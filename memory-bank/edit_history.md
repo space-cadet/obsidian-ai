@@ -1,12 +1,22 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 08:13:57 IST*
+*Last Updated: 2026-05-02 04:00:59 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
 
 ---
 
 ### 2026-05-02
+
+#### 04:00:59 IST - T7: Release System & CI/CD — completed
+- Modified `versions.json` — added missing 1.2.4 entry
+- Created `.github/workflows/pre-release.yml` — auto pre-release on push to main, rolling latest-dev tag
+- Created `memory-bank/tasks/T7.md` — task file for Release System & CI/CD
+- Created `memory-bank/implementation-details/release-ci-design.md` — two-track pipeline design, version bumping workflow, manual testing steps
+- Updated `memory-bank/tasks.md` — added T7 row, updated summary counts, added completed tasks table
+- Updated `memory-bank/activeContext.md` — updated focus, next steps
+- Updated `memory-bank/sessions/2026-05-02-morning.md` — session 3 update appended
+- Updated `memory-bank/session_cache.md` — T7 complete, focus shifted to T1
 
 #### 08:13:57 IST - [META-1]: Architecture documentation + v2.0 task definitions
 
