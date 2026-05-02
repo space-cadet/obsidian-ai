@@ -1,11 +1,11 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 23:56:30 IST*
+*Last Updated: 2026-05-03 00:18:43 IST*
 
-**Started**: 2026-05-02 23:30:00 IST
-**Focus Task**: T5/T2 — fix note targeting, stale closure, persistence, UX
-**Session File**: `sessions/2026-05-02-night.md`
-**Status**: ✅ T5 note targeting fixed; ✅ T2 basic persistence done; ✅ stale closure fixed; ✅ button UX improved
+**Started**: 2026-05-03 00:09:00 IST
+**Focus Task**: T2 — session history modal design
+**Session File**: `sessions/2026-05-03-night.md`
+**Status**: 🔄 T2 session-store architecture designed; documentation updated
 
 ## Overview
 
@@ -15,11 +15,12 @@
 
 ## Session History (Last 10)
 
-1. `sessions/2026-05-02-night.md` — T5: fix note targeting + NoteEditingBridge refactor; T2: basic persistence; stale closure fix; UX clarity
-2. `sessions/2026-05-02-evening.md` — T4: streaming wiring complete; T5: NoteEditingBridge + apply/append buttons
-3. `sessions/2026-05-02-morning.md` — META-1/T8: branding sync, package workflow, README, open-source release files
-4. `sessions/2026-05-02-morning.md` — META-1: arch docs, T1–T7 tasks; T7 (CI/CD) and T1 completed
-5. `sessions/2026-05-02-init.md` — META-1: Initial memory bank setup
+1. `sessions/2026-05-03-night.md` — T2: session history modal design; memory bank docs updated
+2. `sessions/2026-05-02-night.md` — T5: fix note targeting + NoteEditingBridge refactor; T2: basic persistence; stale closure fix; UX clarity
+3. `sessions/2026-05-02-evening.md` — T4: streaming wiring complete; T5: NoteEditingBridge + apply/append buttons
+4. `sessions/2026-05-02-morning.md` — META-1/T8: branding sync, package workflow, README, open-source release files
+5. `sessions/2026-05-02-morning.md` — META-1: arch docs, T1–T7 tasks; T7 (CI/CD) and T1 completed
+6. `sessions/2026-05-02-init.md` — META-1: Initial memory bank setup
 
 ## Task Registry
 
@@ -57,14 +58,18 @@
 
 ### T2: Conversation Chain & Memory
 **Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-02 23:56:30 IST
-**Context:** Basic single-session persistence implemented. plugin.loadChatMessages/saveChatMessages added. ChatApp loads on mount, saves on message change, clears on New Chat. saveSettings fixed to merge plugin data.
-**Files:** `src/main.ts`, `src/views/ObsidianAIChatView.ts`, `src/components/ChatApp.tsx`
+**Started:** 2026-05-02 **Last:** 2026-05-03 00:18:43 IST
+**Context:** Basic single-session persistence implemented. Session-store architecture designed: StoredChatData with sessions[] + activeSessionId; plugin API methods spec'd; SessionPickerModal UI designed; auto-titling and pruning logic defined. Implementation next.
+**Files:** `src/main.ts`, `src/views/ObsidianAIChatView.ts`, `src/components/ChatApp.tsx`, `src/components/ActionBar.tsx`, `src/components/SessionPickerModal.tsx` (new)
 **Progress:**
 1. ✅ loadChatMessages/saveChatMessages on plugin
 2. ✅ ChatApp persistence hooks (load on mount, save on update, clear on new chat)
 3. ✅ saveSettings fixed to preserve chatMessages across settings saves
-4. ⬜ ConversationManager, multi-conversation management, auto-titling
+4. 🔄 Session-store architecture design complete
+5. ⬜ Implement plugin methods (loadChatData, saveChatData, migration)
+6. ⬜ Update ChatApp for session state (archive-on-New, activeSessionId)
+7. ⬜ Build SessionPickerModal component
+8. ⬜ Wire Load button in ActionBar
 
 ### T3: Context & Mentions System
 **Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
@@ -105,4 +110,4 @@
 
 - T3: Build MentionAutocomplete popover, @ trigger in ChatInput, ContextEngine (multi-note context)
 - T5: applyToTargetNote (after T3), slash commands, retry button
-- T2: ConversationManager, multi-conversation UI, auto-titling
+- T2: Implement session store in plugin (loadChatData, saveChatData, migration); update ChatApp for archive-on-New; build SessionPickerModal; wire Load button in ActionBar

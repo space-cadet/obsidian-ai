@@ -5,17 +5,15 @@ import { ChatMessage } from "./ChatApp";
 interface MessageBubbleProps {
 	message: ChatMessage;
 	app: App;
-	targetNoteName: string | null;
-	onApply: (content: string) => void;
 	onAppend: (content: string) => void;
+	onInsertAtCursor: (content: string) => void;
 }
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
 	message,
 	app,
-	targetNoteName,
-	onApply,
 	onAppend,
+	onInsertAtCursor,
 }) => {
 	const contentRef = useRef<HTMLDivElement>(null);
 
@@ -34,8 +32,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	const handleCopy = () => {
 		navigator.clipboard.writeText(message.content);
 	};
-
-	const noteLabel = targetNoteName ? ` → ${targetNoteName}` : " to Note";
 
 	const time = new Date(message.timestamp).toLocaleTimeString([], {
 		hour: "2-digit",
@@ -57,17 +53,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 				<div className="chat-bubble-actions">
 					<button
 						className="chat-btn-small"
-						onClick={() => onApply(message.content)}
-						title="Replace note content with a diff — accept or discard in the editor"
+						onClick={() => onInsertAtCursor(message.content)}
+						title="Insert at the current cursor position"
 					>
-						✓ Apply{noteLabel}
+						⌶ Insert at Cursor
 					</button>
 					<button
 						className="chat-btn-small"
 						onClick={() => onAppend(message.content)}
 						title="Append directly to the end of the note — no confirmation step"
 					>
-						+ Append{noteLabel}
+						+ Append
 					</button>
 					<button
 						className="chat-btn-small"

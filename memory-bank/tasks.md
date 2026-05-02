@@ -1,6 +1,6 @@
 # Task Registry
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 23:56:30 IST*
+*Last Updated: 2026-05-03 00:18:43 IST*
 
 ## Summary
 - Active: 4 | Paused: 3 | Completed: 5 | Cancelled: 0
@@ -35,7 +35,7 @@
 Active note toggle implemented: `includeActiveNote` state in ChatApp, chip in ContextBar, XML context block injected into user message on send. Next: `@`mention autocomplete + ContextEngine. See `tasks/T3.md`.
 
 ### T2 — Conversation Chain & Memory *(requires T1)*
-Basic single-session persistence done: messages saved/loaded via plugin.loadChatMessages/saveChatMessages. Full ConversationManager, multi-conversation UI pending. See `tasks/T2.md`.
+Basic single-session persistence done. Session-store architecture designed: `StoredChatData` with `sessions[]` + `activeSessionId`, plugin API methods, SessionPickerModal UI, auto-titling, pruning. Implementation next. See `tasks/T2.md`.
 
 ### T5 — In-Place Note Editing *(requires T1)*
 `NoteEditingBridge` refactored: receives resolved view/file from caller. Correct note always targeted via workspace active-leaf-change tracking in ChatApp. Button labels show target note name. Remaining: target-note by path (needs T3), slash commands, retry button. See `tasks/T5.md`.

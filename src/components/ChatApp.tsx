@@ -177,23 +177,6 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		plugin.saveChatMessages([]);
 	}, [isStreaming, plugin]);
 
-	const handleApply = useCallback(
-		(content: string) => {
-			const leaf = lastMarkdownLeafRef.current;
-			if (!(leaf?.view instanceof MarkdownView)) {
-				new Notice("⚠️ Open a note first to apply changes.");
-				return;
-			}
-			NoteEditingBridge.applyToNote(
-				plugin.app,
-				leaf.view as MarkdownView,
-				content,
-				"Apply from chat",
-			);
-		},
-		[plugin],
-	);
-
 	const handleAppend = useCallback(
 		async (content: string) => {
 			const leaf = lastMarkdownLeafRef.current;
@@ -210,6 +193,22 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		[plugin],
 	);
 
+	const handleInsertAtCursor = useCallback(
+		(content: string) => {
+			const leaf = lastMarkdownLeafRef.current;
+			if (!(leaf?.view instanceof MarkdownView)) {
+				new Notice("⚠️ Open a note first to insert at cursor.");
+				return;
+			}
+			NoteEditingBridge.insertAtCursor(
+				plugin.app,
+				leaf.view as MarkdownView,
+				content,
+			);
+		},
+		[plugin],
+	);
+
 	return (
 		<div className="chat-panel">
 			<ActionBar onNewChat={handleNewChat} plugin={plugin} />
@@ -218,9 +217,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				currentAiMessage={currentAiMessage}
 				isStreaming={isStreaming}
 				app={plugin.app}
-				targetNoteName={targetNoteName}
-				onApply={handleApply}
 				onAppend={handleAppend}
+				onInsertAtCursor={handleInsertAtCursor}
 			/>
 			<ContextBar
 				includeActiveNote={includeActiveNote}

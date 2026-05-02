@@ -1,6 +1,6 @@
 # Chat Panel Design: ObsidianAIChatView
 *Created: 2026-05-02 08:13:57 IST*
-*Last Updated: 2026-05-02 08:13:57 IST*
+*Last Updated: 2026-05-03 00:18:43 IST*
 
 ## Overview
 
@@ -60,7 +60,7 @@ ObsidianAIChatView extends ItemView
 │
 ├── <ActionBar>
 │   ├── [New Chat]    ← clears conversation
-│   ├── [Load Chat ▾] ← dropdown of saved conversations
+│   ├── [Load Chat] ← opens session picker modal when history exists; disabled when empty
 │   └── [Settings ⚙]  ← opens plugin settings
 │
 ├── <ChatMessages>  (scrollable, flex-col-reverse)
@@ -133,20 +133,23 @@ ObsidianAIChatView extends ItemView
 ```typescript
 interface ChatMessage {
   id: string;               // uuid
-  role: "user" | "assistant" | "system";
+  role: "user" | "assistant";
   content: string;          // markdown text
   timestamp: number;        // Date.now()
-  isStreaming?: boolean;     // true while chunks arriving
   isError?: boolean;
-  contextRefs?: string[];   // note paths attached to this message
 }
 
-interface Conversation {
+interface ChatSession {
   id: string;
   title: string;            // auto-generated from first user message
   createdAt: number;
   updatedAt: number;
   messages: ChatMessage[];
+}
+
+interface StoredChatData {
+  sessions: ChatSession[];
+  activeSessionId: string | null;
 }
 ```
 
@@ -184,14 +187,15 @@ setCurrentAiMessage("");
 ## Conversation Persistence
 
 ```typescript
-// Stored via plugin.saveData() under key "conversations"
-interface StoredData {
-  conversations: Conversation[];
-  activeConversationId: string | null;
+// Stored via plugin.saveData() under key "chatData"
+interface StoredChatData {
+  sessions: ChatSession[];
+  activeSessionId: string | null;
 }
 
-// Max stored conversations: 20 (oldest pruned)
-// Max messages per conversation: stored in full (compaction deferred to T6)
+// Max stored sessions: 20 (oldest pruned) — driven by settings.maxSavedConversations
+// Migration: old flat "chatMessages" array → wrapped into single ChatSession on first load
+// Max messages per session: stored in full (compaction deferred to T6)
 ```
 
 ---

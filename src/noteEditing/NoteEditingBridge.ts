@@ -66,4 +66,29 @@ export class NoteEditingBridge {
 		new Notice(`✓ Appended to ${file.basename}`);
 		return true;
 	}
+
+	/**
+	 * Inserts the AI text at the current cursor position in the given note.
+	 * A Notice confirms the action.
+	 */
+	static insertAtCursor(
+		app: App,
+		view: MarkdownView,
+		aiText: string,
+	): boolean {
+		const editor = view.editor;
+		if (!editor) {
+			new Notice("⚠️ Could not access the editor.");
+			return false;
+		}
+
+		console.log(
+			`[NoteEditingBridge] insertAtCursor — note: ${view.file?.path}, aiLen: ${aiText.length}`,
+		);
+
+		const cursor = editor.getCursor();
+		editor.replaceRange(aiText, cursor);
+		new Notice(`✓ Inserted at cursor`);
+		return true;
+	}
 }
