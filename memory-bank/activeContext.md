@@ -1,6 +1,6 @@
 # Active Context
-*Created: 2026-05-02 00:00:00 UTC*
-*Last Updated: 2026-05-02 00:00:00 UTC*
+*Created: 2026-05-02 08:00:01 IST*
+*Last Updated: 2026-05-02 08:00:01 IST*
 
 ## Current Tasks
 
@@ -27,7 +27,7 @@
 
 ## Current Decisions
 
-1. **UTC Timestamps**: Using UTC since no project timezone has been established
+1. **IST Timestamps**: Using IST (Asia/Kolkata, UTC+5:30) as project timezone
 2. **Clean Slate**: All files initialized fresh — no existing tasks to migrate
 3. **Integrated Rules v6.12**: Following the latest rules version from space-cadet/memory-bank
 

@@ -1,6 +1,6 @@
 # Edit History
-*Created: 2026-05-02 00:00:00 UTC*
-*Last Updated: 2026-05-02 00:00:00 UTC*
+*Created: 2026-05-02 08:00:01 IST*
+*Last Updated: 2026-05-02 08:00:01 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
 
@@ -8,7 +8,7 @@
 
 ### 2026-05-02
 
-#### 00:00:00 UTC - [META-1]: Initial memory bank setup
+#### 08:00:01 IST - [META-1]: Initial memory bank setup
 
 - Created `memory-bank/` directory structure
 - Created `memory-bank/projectbrief.md` - Project overview for InlineAI Plugin

@@ -1,6 +1,6 @@
 # System Patterns: InlineAI Plugin
-*Created: 2026-05-02 00:00:00 UTC*
-*Last Updated: 2026-05-02 00:00:00 UTC*
+*Created: 2026-05-02 08:00:01 IST*
+*Last Updated: 2026-05-02 08:00:01 IST*
 
 ## Core Principles
 
@@ -54,7 +54,7 @@ Extensions are registered via `plugin.registerEditorExtension([...])` in `onload
 ## Memory Bank Update Protocol
 
 When updating memory bank files:
-1. Always include `*Last Updated: YYYY-MM-DD HH:MM:SS UTC*` at the top
+1. Always include `*Last Updated: YYYY-MM-DD HH:MM:SS IST*` at the top
 2. Add an entry to `edit_history.md` (newest first)
 3. Update `activeContext.md` to reflect current focus
 4. Update `session_cache.md` after completing a session
@@ -63,7 +63,7 @@ When updating memory bank files:
 ## Timestamp Format
 
 All timestamps use: `YYYY-MM-DD HH:MM:SS TZ`
-Example: `2026-05-02 14:30:00 UTC`
+Example: `2026-05-02 14:30:00 IST`
 
 ## Task Status Indicators
 

@@ -1,6 +1,6 @@
 # Project Brief: obsidian-ai (InlineAI Plugin)
-*Created: 2026-05-02 00:00:00 UTC*
-*Last Updated: 2026-05-02 00:00:00 UTC*
+*Created: 2026-05-02 08:00:01 IST*
+*Last Updated: 2026-05-02 08:00:01 IST*
 
 ## Overview
 
