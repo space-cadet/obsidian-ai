@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { App, Component, MarkdownRenderer } from "obsidian";
-import { ChatMessage } from "./ChatApp";
+import { ChatMessage } from "../types";
 import MessageBubble from "./MessageBubble";
 
 const StreamingBubble: React.FC<{ content: string; app: App }> = ({

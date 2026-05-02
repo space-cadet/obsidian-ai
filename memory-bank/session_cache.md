@@ -5,7 +5,7 @@
 **Started**: 2026-05-03 00:09:00 IST
 **Focus Task**: T2 — session history modal design
 **Session File**: `sessions/2026-05-03-night.md`
-**Status**: 🔄 T2 session-store architecture designed; documentation updated
+**Status**: ✅ T2 session-store implemented; SessionPickerModal functional
 
 ## Overview
 
@@ -58,18 +58,18 @@
 
 ### T2: Conversation Chain & Memory
 **Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-03 00:18:43 IST
-**Context:** Basic single-session persistence implemented. Session-store architecture designed: StoredChatData with sessions[] + activeSessionId; plugin API methods spec'd; SessionPickerModal UI designed; auto-titling and pruning logic defined. Implementation next.
-**Files:** `src/main.ts`, `src/views/ObsidianAIChatView.ts`, `src/components/ChatApp.tsx`, `src/components/ActionBar.tsx`, `src/components/SessionPickerModal.tsx` (new)
+**Started:** 2026-05-02 **Last:** 2026-05-03 00:45:00 IST
+**Context:** Session-based chat history fully implemented. Plugin methods loadChatData/saveChatData with migration from old flat chatMessages. ChatApp uses sessions[] + activeSessionId state. Archive-on-New with auto-titling and maxSavedConversations pruning. SessionPickerModal with load/delete actions. Load button enabled when history exists.
+**Files:** `src/types.ts`, `src/main.ts`, `src/views/ObsidianAIChatView.ts`, `src/components/ChatApp.tsx`, `src/components/ActionBar.tsx`, `src/components/SessionPickerModal.tsx`
 **Progress:**
 1. ✅ loadChatMessages/saveChatMessages on plugin
 2. ✅ ChatApp persistence hooks (load on mount, save on update, clear on new chat)
 3. ✅ saveSettings fixed to preserve chatMessages across settings saves
-4. 🔄 Session-store architecture design complete
-5. ⬜ Implement plugin methods (loadChatData, saveChatData, migration)
-6. ⬜ Update ChatApp for session state (archive-on-New, activeSessionId)
-7. ⬜ Build SessionPickerModal component
-8. ⬜ Wire Load button in ActionBar
+4. ✅ Session-store architecture design complete
+5. ✅ Implement plugin methods (loadChatData, saveChatData, migration)
+6. ✅ Update ChatApp for session state (archive-on-New, activeSessionId)
+7. ✅ Build SessionPickerModal component
+8. ✅ Wire Load button in ActionBar
 
 ### T3: Context & Mentions System
 **Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
@@ -110,4 +110,4 @@
 
 - T3: Build MentionAutocomplete popover, @ trigger in ChatInput, ContextEngine (multi-note context)
 - T5: applyToTargetNote (after T3), slash commands, retry button
-- T2: Implement session store in plugin (loadChatData, saveChatData, migration); update ChatApp for archive-on-New; build SessionPickerModal; wire Load button in ActionBar
+- T2: Test in real Obsidian environment; verify migration, pruning, delete-active-session edge case

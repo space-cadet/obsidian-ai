@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ## Unreleased - 2026-05-02
 
 ### Added
+- Session-based chat history with SessionPickerModal: archive-on-New, auto-titling, pruning, load/delete - T2
+- Shared `src/types.ts` with `ChatMessage`, `ChatSession`, `StoredChatData` interfaces - T2
+- `Insert at Cursor` button for assistant replies alongside Append and Copy - T5
 - Provider-profile based settings, migration helpers, and active-profile resolution - T9
 - Fetch-models entry point and searchable picker shell in settings UI - T10
 - Open-source community files and release-announcement draft - T8

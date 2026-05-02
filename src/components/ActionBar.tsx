@@ -3,10 +3,17 @@ import { ChatPluginLike } from "../views/ObsidianAIChatView";
 
 interface ActionBarProps {
 	onNewChat: () => void;
+	onLoadChat: () => void;
+	canLoad: boolean;
 	plugin: ChatPluginLike;
 }
 
-const ActionBar: React.FC<ActionBarProps> = ({ onNewChat, plugin }) => {
+const ActionBar: React.FC<ActionBarProps> = ({
+	onNewChat,
+	onLoadChat,
+	canLoad,
+	plugin,
+}) => {
 	const openSettings = () => {
 		(plugin.app as any).setting.open();
 		(plugin.app as any).setting.openTabById(plugin.manifest.id);
@@ -19,8 +26,9 @@ const ActionBar: React.FC<ActionBarProps> = ({ onNewChat, plugin }) => {
 			</button>
 			<button
 				className="chat-btn"
-				disabled
-				title="Load chat — coming soon"
+				onClick={onLoadChat}
+				disabled={!canLoad}
+				title={canLoad ? "Load a previous chat session" : "No saved sessions yet"}
 			>
 				↺ Load
 			</button>

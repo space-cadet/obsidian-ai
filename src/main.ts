@@ -22,6 +22,7 @@ import {
 } from "./modules/SelectionState";
 import { diffExtension } from "./modules/diffExtension";
 import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/ObsidianAIChatView";
+import { StoredChatData, ChatSession } from "./types";
 
 export default class ObsidianAIPlugin extends Plugin {
 	settings: ObsidianAISettings = DEFAULT_SETTINGS;
@@ -173,13 +174,38 @@ export default class ObsidianAIPlugin extends Plugin {
 		await this.saveData({ ...existing, ...this.settings });
 	}
 
-	async loadChatMessages(): Promise<any[]> {
+	async loadChatData(): Promise<StoredChatData> {
 		const data = await this.loadData();
-		return Array.isArray(data?.chatMessages) ? data.chatMessages : [];
+
+		// New format
+		if (data?.chatData && Array.isArray(data.chatData.sessions)) {
+			return data.chatData as StoredChatData;
+		}
+
+		// Migration from old flat chatMessages array
+		if (Array.isArray(data?.chatMessages) && data.chatMessages.length > 0) {
+			const migrated: StoredChatData = {
+				sessions: [
+					{
+						id: crypto.randomUUID(),
+						title: "Previous Chat",
+						createdAt: Date.now(),
+						updatedAt: Date.now(),
+						messages: data.chatMessages,
+					},
+				],
+				activeSessionId: null,
+			};
+			// Save in new format immediately
+			await this.saveData({ ...data, chatData: migrated });
+			return migrated;
+		}
+
+		return { sessions: [], activeSessionId: null };
 	}
 
-	async saveChatMessages(messages: any[]): Promise<void> {
+	async saveChatData(chatData: StoredChatData): Promise<void> {
 		const data = (await this.loadData()) ?? {};
-		await this.saveData({ ...data, chatMessages: messages });
+		await this.saveData({ ...data, chatData });
 	}
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { App, MarkdownRenderer, Component } from "obsidian";
-import { ChatMessage } from "./ChatApp";
+import { ChatMessage } from "../types";
 
 interface MessageBubbleProps {
 	message: ChatMessage;
