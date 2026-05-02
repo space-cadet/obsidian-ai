@@ -1,0 +1,62 @@
+name: Bug report
+description: Report something that is not working in Obsidian AI
+title: "[Bug]: "
+labels:
+    - bug
+body:
+    - type: markdown
+      attributes:
+          value: Thanks for taking the time to report a bug. Please remove any private note content or API keys before submitting.
+    - type: input
+      id: obsidian-version
+      attributes:
+          label: Obsidian version
+          placeholder: "1.7.0"
+      validations:
+          required: true
+    - type: input
+      id: plugin-version
+      attributes:
+          label: Obsidian AI version
+          placeholder: "1.2.4"
+      validations:
+          required: true
+    - type: dropdown
+      id: provider
+      attributes:
+          label: AI provider
+          options:
+              - OpenAI
+              - Ollama
+              - Gemini
+              - Azure OpenAI
+              - Custom endpoint
+              - Not provider-related
+      validations:
+          required: true
+    - type: textarea
+      id: steps
+      attributes:
+          label: Steps to reproduce
+          description: Tell us exactly what you did.
+          placeholder: "1. Open a note...\n2. Press Ctrl/Cmd+K...\n3. ..."
+      validations:
+          required: true
+    - type: textarea
+      id: expected
+      attributes:
+          label: Expected behavior
+      validations:
+          required: true
+    - type: textarea
+      id: actual
+      attributes:
+          label: Actual behavior
+      validations:
+          required: true
+    - type: textarea
+      id: logs
+      attributes:
+          label: Console errors or screenshots
+          description: Paste relevant console output or attach screenshots if useful.
+          render: text

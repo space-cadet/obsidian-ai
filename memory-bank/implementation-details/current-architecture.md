@@ -1,10 +1,10 @@
-# Current Architecture: InlineAI Plugin (v1.2.4)
+# Current Architecture: Obsidian AI Plugin (v1.2.4)
 *Created: 2026-05-02 08:13:57 IST*
 *Last Updated: 2026-05-02 08:13:57 IST*
 
 ## Overview
 
-InlineAI v1.2.4 is a pure inline-editing plugin. The entire interaction surface is a transient CodeMirror widget anchored to the cursor/selection inside the active markdown editor. There is no persistent view, no chat panel, and no vault awareness.
+Obsidian AI v1.2.4 is a pure inline-editing plugin. The entire interaction surface is a transient CodeMirror widget anchored to the cursor/selection inside the active markdown editor. There is no persistent view, no chat panel, and no vault awareness.
 
 ---
 
@@ -109,13 +109,13 @@ applyDiffPlugin    FloatingTooltipState → Decoration.none
 ```
 src/
 ├── main.ts
-│   └── InlineAIChatPlugin
+│   └── Obsidian AIChatPlugin
 │       ├── onload()
 │       │   ├── loadSettings()
 │       │   ├── new ChatApiManager(settings, app)
 │       │   ├── registerEditorExtension([...])
 │       │   ├── addCommand("show-cursor-tooltip")   ← Ctrl+K
-│       │   └── addSettingTab(InlineAISettingsTab)
+│       │   └── addSettingTab(ObsidianAISettingsTab)
 │       └── loadSettings() / saveSettings()
 │
 ├── api.ts
@@ -128,9 +128,9 @@ src/
 │       └── getMessageHistory()     ← returns MessageQueue items (UI use only)
 │
 ├── settings.ts
-│   ├── InlineAISettings (interface)
+│   ├── ObsidianAISettings (interface)
 │   ├── DEFAULT_SETTINGS
-│   └── InlineAISettingsTab (PluginSettingTab)
+│   └── ObsidianAISettingsTab (PluginSettingTab)
 │
 ├── default_prompts.ts
 │   ├── selectionPrompt  ← system prompt when text is selected
@@ -219,7 +219,7 @@ No vault content. No other notes. No conversation history. No file paths. No met
 ## Settings Schema
 
 ```typescript
-interface InlineAISettings {
+interface ObsidianAISettings {
   provider: "openai" | "ollama" | "custom" | "gemini" | "azure"
   model: string
   apiKey?: string

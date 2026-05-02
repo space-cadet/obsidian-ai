@@ -198,7 +198,7 @@ const applyDiffPlugin = ViewPlugin.fromClass(
 
 /**
  * Focus guard to suppress editor-level blur/focusout side effects while the
- * InlineAI widget is open. This mirrors the behavior in WidgetExtension but
+ * Obsidian AI widget is open. This mirrors the behavior in WidgetExtension but
  * ensures that moving focus between the diff overlay and the widget does not
  * trigger Obsidian re-renders (e.g., code block previews).
  */
@@ -209,8 +209,10 @@ const focusGuardPlugin = ViewPlugin.fromClass(
 
 		constructor(private view: EditorView) {
 			const handler = (evt: FocusEvent) => {
-				// Only guard when the InlineAI widget is open
-				if (document.body.classList.contains("obsidian-ai-widget-open")) {
+				// Only guard when the Obsidian AI widget is open
+				if (
+					document.body.classList.contains("obsidian-ai-widget-open")
+				) {
 					// Stop Obsidian/global listeners from reacting to focus loss
 					evt.stopImmediatePropagation?.();
 					evt.stopPropagation();

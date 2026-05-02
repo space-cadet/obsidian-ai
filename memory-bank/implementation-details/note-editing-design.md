@@ -4,7 +4,7 @@
 
 ## Overview
 
-This is the key differentiator from the Obsidian Copilot plugin. While Copilot keeps AI responses inside the chat panel, InlineAI can push AI-generated content directly into notes as an inline diff — the same accept/discard UX already present in the inline tooltip, but triggered from the sidebar chat.
+This is the key differentiator from the Obsidian Copilot plugin. While Copilot keeps AI responses inside the chat panel, Obsidian AI can push AI-generated content directly into notes as an inline diff — the same accept/discard UX already present in the inline tooltip, but triggered from the sidebar chat.
 
 ---
 
@@ -164,13 +164,13 @@ src/
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│ InlineAI                                       10:14 │
+│ Obsidian AI                                       10:14 │
 │ ──────────────────────────────────────────────────── │
 │ Here's a rewritten introduction for Project Notes:   │
 │                                                      │
 │ # Project Notes                                      │
 │ This document captures key architectural decisions   │
-│ for the InlineAI plugin...                           │
+│ for the Obsidian AI plugin...                           │
 │                                                      │
 │ ┌────────────────────────────────────────────────┐   │
 │ │ [✓ Apply to Project Notes]  [✓ Apply to Active]│   │

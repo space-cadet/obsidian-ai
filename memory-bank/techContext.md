@@ -1,4 +1,4 @@
-# Technical Context: InlineAI Plugin
+# Technical Context: Obsidian AI Plugin
 *Created: 2026-05-02 08:00:01 IST*
 *Last Updated: 2026-05-02 08:13:57 IST*
 
@@ -106,7 +106,7 @@ ChatApiManager
 ```
 Obsidian Plugin Host
         │
-        ├── registerView(CHAT_VIEWTYPE, InlineAIChatView)   ← NEW
+        ├── registerView(CHAT_VIEWTYPE, ObsidianAIChatView)   ← NEW
         │
         ├── registerEditorExtension([...])  ← UNCHANGED
         │
@@ -115,7 +115,7 @@ Obsidian Plugin Host
         │
         └── Surface 2: Chat Panel           ← NEW
             │
-            InlineAIChatView (ItemView)
+            ObsidianAIChatView (ItemView)
               └── React Root
                   ├── <ActionBar>
                   ├── <ChatMessages>        → ConversationManager
@@ -179,7 +179,7 @@ NoteEditingBridge (NEW)
 ## Settings Schema (v2.0 additions)
 
 ```typescript
-interface InlineAISettings {
+interface ObsidianAISettings {
   // --- existing ---
   provider: "openai" | "ollama" | "custom" | "gemini" | "azure"
   model: string

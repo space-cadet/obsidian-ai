@@ -67,4 +67,4 @@ HIGH
 
 ## Context
 
-Initial memory bank setup as requested. The memory bank follows the integrated-rules-v6.12.md specification from the space-cadet/memory-bank repository. All files are initialized with content appropriate to the obsidian-ai (InlineAI Plugin) project.
+Initial memory bank setup as requested. The memory bank follows the integrated-rules-v6.12.md specification from the space-cadet/memory-bank repository. All files are initialized with content appropriate to the obsidian-ai (Obsidian AI Plugin) project.

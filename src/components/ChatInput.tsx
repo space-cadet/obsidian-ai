@@ -6,7 +6,11 @@ interface ChatInputProps {
 	isStreaming: boolean;
 }
 
-const ChatInput: React.FC<ChatInputProps> = ({ onSend, onStop, isStreaming }) => {
+const ChatInput: React.FC<ChatInputProps> = ({
+	onSend,
+	onStop,
+	isStreaming,
+}) => {
 	const [value, setValue] = useState("");
 
 	const submit = useCallback(() => {

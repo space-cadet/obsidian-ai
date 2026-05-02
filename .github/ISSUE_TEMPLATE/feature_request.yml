@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest an improvement for Obsidian AI
+title: "[Feature]: "
+labels:
+    - enhancement
+body:
+    - type: textarea
+      id: problem
+      attributes:
+          label: Problem or workflow
+          description: What are you trying to do in Obsidian?
+      validations:
+          required: true
+    - type: textarea
+      id: solution
+      attributes:
+          label: Proposed solution
+          description: Describe the behavior you would like to see.
+      validations:
+          required: true
+    - type: dropdown
+      id: surface
+      attributes:
+          label: Primary surface
+          options:
+              - Inline editor tooltip
+              - Chat panel
+              - Note editing from chat
+              - Settings or provider setup
+              - Release or installation workflow
+              - Other
+      validations:
+          required: true
+    - type: textarea
+      id: alternatives
+      attributes:
+          label: Alternatives considered
+          description: Mention any workarounds or other plugins you have tried.
+    - type: textarea
+      id: context
+      attributes:
+          label: Additional context
+          description: Add screenshots, examples, or links if helpful.

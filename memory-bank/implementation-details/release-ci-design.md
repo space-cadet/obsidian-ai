@@ -4,7 +4,7 @@
 
 ## Overview
 
-Two-track release pipeline for the obsidian-inlineAI plugin:
+Two-track release pipeline for the obsidian-ai plugin:
 
 | Track | Trigger | Tag | Audience | Workflow |
 |-------|---------|-----|----------|----------|
@@ -16,18 +16,18 @@ Two-track release pipeline for the obsidian-inlineAI plugin:
 ## Stable Release Flow (`release.yml`)
 
 ```
-developer: npm version patch   →  bumps package.json, manifest.json, versions.json
+developer: pnpm version patch  →  bumps package.json, manifest.json, versions.json
 developer: git tag 1.2.5
 developer: git push --tags
           ↓
 GitHub Actions: release.yml triggered
-  npm ci + npm run build
-  package: main.js + manifest.json + styles.css → obsidian-inlineAI.zip
+  pnpm install --frozen-lockfile + pnpm run build
+  package: main.js + manifest.json + styles.css → obsidian-ai.zip
   ncipollo/release-action → GitHub Release (tag: 1.2.5, prerelease: false)
 ```
 
 Release assets published:
-- `obsidian-inlineAI.zip`
+- `obsidian-ai.zip`
 - `main.js`
 - `manifest.json`
 - `styles.css`
@@ -40,8 +40,8 @@ Release assets published:
 developer: git push origin main
           ↓
 GitHub Actions: pre-release.yml triggered
-  npm ci + npm run build
-  package: main.js + manifest.json + styles.css → obsidian-inlineAI.zip
+  pnpm install --frozen-lockfile + pnpm run build
+  package: main.js + manifest.json + styles.css → obsidian-ai.zip
   ncipollo/release-action →
     tag: latest-dev
     prerelease: true
@@ -57,7 +57,7 @@ The `latest-dev` release is always the most recent `main` build. No new release 
 
 ```bash
 # 1. Bump version (updates package.json, manifest.json, versions.json)
-npm version patch   # or minor / major
+pnpm version patch   # or minor / major
 
 # 2. Push with tags to trigger stable release
 git push && git push --tags
@@ -78,7 +78,7 @@ Maps plugin version → minimum Obsidian app version required.
 }
 ```
 
-Must be updated whenever a new stable version is released (handled automatically by `npm version` + `version-bump.mjs`).
+Must be updated whenever a new stable version is released (handled automatically by `pnpm version` + `version-bump.mjs`).
 
 ---
 
@@ -94,5 +94,5 @@ Both workflows copy `styles.css` from the project root. During T1, chat styles w
 2. Wait for Actions to complete (~1–2 min)
 3. Go to GitHub Releases → "Dev Build (latest main)"
 4. Download `main.js`, `manifest.json`, `styles.css`
-5. Copy into your Obsidian vault's `.obsidian/plugins/inlineai/` folder
+5. Copy into your Obsidian vault's `.obsidian/plugins/obsidian-ai/` folder
 6. Reload Obsidian (or disable/enable plugin)

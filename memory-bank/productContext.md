@@ -1,4 +1,4 @@
-# Product Context: InlineAI Plugin
+# Product Context: Obsidian AI Plugin
 *Created: 2026-05-02 08:00:01 IST*
 *Last Updated: 2026-05-02 08:13:57 IST*
 
@@ -8,7 +8,7 @@ Obsidian users who want AI-assisted writing must either:
 1. Leave their editor entirely to use external AI tools (ChatGPT, Claude.ai), or
 2. Use a plugin like Copilot that keeps AI responses locked inside a chat panel — separate from the notes being worked on.
 
-InlineAI v1.2.4 solved problem 1 for quick single-shot transforms but has no chat interface. The v2.0 roadmap solves both: a persistent chat panel *plus* the ability to push AI responses directly into notes, with the same familiar diff + accept/discard UX.
+Obsidian AI v1.2.4 solved problem 1 for quick single-shot transforms but has no chat interface. The v2.0 roadmap solves both: a persistent chat panel *plus* the ability to push AI responses directly into notes, with the same familiar diff + accept/discard UX.
 
 ---
 
@@ -60,10 +60,10 @@ InlineAI v1.2.4 solved problem 1 for quick single-shot transforms but has no cha
 │ Rewrite the introduction to be      │
 │ more concise and impactful.         │
 ├─────────────────────────────────────┤
-│ InlineAI: Here's a rewritten intro: │
+│ Obsidian AI: Here's a rewritten intro: │
 │                                     │
 │   # Project Notes                   │
-│   InlineAI brings AI-powered...     │
+│   Obsidian AI brings AI-powered...     │
 │                                     │
 │ [✓ Apply to Project Notes] [⎘ Copy] │
 └─────────────────────────────────────┘
@@ -119,7 +119,7 @@ Obsidian Notice: "Appended to Daily Notes/2026-05-02"
 
 ## Competitive Context
 
-| Feature | Copilot | InlineAI v1 | InlineAI v2 |
+| Feature | Copilot | Obsidian AI v1 | Obsidian AI v2 |
 |---|---|---|---|
 | Persistent chat panel | ✅ | ❌ | ✅ |
 | Multi-turn conversation | ✅ | ❌ | ✅ |

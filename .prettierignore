@@ -2,4 +2,6 @@ node_modules
 dist
 build
 main.js
-
+memory-bank
+pnpm-lock.yaml
+package-lock.json

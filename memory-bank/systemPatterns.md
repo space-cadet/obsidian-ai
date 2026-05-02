@@ -1,4 +1,4 @@
-# System Patterns: InlineAI Plugin
+# System Patterns: Obsidian AI Plugin
 *Created: 2026-05-02 08:00:01 IST*
 *Last Updated: 2026-05-02 08:13:57 IST*
 
@@ -122,7 +122,7 @@ LLM sees a single `HumanMessage` with context prepended. System prompt is separa
 ## Pattern 6: React in Obsidian ItemView
 
 ```typescript
-class InlineAIChatView extends ItemView {
+class ObsidianAIChatView extends ItemView {
   private root: ReactDOM.Root | null = null;
 
   async onOpen() {
@@ -143,9 +143,9 @@ React is bundled into `main.js` by esbuild — no separate chunk. State lives in
 
 ## Pattern 7: Settings Pattern
 
-- All configurable values in `InlineAISettings` interface (`settings.ts`)
+- All configurable values in `ObsidianAISettings` interface (`settings.ts`)
 - `DEFAULT_SETTINGS` provides fallbacks
-- Settings tab (`InlineAISettingsTab`) mutates `plugin.settings` and calls `saveSettings()`
+- Settings tab (`ObsidianAISettingsTab`) mutates `plugin.settings` and calls `saveSettings()`
 - v2.0 settings additions: `chatPanelPosition`, `includeActiveNote`, `maxContextTokens`, `maxSavedConversations`
 
 ---

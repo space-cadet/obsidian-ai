@@ -8,11 +8,20 @@
 
 ### 2026-05-02
 
+#### 11:12:44 IST - T8: Open Source branding + memory sync — in progress
+- Updated `package.json` — branded description, repository/bugs/homepage metadata, GPL-3.0 license, pnpm package workflow retained
+- Updated `README.md` — pnpm development commands, fixed mojibake headings, aligned license text
+- Updated `.github/workflows/release.yml` and `.github/workflows/pre-release.yml` — pnpm install/build workflow
+- Created `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue templates, PR template, and `docs/release-announcement.md`
+- Updated memory-bank current-state files — activeContext, session_cache, progress, tasks, T8
+- Corrected stale `inlineai` / spaced `ObsidianAIChatView` references in implementation docs and task files
+- Added `dist/` to `.gitignore` for local package artifacts
+
 #### 09:41:00 IST - T1: Chat Panel — ItemView + React UI — completed
 - Modified `package.json` — added react, react-dom, @types/react, @types/react-dom
 - Modified `esbuild.config.mjs` — added jsx: automatic, jsxImportSource: react
-- Modified `src/main.ts` — registered InlineAIChatView, ribbon icon, open-chat command, activateChatView()
-- Created `src/views/InlineAIChatView.ts` — ItemView class, ChatPluginLike interface
+- Modified `src/main.ts` — registered ObsidianAIChatView, ribbon icon, open-chat command, activateChatView()
+- Created `src/views/ObsidianAIChatView.ts` — ItemView class, ChatPluginLike interface
 - Created `src/components/ChatApp.tsx` — root component, conversation state, send stub via callApi()
 - Created `src/components/ActionBar.tsx` — New Chat, disabled Load, Settings link
 - Created `src/components/ChatMessages.tsx` — scrollable thread, empty state, typing indicator

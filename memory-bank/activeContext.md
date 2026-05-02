@@ -1,13 +1,18 @@
 # Active Context
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 09:41:00 IST*
+*Last Updated: 2026-05-02 11:12:44 IST*
 
 ## Current Tasks
 
 1. **[META-1]**: Memory Bank Setup and Maintenance (HIGH priority)
    - Status: 🔄 IN PROGRESS
-   - Current Focus: Session 3 — T1 complete, T4 next
-   - Recent Achievement: T1 (Chat Panel) completed — React ItemView, 6 components, CSS, build passes
+   - Current Focus: Session 4 — memory bank synced after branding/open-source release work
+   - Recent Achievement: T1, T7 complete; T8 created and substantially advanced
+
+2. **[T8]**: Open Source Release with Branding (HIGH priority)
+   - Status: 🔄 IN PROGRESS
+   - Current Focus: finish open-source release checklist and public project polish
+   - Recent Achievement: project renamed to Obsidian AI, README refreshed, package workflow added, open-source community files created
 
 ## Implementation Focus — Session 2 (2026-05-02)
 
@@ -43,6 +48,7 @@
 
 ## Next Steps
 
+- Finish T8 release polish: confirm package-manager lockfile policy, review generated `dist/` artifacts, and prepare final release notes
 - Begin T4 (Streaming) — add `streamChat()` to `ChatApiManager`, replace stub in `ChatApp.tsx`
 - T2, T3, T5, T6 all now unblocked pending T4
 
@@ -54,11 +60,14 @@
 4. **Existing inline tooltip preserved**: all current functionality untouched during v2.0 build
 5. **NoteEditingBridge reuses existing effects**: no new diff engine; just dispatches existing CM6 effects
 6. **T4 first**: streaming can be built and tested independently before chat panel UI exists
+7. **Project identity**: public name is Obsidian AI; plugin ID/view type use `obsidian-ai`
+8. **Package manager**: use `pnpm` for local install/build/package workflows
+9. **Editing workflow**: prefer built-in file editing tools over shell text rewrites for content changes
 
 ## System Status
 
-- **Memory Bank**: ✅ Fully documented and up to date
+- **Memory Bank**: ✅ Synced through T8/branding updates
 - **Architecture Docs**: ✅ All 5 implementation-detail docs created
-- **Task Definitions**: ✅ T1–T6 defined with full criteria and context
-- **Development**: ⬜ All v2.0 tasks pending — ready to begin T4
-- **Branch**: claude/setup-memory-bank-Y9eIn
+- **Task Definitions**: ✅ T1–T8 defined with criteria and context
+- **Development**: T1 and T7 complete; T8 active; T4 remains the next v2.0 implementation task
+- **Branch**: main

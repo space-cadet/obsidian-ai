@@ -1,4 +1,4 @@
-# Chat Panel Design: InlineAIChatView
+# Chat Panel Design: ObsidianAIChatView
 *Created: 2026-05-02 08:13:57 IST*
 *Last Updated: 2026-05-02 08:13:57 IST*
 
@@ -12,12 +12,12 @@ The chat panel is a persistent Obsidian `ItemView` rendered in the right sidebar
 
 ```typescript
 // Registration in main.ts
-const CHAT_VIEWTYPE = "inlineai-chat-view";
+const CHAT_VIEWTYPE = "obsidian-ai-chat-view";
 
-this.registerView(CHAT_VIEWTYPE, (leaf) => new InlineAIChatView(leaf, this));
+this.registerView(CHAT_VIEWTYPE, (leaf) => new ObsidianAIChatView(leaf, this));
 
 // Open via ribbon + command
-this.addRibbonIcon("message-square", "Open InlineAI Chat", () => {
+this.addRibbonIcon("message-square", "Open Obsidian AI Chat", () => {
   this.activateChatView();
 });
 
@@ -37,10 +37,10 @@ async activateChatView() {
 ## ItemView Class
 
 ```
-InlineAIChatView extends ItemView
+ObsidianAIChatView extends ItemView
 │
 ├── getViewType()  → CHAT_VIEWTYPE
-├── getDisplayText() → "InlineAI Chat"
+├── getDisplayText() → "Obsidian AI Chat"
 ├── getIcon()        → "message-square"
 │
 ├── onOpen()
@@ -93,7 +93,7 @@ InlineAIChatView extends ItemView
 
 ```
 ┌─────────────────────────────────┐
-│ InlineAI Chat          [≡] [⚙] │  ← ActionBar
+│ Obsidian AI Chat          [≡] [⚙] │  ← ActionBar
 │ [+ New]  [↺ Load ▾]            │
 ├─────────────────────────────────┤
 │                                 │
@@ -104,7 +104,7 @@ InlineAIChatView extends ItemView
 │  └───────────────────────────┘  │
 │                                 │
 │  ┌───────────────────────────┐  │
-│  │ InlineAI            10:13 │  │  ← assistant bubble (left-aligned)
+│  │ Obsidian AI            10:13 │  │  ← assistant bubble (left-aligned)
 │  │ Here's a rewritten intro: │  │
 │  │                           │  │
 │  │ # Project Notes           │  │

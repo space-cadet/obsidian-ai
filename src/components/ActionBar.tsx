@@ -1,5 +1,5 @@
 import React from "react";
-import { ChatPluginLike } from "../views/InlineAIChatView";
+import { ChatPluginLike } from "../views/ObsidianAIChatView";
 
 interface ActionBarProps {
 	onNewChat: () => void;

@@ -20,7 +20,7 @@ import {
 	setSelectionInfoEffect,
 } from "./modules/SelectionState";
 import { diffExtension } from "./modules/diffExtension";
-import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/InlineAIChatView";
+import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/ObsidianAIChatView";
 
 export default class ObsidianAIPlugin extends Plugin {
 	settings: ObsidianAISettings = DEFAULT_SETTINGS;

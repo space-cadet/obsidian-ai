@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from "react";
-import { ChatPluginLike } from "../views/InlineAIChatView";
+import { ChatPluginLike } from "../views/ObsidianAIChatView";
 import ActionBar from "./ActionBar";
 import ChatMessages from "./ChatMessages";
 import ContextBar from "./ContextBar";

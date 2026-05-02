@@ -1,18 +1,18 @@
-# Project Brief: obsidian-ai (InlineAI Plugin)
+# Project Brief: obsidian-ai (Obsidian AI Plugin)
 *Created: 2026-05-02 08:00:01 IST*
 *Last Updated: 2026-05-02 08:13:57 IST*
 
 ## Overview
 
-InlineAI is an Obsidian community plugin that provides AI-powered text assistance directly within the Obsidian editor. It started as a pure inline transformer (v1.2.4) and is being extended into a hybrid AI assistant combining a persistent chat panel with in-place note editing capabilities.
+Obsidian AI is an Obsidian community plugin that provides AI-powered text assistance directly within the Obsidian editor. It started as a pure inline transformer (v1.2.4) and is being extended into a hybrid AI assistant combining a persistent chat panel with in-place note editing capabilities.
 
 ## Repository
 
 - **GitHub**: space-cadet/obsidian-ai
-- **Plugin ID**: inlineai
+- **Plugin ID**: obsidian-ai
 - **Current Version**: 1.2.4
 - **License**: GPL-3.0 / MIT
-- **Author**: FBarrca
+- **Author**: space-cadet
 
 ---
 
@@ -40,7 +40,7 @@ InlineAI is an Obsidian community plugin that provides AI-powered text assistanc
 
 ### What Makes This Different from Copilot
 
-Copilot keeps all AI responses inside the chat panel. InlineAI's chat panel can **apply responses directly to notes** — the same inline diff + accept/discard flow already in v1.2.4 — triggered from the sidebar. The chat is a command interface for the editor, not just a conversation tool.
+Copilot keeps all AI responses inside the chat panel. Obsidian AI's chat panel can **apply responses directly to notes** — the same inline diff + accept/discard flow already in v1.2.4 — triggered from the sidebar. The chat is a command interface for the editor, not just a conversation tool.
 
 ---
 
@@ -82,7 +82,7 @@ obsidian-ai/
 │   ├── settings.ts                # Extended settings schema
 │   ├── default_prompts.ts         # Built-in prompts (unchanged)
 │   ├── views/
-│   │   └── InlineAIChatView.ts    # NEW: ItemView for chat panel
+│   │   └── ObsidianAIChatView.ts     # NEW: ItemView for chat panel
 │   ├── components/                # NEW: React components
 │   │   ├── ChatApp.tsx
 │   │   ├── ActionBar.tsx
@@ -128,6 +128,7 @@ obsidian-ai/
 
 ## Development Workflow
 
-- `npm run dev` — watch mode build
-- `npm run build` — production build (type-check + bundle)
-- `npm run format` — Prettier formatting
+- `pnpm run dev` — watch mode build
+- `pnpm run build` — production build (type-check + bundle)
+- `pnpm run package` — local timestamped release zip
+- `pnpm run format` — Prettier formatting

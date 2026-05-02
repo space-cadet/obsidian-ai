@@ -1,10 +1,10 @@
-# Proposed Architecture: InlineAI with Chat + Note Editing
+# Proposed Architecture: Obsidian AI with Chat + Note Editing
 *Created: 2026-05-02 08:13:57 IST*
 *Last Updated: 2026-05-02 08:13:57 IST*
 
 ## Vision
 
-Extend InlineAI into a hybrid AI assistant that combines:
+Extend Obsidian AI into a hybrid AI assistant that combines:
 - A **persistent sidebar chat panel** (Copilot-style) for multi-turn conversation, context injection, and vault-aware discussion
 - **In-place note editing and creation** triggered from the chat (the key differentiator from Copilot)
 - The existing **inline tooltip** retained for quick single-shot transforms
@@ -18,7 +18,7 @@ Extend InlineAI into a hybrid AI assistant that combines:
 │                        Obsidian Workspace                       │
 │                                                                 │
 │  ┌──────────────────────────┐  ┌────────────────────────────┐  │
-│  │     Markdown Editor      │  │    InlineAI Chat Panel     │  │
+│  │     Markdown Editor      │  │    Obsidian AI Chat Panel     │  │
 │  │   (CodeMirror 6)         │  │    (ItemView sidebar)      │  │
 │  │                          │  │                            │  │
 │  │  ┌────────────────────┐  │  │  ┌──────────────────────┐  │  │
@@ -47,7 +47,7 @@ Extend InlineAI into a hybrid AI assistant that combines:
 ## Component Architecture
 
 ```
-InlineAIChatPlugin (main.ts)
+Obsidian AIChatPlugin (main.ts)
 │
 ├── ChatApiManager (api.ts) ← shared by both surfaces
 │   ├── initializeChatClient()
@@ -59,7 +59,7 @@ InlineAIChatPlugin (main.ts)
 │   └── FloatingTooltipExtension → WidgetExtension → diffExtension
 │
 ├── Surface 2: Chat Panel (new)
-│   ├── InlineAIChatView (ItemView)   ← NEW
+│   ├── ObsidianAIChatView (ItemView)   ← NEW
 │   │   └── React root
 │   │       ├── ChatMessages          ← message thread display
 │   │       ├── ChatInput             ← composer with @ mentions
@@ -82,11 +82,11 @@ InlineAIChatPlugin (main.ts)
 | Component | Status | Notes |
 |---|---|---|
 | `ChatApiManager` | Modified | Add `streamChat()`, conversation history |
-| `InlineAISettings` | Extended | Add chat panel preferences |
+| `ObsidianAISettings` | Extended | Add chat panel preferences |
 | `FloatingTooltipExtension` | Unchanged | Inline tooltip kept as-is |
 | `diffExtension` | Unchanged | Reused by chat panel via NoteEditingBridge |
 | `SlashCommand` system | Reused | Extended with chat-specific commands |
-| `InlineAIChatView` | New | Obsidian ItemView + React root |
+| `ObsidianAIChatView` | New | Obsidian ItemView + React root |
 | `ConversationManager` | New | Message state + persistence |
 | `ContextEngine` | New | Vault note resolver + context assembly |
 | `NoteEditingBridge` | New | Chat → editor diff dispatch |

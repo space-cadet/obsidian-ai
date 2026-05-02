@@ -1,9 +1,9 @@
 # Task Registry
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 09:41:00 IST*
+*Last Updated: 2026-05-02 11:12:44 IST*
 
 ## Summary
-- Active: 1 | Paused: 0 | Completed: 2 | Cancelled: 0
+- Active: 2 | Paused: 0 | Completed: 2 | Cancelled: 0
 
 ## Task Registry Table
 
@@ -17,6 +17,7 @@
 | T5 | In-Place Note Editing from Chat | ⬜ | HIGH | — | T1, T2, T3 | [Details](tasks/T5.md) |
 | T6 | Token & Context Management | ⬜ | MEDIUM | — | T1, T2 | [Details](tasks/T6.md) |
 | T7 | Release System & CI/CD | ✅ | HIGH | 2026-05-02 | — | [Details](tasks/T7.md) |
+| T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
 
 ## Active Tasks
 
@@ -26,15 +27,15 @@
 - Task files T1–T6 created
 - Implementation detail docs created
 - integrated-rules-v6.12.md saved to memory-bank/
-- Core memory bank files updated
+- Core memory bank files updated and currently being synced after T8 work
+
+### T8 — Open Source Release with Branding *(requires T7)*
+Complete branding transition from the original InlineAI lineage to Obsidian AI, update public-facing documentation, add open source standard files, and prepare repository for public release under the personal GitHub account. See `tasks/T8.md` and `implementation-details/open-source-branding.md`.
 
 ## Pending Tasks (v2.0 Development)
 
 ### T4 — Streaming *(start first — no dependencies)*
 Add `streamChat()` to `ChatApiManager` using LangChain `.stream()`. No other tasks blocked on this. See `tasks/T4.md`.
-
-### T1 — Chat Panel *(blocks T2, T3, T5, T6)*
-Obsidian `ItemView` + React UI for persistent sidebar chat. See `tasks/T1.md`.
 
 ### T2 — Conversation Chain & Memory *(requires T1)*
 Multi-turn conversation state, LangChain message history, persistence. See `tasks/T2.md`.
