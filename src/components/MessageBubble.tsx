@@ -1,14 +1,22 @@
 import React, { useEffect, useRef } from "react";
 import { App, MarkdownRenderer, Component } from "obsidian";
 import { ChatMessage } from "./ChatApp";
-import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
 
 interface MessageBubbleProps {
 	message: ChatMessage;
 	app: App;
+	targetNoteName: string | null;
+	onApply: (content: string) => void;
+	onAppend: (content: string) => void;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message, app }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({
+	message,
+	app,
+	targetNoteName,
+	onApply,
+	onAppend,
+}) => {
 	const contentRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -27,15 +35,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, app }) => {
 		navigator.clipboard.writeText(message.content);
 	};
 
-	const handleApply = () => {
-		console.log(`[MessageBubble] apply to active note — msgId: ${message.id}`);
-		NoteEditingBridge.applyToActiveNote(app, message.content, "Apply from chat");
-	};
-
-	const handleAppend = () => {
-		console.log(`[MessageBubble] append to active note — msgId: ${message.id}`);
-		NoteEditingBridge.appendToActiveNote(app, message.content);
-	};
+	const noteLabel = targetNoteName ? ` → ${targetNoteName}` : " to Note";
 
 	const time = new Date(message.timestamp).toLocaleTimeString([], {
 		hour: "2-digit",
@@ -57,17 +57,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, app }) => {
 				<div className="chat-bubble-actions">
 					<button
 						className="chat-btn-small"
-						onClick={handleApply}
-						title="Apply as diff to active note"
+						onClick={() => onApply(message.content)}
+						title="Replace note content with a diff — accept or discard in the editor"
 					>
-						✓ Apply to Note
+						✓ Apply{noteLabel}
 					</button>
 					<button
 						className="chat-btn-small"
-						onClick={handleAppend}
-						title="Append to active note"
+						onClick={() => onAppend(message.content)}
+						title="Append directly to the end of the note — no confirmation step"
 					>
-						+ Append to Note
+						+ Append{noteLabel}
 					</button>
 					<button
 						className="chat-btn-small"

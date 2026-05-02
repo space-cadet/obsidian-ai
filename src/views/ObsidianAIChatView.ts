@@ -11,6 +11,8 @@ export interface ChatPluginLike {
 	app: App;
 	chatapi: ChatApiManager;
 	manifest: { id: string };
+	loadChatMessages(): Promise<any[]>;
+	saveChatMessages(messages: any[]): Promise<void>;
 }
 
 export class ObsidianAIChatView extends ItemView {

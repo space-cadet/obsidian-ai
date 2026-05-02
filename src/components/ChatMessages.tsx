@@ -36,6 +36,9 @@ interface ChatMessagesProps {
 	currentAiMessage: string;
 	isStreaming: boolean;
 	app: App;
+	targetNoteName: string | null;
+	onApply: (content: string) => void;
+	onAppend: (content: string) => void;
 }
 
 const ChatMessages: React.FC<ChatMessagesProps> = ({
@@ -43,6 +46,9 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	currentAiMessage,
 	isStreaming,
 	app,
+	targetNoteName,
+	onApply,
+	onAppend,
 }) => {
 	const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -58,7 +64,14 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 				</div>
 			)}
 			{messages.map((msg) => (
-				<MessageBubble key={msg.id} message={msg} app={app} />
+				<MessageBubble
+					key={msg.id}
+					message={msg}
+					app={app}
+					targetNoteName={targetNoteName}
+					onApply={onApply}
+					onAppend={onAppend}
+				/>
 			))}
 			{isStreaming && currentAiMessage && (
 				<StreamingBubble content={currentAiMessage} app={app} />

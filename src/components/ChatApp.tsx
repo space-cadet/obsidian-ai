@@ -1,6 +1,7 @@
-import React, { useState, useRef, useCallback } from "react";
-import { MarkdownView } from "obsidian";
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import { MarkdownView, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
+import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
 import ActionBar from "./ActionBar";
 import ChatMessages from "./ChatMessages";
 import ContextBar from "./ContextBar";
@@ -25,17 +26,50 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	const [isStreaming, setIsStreaming] = useState(false);
 	const [currentAiMessage, setCurrentAiMessage] = useState("");
 	const [includeActiveNote, setIncludeActiveNote] = useState(false);
+	const [targetNoteName, setTargetNoteName] = useState<string | null>(null);
 	const controllerRef = useRef<AbortController | null>(null);
-	// Keep a ref so handleSend always sees the latest messages without stale closure
+	// Refs so callbacks always see latest values without stale closures
 	const messagesRef = useRef<ChatMessage[]>([]);
 	messagesRef.current = messages;
+	const includeActiveNoteRef = useRef(false);
+	includeActiveNoteRef.current = includeActiveNote;
+	// Tracks the last focused markdown leaf — updated by active-leaf-change event
+	const lastMarkdownLeafRef = useRef<WorkspaceLeaf | null>(null);
 
-	const getActiveNoteName = (): string | null => {
-		const leaves = plugin.app.workspace.getLeavesOfType("markdown");
-		return leaves.length > 0
-			? (leaves[0].view as MarkdownView).file?.basename ?? null
-			: null;
-	};
+	// Initialise leaf tracking and register workspace listener
+	useEffect(() => {
+		const initLeaf = plugin.app.workspace.getLeavesOfType("markdown")[0] ?? null;
+		if (initLeaf?.view instanceof MarkdownView) {
+			lastMarkdownLeafRef.current = initLeaf;
+			setTargetNoteName((initLeaf.view as MarkdownView).file?.basename ?? null);
+		}
+
+		const onLeafChange = (leaf: WorkspaceLeaf | null) => {
+			if (leaf?.view instanceof MarkdownView) {
+				lastMarkdownLeafRef.current = leaf;
+				setTargetNoteName((leaf.view as MarkdownView).file?.basename ?? null);
+			}
+		};
+
+		// Cast needed: Obsidian's .on() overload typing doesn't narrow on event name string
+		plugin.app.workspace.on("active-leaf-change", onLeafChange as any);
+		return () => plugin.app.workspace.off("active-leaf-change", onLeafChange as any);
+	}, [plugin]);
+
+	// Load persisted messages on mount
+	useEffect(() => {
+		plugin.loadChatMessages().then((saved) => {
+			if (saved.length > 0) {
+				setMessages(saved);
+				messagesRef.current = saved;
+			}
+		});
+	}, [plugin]);
+
+	// Persist messages whenever they change
+	useEffect(() => {
+		plugin.saveChatMessages(messages);
+	}, [messages, plugin]);
 
 	const handleToggleActiveNote = useCallback(() => {
 		setIncludeActiveNote((prev) => !prev);
@@ -62,12 +96,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 			}));
 
 			let userContent = text;
-			if (includeActiveNote) {
-				const leaves = plugin.app.workspace.getLeavesOfType("markdown");
-				const view =
-					leaves.length > 0
-						? (leaves[0].view as MarkdownView)
-						: null;
+			if (includeActiveNoteRef.current) {
+				const leaf = lastMarkdownLeafRef.current;
+				const view = leaf?.view instanceof MarkdownView ? (leaf.view as MarkdownView) : null;
 				if (view?.file) {
 					const noteContent = await plugin.app.vault.read(view.file);
 					userContent = `<context>\n<active-note name="${view.file.basename}">\n${noteContent}\n</active-note>\n</context>\n\n${text}`;
@@ -141,11 +172,43 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	}, []);
 
 	const handleNewChat = useCallback(() => {
-		if (isStreaming) {
-			controllerRef.current?.abort();
-		}
+		if (isStreaming) controllerRef.current?.abort();
 		setMessages([]);
-	}, [isStreaming]);
+		plugin.saveChatMessages([]);
+	}, [isStreaming, plugin]);
+
+	const handleApply = useCallback(
+		(content: string) => {
+			const leaf = lastMarkdownLeafRef.current;
+			if (!(leaf?.view instanceof MarkdownView)) {
+				new Notice("⚠️ Open a note first to apply changes.");
+				return;
+			}
+			NoteEditingBridge.applyToNote(
+				plugin.app,
+				leaf.view as MarkdownView,
+				content,
+				"Apply from chat",
+			);
+		},
+		[plugin],
+	);
+
+	const handleAppend = useCallback(
+		async (content: string) => {
+			const leaf = lastMarkdownLeafRef.current;
+			const file =
+				leaf?.view instanceof MarkdownView
+					? (leaf.view as MarkdownView).file
+					: null;
+			if (!(file instanceof TFile)) {
+				new Notice("⚠️ No active note to append to.");
+				return;
+			}
+			await NoteEditingBridge.appendToNote(plugin.app, file, content);
+		},
+		[plugin],
+	);
 
 	return (
 		<div className="chat-panel">
@@ -155,10 +218,13 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				currentAiMessage={currentAiMessage}
 				isStreaming={isStreaming}
 				app={plugin.app}
+				targetNoteName={targetNoteName}
+				onApply={handleApply}
+				onAppend={handleAppend}
 			/>
 			<ContextBar
 				includeActiveNote={includeActiveNote}
-				activeNoteName={getActiveNoteName()}
+				activeNoteName={targetNoteName}
 				onToggleActiveNote={handleToggleActiveNote}
 			/>
 			<ChatInput

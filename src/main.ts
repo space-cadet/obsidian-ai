@@ -168,6 +168,18 @@ export default class ObsidianAIPlugin extends Plugin {
 	}
 
 	async saveSettings() {
-		await this.saveData(this.settings);
+		// Merge with existing data so chat history (and any other non-settings keys) survive.
+		const existing = (await this.loadData()) ?? {};
+		await this.saveData({ ...existing, ...this.settings });
+	}
+
+	async loadChatMessages(): Promise<any[]> {
+		const data = await this.loadData();
+		return Array.isArray(data?.chatMessages) ? data.chatMessages : [];
+	}
+
+	async saveChatMessages(messages: any[]): Promise<void> {
+		const data = (await this.loadData()) ?? {};
+		await this.saveData({ ...data, chatMessages: messages });
 	}
 }
