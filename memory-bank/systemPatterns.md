@@ -1,6 +1,6 @@
 # System Patterns: Obsidian AI Plugin
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 08:13:57 IST*
+*Last Updated: 2026-05-02 11:46:39 IST*
 
 ## Core Principles
 
@@ -97,7 +97,22 @@ NoteEditingBridge
 - **v1 (inline)**: `callSelection()` → `callApi()` → `.invoke()` (blocking)
 - **v2 (chat)**: `streamChat()` → `.stream()` (async iterable chunks)
 
-Provider selected at initialisation via settings; same `chatClient` used by both methods.
+Provider selected from the active provider profile; same `chatClient` used by both methods.
+
+```text
+ObsidianAISettings
+  providerProfiles[]
+  activeProviderProfileId
+        |
+        v
+ProviderProfileService.getActiveProfile()
+        |
+        v
+ChatApiManager.initializeChatClient(profile)
+        |
+        +--> inline tooltip calls
+        +--> chat panel calls
+```
 
 ---
 
@@ -146,7 +161,61 @@ React is bundled into `main.js` by esbuild — no separate chunk. State lives in
 - All configurable values in `ObsidianAISettings` interface (`settings.ts`)
 - `DEFAULT_SETTINGS` provides fallbacks
 - Settings tab (`ObsidianAISettingsTab`) mutates `plugin.settings` and calls `saveSettings()`
-- v2.0 settings additions: `chatPanelPosition`, `includeActiveNote`, `maxContextTokens`, `maxSavedConversations`
+- Provider credentials live in `providerProfiles[]`
+- `activeProviderProfileId` determines the provider/model used by inline and chat calls
+- Legacy flat settings migrate into the first provider profile
+- v2.0 settings additions: `includeActiveNote`, `maxContextTokens`, `maxSavedConversations`, `debugLogLevel`, `debugLogRetention`
+
+## Pattern 8: Model Discovery Pattern
+
+Model discovery is provider-aware and cache-backed. Manual model entry remains available for unsupported providers or temporary API failures.
+
+```text
+ProviderProfile
+  |
+  v
+ModelDiscoveryService.refreshModels(profile)
+  |
+  +-- OpenAI/custom: GET /models
+  +-- Ollama: GET /api/tags
+  +-- Gemini: GET /models
+  +-- Azure: deployment list or manual fallback
+  |
+  v
+profile.modelCache
+  |
+  v
+Searchable ModelPicker
+```
+
+## Pattern 9: Debug Logging Pattern
+
+Feature modules emit redacted diagnostic events to a bounded log service. Logs are visible in-app and copyable for support.
+
+```text
+Provider/chat/context/model code
+        |
+        v
+DebugLogService.add(event)
+        |
+        +-- redact secrets and prompt/note contents
+        +-- keep bounded ring buffer
+        +-- persist to plugin data
+        +-- optional console output
+```
+
+## Pattern 10: Chat Guidance Pattern
+
+The chat panel teaches features through stateful empty states and tips, not a separate tutorial page.
+
+```text
+ChatApp state
+  |
+  +-- provider incomplete --> SetupWarning
+  +-- no messages ---------> ChatEmptyState examples
+  +-- no context ----------> ContextBar hint
+  +-- context attached ----> Context chips and token estimate
+```
 
 ---
 

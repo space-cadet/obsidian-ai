@@ -1,13 +1,18 @@
 // api.ts
-import { ChatOpenAI, AzureChatOpenAI } from "@langchain/openai";
-import { ChatOllama } from "@langchain/ollama";
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { generateText, streamText } from "ai";
+import type { LanguageModelV3 } from "@ai-sdk/provider";
+import { createOpenAI } from "@ai-sdk/openai";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createDeepSeek } from "@ai-sdk/deepseek";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import {
-	SystemMessage,
-	HumanMessage,
-	AIMessage,
-} from "@langchain/core/messages";
-import { ObsidianAISettings } from "./settings";
+	getActiveProviderProfile,
+	getDefaultEndpoint,
+	ObsidianAISettings,
+	ProviderProfile,
+	ProviderType,
+} from "./settings";
 import { App, MarkdownView, Notice } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import { setGeneratedResponseEffect } from "./modules/AIExtension";
@@ -22,18 +27,303 @@ export type HistoryMessage = {
 };
 
 /**
+ * Maps a provider type to its required credential fields.
+ * Returns an error message string if validation fails, or null if valid.
+ */
+function validateProfile(profile: ProviderProfile): string | null {
+	switch (profile.provider) {
+		case "openai":
+			return profile.apiKey ? null : "OpenAI API key is required.";
+		case "anthropic":
+			return profile.apiKey ? null : "Anthropic API key is required.";
+		case "deepseek":
+			return profile.apiKey ? null : "DeepSeek API key is required.";
+		case "kimi":
+			return profile.apiKey ? null : "Kimi API key is required.";
+		case "gemini":
+			return profile.apiKey ? null : "Gemini API key is required.";
+		case "openrouter":
+			return profile.apiKey ? null : "OpenRouter API key is required.";
+		case "azure":
+			if (!profile.apiKey || !profile.azureEndpoint) {
+				return "API key and Azure endpoint are required.";
+			}
+			return null;
+		case "custom":
+			if (!profile.apiKey || !profile.customURL) {
+				return "API key and custom base URL are required.";
+			}
+			return null;
+		case "ollama":
+			return null;
+		default:
+			return `Unsupported provider: ${profile.provider}`;
+	}
+}
+
+/**
+ * Creates a Vercel AI SDK language model from a provider profile.
+ */
+function createLanguageModel(profile: ProviderProfile): LanguageModelV3 | null {
+	const error = validateProfile(profile);
+	if (error) {
+		new Notice(`⚠️ ${error} Please check your settings.`);
+		return null;
+	}
+
+	try {
+		switch (profile.provider) {
+			case "openai": {
+				const provider = createOpenAI({
+					apiKey: profile.apiKey,
+					baseURL:
+						profile.customURL?.trim() ||
+						getDefaultEndpoint("openai"),
+				});
+				return provider.chat(profile.model);
+			}
+
+			case "anthropic": {
+				const provider = createAnthropic({
+					apiKey: profile.apiKey,
+					baseURL:
+						profile.customURL?.trim() ||
+						getDefaultEndpoint("anthropic"),
+				});
+				return provider.chat(profile.model);
+			}
+
+			case "gemini": {
+				const provider = createGoogleGenerativeAI({
+					apiKey: profile.apiKey,
+					baseURL:
+						profile.customURL?.trim() ||
+						getDefaultEndpoint("gemini"),
+				});
+				return provider(profile.model);
+			}
+
+			case "deepseek": {
+				const provider = createDeepSeek({
+					apiKey: profile.apiKey,
+					baseURL:
+						profile.customURL?.trim() ||
+						getDefaultEndpoint("deepseek"),
+				});
+				return provider.chat(profile.model);
+			}
+
+			case "ollama": {
+				const provider = createOpenAI({
+					baseURL:
+						profile.customURL?.trim() ||
+						getDefaultEndpoint("ollama"),
+				});
+				return provider.chat(profile.model);
+			}
+
+			case "openrouter": {
+				const provider = createOpenRouter({
+					apiKey: profile.apiKey,
+					baseURL:
+						profile.customURL?.trim() ||
+						getDefaultEndpoint("openrouter"),
+				});
+				return provider.chat(profile.model);
+			}
+
+			case "kimi": {
+				const provider = createOpenAI({
+					apiKey: profile.apiKey,
+					baseURL:
+						profile.customURL?.trim() || getDefaultEndpoint("kimi"),
+				});
+				return provider.chat(profile.model);
+			}
+
+			case "custom": {
+				const provider = createOpenAI({
+					apiKey: profile.apiKey,
+					baseURL: profile.customURL!.trim(),
+				});
+				return provider.chat(profile.model);
+			}
+
+			case "azure": {
+				const provider = createOpenAI({
+					apiKey: profile.apiKey,
+					baseURL: profile.azureEndpoint!.trim(),
+				});
+				return provider.chat(profile.model);
+			}
+
+			default:
+				new Notice(
+					`⚠️ Unsupported provider: ${(profile as ProviderProfile).provider}`,
+				);
+				return null;
+		}
+	} catch (error: any) {
+		console.error("Error creating language model:", error);
+		new Notice(`❌ Error creating language model: ${error.message}`);
+		return null;
+	}
+}
+
+/**
+ * Fetches available models from the provider's API.
+ * Returns a list of model IDs or an empty array on error.
+ */
+async function fetchProviderModels(
+	profile: ProviderProfile,
+): Promise<string[]> {
+	try {
+		switch (profile.provider) {
+			case "openai": {
+				const baseURL =
+					profile.customURL?.trim() || getDefaultEndpoint("openai");
+				const res = await fetch(`${baseURL}/models`, {
+					headers: {
+						Authorization: `Bearer ${profile.apiKey}`,
+					},
+				});
+				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+				const data = await res.json();
+				return (data.data ?? [])
+					.map((m: any) => m.id)
+					.filter((id: string) => id.includes("gpt"));
+			}
+
+			case "anthropic": {
+				// Anthropic has no public models API; return known models.
+				return [
+					"claude-3-5-sonnet-latest",
+					"claude-3-5-sonnet-20241022",
+					"claude-3-5-haiku-latest",
+					"claude-3-5-haiku-20241022",
+					"claude-3-opus-latest",
+					"claude-3-opus-20240229",
+					"claude-3-sonnet-20240229",
+					"claude-3-haiku-20240307",
+				];
+			}
+
+			case "gemini": {
+				const baseURL =
+					profile.customURL?.trim() || getDefaultEndpoint("gemini");
+				const res = await fetch(
+					`${baseURL}/models?key=${profile.apiKey}`,
+				);
+				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+				const data = await res.json();
+				return (data.models ?? [])
+					.map((m: any) => m.name.replace("models/", ""))
+					.filter((id: string) => id.startsWith("gemini"));
+			}
+
+			case "deepseek": {
+				const baseURL =
+					profile.customURL?.trim() || getDefaultEndpoint("deepseek");
+				const res = await fetch(`${baseURL}/models`, {
+					headers: {
+						Authorization: `Bearer ${profile.apiKey}`,
+					},
+				});
+				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+				const data = await res.json();
+				return (data.data ?? []).map((m: any) => m.id);
+			}
+
+			case "openrouter": {
+				const baseURL =
+					profile.customURL?.trim() ||
+					getDefaultEndpoint("openrouter");
+				const res = await fetch(`${baseURL}/models`);
+				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+				const data = await res.json();
+				return (data.data ?? []).map((m: any) => m.id);
+			}
+
+			case "kimi": {
+				const baseURL =
+					profile.customURL?.trim() || getDefaultEndpoint("kimi");
+				const res = await fetch(`${baseURL}/models`, {
+					headers: {
+						Authorization: `Bearer ${profile.apiKey}`,
+					},
+				});
+				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+				const data = await res.json();
+				return (data.data ?? [])
+					.map((m: any) => m.id)
+					.filter((id: string) => id.includes("kimi"));
+			}
+
+			case "ollama": {
+				const baseURL =
+					profile.customURL?.trim() || getDefaultEndpoint("ollama");
+				const res = await fetch(
+					`${baseURL.replace("/v1", "")}/api/tags`,
+				);
+				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+				const data = await res.json();
+				return (data.models ?? []).map((m: any) => m.name);
+			}
+
+			case "custom": {
+				const baseURL = profile.customURL!.trim();
+				const res = await fetch(`${baseURL}/models`, {
+					headers: {
+						Authorization: `Bearer ${profile.apiKey}`,
+					},
+				});
+				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+				const data = await res.json();
+				return (data.data ?? []).map((m: any) => m.id);
+			}
+
+			case "azure": {
+				// Azure OpenAI: list deployments via management API or fallback
+				const endpoint = profile.azureEndpoint!.trim();
+				const instanceMatch = endpoint.match(
+					/https:\/\/([^.]+)\.(?:openai|cognitiveservices)\.azure\.com/,
+				);
+				if (!instanceMatch) {
+					throw new Error(
+						"Could not parse Azure instance name from endpoint.",
+					);
+				}
+				const instance = instanceMatch[1];
+				const res = await fetch(
+					`https://${instance}.openai.azure.com/openai/deployments?api-version=2023-03-15-preview`,
+					{
+						headers: {
+							"api-key": profile.apiKey!,
+						},
+					},
+				);
+				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+				const data = await res.json();
+				return (data.data ?? []).map((m: any) => m.id || m.model);
+			}
+
+			default:
+				return [];
+		}
+	} catch (error: any) {
+		console.error("Error fetching models:", error);
+		throw error;
+	}
+}
+
+/**
  * Class to manage interactions with different chat APIs.
  */
 export class ChatApiManager {
-	private chatClient:
-		| ChatOpenAI
-		| ChatOllama
-		| ChatGoogleGenerativeAI
-		| AzureChatOpenAI
-		| null;
 	private app: App;
 	private settings: ObsidianAISettings;
 	private messageHistory: MessageQueue<HistoryMessage>;
+
 	/**
 	 * Initializes the ChatApiManager with the given settings.
 	 * @param settings - Configuration settings for the chat API.
@@ -41,141 +331,15 @@ export class ChatApiManager {
 	 */
 	constructor(settings: ObsidianAISettings, app: App) {
 		this.app = app;
-		this.chatClient = this.initializeChatClient(settings);
 		this.settings = settings;
 		this.messageHistory = new MessageQueue<HistoryMessage>(
-			MESSAGE_HISTORY_LIMIT,
+			settings.messageHistory ? MESSAGE_HISTORY_LIMIT : 0,
 		);
-	}
-
-	/**
-	 * Extracts the instance name from an Azure endpoint URL.
-	 * @param endpoint - The Azure endpoint URL.
-	 * @returns The instance name or null if invalid.
-	 */
-	private extractAzureInstanceName(endpoint: string): string | null {
-		const trimmedEndpoint = endpoint.trim();
-
-		// Match both openai.azure.com and cognitiveservices.azure.com formats
-		const openaiMatch = trimmedEndpoint.match(
-			/https:\/\/([^.]+)\.openai\.azure\.com/,
-		);
-		if (openaiMatch) {
-			return openaiMatch[1];
-		}
-
-		const cognitiveservicesMatch = trimmedEndpoint.match(
-			/https:\/\/([^.]+)\.cognitiveservices\.azure\.com/,
-		);
-		if (cognitiveservicesMatch) {
-			return cognitiveservicesMatch[1];
-		}
-
-		return null;
-	}
-
-	/**
-	 * Initializes the appropriate chat client based on the provider specified in settings.
-	 * @param settings - Configuration settings for the chat API.
-	 * @returns An instance of ChatOpenAI, ChatOllama, AzureChatOpenAI, or null if initialization fails.
-	 */
-	private initializeChatClient(
-		settings: ObsidianAISettings,
-	):
-		| ChatOpenAI
-		| ChatOllama
-		| ChatGoogleGenerativeAI
-		| AzureChatOpenAI
-		| null {
-		try {
-			if (settings.messageHistory) {
-				this.messageHistory = new MessageQueue<HistoryMessage>(
-					MESSAGE_HISTORY_LIMIT,
-				);
-			} else {
-				this.messageHistory = new MessageQueue<HistoryMessage>(0);
-			}
-
-			switch (settings.provider) {
-				case "openai":
-					if (!settings.apiKey) {
-						new Notice(
-							"⚠️ OpenAI API key is required. Please check your settings.",
-						);
-						return null;
-					}
-					return new ChatOpenAI({
-						modelName: settings.model,
-						temperature: 0,
-						apiKey: settings.apiKey,
-					});
-
-				case "ollama":
-					return new ChatOllama({
-						model: settings.model,
-					});
-				case "gemini":
-					return new ChatGoogleGenerativeAI({
-						model: settings.model,
-						apiKey: settings.apiKey,
-					});
-				case "azure":
-					if (!settings.apiKey || !settings.azureEndpoint) {
-						new Notice(
-							"⚠️ API key and Azure endpoint are required for Azure provider.",
-						);
-						return null;
-					}
-
-					// Extract instance name from the endpoint URL
-					const instanceName = this.extractAzureInstanceName(
-						settings.azureEndpoint,
-					);
-					if (!instanceName) {
-						new Notice(
-							"⚠️ Invalid Azure endpoint format. Expected: https://your-resource.openai.azure.com",
-						);
-						return null;
-					}
-
-					return new AzureChatOpenAI({
-						azureOpenAIApiKey: settings.apiKey,
-						azureOpenAIApiInstanceName: instanceName,
-						azureOpenAIApiDeploymentName: settings.model,
-						azureOpenAIApiVersion:
-							settings.azureApiVersion || "2024-02-15-preview",
-						temperature: 0,
-					});
-				case "custom":
-					if (!settings.apiKey || !settings.customURL) {
-						new Notice(
-							"⚠️ API key and custom base URL are required for custom providers.",
-						);
-						return null;
-					}
-					return new ChatOpenAI({
-						modelName: settings.model,
-						temperature: 0,
-						openAIApiKey: settings.apiKey,
-						// 'configuration.basePath' is the recognized property
-						configuration: {
-							baseURL: settings.customURL.trim(),
-						},
-					});
-
-				default:
-					new Notice(`⚠️ Unsupported provider: ${settings.provider}`);
-					return null;
-			}
-		} catch (error: any) {
-			console.error("Error initializing chat client:", error);
-			new Notice(`❌ Error initializing chat client: ${error.message}`);
-			return null;
-		}
 	}
 
 	/**
 	 * Calls the chat API with the provided content and context.
+	 * Blocking call for the inline tooltip.
 	 * @param systemMessage - The system message to send to the chat API.
 	 * @param message - The user's message to send to the chat API.
 	 * @returns A promise that resolves with the generated content or an error message.
@@ -184,29 +348,68 @@ export class ChatApiManager {
 		systemMessage: string,
 		message: string,
 	): Promise<string> {
-		if (!this.chatClient) {
+		const model = createLanguageModel(
+			getActiveProviderProfile(this.settings),
+		);
+		if (!model) {
 			new Notice(
 				"⚠️ Chat client is not initialized. Please check your settings.",
 			);
 			return "⚠️ Chat client is not available.";
 		}
 
-		const messages = [
-			new SystemMessage(systemMessage),
-			new HumanMessage(message),
-		];
-
 		try {
-			const aiMessage = await this.chatClient.invoke(messages);
-			if (typeof aiMessage === "string") {
-				return aiMessage;
-			}
-			return aiMessage.content.toString();
+			const result = await generateText({
+				model,
+				system: systemMessage,
+				messages: [{ role: "user", content: message }],
+			});
+			return result.text;
 		} catch (error: any) {
 			console.error("Error calling the chat model:", error);
 			new Notice(`❌ Error calling the chat model: ${error.message}`);
 			return "⚠️ Failed to generate a response. Please try again later.";
 		}
+	}
+
+	/**
+	 * Streams a chat conversation.
+	 * Yields text chunks for progressive display.
+	 * @param messages - Array of conversation messages.
+	 * @param signal - AbortSignal for cancellation.
+	 */
+	public async *streamChat(
+		messages: Array<{
+			role: "user" | "assistant" | "system";
+			content: string;
+		}>,
+		signal?: AbortSignal,
+	): AsyncIterable<string> {
+		const model = createLanguageModel(
+			getActiveProviderProfile(this.settings),
+		);
+		if (!model) {
+			throw new Error("Chat client is not initialized.");
+		}
+
+		const result = streamText({
+			model,
+			messages,
+			abortSignal: signal,
+		});
+
+		for await (const chunk of result.textStream) {
+			yield chunk;
+		}
+	}
+
+	/**
+	 * Fetches available models for a provider profile.
+	 * @param profile - Provider profile to fetch models for.
+	 * @returns Array of model IDs.
+	 */
+	public async fetchModels(profile: ProviderProfile): Promise<string[]> {
+		return fetchProviderModels(profile);
 	}
 
 	/**
@@ -246,6 +449,7 @@ export class ChatApiManager {
 			return "⚠️ Failed to process request.";
 		}
 	}
+
 	/**
 	 * Processes selected text using the specified prompt and transformation.
 	 * @param userPrompt - The transformation prompt (e.g., "Add Emojis").
@@ -292,16 +496,80 @@ export class ChatApiManager {
 	}
 
 	/**
-	 * Updates the manager's settings and reinitializes the chat client.
+	 * Updates the manager's settings.
 	 * @param settings - New configuration settings for the chat API.
 	 */
 	public updateSettings(settings: ObsidianAISettings): void {
 		this.settings = settings;
-		const newChatClient = this.initializeChatClient(settings);
-		if (!newChatClient) {
-			return;
+		this.messageHistory = new MessageQueue<HistoryMessage>(
+			settings.messageHistory ? MESSAGE_HISTORY_LIMIT : 0,
+		);
+	}
+
+	/**
+	 * Validates the active provider profile by checking required fields.
+	 * @returns true if the profile is valid.
+	 */
+	public testConnection(): boolean {
+		const profile = getActiveProviderProfile(this.settings);
+		return validateProfile(profile) === null;
+	}
+
+	/**
+	 * Makes a lightweight API call to verify the active provider profile works.
+	 * @returns Object with ok status and a human-readable message.
+	 */
+	public async testApiConnection(): Promise<{
+		ok: boolean;
+		message: string;
+	}> {
+		const profile = getActiveProviderProfile(this.settings);
+		const fieldError = validateProfile(profile);
+		if (fieldError) {
+			return { ok: false, message: fieldError };
 		}
-		this.chatClient = newChatClient;
+
+		const model = createLanguageModel(profile);
+		if (!model) {
+			return {
+				ok: false,
+				message: "Could not create language model. Check settings.",
+			};
+		}
+
+		try {
+			await generateText({
+				model,
+				messages: [{ role: "user", content: "Hi" }],
+			});
+			return {
+				ok: true,
+				message: `${profile.name} is connected and responding.`,
+			};
+		} catch (error: any) {
+			console.error("Test connection failed:", error);
+			const msg = error.message || String(error);
+			if (msg.includes("401") || msg.includes("Unauthorized")) {
+				return {
+					ok: false,
+					message: "Invalid API key. Check your credentials.",
+				};
+			}
+			if (msg.includes("404") || msg.includes("Not Found")) {
+				return {
+					ok: false,
+					message: "Model not found. Check the model name.",
+				};
+			}
+			if (msg.includes("ENOTFOUND") || msg.includes("ECONNREFUSED")) {
+				return {
+					ok: false,
+					message:
+						"Could not reach provider. Check your network or endpoint URL.",
+				};
+			}
+			return { ok: false, message: `Connection failed: ${msg}` };
+		}
 	}
 
 	public getMessageHistory(): HistoryMessage[] {

@@ -1,6 +1,6 @@
 # Technical Context: Obsidian AI Plugin
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 08:13:57 IST*
+*Last Updated: 2026-05-02 11:46:39 IST*
 
 ## Runtime Environment
 
@@ -69,6 +69,14 @@ Plain CSS for chat panel styles — no Tailwind to minimise bundle size.
 
 No vector store library — vault semantic search is deferred.
 
+### Internal Services (v2.0)
+
+| Module | Purpose |
+|---|---|
+| `providers/providerProfile.ts` | Active provider profile resolution, legacy settings migration, validation |
+| `models/modelDiscoveryService.ts` | Provider-aware model listing, caching, refresh, manual fallback |
+| `debug/DebugLogService.ts` | Structured diagnostics with redaction and bounded retention |
+
 ---
 
 ## Architecture: Current (v1.2.4)
@@ -125,7 +133,7 @@ Obsidian Plugin Host
 ChatApiManager (extended)
   ├── callSelection()  ← UNCHANGED (inline tooltip)
   ├── streamChat(messages, signal)  ← NEW (chat panel)
-  └── chatClient (unchanged)
+  └── chatClient resolved from active ProviderProfile
 
 ConversationManager (NEW)
   ├── active Conversation (ChatMessage[])
@@ -145,6 +153,24 @@ NoteEditingBridge (NEW)
   ├── applyToTargetNote()   → open note → dispatch effects → diffExtension
   ├── createNote()          → vault.create() → open → dispatch effects
   └── appendToNote()        → vault.read() → vault.modify()
+
+ProviderProfileService (NEW)
+  ├── migrateLegacySettings()
+  ├── getActiveProfile()
+  ├── validateProfile()
+  └── createDefaultProfile()
+
+ModelDiscoveryService (NEW)
+  ├── listModels(profile)
+  ├── refreshModels(profile)
+  ├── getCachedModels(profile)
+  └── manual fallback
+
+DebugLogService (NEW)
+  ├── add(redactedEvent)
+  ├── list()
+  ├── clear()
+  └── exportText()
 ```
 
 ---
@@ -180,23 +206,31 @@ NoteEditingBridge (NEW)
 
 ```typescript
 interface ObsidianAISettings {
-  // --- existing ---
+  providerProfiles: ProviderProfile[]
+  activeProviderProfileId: string
+  selectionPrompt: string
+  cursorPrompt: string
+  customCommands: SlashCommand[]
+  commandPrefix: string
+  messageHistory: boolean
+  includeActiveNote: boolean                     // auto-include active note
+  maxContextTokens: number                       // default 8000
+  maxSavedConversations: number                  // default 20
+  debugLogLevel: "off" | "error" | "info" | "debug"
+  debugLogRetention: number
+}
+
+interface ProviderProfile {
+  id: string
+  name: string
   provider: "openai" | "ollama" | "custom" | "gemini" | "azure"
   model: string
   apiKey?: string
   customURL?: string
   azureEndpoint?: string
   azureApiVersion?: string
-  selectionPrompt: string
-  cursorPrompt: string
-  customCommands: SlashCommand[]
-  commandPrefix: string
-  messageHistory: boolean
-
-  // --- new (v2.0) ---
-  chatPanelPosition: "right" | "left" | "tab"  // where to open chat
-  includeActiveNote: boolean                     // auto-include active note
-  maxContextTokens: number                       // default 8000
-  maxSavedConversations: number                  // default 20
+  modelCache?: ModelCache
+  createdAt: number
+  updatedAt: number
 }
 ```

@@ -1,12 +1,20 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 09:41:00 IST*
+*Last Updated: 2026-05-02 17:48:45 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
 
 ---
 
 ### 2026-05-02
+
+#### 17:48:45 IST - META-1: Memory bank sync for T4 migration, T9 completion, T10-T12 creation
+- Updated `memory-bank/tasks.md` — added T9 (✅), T10 (⏸️), T11 (⏸️), T12 (⏸️); updated T4 status to 🔄; updated summary counts
+- Updated `memory-bank/tasks/T4.md` — status changed to 🔄 IN PROGRESS; marked provider-layer criteria complete; updated remaining work to chat-panel UI wiring
+- Updated `memory-bank/tasks/META-1.md` — recorded T9–T12 creation and new implementation docs in progress
+- Updated `memory-bank/tasks/T1.md` — added T9 as completed dependency
+- Updated `memory-bank/session_cache.md` — synced task registry with T9 completion and T4 primary focus
+- Created `memory-bank/edits/2026-05-02/174845-mem-update.md` — canonical edit chunk for this sync
 
 #### 11:12:44 IST - T8: Open Source branding + memory sync — in progress
 - Updated `package.json` — branded description, repository/bugs/homepage metadata, GPL-3.0 license, pnpm package workflow retained

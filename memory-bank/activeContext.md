@@ -1,73 +1,38 @@
 # Active Context
-*Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 11:12:44 IST*
 
-## Current Tasks
+*Last Updated: 2026-05-02 17:08:57 IST*
 
-1. **[META-1]**: Memory Bank Setup and Maintenance (HIGH priority)
-   - Status: 🔄 IN PROGRESS
-   - Current Focus: Session 4 — memory bank synced after branding/open-source release work
-   - Recent Achievement: T1, T7 complete; T8 created and substantially advanced
+## Current Focus
+**Primary Task:** T4
+**Secondary Tasks:** META-1, T10
 
-2. **[T8]**: Open Source Release with Branding (HIGH priority)
-   - Status: 🔄 IN PROGRESS
-   - Current Focus: finish open-source release checklist and public project polish
-   - Recent Achievement: project renamed to Obsidian AI, README refreshed, package workflow added, open-source community files created
+## Active Tasks
+- [T4]: Finish chat-panel streaming wiring, abort handling, and provider verification
+- [META-1]: Keep memory-bank records aligned with the implemented T4/T9/T10 state
+- [T10]: Queue the full model discovery service after T4 streaming UI work lands
 
-## Implementation Focus — Session 2 (2026-05-02)
+## Implementation Focus
+`src/api.ts`, `src/components/ChatApp.tsx`, `src/components/ChatInput.tsx`, `src/components/ChatMessages.tsx`, `src/settings.ts`, and the related memory-bank task/session records.
 
-**Architecture analysis:**
-- ✅ Read all source files: `api.ts`, `main.ts`, `settings.ts`, `default_prompts.ts`, all modules
-- ✅ Traced full state machine from `commandEffect` → diff → accept/discard
-- ✅ Researched Obsidian Copilot plugin (CopilotView, chainFactory, contextProcessor, mentions, search)
-- ✅ Identified 8 key limitations of current single-turn inline-only design
+## Task-Specific Context
 
-**Documentation created:**
-- ✅ `implementation-details/current-architecture.md` — full state machine, module map, data flow, constraints
-- ✅ `implementation-details/proposed-architecture.md` — dual-surface design, component tree, dependency graph
-- ✅ `implementation-details/chat-panel-design.md` — ItemView, React tree, ASCII layout, streaming, persistence
-- ✅ `implementation-details/context-system-design.md` — @mention pipeline, embed expansion, token budget
-- ✅ `implementation-details/note-editing-design.md` — 3 editing intents, reuse diagram, edge cases
+### Task T4
+The LangChain to Vercel AI SDK migration is complete. `streamChat()` exists in the provider layer, but the React chat UI still needs to consume it, expose a working Stop action, and handle abort/error states cleanly.
 
-**Tasks created:**
-- ✅ T1: Chat Panel (ItemView + React UI)
-- ✅ T2: Conversation Chain & Memory
-- ✅ T3: Context & Mentions System
-- ✅ T4: Streaming
-- ✅ T5: In-Place Note Editing from Chat
-- ✅ T6: Token & Context Management
+### Task META-1
+The memory bank now reflects the provider-profile foundation and migration work, but several files had drifted into mixed formats. The current maintenance slice is to keep the records in one canonical structure.
 
-**Memory bank updated:**
-- ✅ projectbrief.md — proposed scope, v2.0 structure
-- ✅ productContext.md — new user flows, competitive table
-- ✅ techContext.md — proposed additions, v2.0 architecture diagrams
-- ✅ systemPatterns.md — two-surface pattern, NoteEditingBridge pattern
-- ✅ tasks.md — T1–T6 registry
-- ✅ progress.md — milestones, dependency order
-- ✅ integrated-rules-v6.12.md — saved to memory-bank/
-
-## Next Steps
-
-- Finish T8 release polish: confirm package-manager lockfile policy, review generated `dist/` artifacts, and prepare final release notes
-- Begin T4 (Streaming) — add `streamChat()` to `ChatApiManager`, replace stub in `ChatApp.tsx`
-- T2, T3, T5, T6 all now unblocked pending T4
+### Task T10
+The settings UI already has a Fetch Models entry point and searchable picker shell. The remaining work is the provider-aware discovery service, caching, refresh/error states, and manual fallback behavior.
 
 ## Current Decisions
+- Use the stricter `integrated-rules-v6.12.md` structure as the source of truth for task, session, registry, and edit-history files.
+- Keep `pnpm` as the package-manager workflow for install, build, and package commands.
+- Build T10 on top of the completed T9 provider-profile foundation rather than reintroducing flat provider settings.
+- Preserve the existing inline tooltip flow while the chat-panel streaming path is completed.
+- Keep diagnostics and model-discovery work sequenced after the current T4 streaming UI slice.
 
-1. **IST Timestamps**: Using IST (Asia/Kolkata, UTC+5:30) as project timezone
-2. **Plain CSS over Tailwind**: minimise bundle size; no Tailwind in v2.0
-3. **No vector search in v2.0**: vault semantic search deferred; `@mention` uses direct file reads
-4. **Existing inline tooltip preserved**: all current functionality untouched during v2.0 build
-5. **NoteEditingBridge reuses existing effects**: no new diff engine; just dispatches existing CM6 effects
-6. **T4 first**: streaming can be built and tested independently before chat panel UI exists
-7. **Project identity**: public name is Obsidian AI; plugin ID/view type use `obsidian-ai`
-8. **Package manager**: use `pnpm` for local install/build/package workflows
-9. **Editing workflow**: prefer built-in file editing tools over shell text rewrites for content changes
-
-## System Status
-
-- **Memory Bank**: ✅ Synced through T8/branding updates
-- **Architecture Docs**: ✅ All 5 implementation-detail docs created
-- **Task Definitions**: ✅ T1–T8 defined with criteria and context
-- **Development**: T1 and T7 complete; T8 active; T4 remains the next v2.0 implementation task
-- **Branch**: main
+## Next Actions By Task
+- [T4]: Wire `streamChat()` into the chat panel and verify stop/error handling.
+- [META-1]: Keep task, session, registry, and history files in the canonical template format.
+- [T10]: Implement provider-specific model fetchers and cache metadata after T4.

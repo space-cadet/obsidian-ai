@@ -1,6 +1,6 @@
 # Current Architecture: Obsidian AI Plugin (v1.2.4)
 *Created: 2026-05-02 08:13:57 IST*
-*Last Updated: 2026-05-02 08:13:57 IST*
+*Last Updated: 2026-05-02 12:09:43 IST*
 
 ## Overview
 
@@ -210,6 +210,9 @@ No vault content. No other notes. No conversation history. No file paths. No met
 | No vault context | Only `selectedText` passed; no `app.vault` calls anywhere |
 | No streaming | Uses `.invoke()` (blocking); no chunk callbacks |
 | No persistence | Nothing written to disk beyond plugin settings |
+| No model discovery | Model is a manual text field; no provider model fetching/cache |
+| No diagnostics UI | Errors go to console/Notice only; no structured log history |
+| No chat guidance | Chat scaffold has minimal empty-state/user-tip support |
 | Editor-bound | Widget anchored to CodeMirror editor; dies on dismiss |
 | Single suggestion | One `generatedResponseState` per editor instance |
 | All-or-nothing accept | `dispatchAIChanges()` replaces entire selection range |
@@ -219,13 +222,20 @@ No vault content. No other notes. No conversation history. No file paths. No met
 ## Settings Schema
 
 ```typescript
-interface ObsidianAISettings {
+interface ProviderProfile {
+  id: string
+  name: string
   provider: "openai" | "ollama" | "custom" | "gemini" | "azure"
   model: string
-  apiKey?: string
-  customURL?: string          // custom OpenAI-compatible base URL
+  apiKey?: string             // per-profile API key
+  customURL?: string
   azureEndpoint?: string
   azureApiVersion?: string
+}
+
+interface ObsidianAISettings {
+  providerProfiles: ProviderProfile[]
+  activeProviderProfileId: string
   selectionPrompt: string     // system prompt (text selected)
   cursorPrompt: string        // system prompt (cursor only)
   customCommands: SlashCommand[]

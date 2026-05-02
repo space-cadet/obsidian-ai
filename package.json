@@ -31,6 +31,7 @@
 	},
 	"homepage": "https://github.com/space-cadet/obsidian-ai#readme",
 	"devDependencies": {
+		"@ai-sdk/provider": "3.0.10",
 		"@types/codemirror": "^5.60.15",
 		"@types/node": "^22.8.1",
 		"@types/react": "^19.2.14",
@@ -51,16 +52,19 @@
 		]
 	},
 	"dependencies": {
+		"@ai-sdk/anthropic": "3.0.74",
+		"@ai-sdk/deepseek": "2.0.32",
+		"@ai-sdk/google": "3.0.67",
+		"@ai-sdk/openai": "3.0.58",
 		"@codemirror/autocomplete": "^6.18.4",
 		"@codemirror/commands": "^6.8.0",
 		"@codemirror/state": "^6.5.1",
 		"@codemirror/view": "^6.36.2",
-		"@langchain/core": "^0.3.16",
-		"@langchain/google-genai": "^0.2.1",
-		"@langchain/ollama": "^0.1.1",
-		"@langchain/openai": "^0.3.11",
+		"@openrouter/ai-sdk-provider": "2.9.0",
 		"@types/diff-match-patch": "^1.0.36",
+		"ai": "6.0.174",
 		"diff-match-patch": "^1.0.5",
+		"ollama-ai-provider": "1.2.0",
 		"react": "^19.2.5",
 		"react-dom": "^19.2.5"
 	}

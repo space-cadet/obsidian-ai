@@ -1,6 +1,6 @@
 # Proposed Architecture: Obsidian AI with Chat + Note Editing
 *Created: 2026-05-02 08:13:57 IST*
-*Last Updated: 2026-05-02 08:13:57 IST*
+*Last Updated: 2026-05-02 11:46:39 IST*
 
 ## Vision
 
@@ -51,9 +51,23 @@ Obsidian AIChatPlugin (main.ts)
 │
 ├── ChatApiManager (api.ts) ← shared by both surfaces
 │   ├── initializeChatClient()
+│   ├── resolveActiveProviderProfile() ← NEW: profile-based provider config
 │   ├── streamChat()          ← NEW: replaces callApi() for chat panel
 │   ├── callSelection()       ← KEPT: used by inline tooltip
 │   └── ConversationHistory   ← NEW: full message array
+│
+├── ProviderProfileService          ← NEW: multiple API keys/endpoints
+│   ├── migrateLegacySettings()
+│   ├── getActiveProfile()
+│   └── validateProfile()
+│
+├── ModelDiscoveryService           ← NEW: provider model list + cache
+│   ├── refreshModels(profile)
+│   └── searchable ModelPicker
+│
+├── DebugLogService                 ← NEW: redacted diagnostics
+│   ├── provider/model/chat/context events
+│   └── copy/clear logs UI
 │
 ├── Surface 1: Inline Tooltip (existing, unchanged)
 │   └── FloatingTooltipExtension → WidgetExtension → diffExtension
@@ -64,6 +78,7 @@ Obsidian AIChatPlugin (main.ts)
 │   │       ├── ChatMessages          ← message thread display
 │   │       ├── ChatInput             ← composer with @ mentions
 │   │       ├── ContextBar            ← attached notes/selection display
+│   │       ├── ChatEmptyState        ← tips/examples/setup warnings
 │   │       └── ActionBar             ← New Chat / Load / Settings
 │   │
 │   ├── ConversationManager           ← NEW: state + persistence
@@ -81,8 +96,8 @@ Obsidian AIChatPlugin (main.ts)
 
 | Component | Status | Notes |
 |---|---|---|
-| `ChatApiManager` | Modified | Add `streamChat()`, conversation history |
-| `ObsidianAISettings` | Extended | Add chat panel preferences |
+| `ChatApiManager` | Modified | Add provider-profile resolution and `streamChat()` |
+| `ObsidianAISettings` | Extended | Provider profiles, model cache, chat/context/debug settings |
 | `FloatingTooltipExtension` | Unchanged | Inline tooltip kept as-is |
 | `diffExtension` | Unchanged | Reused by chat panel via NoteEditingBridge |
 | `SlashCommand` system | Reused | Extended with chat-specific commands |
@@ -90,6 +105,10 @@ Obsidian AIChatPlugin (main.ts)
 | `ConversationManager` | New | Message state + persistence |
 | `ContextEngine` | New | Vault note resolver + context assembly |
 | `NoteEditingBridge` | New | Chat → editor diff dispatch |
+| `ProviderProfileService` | New | Multiple provider profiles and legacy settings migration |
+| `ModelDiscoveryService` | New | Fetch/cache/search provider models |
+| `DebugLogService` | New | Redacted diagnostics and copyable logs |
+| `ChatEmptyState` | New | Onboarding tips, examples, setup warnings |
 
 ---
 

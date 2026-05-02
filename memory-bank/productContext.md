@@ -1,6 +1,6 @@
 # Product Context: Obsidian AI Plugin
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 08:13:57 IST*
+*Last Updated: 2026-05-02 11:46:39 IST*
 
 ## Problem Statement
 
@@ -29,6 +29,9 @@ Obsidian AI v1.2.4 solved problem 1 for quick single-shot transforms but has no 
 4. **Familiar diff UX**: the same accept/discard flow already in v1.2.4
 5. **Privacy**: local models via Ollama remain first-class
 6. **Non-destructive**: nothing changes in a note until the user accepts the diff
+7. **Setup confidence**: users can store multiple provider profiles, test connections, and choose fetched models without guessing IDs
+8. **Diagnosability**: provider/model/chat failures are visible in-app and copyable for bug reports
+9. **Discoverability**: chat teaches `@note`, active-note context, and apply-to-note workflows through concise tips and empty states
 
 ---
 
@@ -130,6 +133,41 @@ Obsidian Notice: "Appended to Daily Notes/2026-05-02"
 | Inline diff + accept/discard | ❌ | ✅ | ✅ (both) |
 | Vault semantic search | ✅ | ❌ | ❌ (deferred) |
 | Local model support | ✅ | ✅ | ✅ |
+| Multiple provider profiles/API keys | ✅ | ❌ | ✅ |
+| Automatic model discovery | ✅ | ❌ | ✅ |
+| In-app diagnostics/logs | partial | ❌ | ✅ |
+| Chat onboarding/tips | ✅ | ❌ | ✅ |
+
+---
+
+## Proposed User Flows (Setup and Guidance)
+
+### Flow 7: Provider Profile Setup
+```text
+User opens Settings
+  → creates "Work OpenAI" profile
+  → enters API key
+  → clicks "Test"
+  → sees success notice
+  → refreshes model list
+  → selects model from searchable picker
+```
+
+### Flow 8: Debug a Failed Request
+```text
+Chat request fails
+  → user opens Settings > Diagnostics
+  → sees provider/model/error metadata
+  → copies redacted logs into a GitHub issue
+```
+
+### Flow 9: First Chat Guidance
+```text
+User opens empty chat
+  → sees example prompts
+  → sees setup warning if provider is incomplete
+  → sees "type @ to attach a note" tip when context is available
+```
 
 ---
 
@@ -139,3 +177,4 @@ Obsidian Notice: "Appended to Daily Notes/2026-05-02"
 - No PDF / image / YouTube / web page context
 - No per-model exact tokenisation (rough estimation only)
 - Mobile UI not specifically optimised
+- No cloud sync of provider profiles/API keys

@@ -5,6 +5,7 @@ import {
 	ObsidianAISettings,
 	DEFAULT_SETTINGS,
 	ObsidianAISettingsTab,
+	normalizeSettings,
 } from "./settings";
 import {
 	acceptTooltipEffect,
@@ -163,11 +164,7 @@ export default class ObsidianAIPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData(),
-		);
+		this.settings = normalizeSettings(await this.loadData());
 	}
 
 	async saveSettings() {

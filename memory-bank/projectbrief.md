@@ -1,134 +1,68 @@
-# Project Brief: obsidian-ai (Obsidian AI Plugin)
-*Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 08:13:57 IST*
+# Project Brief
 
-## Overview
+*Last Updated: 2026-05-02 17:08:57 IST*
 
-Obsidian AI is an Obsidian community plugin that provides AI-powered text assistance directly within the Obsidian editor. It started as a pure inline transformer (v1.2.4) and is being extended into a hybrid AI assistant combining a persistent chat panel with in-place note editing capabilities.
+## Project Overview
+Obsidian AI is an Obsidian plugin that brings AI-assisted writing and editing into the editor. The current product combines an established inline transformation flow with an in-progress sidebar chat experience that will eventually support streaming, context injection, and note-editing actions.
 
-## Repository
+## Goals
+- Preserve and improve the existing inline editor workflow without regressions.
+- Add a persistent chat panel that can share provider settings and eventually apply results back into notes.
+- Keep provider setup, diagnostics, and model selection practical for real multi-provider use.
 
-- **GitHub**: space-cadet/obsidian-ai
-- **Plugin ID**: obsidian-ai
-- **Current Version**: 1.2.4
-- **License**: GPL-3.0 / MIT
-- **Author**: space-cadet
+## Core Features
+- Inline prompt-driven transformations with diff, accept, and discard controls.
+- Sidebar chat panel scaffold built with React and plain CSS.
+- Provider-profile based settings that support multiple endpoints and accounts.
 
----
-
-## Current Scope (v1.2.4 — Inline Only)
-
-- Floating tooltip triggered by `Ctrl+K` / `Cmd+K` at cursor or selection
-- AI text transformation with inline diff (added/removed visualization)
-- Accept or discard changes with one click
-- Supports OpenAI, Ollama, Gemini, Azure OpenAI, custom endpoints
-- Custom slash-command prompts
-- Single-turn only; no vault awareness; no chat history sent to LLM
-
----
-
-## Proposed Scope (v2.0 — Chat + Edit)
-
-### Core Goals
-
-1. **Persistent Chat Panel** — sidebar `ItemView` for multi-turn AI conversation
-2. **Vault Context Injection** — `@mention` notes to include their content in the LLM prompt
-3. **In-Place Note Editing from Chat** — push AI responses directly into notes as diffs (the key differentiator from Obsidian Copilot)
-4. **Note Creation from Chat** — `/create [[Note Name]]` generates and opens a new note with diffed content
-5. **Streaming Responses** — progressive display of AI output
-6. **Conversation Persistence** — save and reload chat sessions
-
-### What Makes This Different from Copilot
-
-Copilot keeps all AI responses inside the chat panel. Obsidian AI's chat panel can **apply responses directly to notes** — the same inline diff + accept/discard flow already in v1.2.4 — triggered from the sidebar. The chat is a command interface for the editor, not just a conversation tool.
-
----
-
-## Tech Stack
-
-### Current (v1.2.4)
-- TypeScript, CodeMirror 6, LangChain, esbuild, ESLint, Prettier
-
-### Additions for v2.0
-- React + ReactDOM (chat panel UI)
-- Plain CSS for chat panel styles (no Tailwind)
-
-No new LangChain packages — `.stream()` is already in `@langchain/core`.
-
----
-
-## Task Roadmap (v2.0)
-
-| Task | Title | Priority | Status |
-|---|---|---|---|
-| T4 | Streaming | HIGH | ⬜ |
-| T1 | Chat Panel (ItemView + React) | HIGH | ⬜ |
-| T2 | Conversation Chain & Memory | HIGH | ⬜ |
-| T3 | Context & Mentions System | HIGH | ⬜ |
-| T5 | In-Place Note Editing from Chat | HIGH | ⬜ |
-| T6 | Token & Context Management | MEDIUM | ⬜ |
-
-Dependency order: T4 → T1 → {T2, T3} → T5; T6 depends on T1+T2.
-
----
-
-## Project Structure (v2.0 target)
-
-```
+## Project Structure
+```text
 obsidian-ai/
 ├── src/
-│   ├── main.ts                    # Plugin entry — registers both surfaces
-│   ├── api.ts                     # ChatApiManager (callSelection + streamChat)
-│   ├── settings.ts                # Extended settings schema
-│   ├── default_prompts.ts         # Built-in prompts (unchanged)
-│   ├── views/
-│   │   └── ObsidianAIChatView.ts     # NEW: ItemView for chat panel
-│   ├── components/                # NEW: React components
-│   │   ├── ChatApp.tsx
-│   │   ├── ActionBar.tsx
-│   │   ├── ChatMessages.tsx
-│   │   ├── MessageBubble.tsx
-│   │   ├── ContextBar.tsx
-│   │   ├── ChatInput.tsx
-│   │   └── MentionAutocomplete.tsx
-│   ├── conversation/              # NEW: conversation state
-│   │   ├── ConversationManager.ts
-│   │   └── types.ts
-│   ├── context/                   # NEW: vault context engine
-│   │   ├── ContextEngine.ts
-│   │   ├── embedExpander.ts
-│   │   ├── wikilinkResolver.ts
-│   │   └── tokenEstimator.ts
-│   ├── noteEditing/               # NEW: chat→editor bridge
-│   │   ├── NoteEditingBridge.ts
-│   │   └── noteEditingUtils.ts
-│   └── modules/                   # EXISTING (unchanged)
-│       ├── AIExtension.ts
-│       ├── SelectionState.ts
-│       ├── WidgetExtension.ts
-│       ├── diffExtension.ts
-│       ├── commands/
-│       └── messageHistory/
+│   ├── main.ts
+│   ├── api.ts
+│   ├── settings.ts
+│   ├── components/
+│   ├── modules/
+│   └── views/
 ├── memory-bank/
-│   ├── integrated-rules-v6.12.md
 │   ├── implementation-details/
-│   │   ├── current-architecture.md
-│   │   ├── proposed-architecture.md
-│   │   ├── chat-panel-design.md
-│   │   ├── context-system-design.md
-│   │   └── note-editing-design.md
-│   └── tasks/
-│       ├── META-1.md
-│       ├── T1.md – T6.md
-│       └── sessions/
+│   ├── sessions/
+│   ├── tasks/
+│   └── templates/
 ├── manifest.json
 ├── package.json
-└── esbuild.config.mjs
+└── styles.css
 ```
 
-## Development Workflow
+## Key Components
+- **`src/main.ts`**: Plugin lifecycle, command registration, and view activation.
+- **`src/api.ts`**: Unified AI provider layer, text generation, streaming, and provider-specific helpers.
+- **`src/settings.ts`**: Settings schema, provider profiles, model defaults, and settings-tab UI.
 
-- `pnpm run dev` — watch mode build
-- `pnpm run build` — production build (type-check + bundle)
-- `pnpm run package` — local timestamped release zip
-- `pnpm run format` — Prettier formatting
+## Current Status
+- Overall Progress: Core chat/settings foundation complete; streaming UI and model discovery remain open.
+- Active Tasks: 2
+- Current Focus: T4 streaming completion and memory-bank normalization.
+
+## Task Tracking
+Tasks are tracked in `tasks.md` with the following priority structure:
+- **High Priority**: Core product behavior or enabling infrastructure for the v2.0 chat workflow.
+- **Medium Priority**: Supporting UX, diagnostics, and context-management improvements.
+- **Low Priority**: Follow-up polish after the main workflow is stable.
+
+## Memory Bank Organization
+- `/memory-bank/`: Core project memory-bank documents.
+- `/memory-bank/templates/`: Reference templates used to keep memory files consistent.
+- `/memory-bank/archive/`: Reserved for archived task or session material.
+
+## Implementation Guidelines
+Keep the existing inline editor path stable while new chat features land incrementally. Prefer one canonical provider abstraction layer, one canonical memory-bank format, and design docs that stay close to the actual implementation state.
+
+## External Dependencies
+- `ai` and `@ai-sdk/*`: Unified provider abstraction and streaming support.
+- `react` and `react-dom`: Sidebar chat UI rendering.
+- `obsidian`: Plugin API and UI surface integration.
+
+## Notes
+The current roadmap assumes T4 streaming completion first, followed by T10 model discovery, then the broader conversation/context/diagnostics/onboarding tasks built on top of the T9 provider-profile foundation.

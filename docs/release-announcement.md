@@ -19,6 +19,15 @@ Download the latest release assets from GitHub Releases and copy `main.js`, `man
 
 Then enable Obsidian AI from Community Plugins in Obsidian settings.
 
+## Community Plugin Submission
+
+To submit to the official Obsidian Community Plugins directory:
+
+1. Ensure the release includes `main.js`, `manifest.json`, and `styles.css`
+2. Open a PR at [obsidianmd/obsidian-releases](https://github.com/obsidianmd/obsidian-releases)
+3. Follow the [Plugin Guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines)
+4. Include a link to this repo and the latest release
+
 ## Acknowledgments
 
 Obsidian AI builds on the original InlineAI plugin and takes UI inspiration from the Obsidian Copilot project.
