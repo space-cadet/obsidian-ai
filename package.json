@@ -17,6 +17,8 @@
 	"devDependencies": {
 		"@types/codemirror": "^5.60.15",
 		"@types/node": "^22.8.1",
+		"@types/react": "^19.2.14",
+		"@types/react-dom": "^19.2.3",
 		"@typescript-eslint/eslint-plugin": "^8.11.0",
 		"@typescript-eslint/parser": "^8.11.0",
 		"builtin-modules": "^4.0.0",
@@ -42,6 +44,8 @@
 		"@langchain/ollama": "^0.1.1",
 		"@langchain/openai": "^0.3.11",
 		"@types/diff-match-patch": "^1.0.36",
-		"diff-match-patch": "^1.0.5"
+		"diff-match-patch": "^1.0.5",
+		"react": "^19.2.5",
+		"react-dom": "^19.2.5"
 	}
 }

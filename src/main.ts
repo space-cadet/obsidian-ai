@@ -20,6 +20,7 @@ import {
 	setSelectionInfoEffect,
 } from "./modules/SelectionState";
 import { diffExtension } from "./modules/diffExtension";
+import { InlineAIChatView, CHAT_VIEWTYPE } from "./views/InlineAIChatView";
 
 export default class InlineAIChatPlugin extends Plugin {
 	settings: InlineAISettings = DEFAULT_SETTINGS;
@@ -28,6 +29,21 @@ export default class InlineAIChatPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		this.chatapi = new ChatApiManager(this.settings, this.app);
+
+		this.registerView(
+			CHAT_VIEWTYPE,
+			(leaf) => new InlineAIChatView(leaf, this),
+		);
+
+		this.addRibbonIcon("message-square", "Open InlineAI Chat", () => {
+			this.activateChatView();
+		});
+
+		this.addCommand({
+			id: "open-inlineai-chat",
+			name: "Open InlineAI Chat",
+			callback: () => this.activateChatView(),
+		});
 
 		this.registerEditorExtension([
 			FloatingTooltipExtension(this.chatapi, this),
@@ -132,8 +148,18 @@ export default class InlineAIChatPlugin extends Plugin {
 		this.addSettingTab(new InlineAISettingsTab(this.app, this));
 	}
 
+	async activateChatView() {
+		const { workspace } = this.app;
+		let leaf = workspace.getLeavesOfType(CHAT_VIEWTYPE)[0];
+		if (!leaf) {
+			leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf(true);
+			await leaf.setViewState({ type: CHAT_VIEWTYPE, active: true });
+		}
+		workspace.revealLeaf(leaf);
+	}
+
 	onunload() {
-		// Cleanup if necessary
+		this.app.workspace.detachLeavesOfType(CHAT_VIEWTYPE);
 	}
 
 	async loadSettings() {

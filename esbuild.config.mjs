@@ -16,6 +16,8 @@ const context = await esbuild.context({
 	},
 	entryPoints: ["src/main.ts"],
 	bundle: true,
+	jsx: "automatic",
+	jsxImportSource: "react",
 	external: [
 		"obsidian",
 		"electron",

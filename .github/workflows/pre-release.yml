@@ -1,0 +1,51 @@
+name: Pre-Release Build (main branch)
+
+on:
+    push:
+        branches:
+            - main
+
+env:
+    PLUGIN_NAME: obsidian-inlineAI
+
+jobs:
+    pre-release:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v3
+
+            - name: Set Up Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: "lts/*"
+                  cache: "npm"
+
+            - name: Install and Build
+              run: |
+                  npm ci
+                  npm run build --if-present
+
+            - name: Prepare Release Assets
+              run: |
+                  mkdir -p $PLUGIN_NAME
+                  cp main.js manifest.json styles.css $PLUGIN_NAME
+                  zip -r ${PLUGIN_NAME}.zip $PLUGIN_NAME
+
+            - name: Create or Update Pre-Release
+              uses: ncipollo/release-action@v1
+              with:
+                  tag: latest-dev
+                  name: "Dev Build (latest main)"
+                  body: "Automated pre-release build from the latest commit on `main`. Not for production use."
+                  prerelease: true
+                  allowUpdates: true
+                  removeArtifacts: true
+                  artifacts: |
+                      ${{ env.PLUGIN_NAME }}.zip
+                      main.js
+                      manifest.json
+                      styles.css
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
