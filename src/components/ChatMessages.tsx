@@ -5,12 +5,14 @@ import MessageBubble from "./MessageBubble";
 
 interface ChatMessagesProps {
 	messages: ChatMessage[];
+	currentAiMessage: string;
 	isStreaming: boolean;
 	app: App;
 }
 
 const ChatMessages: React.FC<ChatMessagesProps> = ({
 	messages,
+	currentAiMessage,
 	isStreaming,
 	app,
 }) => {
@@ -30,7 +32,15 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 			{messages.map((msg) => (
 				<MessageBubble key={msg.id} message={msg} app={app} />
 			))}
-			{isStreaming && (
+			{isStreaming && currentAiMessage && (
+				<div className="chat-bubble chat-bubble-assistant chat-bubble-streaming">
+					<div className="chat-bubble-header">
+						<span className="chat-bubble-role">Obsidian AI</span>
+					</div>
+					<div className="chat-bubble-content">{currentAiMessage}</div>
+				</div>
+			)}
+			{isStreaming && !currentAiMessage && (
 				<div className="chat-typing-indicator">
 					<span />
 					<span />

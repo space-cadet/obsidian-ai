@@ -1,12 +1,19 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 17:48:45 IST*
+*Last Updated: 2026-05-02 22:32:52 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
 
 ---
 
 ### 2026-05-02
+
+#### 22:32:52 IST - T4,T5: Streaming wiring and NoteEditingBridge
+
+- Modified `src/components/ChatApp.tsx` - Replace callApi() with streamChat() async iterator loop; add currentAiMessage state and messagesRef for progressive rendering
+- Modified `src/components/ChatMessages.tsx` - Accept currentAiMessage prop; render streaming bubble while chunks arrive, typing indicator before first chunk
+- Modified `src/components/MessageBubble.tsx` - Add Apply to Note (diff) and Append to Note buttons for assistant messages; import NoteEditingBridge
+- Created `src/noteEditing/NoteEditingBridge.ts` - applyToActiveNote() dispatches full-doc selection + response effects in single transaction; appendToActiveNote() writes via vault.modify with Notice
 
 #### 17:48:45 IST - META-1: Memory bank sync for T4 migration, T9 completion, T10-T12 creation
 - Updated `memory-bank/tasks.md` — added T9 (✅), T10 (⏸️), T11 (⏸️), T12 (⏸️); updated T4 status to 🔄; updated summary counts
