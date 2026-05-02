@@ -177,9 +177,15 @@ export default class ObsidianAIPlugin extends Plugin {
 	async loadChatData(): Promise<StoredChatData> {
 		const data = await this.loadData();
 
-		// New format
+		// New format — ensure contextItems exists on every session
 		if (data?.chatData && Array.isArray(data.chatData.sessions)) {
-			return data.chatData as StoredChatData;
+			const chatData = data.chatData as StoredChatData;
+			for (const session of chatData.sessions) {
+				if (!Array.isArray(session.contextItems)) {
+					session.contextItems = [];
+				}
+			}
+			return chatData;
 		}
 
 		// Migration from old flat chatMessages array
@@ -192,6 +198,7 @@ export default class ObsidianAIPlugin extends Plugin {
 						createdAt: Date.now(),
 						updatedAt: Date.now(),
 						messages: data.chatMessages,
+						contextItems: [],
 					},
 				],
 				activeSessionId: null,

@@ -6,12 +6,23 @@ export interface ChatMessage {
 	isError?: boolean;
 }
 
+export interface ContextItemBase {
+	id: string;
+}
+
+export type ContextItem =
+	| (ContextItemBase & { type: "note"; path: string; name: string })
+	| (ContextItemBase & { type: "folder"; path: string; name: string })
+	| (ContextItemBase & { type: "tag"; tag: string })
+	| (ContextItemBase & { type: "active-note" });
+
 export interface ChatSession {
 	id: string;
 	title: string;
 	createdAt: number;
 	updatedAt: number;
 	messages: ChatMessage[];
+	contextItems: ContextItem[];
 }
 
 export interface StoredChatData {

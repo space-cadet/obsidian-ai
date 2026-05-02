@@ -1,19 +1,20 @@
 # Active Context
 
-*Last Updated: 2026-05-03 00:45:00 IST*
+*Last Updated: 2026-05-03 02:40:00 IST*
 
 ## Current Focus
 **Primary Task:** T3
-**Secondary Tasks:** META-1, T5, T2
+**Secondary Tasks:** META-1, T5, T2, T13
 
 ## Active Tasks
-- [T3]: Context & Mentions — active note toggle done; next: @mention autocomplete + ContextEngine
-- [T5]: Note targeting fixed (active-leaf-change); NoteEditingBridge refactored; remaining: applyToTargetNote, slash commands, retry
+- [T3]: Context & Mentions — active note toggle, @mention autocomplete, ContextEngine multi-note support all implemented
+- [T5]: Note targeting fixed (active-leaf-change); NoteEditingBridge refactored; Apply button added to message bubbles; remaining: applyToTargetNote, slash commands, retry
 - [T2]: Session-based chat history fully implemented; pending real-world testing
+- [T13]: Agentic Tool Calling — design complete, task and implementation doc created, awaiting scheduling
 - [META-1]: Keep memory-bank records aligned with implementation state
 
 ## Implementation Focus
-`src/components/ChatApp.tsx`, `src/components/SessionPickerModal.tsx`, `src/main.ts`
+`src/components/ChatApp.tsx`, `src/components/ChatInput.tsx`, `src/context/ContextEngine.ts`
 
 ## Task-Specific Context
 
@@ -24,7 +25,7 @@
 Session-based chat history fully implemented. `loadChatData`/`saveChatData` plugin methods with migration from old flat `chatMessages`. `ChatApp` uses `sessions[]` + `activeSessionId` state with `activeSessionIdRef` to avoid stale closures during streaming. Archive-on-New auto-titles from first user message and prunes to `maxSavedConversations`. `SessionPickerModal` lists sessions with title, count, relative time, preview; supports load and delete. Deleting the active session automatically creates a new empty one. Load button enabled via `hasHistory = sessions.some(s => s.messages.length > 0)`.
 
 ### Task T3 — IN PROGRESS
-Active note toggle chip in `ContextBar`. `ChatApp.includeActiveNote` state + `includeActiveNoteRef` drive context injection in `handleSend`. Reads tracked markdown leaf via `lastMarkdownLeafRef` (same ref as T5 fix). Next: @mention autocomplete popover.
+Active note toggle chip in `ContextBar`. `contextItems` state drives context injection in `handleSend`. `@mention` autocomplete in `ChatInput` adds notes/folders/tags to context chips. `ContextEngine.resolveContextItems()` resolves all context types into XML blocks with token budget enforcement. Context items persist per-session.
 
 ## Current Decisions
 - Both effects (`setSelectionInfoEffect` + `setGeneratedResponseEffect`) dispatched in one transaction.
@@ -34,7 +35,8 @@ Active note toggle chip in `ContextBar`. `ChatApp.includeActiveNote` state + `in
 - CI fix: `github.ref_name` sanitized with `tr '/' '-'` before use as artifact name.
 
 ## Next Actions By Task
-- [T3]: Build `MentionAutocomplete` popover, wire `@` trigger in `ChatInput`, build `ContextEngine`.
+- [T3]: Context system implementation complete — verify in real Obsidian environment.
 - [T5]: Add retry button, `applyToTargetNote` (post-T3), slash commands.
 - [T2]: Test in real Obsidian environment — verify migration from old chatMessages, pruning behaviour, delete-active-session edge case.
+- [T13]: Schedule implementation when T3/T5 are stable. Full tool calling with Vercel AI SDK `streamText({ tools, maxSteps })`.
 - [META-1]: Keep records in canonical template format.

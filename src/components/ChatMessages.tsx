@@ -38,6 +38,7 @@ interface ChatMessagesProps {
 	app: App;
 	onAppend: (content: string) => void;
 	onInsertAtCursor: (content: string) => void;
+	onApply: (content: string) => void;
 }
 
 const ChatMessages: React.FC<ChatMessagesProps> = ({
@@ -47,6 +48,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	app,
 	onAppend,
 	onInsertAtCursor,
+	onApply,
 }) => {
 	const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -68,6 +70,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 					app={app}
 					onAppend={onAppend}
 					onInsertAtCursor={onInsertAtCursor}
+					onApply={onApply}
 				/>
 			))}
 			{isStreaming && currentAiMessage && (

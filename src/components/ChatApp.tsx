@@ -2,18 +2,29 @@ import React, { useState, useRef, useCallback, useEffect, useMemo } from "react"
 import { MarkdownView, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
 import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
-import { ChatMessage, ChatSession } from "../types";
+import { ChatMessage, ChatSession, ContextItem } from "../types";
+import { resolveContextItems } from "../context/ContextEngine";
 import ActionBar from "./ActionBar";
 import ChatMessages from "./ChatMessages";
 import ContextBar from "./ContextBar";
 import ChatInput from "./ChatInput";
 import SessionPickerModal from "./SessionPickerModal";
+import ContextPickerModal from "./ContextPickerModal";
 
 interface ChatAppProps {
 	plugin: ChatPluginLike;
 }
 
-const SYSTEM_PROMPT = "You are a helpful assistant.";
+function buildSystemPrompt(contextItems: ContextItem[]): string {
+	let prompt =
+		"You are a helpful assistant integrated into an Obsidian note-taking app.";
+	const hasActiveNote = contextItems.some((i) => i.type === "active-note");
+	if (hasActiveNote) {
+		prompt +=
+			"\n\nThe active note is included in context. When the user asks you to edit, rewrite, or improve the note, return ONLY the complete revised note content. Do not wrap it in markdown code blocks or add explanations.";
+	}
+	return prompt;
+}
 
 function generateSessionTitle(messages: ChatMessage[]): string {
 	const firstUser = messages.find((m) => m.role === "user");
@@ -38,22 +49,28 @@ function pruneSessions(
 	return sessions.filter((s) => !removeIds.has(s.id));
 }
 
+function makeId(): string {
+	return crypto.randomUUID();
+}
+
 const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	const [sessions, setSessions] = useState<ChatSession[]>([]);
 	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 	const [isStreaming, setIsStreaming] = useState(false);
 	const [currentAiMessage, setCurrentAiMessage] = useState("");
-	const [includeActiveNote, setIncludeActiveNote] = useState(false);
+	const [contextItems, setContextItems] = useState<ContextItem[]>([]);
+	const [wasTruncated, setWasTruncated] = useState(false);
 	const [targetNoteName, setTargetNoteName] = useState<string | null>(null);
 	const [showSessionPicker, setShowSessionPicker] = useState(false);
+	const [showContextPicker, setShowContextPicker] = useState(false);
 	const controllerRef = useRef<AbortController | null>(null);
 	// Refs so callbacks always see latest values without stale closures
 	const messagesRef = useRef<ChatMessage[]>([]);
-	const includeActiveNoteRef = useRef(false);
-	includeActiveNoteRef.current = includeActiveNote;
+	const contextItemsRef = useRef<ContextItem[]>([]);
+	contextItemsRef.current = contextItems;
 	const activeSessionIdRef = useRef<string | null>(null);
 	activeSessionIdRef.current = activeSessionId;
-	// Tracks the last focused markdown leaf — updated by active-leaf-change event
+	// Tracks the last focused markdown leaf
 	const lastMarkdownLeafRef = useRef<WorkspaceLeaf | null>(null);
 
 	const messages = useMemo(() => {
@@ -61,6 +78,25 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		return s?.messages ?? [];
 	}, [sessions, activeSessionId]);
 	messagesRef.current = messages;
+
+	// Sync contextItems when active session changes
+	useEffect(() => {
+		const s = sessions.find((s) => s.id === activeSessionId);
+		setContextItems(s?.contextItems ?? []);
+		setWasTruncated(false);
+	}, [activeSessionId, sessions]);
+
+	// Persist contextItems to the current session whenever they change
+	useEffect(() => {
+		const currentActiveId = activeSessionIdRef.current;
+		if (!currentActiveId) return;
+		setSessions((prev) =>
+			prev.map((s) =>
+				s.id === currentActiveId ? { ...s, contextItems } : s,
+			),
+		);
+		setWasTruncated(false);
+	}, [contextItems]);
 
 	// Initialise leaf tracking and register workspace listener
 	useEffect(() => {
@@ -84,7 +120,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 
 		plugin.app.workspace.on("active-leaf-change", onLeafChange as any);
 		return () =>
-			plugin.app.workspace.off("active-leaf-change", onLeafChange as any);
+			plugin.app.workspace.off(
+				"active-leaf-change",
+				onLeafChange as any,
+			);
 	}, [plugin]);
 
 	// Load persisted sessions on mount
@@ -94,11 +133,14 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 			setActiveSessionId(data.activeSessionId);
 			if (!data.activeSessionId && data.sessions.length === 0) {
 				const newSession: ChatSession = {
-					id: crypto.randomUUID(),
+					id: makeId(),
 					title: "",
 					createdAt: Date.now(),
 					updatedAt: Date.now(),
 					messages: [],
+					contextItems: plugin.settings.includeActiveNote
+						? [{ type: "active-note", id: makeId() }]
+						: [],
 				};
 				setSessions([newSession]);
 				setActiveSessionId(newSession.id);
@@ -114,7 +156,51 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	}, [sessions, activeSessionId, plugin]);
 
 	const handleToggleActiveNote = useCallback(() => {
-		setIncludeActiveNote((prev) => !prev);
+		setContextItems((prev) => {
+			const hasActive = prev.some((i) => i.type === "active-note");
+			if (hasActive) {
+				return prev.filter((i) => i.type !== "active-note");
+			}
+			return [...prev, { type: "active-note", id: makeId() }];
+		});
+	}, []);
+
+	const handleRemoveContextItem = useCallback((id: string) => {
+		setContextItems((prev) => prev.filter((i) => i.id !== id));
+	}, []);
+
+	const handleAddMention = useCallback((item: ContextItem) => {
+		handleAddContextItems([item]);
+	}, []);
+
+	const handleAddContextItems = useCallback((items: ContextItem[]) => {
+		setContextItems((prev) => {
+			const existing = new Set(
+				prev.map((i) => {
+					if (i.type === "note") return `note:${i.path}`;
+					if (i.type === "folder") return `folder:${i.path}`;
+					if (i.type === "tag") return `tag:${i.tag}`;
+					return `active:${i.id}`;
+				}),
+			);
+			const merged = [...prev];
+			for (const item of items) {
+				const key =
+					item.type === "note"
+						? `note:${item.path}`
+						: item.type === "folder"
+							? `folder:${item.path}`
+							: item.type === "tag"
+								? `tag:${item.tag}`
+								: `active:${item.id}`;
+				if (!existing.has(key)) {
+					existing.add(key);
+					merged.push(item);
+				}
+			}
+			return merged;
+		});
+		setShowContextPicker(false);
 	}, []);
 
 	const handleSend = useCallback(
@@ -122,7 +208,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 			if (!text.trim() || isStreaming) return;
 
 			const userMsg: ChatMessage = {
-				id: crypto.randomUUID(),
+				id: makeId(),
 				role: "user",
 				content: text,
 				timestamp: Date.now(),
@@ -136,8 +222,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 								...s,
 								messages: [...s.messages, userMsg],
 								updatedAt: Date.now(),
+								contextItems: contextItemsRef.current,
 							}
-						: s,
+							: s,
 				),
 			);
 			setIsStreaming(true);
@@ -150,20 +237,21 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 			}));
 
 			let userContent = text;
-			if (includeActiveNoteRef.current) {
-				const leaf = lastMarkdownLeafRef.current;
-				const view =
-					leaf?.view instanceof MarkdownView
-						? (leaf.view as MarkdownView)
-						: null;
-				if (view?.file) {
-					const noteContent = await plugin.app.vault.read(view.file);
-					userContent = `<context>\n<active-note name="${view.file.basename}">\n${noteContent}\n</active-note>\n</context>\n\n${text}`;
-				}
+			const resolved = await resolveContextItems(
+				contextItemsRef.current,
+				plugin.app,
+				plugin.settings.maxContextTokens || 8000,
+			);
+			setWasTruncated(resolved.wasTruncated);
+			if (resolved.contextString) {
+				userContent = `${resolved.contextString}\n\n${text}`;
 			}
 
 			const chatMessages = [
-				{ role: "system" as const, content: SYSTEM_PROMPT },
+				{
+					role: "system" as const,
+					content: buildSystemPrompt(contextItemsRef.current),
+				},
 				...history,
 				{ role: "user" as const, content: userContent },
 			];
@@ -180,7 +268,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				}
 				console.log(`[ChatApp] streamChat done — ${fullText.length} chars`);
 				const assistantMsg: ChatMessage = {
-					id: crypto.randomUUID(),
+					id: makeId(),
 					role: "assistant",
 					content: fullText,
 					timestamp: Date.now(),
@@ -192,8 +280,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 									...s,
 									messages: [...s.messages, assistantMsg],
 									updatedAt: Date.now(),
+									contextItems: contextItemsRef.current,
 								}
-							: s,
+								: s,
 					),
 				);
 			} catch (e: any) {
@@ -203,7 +292,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					);
 					if (fullText) {
 						const stoppedMsg: ChatMessage = {
-							id: crypto.randomUUID(),
+							id: makeId(),
 							role: "assistant",
 							content: fullText + " [stopped]",
 							timestamp: Date.now(),
@@ -215,15 +304,16 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 											...s,
 											messages: [...s.messages, stoppedMsg],
 											updatedAt: Date.now(),
+											contextItems: contextItemsRef.current,
 										}
-									: s,
+										: s,
 							),
 						);
 					}
 				} else {
 					console.error("[ChatApp] streamChat error:", e.message);
 					const errorMsg: ChatMessage = {
-						id: crypto.randomUUID(),
+						id: makeId(),
 						role: "assistant",
 						content: `Error: ${e.message}`,
 						timestamp: Date.now(),
@@ -236,8 +326,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 										...s,
 										messages: [...s.messages, errorMsg],
 										updatedAt: Date.now(),
+										contextItems: contextItemsRef.current,
 									}
-								: s,
+									: s,
 						),
 					);
 				}
@@ -259,11 +350,14 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 
 		const currentActiveId = activeSessionIdRef.current;
 		const newSession: ChatSession = {
-			id: crypto.randomUUID(),
+			id: makeId(),
 			title: "",
 			createdAt: Date.now(),
 			updatedAt: Date.now(),
 			messages: [],
+			contextItems: plugin.settings.includeActiveNote
+				? [{ type: "active-note", id: makeId() }]
+				: [],
 		};
 
 		setSessions((prev) => {
@@ -281,13 +375,14 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 							title: s.title || generateSessionTitle(s.messages),
 							updatedAt: Date.now(),
 						}
-					: s,
+						: s,
 			);
 			const withNew = [...updated, newSession];
 			const max = plugin.settings.maxSavedConversations || 20;
 			return pruneSessions(withNew, max, newSession.id);
 		});
 		setActiveSessionId(newSession.id);
+		setWasTruncated(false);
 	}, [isStreaming, plugin]);
 
 	const handleAppend = useCallback(
@@ -322,6 +417,24 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		[plugin],
 	);
 
+	const handleApply = useCallback(
+		(content: string) => {
+			const leaf = lastMarkdownLeafRef.current;
+			if (!(leaf?.view instanceof MarkdownView)) {
+				new Notice("⚠️ Open a note first to apply edits.");
+				return;
+			}
+			const view = leaf.view as MarkdownView;
+			NoteEditingBridge.applyToNote(
+				plugin.app,
+				view,
+				content,
+				"Apply AI edit",
+			);
+		},
+		[plugin],
+	);
+
 	const handleLoadSession = useCallback((sessionId: string) => {
 		setActiveSessionId(sessionId);
 		setShowSessionPicker(false);
@@ -341,11 +454,14 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					} else {
 						// No sessions left — create a new empty one
 						const empty: ChatSession = {
-							id: crypto.randomUUID(),
+							id: makeId(),
 							title: "",
 							createdAt: Date.now(),
 							updatedAt: Date.now(),
 							messages: [],
+							contextItems: plugin.settings.includeActiveNote
+								? [{ type: "active-note", id: makeId() }]
+								: [],
 						};
 						filtered.push(empty);
 						setActiveSessionId(empty.id);
@@ -374,15 +490,21 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				app={plugin.app}
 				onAppend={handleAppend}
 				onInsertAtCursor={handleInsertAtCursor}
+				onApply={handleApply}
 			/>
 			<ContextBar
-				includeActiveNote={includeActiveNote}
+				contextItems={contextItems}
 				activeNoteName={targetNoteName}
+				wasTruncated={wasTruncated}
 				onToggleActiveNote={handleToggleActiveNote}
+				onRemoveItem={handleRemoveContextItem}
+				onOpenPicker={() => setShowContextPicker(true)}
 			/>
 			<ChatInput
+				app={plugin.app}
 				onSend={handleSend}
 				onStop={handleStop}
+				onAddMention={handleAddMention}
 				isStreaming={isStreaming}
 			/>
 			{showSessionPicker && (
@@ -392,6 +514,13 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					onLoad={handleLoadSession}
 					onDelete={handleDeleteSession}
 					onClose={() => setShowSessionPicker(false)}
+				/>
+			)}
+			{showContextPicker && (
+				<ContextPickerModal
+					app={plugin.app}
+					onAdd={handleAddContextItems}
+					onClose={() => setShowContextPicker(false)}
 				/>
 			)}
 		</div>

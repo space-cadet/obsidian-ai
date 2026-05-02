@@ -22,6 +22,7 @@
 | T10 | Model Discovery & Picker UX | ⏸️ | HIGH | — | T9 | [Details](tasks/T10.md) |
 | T11 | Debug Logging & Diagnostics | ⏸️ | MEDIUM | — | T9 | [Details](tasks/T11.md) |
 | T12 | Chat Onboarding, Tips & Empty States | ⏸️ | MEDIUM | — | T1, T9 | [Details](tasks/T12.md) |
+| T13 | Agentic Tool Calling for Note Editing | ⬜ | HIGH | — | T1, T3, T5, T9 | [Details](tasks/T13.md) |
 
 ## Active Tasks
 

@@ -7,6 +7,7 @@ interface MessageBubbleProps {
 	app: App;
 	onAppend: (content: string) => void;
 	onInsertAtCursor: (content: string) => void;
+	onApply: (content: string) => void;
 }
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
@@ -14,6 +15,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	app,
 	onAppend,
 	onInsertAtCursor,
+	onApply,
 }) => {
 	const contentRef = useRef<HTMLDivElement>(null);
 
@@ -51,6 +53,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 			<div ref={contentRef} className="chat-bubble-content" />
 			{message.role === "assistant" && !message.isError && (
 				<div className="chat-bubble-actions">
+					<button
+						className="chat-btn-small"
+						onClick={() => onApply(message.content)}
+						title="Preview changes as a diff in the active note"
+					>
+						✓ Apply
+					</button>
 					<button
 						className="chat-btn-small"
 						onClick={() => onInsertAtCursor(message.content)}

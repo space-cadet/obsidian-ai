@@ -1,6 +1,6 @@
 # Implementation Progress
 
-*Last Updated: 2026-05-03 00:45:00 IST*
+*Last Updated: 2026-05-03 02:47:31 IST*
 
 ## Active Tasks
 
@@ -47,6 +47,59 @@
 - ✅ LangChain removed and Vercel AI SDK provider layer installed
 - ✅ `streamChat()` added to `ChatApiManager`
 - ✅ Streaming wired into React chat panel with abort handling and error states
+
+### T3: Context & Mentions System
+**Status:** 🔄 IN PROGRESS
+**Priority:** HIGH
+
+#### Completed Steps
+- ✅ Active note toggle chip in ContextBar
+- ✅ `ContextEngine.resolveContextItems()` — resolves notes, folders, tags to XML
+- ✅ `@mention` autocomplete in ChatInput with keyboard navigation
+- ✅ ContextBar multi-chip UI with remove buttons and truncation warning
+- ✅ Token budget enforcement (chars/4, proportional truncation)
+- ✅ Context items persist per-session in `ChatSession.contextItems`
+
+#### Current Work
+- 🔄 Real-world testing in Obsidian
+
+#### Up Next
+- ⬜ `embedExpander` for `![[]]` inline embeds
+- ⬜ Selection capture bridge from inline tooltip
+
+### T5: In-Place Note Editing from Chat
+**Status:** 🔄 IN PROGRESS
+**Priority:** HIGH
+
+#### Completed Steps
+- ✅ NoteEditingBridge refactored — caller provides resolved view/file
+- ✅ Apply/Append/Copy buttons on MessageBubble
+- ✅ Apply button triggers diff overlay via `NoteEditingBridge.applyToNote()`
+- ✅ Active-leaf-change tracking for correct note targeting
+
+#### Current Work
+- 🔄 Testing apply flow in real Obsidian environment
+
+#### Up Next
+- ⬜ `applyToTargetNote()` — open note by path if not active
+- ⬜ `/create` and `/append` slash commands
+- ⬜ Retry button on message bubble
+
+### T13: Agentic Tool Calling for Note Editing
+**Status:** ⬜ NOT STARTED
+**Priority:** HIGH
+
+#### Design Complete
+- Task file and implementation doc created
+- Architecture: Vercel AI SDK `streamText` with `tools` + `maxSteps`
+- Tools: `read_note`, `edit_note`, `append_to_note`, `create_note`
+- Approval UI: PendingToolCard with approve/reject
+- Settings: `autoApply`, `maxAgentSteps`
+
+#### Up Next
+- ⬜ Implement tool schemas and ToolExecutor
+- ⬜ Restructure streaming loop for StreamEvent union
+- ⬜ Build PendingToolCard UI component
 
 ## Paused Tasks
 

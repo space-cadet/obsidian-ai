@@ -1,12 +1,34 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-03 00:52:00 IST*
+*Last Updated: 2026-05-03 02:47:31 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
 
 ---
 
 ### 2026-05-03
+
+#### 02:47:31 IST - T3/T5/T13: Context system implementation, Apply button, agentic tool calling design
+
+- Created `src/context/ContextEngine.ts` — resolves ContextItem[] to XML context blocks with token budget and truncation
+- Created `src/components/ContextPickerModal.tsx` — modal with Notes/Folders/Tags tabs for multi-select context addition
+- Modified `src/types.ts` — added ContextItem union and contextItems field to ChatSession
+- Modified `src/components/ChatApp.tsx` — replaced includeActiveNote with contextItems state; handleSend uses ContextEngine; dynamic system prompt; context persists per-session
+- Modified `src/components/ContextBar.tsx` — multi-chip display with removable chips, truncation warning, "+ Add context" button
+- Modified `src/components/ChatInput.tsx` — @mention autocomplete dropdown with keyboard navigation
+- Modified `src/components/MessageBubble.tsx` — added Apply button triggering diff overlay
+- Modified `src/components/ChatMessages.tsx` — passes onApply through to MessageBubble
+- Modified `src/main.ts` — migration ensures contextItems: [] on all sessions
+- Modified `styles.css` — styles for picker modal, mention dropdown, removable chips, truncation warning
+- Created `memory-bank/tasks/T13.md` — task file for agentic tool calling
+- Created `memory-bank/implementation-details/agentic-tool-calling.md` — full design doc
+- Updated `memory-bank/tasks/T3.md` — marked completion criteria and progress items done
+- Updated `memory-bank/tasks/T5.md` — marked Apply button progress done
+- Updated `memory-bank/tasks.md` — added T13 row
+- Updated `memory-bank/activeContext.md` — T3 marked feature-complete, T13 added
+- Updated `memory-bank/session_cache.md` — updated focus, active tasks, next session focus
+- Updated `memory-bank/progress.md` — added T3, T5, T13 sections
+- Updated `memory-bank/sessions/2026-05-03-night.md` — appended T3 implementation and T13 design work
 
 #### 00:52:00 IST - T2/META-1: Sync memory bank after session history implementation
 
