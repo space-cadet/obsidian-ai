@@ -2,9 +2,9 @@
 import { Plugin, MarkdownView, App } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import {
-	InlineAISettings,
+	ObsidianAISettings,
 	DEFAULT_SETTINGS,
-	InlineAISettingsTab,
+	ObsidianAISettingsTab,
 } from "./settings";
 import {
 	acceptTooltipEffect,
@@ -20,10 +20,10 @@ import {
 	setSelectionInfoEffect,
 } from "./modules/SelectionState";
 import { diffExtension } from "./modules/diffExtension";
-import { InlineAIChatView, CHAT_VIEWTYPE } from "./views/InlineAIChatView";
+import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/InlineAIChatView";
 
-export default class InlineAIChatPlugin extends Plugin {
-	settings: InlineAISettings = DEFAULT_SETTINGS;
+export default class ObsidianAIPlugin extends Plugin {
+	settings: ObsidianAISettings = DEFAULT_SETTINGS;
 	chatapi!: ChatApiManager;
 
 	async onload() {
@@ -32,16 +32,16 @@ export default class InlineAIChatPlugin extends Plugin {
 
 		this.registerView(
 			CHAT_VIEWTYPE,
-			(leaf) => new InlineAIChatView(leaf, this),
+			(leaf) => new ObsidianAIChatView(leaf, this),
 		);
 
-		this.addRibbonIcon("message-square", "Open InlineAI Chat", () => {
+		this.addRibbonIcon("message-square", "Open Obsidian AI Chat", () => {
 			this.activateChatView();
 		});
 
 		this.addCommand({
-			id: "open-inlineai-chat",
-			name: "Open InlineAI Chat",
+			id: "open-obsidian-ai-chat",
+			name: "Open Obsidian AI Chat",
 			callback: () => this.activateChatView(),
 		});
 
@@ -145,7 +145,7 @@ export default class InlineAIChatPlugin extends Plugin {
 		});
 
 		// Add settings tab
-		this.addSettingTab(new InlineAISettingsTab(this.app, this));
+		this.addSettingTab(new ObsidianAISettingsTab(this.app, this));
 	}
 
 	async activateChatView() {

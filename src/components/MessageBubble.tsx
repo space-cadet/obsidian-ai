@@ -37,7 +37,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, app }) => {
 		>
 			<div className="chat-bubble-header">
 				<span className="chat-bubble-role">
-					{message.role === "user" ? "You" : "InlineAI"}
+					{message.role === "user" ? "You" : "Obsidian AI"}
 				</span>
 				<span className="chat-bubble-time">{time}</span>
 			</div>

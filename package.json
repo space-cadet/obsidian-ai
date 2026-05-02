@@ -1,5 +1,5 @@
 {
-	"name": "obsidian-inlineai",
+	"name": "obsidian-ai",
 	"version": "1.2.4",
 	"description": "Cursor or Copilot like Inline AI interface for Obsidian",
 	"main": "main.js",
@@ -12,7 +12,7 @@
 		"prepare": "husky"
 	},
 	"keywords": [],
-	"author": "FBarrca",
+	"author": "space-cadet",
 	"license": "MIT",
 	"devDependencies": {
 		"@types/codemirror": "^5.60.15",

@@ -5,7 +5,7 @@ import ChatApp from "../components/ChatApp";
 import { ChatApiManager } from "../api";
 import { App } from "obsidian";
 
-export const CHAT_VIEWTYPE = "inlineai-chat-view";
+export const CHAT_VIEWTYPE = "obsidian-ai-chat-view";
 
 export interface ChatPluginLike {
 	app: App;
@@ -13,7 +13,7 @@ export interface ChatPluginLike {
 	manifest: { id: string };
 }
 
-export class InlineAIChatView extends ItemView {
+export class ObsidianAIChatView extends ItemView {
 	private root: Root | null = null;
 	private plugin: ChatPluginLike;
 
@@ -27,7 +27,7 @@ export class InlineAIChatView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "InlineAI Chat";
+		return "Obsidian AI Chat";
 	}
 
 	getIcon(): string {

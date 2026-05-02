@@ -18,7 +18,7 @@ import {
 	createSlashCommandHighlighter,
 	slashCommandAutocompletion,
 } from "./commands/source";
-import InlineAIChatPlugin from "src/main";
+import ObsidianAIPlugin from "src/main";
 
 // Some existing exports
 export const commandEffect = StateEffect.define<null>();
@@ -28,7 +28,7 @@ export const acceptTooltipEffect = StateEffect.define<null>();
 class FloatingWidget extends WidgetType {
 	private chatApiManager: ChatApiManager;
 	private selectionInfo: SelectionInfo | null;
-	private plugin: InlineAIChatPlugin;
+	private plugin: ObsidianAIPlugin;
 
 	private outerEditorView: EditorView | null = null;
 
@@ -57,7 +57,7 @@ class FloatingWidget extends WidgetType {
 	constructor(
 		chatApiManager: ChatApiManager,
 		selectionInfo: SelectionInfo | null,
-		plugin: InlineAIChatPlugin,
+		plugin: ObsidianAIPlugin,
 	) {
 		super();
 		this.chatApiManager = chatApiManager;
@@ -155,7 +155,7 @@ class FloatingWidget extends WidgetType {
 		});
 
 		// Add a body-level flag so we can style/coordinate behavior if needed
-		document.body.classList.add("inlineai-widget-open");
+		document.body.classList.add("obsidian-ai-widget-open");
 
 		// Focus guard is handled globally by diffExtension's focusGuardPlugin
 
@@ -173,7 +173,7 @@ class FloatingWidget extends WidgetType {
 		if (this.discardButton) this.discardButton.remove();
 
 		// Remove flag/class
-		document.body.classList.remove("inlineai-widget-open");
+		document.body.classList.remove("obsidian-ai-widget-open");
 
 		// Focus suppression cleanup no longer needed (handled by focusGuardPlugin)
 
@@ -509,7 +509,7 @@ class FloatingWidget extends WidgetType {
 function renderFloatingWidget(
 	state: EditorState,
 	chatApiManager: ChatApiManager,
-	plugin: InlineAIChatPlugin,
+	plugin: ObsidianAIPlugin,
 ): DecorationSet {
 	const firstSelectedRange =
 		state.selection.ranges.find((range) => !range.empty) ??
@@ -540,7 +540,7 @@ function renderFloatingWidget(
  */
 function FloatingTooltipState(
 	chatApiManager: ChatApiManager,
-	plugin: InlineAIChatPlugin,
+	plugin: ObsidianAIPlugin,
 ) {
 	return StateField.define<DecorationSet>({
 		create(state) {
@@ -567,7 +567,7 @@ function FloatingTooltipState(
  */
 export function FloatingTooltipExtension(
 	chatApiManager: ChatApiManager,
-	plugin: InlineAIChatPlugin,
+	plugin: ObsidianAIPlugin,
 ) {
 	return [FloatingTooltipState(chatApiManager, plugin)];
 }
