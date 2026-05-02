@@ -1,66 +1,141 @@
 # Product Context: InlineAI Plugin
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 08:00:01 IST*
+*Last Updated: 2026-05-02 08:13:57 IST*
 
 ## Problem Statement
 
-Obsidian users who want AI-assisted writing must leave their editor to use external AI tools, breaking their workflow. InlineAI solves this by embedding AI text transformation directly into the Obsidian editor with a native feel.
+Obsidian users who want AI-assisted writing must either:
+1. Leave their editor entirely to use external AI tools (ChatGPT, Claude.ai), or
+2. Use a plugin like Copilot that keeps AI responses locked inside a chat panel — separate from the notes being worked on.
+
+InlineAI v1.2.4 solved problem 1 for quick single-shot transforms but has no chat interface. The v2.0 roadmap solves both: a persistent chat panel *plus* the ability to push AI responses directly into notes, with the same familiar diff + accept/discard UX.
+
+---
 
 ## Target Users
 
 - **Knowledge workers** using Obsidian for notes, writing, and research
-- **Writers** who want AI suggestions without context-switching
-- **Developers** using Obsidian for documentation who want local model privacy
-- **Power users** who want customizable AI prompts integrated into their PKM workflow
+- **Writers** who want to discuss and refine content with AI without leaving their vault
+- **Developers** using Obsidian for documentation who want local/private model support
+- **Power users** who want `@mention` context injection and in-place editing, not just chat replies
+
+---
 
 ## User Experience Goals
 
-1. **Minimal friction**: Trigger AI with a single keyboard shortcut
-2. **Transparency**: Show exactly what the AI changed via inline diffs
-3. **Control**: Accept or discard AI suggestions before they are applied
-4. **Flexibility**: Bring your own API key and model provider
-5. **Privacy**: Support local models via Ollama for offline/private use
+1. **Conversation first**: discuss changes with AI before applying them
+2. **Apply anywhere**: push AI responses into any note, not just the chat
+3. **Minimal friction**: `@note` to add context; one button to apply to note
+4. **Familiar diff UX**: the same accept/discard flow already in v1.2.4
+5. **Privacy**: local models via Ollama remain first-class
+6. **Non-destructive**: nothing changes in a note until the user accepts the diff
 
-## Core User Flows
+---
 
-### Flow 1: Transform Selected Text
-1. User selects text in Obsidian editor
-2. User presses `Ctrl+K` / `Cmd+K`
-3. Floating tooltip appears with prompt input
-4. User types transformation instruction
-5. AI response shown as inline diff (additions/deletions)
-6. User accepts or dismisses the change
+## Current User Flows (v1.2.4)
 
-### Flow 2: Cursor-Position AI Assistance
-1. User places cursor (no selection)
-2. User presses `Ctrl+K` / `Cmd+K`
-3. Tooltip appears for text generation at cursor position
-4. AI generates content shown inline
-5. User accepts or dismisses
+### Flow 1: Quick Inline Transform
+1. Select text in editor
+2. Press `Ctrl+K`
+3. Floating tooltip appears at cursor
+4. Type transform instruction (or `/custom-command`)
+5. AI response shown as inline diff
+6. Accept or Discard
 
-### Flow 3: Custom Command Usage
-1. User defines custom prompts in plugin settings
-2. Custom prompt appears as an Obsidian command
-3. User triggers via command palette or hotkey
-4. Same diff + accept/dismiss flow as above
+### Flow 2: Cursor Generation
+1. Place cursor (no selection)
+2. Press `Ctrl+K`
+3. Type generation prompt
+4. AI content shown as diff at cursor
+5. Accept or Discard
+
+---
+
+## Proposed User Flows (v2.0)
+
+### Flow 3: Chat + Apply to Note
+```
+┌─────────────────────────────────────┐
+│ You: @[[Project Notes]]             │
+│ Rewrite the introduction to be      │
+│ more concise and impactful.         │
+├─────────────────────────────────────┤
+│ InlineAI: Here's a rewritten intro: │
+│                                     │
+│   # Project Notes                   │
+│   InlineAI brings AI-powered...     │
+│                                     │
+│ [✓ Apply to Project Notes] [⎘ Copy] │
+└─────────────────────────────────────┘
+         │
+         ▼  user clicks Apply
+┌──────────────────────────────┐
+│ Project Notes.md (in editor) │
+│                              │
+│ ~~Old intro text~~ [removed] │
+│ [added] New intro text       │
+│                              │
+│    [✓ Accept]  [✗ Discard]   │
+└──────────────────────────────┘
+```
+
+### Flow 4: Create Note from Chat
+```
+User: /create [[Meeting Summary]]
+      Summarise our discussion into action items
+
+AI: # Meeting Summary
+    ## Action Items
+    - [ ] ...
+
+[✓ Create Note]
+
+→ "Meeting Summary.md" opens with full content as diff
+→ Accept saves it, Discard deletes it
+```
+
+### Flow 5: Multi-Turn Refinement
+```
+User: @[[Draft Essay]] What's weak about this?
+AI:   The conclusion doesn't tie back to...
+
+User: Rewrite the conclusion only
+AI:   Here's a new conclusion:  [Apply to Draft Essay]
+
+User: Make it shorter
+AI:   [Apply to Draft Essay]
+```
+
+### Flow 6: Append to Note
+```
+User: /append [[Daily Notes/2026-05-02]]
+      Add a summary of today's work
+
+AI generates summary → appended directly to note
+Obsidian Notice: "Appended to Daily Notes/2026-05-02"
+```
+
+---
 
 ## Competitive Context
 
-- **Cursor**: IDE-level AI for code; InlineAI brings a similar paradigm to Obsidian notes
-- **Obsidian Copilot**: Tab-completion focused; InlineAI focuses on transformation/editing
-- **ChatGPT/Claude web**: External tools that break the in-editor workflow
+| Feature | Copilot | InlineAI v1 | InlineAI v2 |
+|---|---|---|---|
+| Persistent chat panel | ✅ | ❌ | ✅ |
+| Multi-turn conversation | ✅ | ❌ | ✅ |
+| @mention vault notes | ✅ | ❌ | ✅ |
+| Streaming responses | ✅ | ❌ | ✅ |
+| Apply response to note | ❌ (chat only) | inline only | ✅ from chat |
+| Create note from chat | ❌ | ❌ | ✅ |
+| Inline diff + accept/discard | ❌ | ✅ | ✅ (both) |
+| Vault semantic search | ✅ | ❌ | ❌ (deferred) |
+| Local model support | ✅ | ✅ | ✅ |
 
-## Current Capabilities (v1.2.4)
+---
 
-- OpenAI, Ollama, Gemini, Azure OpenAI provider support
-- Inline diff visualization with accept/discard
-- Custom system and transformation prompts
-- Message history queue
-- Focus guard to prevent editor re-renders during widget interactions
-- Desktop and mobile support (`isDesktopOnly: false`)
+## Known Limitations (v2.0 scope)
 
-## Known Limitations
-
-- Requires manual API key configuration per provider
-- No built-in model discovery (user must know model names)
-- Single active suggestion at a time
+- No vault-wide semantic search / vector indexing (deferred)
+- No PDF / image / YouTube / web page context
+- No per-model exact tokenisation (rough estimation only)
+- Mobile UI not specifically optimised
