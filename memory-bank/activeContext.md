@@ -1,13 +1,13 @@
 # Active Context
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 09:34:00 IST*
+*Last Updated: 2026-05-02 09:41:00 IST*
 
 ## Current Tasks
 
 1. **[META-1]**: Memory Bank Setup and Maintenance (HIGH priority)
    - Status: 🔄 IN PROGRESS
-   - Current Focus: Session 3 — T7 complete, T1 next
-   - Recent Achievement: T7 (Release System & CI/CD) completed — `pre-release.yml` created, `versions.json` fixed, T7 task + impl doc created
+   - Current Focus: Session 3 — T1 complete, T4 next
+   - Recent Achievement: T1 (Chat Panel) completed — React ItemView, 6 components, CSS, build passes
 
 ## Implementation Focus — Session 2 (2026-05-02)
 
@@ -43,8 +43,8 @@
 
 ## Next Steps
 
-- Begin T1 (Chat Panel) — user approved, React deps next
-- T4 (Streaming) — wire after T1 shell exists
+- Begin T4 (Streaming) — add `streamChat()` to `ChatApiManager`, replace stub in `ChatApp.tsx`
+- T2, T3, T5, T6 all now unblocked pending T4
 
 ## Current Decisions
 

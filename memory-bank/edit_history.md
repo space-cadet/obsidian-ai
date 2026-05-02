@@ -1,12 +1,30 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 09:34:00 IST*
+*Last Updated: 2026-05-02 09:41:00 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
 
 ---
 
 ### 2026-05-02
+
+#### 09:41:00 IST - T1: Chat Panel — ItemView + React UI — completed
+- Modified `package.json` — added react, react-dom, @types/react, @types/react-dom
+- Modified `esbuild.config.mjs` — added jsx: automatic, jsxImportSource: react
+- Modified `src/main.ts` — registered InlineAIChatView, ribbon icon, open-chat command, activateChatView()
+- Created `src/views/InlineAIChatView.ts` — ItemView class, ChatPluginLike interface
+- Created `src/components/ChatApp.tsx` — root component, conversation state, send stub via callApi()
+- Created `src/components/ActionBar.tsx` — New Chat, disabled Load, Settings link
+- Created `src/components/ChatMessages.tsx` — scrollable thread, empty state, typing indicator
+- Created `src/components/MessageBubble.tsx` — MarkdownRenderer.render(), copy button, timestamps
+- Created `src/components/ContextBar.tsx` — placeholder for T3
+- Created `src/components/ChatInput.tsx` — textarea, Enter/Shift+Enter, Send/Stop button
+- Modified `styles.css` — appended chat panel CSS (panel, bubbles, input, buttons, typing indicator)
+- Updated `memory-bank/tasks/T1.md` — marked complete, all criteria checked
+- Updated `memory-bank/tasks.md` — T1 status ✅, summary updated, completed table updated
+- Updated `memory-bank/activeContext.md` — focus shifted to T4
+- Updated `memory-bank/sessions/2026-05-02-morning.md` — T1 completion block appended
+- Updated `memory-bank/session_cache.md` — T1 complete, next focus T4
 
 #### 09:34:00 IST - T7: Release System & CI/CD — completed
 - Modified `versions.json` — added missing 1.2.4 entry
