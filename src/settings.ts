@@ -1,10 +1,10 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import MyPlugin from "./main";
+import ObsidianAIPlugin from "./main";
 import { cursorPrompt, selectionPrompt } from "./default_prompts";
 import { SlashCommand } from "./modules/commands/source";
 
 // Interface for the settings
-export interface InlineAISettings {
+export interface ObsidianAISettings {
 	provider: "openai" | "ollama" | "custom" | "gemini" | "azure";
 	model: string;
 	apiKey?: string;
@@ -19,7 +19,7 @@ export interface InlineAISettings {
 }
 
 // Default settings values
-export const DEFAULT_SETTINGS: InlineAISettings = {
+export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	provider: "ollama",
 	model: "llama3.2",
 	apiKey: "",
@@ -33,10 +33,10 @@ export const DEFAULT_SETTINGS: InlineAISettings = {
 	messageHistory: false,
 };
 
-export class InlineAISettingsTab extends PluginSettingTab {
-	plugin: MyPlugin;
+export class ObsidianAISettingsTab extends PluginSettingTab {
+	plugin: ObsidianAIPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: ObsidianAIPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

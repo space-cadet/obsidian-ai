@@ -210,7 +210,7 @@ const focusGuardPlugin = ViewPlugin.fromClass(
 		constructor(private view: EditorView) {
 			const handler = (evt: FocusEvent) => {
 				// Only guard when the InlineAI widget is open
-				if (document.body.classList.contains("inlineai-widget-open")) {
+				if (document.body.classList.contains("obsidian-ai-widget-open")) {
 					// Stop Obsidian/global listeners from reacting to focus loss
 					evt.stopImmediatePropagation?.();
 					evt.stopPropagation();

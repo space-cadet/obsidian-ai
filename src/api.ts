@@ -7,7 +7,7 @@ import {
 	HumanMessage,
 	AIMessage,
 } from "@langchain/core/messages";
-import { InlineAISettings } from "./settings";
+import { ObsidianAISettings } from "./settings";
 import { App, MarkdownView, Notice } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import { setGeneratedResponseEffect } from "./modules/AIExtension";
@@ -32,14 +32,14 @@ export class ChatApiManager {
 		| AzureChatOpenAI
 		| null;
 	private app: App;
-	private settings: InlineAISettings;
+	private settings: ObsidianAISettings;
 	private messageHistory: MessageQueue<HistoryMessage>;
 	/**
 	 * Initializes the ChatApiManager with the given settings.
 	 * @param settings - Configuration settings for the chat API.
 	 * @param app - The Obsidian App instance.
 	 */
-	constructor(settings: InlineAISettings, app: App) {
+	constructor(settings: ObsidianAISettings, app: App) {
 		this.app = app;
 		this.chatClient = this.initializeChatClient(settings);
 		this.settings = settings;
@@ -80,7 +80,7 @@ export class ChatApiManager {
 	 * @returns An instance of ChatOpenAI, ChatOllama, AzureChatOpenAI, or null if initialization fails.
 	 */
 	private initializeChatClient(
-		settings: InlineAISettings,
+		settings: ObsidianAISettings,
 	):
 		| ChatOpenAI
 		| ChatOllama
@@ -295,7 +295,7 @@ export class ChatApiManager {
 	 * Updates the manager's settings and reinitializes the chat client.
 	 * @param settings - New configuration settings for the chat API.
 	 */
-	public updateSettings(settings: InlineAISettings): void {
+	public updateSettings(settings: ObsidianAISettings): void {
 		this.settings = settings;
 		const newChatClient = this.initializeChatClient(settings);
 		if (!newChatClient) {
