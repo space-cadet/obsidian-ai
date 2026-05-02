@@ -11,6 +11,8 @@ env:
 jobs:
     pre-release:
         runs-on: ubuntu-latest
+        permissions:
+            contents: write
 
         steps:
             - name: Checkout Repository
@@ -26,6 +28,10 @@ jobs:
               run: |
                   npm ci
                   npm run build --if-present
+
+            - name: Verify Build Output
+              run: |
+                  test -f main.js || (echo "Build failed: main.js not found" && exit 1)
 
             - name: Prepare Release Assets
               run: |
