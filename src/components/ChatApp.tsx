@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from "react";
+import { MarkdownView } from "obsidian";
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
 import ActionBar from "./ActionBar";
 import ChatMessages from "./ChatMessages";
@@ -23,10 +24,22 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [isStreaming, setIsStreaming] = useState(false);
 	const [currentAiMessage, setCurrentAiMessage] = useState("");
+	const [includeActiveNote, setIncludeActiveNote] = useState(false);
 	const controllerRef = useRef<AbortController | null>(null);
 	// Keep a ref so handleSend always sees the latest messages without stale closure
 	const messagesRef = useRef<ChatMessage[]>([]);
 	messagesRef.current = messages;
+
+	const getActiveNoteName = (): string | null => {
+		const leaves = plugin.app.workspace.getLeavesOfType("markdown");
+		return leaves.length > 0
+			? (leaves[0].view as MarkdownView).file?.basename ?? null
+			: null;
+	};
+
+	const handleToggleActiveNote = useCallback(() => {
+		setIncludeActiveNote((prev) => !prev);
+	}, []);
 
 	const handleSend = useCallback(
 		async (text: string) => {
@@ -47,10 +60,24 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				role: m.role as "user" | "assistant",
 				content: m.content,
 			}));
+
+			let userContent = text;
+			if (includeActiveNote) {
+				const leaves = plugin.app.workspace.getLeavesOfType("markdown");
+				const view =
+					leaves.length > 0
+						? (leaves[0].view as MarkdownView)
+						: null;
+				if (view?.file) {
+					const noteContent = await plugin.app.vault.read(view.file);
+					userContent = `<context>\n<active-note name="${view.file.basename}">\n${noteContent}\n</active-note>\n</context>\n\n${text}`;
+				}
+			}
+
 			const chatMessages = [
 				{ role: "system" as const, content: SYSTEM_PROMPT },
 				...history,
-				{ role: "user" as const, content: text },
+				{ role: "user" as const, content: userContent },
 			];
 
 			let fullText = "";
@@ -129,7 +156,11 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				isStreaming={isStreaming}
 				app={plugin.app}
 			/>
-			<ContextBar />
+			<ContextBar
+				includeActiveNote={includeActiveNote}
+				activeNoteName={getActiveNoteName()}
+				onToggleActiveNote={handleToggleActiveNote}
+			/>
 			<ChatInput
 				onSend={handleSend}
 				onStop={handleStop}

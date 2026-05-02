@@ -1,6 +1,6 @@
 # Context System Design: @ Mentions & Vault Integration
 *Created: 2026-05-02 08:13:57 IST*
-*Last Updated: 2026-05-02 08:13:57 IST*
+*Last Updated: 2026-05-02 23:21:14 IST*
 
 ## Overview
 
@@ -226,3 +226,26 @@ ContextEngine ──────────────────────
                     ▼
                   LLM
 ```
+
+---
+
+## Implementation Status (2026-05-02 23:21:14 IST)
+
+### Done
+- **Active note toggle** — `ContextBar` renders a toggle chip; `ChatApp.includeActiveNote` state drives injection
+- **Note detection** — `getLeavesOfType('markdown')[0]` used in both `NoteEditingBridge` and `ChatApp`; works when chat sidebar is focused
+- **Context injection** — `ChatApp.handleSend` reads active note via `vault.read()` and prepends:
+  ```
+  <context>
+  <active-note name="...">...content...</active-note>
+  </context>
+
+  {{userMessage}}
+  ```
+
+### Not Yet Done
+- `MentionAutocomplete` popover (`src/components/MentionAutocomplete.tsx`)
+- `@` trigger detection in `ChatInput` textarea
+- `ContextEngine.ts` for multi-note resolution
+- `embedExpander.ts` for `![[]]` inline embeds
+- Token estimation and truncation

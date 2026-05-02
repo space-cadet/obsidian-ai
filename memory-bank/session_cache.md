@@ -1,11 +1,11 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 22:32:52 IST*
+*Last Updated: 2026-05-02 23:21:14 IST*
 
 **Started**: 2026-05-02 22:00:00 IST
-**Focus Task**: T4 (Streaming wiring) + T5 (NoteEditingBridge)
+**Focus Task**: T4/T5 fixes + T3 Step 1 + CI workflow fix
 **Session File**: `sessions/2026-05-02-evening.md`
-**Status**: ✅ T4 complete; T5 core complete (apply/append buttons live)
+**Status**: ✅ T4 complete; 🔄 T5 fixes done (note detection, hover UI); 🔄 T3 active note toggle done; CI fixed
 
 ## Overview
 
@@ -25,7 +25,7 @@
 - META-1: Memory Bank Setup and Maintenance — 🔄
 - T1: Chat Panel (ItemView + React UI) — ✅
 - T2: Conversation Chain & Memory — ⬜
-- T3: Context & Mentions System — ⬜
+- T3: Context & Mentions System — 🔄
 - T4: Streaming — ✅
 - T5: In-Place Note Editing from Chat — 🔄
 - T6: Token & Context Management — ⬜
@@ -54,17 +54,31 @@
 8. ✅ T5 core — NoteEditingBridge (apply/append), buttons on message bubbles
 9. 🔄 Keep records in sync as T5 and T3 work continues
 
+### T3: Context & Mentions System
+**Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
+**Started:** 2026-05-02 **Last:** 2026-05-02 23:21:14 IST
+**Context:** Active note toggle chip in ContextBar. ChatApp.includeActiveNote state drives context injection. Uses getLeavesOfType('markdown') for note detection. XML block prepended to user message before streamChat call.
+**Files:** `src/components/ContextBar.tsx`, `src/components/ChatApp.tsx`
+**Progress:**
+1. ✅ Active note toggle chip in ContextBar
+2. ✅ includeActiveNote state + context XML injection in handleSend
+3. ⬜ MentionAutocomplete (@ trigger + popover)
+4. ⬜ ContextEngine.resolveAll() for @mentioned notes
+5. ⬜ embedExpander for ![[]] inline embeds
+6. ⬜ Token estimation and truncation
+
 ### T5: In-Place Note Editing from Chat
 **Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-02 22:32:52 IST
-**Context:** NoteEditingBridge created. applyToActiveNote dispatches full-doc selection + response effects in one transaction. appendToActiveNote writes directly via vault.modify. Both buttons live on all assistant bubbles.
+**Started:** 2026-05-02 **Last:** 2026-05-02 23:21:14 IST
+**Context:** NoteEditingBridge note detection fixed — uses getLeavesOfType('markdown') so works when chat sidebar is focused. Action buttons (Apply/Append/Copy) now hidden by default, shown on bubble hover.
 **Files:** `src/noteEditing/NoteEditingBridge.ts`, `src/components/MessageBubble.tsx`, `src/components/ChatApp.tsx`, `src/components/ChatMessages.tsx`
 **Progress:**
 1. ✅ NoteEditingBridge.applyToActiveNote()
 2. ✅ NoteEditingBridge.appendToActiveNote()
-3. ✅ Apply/Append buttons on MessageBubble
-4. ⬜ applyToTargetNote() — after T3
-5. ⬜ Slash commands, retry button
+3. ✅ Apply/Append buttons on MessageBubble (hover-only)
+4. ✅ Fix: getLeavesOfType for note detection in apply and append
+5. ⬜ applyToTargetNote() — after T3
+6. ⬜ Slash commands, retry button
 
 ### T8: Open Source Release with Branding
 **Status:** 🔄 **IN PROGRESS** **Priority:** HIGH

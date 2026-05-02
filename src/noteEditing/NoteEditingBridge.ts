@@ -18,8 +18,10 @@ export class NoteEditingBridge {
 		aiText: string,
 		prompt: string,
 	): boolean {
+		// getActiveViewOfType fails when the chat sidebar is focused — find any open markdown leaf
+		const leaves = app.workspace.getLeavesOfType("markdown");
 		const markdownView =
-			app.workspace.getActiveViewOfType(MarkdownView);
+			leaves.length > 0 ? (leaves[0].view as MarkdownView) : null;
 		if (!markdownView) {
 			new Notice("⚠️ Open a note first to apply changes.");
 			return false;
@@ -64,7 +66,11 @@ export class NoteEditingBridge {
 		app: App,
 		aiText: string,
 	): Promise<boolean> {
-		const file = app.workspace.getActiveFile();
+		const leaves = app.workspace.getLeavesOfType("markdown");
+		const file =
+			leaves.length > 0
+				? (leaves[0].view as MarkdownView).file
+				: null;
 		if (!(file instanceof TFile)) {
 			new Notice("⚠️ No active note to append to.");
 			return false;

@@ -1,7 +1,35 @@
 import React, { useEffect, useRef } from "react";
-import { App } from "obsidian";
+import { App, Component, MarkdownRenderer } from "obsidian";
 import { ChatMessage } from "./ChatApp";
 import MessageBubble from "./MessageBubble";
+
+const StreamingBubble: React.FC<{ content: string; app: App }> = ({
+	content,
+	app,
+}) => {
+	const contentRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!contentRef.current) return;
+		contentRef.current.innerHTML = "";
+		MarkdownRenderer.render(
+			app,
+			content,
+			contentRef.current,
+			"",
+			new Component(),
+		).catch(console.error);
+	}, [content, app]);
+
+	return (
+		<div className="chat-bubble chat-bubble-assistant chat-bubble-streaming">
+			<div className="chat-bubble-header">
+				<span className="chat-bubble-role">Obsidian AI</span>
+			</div>
+			<div ref={contentRef} className="chat-bubble-content" />
+		</div>
+	);
+};
 
 interface ChatMessagesProps {
 	messages: ChatMessage[];
@@ -33,12 +61,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 				<MessageBubble key={msg.id} message={msg} app={app} />
 			))}
 			{isStreaming && currentAiMessage && (
-				<div className="chat-bubble chat-bubble-assistant chat-bubble-streaming">
-					<div className="chat-bubble-header">
-						<span className="chat-bubble-role">Obsidian AI</span>
-					</div>
-					<div className="chat-bubble-content">{currentAiMessage}</div>
-				</div>
+				<StreamingBubble content={currentAiMessage} app={app} />
 			)}
 			{isStreaming && !currentAiMessage && (
 				<div className="chat-typing-indicator">
