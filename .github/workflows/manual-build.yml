@@ -1,0 +1,52 @@
+name: Manual Build
+
+on:
+    workflow_dispatch:
+
+env:
+    PLUGIN_NAME: obsidian-ai
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 10
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: "pnpm"
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Build
+              run: pnpm run build
+
+            - name: Verify build output
+              run: |
+                  test -f main.js || (echo "Build failed: main.js not found" && exit 1)
+
+            - name: Package artifact
+              run: |
+                  mkdir -p $PLUGIN_NAME
+                  cp main.js manifest.json styles.css $PLUGIN_NAME
+                  zip -r ${PLUGIN_NAME}.zip $PLUGIN_NAME
+
+            - name: Upload artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ env.PLUGIN_NAME }}-${{ github.ref_name }}
+                  path: |
+                      ${{ env.PLUGIN_NAME }}.zip
+                      main.js
+                      manifest.json
+                      styles.css
+                  retention-days: 7

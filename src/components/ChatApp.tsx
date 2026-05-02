@@ -17,10 +17,16 @@ interface ChatAppProps {
 	plugin: ChatPluginLike;
 }
 
+const SYSTEM_PROMPT = "You are a helpful assistant.";
+
 const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [isStreaming, setIsStreaming] = useState(false);
+	const [currentAiMessage, setCurrentAiMessage] = useState("");
 	const controllerRef = useRef<AbortController | null>(null);
+	// Keep a ref so handleSend always sees the latest messages without stale closure
+	const messagesRef = useRef<ChatMessage[]>([]);
+	messagesRef.current = messages;
 
 	const handleSend = useCallback(
 		async (text: string) => {
@@ -34,32 +40,69 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 			};
 			setMessages((prev) => [...prev, userMsg]);
 			setIsStreaming(true);
+			setCurrentAiMessage("");
 			controllerRef.current = new AbortController();
 
+			const history = messagesRef.current.map((m) => ({
+				role: m.role as "user" | "assistant",
+				content: m.content,
+			}));
+			const chatMessages = [
+				{ role: "system" as const, content: SYSTEM_PROMPT },
+				...history,
+				{ role: "user" as const, content: text },
+			];
+
+			let fullText = "";
 			try {
-				// T4: replace with streamChat(messages, controller.signal) when streaming is implemented
-				const response = await plugin.chatapi.callApi(
-					"You are a helpful assistant.",
-					text,
-				);
-				const aiMsg: ChatMessage = {
-					id: crypto.randomUUID(),
-					role: "assistant",
-					content: response,
-					timestamp: Date.now(),
-				};
-				setMessages((prev) => [...prev, aiMsg]);
+				console.log(`[ChatApp] streamChat start — ${chatMessages.length} msgs`);
+				for await (const chunk of plugin.chatapi.streamChat(
+					chatMessages,
+					controllerRef.current.signal,
+				)) {
+					fullText += chunk;
+					setCurrentAiMessage(fullText);
+				}
+				console.log(`[ChatApp] streamChat done — ${fullText.length} chars`);
+				setMessages((prev) => [
+					...prev,
+					{
+						id: crypto.randomUUID(),
+						role: "assistant",
+						content: fullText,
+						timestamp: Date.now(),
+					},
+				]);
 			} catch (e: any) {
-				const errMsg: ChatMessage = {
-					id: crypto.randomUUID(),
-					role: "assistant",
-					content: `Error: ${e.message}`,
-					timestamp: Date.now(),
-					isError: true,
-				};
-				setMessages((prev) => [...prev, errMsg]);
+				if (e.name === "AbortError") {
+					console.log(`[ChatApp] streamChat aborted — partial ${fullText.length} chars`);
+					if (fullText) {
+						setMessages((prev) => [
+							...prev,
+							{
+								id: crypto.randomUUID(),
+								role: "assistant",
+								content: fullText + " [stopped]",
+								timestamp: Date.now(),
+							},
+						]);
+					}
+				} else {
+					console.error("[ChatApp] streamChat error:", e.message);
+					setMessages((prev) => [
+						...prev,
+						{
+							id: crypto.randomUUID(),
+							role: "assistant",
+							content: `Error: ${e.message}`,
+							timestamp: Date.now(),
+							isError: true,
+						},
+					]);
+				}
 			} finally {
 				setIsStreaming(false);
+				setCurrentAiMessage("");
 				controllerRef.current = null;
 			}
 		},
@@ -82,6 +125,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 			<ActionBar onNewChat={handleNewChat} plugin={plugin} />
 			<ChatMessages
 				messages={messages}
+				currentAiMessage={currentAiMessage}
 				isStreaming={isStreaming}
 				app={plugin.app}
 			/>

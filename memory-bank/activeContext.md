@@ -1,38 +1,36 @@
 # Active Context
 
-*Last Updated: 2026-05-02 17:08:57 IST*
+*Last Updated: 2026-05-02 22:32:52 IST*
 
 ## Current Focus
-**Primary Task:** T4
-**Secondary Tasks:** META-1, T10
+**Primary Task:** T5
+**Secondary Tasks:** META-1, T3
 
 ## Active Tasks
-- [T4]: Finish chat-panel streaming wiring, abort handling, and provider verification
-- [META-1]: Keep memory-bank records aligned with the implemented T4/T9/T10 state
-- [T10]: Queue the full model discovery service after T4 streaming UI work lands
+- [T5]: Complete remaining note-editing paths (target-note, slash commands, retry button)
+- [META-1]: Keep memory-bank records aligned with T4/T5 implementation state
+- [T3]: Context & Mentions — next major feature enabling full T5 target-note flow
 
 ## Implementation Focus
-`src/api.ts`, `src/components/ChatApp.tsx`, `src/components/ChatInput.tsx`, `src/components/ChatMessages.tsx`, `src/settings.ts`, and the related memory-bank task/session records.
+`src/noteEditing/NoteEditingBridge.ts`, `src/components/MessageBubble.tsx`, `src/components/ChatApp.tsx`, `src/components/ChatMessages.tsx`
 
 ## Task-Specific Context
 
-### Task T4
-The LangChain to Vercel AI SDK migration is complete. `streamChat()` exists in the provider layer, but the React chat UI still needs to consume it, expose a working Stop action, and handle abort/error states cleanly.
+### Task T4 — COMPLETE
+`streamChat()` is wired into the React chat panel. Progressive rendering via `currentAiMessage` state, abort saves partial with `[stopped]`, errors shown as error bubbles. Stop button was already present in ChatInput.
 
-### Task META-1
-The memory bank now reflects the provider-profile foundation and migration work, but several files had drifted into mixed formats. The current maintenance slice is to keep the records in one canonical structure.
+### Task T5
+`NoteEditingBridge` created with `applyToActiveNote()` (dispatches full-doc selection + response effects to active MarkdownView) and `appendToActiveNote()` (vault.modify append). "Apply to Note" and "Append to Note" buttons live on all assistant message bubbles. Remaining work: `applyToTargetNote()` (depends on T3 for @mention resolution), slash commands `/create`/`/append`, retry button.
 
-### Task T10
-The settings UI already has a Fetch Models entry point and searchable picker shell. The remaining work is the provider-aware discovery service, caching, refresh/error states, and manual fallback behavior.
+### Task T3
+All context/mentions work is 0% started. Needed to unlock "Apply to [[Note Name]]" in T5.
 
 ## Current Decisions
-- Use the stricter `integrated-rules-v6.12.md` structure as the source of truth for task, session, registry, and edit-history files.
-- Keep `pnpm` as the package-manager workflow for install, build, and package commands.
-- Build T10 on top of the completed T9 provider-profile foundation rather than reintroducing flat provider settings.
-- Preserve the existing inline tooltip flow while the chat-panel streaming path is completed.
-- Keep diagnostics and model-discovery work sequenced after the current T4 streaming UI slice.
+- Both effects (`setSelectionInfoEffect` + `setGeneratedResponseEffect`) dispatched in a single CodeMirror transaction so `diffDecorationState` sees the full-doc selection in `tr.state`.
+- `appendToActiveNote` writes directly via `vault.modify` (no diff) — simpler UX for appending.
+- T3 is the correct next session focus after T5 remaining items.
 
 ## Next Actions By Task
-- [T4]: Wire `streamChat()` into the chat panel and verify stop/error handling.
-- [META-1]: Keep task, session, registry, and history files in the canonical template format.
-- [T10]: Implement provider-specific model fetchers and cache metadata after T4.
+- [T5]: Add retry button, applyToTargetNote (post-T3), slash command parser entries.
+- [T3]: Build MentionAutocomplete, ContextEngine, @ trigger wiring.
+- [META-1]: Keep records in canonical template format.
