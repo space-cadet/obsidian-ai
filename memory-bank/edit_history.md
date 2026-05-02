@@ -1,12 +1,23 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 23:21:14 IST*
+*Last Updated: 2026-05-02 23:56:30 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
 
 ---
 
 ### 2026-05-02
+
+#### 23:56:30 IST - T5/T2/T3: Fix note targeting, stale closure, persistence, UX clarity
+
+- Modified `src/noteEditing/NoteEditingBridge.ts` - Renamed applyToActiveNote→applyToNote, appendToActiveNote→appendToNote; methods now receive resolved MarkdownView/TFile from caller; removed internal getLeavesOfType leaf discovery
+- Modified `src/components/ChatApp.tsx` - Added workspace.on('active-leaf-change') tracking (lastMarkdownLeafRef + targetNoteName state); added includeActiveNoteRef to fix stale closure in handleSend; added handleApply/handleAppend callbacks using tracked leaf; added loadChatMessages on mount, saveChatMessages on message change, clear on new chat
+- Modified `src/components/ChatMessages.tsx` - Added targetNoteName, onApply, onAppend props; pass through to each MessageBubble
+- Modified `src/components/MessageBubble.tsx` - Removed direct NoteEditingBridge calls; uses onApply/onAppend callbacks; shows target note name in button labels; improved tooltips
+- Modified `src/views/ObsidianAIChatView.ts` - Extended ChatPluginLike interface with loadChatMessages() and saveChatMessages()
+- Modified `src/main.ts` - Added loadChatMessages and saveChatMessages methods; fixed saveSettings to merge rather than replace plugin data
+- Modified `package.json` - Added zod ^3.24.0 dependency
+- Created `package-lock.json` - Lockfile generated
 
 #### 23:21:14 IST - T7: Fix manual-build artifact name with forward slash in branch name
 

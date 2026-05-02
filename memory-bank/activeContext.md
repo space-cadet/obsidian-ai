@@ -1,14 +1,15 @@
 # Active Context
 
-*Last Updated: 2026-05-02 23:21:14 IST*
+*Last Updated: 2026-05-02 23:56:30 IST*
 
 ## Current Focus
 **Primary Task:** T3
-**Secondary Tasks:** META-1, T5
+**Secondary Tasks:** META-1, T5, T2
 
 ## Active Tasks
 - [T3]: Context & Mentions — active note toggle done; next: @mention autocomplete + ContextEngine
-- [T5]: Note detection fixed; hover-only buttons; remaining: target-note, slash commands, retry
+- [T5]: Note targeting fixed (active-leaf-change); NoteEditingBridge refactored; remaining: applyToTargetNote, slash commands, retry
+- [T2]: Basic persistence done (loadChatMessages/saveChatMessages); full ConversationManager pending
 - [META-1]: Keep memory-bank records aligned with implementation state
 
 ## Implementation Focus
@@ -16,22 +17,24 @@
 
 ## Task-Specific Context
 
-### Task T4 — COMPLETE
-`streamChat()` wired into chat panel. `StreamingBubble` component uses `MarkdownRenderer.render()` for progressive rendering. Abort saves partial with `[stopped]`, errors shown as error bubbles.
+### Task T5 — IN PROGRESS
+`NoteEditingBridge` refactored: methods now receive resolved MarkdownView/TFile from caller — no internal leaf discovery. `ChatApp` tracks last-focused markdown leaf via `workspace.on('active-leaf-change')`. Apply/Append buttons show target note name ("✓ Apply → NoteBasename"). Stale closure on `includeActiveNote` fixed using ref pattern. Remaining: `applyToTargetNote()` (depends on T3), slash commands, retry button.
 
-### Task T5
-`NoteEditingBridge` note detection fixed: uses `getLeavesOfType('markdown')` so apply/append work when chat sidebar is focused (not `getActiveViewOfType`). Action buttons hidden by default, shown on hover. Remaining: `applyToTargetNote()` (depends on T3), slash commands, retry button.
+### Task T2 — IN PROGRESS (partial)
+Basic single-session persistence implemented: `plugin.loadChatMessages()` / `saveChatMessages()` added to plugin + interface. `ChatApp` loads on mount, saves on every message update, clears on New Chat. `saveSettings` now merges rather than replaces plugin data so chat history survives settings saves. Full ConversationManager with multi-conversation management is next.
 
 ### Task T3 — IN PROGRESS
-Active note toggle chip in `ContextBar`. `ChatApp.includeActiveNote` state drives context injection in `handleSend`. When toggled, reads first markdown leaf via `getLeavesOfType`, wraps content in `<active-note>` XML block, prepends to user message. Next: @mention autocomplete popover.
+Active note toggle chip in `ContextBar`. `ChatApp.includeActiveNote` state + `includeActiveNoteRef` drive context injection in `handleSend`. Reads tracked markdown leaf via `lastMarkdownLeafRef` (same ref as T5 fix). Next: @mention autocomplete popover.
 
 ## Current Decisions
 - Both effects (`setSelectionInfoEffect` + `setGeneratedResponseEffect`) dispatched in one transaction.
-- `appendToActiveNote` writes via `vault.modify` (no diff) — simpler UX.
-- Note detection: `getLeavesOfType('markdown')[0]` used consistently across NoteEditingBridge and ChatApp context injection.
+- `appendToNote` writes via `vault.modify` (no diff) — simpler UX.
+- Note targeting: `workspace.on('active-leaf-change')` listener in ChatApp updates `lastMarkdownLeafRef` and `targetNoteName` state. NoteEditingBridge methods receive resolved view/file — single source of truth in ChatApp.
+- Chat persistence stored in plugin data under `chatMessages` key, separate from settings fields.
 - CI fix: `github.ref_name` sanitized with `tr '/' '-'` before use as artifact name.
 
 ## Next Actions By Task
 - [T3]: Build `MentionAutocomplete` popover, wire `@` trigger in `ChatInput`, build `ContextEngine`.
 - [T5]: Add retry button, `applyToTargetNote` (post-T3), slash commands.
+- [T2]: Build ConversationManager, multi-conversation UI, auto-titling.
 - [META-1]: Keep records in canonical template format.
