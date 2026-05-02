@@ -1,12 +1,24 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 22:32:52 IST*
+*Last Updated: 2026-05-02 23:21:14 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
 
 ---
 
 ### 2026-05-02
+
+#### 23:21:14 IST - T7: Fix manual-build artifact name with forward slash in branch name
+
+- Modified `.github/workflows/manual-build.yml` - Add "Set safe branch name" step that runs tr '/' '-' on github.ref_name into SAFE_BRANCH env var; update artifact name to use PLUGIN_NAME-SAFE_BRANCH
+
+#### 23:21:14 IST - T4,T5,T3: Fix note detection, streaming render, button clutter, active note context
+
+- Modified `src/noteEditing/NoteEditingBridge.ts` - applyToActiveNote and appendToActiveNote use getLeavesOfType('markdown') instead of getActiveViewOfType so note detection works when chat sidebar is focused
+- Modified `src/components/ChatMessages.tsx` - Add StreamingBubble component using MarkdownRenderer.render() via useEffect; streaming text now renders as HTML not raw markdown
+- Modified `src/components/ContextBar.tsx` - Add includeActiveNote/activeNoteName/onToggleActiveNote props; render active note toggle chip
+- Modified `src/components/ChatApp.tsx` - Add includeActiveNote state, getActiveNoteName helper, handleToggleActiveNote, context XML injection in handleSend; import MarkdownView
+- Modified `styles.css` - Hide .chat-bubble-actions by default, show on .chat-bubble:hover; add chip styles for .chat-context-chip and .chat-context-chip-active
 
 #### 22:32:52 IST - T4,T5: Streaming wiring and NoteEditingBridge
 
