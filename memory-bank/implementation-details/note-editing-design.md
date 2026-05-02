@@ -1,6 +1,6 @@
 # Note Editing Design: In-Place Edit & Create from Chat
 *Created: 2026-05-02 08:13:57 IST*
-*Last Updated: 2026-05-02 08:13:57 IST*
+*Last Updated: 2026-05-02 23:56:30 IST*
 
 ## Overview
 
@@ -64,23 +64,29 @@ NoteEditingBridge.applyToTargetNote(
 
 ---
 
-## "Apply to Active Note" — Simplified Flow
+## "Apply to Note" — Simplified Flow
 
 ```
 Any chat response
         │
         ▼
-[✓ Apply to Active Note]  button on message bubble
+[✓ Apply → NoteBasename]  button on message bubble
         │
         ▼
-NoteEditingBridge.applyToActiveNote(aiText, userPrompt)
+onApply(content) callback in ChatApp
   │
-  ├── get active MarkdownView
-  ├── get current selection (or entire note if no selection)
-  ├── dispatch setSelectionInfoEffect (current range)
-  └── dispatch setGeneratedResponseEffect (aiText)
-      → diffExtension renders diff → Accept / Discard
+  ├── read lastMarkdownLeafRef.current (tracked via active-leaf-change)
+  └── call NoteEditingBridge.applyToNote(app, view, aiText, prompt)
+        │
+        ├── get EditorView from view.editor.cm
+        ├── dispatch setSelectionInfoEffect (full doc range)
+        └── dispatch setGeneratedResponseEffect (aiText)
+            → diffExtension renders diff → Accept / Discard
 ```
+
+Note: NoteEditingBridge no longer discovers the target leaf internally.
+The caller (ChatApp) always provides the resolved MarkdownView. This
+ensures the correct note is targeted when multiple tabs are open.
 
 ---
 
@@ -145,18 +151,18 @@ NoteEditingBridge.appendToNote("Daily Notes/2026-05-02.md", aiContent)
 
 ```
 src/
-└── noteEditing/                     ← NEW directory
-    ├── NoteEditingBridge.ts
-    │   ├── applyToActiveNote(aiText, prompt)
-    │   ├── applyToTargetNote(notePath, aiText, range, prompt)
-    │   ├── createNote(noteName, aiContent)
-    │   └── appendToNote(notePath, aiContent)
-    │
-    └── noteEditingUtils.ts
-        ├── getEditorViewForNote(app, notePath)
-        ├── resolveNoteRange(content, mentionContext)
-        └── openNoteInWorkspace(app, notePath, newTab)
+└── noteEditing/
+    └── NoteEditingBridge.ts
+        ├── applyToNote(app, view: MarkdownView, aiText, prompt)
+        │     Caller provides resolved MarkdownView — no leaf discovery here
+        ├── appendToNote(app, file: TFile, aiText)
+        │     Caller provides resolved TFile — no leaf discovery here
+        ├── applyToTargetNote(notePath, aiText, range, prompt)  ← TODO (T3)
+        └── createNote(noteName, aiContent)                     ← TODO
 ```
+
+Leaf/file resolution lives in `ChatApp.handleApply` and `handleAppend`,
+which read `lastMarkdownLeafRef.current` (updated by active-leaf-change).
 
 ---
 

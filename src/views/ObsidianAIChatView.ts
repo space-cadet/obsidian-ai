@@ -4,6 +4,8 @@ import { createElement } from "react";
 import ChatApp from "../components/ChatApp";
 import { ChatApiManager } from "../api";
 import { App } from "obsidian";
+import { StoredChatData } from "../types";
+import { ObsidianAISettings } from "../settings";
 
 export const CHAT_VIEWTYPE = "obsidian-ai-chat-view";
 
@@ -11,6 +13,9 @@ export interface ChatPluginLike {
 	app: App;
 	chatapi: ChatApiManager;
 	manifest: { id: string };
+	settings: ObsidianAISettings;
+	loadChatData(): Promise<StoredChatData>;
+	saveChatData(data: StoredChatData): Promise<void>;
 }
 
 export class ObsidianAIChatView extends ItemView {

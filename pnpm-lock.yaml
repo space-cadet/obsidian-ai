@@ -53,6 +53,9 @@ importers:
       react-dom:
         specifier: ^19.2.5
         version: 19.2.5(react@19.2.5)
+      zod:
+        specifier: ^3.25.76
+        version: 3.25.76
     devDependencies:
       '@ai-sdk/provider':
         specifier: 3.0.10

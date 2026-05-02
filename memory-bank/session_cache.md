@@ -1,30 +1,32 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 23:21:14 IST*
+*Last Updated: 2026-05-03 00:18:43 IST*
 
-**Started**: 2026-05-02 22:00:00 IST
-**Focus Task**: T4/T5 fixes + T3 Step 1 + CI workflow fix
-**Session File**: `sessions/2026-05-02-evening.md`
-**Status**: ✅ T4 complete; 🔄 T5 fixes done (note detection, hover UI); 🔄 T3 active note toggle done; CI fixed
+**Started**: 2026-05-03 00:09:00 IST
+**Focus Task**: T2 — session history modal design
+**Session File**: `sessions/2026-05-03-night.md`
+**Status**: ✅ T2 session-store implemented; SessionPickerModal functional
 
 ## Overview
 
-- Active: 2 | Paused: 3 | Completed: 5 | Cancelled: 0
-- Last Session: 2026-05-02 morning (META-1 + T7 + T1 + T8)
-- Current Period: evening
+- Active: 4 | Paused: 3 | Completed: 5 | Cancelled: 0
+- Last Session: 2026-05-02 evening (T4: streaming; T5: NoteEditingBridge + buttons)
+- Current Period: night
 
 ## Session History (Last 10)
 
-1. `sessions/2026-05-02-evening.md` — T4: streaming wiring complete; T5: NoteEditingBridge + apply/append buttons
-2. `sessions/2026-05-02-morning.md` — META-1/T8: branding sync, package workflow, README, open-source release files
-3. `sessions/2026-05-02-morning.md` — META-1: arch docs, T1–T7 tasks; T7 (CI/CD) and T1 completed
-4. `sessions/2026-05-02-init.md` — META-1: Initial memory bank setup
+1. `sessions/2026-05-03-night.md` — T2: session history modal design; memory bank docs updated
+2. `sessions/2026-05-02-night.md` — T5: fix note targeting + NoteEditingBridge refactor; T2: basic persistence; stale closure fix; UX clarity
+3. `sessions/2026-05-02-evening.md` — T4: streaming wiring complete; T5: NoteEditingBridge + apply/append buttons
+4. `sessions/2026-05-02-morning.md` — META-1/T8: branding sync, package workflow, README, open-source release files
+5. `sessions/2026-05-02-morning.md` — META-1: arch docs, T1–T7 tasks; T7 (CI/CD) and T1 completed
+6. `sessions/2026-05-02-init.md` — META-1: Initial memory bank setup
 
 ## Task Registry
 
 - META-1: Memory Bank Setup and Maintenance — 🔄
 - T1: Chat Panel (ItemView + React UI) — ✅
-- T2: Conversation Chain & Memory — ⬜
+- T2: Conversation Chain & Memory — 🔄
 - T3: Context & Mentions System — 🔄
 - T4: Streaming — ✅
 - T5: In-Place Note Editing from Chat — 🔄
@@ -54,14 +56,29 @@
 8. ✅ T5 core — NoteEditingBridge (apply/append), buttons on message bubbles
 9. 🔄 Keep records in sync as T5 and T3 work continues
 
+### T2: Conversation Chain & Memory
+**Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
+**Started:** 2026-05-02 **Last:** 2026-05-03 00:45:00 IST
+**Context:** Session-based chat history fully implemented. Plugin methods loadChatData/saveChatData with migration from old flat chatMessages. ChatApp uses sessions[] + activeSessionId state. Archive-on-New with auto-titling and maxSavedConversations pruning. SessionPickerModal with load/delete actions. Load button enabled when history exists.
+**Files:** `src/types.ts`, `src/main.ts`, `src/views/ObsidianAIChatView.ts`, `src/components/ChatApp.tsx`, `src/components/ActionBar.tsx`, `src/components/SessionPickerModal.tsx`
+**Progress:**
+1. ✅ loadChatMessages/saveChatMessages on plugin
+2. ✅ ChatApp persistence hooks (load on mount, save on update, clear on new chat)
+3. ✅ saveSettings fixed to preserve chatMessages across settings saves
+4. ✅ Session-store architecture design complete
+5. ✅ Implement plugin methods (loadChatData, saveChatData, migration)
+6. ✅ Update ChatApp for session state (archive-on-New, activeSessionId)
+7. ✅ Build SessionPickerModal component
+8. ✅ Wire Load button in ActionBar
+
 ### T3: Context & Mentions System
 **Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-02 23:21:14 IST
-**Context:** Active note toggle chip in ContextBar. ChatApp.includeActiveNote state drives context injection. Uses getLeavesOfType('markdown') for note detection. XML block prepended to user message before streamChat call.
+**Started:** 2026-05-02 **Last:** 2026-05-02 23:56:30 IST
+**Context:** Active note toggle chip in ContextBar. includeActiveNoteRef drives context injection (stale closure fixed). Uses lastMarkdownLeafRef (shared with T5 fix) for note content. XML block prepended to user message before streamChat call.
 **Files:** `src/components/ContextBar.tsx`, `src/components/ChatApp.tsx`
 **Progress:**
 1. ✅ Active note toggle chip in ContextBar
-2. ✅ includeActiveNote state + context XML injection in handleSend
+2. ✅ includeActiveNoteRef + lastMarkdownLeafRef for correct note context injection
 3. ⬜ MentionAutocomplete (@ trigger + popover)
 4. ⬜ ContextEngine.resolveAll() for @mentioned notes
 5. ⬜ embedExpander for ![[]] inline embeds
@@ -69,16 +86,19 @@
 
 ### T5: In-Place Note Editing from Chat
 **Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-02 23:21:14 IST
-**Context:** NoteEditingBridge note detection fixed — uses getLeavesOfType('markdown') so works when chat sidebar is focused. Action buttons (Apply/Append/Copy) now hidden by default, shown on bubble hover.
+**Started:** 2026-05-02 **Last:** 2026-05-02 23:56:30 IST
+**Context:** NoteEditingBridge refactored — methods receive resolved view/file from ChatApp (no internal leaf discovery). ChatApp tracks last markdown leaf via workspace.on('active-leaf-change'). Buttons show target note name. Stale closure fixed.
 **Files:** `src/noteEditing/NoteEditingBridge.ts`, `src/components/MessageBubble.tsx`, `src/components/ChatApp.tsx`, `src/components/ChatMessages.tsx`
 **Progress:**
-1. ✅ NoteEditingBridge.applyToActiveNote()
-2. ✅ NoteEditingBridge.appendToActiveNote()
-3. ✅ Apply/Append buttons on MessageBubble (hover-only)
-4. ✅ Fix: getLeavesOfType for note detection in apply and append
-5. ⬜ applyToTargetNote() — after T3
-6. ⬜ Slash commands, retry button
+1. ✅ NoteEditingBridge.applyToNote(app, view, aiText, prompt)
+2. ✅ NoteEditingBridge.appendToNote(app, file, aiText)
+3. ✅ Apply/Append/Copy buttons on MessageBubble (hover-only)
+4. ✅ Fix: active-leaf-change tracking; NoteEditingBridge receives resolved view/file
+5. ✅ Fix: stale closure on includeActiveNote — ref pattern
+6. ✅ Button labels show target note name ("✓ Apply → NoteBasename")
+7. ✅ Improved tooltips distinguish diff vs direct-write
+8. ⬜ applyToTargetNote() — after T3
+9. ⬜ Slash commands, retry button
 
 ### T8: Open Source Release with Branding
 **Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
@@ -88,5 +108,6 @@
 
 ## Next Session Focus
 
-- Complete T5 remaining items (retry button, slash commands)
-- Begin T3 context & mentions system (needed for T5 target-note path)
+- T3: Build MentionAutocomplete popover, @ trigger in ChatInput, ContextEngine (multi-note context)
+- T5: applyToTargetNote (after T3), slash commands, retry button
+- T2: Test in real Obsidian environment; verify migration, pruning, delete-active-session edge case

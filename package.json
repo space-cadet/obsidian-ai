@@ -66,6 +66,7 @@
 		"diff-match-patch": "^1.0.5",
 		"ollama-ai-provider": "1.2.0",
 		"react": "^19.2.5",
-		"react-dom": "^19.2.5"
+		"react-dom": "^19.2.5",
+		"zod": "^3.25.76"
 	}
 }

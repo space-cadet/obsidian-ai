@@ -1,16 +1,61 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 23:21:14 IST*
+*Last Updated: 2026-05-03 00:52:00 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
 
 ---
 
+### 2026-05-03
+
+#### 00:52:00 IST - T2/META-1: Sync memory bank after session history implementation
+
+- Updated `memory-bank/tasks/T2.md` — marked all completion criteria ✅; progress steps 3–9 marked done; step 10 added for real-world testing
+- Updated `memory-bank/activeContext.md` — T2 section rewritten to reflect implementation completion; implementation focus updated; next actions revised
+- Updated `memory-bank/progress.md` — added T2 section with completed/current/up-next steps; marked T4 as completed
+- Updated `memory-bank/changelog.md` — added session-based chat history and shared types entries
+
+
+#### 00:45:00 IST - T2/T5: Implement session-based chat history with SessionPickerModal
+
+- Created `src/types.ts` — shared TypeScript interfaces: ChatMessage, ChatSession, StoredChatData
+- Modified `src/views/ObsidianAIChatView.ts` — replaced loadChatMessages/saveChatMessages with loadChatData/saveChatData on ChatPluginLike; added settings: ObsidianAISettings to interface
+- Modified `src/main.ts` — implemented loadChatData() with migration from old flat chatMessages array; implemented saveChatData(); removed old loadChatMessages/saveChatMessages
+- Modified `src/components/ChatApp.tsx` — refactored from flat messages state to session-based state (sessions[] + activeSessionId); added archive-on-New with auto-titling and pruning; added handleLoadSession and handleDeleteSession; added showSessionPicker state; messages derived via useMemo from active session
+- Modified `src/components/ActionBar.tsx` — Load button now enabled when history exists; onLoadChat prop opens SessionPickerModal
+- Created `src/components/SessionPickerModal.tsx` — modal overlay listing sessions with title, message count, relative time, preview; load and delete actions; active session highlighted
+- Modified `src/components/ChatMessages.tsx` — import ChatMessage from ../types instead of ./ChatApp
+- Modified `src/components/MessageBubble.tsx` — import ChatMessage from ../types instead of ./ChatApp
+- Modified `styles.css` — added modal overlay, modal container, session list, session item, session title/meta/preview, badge, and danger button styles
+- Updated `memory-bank/sessions/2026-05-03-night.md` — recorded implementation completion
+
+
+#### 00:18:43 IST - T2: Session history modal design and memory bank docs
+
+- Created `memory-bank/implementation-details/chat-session-persistence.md` — design doc for session-based chat persistence: data model (ChatSession, StoredChatData), plugin API (loadSessions, saveSession, archiveSession, deleteSession, pruneSessions), SessionPickerModal UI spec, auto-titling logic, pruning behaviour, migration from flat chatMessages array
+- Updated `memory-bank/tasks/T2.md` — updated Last Updated timestamp; progress steps 4–8 revised to reflect session-store approach instead of standalone ConversationManager class; related files updated to actual source files (removed src/conversation/*, added ActionBar, new SessionPickerModal); ChatMessage interface fixed to match actual code (role excludes "system"); completion criteria updated
+- Updated `memory-bank/tasks.md` — T2 summary updated to reflect session-history modal design and planned implementation
+- Updated `memory-bank/activeContext.md` — T2 section updated with session-store architecture decisions; next actions revised; current decisions updated
+- Updated `memory-bank/implementation-details/chat-panel-design.md` — Conversation Persistence section updated to match session-store model; ActionBar description changed from dropdown to modal
+- Updated `memory-bank/session_cache.md` — new session registered; T2 progress updated
+- Created `memory-bank/sessions/2026-05-03-night.md` — session file documenting session history design work
+
+
+---
+
 ### 2026-05-02
 
-#### 23:21:14 IST - T7: Fix manual-build artifact name with forward slash in branch name
+#### 23:56:30 IST - T5/T2/T3: Fix note targeting, stale closure, persistence, UX clarity
 
-- Modified `.github/workflows/manual-build.yml` - Add "Set safe branch name" step that runs tr '/' '-' on github.ref_name into SAFE_BRANCH env var; update artifact name to use PLUGIN_NAME-SAFE_BRANCH
+- Modified `src/noteEditing/NoteEditingBridge.ts` - Renamed applyToActiveNote→applyToNote, appendToActiveNote→appendToNote; methods now receive resolved MarkdownView/TFile from caller; removed internal getLeavesOfType leaf discovery
+- Modified `src/components/ChatApp.tsx` - Added workspace.on('active-leaf-change') tracking (lastMarkdownLeafRef + targetNoteName state); added includeActiveNoteRef to fix stale closure in handleSend; added handleApply/handleAppend callbacks using tracked leaf; added loadChatMessages on mount, saveChatMessages on message change, clear on new chat; removed getActiveNoteName helper; pass new props to ChatMessages
+- Modified `src/components/ChatMessages.tsx` - Added targetNoteName, onApply, onAppend props; pass through to each MessageBubble
+- Modified `src/components/MessageBubble.tsx` - Removed direct NoteEditingBridge calls; uses onApply/onAppend callbacks; shows target note name in button labels; improved tooltips explaining diff vs direct-write
+- Modified `src/views/ObsidianAIChatView.ts` - Extended ChatPluginLike interface with loadChatMessages() and saveChatMessages()
+- Modified `src/main.ts` - Added loadChatMessages and saveChatMessages methods; fixed saveSettings to merge existing data rather than replace, preserving chatMessages key
+- Modified `package.json` - Added zod ^3.24.0 dependency (required by ai-sdk v6)
+- Created `package-lock.json` - Lockfile generated by npm install --legacy-peer-deps
+
 
 #### 23:21:14 IST - T4,T5,T3: Fix note detection, streaming render, button clutter, active note context
 
@@ -20,6 +65,12 @@
 - Modified `src/components/ChatApp.tsx` - Add includeActiveNote state, getActiveNoteName helper, handleToggleActiveNote, context XML injection in handleSend; import MarkdownView
 - Modified `styles.css` - Hide .chat-bubble-actions by default, show on .chat-bubble:hover; add chip styles for .chat-context-chip and .chat-context-chip-active
 
+
+#### 23:21:14 IST - T7: Fix manual-build artifact name with forward slash in branch name
+
+- Modified `.github/workflows/manual-build.yml` - Add "Set safe branch name" step that runs tr '/' '-' on github.ref_name into SAFE_BRANCH env var; update artifact name to use PLUGIN_NAME-SAFE_BRANCH
+
+
 #### 22:32:52 IST - T4,T5: Streaming wiring and NoteEditingBridge
 
 - Modified `src/components/ChatApp.tsx` - Replace callApi() with streamChat() async iterator loop; add currentAiMessage state and messagesRef for progressive rendering
@@ -27,22 +78,42 @@
 - Modified `src/components/MessageBubble.tsx` - Add Apply to Note (diff) and Append to Note buttons for assistant messages; import NoteEditingBridge
 - Created `src/noteEditing/NoteEditingBridge.ts` - applyToActiveNote() dispatches full-doc selection + response effects in single transaction; appendToActiveNote() writes via vault.modify with Notice
 
+
 #### 17:48:45 IST - META-1: Memory bank sync for T4 migration, T9 completion, T10-T12 creation
 - Updated `memory-bank/tasks.md` — added T9 (✅), T10 (⏸️), T11 (⏸️), T12 (⏸️); updated T4 status to 🔄; updated summary counts
 - Updated `memory-bank/tasks/T4.md` — status changed to 🔄 IN PROGRESS; marked provider-layer criteria complete; updated remaining work to chat-panel UI wiring
 - Updated `memory-bank/tasks/META-1.md` — recorded T9–T12 creation and new implementation docs in progress
 - Updated `memory-bank/tasks/T1.md` — added T9 as completed dependency
 - Updated `memory-bank/session_cache.md` — synced task registry with T9 completion and T4 primary focus
-- Created `memory-bank/edits/2026-05-02/174845-mem-update.md` — canonical edit chunk for this sync
+- Updated `memory-bank/edit_history.md` — appended mem-update entry
 
-#### 11:12:44 IST - T8: Open Source branding + memory sync — in progress
-- Updated `package.json` — branded description, repository/bugs/homepage metadata, GPL-3.0 license, pnpm package workflow retained
-- Updated `README.md` — pnpm development commands, fixed mojibake headings, aligned license text
-- Updated `.github/workflows/release.yml` and `.github/workflows/pre-release.yml` — pnpm install/build workflow
-- Created `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, issue templates, PR template, and `docs/release-announcement.md`
-- Updated memory-bank current-state files — activeContext, session_cache, progress, tasks, T8
-- Corrected stale `inlineai` / spaced `ObsidianAIChatView` references in implementation docs and task files
-- Added `dist/` to `.gitignore` for local package artifacts
+
+#### 11:12:44 IST - T8: Open Source Branding + Memory Sync — in progress
+- Updated `README.md` — pnpm commands, heading encoding, GPL-3.0 license wording, and open-source release structure
+- Updated `package.json` — branded metadata, repository links, keywords, GPL-3.0 license, and timestamped package script
+- Updated `package-lock.json` — root package license aligned to GPL-3.0
+- Updated `.github/workflows/release.yml` — switched release build workflow to pnpm install/build
+- Updated `.github/workflows/pre-release.yml` — switched rolling pre-release workflow to pnpm install/build
+- Updated `.github/workflows/format.yml` — switched format check workflow to pnpm and `pnpm exec prettier`
+- Updated `.github/FUNDING.yml` — changed sponsorship identity to `space-cadet`
+- Updated `.gitignore` — ignored local `dist/` package artifacts
+- Updated `.prettierignore` — excluded memory-bank and lockfiles from project format checks
+- Created `CONTRIBUTING.md` — contributor workflow, bug reports, PR process, and code style guidance
+- Created `CODE_OF_CONDUCT.md` — community behavior and enforcement guidance
+- Created `.github/ISSUE_TEMPLATE/bug_report.yml` — structured bug report form
+- Created `.github/ISSUE_TEMPLATE/feature_request.yml` — structured feature request form
+- Created `.github/PULL_REQUEST_TEMPLATE.md` — PR summary and testing checklist
+- Created `docs/release-announcement.md` — draft release announcement
+- Updated `memory-bank/activeContext.md` — current focus and T8 sync status
+- Updated `memory-bank/session_cache.md` — current T8 session state and task registry
+- Updated `memory-bank/progress.md` — T1/T7 completion, T8 status, and recent accomplishments
+- Updated `memory-bank/tasks.md` — T8 active context and completed/pending task state
+- Updated `memory-bank/tasks/T8.md` — acceptance criteria, progress, and remaining release-readiness follow-ups
+- Updated `memory-bank/sessions/2026-05-02-morning.md` — appended Session 4 branding/open-source sync details
+- Updated `memory-bank/changelog.md` — added Session 3 and Session 4 entries
+- Updated `memory-bank/edit_history.md` — added T8 edit history entry
+- Updated memory-bank implementation docs — corrected stale plugin ID, pnpm workflow, and `ObsidianAIChatView.ts` references
+
 
 #### 09:41:00 IST - T1: Chat Panel — ItemView + React UI — completed
 - Modified `package.json` — added react, react-dom, @types/react, @types/react-dom
@@ -62,6 +133,7 @@
 - Updated `memory-bank/sessions/2026-05-02-morning.md` — T1 completion block appended
 - Updated `memory-bank/session_cache.md` — T1 complete, next focus T4
 
+
 #### 09:34:00 IST - T7: Release System & CI/CD — completed
 - Modified `versions.json` — added missing 1.2.4 entry
 - Created `.github/workflows/pre-release.yml` — auto pre-release on push to main, rolling latest-dev tag
@@ -72,50 +144,4 @@
 - Updated `memory-bank/sessions/2026-05-02-morning.md` — session 3 update appended
 - Updated `memory-bank/session_cache.md` — T7 complete, focus shifted to T1
 
-#### 08:13:57 IST - [META-1]: Architecture documentation + v2.0 task definitions
 
-- Created `memory-bank/integrated-rules-v6.12.md` — 573-line rules file downloaded from space-cadet/memory-bank
-- Created `memory-bank/implementation-details/current-architecture.md` — full state machine, module map, data flow, constraints table
-- Created `memory-bank/implementation-details/proposed-architecture.md` — dual-surface design, component tree, shared vs new components, dependency graph
-- Created `memory-bank/implementation-details/chat-panel-design.md` — ItemView class, React component tree, ASCII UI layout, message data model, streaming implementation, persistence
-- Created `memory-bank/implementation-details/context-system-design.md` — mention flow, resolution pipeline, embed expansion, token budget, module structure
-- Created `memory-bank/implementation-details/note-editing-design.md` — 3 editing intents (edit/create/append), NoteEditingBridge module, reuse table, edge cases
-- Created `memory-bank/tasks/T1.md` — Chat Panel (ItemView + React UI)
-- Created `memory-bank/tasks/T2.md` — Conversation Chain & Memory
-- Created `memory-bank/tasks/T3.md` — Context & Mentions System
-- Created `memory-bank/tasks/T4.md` — Streaming
-- Created `memory-bank/tasks/T5.md` — In-Place Note Editing from Chat
-- Created `memory-bank/tasks/T6.md` — Token & Context Management
-- Created `memory-bank/sessions/2026-05-02-morning.md` — session record
-- Updated `memory-bank/tasks/META-1.md` — progress and completion criteria updated
-- Updated `memory-bank/projectbrief.md` — proposed scope, v2.0 structure, task roadmap
-- Updated `memory-bank/productContext.md` — new user flows, competitive table, v2.0 flows
-- Updated `memory-bank/techContext.md` — proposed additions, full architecture diagrams (current + v2.0)
-- Updated `memory-bank/systemPatterns.md` — two-surface pattern, NoteEditingBridge pattern, context assembly pattern
-- Updated `memory-bank/tasks.md` — T1–T6 added to registry
-- Updated `memory-bank/progress.md` — milestones, dependency order, accomplishments
-- Updated `memory-bank/activeContext.md` — session 2 focus and decisions
-- Updated `memory-bank/session_cache.md` — session history, task registry
-- Updated `memory-bank/changelog.md` — session 2 entry
-
-#### 08:00:01 IST - [META-1]: Timestamp update — UTC → IST
-
-- Updated all timestamps across 13 memory bank files from placeholder UTC to `2026-05-02 08:00:01 IST`
-- Updated timezone references in `systemPatterns.md` and `activeContext.md`
-
-#### 00:00:00 IST - [META-1]: Initial memory bank setup
-
-- Created `memory-bank/` directory structure (sessions/, tasks/, edits/, archive/, implementation-details/)
-- Created `memory-bank/projectbrief.md`
-- Created `memory-bank/productContext.md`
-- Created `memory-bank/techContext.md`
-- Created `memory-bank/systemPatterns.md`
-- Created `memory-bank/tasks.md`
-- Created `memory-bank/tasks/META-1.md`
-- Created `memory-bank/activeContext.md`
-- Created `memory-bank/session_cache.md`
-- Created `memory-bank/sessions/2026-05-02-init.md`
-- Created `memory-bank/edit_history.md`
-- Created `memory-bank/errorLog.md`
-- Created `memory-bank/progress.md`
-- Created `memory-bank/changelog.md`

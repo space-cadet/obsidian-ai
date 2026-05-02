@@ -1,6 +1,6 @@
 # Implementation Progress
 
-*Last Updated: 2026-05-02 17:08:57 IST*
+*Last Updated: 2026-05-03 00:45:00 IST*
 
 ## Active Tasks
 
@@ -19,20 +19,34 @@
 - ⬜ Keep the normalized structure current as T4 and T10 move forward
 - ⬜ Add new edit chunks only in the canonical chunk format
 
-### T4: Streaming with Vercel AI SDK
+### T2: Conversation Chain & Memory
 **Status:** 🔄 IN PROGRESS
 **Priority:** HIGH
 
 #### Completed Steps
-- ✅ LangChain removed and Vercel AI SDK provider layer installed
-- ✅ `streamChat()` added to `ChatApiManager`
+- ✅ Basic single-session persistence (loadChatMessages/saveChatMessages)
+- ✅ Session-store architecture design
+- ✅ Plugin methods loadChatData/saveChatData with migration
+- ✅ ChatApp refactored to session state (archive-on-New, activeSessionId)
+- ✅ SessionPickerModal with load/delete
+- ✅ Auto-titling and pruning
 
 #### Current Work
-- 🔄 Wire streaming, abort handling, and error states into the React chat panel
+- 🔄 Real-world testing in Obsidian
 
 #### Up Next
-- ⬜ Verify streaming behavior across supported providers
-- ⬜ Close the remaining T4 UI work so T10 can become the primary implementation task
+- ⬜ Verify migration from old flat chatMessages format
+- ⬜ Verify pruning and edge cases
+
+### T4: Streaming with Vercel AI SDK
+**Status:** ✅ COMPLETED
+**Priority:** HIGH
+**Completed:** 2026-05-02
+
+#### Completed Steps
+- ✅ LangChain removed and Vercel AI SDK provider layer installed
+- ✅ `streamChat()` added to `ChatApiManager`
+- ✅ Streaming wired into React chat panel with abort handling and error states
 
 ## Paused Tasks
 

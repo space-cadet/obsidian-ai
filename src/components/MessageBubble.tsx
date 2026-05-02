@@ -1,14 +1,20 @@
 import React, { useEffect, useRef } from "react";
 import { App, MarkdownRenderer, Component } from "obsidian";
-import { ChatMessage } from "./ChatApp";
-import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
+import { ChatMessage } from "../types";
 
 interface MessageBubbleProps {
 	message: ChatMessage;
 	app: App;
+	onAppend: (content: string) => void;
+	onInsertAtCursor: (content: string) => void;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message, app }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({
+	message,
+	app,
+	onAppend,
+	onInsertAtCursor,
+}) => {
 	const contentRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -25,16 +31,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, app }) => {
 
 	const handleCopy = () => {
 		navigator.clipboard.writeText(message.content);
-	};
-
-	const handleApply = () => {
-		console.log(`[MessageBubble] apply to active note — msgId: ${message.id}`);
-		NoteEditingBridge.applyToActiveNote(app, message.content, "Apply from chat");
-	};
-
-	const handleAppend = () => {
-		console.log(`[MessageBubble] append to active note — msgId: ${message.id}`);
-		NoteEditingBridge.appendToActiveNote(app, message.content);
 	};
 
 	const time = new Date(message.timestamp).toLocaleTimeString([], {
@@ -57,17 +53,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, app }) => {
 				<div className="chat-bubble-actions">
 					<button
 						className="chat-btn-small"
-						onClick={handleApply}
-						title="Apply as diff to active note"
+						onClick={() => onInsertAtCursor(message.content)}
+						title="Insert at the current cursor position"
 					>
-						✓ Apply to Note
+						⌶ Insert at Cursor
 					</button>
 					<button
 						className="chat-btn-small"
-						onClick={handleAppend}
-						title="Append to active note"
+						onClick={() => onAppend(message.content)}
+						title="Append directly to the end of the note — no confirmation step"
 					>
-						+ Append to Note
+						+ Append
 					</button>
 					<button
 						className="chat-btn-small"

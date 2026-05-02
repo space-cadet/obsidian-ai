@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { App, Component, MarkdownRenderer } from "obsidian";
-import { ChatMessage } from "./ChatApp";
+import { ChatMessage } from "../types";
 import MessageBubble from "./MessageBubble";
 
 const StreamingBubble: React.FC<{ content: string; app: App }> = ({
@@ -36,6 +36,8 @@ interface ChatMessagesProps {
 	currentAiMessage: string;
 	isStreaming: boolean;
 	app: App;
+	onAppend: (content: string) => void;
+	onInsertAtCursor: (content: string) => void;
 }
 
 const ChatMessages: React.FC<ChatMessagesProps> = ({
@@ -43,6 +45,8 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	currentAiMessage,
 	isStreaming,
 	app,
+	onAppend,
+	onInsertAtCursor,
 }) => {
 	const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -58,7 +62,13 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 				</div>
 			)}
 			{messages.map((msg) => (
-				<MessageBubble key={msg.id} message={msg} app={app} />
+				<MessageBubble
+					key={msg.id}
+					message={msg}
+					app={app}
+					onAppend={onAppend}
+					onInsertAtCursor={onInsertAtCursor}
+				/>
 			))}
 			{isStreaming && currentAiMessage && (
 				<StreamingBubble content={currentAiMessage} app={app} />

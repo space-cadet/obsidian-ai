@@ -5,29 +5,22 @@ import { setSelectionInfoEffect } from "../modules/SelectionState";
 
 /**
  * Connects the chat panel to the existing CodeMirror diff machinery.
- * All methods are static — no instance state needed.
+ * Callers are responsible for resolving the target view/file — no leaf
+ * discovery happens here, so the correct note is always targeted.
  */
 export class NoteEditingBridge {
 	/**
-	 * Applies an AI response as a diff against the full content of the active note.
+	 * Applies an AI response as a diff against the full content of the given note.
 	 * Dispatches both the selection-range effect (full doc) and the response effect
 	 * in a single transaction so diffDecorationState sees both in tr.state.
 	 */
-	static applyToActiveNote(
+	static applyToNote(
 		app: App,
+		view: MarkdownView,
 		aiText: string,
 		prompt: string,
 	): boolean {
-		// getActiveViewOfType fails when the chat sidebar is focused — find any open markdown leaf
-		const leaves = app.workspace.getLeavesOfType("markdown");
-		const markdownView =
-			leaves.length > 0 ? (leaves[0].view as MarkdownView) : null;
-		if (!markdownView) {
-			new Notice("⚠️ Open a note first to apply changes.");
-			return false;
-		}
-
-		const editorView = (markdownView.editor as any).cm as EditorView;
+		const editorView = (view.editor as any).cm as EditorView;
 		if (!editorView) {
 			new Notice("⚠️ Could not access the editor.");
 			return false;
@@ -37,11 +30,9 @@ export class NoteEditingBridge {
 		const fullText = doc.sliceString(0, doc.length);
 
 		console.log(
-			`[NoteEditingBridge] applyToActiveNote — note: ${markdownView.file?.path}, aiLen: ${aiText.length}`,
+			`[NoteEditingBridge] applyToNote — note: ${view.file?.path}, aiLen: ${aiText.length}`,
 		);
 
-		// Dispatch selection (full doc) and generated response together so
-		// diffDecorationState.update sees both effects in tr.state.
 		editorView.dispatch({
 			effects: [
 				setSelectionInfoEffect.of({
@@ -53,36 +44,51 @@ export class NoteEditingBridge {
 			],
 		});
 
-		// Bring the editor into view so the user sees the diff immediately.
-		markdownView.leaf.setEphemeralState({ focus: true });
+		view.leaf.setEphemeralState({ focus: true });
 		return true;
 	}
 
 	/**
-	 * Appends the AI text to the end of the active note without a diff step.
+	 * Appends the AI text to the end of the given file without a diff step.
 	 * A Notice confirms the action.
 	 */
-	static async appendToActiveNote(
+	static async appendToNote(
 		app: App,
+		file: TFile,
 		aiText: string,
 	): Promise<boolean> {
-		const leaves = app.workspace.getLeavesOfType("markdown");
-		const file =
-			leaves.length > 0
-				? (leaves[0].view as MarkdownView).file
-				: null;
-		if (!(file instanceof TFile)) {
-			new Notice("⚠️ No active note to append to.");
-			return false;
-		}
-
 		console.log(
-			`[NoteEditingBridge] appendToActiveNote — note: ${file.path}, aiLen: ${aiText.length}`,
+			`[NoteEditingBridge] appendToNote — note: ${file.path}, aiLen: ${aiText.length}`,
 		);
 
 		const existing = await app.vault.read(file);
 		await app.vault.modify(file, existing + "\n\n" + aiText);
 		new Notice(`✓ Appended to ${file.basename}`);
+		return true;
+	}
+
+	/**
+	 * Inserts the AI text at the current cursor position in the given note.
+	 * A Notice confirms the action.
+	 */
+	static insertAtCursor(
+		app: App,
+		view: MarkdownView,
+		aiText: string,
+	): boolean {
+		const editor = view.editor;
+		if (!editor) {
+			new Notice("⚠️ Could not access the editor.");
+			return false;
+		}
+
+		console.log(
+			`[NoteEditingBridge] insertAtCursor — note: ${view.file?.path}, aiLen: ${aiText.length}`,
+		);
+
+		const cursor = editor.getCursor();
+		editor.replaceRange(aiText, cursor);
+		new Notice(`✓ Inserted at cursor`);
 		return true;
 	}
 }
