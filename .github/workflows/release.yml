@@ -34,7 +34,8 @@ jobs:
 
             # 4. Verify build output
             - name: Verify Build Output
-              run: test -f main.js || (echo "Build failed: main.js not found" && exit 1)
+              run: |
+                  test -f main.js || (echo "Build failed: main.js not found" && exit 1)
 
             # 5. Prepare release assets
             - name: Prepare Release Assets

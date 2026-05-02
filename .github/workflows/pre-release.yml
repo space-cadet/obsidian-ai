@@ -30,7 +30,8 @@ jobs:
                   npm run build --if-present
 
             - name: Verify Build Output
-              run: test -f main.js || (echo "Build failed: main.js not found" && exit 1)
+              run: |
+                  test -f main.js || (echo "Build failed: main.js not found" && exit 1)
 
             - name: Prepare Release Assets
               run: |
