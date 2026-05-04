@@ -91,4 +91,115 @@ export class NoteEditingBridge {
 		new Notice(`✓ Inserted at cursor`);
 		return true;
 	}
+
+	/**
+	 * Opens the target note and applies the AI response as a diff.
+	 * Resolves the note path via Obsidian's link cache if needed.
+	 */
+	static async applyToTargetNote(
+		app: App,
+		notePath: string,
+		aiText: string,
+		prompt: string,
+	): Promise<boolean> {
+		// Resolve file
+		let file = app.vault.getAbstractFileByPath(notePath);
+		if (!file || !(file instanceof TFile)) {
+			const resolved = app.metadataCache.getFirstLinkpathDest(notePath, "");
+			if (resolved && resolved instanceof TFile) {
+				file = resolved;
+			}
+		}
+
+		if (!file || !(file instanceof TFile)) {
+			new Notice(`⚠️ Note not found: ${notePath}`);
+			return false;
+		}
+
+		// Open the note
+		await app.workspace.openLinkText(file.path, "", false);
+
+		// Find the leaf
+		const leaf = app.workspace
+			.getLeavesOfType("markdown")
+			.find(
+				(l) =>
+					l.view instanceof MarkdownView &&
+					l.view.file?.path === file.path,
+			);
+
+		if (!leaf || !(leaf.view instanceof MarkdownView)) {
+			new Notice(`⚠️ Could not open editor for: ${notePath}`);
+			return false;
+		}
+
+		return NoteEditingBridge.applyToNote(
+			app,
+			leaf.view,
+			aiText,
+			prompt,
+		);
+	}
+
+	/**
+	 * Creates a new note with the given name, opens it, and applies the AI
+	 * response as a diff (so the user sees Accept/Discard).
+	 */
+	static async createNote(
+		app: App,
+		noteName: string,
+		aiContent: string,
+		prompt: string,
+	): Promise<boolean> {
+		// Normalize name to end with .md
+		const fileName = noteName.endsWith(".md") ? noteName : `${noteName}.md`;
+
+		// Check if file exists
+		let existing = app.vault.getAbstractFileByPath(fileName);
+		if (!existing) {
+			const resolved = app.metadataCache.getFirstLinkpathDest(fileName, "");
+			if (resolved && resolved instanceof TFile) {
+				existing = resolved;
+			}
+		}
+
+		if (existing) {
+			new Notice(`⚠️ Note already exists: ${fileName}`);
+			return false;
+		}
+
+		// Create file
+		let newFile: TFile;
+		try {
+			newFile = await app.vault.create(fileName, "");
+		} catch (e: any) {
+			new Notice(`⚠️ Could not create note: ${e.message}`);
+			return false;
+		}
+
+		// Open in new tab
+		await app.workspace.openLinkText(newFile.path, "", true);
+
+		// Find the leaf
+		const leaf = app.workspace
+			.getLeavesOfType("markdown")
+			.find(
+				(l) =>
+					l.view instanceof MarkdownView &&
+					l.view.file?.path === newFile.path,
+			);
+
+		if (!leaf || !(leaf.view instanceof MarkdownView)) {
+			new Notice(`⚠️ Could not open editor for: ${fileName}`);
+			return false;
+		}
+
+		// Apply diff (full content as "added")
+		return NoteEditingBridge.applyToNote(
+			app,
+			leaf.view,
+			aiContent,
+			prompt,
+		);
+	}
 }

@@ -10,33 +10,65 @@ interface ChatInputProps {
 	isStreaming: boolean;
 }
 
-interface MentionCandidate {
+type AutoType = "mention" | "slash" | "wikilink";
+
+interface AutoCandidate {
 	key: string;
 	label: string;
 	icon: string;
-	type: ContextItem["type"];
-	// Extra data for creating the ContextItem
+	type: AutoType;
+	// Mention data
+	contextType?: ContextItem["type"];
 	path?: string;
 	name?: string;
 	tag?: string;
+}
+
+interface AutoState {
+	type: AutoType;
+	query: string;
+	start: number;
+	index: number;
 }
 
 function makeId(): string {
 	return crypto.randomUUID();
 }
 
-function detectMention(
+function detectAutocomplete(
 	text: string,
 	cursorPos: number,
-): { query: string; start: number } | null {
+): Omit<AutoState, "index"> | null {
 	const beforeCursor = text.slice(0, cursorPos);
-	const match = beforeCursor.match(/@([^@\s]*)$/);
-	if (match) {
-		const start = beforeCursor.lastIndexOf("@");
-		return { query: match[1], start };
+
+	// 1. Wikilink [[ — check first so it beats mention when typing inside slash cmds
+	const wikiMatch = beforeCursor.match(/\[\[([^\[\]]*)$/);
+	if (wikiMatch) {
+		const start = beforeCursor.lastIndexOf("[[");
+		return { type: "wikilink", query: wikiMatch[1], start };
 	}
+
+	// 2. Mention @
+	const mentionMatch = beforeCursor.match(/@([^@\s]*)$/);
+	if (mentionMatch) {
+		const start = beforeCursor.lastIndexOf("@");
+		return { type: "mention", query: mentionMatch[1], start };
+	}
+
+	// 3. Slash command / — only at start of input
+	const slashMatch = beforeCursor.match(/^\/([^/\s]*)$/);
+	if (slashMatch) {
+		return { type: "slash", query: slashMatch[1], start: 0 };
+	}
+
 	return null;
 }
+
+const SLASH_COMMANDS: AutoCandidate[] = [
+	{ key: "slash:edit", label: "/edit [[Note]] prompt", icon: "✏️", type: "slash" },
+	{ key: "slash:create", label: "/create [[Note]] prompt", icon: "📝", type: "slash" },
+	{ key: "slash:append", label: "/append [[Note]] prompt", icon: "➕", type: "slash" },
+];
 
 const ChatInput: React.FC<ChatInputProps> = ({
 	app,
@@ -47,15 +79,18 @@ const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
 	const [value, setValue] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
-	const [mention, setMention] = useState<{
-		query: string;
-		start: number;
-		index: number;
-	} | null>(null);
+	const [auto, setAuto] = useState<AutoState | null>(null);
 
 	const allCandidates = useMemo(() => {
-		const candidates: MentionCandidate[] = [];
-		// Notes
+		if (!auto) return [];
+
+		if (auto.type === "slash") {
+			return SLASH_COMMANDS;
+		}
+
+		const candidates: AutoCandidate[] = [];
+
+		// Notes (for both mention and wikilink)
 		for (const file of app.vault.getMarkdownFiles().sort(
 			(a, b) => b.stat.mtime - a.stat.mtime,
 		)) {
@@ -63,56 +98,56 @@ const ChatInput: React.FC<ChatInputProps> = ({
 				key: `note:${file.path}`,
 				label: file.basename,
 				icon: "📄",
-				type: "note",
+				type: auto.type,
+				contextType: "note",
 				path: file.path,
 				name: file.basename,
 			});
 		}
-		// Folders
-		for (const folder of app.vault
-			.getAllLoadedFiles()
-			.filter((f): f is TFolder => f instanceof TFolder)
-			.sort((a, b) => a.path.localeCompare(b.path))) {
-			candidates.push({
-				key: `folder:${folder.path}`,
-				label:
-					folder.path === ""
-						? "(vault root)"
-						: folder.name,
-				icon: "📁",
-				type: "folder",
-				path: folder.path,
-				name:
-					folder.path === ""
-						? "(vault root)"
-						: folder.name,
-			});
+
+		// Folders and tags only for mentions
+		if (auto.type === "mention") {
+			for (const folder of app.vault
+				.getAllLoadedFiles()
+				.filter((f): f is TFolder => f instanceof TFolder)
+				.sort((a, b) => a.path.localeCompare(b.path))) {
+				candidates.push({
+					key: `folder:${folder.path}`,
+					label: folder.path === "" ? "(vault root)" : folder.name,
+					icon: "📁",
+					type: "mention",
+					contextType: "folder",
+					path: folder.path,
+					name: folder.path === "" ? "(vault root)" : folder.name,
+				});
+			}
+			const tagMap = (app.metadataCache as any).getTags() as Record<
+				string,
+				number
+			>;
+			for (const [tag, count] of Object.entries(tagMap)) {
+				candidates.push({
+					key: `tag:${tag}`,
+					label: `${tag} (${count})`,
+					icon: "#",
+					type: "mention",
+					contextType: "tag",
+					tag,
+				});
+			}
 		}
-		// Tags
-		const tagMap = (app.metadataCache as any).getTags() as Record<
-			string,
-			number
-		>;
-		for (const [tag, count] of Object.entries(tagMap)) {
-			candidates.push({
-				key: `tag:${tag}`,
-				label: `${tag} (${count})`,
-				icon: "#",
-				type: "tag",
-				tag,
-			});
-		}
+
 		return candidates;
-	}, [app]);
+	}, [app, auto?.type]);
 
 	const filteredCandidates = useMemo(() => {
-		if (!mention) return [];
-		const q = mention.query.toLowerCase();
+		if (!auto) return [];
+		const q = auto.query.toLowerCase();
 		if (!q) return allCandidates.slice(0, 10);
 		return allCandidates
 			.filter((c) => c.label.toLowerCase().includes(q))
 			.slice(0, 10);
-	}, [allCandidates, mention]);
+	}, [allCandidates, auto]);
 
 	const handleInputChange = useCallback(
 		(e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -120,69 +155,101 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			const cursorPos = e.target.selectionStart;
 			setValue(text);
 
-			const detected = detectMention(text, cursorPos);
+			const detected = detectAutocomplete(text, cursorPos);
 			if (detected) {
-				setMention({
-					query: detected.query,
-					start: detected.start,
-					index: 0,
-				});
+				setAuto({ ...detected, index: 0 });
 			} else {
-				setMention(null);
+				setAuto(null);
 			}
 		},
 		[],
 	);
 
-	const insertMention = useCallback(
-		(candidate: MentionCandidate) => {
-			if (!mention) return;
-			// Remove the @query text from the input
-			const before = value.slice(0, mention.start);
-			const after = value.slice(
-				textareaRef.current?.selectionStart ?? value.length,
-			);
-			const newValue = before + after;
-			setValue(newValue);
-			setMention(null);
+	const insertCandidate = useCallback(
+		(candidate: AutoCandidate) => {
+			if (!auto) return;
 
-			// Create ContextItem
-			let item: ContextItem;
-			if (candidate.type === "note") {
-				item = {
-					type: "note",
-					path: candidate.path!,
-					name: candidate.name!,
-					id: makeId(),
-				};
-			} else if (candidate.type === "folder") {
-				item = {
-					type: "folder",
-					path: candidate.path!,
-					name: candidate.name!,
-					id: makeId(),
-				};
-			} else {
-				item = {
-					type: "tag",
-					tag: candidate.tag!,
-					id: makeId(),
-				};
+			if (auto.type === "mention") {
+				// Remove the @query text from the input
+				const before = value.slice(0, auto.start);
+				const after = value.slice(
+					textareaRef.current?.selectionStart ?? value.length,
+				);
+				setValue(before + after);
+				setAuto(null);
+
+				// Create ContextItem
+				let item: ContextItem;
+				if (candidate.contextType === "note") {
+					item = {
+						type: "note",
+						path: candidate.path!,
+						name: candidate.name!,
+						id: makeId(),
+					};
+				} else if (candidate.contextType === "folder") {
+					item = {
+						type: "folder",
+						path: candidate.path!,
+						name: candidate.name!,
+						id: makeId(),
+					};
+				} else {
+					item = {
+						type: "tag",
+						tag: candidate.tag!,
+						id: makeId(),
+					};
+				}
+				onAddMention(item);
+				setTimeout(() => textareaRef.current?.focus(), 0);
+				return;
 			}
-			onAddMention(item);
 
-			// Refocus textarea
-			setTimeout(() => textareaRef.current?.focus(), 0);
+			if (auto.type === "slash") {
+				const replacement = candidate.label + " ";
+				const before = value.slice(0, auto.start);
+				const after = value.slice(
+					textareaRef.current?.selectionStart ?? value.length,
+				);
+				const newValue = before + replacement + after;
+				setValue(newValue);
+				setAuto(null);
+				setTimeout(() => {
+					textareaRef.current?.focus();
+					// Place cursor after the inserted command + space
+					const pos = auto.start + replacement.length;
+					textareaRef.current?.setSelectionRange(pos, pos);
+				}, 0);
+				return;
+			}
+
+			if (auto.type === "wikilink") {
+				const replacement = `[[${candidate.label}]]`;
+				const before = value.slice(0, auto.start);
+				const after = value.slice(
+					textareaRef.current?.selectionStart ?? value.length,
+				);
+				const newValue = before + replacement + after;
+				setValue(newValue);
+				setAuto(null);
+				setTimeout(() => {
+					textareaRef.current?.focus();
+					const pos = auto.start + replacement.length;
+					textareaRef.current?.setSelectionRange(pos, pos);
+				}, 0);
+				return;
+			}
 		},
-		[mention, value, onAddMention],
+		[auto, value, onAddMention],
 	);
 
 	const handleKeyDown = useCallback(
 		(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-			if (mention && filteredCandidates.length > 0) {
+			if (auto && filteredCandidates.length > 0) {
 				if (e.key === "ArrowDown") {
 					e.preventDefault();
-					setMention((prev) =>
+					setAuto((prev) =>
 						prev
 							? {
 									...prev,
@@ -196,7 +263,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 				}
 				if (e.key === "ArrowUp") {
 					e.preventDefault();
-					setMention((prev) =>
+					setAuto((prev) =>
 						prev
 							? {
 									...prev,
@@ -212,12 +279,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
 				}
 				if (e.key === "Enter") {
 					e.preventDefault();
-					insertMention(filteredCandidates[mention.index]);
+					insertCandidate(filteredCandidates[auto.index]);
 					return;
 				}
 				if (e.key === "Escape") {
 					e.preventDefault();
-					setMention(null);
+					setAuto(null);
 					return;
 				}
 			}
@@ -228,14 +295,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
 				if (trimmed && !isStreaming) {
 					onSend(trimmed);
 					setValue("");
-					setMention(null);
+					setAuto(null);
 				}
 			}
 		},
 		[
-			mention,
+			auto,
 			filteredCandidates,
-			insertMention,
+			insertCandidate,
 			value,
 			isStreaming,
 			onSend,
@@ -244,18 +311,18 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
 	return (
 		<div style={{ position: "relative" }}>
-			{mention && filteredCandidates.length > 0 && (
+			{auto && filteredCandidates.length > 0 && (
 				<div className="chat-mention-dropdown">
 					{filteredCandidates.map((candidate, i) => (
 						<div
 							key={candidate.key}
-							className={`chat-mention-item${i === mention.index ? " chat-mention-item-active" : ""}`}
+							className={`chat-mention-item${i === auto.index ? " chat-mention-item-active" : ""}`}
 							onMouseDown={(e) => {
 								e.preventDefault();
-								insertMention(candidate);
+								insertCandidate(candidate);
 							}}
 							onMouseEnter={() =>
-								setMention((prev) =>
+								setAuto((prev) =>
 									prev ? { ...prev, index: i } : prev,
 								)
 							}
@@ -296,7 +363,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 							if (trimmed) {
 								onSend(trimmed);
 								setValue("");
-								setMention(null);
+								setAuto(null);
 							}
 						}}
 						disabled={!value.trim()}

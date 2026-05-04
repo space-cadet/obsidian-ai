@@ -1,5 +1,6 @@
 import { App, TFile, TFolder } from "obsidian";
 import { ContextItem } from "../types";
+import { expandEmbeds } from "./embedExpander";
 
 interface ResolvedNote {
 	name: string;
@@ -85,14 +86,16 @@ async function resolveSingleItem(
 		case "note": {
 			const file = app.vault.getAbstractFileByPath(item.path);
 			if (!(file instanceof TFile)) return [];
-			const content = await app.vault.read(file);
+			const raw = await app.vault.read(file);
+			const content = await expandEmbeds(raw, app);
 			return [{ name: item.name, path: file.path, content }];
 		}
 		case "folder": {
 			const files = getFilesForFolder(app, item.path);
 			const results: ResolvedNote[] = [];
 			for (const file of files) {
-				const content = await app.vault.read(file);
+				const raw = await app.vault.read(file);
+				const content = await expandEmbeds(raw, app);
 				results.push({ name: file.basename, path: file.path, content });
 			}
 			return results;
@@ -101,7 +104,8 @@ async function resolveSingleItem(
 			const files = getFilesForTag(app, item.tag);
 			const results: ResolvedNote[] = [];
 			for (const file of files) {
-				const content = await app.vault.read(file);
+				const raw = await app.vault.read(file);
+				const content = await expandEmbeds(raw, app);
 				results.push({ name: file.basename, path: file.path, content });
 			}
 			return results;
@@ -109,7 +113,8 @@ async function resolveSingleItem(
 		case "active-note": {
 			const file = app.workspace.getActiveFile();
 			if (!(file instanceof TFile)) return [];
-			const content = await app.vault.read(file);
+			const raw = await app.vault.read(file);
+			const content = await expandEmbeds(raw, app);
 			return [
 				{
 					name: file.basename,

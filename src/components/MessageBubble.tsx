@@ -8,6 +8,10 @@ interface MessageBubbleProps {
 	onAppend: (content: string) => void;
 	onInsertAtCursor: (content: string) => void;
 	onApply: (content: string) => void;
+	onRetry: () => void;
+	onApplyToTarget: (content: string, target: string) => void;
+	onCreateNote: (content: string, target: string) => void;
+	onAppendToTarget: (content: string, target: string) => void;
 }
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
@@ -16,6 +20,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	onAppend,
 	onInsertAtCursor,
 	onApply,
+	onRetry,
+	onApplyToTarget,
+	onCreateNote,
+	onAppendToTarget,
 }) => {
 	const contentRef = useRef<HTMLDivElement>(null);
 
@@ -53,13 +61,57 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 			<div ref={contentRef} className="chat-bubble-content" />
 			{message.role === "assistant" && !message.isError && (
 				<div className="chat-bubble-actions">
-					<button
-						className="chat-btn-small"
-						onClick={() => onApply(message.content)}
-						title="Preview changes as a diff in the active note"
-					>
-						✓ Apply
-					</button>
+					{message.command?.type === "edit" && (
+						<button
+							className="chat-btn-small"
+							onClick={() =>
+								onApplyToTarget(
+									message.content,
+									message.command!.target,
+								)
+							}
+							title={`Apply as diff to ${message.command.target}`}
+						>
+							✓ Apply → {message.command.target}
+						</button>
+					)}
+					{message.command?.type === "create" && (
+						<button
+							className="chat-btn-small"
+							onClick={() =>
+								onCreateNote(
+									message.content,
+									message.command!.target,
+								)
+							}
+							title={`Create ${message.command.target}`}
+						>
+							✓ Create {message.command.target}
+						</button>
+					)}
+					{message.command?.type === "append" && (
+						<button
+							className="chat-btn-small"
+							onClick={() =>
+								onAppendToTarget(
+									message.content,
+									message.command!.target,
+								)
+							}
+							title={`Append to ${message.command.target}`}
+						>
+							+ Append → {message.command.target}
+						</button>
+					)}
+					{!message.command && (
+						<button
+							className="chat-btn-small"
+							onClick={() => onApply(message.content)}
+							title="Preview changes as a diff in the active note"
+						>
+							✓ Apply
+						</button>
+					)}
 					<button
 						className="chat-btn-small"
 						onClick={() => onInsertAtCursor(message.content)}
@@ -67,19 +119,28 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 					>
 						⌶ Insert at Cursor
 					</button>
-					<button
-						className="chat-btn-small"
-						onClick={() => onAppend(message.content)}
-						title="Append directly to the end of the note — no confirmation step"
-					>
-						+ Append
-					</button>
+					{!message.command && (
+						<button
+							className="chat-btn-small"
+							onClick={() => onAppend(message.content)}
+							title="Append directly to the end of the note — no confirmation step"
+						>
+							+ Append
+						</button>
+					)}
 					<button
 						className="chat-btn-small"
 						onClick={handleCopy}
 						title="Copy response"
 					>
 						⎘ Copy
+					</button>
+					<button
+						className="chat-btn-small"
+						onClick={onRetry}
+						title="Retry this message"
+					>
+						↺ Retry
 					</button>
 				</div>
 			)}

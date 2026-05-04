@@ -1,6 +1,6 @@
 # Task Registry
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-03 00:18:43 IST*
+*Last Updated: 2026-05-04 14:59:36 IST*
 
 ## Summary
 - Active: 4 | Paused: 3 | Completed: 5 | Cancelled: 0
@@ -33,13 +33,13 @@
 - Format normalization complete
 
 ### T3 — Context & Mentions System *(requires T1)*
-Active note toggle implemented: `includeActiveNote` state in ChatApp, chip in ContextBar, XML context block injected into user message on send. Next: `@`mention autocomplete + ContextEngine. See `tasks/T3.md`.
+`@mention` autocomplete implemented, ContextEngine with multi-note support, active note toggle, embedExpander for `![[...]]` resolution. Pending: selection capture, token estimation. See `tasks/T3.md`.
 
 ### T2 — Conversation Chain & Memory *(requires T1)*
 Basic single-session persistence done. Session-store architecture designed: `StoredChatData` with `sessions[]` + `activeSessionId`, plugin API methods, SessionPickerModal UI, auto-titling, pruning. Implementation next. See `tasks/T2.md`.
 
 ### T5 — In-Place Note Editing *(requires T1)*
-`NoteEditingBridge` refactored: receives resolved view/file from caller. Correct note always targeted via workspace active-leaf-change tracking in ChatApp. Button labels show target note name. Remaining: target-note by path (needs T3), slash commands, retry button. See `tasks/T5.md`.
+`NoteEditingBridge` complete: `applyToNote`, `applyToTargetNote`, `createNote`, `appendToNote`. Slash commands (`/edit`, `/create`, `/append`) implemented. Retry button added. Targeted actions (Apply→Note, Create Note, Append→Note) via message metadata. Remaining: overwrite modal for create, end-to-end testing. See `tasks/T5.md`.
 
 ### T8 — Open Source Release with Branding *(requires T7)*
 Branding transition and open-source release preparation. See `tasks/T8.md`.

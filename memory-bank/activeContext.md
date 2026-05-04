@@ -1,14 +1,14 @@
 # Active Context
 
-*Last Updated: 2026-05-03 02:40:00 IST*
+*Last Updated: 2026-05-04 14:59:36 IST*
 
 ## Current Focus
 **Primary Task:** T3
 **Secondary Tasks:** META-1, T5, T2, T13
 
 ## Active Tasks
-- [T3]: Context & Mentions — active note toggle, @mention autocomplete, ContextEngine multi-note support all implemented
-- [T5]: Note targeting fixed (active-leaf-change); NoteEditingBridge refactored; Apply button added to message bubbles; remaining: applyToTargetNote, slash commands, retry
+- [T3]: Context & Mentions — `@mention` autocomplete, ContextEngine multi-note support, embedExpander, active note toggle all implemented
+- [T5]: Note Editing — `applyToNote`, `applyToTargetNote`, `createNote`, `appendToNote` all complete. Slash commands (`/edit`, `/create`, `/append`) implemented. Retry button added. Targeted actions via message metadata. Remaining: overwrite modal, real-world testing
 - [T2]: Session-based chat history fully implemented; pending real-world testing
 - [T13]: Agentic Tool Calling — design complete, task and implementation doc created, awaiting scheduling
 - [META-1]: Keep memory-bank records aligned with implementation state
@@ -18,8 +18,8 @@
 
 ## Task-Specific Context
 
-### Task T5 — IN PROGRESS
-`NoteEditingBridge` refactored: methods now receive resolved MarkdownView/TFile from caller — no internal leaf discovery. `ChatApp` tracks last-focused markdown leaf via `workspace.on('active-leaf-change')`. Apply/Append buttons show target note name ("✓ Apply → NoteBasename"). Stale closure on `includeActiveNote` fixed using ref pattern. Remaining: `applyToTargetNote()` (depends on T3), slash commands, retry button.
+### Task T5 — IN PROGRESS (major items complete)
+`NoteEditingBridge` complete with all methods: `applyToNote()`, `applyToTargetNote()`, `createNote()`, `appendToNote()`. Slash commands (`/edit [[Note]]`, `/create [[Note]]`, `/append [[Note]]`) implemented with parser supporting `[[Note]]` and bare names. Retry button added to MessageBubble. Targeted action buttons (Apply→Note, Create Note, Append→Note) render contextually based on `command` metadata stored on assistant messages. Remaining: overwrite/confirm modal for existing files, end-to-end testing.
 
 ### Task T2 — IN PROGRESS (implementation complete, pending testing)
 Session-based chat history fully implemented. `loadChatData`/`saveChatData` plugin methods with migration from old flat `chatMessages`. `ChatApp` uses `sessions[]` + `activeSessionId` state with `activeSessionIdRef` to avoid stale closures during streaming. Archive-on-New auto-titles from first user message and prunes to `maxSavedConversations`. `SessionPickerModal` lists sessions with title, count, relative time, preview; supports load and delete. Deleting the active session automatically creates a new empty one. Load button enabled via `hasHistory = sessions.some(s => s.messages.length > 0)`.

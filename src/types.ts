@@ -4,6 +4,10 @@ export interface ChatMessage {
 	content: string;
 	timestamp: number;
 	isError?: boolean;
+	command?: {
+		type: "edit" | "create" | "append";
+		target: string;
+	};
 }
 
 export interface ContextItemBase {

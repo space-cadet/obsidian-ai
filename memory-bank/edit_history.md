@@ -1,8 +1,21 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-03 02:47:31 IST*
+*Last Updated: 2026-05-04 14:59:36 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
+
+---
+
+### 2026-05-04
+
+#### 14:59:36 IST - T3/T5: Memory Bank Update for Uncommitted Changes
+
+- Modified `memory-bank/tasks/T3.md` — Marked embedExpander completion criteria as done
+- Modified `memory-bank/tasks/T5.md` — Marked applyToTargetNote, createNote, slash commands, retry, appendToTarget as complete
+- Modified `memory-bank/tasks.md` — Updated T3/T5 summaries and timestamps
+- Modified `memory-bank/activeContext.md` — Updated current focus and T5 status
+- Modified `memory-bank/session_cache.md` — Updated session history, T3/T5 progress, timestamps
+- Created `memory-bank/sessions/2026-05-04-afternoon.md` — Session file documenting retry, embedExpander, slash commands, applyToTargetNote implementation
 
 ---
 

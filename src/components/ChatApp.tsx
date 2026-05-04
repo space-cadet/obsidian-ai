@@ -15,11 +15,27 @@ interface ChatAppProps {
 	plugin: ChatPluginLike;
 }
 
-function buildSystemPrompt(contextItems: ContextItem[]): string {
+function buildSystemPrompt(
+	contextItems: ContextItem[],
+	slashCmd?: SlashCommand,
+): string {
 	let prompt =
 		"You are a helpful assistant integrated into an Obsidian note-taking app.";
 	const hasActiveNote = contextItems.some((i) => i.type === "active-note");
-	if (hasActiveNote) {
+
+	if (slashCmd) {
+		switch (slashCmd.command) {
+			case "edit":
+				prompt += `\n\nThe user wants to edit the note "${slashCmd.target}". Return ONLY the complete revised note content. Do not wrap it in markdown code blocks or add explanations.`;
+				break;
+			case "create":
+				prompt += `\n\nThe user wants to create a new note named "${slashCmd.target}". Return the complete note content.`;
+				break;
+			case "append":
+				prompt += `\n\nThe user wants to append to the note "${slashCmd.target}". Return only the new content to append.`;
+				break;
+		}
+	} else if (hasActiveNote) {
 		prompt +=
 			"\n\nThe active note is included in context. When the user asks you to edit, rewrite, or improve the note, return ONLY the complete revised note content. Do not wrap it in markdown code blocks or add explanations.";
 	}
@@ -53,6 +69,24 @@ function makeId(): string {
 	return crypto.randomUUID();
 }
 
+interface SlashCommand {
+	command: "edit" | "create" | "append";
+	target: string;
+	prompt: string;
+}
+
+function parseSlashCommand(text: string): SlashCommand | null {
+	const match = text.match(
+		/^\/(edit|create|append)\s+(?:\[\[)?([^\]\n]+?)(?:\]\])?(?:\s+([\s\S]*))?$/i,
+	);
+	if (!match) return null;
+	return {
+		command: match[1].toLowerCase() as "edit" | "create" | "append",
+		target: match[2].trim(),
+		prompt: (match[3] ?? "").trim(),
+	};
+}
+
 const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	const [sessions, setSessions] = useState<ChatSession[]>([]);
 	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -67,7 +101,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	// Refs so callbacks always see latest values without stale closures
 	const messagesRef = useRef<ChatMessage[]>([]);
 	const contextItemsRef = useRef<ContextItem[]>([]);
+	const sessionsRef = useRef<ChatSession[]>([]);
 	contextItemsRef.current = contextItems;
+	sessionsRef.current = sessions;
 	const activeSessionIdRef = useRef<string | null>(null);
 	activeSessionIdRef.current = activeSessionId;
 	// Tracks the last focused markdown leaf
@@ -207,6 +243,48 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		async (text: string) => {
 			if (!text.trim() || isStreaming) return;
 
+			// Parse slash commands
+			const slashCmd = parseSlashCommand(text);
+			let sendText = text;
+			let sendContextItems = contextItemsRef.current;
+			let commandMeta: ChatMessage["command"] = undefined;
+
+			if (slashCmd) {
+				commandMeta = {
+					type: slashCmd.command,
+					target: slashCmd.target,
+				};
+				sendText =
+					slashCmd.prompt ||
+					`Please ${slashCmd.command} ${slashCmd.target}`;
+
+				if (slashCmd.command === "edit" || slashCmd.command === "append") {
+					// Resolve target note and add to context
+					const file =
+						plugin.app.metadataCache.getFirstLinkpathDest(
+							slashCmd.target,
+							"",
+						);
+					if (file && file instanceof TFile) {
+						const exists = sendContextItems.some(
+							(i) =>
+								i.type === "note" && i.path === file.path,
+						);
+						if (!exists) {
+							sendContextItems = [
+								...sendContextItems,
+								{
+									type: "note",
+									path: file.path,
+									name: file.basename,
+									id: makeId(),
+								},
+							];
+						}
+					}
+				}
+			}
+
 			const userMsg: ChatMessage = {
 				id: makeId(),
 				role: "user",
@@ -236,21 +314,21 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				content: m.content,
 			}));
 
-			let userContent = text;
+			let userContent = sendText;
 			const resolved = await resolveContextItems(
-				contextItemsRef.current,
+				sendContextItems,
 				plugin.app,
 				plugin.settings.maxContextTokens || 8000,
 			);
 			setWasTruncated(resolved.wasTruncated);
 			if (resolved.contextString) {
-				userContent = `${resolved.contextString}\n\n${text}`;
+				userContent = `${resolved.contextString}\n\n${sendText}`;
 			}
 
 			const chatMessages = [
 				{
 					role: "system" as const,
-					content: buildSystemPrompt(contextItemsRef.current),
+					content: buildSystemPrompt(sendContextItems, slashCmd ?? undefined),
 				},
 				...history,
 				{ role: "user" as const, content: userContent },
@@ -272,6 +350,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					role: "assistant",
 					content: fullText,
 					timestamp: Date.now(),
+					command: commandMeta,
 				};
 				setSessions((prev) =>
 					prev.map((s) =>
@@ -296,6 +375,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 							role: "assistant",
 							content: fullText + " [stopped]",
 							timestamp: Date.now(),
+							command: commandMeta,
 						};
 						setSessions((prev) =>
 							prev.map((s) =>
@@ -318,6 +398,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 						content: `Error: ${e.message}`,
 						timestamp: Date.now(),
 						isError: true,
+						command: commandMeta,
 					};
 					setSessions((prev) =>
 						prev.map((s) =>
@@ -435,6 +516,97 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		[plugin],
 	);
 
+	const handleRetry = useCallback(
+		(messageId: string) => {
+			if (isStreaming) return;
+			const currentActiveId = activeSessionIdRef.current;
+			if (!currentActiveId) return;
+
+			const session = sessionsRef.current.find(
+				(s) => s.id === currentActiveId,
+			);
+			if (!session) return;
+
+			const assistantIndex = session.messages.findIndex(
+				(m) => m.id === messageId,
+			);
+			if (assistantIndex <= 0) return;
+
+			// Find the preceding user message
+			let userIndex = -1;
+			for (let i = assistantIndex - 1; i >= 0; i--) {
+				if (session.messages[i].role === "user") {
+					userIndex = i;
+					break;
+				}
+			}
+			if (userIndex === -1) return;
+
+			const userMsg = session.messages[userIndex];
+			const truncated = session.messages.slice(0, userIndex);
+
+			// Update ref so handleSend sees truncated history
+			messagesRef.current = truncated;
+
+			setSessions((prev) =>
+				prev.map((s) =>
+					s.id === currentActiveId
+						? { ...s, messages: truncated, updatedAt: Date.now() }
+						: s,
+				),
+			);
+
+			console.log(`[ChatApp] retry message ${messageId} — re-sending user msg`);
+			handleSend(userMsg.content);
+		},
+		[isStreaming, handleSend],
+	);
+
+	const handleApplyToTarget = useCallback(
+		async (content: string, target: string) => {
+			await NoteEditingBridge.applyToTargetNote(
+				plugin.app,
+				target,
+				content,
+				"Apply AI edit",
+			);
+		},
+		[plugin],
+	);
+
+	const handleCreateNote = useCallback(
+		async (content: string, target: string) => {
+			await NoteEditingBridge.createNote(
+				plugin.app,
+				target,
+				content,
+				"Create note",
+			);
+		},
+		[plugin],
+	);
+
+	const handleAppendToTarget = useCallback(
+		async (content: string, target: string) => {
+			let file = plugin.app.vault.getAbstractFileByPath(target);
+			if (!file || !(file instanceof TFile)) {
+				const resolved = plugin.app.metadataCache.getFirstLinkpathDest(
+					target,
+					"",
+				);
+				if (resolved && resolved instanceof TFile) {
+					file = resolved;
+				}
+			}
+			if (!file || !(file instanceof TFile)) {
+				new Notice(`⚠️ Note not found: ${target}`);
+				return;
+			}
+			await NoteEditingBridge.appendToNote(plugin.app, file, content);
+		},
+		[plugin],
+	);
+
 	const handleLoadSession = useCallback((sessionId: string) => {
 		setActiveSessionId(sessionId);
 		setShowSessionPicker(false);
@@ -491,6 +663,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				onAppend={handleAppend}
 				onInsertAtCursor={handleInsertAtCursor}
 				onApply={handleApply}
+				onRetry={handleRetry}
+				onApplyToTarget={handleApplyToTarget}
+				onCreateNote={handleCreateNote}
+				onAppendToTarget={handleAppendToTarget}
 			/>
 			<ContextBar
 				contextItems={contextItems}
