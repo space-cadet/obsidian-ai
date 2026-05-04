@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { ChatSession } from "../types";
 
 interface SessionPickerModalProps {
@@ -6,6 +6,7 @@ interface SessionPickerModalProps {
 	activeSessionId: string | null;
 	onLoad: (sessionId: string) => void;
 	onDelete: (sessionId: string) => void;
+	onRename: (sessionId: string, newTitle: string) => void;
 	onClose: () => void;
 }
 
@@ -28,10 +29,37 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 	activeSessionId,
 	onLoad,
 	onDelete,
+	onRename,
 	onClose,
 }) => {
+	const [editingId, setEditingId] = useState<string | null>(null);
+	const [editValue, setEditValue] = useState("");
+
 	// Sort by updatedAt descending (newest first)
 	const sorted = [...sessions].sort((a, b) => b.updatedAt - a.updatedAt);
+
+	const startRename = (session: ChatSession) => {
+		setEditingId(session.id);
+		setEditValue(session.title || "");
+	};
+
+	const commitRename = () => {
+		if (editingId) {
+			onRename(editingId, editValue);
+			setEditingId(null);
+			setEditValue("");
+		}
+	};
+
+	const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === "Enter") {
+			e.preventDefault();
+			commitRename();
+		} else if (e.key === "Escape") {
+			setEditingId(null);
+			setEditValue("");
+		}
+	};
 
 	return (
 		<div className="chat-modal-overlay" onClick={onClose}>
@@ -70,7 +98,7 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 									(firstUserMsg
 										? firstUserMsg.content.slice(0, 40) +
 											(firstUserMsg.content.length > 40 ? "…" : "")
-										: `Chat ${new Date(session.createdAt).toLocaleDateString()}`);
+									: `Chat ${new Date(session.createdAt).toLocaleDateString()}`);
 
 								return (
 									<div
@@ -78,14 +106,29 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 										className={`chat-session-item${isActive ? " chat-session-item-active" : ""}`}
 									>
 										<div className="chat-session-info">
-											<div className="chat-session-title">
-												{displayTitle}
-												{isActive && (
-													<span className="chat-session-badge">
-														Active
-													</span>
-												)}
-											</div>
+											{editingId === session.id ? (
+												<input
+													className="chat-session-rename-input"
+													value={editValue}
+													onChange={(e) => setEditValue(e.target.value)}
+													onKeyDown={handleRenameKeyDown}
+													onBlur={commitRename}
+													autoFocus
+												/>
+											) : (
+												<div
+													className="chat-session-title"
+													onDoubleClick={() => startRename(session)}
+													title="Double-click to rename"
+												>
+													{displayTitle}
+													{isActive && (
+														<span className="chat-session-badge">
+															Active
+														</span>
+													)}
+												</div>
+											)}
 											<div className="chat-session-meta">
 												{session.messages.length} messages ·{" "}
 												{formatRelativeTime(session.updatedAt)}
@@ -101,6 +144,13 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 												disabled={isActive}
 											>
 												{isActive ? "Current" : "Load"}
+											</button>
+											<button
+												className="chat-btn-small"
+												onClick={() => startRename(session)}
+												title="Rename session"
+											>
+												✎
 											</button>
 											<button
 												className="chat-btn-small chat-btn-danger"
@@ -121,4 +171,4 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 		);
 	};
 
-	export default SessionPickerModal;
+export default SessionPickerModal;

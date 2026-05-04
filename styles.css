@@ -760,3 +760,72 @@
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
+
+/* ── New styles for context tracking, tokens, editing, renaming ─────────── */
+
+/* Show actions on user bubble hover too */
+.chat-bubble-user:hover .chat-bubble-actions-user {
+	display: flex;
+}
+
+.chat-bubble-actions-user {
+	justify-content: flex-end;
+}
+
+/* Context tracking footer under user messages */
+.chat-message-context-footer {
+	margin-top: 6px;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	opacity: 0.75;
+	line-height: 1.4;
+}
+
+.chat-message-context-label {
+	font-weight: 500;
+	margin-right: 4px;
+}
+
+.chat-message-context-items {
+	font-style: italic;
+}
+
+/* Token count */
+.chat-message-token-count {
+	margin-top: 4px;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	opacity: 0.7;
+	text-align: right;
+}
+
+.chat-bubble-assistant .chat-message-token-count {
+	text-align: left;
+}
+
+/* Session rename input */
+.chat-session-rename-input {
+	width: 100%;
+	padding: 4px 8px;
+	border-radius: 4px;
+	border: 1px solid var(--interactive-accent);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-family: inherit;
+	outline: none;
+}
+
+.chat-session-rename-input:focus {
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+}
+
+/* Session title hover hint */
+.chat-session-title {
+	cursor: pointer;
+}
+
+.chat-session-title:hover {
+	opacity: 0.8;
+}

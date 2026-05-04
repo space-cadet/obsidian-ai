@@ -8,6 +8,10 @@ export interface ChatMessage {
 		type: "edit" | "create" | "append";
 		target: string;
 	};
+	/** Context items attached when this message was sent */
+	contextItems?: ContextItem[];
+	/** Estimated token count for this message (including context for user messages) */
+	estimatedTokens?: number;
 }
 
 export interface ContextItemBase {

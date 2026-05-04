@@ -35,11 +35,13 @@ interface ChatMessagesProps {
 	messages: ChatMessage[];
 	currentAiMessage: string;
 	isStreaming: boolean;
+	isEditing: boolean;
 	app: App;
 	onAppend: (content: string) => void;
 	onInsertAtCursor: (content: string) => void;
 	onApply: (content: string) => void;
 	onRetry: (messageId: string) => void;
+	onEdit: (messageId: string) => void;
 	onApplyToTarget: (content: string, target: string) => void;
 	onCreateNote: (content: string, target: string) => void;
 	onAppendToTarget: (content: string, target: string) => void;
@@ -49,11 +51,13 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	messages,
 	currentAiMessage,
 	isStreaming,
+	isEditing,
 	app,
 	onAppend,
 	onInsertAtCursor,
 	onApply,
 	onRetry,
+	onEdit,
 	onApplyToTarget,
 	onCreateNote,
 	onAppendToTarget,
@@ -80,6 +84,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 					onInsertAtCursor={onInsertAtCursor}
 					onApply={onApply}
 					onRetry={() => onRetry(msg.id)}
+					onEdit={() => onEdit(msg.id)}
 					onApplyToTarget={onApplyToTarget}
 					onCreateNote={onCreateNote}
 					onAppendToTarget={onAppendToTarget}

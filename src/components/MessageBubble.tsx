@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { App, MarkdownRenderer, Component } from "obsidian";
-import { ChatMessage } from "../types";
+import { ChatMessage, ContextItem } from "../types";
 
 interface MessageBubbleProps {
 	message: ChatMessage;
@@ -9,9 +9,27 @@ interface MessageBubbleProps {
 	onInsertAtCursor: (content: string) => void;
 	onApply: (content: string) => void;
 	onRetry: () => void;
+	onEdit: () => void;
 	onApplyToTarget: (content: string, target: string) => void;
 	onCreateNote: (content: string, target: string) => void;
 	onAppendToTarget: (content: string, target: string) => void;
+}
+
+function formatContextItems(items: ContextItem[]): string {
+	return items
+		.map((item) => {
+			switch (item.type) {
+				case "note":
+					return `📄 ${item.name}`;
+				case "folder":
+					return `📁 ${item.name}`;
+				case "tag":
+					return `#${item.tag}`;
+				case "active-note":
+					return "📄 Active note";
+			}
+		})
+		.join(", ");
 }
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
@@ -21,6 +39,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	onInsertAtCursor,
 	onApply,
 	onRetry,
+	onEdit,
 	onApplyToTarget,
 	onCreateNote,
 	onAppendToTarget,
@@ -59,6 +78,24 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 				<span className="chat-bubble-time">{time}</span>
 			</div>
 			<div ref={contentRef} className="chat-bubble-content" />
+
+			{/* Context tracking for user messages */}
+			{message.role === "user" && message.contextItems && message.contextItems.length > 0 && (
+				<div className="chat-message-context-footer">
+					<span className="chat-message-context-label">Context:</span>
+					<span className="chat-message-context-items">
+						{formatContextItems(message.contextItems)}
+					</span>
+				</div>
+			)}
+
+			{/* Token count */}
+			{message.estimatedTokens !== undefined && (
+				<div className="chat-message-token-count">
+					~{message.estimatedTokens} tokens
+				</div>
+			)}
+
 			{message.role === "assistant" && !message.isError && (
 				<div className="chat-bubble-actions">
 					{message.command?.type === "edit" && (
@@ -141,6 +178,26 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 						title="Retry this message"
 					>
 						↺ Retry
+					</button>
+				</div>
+			)}
+
+			{/* Edit button for user messages */}
+			{message.role === "user" && (
+				<div className="chat-bubble-actions chat-bubble-actions-user">
+					<button
+						className="chat-btn-small"
+						onClick={onEdit}
+						title="Edit and resubmit"
+					>
+						✎ Edit
+					</button>
+					<button
+						className="chat-btn-small"
+						onClick={handleCopy}
+						title="Copy message"
+					>
+						⎘ Copy
 					</button>
 				</div>
 			)}

@@ -45,6 +45,7 @@ export interface ObsidianAISettings {
 	includeActiveNote: boolean;
 	maxContextTokens: number;
 	maxSavedConversations: number;
+	autoNameSessions: boolean;
 	debugLogLevel: "off" | "error" | "info" | "debug";
 	debugLogRetention: number;
 }
@@ -182,6 +183,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	includeActiveNote: false,
 	maxContextTokens: 8000,
 	maxSavedConversations: 20,
+	autoNameSessions: false,
 	debugLogLevel: "error",
 	debugLogRetention: 200,
 };
@@ -217,6 +219,7 @@ export const normalizeSettings = (
 		includeActiveNote: Boolean(merged.includeActiveNote),
 		maxContextTokens: merged.maxContextTokens ?? 8000,
 		maxSavedConversations: merged.maxSavedConversations ?? 20,
+		autoNameSessions: Boolean(merged.autoNameSessions),
 		debugLogLevel: merged.debugLogLevel ?? "error",
 		debugLogRetention: merged.debugLogRetention ?? 200,
 	};

@@ -8,6 +8,9 @@ interface ChatInputProps {
 	onStop: () => void;
 	onAddMention: (item: ContextItem) => void;
 	isStreaming: boolean;
+	isEditing?: boolean;
+	onCancel?: () => void;
+	editMessage?: string;
 }
 
 type AutoType = "mention" | "slash" | "wikilink";
@@ -76,10 +79,20 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	onStop,
 	onAddMention,
 	isStreaming,
+	isEditing,
+	onCancel,
+	editMessage,
 }) => {
 	const [value, setValue] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const [auto, setAuto] = useState<AutoState | null>(null);
+
+	useEffect(() => {
+		if (editMessage !== undefined) {
+			setValue(editMessage);
+			setTimeout(() => textareaRef.current?.focus(), 50);
+		}
+	}, [editMessage]);
 
 	const allCandidates = useMemo(() => {
 		if (!auto) return [];
@@ -170,12 +183,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			if (!auto) return;
 
 			if (auto.type === "mention") {
-				// Remove the @query text from the input
+				// Replace @query with the candidate name in the input
 				const before = value.slice(0, auto.start);
 				const after = value.slice(
 					textareaRef.current?.selectionStart ?? value.length,
 				);
-				setValue(before + after);
+				setValue(before + candidate.label + after);
 				setAuto(null);
 
 				// Create ContextItem
@@ -355,6 +368,33 @@ const ChatInput: React.FC<ChatInputProps> = ({
 					>
 						⏹ Stop
 					</button>
+				) : isEditing ? (
+					<div style={{ display: "flex", gap: "6px" }}>
+						<button
+							className="chat-btn chat-send-btn"
+							onClick={() => {
+								const trimmed = value.trim();
+								if (trimmed) {
+									onSend(trimmed);
+									setValue("");
+									setAuto(null);
+								}
+							}}
+							disabled={!value.trim()}
+						>
+							Resubmit
+						</button>
+						<button
+							className="chat-btn"
+							onClick={() => {
+								setValue("");
+								setAuto(null);
+								onCancel?.();
+							}}
+						>
+							Cancel
+						</button>
+					</div>
 				) : (
 					<button
 						className="chat-btn chat-send-btn"

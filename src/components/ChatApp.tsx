@@ -97,6 +97,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	const [targetNoteName, setTargetNoteName] = useState<string | null>(null);
 	const [showSessionPicker, setShowSessionPicker] = useState(false);
 	const [showContextPicker, setShowContextPicker] = useState(false);
+	const [isEditing, setIsEditing] = useState(false);
+	const [originalMessages, setOriginalMessages] = useState<ChatMessage[]>([]);
+	const [editMessageText, setEditMessageText] = useState<string>("");
 	const controllerRef = useRef<AbortController | null>(null);
 	// Refs so callbacks always see latest values without stale closures
 	const messagesRef = useRef<ChatMessage[]>([]);
@@ -191,6 +194,28 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		}
 	}, [sessions, activeSessionId, plugin]);
 
+	// Auto-title session after it has a few messages
+	useEffect(() => {
+		if (!plugin.settings.autoNameSessions) return;
+		const currentActiveId = activeSessionIdRef.current;
+		if (!currentActiveId) return;
+		const session = sessionsRef.current.find(
+			(s) => s.id === currentActiveId,
+		);
+		if (!session || session.title) return;
+		const userMsgs = session.messages.filter((m) => m.role === "user");
+		if (userMsgs.length >= 2) {
+			const title = generateSessionTitle(session.messages);
+			if (title && title !== `Chat ${new Date().toLocaleDateString()}`) {
+				setSessions((prev) =>
+					prev.map((s) =>
+						s.id === currentActiveId ? { ...s, title } : s,
+					),
+				);
+			}
+		}
+	}, [sessions, activeSessionId, plugin.settings.autoNameSessions]);
+
 	const handleToggleActiveNote = useCallback(() => {
 		setContextItems((prev) => {
 			const hasActive = prev.some((i) => i.type === "active-note");
@@ -239,6 +264,12 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		setShowContextPicker(false);
 	}, []);
 
+	const TOKEN_ESTIMATE_RATIO = 4;
+
+	function estimateTokens(text: string): number {
+		return Math.ceil(text.length / TOKEN_ESTIMATE_RATIO);
+	}
+
 	const handleSend = useCallback(
 		async (text: string) => {
 			if (!text.trim() || isStreaming) return;
@@ -285,11 +316,24 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				}
 			}
 
+			const resolved = await resolveContextItems(
+				sendContextItems,
+				plugin.app,
+				plugin.settings.maxContextTokens || 8000,
+			);
+			setWasTruncated(resolved.wasTruncated);
+
+			const userTokenEstimate = estimateTokens(
+				(resolved.contextString ? resolved.contextString + "\n\n" : "") + sendText,
+			);
+
 			const userMsg: ChatMessage = {
 				id: makeId(),
 				role: "user",
 				content: text,
 				timestamp: Date.now(),
+				contextItems: sendContextItems,
+				estimatedTokens: userTokenEstimate,
 			};
 
 			const currentActiveId = activeSessionIdRef.current;
@@ -300,7 +344,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 								...s,
 								messages: [...s.messages, userMsg],
 								updatedAt: Date.now(),
-								contextItems: contextItemsRef.current,
+								contextItems: sendContextItems,
 							}
 							: s,
 				),
@@ -315,12 +359,6 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 			}));
 
 			let userContent = sendText;
-			const resolved = await resolveContextItems(
-				sendContextItems,
-				plugin.app,
-				plugin.settings.maxContextTokens || 8000,
-			);
-			setWasTruncated(resolved.wasTruncated);
 			if (resolved.contextString) {
 				userContent = `${resolved.contextString}\n\n${sendText}`;
 			}
@@ -342,15 +380,67 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					controllerRef.current.signal,
 				)) {
 					fullText += chunk;
-					setCurrentAiMessage(fullText);
+					// Only show streaming content for non-slash commands
+					if (!slashCmd) {
+						setCurrentAiMessage(fullText);
+					}
 				}
 				console.log(`[ChatApp] streamChat done — ${fullText.length} chars`);
+				let assistantContent = fullText;
+				let assistantTokenEstimate = estimateTokens(fullText);
+
+				// For slash commands, execute the action and show a status message
+				if (slashCmd?.command === "create" && fullText) {
+					const fileName = slashCmd.target.endsWith(".md")
+						? slashCmd.target
+						: `${slashCmd.target}.md`;
+					try {
+						await plugin.app.vault.create(fileName, fullText);
+						new Notice(`✓ Created note: ${slashCmd.target}`);
+						assistantContent = `✓ Created note: ${slashCmd.target}`;
+					} catch (e: any) {
+						new Notice(`⚠️ Could not create note: ${e.message}`);
+						assistantContent = `⚠️ Could not create note: ${e.message}`;
+					}
+					assistantTokenEstimate = estimateTokens(assistantContent);
+				} else if (slashCmd?.command === "edit" && fullText) {
+					const success = await NoteEditingBridge.applyToTargetNote(
+						plugin.app,
+						slashCmd.target,
+						fullText,
+						"Apply AI edit",
+					);
+					assistantContent = success
+						? `✓ Applied edits to ${slashCmd.target}`
+						: `⚠️ Could not apply edits to ${slashCmd.target}`;
+					assistantTokenEstimate = estimateTokens(assistantContent);
+				} else if (slashCmd?.command === "append" && fullText) {
+					let file = plugin.app.vault.getAbstractFileByPath(slashCmd.target);
+					if (!file || !(file instanceof TFile)) {
+						const resolved = plugin.app.metadataCache.getFirstLinkpathDest(
+							slashCmd.target,
+							"",
+						);
+						if (resolved && resolved instanceof TFile) {
+							file = resolved;
+						}
+					}
+					if (file && file instanceof TFile) {
+						await NoteEditingBridge.appendToNote(plugin.app, file, fullText);
+						assistantContent = `✓ Appended to ${slashCmd.target}`;
+					} else {
+						assistantContent = `⚠️ Note not found: ${slashCmd.target}`;
+					}
+					assistantTokenEstimate = estimateTokens(assistantContent);
+				}
+
 				const assistantMsg: ChatMessage = {
 					id: makeId(),
 					role: "assistant",
-					content: fullText,
+					content: assistantContent,
 					timestamp: Date.now(),
 					command: commandMeta,
+					estimatedTokens: assistantTokenEstimate,
 				};
 				setSessions((prev) =>
 					prev.map((s) =>
@@ -359,10 +449,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 									...s,
 									messages: [...s.messages, assistantMsg],
 									updatedAt: Date.now(),
-									contextItems: contextItemsRef.current,
+									contextItems: sendContextItems,
 								}
 								: s,
-					),
+						),
 				);
 			} catch (e: any) {
 				if (e.name === "AbortError") {
@@ -376,6 +466,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 							content: fullText + " [stopped]",
 							timestamp: Date.now(),
 							command: commandMeta,
+							estimatedTokens: estimateTokens(fullText),
 						};
 						setSessions((prev) =>
 							prev.map((s) =>
@@ -384,7 +475,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 											...s,
 											messages: [...s.messages, stoppedMsg],
 											updatedAt: Date.now(),
-											contextItems: contextItemsRef.current,
+											contextItems: sendContextItems,
 										}
 										: s,
 							),
@@ -399,6 +490,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 						timestamp: Date.now(),
 						isError: true,
 						command: commandMeta,
+						estimatedTokens: estimateTokens(`Error: ${e.message}`),
 					};
 					setSessions((prev) =>
 						prev.map((s) =>
@@ -407,7 +499,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 										...s,
 										messages: [...s.messages, errorMsg],
 										updatedAt: Date.now(),
-										contextItems: contextItemsRef.current,
+										contextItems: sendContextItems,
 									}
 									: s,
 						),
@@ -417,6 +509,11 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				setIsStreaming(false);
 				setCurrentAiMessage("");
 				controllerRef.current = null;
+				setIsEditing(false);
+				setOriginalMessages([]);
+				setEditMessageText("");
+				// Clear context items after send (context is per-message)
+				setContextItems([]);
 			}
 		},
 		[isStreaming, plugin],
@@ -453,7 +550,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				s.id === currentActiveId
 					? {
 							...s,
-							title: s.title || generateSessionTitle(s.messages),
+							title: plugin.settings.autoNameSessions
+								? s.title || generateSessionTitle(s.messages)
+								: s.title,
 							updatedAt: Date.now(),
 						}
 						: s,
@@ -562,6 +661,55 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		[isStreaming, handleSend],
 	);
 
+	const handleEditMessage = useCallback(
+		(messageId: string) => {
+			if (isStreaming) return;
+			const currentActiveId = activeSessionIdRef.current;
+			if (!currentActiveId) return;
+
+			const session = sessionsRef.current.find(
+				(s) => s.id === currentActiveId,
+			);
+			if (!session) return;
+
+			const index = session.messages.findIndex((m) => m.id === messageId);
+			if (index < 0 || session.messages[index].role !== "user") return;
+
+			const msg = session.messages[index];
+			const truncated = session.messages.slice(0, index);
+
+			setOriginalMessages([...session.messages]);
+			messagesRef.current = truncated;
+
+			setSessions((prev) =>
+				prev.map((s) =>
+					s.id === currentActiveId
+						? { ...s, messages: truncated, updatedAt: Date.now() }
+						: s,
+				),
+			);
+			setIsEditing(true);
+			// The input value will be set via a ref callback in ChatInput
+		},
+		[isStreaming],
+	);
+
+	const handleCancelEdit = useCallback(() => {
+		const currentActiveId = activeSessionIdRef.current;
+		if (!currentActiveId || originalMessages.length === 0) return;
+
+		setSessions((prev) =>
+			prev.map((s) =>
+				s.id === currentActiveId
+					? { ...s, messages: originalMessages, updatedAt: Date.now() }
+					: s,
+			),
+		);
+		setIsEditing(false);
+		setOriginalMessages([]);
+		setEditMessageText("");
+	}, [originalMessages]);
+
 	const handleApplyToTarget = useCallback(
 		async (content: string, target: string) => {
 			await NoteEditingBridge.applyToTargetNote(
@@ -645,6 +793,17 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		[],
 	);
 
+	const handleRenameSession = useCallback(
+		(sessionId: string, newTitle: string) => {
+			setSessions((prev) =>
+				prev.map((s) =>
+					s.id === sessionId ? { ...s, title: newTitle.trim() } : s,
+				),
+			);
+		},
+		[],
+	);
+
 	const hasHistory = sessions.some((s) => s.messages.length > 0);
 
 	return (
@@ -659,11 +818,13 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				messages={messages}
 				currentAiMessage={currentAiMessage}
 				isStreaming={isStreaming}
+				isEditing={isEditing}
 				app={plugin.app}
 				onAppend={handleAppend}
 				onInsertAtCursor={handleInsertAtCursor}
 				onApply={handleApply}
 				onRetry={handleRetry}
+				onEdit={handleEditMessage}
 				onApplyToTarget={handleApplyToTarget}
 				onCreateNote={handleCreateNote}
 				onAppendToTarget={handleAppendToTarget}
@@ -673,8 +834,6 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				activeNoteName={targetNoteName}
 				wasTruncated={wasTruncated}
 				onToggleActiveNote={handleToggleActiveNote}
-				onRemoveItem={handleRemoveContextItem}
-				onOpenPicker={() => setShowContextPicker(true)}
 			/>
 			<ChatInput
 				app={plugin.app}
@@ -682,6 +841,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				onStop={handleStop}
 				onAddMention={handleAddMention}
 				isStreaming={isStreaming}
+				isEditing={isEditing}
+				onCancel={handleCancelEdit}
+				editMessage={editMessageText}
 			/>
 			{showSessionPicker && (
 				<SessionPickerModal
@@ -689,6 +851,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					activeSessionId={activeSessionId}
 					onLoad={handleLoadSession}
 					onDelete={handleDeleteSession}
+					onRename={handleRenameSession}
 					onClose={() => setShowSessionPicker(false)}
 				/>
 			)}

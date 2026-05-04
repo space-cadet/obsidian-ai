@@ -1,36 +1,37 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-04 14:59:36 IST*
+*Last Updated: 2026-05-04 18:11:57 IST*
 
-**Started**: 2026-05-04 14:30:00 IST
-**Focus Task**: T5 — Note Editing (retry, slash commands, applyToTargetNote) + T3 embedExpander
-**Session File**: `sessions/2026-05-04-afternoon.md`
-**Status**: ✅ All four queued tasks complete (retry, embedExpander, slash commands, applyToTargetNote); build passes
+**Started**: 2026-05-04 18:11:57 IST
+**Focus Task**: Memory Bank Update - T2, T3, T5 completion
+**Session File**: `sessions/2026-05-04-evening.md`
+**Status**: 🔄 Memory bank update in progress - task files updated with completion status
 
 ## Overview
 
-- Active: 4 | Paused: 3 | Completed: 5 | Cancelled: 0
-- Last Session: 2026-05-03 night (T3: context system; T5: Apply button; T13: design doc)
-- Current Period: afternoon
+- Active: 2 | Paused: 3 | Completed: 7 | Cancelled: 0
+- Last Session: 2026-05-04 afternoon (T5: retry, slash commands, applyToTargetNote; T3: embedExpander)
+- Current Period: evening
 
 ## Session History (Last 10)
 
-1. `sessions/2026-05-04-afternoon.md` — T5: retry button, slash commands, applyToTargetNote, createNote, appendToTarget; T3: embedExpander; all queued tasks complete
-2. `sessions/2026-05-03-night.md` — T3: context system implementation; T5: Apply button; T13: agentic tool calling design doc
-3. `sessions/2026-05-02-night.md` — T5: fix note targeting + NoteEditingBridge refactor; T2: basic persistence; stale closure fix; UX clarity
-4. `sessions/2026-05-02-evening.md` — T4: streaming wiring complete; T5: NoteEditingBridge + apply/append buttons
-5. `sessions/2026-05-02-morning.md` — META-1/T8: branding sync, package workflow, README, open-source release files
-6. `sessions/2026-05-02-morning.md` — META-1: arch docs, T1–T7 tasks; T7 (CI/CD) and T1 completed
-7. `sessions/2026-05-02-init.md` — META-1: Initial memory bank setup
+1. `sessions/2026-05-04-evening.md` — Memory bank update: T2, T3, T5 marked complete; registry updated
+2. `sessions/2026-05-04-afternoon.md` — T5: retry button, slash commands, applyToTargetNote, createNote, appendToTarget; T3: embedExpander; all queued tasks complete
+3. `sessions/2026-05-03-night.md` — T3: context system implementation; T5: Apply button; T13: agentic tool calling design doc
+4. `sessions/2026-05-02-night.md` — T5: fix note targeting + NoteEditingBridge refactor; T2: basic persistence; stale closure fix; UX clarity
+5. `sessions/2026-05-02-evening.md` — T4: streaming wiring complete; T5: NoteEditingBridge + apply/append buttons
+6. `sessions/2026-05-02-morning.md` — META-1/T8: branding sync, package workflow, README, open-source release files
+7. `sessions/2026-05-02-morning.md` — META-1: arch docs, T1–T7 tasks; T7 (CI/CD) and T1 completed
+8. `sessions/2026-05-02-init.md` — META-1: Initial memory bank setup
 
 ## Task Registry
 
 - META-1: Memory Bank Setup and Maintenance — 🔄
 - T1: Chat Panel (ItemView + React UI) — ✅
-- T2: Conversation Chain & Memory — 🔄
-- T3: Context & Mentions System — 🔄
+- T2: Conversation Chain & Memory — ✅
+- T3: Context & Mentions System — ✅
 - T4: Streaming — ✅
-- T5: In-Place Note Editing from Chat — 🔄
+- T5: In-Place Note Editing from Chat — ✅
 - T6: Token & Context Management — ⬜
 - T7: Release System & CI/CD — ✅
 - T8: Open Source Release with Branding — 🔄
@@ -59,9 +60,9 @@
 9. 🔄 Keep records in sync as T5 and T3 work continues
 
 ### T2: Conversation Chain & Memory
-**Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-03 00:45:00 IST
-**Context:** Session-based chat history fully implemented. Plugin methods loadChatData/saveChatData with migration from old flat chatMessages. ChatApp uses sessions[] + activeSessionId state. Archive-on-New with auto-titling and maxSavedConversations pruning. SessionPickerModal with load/delete actions. Load button enabled when history exists.
+**Status:** ✅ **COMPLETED** **Priority:** HIGH
+**Started:** 2026-05-02 **Last:** 2026-05-04 18:11:57 IST
+**Context:** Session-based chat history fully implemented with message editing and session renaming. Plugin methods loadChatData/saveChatData with migration from old flat chatMessages. ChatApp uses sessions[] + activeSessionId state. Archive-on-New with auto-titling and maxSavedConversations pruning. SessionPickerModal with load/delete actions.
 **Files:** `src/types.ts`, `src/main.ts`, `src/views/ObsidianAIChatView.ts`, `src/components/ChatApp.tsx`, `src/components/ActionBar.tsx`, `src/components/SessionPickerModal.tsx`
 **Progress:**
 1. ✅ loadChatMessages/saveChatMessages on plugin
@@ -72,11 +73,14 @@
 6. ✅ Update ChatApp for session state (archive-on-New, activeSessionId)
 7. ✅ Build SessionPickerModal component
 8. ✅ Wire Load button in ActionBar
+9. ✅ Message editing functionality - edit and resubmit previous messages
+10. ✅ Session renaming functionality via SessionPickerModal
+11. ✅ Real-world testing in Obsidian - all features tested and working
 
 ### T3: Context & Mentions System
-**Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-04 14:59:36 IST
-**Context:** Full context system + embedExpander implemented. `ContextEngine.resolveContextItems()` resolves all context types with embed expansion (depth ≤ 2, circular guard, heading extraction). `@mention` and `[[wikilink]]` autocomplete in `ChatInput`. Context items persist per-session.
+**Status:** ✅ **COMPLETED** **Priority:** HIGH
+**Started:** 2026-05-02 **Last:** 2026-05-04 18:11:57 IST
+**Context:** Full context system + embedExpander implemented with token estimation and context tracking UI. `ContextEngine.resolveContextItems()` resolves all context types with embed expansion (depth ≤ 2, circular guard, heading extraction). `@mention` and `[[wikilink]]` autocomplete in `ChatInput`. Context items persist per-session with token counts displayed per message.
 **Files:** `src/context/ContextEngine.ts`, `src/context/embedExpander.ts`, `src/components/ChatInput.tsx`, `src/components/ContextBar.tsx`, `src/components/ContextPickerModal.tsx`, `src/components/ChatApp.tsx`, `src/types.ts`, `styles.css`
 **Progress:**
 1. ✅ Active note toggle chip in ContextBar
@@ -86,11 +90,17 @@
 5. ✅ ContextEngine.resolveContextItems() for notes, folders, tags
 6. ✅ embedExpander for `![[]]` inline embeds (depth ≤ 2, circular guard, heading extraction)
 7. ✅ Token estimation and truncation with warning chip
+8. ✅ Per-message context tracking footer
+9. ✅ Inline mention UX (keeps name in textarea)
+10. ✅ Token count displayed per message
+11. ✅ Context cleared after send (per-message only)
+12. ✅ ContextBar simplified (no individual chips)
+13. ✅ Real-world testing in Obsidian - all features tested and working
 
 ### T5: In-Place Note Editing from Chat
-**Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-04 14:59:36 IST
-**Context:** NoteEditingBridge complete with all methods. Slash commands (`/edit`, `/create`, `/append`) implemented with parser supporting `[[Note]]` and bare names. Retry button truncates session and re-sends. Targeted action buttons (Apply→Note, Create Note, Append→Note) render contextually based on `command` metadata. Uses `sessionsRef`/`messagesRef` to avoid stale closures.
+**Status:** ✅ **COMPLETED** **Priority:** HIGH
+**Started:** 2026-05-02 **Last:** 2026-05-04 18:11:57 IST
+**Context:** NoteEditingBridge complete with all methods. Slash commands (`/edit`, `/create`, `/append`) implemented with parser supporting `[[Note]]` and bare names. Retry button truncates session and re-sends. Targeted action buttons (Apply→Note, Create Note, Append→Note) render contextually based on `command` metadata. Uses `sessionsRef`/`messagesRef` to avoid stale closures. Wikilink autocomplete for slash commands completed.
 **Files:** `src/noteEditing/NoteEditingBridge.ts`, `src/components/MessageBubble.tsx`, `src/components/ChatApp.tsx`, `src/components/ChatInput.tsx`, `src/components/ChatMessages.tsx`
 **Progress:**
 1. ✅ NoteEditingBridge.applyToNote(app, view, aiText, prompt)
@@ -103,7 +113,9 @@
 8. ✅ Fix: active-leaf-change tracking; NoteEditingBridge receives resolved view/file
 9. ✅ Fix: stale closure — ref pattern for sessionsRef/messagesRef
 10. ✅ Button labels show target note name
-11. ⬜ Overwrite modal for existing files in createNote
+11. ✅ Targeted action buttons based on command metadata
+12. ✅ End-to-end testing in Obsidian - all features tested and working
+13. ⬜ Overwrite modal for existing files in createNote
 
 ### T8: Open Source Release with Branding
 **Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
@@ -113,7 +125,7 @@
 
 ## Next Session Focus
 
-- T3: Real-world testing in Obsidian; verify embedExpander recursion, heading extraction
-- T5: Overwrite modal for createNote, end-to-end testing
-- T2: Real-world testing; verify migration, pruning, delete-active-session
-- T13: Schedule implementation of agentic tool calling when T3/T5 stable
+- T8: Complete open-source branding and release readiness
+- T6: Implement token & context management features
+- T10-T12: Resume paused tasks after T6 is complete
+- T13: Schedule agentic tool calling implementation when all core features stable
