@@ -6,6 +6,8 @@ interface ContextBarProps {
 	activeNoteName: string | null;
 	wasTruncated: boolean;
 	onToggleActiveNote: () => void;
+	estimatedTokens?: number;
+	maxTokens?: number;
 }
 
 const ContextBar: React.FC<ContextBarProps> = ({
@@ -13,10 +15,21 @@ const ContextBar: React.FC<ContextBarProps> = ({
 	activeNoteName,
 	wasTruncated,
 	onToggleActiveNote,
+	estimatedTokens = 0,
+	maxTokens = 8000,
 }) => {
 	const hasActiveNote = contextItems.some(
 		(item) => item.type === "active-note",
 	);
+
+	const usagePercent =
+		maxTokens > 0 ? (estimatedTokens / maxTokens) * 100 : 0;
+	let usageClass = "chat-token-usage-low";
+	if (usagePercent > 85) {
+		usageClass = "chat-token-usage-high";
+	} else if (usagePercent > 60) {
+		usageClass = "chat-token-usage-medium";
+	}
 
 	return (
 		<div className="chat-context-bar">
@@ -39,6 +52,15 @@ const ContextBar: React.FC<ContextBarProps> = ({
 			{wasTruncated && (
 				<span className="chat-context-chip chat-context-chip-warning">
 					⚠️ Context truncated
+				</span>
+			)}
+
+			{estimatedTokens > 0 && (
+				<span
+					className={`chat-context-chip chat-token-usage ${usageClass}`}
+				>
+					~{estimatedTokens.toLocaleString()} /{" "}
+					{maxTokens.toLocaleString()} tokens
 				</span>
 			)}
 		</div>

@@ -1,15 +1,17 @@
 # Active Context
 
-*Last Updated: 2026-05-04 17:20:56 IST*
+*Last Updated: 2026-05-04 22:46:16 IST*
 
 ## Current Focus
-**Primary Task:** T3
-**Secondary Tasks:** META-1, T5, T2, T13
+**Primary Task:** T8
+**Secondary Tasks:** META-1, T6, T10, T13
 
 ## Active Tasks
-- [T3]: Context & Mentions — `@mention` autocomplete (keeps name in textarea), ContextEngine multi-note support, embedExpander, active note toggle, per-message context tracking, token estimation all implemented. Context chips above input removed; context is cleared after each send (per-message only).
-- [T5]: Note Editing — `applyToNote`, `applyToTargetNote`, `createNote`, `appendToNote` all complete. Slash commands now auto-execute without returning content in chat (`/create` creates file directly, `/edit` auto-applies diff, `/append` auto-appends). Retry button added. Targeted actions via message metadata. Remaining: overwrite modal, real-world testing
+- [T6]: Token & Context Management — `tokenEstimator.ts` extracted, `maxContextMessages` setting (default 10) limits conversation history, ContextBar shows `~X / Y tokens` with green/amber/red colour coding.
+- [T3]: Context & Mentions — COMPLETED
+- [T5]: Note Editing — COMPLETED Slash commands now auto-execute without returning content in chat (`/create` creates file directly, `/edit` auto-applies diff, `/append` auto-appends). Retry button added. Targeted actions via message metadata. Remaining: overwrite modal, real-world testing
 - [T2]: Session-based chat history fully implemented. Message editing & resubmit, session rename, auto-title after 2 messages. Pending real-world testing
+- [T10]: Model Discovery — fetchers implemented, model cache fix complete. Cached models reused on subsequent clicks; refresh button in picker modal.
 - [T13]: Agentic Tool Calling — design complete, task and implementation doc created, awaiting scheduling
 - [META-1]: Keep memory-bank records aligned with implementation state
 
@@ -35,9 +37,8 @@ Active note toggle chip in `ContextBar`. `@mention` autocomplete keeps candidate
 - CI fix: `github.ref_name` sanitized with `tr '/' '-'` before use as artifact name.
 
 ## Next Actions By Task
-- [T3]: Verify inline mentions and per-message context in real Obsidian environment.
-- [T5]: Test slash command auto-execution (`/create`, `/edit`, `/append`); implement overwrite modal for existing files.
-- [T2]: Test message editing, session rename, auto-title setting in real Obsidian environment.
-- [T6]: Add `maxContextMessages` setting for lightweight token/context management before T13.
-- [T13]: Schedule implementation when T3/T5/T6 are stable. Full tool calling with Vercel AI SDK `streamText({ tools, maxSteps })`.
+- [T8]: Complete open-source branding and release readiness pass.
+- [T6]: Test `maxContextMessages` and token usage indicator in real Obsidian environment.
+- [T13]: Schedule implementation when T6/T8 are stable. Full tool calling with Vercel AI SDK `streamText({ tools, maxSteps })`.
+- [T10-T12]: Resume paused tasks after T6/T8 are complete.
 - [META-1]: Keep records in canonical template format.

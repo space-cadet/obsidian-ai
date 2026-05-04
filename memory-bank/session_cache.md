@@ -1,22 +1,23 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-04 18:11:57 IST*
+*Last Updated: 2026-05-04 22:46:16 IST*
 
-**Started**: 2026-05-04 18:11:57 IST
-**Focus Task**: Memory Bank Update - T2, T3, T5 completion
-**Session File**: `sessions/2026-05-04-evening.md`
-**Status**: 🔄 Memory bank update in progress - task files updated with completion status
+**Started**: 2026-05-04 21:34:17 IST
+**Focus Task**: T8 Open Source Release with Branding
+**Session File**: `sessions/2026-05-04-night.md`
+**Status**: ✅ T10 model cache fix complete; T6 lightweight implementation complete
 
 ## Overview
 
-- Active: 2 | Paused: 3 | Completed: 7 | Cancelled: 0
-- Last Session: 2026-05-04 afternoon (T5: retry, slash commands, applyToTargetNote; T3: embedExpander)
-- Current Period: evening
+- Active: 1 | Paused: 2 | Completed: 9 | Cancelled: 0
+- Last Session: 2026-05-04 night (T10: model cache fix; T6: token estimator, maxContextMessages, usage indicator)
+- Current Period: night
 
 ## Session History (Last 10)
 
-1. `sessions/2026-05-04-evening.md` — Memory bank update: T2, T3, T5 marked complete; registry updated
-2. `sessions/2026-05-04-afternoon.md` — T5: retry button, slash commands, applyToTargetNote, createNote, appendToTarget; T3: embedExpander; all queued tasks complete
+1. `sessions/2026-05-04-night.md` — T10: model cache fix; T6: token estimator, maxContextMessages, usage indicator
+2. `sessions/2026-05-04-evening.md` — Memory bank update: T2, T3, T5 marked complete; registry updated
+3. `sessions/2026-05-04-afternoon.md` — T5: retry button, slash commands, applyToTargetNote, createNote, appendToTarget; T3: embedExpander; all queued tasks complete
 3. `sessions/2026-05-03-night.md` — T3: context system implementation; T5: Apply button; T13: agentic tool calling design doc
 4. `sessions/2026-05-02-night.md` — T5: fix note targeting + NoteEditingBridge refactor; T2: basic persistence; stale closure fix; UX clarity
 5. `sessions/2026-05-02-evening.md` — T4: streaming wiring complete; T5: NoteEditingBridge + apply/append buttons
@@ -32,11 +33,11 @@
 - T3: Context & Mentions System — ✅
 - T4: Streaming — ✅
 - T5: In-Place Note Editing from Chat — ✅
-- T6: Token & Context Management — ⬜
+- T6: Token & Context Management — ✅
 - T7: Release System & CI/CD — ✅
 - T8: Open Source Release with Branding — 🔄
 - T9: Settings & Provider Profiles — ✅
-- T10: Model Discovery & Picker UX — ⏸️
+- T10: Model Discovery & Picker UX — ✅
 - T11: Debug Logging & Diagnostics — ⏸️
 - T12: Chat Onboarding, Tips & Empty States — ⏸️
 - T13: Agentic Tool Calling for Note Editing — ⬜
@@ -45,8 +46,8 @@
 
 ### META-1: Memory Bank Setup and Maintenance
 **Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-02 22:32:52 IST
-**Context:** Session 5 — T4 streaming wiring complete; T5 NoteEditingBridge + apply/append buttons done.
+**Started:** 2026-05-02 **Last:** 2026-05-04 22:46:16 IST
+**Context:** Memory bank records kept in sync through T6 and T10 completion.
 **Files:** All `memory-bank/*.md`, all `memory-bank/tasks/*.md`
 **Progress:**
 1. ✅ Initial memory bank setup (session 1)
@@ -57,7 +58,11 @@
 6. ✅ T9 complete — provider profiles, Vercel AI SDK migration
 7. ✅ T4 complete — streamChat() wired into chat panel, progressive rendering, abort/error
 8. ✅ T5 core — NoteEditingBridge (apply/append), buttons on message bubbles
-9. 🔄 Keep records in sync as T5 and T3 work continues
+9. ✅ T2 complete — session-based chat history with persistence
+10. ✅ T3 complete — context system with mentions and embed expansion
+11. ✅ T6 complete — token estimation, maxContextMessages, usage indicator
+12. ✅ T10 complete — model discovery cache and inline picker
+13. 🔄 Keep records in sync as T8 work continues
 
 ### T2: Conversation Chain & Memory
 **Status:** ✅ **COMPLETED** **Priority:** HIGH
@@ -126,6 +131,5 @@
 ## Next Session Focus
 
 - T8: Complete open-source branding and release readiness
-- T6: Implement token & context management features
-- T10-T12: Resume paused tasks after T6 is complete
-- T13: Schedule agentic tool calling implementation when all core features stable
+- T13: Schedule agentic tool calling implementation when T8 is stable
+- T11-T12: Resume paused tasks after T8 is complete

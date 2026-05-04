@@ -44,6 +44,7 @@ export interface ObsidianAISettings {
 	messageHistory: boolean;
 	includeActiveNote: boolean;
 	maxContextTokens: number;
+	maxContextMessages: number;
 	maxSavedConversations: number;
 	autoNameSessions: boolean;
 	debugLogLevel: "off" | "error" | "info" | "debug";
@@ -182,6 +183,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	messageHistory: false,
 	includeActiveNote: false,
 	maxContextTokens: 8000,
+	maxContextMessages: 10,
 	maxSavedConversations: 20,
 	autoNameSessions: false,
 	debugLogLevel: "error",
@@ -218,6 +220,7 @@ export const normalizeSettings = (
 		messageHistory: Boolean(merged.messageHistory),
 		includeActiveNote: Boolean(merged.includeActiveNote),
 		maxContextTokens: merged.maxContextTokens ?? 8000,
+		maxContextMessages: merged.maxContextMessages ?? 10,
 		maxSavedConversations: merged.maxSavedConversations ?? 20,
 		autoNameSessions: Boolean(merged.autoNameSessions),
 		debugLogLevel: merged.debugLogLevel ?? "error",
@@ -283,82 +286,6 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 		} else {
 			new Notice("Settings saved", 2000);
 		}
-	}
-
-	private showModelPicker(models: string[], profile: ProviderProfile): void {
-		const modal = new (class extends Modal {
-			profile: ProviderProfile;
-			callback: (model: string) => void;
-			constructor(
-				app: App,
-				profile: ProviderProfile,
-				callback: (model: string) => void,
-			) {
-				super(app);
-				this.profile = profile;
-				this.callback = callback;
-			}
-
-			onOpen() {
-				const { contentEl } = this;
-				contentEl.createEl("h2", { text: "Select a model" });
-
-				// Search input
-				const searchEl = contentEl.createEl("input", {
-					type: "text",
-					placeholder: "Filter models...",
-				});
-				searchEl.style.width = "100%";
-				searchEl.style.marginBottom = "1rem";
-
-				const listEl = contentEl.createEl("div");
-				listEl.style.maxHeight = "400px";
-				listEl.style.overflowY = "auto";
-
-				const renderList = (filter: string) => {
-					listEl.empty();
-					const filtered = filter.trim()
-						? models.filter((m) =>
-								m.toLowerCase().includes(filter.toLowerCase()),
-							)
-						: models;
-					if (filtered.length === 0) {
-						listEl.createEl("p", {
-							text: "No models match your filter.",
-						});
-					}
-					for (const modelId of filtered) {
-						const item = listEl.createEl("div", {
-							text: modelId,
-							cls: "suggestion-item",
-						});
-						item.style.padding = "6px 8px";
-						item.style.cursor = "pointer";
-						item.style.borderRadius = "4px";
-						item.addEventListener("mouseenter", () => {
-							item.style.background = "var(--interactive-hover)";
-						});
-						item.addEventListener("mouseleave", () => {
-							item.style.background = "";
-						});
-						item.addEventListener("click", () => {
-							this.callback(modelId);
-							this.close();
-						});
-					}
-				};
-
-				renderList("");
-				searchEl.addEventListener("input", () => {
-					renderList(searchEl.value);
-				});
-			}
-		})(this.app, profile, (model) => {
-			profile.model = model;
-			profile.updatedAt = Date.now();
-			this.saveSettings(true);
-		});
-		modal.open();
 	}
 
 	display(): void {
@@ -475,9 +402,9 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			.addText((text) => {
 				text.setPlaceholder("Writing - OpenAI")
 					.setValue(profile.name)
-					.inputEl.addEventListener("blur", async () => {
+					.onChange(async (value) => {
 						profile.name =
-							text.getValue().trim() ||
+							value.trim() ||
 							getDefaultProfileName(profile.provider);
 						profile.updatedAt = Date.now();
 						await this.saveSettings(true);
@@ -507,45 +434,164 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 							getDefaultProfileName(profile.provider);
 						profile.azureEndpoint = "";
 						profile.customURL = "";
+						profile.modelCache = undefined;
 						profile.updatedAt = Date.now();
 						await this.saveSettings(true);
 					}),
 			);
 
-		new Setting(containerEl)
+		const cachedModels = profile.modelCache?.models ?? [];
+		const hasCache = cachedModels.length > 0;
+
+		const modelSetting = new Setting(containerEl)
 			.setName("Model")
-			.setDesc("Model or deployment name to use for this profile.")
-			.addText((text) => {
-				text.setPlaceholder("e.g., gpt-4o-mini")
-					.setValue(profile.model)
-					.inputEl.addEventListener("blur", async () => {
-						profile.model =
-							text.getValue().trim() ||
-							getDefaultModel(profile.provider);
-						profile.updatedAt = Date.now();
-						await this.saveSettings();
-					});
-			})
-			.addButton((btn) =>
-				btn
-					.setButtonText("Fetch models")
-					.setTooltip("Fetch available models from this provider")
-					.onClick(async () => {
-						btn.setButtonText("Fetching...").setDisabled(true);
-						try {
-							const models =
-								await this.plugin.chatapi.fetchModels(profile);
-							if (models.length === 0) {
-								new Notice("No models found.");
-							} else {
-								this.showModelPicker(models, profile);
-							}
-						} catch (e: any) {
-							new Notice(`❌ ${e.message || e}`);
-						}
-						btn.setButtonText("Fetch models").setDisabled(false);
-					}),
+			.setDesc(
+				hasCache
+					? `${cachedModels.length} models cached for ${profile.provider}. Search and click to select, or type a custom name.`
+					: "Model or deployment name to use for this profile.",
 			);
+
+		// Build a custom searchable model picker in the control area
+		const wrapper = modelSetting.controlEl.createEl("div");
+		wrapper.style.display = "flex";
+		wrapper.style.flexDirection = "column";
+		wrapper.style.gap = "6px";
+		wrapper.style.width = "100%";
+		wrapper.style.minWidth = "280px";
+		wrapper.style.textAlign = "left";
+
+		// Search row: input + fetch button
+		const searchRow = wrapper.createEl("div");
+		searchRow.style.display = "flex";
+		searchRow.style.gap = "8px";
+		searchRow.style.alignItems = "center";
+
+		const searchEl = searchRow.createEl("input", {
+			type: "text",
+			placeholder: hasCache ? "Search models..." : "Type model name...",
+		});
+		searchEl.style.flex = "1";
+		searchEl.value = profile.model;
+
+		const fetchBtn = searchRow.createEl("button", {
+			text: hasCache ? "Refresh" : "Fetch",
+		});
+		fetchBtn.classList.add("mod-cta");
+		fetchBtn.style.cursor = "pointer";
+
+		// Scrollable model list (only when cache exists)
+		let listEl: HTMLDivElement | null = null;
+		if (hasCache) {
+			listEl = wrapper.createEl("div");
+			listEl.style.maxHeight = "200px";
+			listEl.style.overflowY = "auto";
+			listEl.style.border = "1px solid var(--background-modifier-border)";
+			listEl.style.borderRadius = "4px";
+			listEl.style.background = "var(--background-primary)";
+			listEl.style.textAlign = "left";
+		}
+
+		const renderList = (filter: string) => {
+			if (!listEl) return;
+			listEl.empty();
+			const term = filter.trim().toLowerCase();
+			const filtered = term
+				? cachedModels.filter((m) => m.toLowerCase().includes(term))
+				: cachedModels;
+			const displayModels = filtered.slice(0, 200); // performance limit
+
+			for (const m of displayModels) {
+				const item = listEl.createEl("div", { text: m });
+				item.style.padding = "4px 10px";
+				item.style.cursor = "pointer";
+				item.style.fontSize = "0.9em";
+				item.style.borderRadius = "3px";
+				item.style.transition = "background 0.1s";
+				item.style.textAlign = "left";
+
+				const isSelected = m === profile.model;
+				if (isSelected) {
+					item.style.background = "var(--interactive-accent)";
+					item.style.color = "var(--text-on-accent)";
+					item.style.fontWeight = "600";
+				}
+
+				item.addEventListener("click", async () => {
+					profile.model = m;
+					profile.updatedAt = Date.now();
+					await this.saveSettings();
+					searchEl.value = m;
+					// Update visual selection without full re-render
+					for (const child of Array.from(listEl.children)) {
+						const el = child as HTMLElement;
+						el.style.background = "";
+						el.style.color = "";
+						el.style.fontWeight = "";
+					}
+					item.style.background = "var(--interactive-accent)";
+					item.style.color = "var(--text-on-accent)";
+					item.style.fontWeight = "600";
+					new Notice(`Model set to ${m}`);
+				});
+				item.addEventListener("mouseenter", () => {
+					if (!isSelected)
+						item.style.background = "var(--interactive-hover)";
+				});
+				item.addEventListener("mouseleave", () => {
+					if (!isSelected) item.style.background = "";
+				});
+			}
+
+			if (displayModels.length === 0) {
+				listEl.createEl("div", {
+					text: "No models match your search.",
+					cls: "setting-item-description",
+				});
+			} else if (filtered.length > displayModels.length) {
+				listEl.createEl("div", {
+					text: `...and ${filtered.length - displayModels.length} more`,
+					cls: "setting-item-description",
+				});
+			}
+		};
+
+		renderList("");
+
+		searchEl.addEventListener("input", () => {
+			renderList(searchEl.value);
+		});
+
+		searchEl.addEventListener("input", async () => {
+			const value = searchEl.value.trim();
+			if (value && value !== profile.model) {
+				profile.model = value;
+				profile.updatedAt = Date.now();
+				await this.saveSettings();
+			}
+		});
+
+		fetchBtn.addEventListener("click", async () => {
+			fetchBtn.setText("Fetching...");
+			fetchBtn.setAttribute("disabled", "true");
+			try {
+				const models = await this.plugin.chatapi.fetchModels(profile);
+				if (models.length === 0) {
+					new Notice("No models found.");
+				} else {
+					profile.modelCache = {
+						models,
+						fetchedAt: Date.now(),
+					};
+					await this.plugin.saveSettings();
+					new Notice(`✓ ${models.length} models loaded.`);
+					this.display();
+				}
+			} catch (e: any) {
+				new Notice(`❌ ${e.message || e}`);
+			}
+			fetchBtn.setText("Refresh");
+			fetchBtn.removeAttribute("disabled");
+		});
 
 		if (profile.provider !== "ollama") {
 			new Setting(containerEl)
@@ -555,8 +601,9 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					text.inputEl.type = "password";
 					text.setPlaceholder("sk-...")
 						.setValue(profile.apiKey || "")
-						.inputEl.addEventListener("blur", async () => {
-							profile.apiKey = text.getValue().trim();
+						.onChange(async (value) => {
+							profile.apiKey = value.trim();
+							profile.modelCache = undefined;
 							profile.updatedAt = Date.now();
 							await this.saveSettings();
 						});
@@ -583,13 +630,14 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 							? profile.azureEndpoint || ""
 							: profile.customURL || "",
 					)
-					.inputEl.addEventListener("blur", async () => {
-						const value = text.getValue().trim();
+					.onChange(async (value) => {
+						const trimmed = value.trim();
 						if (profile.provider === "azure") {
 							profile.azureEndpoint = value;
 						} else {
 							profile.customURL = value;
 						}
+						profile.modelCache = undefined;
 						profile.updatedAt = Date.now();
 						await this.saveSettings();
 					});
@@ -604,8 +652,9 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						.setValue(
 							profile.azureApiVersion || "2024-02-15-preview",
 						)
-						.inputEl.addEventListener("blur", async () => {
-							profile.azureApiVersion = text.getValue().trim();
+						.onChange(async (value) => {
+							profile.azureApiVersion = value.trim();
+							profile.modelCache = undefined;
 							profile.updatedAt = Date.now();
 							await this.saveSettings();
 						});
@@ -650,9 +699,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Max context tokens")
-			.setDesc(
-				"Approximate context budget for future note/context loading.",
-			)
+			.setDesc("Approximate context budget for note/context loading.")
 			.addText((text) => {
 				text.setPlaceholder("8000")
 					.setValue(String(this.plugin.settings.maxContextTokens))
@@ -660,6 +707,22 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						const value = Number.parseInt(text.getValue(), 10);
 						this.plugin.settings.maxContextTokens =
 							Number.isFinite(value) && value > 0 ? value : 8000;
+						await this.saveSettings();
+					});
+			});
+
+		new Setting(containerEl)
+			.setName("Max context messages")
+			.setDesc(
+				"Maximum previous messages to include in the conversation context. Older messages are silently dropped.",
+			)
+			.addText((text) => {
+				text.setPlaceholder("10")
+					.setValue(String(this.plugin.settings.maxContextMessages))
+					.inputEl.addEventListener("blur", async () => {
+						const value = Number.parseInt(text.getValue(), 10);
+						this.plugin.settings.maxContextMessages =
+							Number.isFinite(value) && value > 0 ? value : 10;
 						await this.saveSettings();
 					});
 			});

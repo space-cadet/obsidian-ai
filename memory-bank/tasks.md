@@ -1,9 +1,9 @@
 # Task Registry
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-04 18:11:57 IST*
+*Last Updated: 2026-05-04 22:46:16 IST*
 
 ## Summary
-- Active: 2 | Paused: 3 | Completed: 7 | Cancelled: 0
+- Active: 1 | Paused: 2 | Completed: 9 | Cancelled: 0
 
 ## Task Registry Table
 
@@ -15,11 +15,11 @@
 | T3 | Context & Mentions System | ✅ | HIGH | 2026-05-02 | T1 | [Details](tasks/T3.md) |
 | T4 | Streaming | ✅ | HIGH | 2026-05-02 | T9 | [Details](tasks/T4.md) |
 | T5 | In-Place Note Editing from Chat | ✅ | HIGH | 2026-05-02 | T1 | [Details](tasks/T5.md) |
-| T6 | Token & Context Management | ⬜ | MEDIUM | — | T1, T2 | [Details](tasks/T6.md) |
+| T6 | Token & Context Management | ✅ | MEDIUM | 2026-05-02 | T1, T2 | [Details](tasks/T6.md) |
 | T7 | Release System & CI/CD | ✅ | HIGH | 2026-05-02 | — | [Details](tasks/T7.md) |
 | T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
 | T9 | Settings & Provider Profiles | ✅ | HIGH | 2026-05-02 | T1 | [Details](tasks/T9.md) |
-| T10 | Model Discovery & Picker UX | ⏸️ | HIGH | — | T9 | [Details](tasks/T10.md) |
+| T10 | Model Discovery & Picker UX | ✅ | HIGH | 2026-05-02 | T9 | [Details](tasks/T10.md) |
 | T11 | Debug Logging & Diagnostics | ⏸️ | MEDIUM | — | T9 | [Details](tasks/T11.md) |
 | T12 | Chat Onboarding, Tips & Empty States | ⏸️ | MEDIUM | — | T1, T9 | [Details](tasks/T12.md) |
 | T13 | Agentic Tool Calling for Note Editing | ⬜ | HIGH | — | T1, T3, T5, T9 | [Details](tasks/T13.md) |
@@ -36,12 +36,6 @@
 Branding transition and open-source release preparation. See `tasks/T8.md`.
 
 ## Pending Tasks (v2.0 Development)
-
-### T6 — Token & Context Management *(requires T1, T2)*
-Token estimation, history truncation, context usage indicator. See `tasks/T6.md`.
-
-### T10 — Model Discovery & Picker UX *(requires T9)*
-Provider-aware model discovery, cache metadata, refresh/error states, searchable picker. See `tasks/T10.md`.
 
 ### T11 — Debug Logging & Diagnostics *(requires T9)*
 Structured diagnostics with privacy redaction and bounded retention. See `tasks/T11.md`.
@@ -61,9 +55,11 @@ Advanced AI tool calling for note editing. See `tasks/T13.md`.
 | T3 | Context & Mentions System | 2026-05-04 | T1 | [Details](tasks/T3.md) |
 | T4 | Streaming | 2026-05-02 | T9 | [Details](tasks/T4.md) |
 | T5 | In-Place Note Editing from Chat | 2026-05-04 | T1 | [Details](tasks/T5.md) |
+| T6 | Token & Context Management | 2026-05-04 | T1, T2 | [Details](tasks/T6.md) |
 | T7 | Release System & CI/CD | 2026-05-02 | — | [Details](tasks/T7.md) |
 | T9 | Settings & Provider Profiles | 2026-05-02 | T4, T10, T11 | [Details](tasks/T9.md) |
+| T10 | Model Discovery & Picker UX | 2026-05-04 | T9 | [Details](tasks/T10.md) |
 
 ## Cancelled / Paused Tasks
 
-*None cancelled. T10, T11, T12 are paused pending T3 context work.*
+*None cancelled. T11, T12 are paused.*

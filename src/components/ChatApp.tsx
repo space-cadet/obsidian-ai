@@ -1,9 +1,16 @@
-import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import React, {
+	useState,
+	useRef,
+	useCallback,
+	useEffect,
+	useMemo,
+} from "react";
 import { MarkdownView, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
 import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
 import { ChatMessage, ChatSession, ContextItem } from "../types";
 import { resolveContextItems } from "../context/ContextEngine";
+import { estimateTokens } from "../context/tokenEstimator";
 import ActionBar from "./ActionBar";
 import ChatMessages from "./ChatMessages";
 import ContextBar from "./ContextBar";
@@ -94,6 +101,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	const [currentAiMessage, setCurrentAiMessage] = useState("");
 	const [contextItems, setContextItems] = useState<ContextItem[]>([]);
 	const [wasTruncated, setWasTruncated] = useState(false);
+	const [contextTokenCount, setContextTokenCount] = useState(0);
 	const [targetNoteName, setTargetNoteName] = useState<string | null>(null);
 	const [showSessionPicker, setShowSessionPicker] = useState(false);
 	const [showContextPicker, setShowContextPicker] = useState(false);
@@ -159,10 +167,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 
 		plugin.app.workspace.on("active-leaf-change", onLeafChange as any);
 		return () =>
-			plugin.app.workspace.off(
-				"active-leaf-change",
-				onLeafChange as any,
-			);
+			plugin.app.workspace.off("active-leaf-change", onLeafChange as any);
 	}, [plugin]);
 
 	// Load persisted sessions on mount
@@ -264,12 +269,6 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		setShowContextPicker(false);
 	}, []);
 
-	const TOKEN_ESTIMATE_RATIO = 4;
-
-	function estimateTokens(text: string): number {
-		return Math.ceil(text.length / TOKEN_ESTIMATE_RATIO);
-	}
-
 	const handleSend = useCallback(
 		async (text: string) => {
 			if (!text.trim() || isStreaming) return;
@@ -289,17 +288,18 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					slashCmd.prompt ||
 					`Please ${slashCmd.command} ${slashCmd.target}`;
 
-				if (slashCmd.command === "edit" || slashCmd.command === "append") {
+				if (
+					slashCmd.command === "edit" ||
+					slashCmd.command === "append"
+				) {
 					// Resolve target note and add to context
-					const file =
-						plugin.app.metadataCache.getFirstLinkpathDest(
-							slashCmd.target,
-							"",
-						);
+					const file = plugin.app.metadataCache.getFirstLinkpathDest(
+						slashCmd.target,
+						"",
+					);
 					if (file && file instanceof TFile) {
 						const exists = sendContextItems.some(
-							(i) =>
-								i.type === "note" && i.path === file.path,
+							(i) => i.type === "note" && i.path === file.path,
 						);
 						if (!exists) {
 							sendContextItems = [
@@ -322,9 +322,12 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				plugin.settings.maxContextTokens || 8000,
 			);
 			setWasTruncated(resolved.wasTruncated);
+			setContextTokenCount(resolved.stats.estimatedTokens);
 
 			const userTokenEstimate = estimateTokens(
-				(resolved.contextString ? resolved.contextString + "\n\n" : "") + sendText,
+				(resolved.contextString
+					? resolved.contextString + "\n\n"
+					: "") + sendText,
 			);
 
 			const userMsg: ChatMessage = {
@@ -346,17 +349,20 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 								updatedAt: Date.now(),
 								contextItems: sendContextItems,
 							}
-							: s,
+						: s,
 				),
 			);
 			setIsStreaming(true);
 			setCurrentAiMessage("");
 			controllerRef.current = new AbortController();
 
-			const history = messagesRef.current.map((m) => ({
-				role: m.role as "user" | "assistant",
-				content: m.content,
-			}));
+			const maxContextMessages = plugin.settings.maxContextMessages || 10;
+			const history = messagesRef.current
+				.slice(-maxContextMessages)
+				.map((m) => ({
+					role: m.role as "user" | "assistant",
+					content: m.content,
+				}));
 
 			let userContent = sendText;
 			if (resolved.contextString) {
@@ -366,7 +372,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 			const chatMessages = [
 				{
 					role: "system" as const,
-					content: buildSystemPrompt(sendContextItems, slashCmd ?? undefined),
+					content: buildSystemPrompt(
+						sendContextItems,
+						slashCmd ?? undefined,
+					),
 				},
 				...history,
 				{ role: "user" as const, content: userContent },
@@ -374,7 +383,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 
 			let fullText = "";
 			try {
-				console.log(`[ChatApp] streamChat start — ${chatMessages.length} msgs`);
+				console.log(
+					`[ChatApp] streamChat start — ${chatMessages.length} msgs`,
+				);
 				for await (const chunk of plugin.chatapi.streamChat(
 					chatMessages,
 					controllerRef.current.signal,
@@ -385,7 +396,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 						setCurrentAiMessage(fullText);
 					}
 				}
-				console.log(`[ChatApp] streamChat done — ${fullText.length} chars`);
+				console.log(
+					`[ChatApp] streamChat done — ${fullText.length} chars`,
+				);
 				let assistantContent = fullText;
 				let assistantTokenEstimate = estimateTokens(fullText);
 
@@ -415,18 +428,25 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 						: `⚠️ Could not apply edits to ${slashCmd.target}`;
 					assistantTokenEstimate = estimateTokens(assistantContent);
 				} else if (slashCmd?.command === "append" && fullText) {
-					let file = plugin.app.vault.getAbstractFileByPath(slashCmd.target);
+					let file = plugin.app.vault.getAbstractFileByPath(
+						slashCmd.target,
+					);
 					if (!file || !(file instanceof TFile)) {
-						const resolved = plugin.app.metadataCache.getFirstLinkpathDest(
-							slashCmd.target,
-							"",
-						);
+						const resolved =
+							plugin.app.metadataCache.getFirstLinkpathDest(
+								slashCmd.target,
+								"",
+							);
 						if (resolved && resolved instanceof TFile) {
 							file = resolved;
 						}
 					}
 					if (file && file instanceof TFile) {
-						await NoteEditingBridge.appendToNote(plugin.app, file, fullText);
+						await NoteEditingBridge.appendToNote(
+							plugin.app,
+							file,
+							fullText,
+						);
 						assistantContent = `✓ Appended to ${slashCmd.target}`;
 					} else {
 						assistantContent = `⚠️ Note not found: ${slashCmd.target}`;
@@ -451,8 +471,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 									updatedAt: Date.now(),
 									contextItems: sendContextItems,
 								}
-								: s,
-						),
+							: s,
+					),
 				);
 			} catch (e: any) {
 				if (e.name === "AbortError") {
@@ -473,11 +493,14 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 								s.id === currentActiveId
 									? {
 											...s,
-											messages: [...s.messages, stoppedMsg],
+											messages: [
+												...s.messages,
+												stoppedMsg,
+											],
 											updatedAt: Date.now(),
 											contextItems: sendContextItems,
 										}
-										: s,
+									: s,
 							),
 						);
 					}
@@ -501,7 +524,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 										updatedAt: Date.now(),
 										contextItems: sendContextItems,
 									}
-									: s,
+								: s,
 						),
 					);
 				}
@@ -543,7 +566,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 			// If current session is empty, just keep it instead of creating another empty one
 			if (currentSession && currentSession.messages.length === 0) {
 				return prev.map((s) =>
-					s.id === currentActiveId ? { ...s, updatedAt: Date.now() } : s,
+					s.id === currentActiveId
+						? { ...s, updatedAt: Date.now() }
+						: s,
 				);
 			}
 			const updated = prev.map((s) =>
@@ -555,7 +580,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 								: s.title,
 							updatedAt: Date.now(),
 						}
-						: s,
+					: s,
 			);
 			const withNew = [...updated, newSession];
 			const max = plugin.settings.maxSavedConversations || 20;
@@ -655,7 +680,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				),
 			);
 
-			console.log(`[ChatApp] retry message ${messageId} — re-sending user msg`);
+			console.log(
+				`[ChatApp] retry message ${messageId} — re-sending user msg`,
+			);
 			handleSend(userMsg.content);
 		},
 		[isStreaming, handleSend],
@@ -689,6 +716,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				),
 			);
 			setIsEditing(true);
+			setEditMessageText(msg.content);
 			// The input value will be set via a ref callback in ChatInput
 		},
 		[isStreaming],
@@ -701,7 +729,11 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		setSessions((prev) =>
 			prev.map((s) =>
 				s.id === currentActiveId
-					? { ...s, messages: originalMessages, updatedAt: Date.now() }
+					? {
+							...s,
+							messages: originalMessages,
+							updatedAt: Date.now(),
+						}
 					: s,
 			),
 		);
@@ -760,38 +792,35 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		setShowSessionPicker(false);
 	}, []);
 
-	const handleDeleteSession = useCallback(
-		(sessionId: string) => {
-			setSessions((prev) => {
-				const filtered = prev.filter((s) => s.id !== sessionId);
-				// If deleting the active session, activate the most recent remaining
-				if (activeSessionIdRef.current === sessionId) {
-					const mostRecent = filtered.sort(
-						(a, b) => b.updatedAt - a.updatedAt,
-					)[0];
-					if (mostRecent) {
-						setActiveSessionId(mostRecent.id);
-					} else {
-						// No sessions left — create a new empty one
-						const empty: ChatSession = {
-							id: makeId(),
-							title: "",
-							createdAt: Date.now(),
-							updatedAt: Date.now(),
-							messages: [],
-							contextItems: plugin.settings.includeActiveNote
-								? [{ type: "active-note", id: makeId() }]
-								: [],
-						};
-						filtered.push(empty);
-						setActiveSessionId(empty.id);
-					}
+	const handleDeleteSession = useCallback((sessionId: string) => {
+		setSessions((prev) => {
+			const filtered = prev.filter((s) => s.id !== sessionId);
+			// If deleting the active session, activate the most recent remaining
+			if (activeSessionIdRef.current === sessionId) {
+				const mostRecent = filtered.sort(
+					(a, b) => b.updatedAt - a.updatedAt,
+				)[0];
+				if (mostRecent) {
+					setActiveSessionId(mostRecent.id);
+				} else {
+					// No sessions left — create a new empty one
+					const empty: ChatSession = {
+						id: makeId(),
+						title: "",
+						createdAt: Date.now(),
+						updatedAt: Date.now(),
+						messages: [],
+						contextItems: plugin.settings.includeActiveNote
+							? [{ type: "active-note", id: makeId() }]
+							: [],
+					};
+					filtered.push(empty);
+					setActiveSessionId(empty.id);
 				}
-				return filtered;
-			});
-		},
-		[],
-	);
+			}
+			return filtered;
+		});
+	}, []);
 
 	const handleRenameSession = useCallback(
 		(sessionId: string, newTitle: string) => {
@@ -834,6 +863,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				activeNoteName={targetNoteName}
 				wasTruncated={wasTruncated}
 				onToggleActiveNote={handleToggleActiveNote}
+				estimatedTokens={contextTokenCount}
+				maxTokens={plugin.settings.maxContextTokens || 8000}
 			/>
 			<ChatInput
 				app={plugin.app}

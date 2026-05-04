@@ -1,6 +1,7 @@
-import { App, TFile, TFolder } from "obsidian";
+import { App, TFile } from "obsidian";
 import { ContextItem } from "../types";
 import { expandEmbeds } from "./embedExpander";
+import { estimateTokens, TOKEN_ESTIMATE_RATIO } from "./tokenEstimator";
 
 interface ResolvedNote {
 	name: string;
@@ -20,8 +21,6 @@ export interface ContextResolutionResult {
 }
 
 const MAX_FILES_PER_FOLDER_TAG = 50;
-const TOKEN_ESTIMATE_RATIO = 4;
-
 function normalizeTag(tag: string): string {
 	return tag.toLowerCase().replace(/^#/, "");
 }
@@ -43,9 +42,7 @@ function fileHasTag(app: App, file: TFile, tag: string): boolean {
 	// Frontmatter tags
 	const fmTags = cache.frontmatter?.tags;
 	if (Array.isArray(fmTags)) {
-		return fmTags.some(
-			(t) => String(t).toLowerCase() === normalized,
-		);
+		return fmTags.some((t) => String(t).toLowerCase() === normalized);
 	}
 	if (typeof fmTags === "string") {
 		return fmTags.toLowerCase() === normalized;
@@ -54,10 +51,7 @@ function fileHasTag(app: App, file: TFile, tag: string): boolean {
 	return false;
 }
 
-function getFilesForFolder(
-	app: App,
-	folderPath: string,
-): TFile[] {
+function getFilesForFolder(app: App, folderPath: string): TFile[] {
 	const prefix = folderPath === "" ? "" : folderPath + "/";
 	return app.vault
 		.getMarkdownFiles()
@@ -72,10 +66,6 @@ function getFilesForTag(app: App, tag: string): TFile[] {
 		.filter((f) => fileHasTag(app, f, tag))
 		.sort((a, b) => b.stat.mtime - a.stat.mtime)
 		.slice(0, MAX_FILES_PER_FOLDER_TAG);
-}
-
-function estimateTokens(text: string): number {
-	return Math.ceil(text.length / TOKEN_ESTIMATE_RATIO);
 }
 
 async function resolveSingleItem(
@@ -166,10 +156,7 @@ export async function resolveContextItems(
 					"\n[...truncated for context window]";
 			}
 		}
-		totalChars = resolved.reduce(
-			(sum, n) => sum + n.content.length,
-			0,
-		);
+		totalChars = resolved.reduce((sum, n) => sum + n.content.length, 0);
 	}
 
 	if (resolved.length === 0) {

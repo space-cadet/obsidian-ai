@@ -1,6 +1,6 @@
 # Model Discovery & Picker Design
 *Created: 2026-05-02 11:46:39 IST*
-*Last Updated: 2026-05-02 16:55:00 IST*
+*Last Updated: 2026-05-04 22:46:16 IST*
 
 ## Overview
 
@@ -157,18 +157,17 @@ Network error:
 - Cached model lists are per provider profile, not global
 - Long model lists must be searchable and scrollable
 
-## Partial Implementation (2026-05-02 16:55:00 IST)
+## Implementation Status (2026-05-04 22:46:16 IST)
 
-A basic model fetching UI has been implemented in settings:
+Model discovery is fully implemented:
 
-- "Fetch models" button added next to Model field in settings (src/settings.ts lines 526-545)
-- Searchable modal picker with filter input and clickable model list
-- Model selection updates the active profile's model field
+- Provider-specific fetchers in `src/api.ts` (`fetchProviderModels`) for all 9 providers
+- `ModelCache` stored on `ProviderProfile` with `models[]` and `fetchedAt` timestamp
+- Inline searchable model list in settings (replaced modal picker): search input + scrollable results + click-to-select
+- Cache invalidated when provider, API key, endpoint, or API version changes
+- Manual model entry always available via search input
 - Error handling with Notice messages on fetch failure
 
-**Remaining for full T10 completion:**
-- Model discovery service with provider-specific fetchers
-- Model cache with `fetchedAt` timestamps per profile
-- Refresh controls and cache freshness checks
-- Model metadata (capabilities, context window) display
-- Manual model entry preservation in cache
+**Deferred (not required for v1):**
+- Model metadata display (capabilities, context window) — cache stores plain strings, not `ModelInfo` objects
+- Separate `modelDiscoveryService.ts` layer — fetch logic lives directly in `src/api.ts`
