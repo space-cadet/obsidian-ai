@@ -6,11 +6,15 @@ import React, {
 	useMemo,
 } from "react";
 import { MarkdownView, Notice, TFile, WorkspaceLeaf } from "obsidian";
+
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
 import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
 import { ChatMessage, ChatSession, ContextItem } from "../types";
 import { resolveContextItems } from "../context/ContextEngine";
 import { estimateTokens } from "../context/tokenEstimator";
+import { noteTools } from "../agent/tools";
+import { ToolExecutor } from "../agent/ToolExecutor";
+import type { ToolCall, ToolResult } from "../agent/types";
 import ActionBar from "./ActionBar";
 import ChatMessages from "./ChatMessages";
 import ContextBar from "./ContextBar";
@@ -25,10 +29,21 @@ interface ChatAppProps {
 function buildSystemPrompt(
 	contextItems: ContextItem[],
 	slashCmd?: SlashCommand,
+	toolsEnabled = false,
 ): string {
 	let prompt =
 		"You are a helpful assistant integrated into an Obsidian note-taking app.";
 	const hasActiveNote = contextItems.some((i) => i.type === "active-note");
+
+	if (toolsEnabled) {
+		prompt +=
+			"\n\nYou have access to tools that can read, edit, create, and append to Obsidian notes." +
+			" When the user asks you to edit or rewrite a note, use the edit_note tool." +
+			" When the user asks you to create a new note, use the create_note tool." +
+			" When the user asks you to add to an existing note without changing current content, use append_to_note." +
+			" Before editing a note you are unfamiliar with, use read_note to see its current content." +
+			"\n\nImportant: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks.";
+	}
 
 	if (slashCmd) {
 		switch (slashCmd.command) {
@@ -108,7 +123,13 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	const [isEditing, setIsEditing] = useState(false);
 	const [originalMessages, setOriginalMessages] = useState<ChatMessage[]>([]);
 	const [editMessageText, setEditMessageText] = useState<string>("");
+	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(
+		null,
+	);
 	const controllerRef = useRef<AbortController | null>(null);
+	const resolveToolRef = useRef<((result: ToolResult | null) => void) | null>(
+		null,
+	);
 	// Refs so callbacks always see latest values without stale closures
 	const messagesRef = useRef<ChatMessage[]>([]);
 	const contextItemsRef = useRef<ContextItem[]>([]);
@@ -369,12 +390,17 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				userContent = `${resolved.contextString}\n\n${sendText}`;
 			}
 
+			const useTools = plugin.settings.enableAgentTools;
+			const autoApprove = plugin.settings.autoApply;
+			const maxAgentSteps = plugin.settings.maxAgentSteps;
+
 			const chatMessages = [
 				{
 					role: "system" as const,
 					content: buildSystemPrompt(
 						sendContextItems,
 						slashCmd ?? undefined,
+						useTools && !slashCmd,
 					),
 				},
 				...history,
@@ -383,24 +409,146 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 
 			let fullText = "";
 			try {
-				console.log(
-					`[ChatApp] streamChat start — ${chatMessages.length} msgs`,
-				);
-				for await (const chunk of plugin.chatapi.streamChat(
-					chatMessages,
-					controllerRef.current.signal,
-				)) {
-					fullText += chunk;
-					// Only show streaming content for non-slash commands
-					if (!slashCmd) {
+				let assistantContent = fullText;
+				let assistantTokenEstimate = 0;
+
+				if (useTools && !slashCmd) {
+					console.log(
+						`[ChatApp] streamChatWithTools start — ${chatMessages.length} msgs`,
+					);
+					const toolExecutor = new ToolExecutor(plugin.app);
+					let currentMessages: Array<any> =
+						chatMessages as Array<any>;
+					for (let step = 0; step < maxAgentSteps; step++) {
+						let stepText = "";
+						let pendingCall: ToolCall | null = null;
+
+						for await (const event of plugin.chatapi.streamChatWithTools(
+							currentMessages,
+							noteTools,
+							controllerRef.current.signal,
+						)) {
+							if (event.type === "text-delta") {
+								stepText += event.text;
+								fullText += event.text;
+								setCurrentAiMessage(fullText);
+							} else if (event.type === "tool-call") {
+								pendingCall = event.call;
+							} else if (event.type === "error") {
+								throw new Error(event.message);
+							}
+						}
+
+						if (!pendingCall) {
+							assistantContent = fullText;
+							assistantTokenEstimate = estimateTokens(fullText);
+							console.log(
+								`[ChatApp] streamChatWithTools done — ${fullText.length} chars`,
+							);
+							break;
+						}
+
+						console.log(
+							`[ChatApp] tool-call: ${pendingCall.toolName}`,
+							pendingCall.args,
+						);
+
+						let result: ToolResult;
+						if (autoApprove) {
+							result = await toolExecutor.execute(pendingCall);
+						} else {
+							setPendingToolCall(pendingCall);
+							const resolved =
+								await new Promise<ToolResult | null>(
+									(resolve) => {
+										resolveToolRef.current = resolve;
+									},
+								);
+							setPendingToolCall(null);
+							result = resolved ?? {
+								error: "User rejected the tool call",
+							};
+						}
+
+						console.log(
+							`[ChatApp] tool-result:`,
+							result.error ?? "success",
+						);
+
+						// Build assistant message with text + tool call
+						const assistantParts: Array<{
+							type: string;
+							[key: string]: unknown;
+						}> = [];
+						if (stepText) {
+							assistantParts.push({
+								type: "text",
+								text: stepText,
+							});
+						}
+						assistantParts.push({
+							type: "tool-call",
+							toolCallId: pendingCall.toolCallId,
+							toolName: pendingCall.toolName,
+							input: pendingCall.args,
+						});
+
+						const assistantMsg: any = {
+							role: "assistant",
+							content: assistantParts,
+						};
+
+						// Build tool result message
+						const toolResultOutput = result.error
+							? {
+									type: "json",
+									value: { error: result.error },
+								}
+							: {
+									type: "json",
+									value: result,
+								};
+
+						const toolMsg: any = {
+							role: "tool",
+							content: [
+								{
+									type: "tool-result",
+									toolCallId: pendingCall.toolCallId,
+									toolName: pendingCall.toolName,
+									output: toolResultOutput,
+								},
+							],
+						};
+
+						currentMessages = [
+							...currentMessages,
+							assistantMsg,
+							toolMsg,
+						];
+						fullText += `\n\n[${pendingCall.toolName}: ${result.error ? "error" : "ok"}]\n`;
 						setCurrentAiMessage(fullText);
 					}
+				} else {
+					console.log(
+						`[ChatApp] streamChat start — ${chatMessages.length} msgs`,
+					);
+					for await (const chunk of plugin.chatapi.streamChat(
+						chatMessages,
+						controllerRef.current.signal,
+					)) {
+						fullText += chunk;
+						// Only show streaming content for non-slash commands
+						if (!slashCmd) {
+							setCurrentAiMessage(fullText);
+						}
+					}
+					console.log(
+						`[ChatApp] streamChat done — ${fullText.length} chars`,
+					);
+					assistantContent = fullText;
+					assistantTokenEstimate = estimateTokens(fullText);
 				}
-				console.log(
-					`[ChatApp] streamChat done — ${fullText.length} chars`,
-				);
-				let assistantContent = fullText;
-				let assistantTokenEstimate = estimateTokens(fullText);
 
 				// For slash commands, execute the action and show a status message
 				if (slashCmd?.command === "create" && fullText) {
@@ -833,6 +981,19 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		[],
 	);
 
+	const handleApproveTool = useCallback(async () => {
+		if (!pendingToolCall) return;
+		const toolExecutor = new ToolExecutor(plugin.app);
+		const result = await toolExecutor.execute(pendingToolCall);
+		resolveToolRef.current?.(result);
+		resolveToolRef.current = null;
+	}, [pendingToolCall, plugin.app]);
+
+	const handleRejectTool = useCallback(() => {
+		resolveToolRef.current?.(null);
+		resolveToolRef.current = null;
+	}, []);
+
 	const hasHistory = sessions.some((s) => s.messages.length > 0);
 
 	return (
@@ -866,6 +1027,21 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				estimatedTokens={contextTokenCount}
 				maxTokens={plugin.settings.maxContextTokens || 8000}
 			/>
+			{pendingToolCall && (
+				<div className="pending-tool-call">
+					<span>
+						🤖 <strong>{pendingToolCall.toolName}</strong>:{" "}
+						{JSON.stringify(pendingToolCall.args)}
+					</span>
+					<div className="pending-tool-actions">
+						<button className="mod-cta" onClick={handleApproveTool}>
+							Approve
+						</button>
+						<button onClick={handleRejectTool}>Reject</button>
+					</div>
+				</div>
+			)}
+
 			<ChatInput
 				app={plugin.app}
 				onSend={handleSend}

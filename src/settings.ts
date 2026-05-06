@@ -49,6 +49,9 @@ export interface ObsidianAISettings {
 	autoNameSessions: boolean;
 	debugLogLevel: "off" | "error" | "info" | "debug";
 	debugLogRetention: number;
+	enableAgentTools: boolean;
+	autoApply: boolean;
+	maxAgentSteps: number;
 }
 
 type LegacySettings = Partial<ObsidianAISettings> & {
@@ -188,6 +191,9 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	autoNameSessions: false,
 	debugLogLevel: "error",
 	debugLogRetention: 200,
+	enableAgentTools: true,
+	autoApply: false,
+	maxAgentSteps: 5,
 };
 
 export const normalizeSettings = (
@@ -225,6 +231,9 @@ export const normalizeSettings = (
 		autoNameSessions: Boolean(merged.autoNameSessions),
 		debugLogLevel: merged.debugLogLevel ?? "error",
 		debugLogRetention: merged.debugLogRetention ?? 200,
+		enableAgentTools: Boolean(merged.enableAgentTools ?? true),
+		autoApply: Boolean(merged.autoApply ?? false),
+		maxAgentSteps: merged.maxAgentSteps ?? 5,
 	};
 };
 
@@ -294,6 +303,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 
 		this.displayProviderProfiles(containerEl);
 		this.displayChatDefaults(containerEl);
+		this.displayAgentToolsSettings(containerEl);
 		this.displayAdvancedPrompts(containerEl);
 		this.displayCustomCommands(containerEl);
 	}
@@ -723,6 +733,57 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						const value = Number.parseInt(text.getValue(), 10);
 						this.plugin.settings.maxContextMessages =
 							Number.isFinite(value) && value > 0 ? value : 10;
+						await this.saveSettings();
+					});
+			});
+	}
+
+	private displayAgentToolsSettings(containerEl: HTMLElement): void {
+		containerEl.createEl("h3", { text: "Agent Tools" });
+		containerEl.createEl("p", {
+			text: "Allow the AI to read, edit, create, and append to notes directly via native tool calling.",
+		});
+
+		new Setting(containerEl)
+			.setName("Enable agent tools")
+			.setDesc(
+				"When enabled, the AI can invoke tools to interact with your vault during chat conversations.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.enableAgentTools)
+					.onChange(async (value) => {
+						this.plugin.settings.enableAgentTools = value;
+						await this.saveSettings();
+					});
+			});
+
+		new Setting(containerEl)
+			.setName("Auto-apply edits")
+			.setDesc(
+				"Apply note edits automatically without asking for confirmation. (Not recommended for important notes.)",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.autoApply)
+					.onChange(async (value) => {
+						this.plugin.settings.autoApply = value;
+						await this.saveSettings();
+					});
+			});
+
+		new Setting(containerEl)
+			.setName("Max agent steps")
+			.setDesc(
+				"Maximum number of tool call rounds per message. Higher values allow more complex multi-step reasoning.",
+			)
+			.addText((text) => {
+				text.setPlaceholder("5")
+					.setValue(String(this.plugin.settings.maxAgentSteps))
+					.inputEl.addEventListener("blur", async () => {
+						const value = Number.parseInt(text.getValue(), 10);
+						this.plugin.settings.maxAgentSteps =
+							Number.isFinite(value) && value > 0 ? value : 5;
 						await this.saveSettings();
 					});
 			});

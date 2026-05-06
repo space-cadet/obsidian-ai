@@ -1,21 +1,22 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-04 22:46:16 IST*
+*Last Updated: 2026-05-06 09:30:00 IST*
 
-**Started**: 2026-05-04 21:34:17 IST
-**Focus Task**: T8 Open Source Release with Branding
-**Session File**: `sessions/2026-05-04-night.md`
-**Status**: ✅ T10 model cache fix complete; T6 lightweight implementation complete
+**Started**: 2026-05-06 09:30:00 IST
+**Focus Task**: T13 Agentic Tool Calling for Note Editing
+**Session File**: `sessions/2026-05-06.md`
+**Status**: 🔄 T13 MVP foundation built; settings panel wired; awaiting end-to-end testing
 
 ## Overview
 
 - Active: 1 | Paused: 2 | Completed: 9 | Cancelled: 0
-- Last Session: 2026-05-04 night (T10: model cache fix; T6: token estimator, maxContextMessages, usage indicator)
-- Current Period: night
+- Last Session: 2026-05-06 (T13: agentic tool calling MVP foundation and settings wiring)
+- Current Period: morning
 
 ## Session History (Last 10)
 
-1. `sessions/2026-05-04-night.md` — T10: model cache fix; T6: token estimator, maxContextMessages, usage indicator
+1. `sessions/2026-05-06.md` — T13: agentic tool calling MVP foundation; settings panel wiring
+2. `sessions/2026-05-04-night.md` — T10: model cache fix; T6: token estimator, maxContextMessages, usage indicator
 2. `sessions/2026-05-04-evening.md` — Memory bank update: T2, T3, T5 marked complete; registry updated
 3. `sessions/2026-05-04-afternoon.md` — T5: retry button, slash commands, applyToTargetNote, createNote, appendToTarget; T3: embedExpander; all queued tasks complete
 3. `sessions/2026-05-03-night.md` — T3: context system implementation; T5: Apply button; T13: agentic tool calling design doc
@@ -40,7 +41,7 @@
 - T10: Model Discovery & Picker UX — ✅
 - T11: Debug Logging & Diagnostics — ⏸️
 - T12: Chat Onboarding, Tips & Empty States — ⏸️
-- T13: Agentic Tool Calling for Note Editing — ⬜
+- T13: Agentic Tool Calling for Note Editing — 🔄
 
 ## Active Tasks
 
@@ -130,6 +131,8 @@
 
 ## Next Session Focus
 
+- T13: Complete end-to-end testing of agentic tool calling in Obsidian
+- T13: Extract inline AgentLoop from ChatApp into `src/agent/AgentLoop.ts`
+- T13: Create `PendingToolCard.tsx` component for approval UI
 - T8: Complete open-source branding and release readiness
-- T13: Schedule agentic tool calling implementation when T8 is stable
-- T11-T12: Resume paused tasks after T8 is complete
+- T11-T12: Resume paused tasks after T13 MVP is stable

@@ -1,6 +1,6 @@
 # Task Registry
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-04 22:46:16 IST*
+*Last Updated: 2026-05-06 09:30:00 IST*
 
 ## Summary
 - Active: 1 | Paused: 2 | Completed: 9 | Cancelled: 0
@@ -22,7 +22,7 @@
 | T10 | Model Discovery & Picker UX | ✅ | HIGH | 2026-05-02 | T9 | [Details](tasks/T10.md) |
 | T11 | Debug Logging & Diagnostics | ⏸️ | MEDIUM | — | T9 | [Details](tasks/T11.md) |
 | T12 | Chat Onboarding, Tips & Empty States | ⏸️ | MEDIUM | — | T1, T9 | [Details](tasks/T12.md) |
-| T13 | Agentic Tool Calling for Note Editing | ⬜ | HIGH | — | T1, T3, T5, T9 | [Details](tasks/T13.md) |
+| T13 | Agentic Tool Calling for Note Editing | 🔄 | HIGH | 2026-05-06 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
 
 ## Active Tasks
 

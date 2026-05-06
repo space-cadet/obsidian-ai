@@ -1,8 +1,27 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-    *Last Updated: 2026-05-04 22:46:16 IST*
+    *Last Updated: 2026-05-06 09:30:00 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
+
+---
+
+### 2026-05-06
+
+#### 09:30:00 IST - T13: Agentic tool calling MVP foundation and settings wiring
+
+- Created `src/agent/types.ts` — `StreamEvent` union, `ToolCall`, `ToolResult` interfaces
+- Created `src/agent/tools.ts` — 4 Zod tool schemas (`read_note`, `edit_note`, `append_to_note`, `create_note`) with `any` cast workaround for AI SDK v6 TS OOM
+- Created `src/agent/ToolExecutor.ts` — vault operations executor with error handling
+- Modified `src/api.ts` — added `streamChatWithTools()` using `streamText({ tools, stopWhen: stepCountIs(1) })` with SDK-agnostic event translation
+- Modified `src/components/ChatApp.tsx` — integrated tool loop into `handleSend` with approve/reject handlers; wired `plugin.settings.enableAgentTools`, `autoApply`, `maxAgentSteps`
+- Modified `src/settings.ts` — added `enableAgentTools`, `autoApply`, `maxAgentSteps` to `ObsidianAISettings`, `DEFAULT_SETTINGS`, `normalizeSettings`; added `displayAgentToolsSettings()` UI section
+- Modified `styles.css` — pending tool call approval card styles
+- Updated `memory-bank/tasks/T13.md` — marked settings criteria complete; added progress entries
+- Updated `memory-bank/tasks.md` — T13 status changed to 🔄 IN PROGRESS
+- Updated `memory-bank/session_cache.md` — focus shifted to T13
+- Updated `memory-bank/activeContext.md` — current focus updated to T13
+- Created `memory-bank/sessions/2026-05-06.md` — session file documenting MVP build
 
 ---
 

@@ -1,10 +1,10 @@
 # Active Context
 
-*Last Updated: 2026-05-04 22:46:16 IST*
+*Last Updated: 2026-05-06 09:30:00 IST*
 
 ## Current Focus
-**Primary Task:** T8
-**Secondary Tasks:** META-1, T6, T10, T13
+**Primary Task:** T13
+**Secondary Tasks:** META-1, T8
 
 ## Active Tasks
 - [T6]: Token & Context Management — `tokenEstimator.ts` extracted, `maxContextMessages` setting (default 10) limits conversation history, ContextBar shows `~X / Y tokens` with green/amber/red colour coding.
@@ -12,11 +12,11 @@
 - [T5]: Note Editing — COMPLETED Slash commands now auto-execute without returning content in chat (`/create` creates file directly, `/edit` auto-applies diff, `/append` auto-appends). Retry button added. Targeted actions via message metadata. Remaining: overwrite modal, real-world testing
 - [T2]: Session-based chat history fully implemented. Message editing & resubmit, session rename, auto-title after 2 messages. Pending real-world testing
 - [T10]: Model Discovery — fetchers implemented, model cache fix complete. Cached models reused on subsequent clicks; refresh button in picker modal.
-- [T13]: Agentic Tool Calling — design complete, task and implementation doc created, awaiting scheduling
+- [T13]: Agentic Tool Calling — 🔄 IN PROGRESS. MVP foundation built: `types.ts`, `tools.ts`, `ToolExecutor.ts`, `api.ts` (`streamChatWithTools`), `ChatApp.tsx` (inline tool loop), `styles.css` (pending tool UI). Settings panel wired with `enableAgentTools`, `autoApply`, `maxAgentSteps`. Build passes. Awaiting end-to-end testing in Obsidian.
 - [META-1]: Keep memory-bank records aligned with implementation state
 
 ## Implementation Focus
-`src/components/ChatApp.tsx`, `src/components/ChatInput.tsx`, `src/context/ContextEngine.ts`
+`src/agent/types.ts`, `src/agent/tools.ts`, `src/agent/ToolExecutor.ts`, `src/api.ts`, `src/components/ChatApp.tsx`, `src/settings.ts`
 
 ## Task-Specific Context
 
@@ -39,6 +39,7 @@ Active note toggle chip in `ContextBar`. `@mention` autocomplete keeps candidate
 ## Next Actions By Task
 - [T8]: Complete open-source branding and release readiness pass.
 - [T6]: Test `maxContextMessages` and token usage indicator in real Obsidian environment.
-- [T13]: Schedule implementation when T6/T8 are stable. Full tool calling with Vercel AI SDK `streamText({ tools, maxSteps })`.
+- [T13]: Extract inline AgentLoop from ChatApp into `src/agent/AgentLoop.ts`. Create `PendingToolCard.tsx`. Add provider compatibility check. Test end-to-end in Obsidian.
+- [T8]: Complete open-source branding and release readiness pass.
 - [T10-T12]: Resume paused tasks after T6/T8 are complete.
 - [META-1]: Keep records in canonical template format.

@@ -16,103 +16,144 @@
 
 > **🤖 AI-Powered Writing Assistant for Obsidian**
 >
-> Transform your Obsidian workflow with intelligent inline editing and a persistent AI chat panel. Get contextual suggestions, rewrite content, and have full conversations with your vault—all without leaving your editor.
+> Transform your Obsidian workflow with intelligent inline editing and a persistent AI chat panel. Highlight text for instant rewrites, chat with your vault using `@mentions`, and edit notes directly from the conversation — all without leaving your editor.
 
 ---
 
 ## ✨ Features
 
-### **Inline AI Editing**
+### Inline AI Editing
 
-- **Context-Aware Suggestions**: Highlight text or place your cursor, press `Ctrl/Cmd + K` to get AI-powered transformations
-- **Visual Diff Preview**: See exactly what changed with inline markers for additions and deletions
-- **One-Click Apply**: Accept or discard suggestions instantly
-- **Custom Commands**: Define your own system and transformation prompts for personalized workflows
+- **Context-Aware Suggestions** — Highlight text or place your cursor, press `Ctrl/Cmd + K`, and get AI-powered transformations
+- **Visual Diff Preview** — See exactly what changed with inline markers for additions and deletions before you commit
+- **One-Click Apply / Discard** — Accept changes instantly or dismiss them without touching your note
+- **Custom Slash Commands** — Define your own system prompts and trigger them with `/` shortcuts
 
-### **Persistent Chat Panel** (New in v2.0)
+### Persistent Chat Panel
 
-- **Sidebar Chat**: Dedicated AI conversation panel alongside your notes
-- **Conversation History**: Multi-turn chats that persist across sessions
-- **Vault Context**: Reference your notes with `@mention` support
-- **Streaming Responses**: Real-time AI output for better responsiveness
+- **Sidebar Conversations** — Dedicated AI chat panel alongside your notes with full multi-turn dialogue
+- **Session History** — Conversations are saved and restored across Obsidian restarts
+- **Archive & Rename** — Organize past chats, prune old sessions automatically, and resume any conversation
+- **Edit & Resubmit** — Fix a previous message and regenerate the response from that point
 
-### **Multi-Provider Support**
+### Vault-Aware Context
 
-- **OpenAI** (GPT-4, GPT-3.5)
-- **Ollama** (Local models for privacy)
-- **Google Gemini**
-- **Custom API endpoints**
+- **`@mention` Notes** — Reference any note in your vault directly in chat
+- **Folder & Tag Context** — Attach entire folders or all notes matching a tag to the conversation
+- **Active Note** — Include the note you're currently editing as context with one toggle
+- **Embed Expansion** — Inline embeds (`![[...]]`) are recursively resolved up to depth 2
+
+### Note Editing from Chat
+
+- **`/create`**, **`/edit`**, **`/append`** — Create new notes, rewrite existing ones, or append summaries directly from chat responses
+- **Targeted Actions** — AI responses that look like edits show contextual buttons: *Apply → Note*, *Create Note*, *Append → Note*
+- **Retry** — Regenerate a response if the first attempt wasn't right
+
+### Multi-Provider Support
+
+Bring your own keys. No data leaves your machine unless you choose it to.
+
+| Provider | Models | Local / Cloud |
+|---|---|---|
+| **OpenAI** | GPT-4o, GPT-4, GPT-3.5 | Cloud |
+| **Anthropic** | Claude 3.5 Sonnet, Claude 3 Opus | Cloud |
+| **Google** | Gemini 1.5 Pro, Gemini Flash | Cloud |
+| **DeepSeek** | DeepSeek V3, DeepSeek R1 | Cloud |
+| **OpenRouter** | 200+ models via unified endpoint | Cloud |
+| **Ollama** | Llama, Mistral, Qwen, and more | **Local** |
+| **Azure OpenAI** | Enterprise GPT models | Cloud |
+| **Custom** | Any OpenAI-compatible endpoint | Either |
+
+- **Model Discovery** — Fetch available models from your provider instead of typing names manually
+- **Per-Provider Profiles** — Save multiple provider configurations and switch between them instantly
+
+### Quality-of-Life
+
+- **Streaming Responses** — See AI output appear in real time, not after a long wait
+- **Token Usage Indicator** — Visual feedback on how much context budget you're using (green → amber → red)
+- **Context Limits** — Cap conversation history to stay within model context windows
+- **Abort** — Cancel a streaming response mid-generation
 
 ---
 
 ## 📦 Installation
 
-### **From Obsidian Community Plugins**
+### From Obsidian Community Plugins (recommended)
 
 1. Open **Settings** → **Community Plugins**
-2. Turn on **Safe Mode** if it's enabled
-3. Click **Browse** and search for "Obsidian AI"
+2. Turn off **Safe Mode** if it's enabled
+3. Click **Browse** and search for **"Obsidian AI"**
 4. Click **Install**, then **Enable**
 
-### **Manual Installation**
+### Manual Installation
 
 1. Download the latest release from [GitHub Releases](https://github.com/space-cadet/obsidian-ai/releases)
 2. Extract `main.js`, `styles.css`, and `manifest.json`
-3. Copy to your vault: `.obsidian/plugins/obsidian-ai/`
+3. Copy them to your vault: `.obsidian/plugins/obsidian-ai/`
 4. Enable in **Settings** → **Community Plugins**
 
 ---
 
 ## 🚀 Quick Start
 
-### Setup
+### 1. Configure Your Provider
 
-1. **Configure your AI provider**:
-    - Open **Settings** → **Obsidian AI**
-    - Select your provider (OpenAI, Ollama, Gemini, etc.)
-    - Enter your API key or local endpoint
+Open **Settings** → **Obsidian AI** → **Provider Profiles**.
 
-2. **Choose a model**:
-    - OpenAI: `gpt-4`, `gpt-4o`, `gpt-3.5-turbo`
-    - Ollama: `llama3.2`, `mistral`, etc.
-    - Gemini: `gemini-pro`, `gemini-flash`
+Click **Add Profile**, choose your provider, and enter:
+- **API Key** (if required by the provider)
+- **Model** — type a model name, or click **Fetch Models** to discover available ones
+- **Custom URL** (for Ollama or custom endpoints)
 
-### Usage
+Switch between profiles anytime from the chat panel header.
 
-**Inline Editing**:
+### 2. Inline Editing
 
-1. Select text or place cursor
-2. Press `Ctrl/Cmd + K` (customizable hotkey)
-3. Type your instruction (e.g., "make this more concise")
-4. Review the diff and click ✓ to apply or ✗ to discard
+1. Select text in any note (or place your cursor)
+2. Press `Ctrl/Cmd + K` (customizable in Hotkeys)
+3. Type your instruction — e.g. *"make this more concise"* or *"translate to Spanish"*
+4. Review the diff preview
+5. Click **✓ Accept** to apply, or **✗ Discard** to cancel
 
-**Chat Panel**:
+### 3. Chat Panel
 
-1. Click the **message-square** icon in the ribbon
-2. Or use the command palette: "Open Obsidian AI Chat"
-3. Ask questions, get help writing, or discuss your notes
+1. Click the **💬** icon in the left ribbon (or run **"Open Obsidian AI Chat"** from the Command Palette)
+2. Ask questions, brainstorm, or request help writing
+3. Use `@` to mention notes, folders, or tags for vault-aware answers
+4. Toggle **Active Note** in the context bar to include the note you're editing
+
+### 4. Edit Notes from Chat
+
+When the AI generates content you want to keep:
+
+- Click **Apply → Note** to diff-merge the response into the active note
+- Click **Create Note** to save it as a new file
+- Click **Append → Note** to add it to the end of an existing file
+
+Or use slash commands in your message:
+- `/create [[Note Name]]` — create a new note
+- `/edit [[Note Name]]` — overwrite an existing note
+- `/append [[Note Name]]` — append to an existing note
 
 ---
 
 ## 🛠️ Development
 
-### Setup
-
 ```bash
-# Clone the repository
+# Clone
 git clone https://github.com/space-cadet/obsidian-ai.git
 cd obsidian-ai
 
-# Install dependencies
+# Install
 pnpm install
 
-# Development build with hot reload
+# Dev build with hot reload
 pnpm run dev
 
 # Production build
 pnpm run build
 
-# Package release artifacts locally
+# Package release artifacts
 pnpm run package
 ```
 
@@ -120,13 +161,15 @@ pnpm run package
 
 ```
 src/
-├── components/          # React UI components (Chat panel)
-├── modules/            # Core functionality
-│   ├── AIExtension.ts  # Inline AI tooltip
-│   ├── diffExtension.ts # Diff visualization
-│   └── commands/       # Slash commands
-├── views/              # Obsidian views
-└── main.ts            # Plugin entry
+├── components/          # React UI (ChatApp, ChatInput, MessageBubble, etc.)
+├── context/             # ContextEngine, tokenEstimator, embedExpander
+├── modules/             # Core CodeMirror extensions (inline tooltip, diff, commands)
+├── noteEditing/         # NoteEditingBridge (apply, append, create from chat)
+├── views/               # Obsidian ItemView registration
+├── api.ts               # Provider abstractions & streaming
+├── settings.ts          # Plugin settings & configuration UI
+├── default_prompts.ts   # Built-in system prompts
+└── main.ts              # Plugin entry point
 ```
 
 ---
@@ -137,25 +180,13 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 
 - **Bug Reports**: [Open an issue](https://github.com/space-cadet/obsidian-ai/issues)
 - **Feature Requests**: [Start a discussion](https://github.com/space-cadet/obsidian-ai/discussions)
-- **Showcase**: Share your workflows in [Discussions](https://github.com/space-cadet/obsidian-ai/discussions/categories/showcase)
-
----
-
-## 📋 Roadmap
-
-- [x] Inline AI editing with diff visualization
-- [x] Persistent chat panel (React-based)
-- [ ] Streaming responses
-- [ ] Conversation history & memory
-- [ ] `@mention` vault note references
-- [ ] In-place note editing from chat
-- [ ] Token usage tracking
+- **Showcase**: Share your workflows in [Discussions → Showcase](https://github.com/space-cadet/obsidian-ai/discussions/categories/showcase)
 
 ---
 
 ## Acknowledgments
 
-This plugin was originally forked from [FBarrca/obsidian-inlineAI](https://github.com/FBarrca/obsidian-inlineAI) and has been significantly extended with new features.
+This plugin was originally forked from [FBarrca/obsidian-inlineAI](https://github.com/FBarrca/obsidian-inlineAI) and has been significantly extended with chat, context, and vault-aware features.
 
 UI and design patterns inspired by [Logan Yang](https://github.com/logancyang)'s excellent [Obsidian Copilot](https://github.com/logancyang/obsidian-copilot) plugin.
 

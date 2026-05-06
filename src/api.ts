@@ -1,6 +1,8 @@
 // api.ts
-import { generateText, streamText } from "ai";
+import { generateText, streamText, stepCountIs } from "ai";
 import type { LanguageModelV3 } from "@ai-sdk/provider";
+
+import type { StreamEvent } from "./agent/types";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
@@ -400,6 +402,74 @@ export class ChatApiManager {
 
 		for await (const chunk of result.textStream) {
 			yield chunk;
+		}
+	}
+
+	/**
+	 * Streams a chat conversation with tool calling support.
+	 * Yields structured StreamEvent types for progressive display and tool interaction.
+	 * Each call performs a single step (stopWhen: stepCountIs(1)).
+	 * The caller is responsible for executing tools and calling again for subsequent steps.
+	 * @param messages - Array of conversation messages (including tool messages).
+	 * @param tools - Record of tool definitions.
+	 * @param signal - AbortSignal for cancellation.
+	 */
+	public async *streamChatWithTools(
+		messages: Array<any>,
+		tools: any,
+		signal?: AbortSignal,
+	): AsyncIterable<StreamEvent> {
+		const model = createLanguageModel(
+			getActiveProviderProfile(this.settings),
+		);
+		if (!model) {
+			throw new Error("Chat client is not initialized.");
+		}
+
+		const result = streamText({
+			model,
+			messages,
+			tools,
+			stopWhen: stepCountIs(1),
+			abortSignal: signal,
+		});
+
+		for await (const part of result.fullStream) {
+			switch (part.type) {
+				case "text-delta":
+					yield { type: "text-delta", text: part.text };
+					break;
+				case "tool-call":
+					yield {
+						type: "tool-call",
+						call: {
+							toolCallId: part.toolCallId,
+							toolName: part.toolName,
+							args: part.input as Record<string, unknown>,
+						},
+					};
+					break;
+				case "tool-result":
+					yield {
+						type: "tool-result",
+						callId: part.toolCallId,
+						result: part.output,
+					};
+					break;
+				case "tool-error":
+					yield {
+						type: "tool-error",
+						callId: part.toolCallId,
+						error: String(part.error),
+					};
+					break;
+				case "finish":
+					yield { type: "finish", reason: part.finishReason };
+					break;
+				case "error":
+					yield { type: "error", message: String(part.error) };
+					break;
+			}
 		}
 	}
 

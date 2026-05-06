@@ -853,3 +853,32 @@
 .chat-session-title:hover {
 	opacity: 0.8;
 }
+
+/* Pending tool call approval UI */
+.pending-tool-call {
+	padding: 12px 16px;
+	margin: 8px 16px;
+	background: var(--background-primary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.pending-tool-call span {
+	font-size: var(--font-ui-small);
+	color: var(--text-normal);
+	word-break: break-all;
+}
+
+.pending-tool-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+}
+
+.pending-tool-actions button {
+	padding: 4px 12px;
+	font-size: var(--font-ui-small);
+}
