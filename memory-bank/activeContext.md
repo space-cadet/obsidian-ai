@@ -3,8 +3,8 @@
 *Last Updated: 2026-05-06 09:30:00 IST*
 
 ## Current Focus
-**Primary Task:** T13
-**Secondary Tasks:** META-1, T8
+**Primary Task:** T14
+**Secondary Tasks:** T13, T8
 
 ## Active Tasks
 - [T6]: Token & Context Management — `tokenEstimator.ts` extracted, `maxContextMessages` setting (default 10) limits conversation history, ContextBar shows `~X / Y tokens` with green/amber/red colour coding.

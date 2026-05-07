@@ -23,17 +23,24 @@
 | T11 | Debug Logging & Diagnostics | ⏸️ | MEDIUM | — | T9 | [Details](tasks/T11.md) |
 | T12 | Chat Onboarding, Tips & Empty States | ⏸️ | MEDIUM | — | T1, T9 | [Details](tasks/T12.md) |
 | T13 | Agentic Tool Calling for Note Editing | 🔄 | HIGH | 2026-05-06 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
+| T14 | Remote Agent Connectivity (OpenResponses) | 🔄 | HIGH | 2026-05-07 | T1, T5, T9, T13 | [Details](tasks/T14.md) |
 
 ## Active Tasks
 
 ### META-1: Memory Bank Setup and Maintenance
 **Status:** 🔄 IN PROGRESS | **Priority:** HIGH | **Started:** 2026-05-02
 - Memory bank structure created and maintained
-- T1–T13 task files created and kept in sync
+- T1–T14 task files created and kept in sync
 - Format normalization complete
 
 ### T8 — Open Source Release with Branding *(requires T7)*
 Branding transition and open-source release preparation. See `tasks/T8.md`.
+
+### T13 — Agentic Tool Calling for Note Editing *(requires T1, T3, T5, T9)*
+Advanced AI tool calling for note editing. See `tasks/T13.md`.
+
+### T14 — Remote Agent Connectivity (OpenResponses) *(requires T1, T5, T9, T13)*
+Connect Obsidian chat to remote OpenClaw agents via OpenResponses API. See `tasks/T14.md`.
 
 ## Pending Tasks (v2.0 Development)
 

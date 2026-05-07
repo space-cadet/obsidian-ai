@@ -1,30 +1,30 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-06 09:30:00 IST*
+*Last Updated: 2026-05-07 06:57:28 UTC*
 
-**Started**: 2026-05-06 09:30:00 IST
-**Focus Task**: T13 Agentic Tool Calling for Note Editing
-**Session File**: `sessions/2026-05-06.md`
-**Status**: 🔄 T13 MVP foundation built; settings panel wired; awaiting end-to-end testing
+**Started**: 2026-05-07 06:57:28 UTC
+**Focus Task**: T14 Remote Agent Connectivity (OpenResponses)
+**Session File**: `sessions/2026-05-07-morning.md`
+**Status**: 🔄 T14 design complete; moved from ember-workspace to obsidian-ai repo; awaiting implementation approval
 
 ## Overview
 
-- Active: 1 | Paused: 2 | Completed: 9 | Cancelled: 0
+- Active: 2 | Paused: 2 | Completed: 9 | Cancelled: 0
 - Last Session: 2026-05-06 (T13: agentic tool calling MVP foundation and settings wiring)
 - Current Period: morning
 
 ## Session History (Last 10)
 
-1. `sessions/2026-05-06.md` — T13: agentic tool calling MVP foundation; settings panel wiring
-2. `sessions/2026-05-04-night.md` — T10: model cache fix; T6: token estimator, maxContextMessages, usage indicator
-2. `sessions/2026-05-04-evening.md` — Memory bank update: T2, T3, T5 marked complete; registry updated
-3. `sessions/2026-05-04-afternoon.md` — T5: retry button, slash commands, applyToTargetNote, createNote, appendToTarget; T3: embedExpander; all queued tasks complete
-3. `sessions/2026-05-03-night.md` — T3: context system implementation; T5: Apply button; T13: agentic tool calling design doc
-4. `sessions/2026-05-02-night.md` — T5: fix note targeting + NoteEditingBridge refactor; T2: basic persistence; stale closure fix; UX clarity
-5. `sessions/2026-05-02-evening.md` — T4: streaming wiring complete; T5: NoteEditingBridge + apply/append buttons
-6. `sessions/2026-05-02-morning.md` — META-1/T8: branding sync, package workflow, README, open-source release files
-7. `sessions/2026-05-02-morning.md` — META-1: arch docs, T1–T7 tasks; T7 (CI/CD) and T1 completed
-8. `sessions/2026-05-02-init.md` — META-1: Initial memory bank setup
+1. `sessions/2026-05-07-morning.md` — T14: remote agent connectivity design; memory bank update
+2. `sessions/2026-05-06.md` — T13: agentic tool calling MVP foundation; settings panel wiring
+3. `sessions/2026-05-04-night.md` — T10: model cache fix; T6: token estimator, maxContextMessages, usage indicator
+4. `sessions/2026-05-04-evening.md` — Memory bank update: T2, T3, T5 marked complete; registry updated
+5. `sessions/2026-05-04-afternoon.md` — T5: retry button, slash commands, applyToTargetNote, createNote, appendToTarget; T3: embedExpander; all queued tasks complete
+6. `sessions/2026-05-03-night.md` — T3: context system implementation; T5: Apply button; T13: agentic tool calling design doc
+7. `sessions/2026-05-02-night.md` — T5: fix note targeting + NoteEditingBridge refactor; T2: basic persistence; stale closure fix; UX clarity
+8. `sessions/2026-05-02-evening.md` — T4: streaming wiring complete; T5: NoteEditingBridge + apply/append buttons
+9. `sessions/2026-05-02-morning.md` — META-1/T8: branding sync, package workflow, README, open-source release files
+10. `sessions/2026-05-02-morning.md` — META-1: arch docs, T1–T7 tasks; T7 (CI/CD) and T1 completed
 
 ## Task Registry
 
@@ -42,13 +42,14 @@
 - T11: Debug Logging & Diagnostics — ⏸️
 - T12: Chat Onboarding, Tips & Empty States — ⏸️
 - T13: Agentic Tool Calling for Note Editing — 🔄
+- T14: Remote Agent Connectivity (OpenResponses) — 🔄
 
 ## Active Tasks
 
 ### META-1: Memory Bank Setup and Maintenance
 **Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-04 22:46:16 IST
-**Context:** Memory bank records kept in sync through T6 and T10 completion.
+**Started:** 2026-05-02 **Last:** 2026-05-07 06:57:28 UTC
+**Context:** Memory bank records kept in sync through T14 design phase. T14 task file created and registry updated.
 **Files:** All `memory-bank/*.md`, all `memory-bank/tasks/*.md`
 **Progress:**
 1. ✅ Initial memory bank setup (session 1)
@@ -63,76 +64,26 @@
 10. ✅ T3 complete — context system with mentions and embed expansion
 11. ✅ T6 complete — token estimation, maxContextMessages, usage indicator
 12. ✅ T10 complete — model discovery cache and inline picker
-13. 🔄 Keep records in sync as T8 work continues
+13. ✅ T14 design complete — remote agent connectivity architecture
+14. 🔄 Keep records in sync as T13/T8 work continues
 
-### T2: Conversation Chain & Memory
-**Status:** ✅ **COMPLETED** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-04 18:11:57 IST
-**Context:** Session-based chat history fully implemented with message editing and session renaming. Plugin methods loadChatData/saveChatData with migration from old flat chatMessages. ChatApp uses sessions[] + activeSessionId state. Archive-on-New with auto-titling and maxSavedConversations pruning. SessionPickerModal with load/delete actions.
-**Files:** `src/types.ts`, `src/main.ts`, `src/views/ObsidianAIChatView.ts`, `src/components/ChatApp.tsx`, `src/components/ActionBar.tsx`, `src/components/SessionPickerModal.tsx`
-**Progress:**
-1. ✅ loadChatMessages/saveChatMessages on plugin
-2. ✅ ChatApp persistence hooks (load on mount, save on update, clear on new chat)
-3. ✅ saveSettings fixed to preserve chatMessages across settings saves
-4. ✅ Session-store architecture design complete
-5. ✅ Implement plugin methods (loadChatData, saveChatData, migration)
-6. ✅ Update ChatApp for session state (archive-on-New, activeSessionId)
-7. ✅ Build SessionPickerModal component
-8. ✅ Wire Load button in ActionBar
-9. ✅ Message editing functionality - edit and resubmit previous messages
-10. ✅ Session renaming functionality via SessionPickerModal
-11. ✅ Real-world testing in Obsidian - all features tested and working
-
-### T3: Context & Mentions System
-**Status:** ✅ **COMPLETED** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-04 18:11:57 IST
-**Context:** Full context system + embedExpander implemented with token estimation and context tracking UI. `ContextEngine.resolveContextItems()` resolves all context types with embed expansion (depth ≤ 2, circular guard, heading extraction). `@mention` and `[[wikilink]]` autocomplete in `ChatInput`. Context items persist per-session with token counts displayed per message.
-**Files:** `src/context/ContextEngine.ts`, `src/context/embedExpander.ts`, `src/components/ChatInput.tsx`, `src/components/ContextBar.tsx`, `src/components/ContextPickerModal.tsx`, `src/components/ChatApp.tsx`, `src/types.ts`, `styles.css`
-**Progress:**
-1. ✅ Active note toggle chip in ContextBar
-2. ✅ `contextItems` state + `contextItemsRef` for correct context injection
-3. ✅ `@mention` autocomplete dropdown in ChatInput
-4. ✅ `[[wikilink]]` autocomplete for slash commands
-5. ✅ ContextEngine.resolveContextItems() for notes, folders, tags
-6. ✅ embedExpander for `![[]]` inline embeds (depth ≤ 2, circular guard, heading extraction)
-7. ✅ Token estimation and truncation with warning chip
-8. ✅ Per-message context tracking footer
-9. ✅ Inline mention UX (keeps name in textarea)
-10. ✅ Token count displayed per message
-11. ✅ Context cleared after send (per-message only)
-12. ✅ ContextBar simplified (no individual chips)
-13. ✅ Real-world testing in Obsidian - all features tested and working
-
-### T5: In-Place Note Editing from Chat
-**Status:** ✅ **COMPLETED** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-04 18:11:57 IST
-**Context:** NoteEditingBridge complete with all methods. Slash commands (`/edit`, `/create`, `/append`) implemented with parser supporting `[[Note]]` and bare names. Retry button truncates session and re-sends. Targeted action buttons (Apply→Note, Create Note, Append→Note) render contextually based on `command` metadata. Uses `sessionsRef`/`messagesRef` to avoid stale closures. Wikilink autocomplete for slash commands completed.
-**Files:** `src/noteEditing/NoteEditingBridge.ts`, `src/components/MessageBubble.tsx`, `src/components/ChatApp.tsx`, `src/components/ChatInput.tsx`, `src/components/ChatMessages.tsx`
-**Progress:**
-1. ✅ NoteEditingBridge.applyToNote(app, view, aiText, prompt)
-2. ✅ NoteEditingBridge.appendToNote(app, file, aiText)
-3. ✅ NoteEditingBridge.applyToTargetNote(app, notePath, aiText, prompt) — opens note, applies diff
-4. ✅ NoteEditingBridge.createNote(app, noteName, aiContent, prompt) — creates file, applies diff
-5. ✅ Apply/Append/Copy/Retry buttons on MessageBubble (hover-only)
-6. ✅ Targeted action buttons (Apply→Note, Create Note, Append→Note) via message command metadata
-7. ✅ Slash commands (`/edit`, `/create`, `/append`) with wikilink autocomplete
-8. ✅ Fix: active-leaf-change tracking; NoteEditingBridge receives resolved view/file
-9. ✅ Fix: stale closure — ref pattern for sessionsRef/messagesRef
-10. ✅ Button labels show target note name
-11. ✅ Targeted action buttons based on command metadata
-12. ✅ End-to-end testing in Obsidian - all features tested and working
-13. ⬜ Overwrite modal for existing files in createNote
-
-### T8: Open Source Release with Branding
+### T14: Remote Agent Connectivity (OpenResponses)
 **Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-02 11:12:44 IST
-**Context:** README and metadata are branded; open-source community files added; final release readiness pass remains.
-**Files:** `README.md`, `manifest.json`, `package.json`, `.github/*`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`
+**Started:** 2026-05-07 **Last:** 2026-05-07 06:57:28 UTC
+**Context:** Design doc complete. Uses OpenClaw OpenResponses API for bidirectional agent communication. Reuses T13 ToolExecutor infrastructure.
+**Files:** `memory-bank/tasks/T14.md`, `src/api.ts`, `src/settings.ts`, `src/agent/tools.ts`, `src/components/ChatApp.tsx`
+**Progress:**
+1. ✅ OpenClaw docs reviewed — OpenResponses API, session tools, gateway endpoints
+2. ✅ Architecture diagram and design decisions documented
+3. ✅ Task file T14.md created with full completion criteria
+4. ✅ tasks.md registry updated
+5. ✅ activeContext.md updated
+6. ⬜ Awaiting user approval to begin implementation
 
 ## Next Session Focus
 
+- T14: Begin implementation (settings.ts, api.ts, tools.ts changes)
 - T13: Complete end-to-end testing of agentic tool calling in Obsidian
 - T13: Extract inline AgentLoop from ChatApp into `src/agent/AgentLoop.ts`
 - T13: Create `PendingToolCard.tsx` component for approval UI
 - T8: Complete open-source branding and release readiness
-- T11-T12: Resume paused tasks after T13 MVP is stable

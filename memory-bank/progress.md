@@ -1,6 +1,5 @@
 # Implementation Progress
-
-*Last Updated: 2026-05-03 02:47:31 IST*
+*Last Updated: 2026-05-07 06:57:28 UTC*
 
 ## Active Tasks
 
@@ -10,18 +9,57 @@
 
 #### Completed Steps
 - ✅ Initial memory-bank structure created
-- ✅ T1 through T12 planning and implementation state captured
+- ✅ T1 through T14 planning and implementation state captured
+- ✅ T14 design doc created and moved to obsidian-ai repo
 
 #### Current Work
 - 🔄 Normalize task, session, registry, and edit-history files back to one canonical structure
+- 🔄 Keep the normalized structure current as T14 moves forward
 
 #### Up Next
-- ⬜ Keep the normalized structure current as T4 and T10 move forward
 - ⬜ Add new edit chunks only in the canonical chunk format
+- ⬜ Update progress.md when T14 implementation begins
 
-### T2: Conversation Chain & Memory
+### T14: Remote Agent Connectivity (OpenResponses)
 **Status:** 🔄 IN PROGRESS
 **Priority:** HIGH
+**Started:** 2026-05-07
+
+#### Completed Steps
+- ✅ OpenClaw docs reviewed — OpenResponses API, session tools, gateway endpoints
+- ✅ Architecture diagram and design decisions documented
+- ✅ Task file T14.md created with full completion criteria
+- ✅ tasks.md registry updated with T14 entry
+- ✅ activeContext.md updated — T14 set as primary focus
+
+#### Current Work
+- 🔄 Awaiting user approval to begin implementation
+
+#### Up Next
+- ⬜ Add "agent" provider type in settings.ts
+- ⬜ Create AgentApiManager class in api.ts
+- ⬜ Add OpenResponses tool serializer in tools.ts
+- ⬜ Wire agent streaming in ChatApp.tsx
+
+### T13: Agentic Tool Calling for Note Editing
+**Status:** 🔄 IN PROGRESS
+**Priority:** HIGH
+
+#### Completed Steps
+- ✅ MVP foundation built (types.ts, tools.ts, ToolExecutor.ts, api.ts updates)
+- ✅ Settings panel wired (enableAgentTools, autoApply, maxAgentSteps)
+
+#### Current Work
+- 🔄 End-to-end testing pending
+
+#### Up Next
+- ⬜ Extract inline AgentLoop from ChatApp into `src/agent/AgentLoop.ts`
+- ⬜ Create `PendingToolCard.tsx` component for approval UI
+
+### T2: Conversation Chain & Memory
+**Status:** ✅ COMPLETED
+**Priority:** HIGH
+**Completed:** 2026-05-04
 
 #### Completed Steps
 - ✅ Basic single-session persistence (loadChatMessages/saveChatMessages)
@@ -30,13 +68,6 @@
 - ✅ ChatApp refactored to session state (archive-on-New, activeSessionId)
 - ✅ SessionPickerModal with load/delete
 - ✅ Auto-titling and pruning
-
-#### Current Work
-- 🔄 Real-world testing in Obsidian
-
-#### Up Next
-- ⬜ Verify migration from old flat chatMessages format
-- ⬜ Verify pruning and edge cases
 
 ### T4: Streaming with Vercel AI SDK
 **Status:** ✅ COMPLETED
@@ -49,8 +80,9 @@
 - ✅ Streaming wired into React chat panel with abort handling and error states
 
 ### T3: Context & Mentions System
-**Status:** 🔄 IN PROGRESS
+**Status:** ✅ COMPLETED
 **Priority:** HIGH
+**Completed:** 2026-05-04
 
 #### Completed Steps
 - ✅ Active note toggle chip in ContextBar
@@ -60,46 +92,16 @@
 - ✅ Token budget enforcement (chars/4, proportional truncation)
 - ✅ Context items persist per-session in `ChatSession.contextItems`
 
-#### Current Work
-- 🔄 Real-world testing in Obsidian
-
-#### Up Next
-- ⬜ `embedExpander` for `![[]]` inline embeds
-- ⬜ Selection capture bridge from inline tooltip
-
 ### T5: In-Place Note Editing from Chat
-**Status:** 🔄 IN PROGRESS
+**Status:** ✅ COMPLETED
 **Priority:** HIGH
+**Completed:** 2026-05-04
 
 #### Completed Steps
 - ✅ NoteEditingBridge refactored — caller provides resolved view/file
 - ✅ Apply/Append/Copy buttons on MessageBubble
 - ✅ Apply button triggers diff overlay via `NoteEditingBridge.applyToNote()`
 - ✅ Active-leaf-change tracking for correct note targeting
-
-#### Current Work
-- 🔄 Testing apply flow in real Obsidian environment
-
-#### Up Next
-- ⬜ `applyToTargetNote()` — open note by path if not active
-- ⬜ `/create` and `/append` slash commands
-- ⬜ Retry button on message bubble
-
-### T13: Agentic Tool Calling for Note Editing
-**Status:** ⬜ NOT STARTED
-**Priority:** HIGH
-
-#### Design Complete
-- Task file and implementation doc created
-- Architecture: Vercel AI SDK `streamText` with `tools` + `maxSteps`
-- Tools: `read_note`, `edit_note`, `append_to_note`, `create_note`
-- Approval UI: PendingToolCard with approve/reject
-- Settings: `autoApply`, `maxAgentSteps`
-
-#### Up Next
-- ⬜ Implement tool schemas and ToolExecutor
-- ⬜ Restructure streaming loop for StreamEvent union
-- ⬜ Build PendingToolCard UI component
 
 ## Paused Tasks
 
