@@ -1,6 +1,6 @@
 # Agentic Tool Calling Design: LLM-Driven Note Editing
 *Created: 2026-05-03 02:40:00 IST*
-*Last Updated: 2026-05-06 08:03:05 IST*
+*Last Updated: 2026-05-09 11:51:05 IST*
 
 ## Overview
 
@@ -13,6 +13,7 @@ Enable the LLM to act as an agent that can read, edit, create, and append to Obs
 - **Progressive enhancement**: If the provider/model doesn't support tool calling, degrade gracefully to text-only responses.
 - **Reuse existing machinery**: `NoteEditingBridge` and `vault.*` APIs handle the actual file operations; the agent layer only decides *when* to call them.
 - **SDK-agnostic events**: `api.ts` translates SDK-specific stream events into our own `StreamEvent` union. If the SDK changes event shapes in v7, only the adapter changes.
+- **Basename-friendly**: The LLM often passes note names without `.md`. `resolveNote()` handles three-tier resolution so tools work with either basenames or full paths.
 
 ---
 
@@ -44,10 +45,10 @@ import { z } from 'zod';
 export const noteTools = {
   read_note: {
     description:
-      'Read the full content of an Obsidian note by its path. ' +
+      'Read the full content of an Obsidian note by its name or path. ' +
       'Use this before editing to understand the current content.',
     parameters: z.object({
-      path: z.string().describe('Vault-relative path, e.g. "Project Notes.md"'),
+      path: z.string().describe('Note name or path, e.g. "Project Notes" or "Folder/Project Notes"'),
     }),
   },
 
@@ -57,7 +58,7 @@ export const noteTools = {
       'Only use when the user explicitly asks to rewrite, edit, or replace a note. ' +
       'Return the complete new content — do not use diff syntax.',
     parameters: z.object({
-      path: z.string().describe('Vault-relative path of the note to edit'),
+      path: z.string().describe('Note name or path, e.g. "Project Notes"'),
       content: z.string().describe('The complete new note content'),
     }),
   },
@@ -67,7 +68,7 @@ export const noteTools = {
       'Append content to the end of an existing note. ' +
       'Use for adding summaries, logs, or follow-ups without changing existing content.',
     parameters: z.object({
-      path: z.string().describe('Vault-relative path'),
+      path: z.string().describe('Note name or path, e.g. "Project Notes"'),
       content: z.string().describe('Content to append'),
     }),
   },
@@ -77,8 +78,32 @@ export const noteTools = {
       'Create a new note in the vault with the given content. ' +
       'Use when the user asks to create a new document, summary, or draft.',
     parameters: z.object({
-      path: z.string().describe('Vault-relative path, e.g. "Meeting Summaries/2026-05-03.md"'),
+      path: z.string().describe('Note name or path, e.g. "Meeting Summaries/2026-05-03"'),
       content: z.string().describe('Initial note content'),
+    }),
+  },
+
+  patch_note: {
+    description:
+      'Find and replace text inside an existing note. Use for small, precise edits ' +
+      '— fixing a word, updating a link, or changing a date. Only replaces the first match ' +
+      'unless replace_all is true.',
+    parameters: z.object({
+      path: z.string().describe('Note name or path, e.g. "Project Notes"'),
+      search: z.string().describe('Exact text to find. Must match literally (case-sensitive).'),
+      replace: z.string().describe('Text to insert in place of the search string.'),
+      replace_all: z.boolean().optional().describe('Replace every occurrence instead of just the first.'),
+    }),
+  },
+
+  edit_section: {
+    description:
+      'Rewrite a specific section of a note identified by its heading. ' +
+      'Use when the user wants to change only one part of a long note.',
+    parameters: z.object({
+      path: z.string().describe('Note name or path, e.g. "Project Notes"'),
+      heading: z.string().describe('Exact heading text (without # marks) of the section to rewrite.'),
+      content: z.string().describe('New content for that section.'),
     }),
   },
 };
@@ -88,11 +113,23 @@ export const noteTools = {
 
 ---
 
+## Path Resolution (`resolveNote`)
+
+`ToolExecutor` includes a `resolveNote(path: string): TFile | null` helper that tries three strategies in order:
+
+1. **Exact path** — `vault.getAbstractFileByPath(path)`
+2. **Append `.md`** — `vault.getAbstractFileByPath(path + ".md")`
+3. **Wiki-link resolution** — `metadataCache.getFirstLinkpathDest(path, "")`
+
+This ensures tools work whether the LLM passes `"Project Notes"`, `"Project Notes.md"`, or a wiki-link style name.
+
+---
+
 ## Agent Core
 
-### `AgentLoop` (`src/agent/AgentLoop.ts`)
+### `AgentLoop` (`src/agent/AgentLoop.ts`) — *Planned extraction*
 
-Owns the conversation lifecycle with tools. Created fresh for each user message.
+Currently the loop is inline in `ChatApp.tsx`. The planned `AgentLoop` class:
 
 ```typescript
 class AgentLoop {
@@ -145,40 +182,83 @@ class ToolExecutor {
       case 'edit_note': return this.editNote(call.args);
       case 'append_to_note': return this.appendToNote(call.args);
       case 'create_note': return this.createNote(call.args);
+      case 'patch_note': return this.patchNote(call.args);
+      case 'edit_section': return this.editSection(call.args);
       default: return { error: `Unknown tool: ${call.name}` };
     }
   }
 
+  private resolveNote(path: string): TFile | null {
+    // 1. exact path
+    let file = this.app.vault.getAbstractFileByPath(path);
+    if (file instanceof TFile) return file;
+    // 2. append .md
+    file = this.app.vault.getAbstractFileByPath(path + '.md');
+    if (file instanceof TFile) return file;
+    // 3. wiki-link resolution
+    file = this.app.metadataCache.getFirstLinkpathDest(path, '');
+    if (file instanceof TFile) return file;
+    return null;
+  }
+
   private async readNote(args: { path: string }): Promise<ToolResult> {
-    const file = this.app.vault.getAbstractFileByPath(args.path);
-    if (!(file instanceof TFile)) return { error: `Note not found: ${args.path}` };
+    const file = this.resolveNote(args.path);
+    if (!file) return { error: `Note not found: ${args.path}` };
     const content = await this.app.vault.read(file);
-    return { content, path: args.path };
+    return { content, path: file.path };
   }
 
   private async editNote(args: { path: string; content: string }): Promise<ToolResult> {
-    const file = this.app.vault.getAbstractFileByPath(args.path);
-    if (!(file instanceof TFile)) return { error: `Note not found: ${args.path}` };
+    const file = this.resolveNote(args.path);
+    if (!file) return { error: `Note not found: ${args.path}` };
     await this.app.vault.modify(file, args.content);
     new Notice(`✓ Edited ${file.basename}`);
-    return { success: true, path: args.path };
+    return { success: true, path: file.path };
   }
 
   private async appendToNote(args: { path: string; content: string }): Promise<ToolResult> {
-    const file = this.app.vault.getAbstractFileByPath(args.path);
-    if (!(file instanceof TFile)) return { error: `Note not found: ${args.path}` };
+    const file = this.resolveNote(args.path);
+    if (!file) return { error: `Note not found: ${args.path}` };
     const existing = await this.app.vault.read(file);
     await this.app.vault.modify(file, existing + '\n\n' + args.content);
     new Notice(`✓ Appended to ${file.basename}`);
-    return { success: true, path: args.path };
+    return { success: true, path: file.path };
   }
 
   private async createNote(args: { path: string; content: string }): Promise<ToolResult> {
-    const existing = this.app.vault.getAbstractFileByPath(args.path);
-    if (existing) return { error: `Note already exists: ${args.path}` };
-    await this.app.vault.create(args.path, args.content);
-    new Notice(`✓ Created ${args.path}`);
-    return { success: true, path: args.path };
+    const fileName = args.path.endsWith('.md') ? args.path : `${args.path}.md`;
+    if (this.resolveNote(fileName)) return { error: `Note already exists: ${fileName}` };
+    await this.app.vault.create(fileName, args.content);
+    new Notice(`✓ Created ${fileName}`);
+    return { success: true, path: fileName };
+  }
+
+  private async patchNote(args: { path: string; search: string; replace: string; replace_all?: boolean }): Promise<ToolResult> {
+    const file = this.resolveNote(args.path);
+    if (!file) return { error: `Note not found: ${args.path}` };
+    const content = await this.app.vault.read(file);
+    if (!content.includes(args.search)) return { error: 'Search text not found in note. Consider read_note first to see exact content.' };
+    const newContent = args.replace_all
+      ? content.split(args.search).join(args.replace)
+      : content.replace(args.search, args.replace);
+    await this.app.vault.modify(file, newContent);
+    const count = args.replace_all ? content.split(args.search).length - 1 : 1;
+    new Notice(`✓ Patched ${file.basename} (${count} replacement${count > 1 ? 's' : ''})`);
+    return { success: true, path: file.path };
+  }
+
+  private async editSection(args: { path: string; heading: string; content: string }): Promise<ToolResult> {
+    const file = this.resolveNote(args.path);
+    if (!file) return { error: `Note not found: ${args.path}` };
+    const lines = (await this.app.vault.read(file)).split('\n');
+    const headingLine = lines.findIndex(l => l.trim() === `# ${args.heading}`);
+    if (headingLine === -1) return { error: `Heading "${args.heading}" not found.` };
+    const nextHeading = lines.findIndex((l, i) => i > headingLine && l.startsWith('# '));
+    const endLine = nextHeading === -1 ? lines.length : nextHeading;
+    const newLines = [...lines.slice(0, headingLine + 1), args.content, ...lines.slice(endLine)];
+    await this.app.vault.modify(file, newLines.join('\n'));
+    new Notice(`✓ Edited section "${args.heading}" in ${file.basename}`);
+    return { success: true, path: file.path };
   }
 }
 ```
@@ -200,10 +280,10 @@ streamText({ model, messages })
 ```
 streamText({ model, messages, tools, stopWhen: stepCountIs(1) })
   → fullStream yields TextStreamPart events
-  → AgentLoop translates to StreamEvent
+  → Inline loop translates to StreamEvent
   → ChatApp renders text chunks + pending tool cards
   → On approval: ToolExecutor runs, result added to messages
-  → AgentLoop calls streamText again (next step)
+  → streamText called again (next step)
 ```
 
 ### StreamEvent Union (`src/agent/types.ts`)
@@ -281,7 +361,7 @@ public async *streamChatWithTools(
 
 ## Chat UI: Pending Tool Cards
 
-### Component: `PendingToolCard.tsx`
+### Component: `PendingToolCard.tsx` — *Planned*
 
 Renders inline in the chat stream when a tool call is emitted:
 
@@ -289,7 +369,7 @@ Renders inline in the chat stream when a tool call is emitted:
 ┌─────────────────────────────────────────────────────────┐
 │ 🤖 Agent wants to edit a note                           │
 │                                                         │
-│  ✏️  Edit: Vocabulary Log.md                            │
+│  ✏️  Edit: Vocabulary Log                               │
 │     (preview first 120 chars of new content...)         │
 │                                                         │
 │              [Approve]  [Reject]                        │
@@ -326,16 +406,16 @@ When `autoApply` is true, pending tools skip the card and go straight to `execut
 
 ```
 LLM emits tool-call event
-  → ChatApp pauses AgentLoop (stops consuming further events)
-  → Renders PendingToolCard
+  → ChatApp pauses loop (stops consuming further events)
+  → Renders pending tool UI inline
   → User clicks [Approve]
       → ToolExecutor.execute(call)
       → Store result in conversation history
-      → AgentLoop calls streamText again (next step)
+      → streamText called again (next step)
   → User clicks [Reject]
       → Skip execution
       → Feed rejection message back to LLM
-      → AgentLoop calls streamText again
+      → streamText called again
 ```
 
 ### autoApply = true
@@ -345,7 +425,7 @@ LLM emits tool-call event
   → ToolExecutor.execute(call) immediately
   → Show brief Notice ("✓ Edited Vocabulary Log")
   → Result appended to messages
-  → AgentLoop continues automatically
+  → streamText called again automatically
 ```
 
 ---
@@ -366,6 +446,8 @@ When the user asks you to edit or rewrite a note, use the edit_note tool.
 When the user asks you to create a new note, use the create_note tool.
 When the user asks you to add to an existing note without changing current content, use append_to_note.
 Before editing a note you are unfamiliar with, use read_note to see its current content.
+For small precise changes, use patch_note.
+To rewrite a specific section, use edit_section with the exact heading.
 
 Important: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks.`;
   }
@@ -429,11 +511,11 @@ interface ObsidianAISettings {
 |---|---|---|
 | `src/agent/types.ts` | **Create** | `StreamEvent` union, `ToolCall`, `ToolResult` types |
 | `src/agent/tools.ts` | **Create** | Zod tool definitions (schemas only, no execute) |
-| `src/agent/ToolExecutor.ts` | **Create** | Executes tool handlers against vault |
-| `src/agent/AgentLoop.ts` | **Create** | Orchestrates multi-step streamText calls |
+| `src/agent/ToolExecutor.ts` | **Create** | Executes tool handlers against vault; `resolveNote()`, `patchNote()`, `editSection()` |
+| `src/agent/AgentLoop.ts` | **Create** | Orchestrates multi-step streamText calls *(planned extraction)* |
 | `src/api.ts` | **Modify** | Add `streamChatWithTools` method; keep `streamChat` for fallback |
-| `src/components/ChatApp.tsx` | **Modify** | Creates AgentLoop, handles StreamEvent union, renders pending tool cards |
-| `src/components/PendingToolCard.tsx` | **Create** | UI for approve/reject with content preview |
+| `src/components/ChatApp.tsx` | **Modify** | Creates inline tool loop, handles StreamEvent union, renders pending actions |
+| `src/components/PendingToolCard.tsx` | **Create** | UI for approve/reject with content preview *(planned)* |
 | `src/settings.ts` | **Modify** | Add `enableAgentTools`, `autoApply`, `maxAgentSteps` |
 | `src/settings.ts` (tab) | **Modify** | UI toggles for new settings |
 
@@ -444,13 +526,15 @@ interface ObsidianAISettings {
 | Risk | Mitigation |
 |---|---|
 | LLM hallucinates tool arguments | Zod validation on incoming args; error fed back to model |
-| Infinite tool loops | `maxAgentSteps` hard cap (default 5) in AgentLoop |
+| Infinite tool loops | `maxAgentSteps` hard cap (default 5) in inline loop |
 | File overwrites without warning | `edit_note` only modifies existing files; `create_note` checks for existence |
-| Vault path traversal | ToolExecutor validates paths are within vault root before any `vault.*` call |
+| Vault path traversal | `resolveNote()` validates paths via Obsidian's own APIs |
+| Basename resolution fails | Three-tier fallback: exact → `.md` → `metadataCache.getFirstLinkpathDest()` |
 | Streaming abort mid-tool | AbortController passed to streamText; ToolExecutor checks signal before vault ops |
 | Model doesn't support tools | Graceful fallback to text-only `streamChat` mode |
 | Large note content in tool args | No inherent size limit, but token budget still applies to messages |
 | SDK v7 changes `fullStream` API | Only `api.ts` changes — `StreamEvent` union insulates the rest of the app |
+| Native renderer crash on streaming completion | `scrollIntoView({ behavior: "auto" })`, unmount cleanup flags, ErrorBoundary for recovery |
 
 ---
 

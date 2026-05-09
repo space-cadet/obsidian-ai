@@ -1,5 +1,5 @@
 // main.ts
-import { Plugin, MarkdownView, App } from "obsidian";
+import { Plugin, MarkdownView, App, Notice } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import {
 	ObsidianAISettings,
@@ -23,12 +23,18 @@ import {
 import { diffExtension } from "./modules/diffExtension";
 import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/ObsidianAIChatView";
 import { StoredChatData, ChatSession } from "./types";
+import { createFileLogger, FileLogger } from "./logger";
 
 export default class ObsidianAIPlugin extends Plugin {
 	settings: ObsidianAISettings = DEFAULT_SETTINGS;
 	chatapi!: ChatApiManager;
+	logger!: FileLogger;
 
 	async onload() {
+		// Initialize file logger FIRST so any crash during load is captured.
+		this.logger = createFileLogger(this.app, this.manifest.id);
+		await this.logger.init();
+
 		await this.loadSettings();
 		this.chatapi = new ChatApiManager(this.settings, this.app);
 
@@ -148,6 +154,16 @@ export default class ObsidianAIPlugin extends Plugin {
 
 		// Add settings tab
 		this.addSettingTab(new ObsidianAISettingsTab(this.app, this));
+
+		// Command to clear debug log
+		this.addCommand({
+			id: "clear-debug-log",
+			name: "Clear debug log file",
+			callback: async () => {
+				await this.logger.clear();
+				new Notice("Debug log cleared.");
+			},
+		});
 	}
 
 	async activateChatView() {
@@ -161,6 +177,8 @@ export default class ObsidianAIPlugin extends Plugin {
 	}
 
 	onunload() {
+		this.logger.stopMemoryLogging();
+		this.logger.flushNow();
 		this.app.workspace.detachLeavesOfType(CHAT_VIEWTYPE);
 	}
 

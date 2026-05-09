@@ -306,6 +306,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 		this.displayAgentToolsSettings(containerEl);
 		this.displayAdvancedPrompts(containerEl);
 		this.displayCustomCommands(containerEl);
+		this.displayDiagnostics(containerEl);
 	}
 
 	private displayProviderProfiles(containerEl: HTMLElement): void {
@@ -840,6 +841,167 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						await this.saveSettings();
 					});
 			});
+	}
+
+	private displayDiagnostics(containerEl: HTMLElement): void {
+		containerEl.createEl("h3", { text: "Diagnostics" });
+		containerEl.createEl("p", {
+			text: "Monitor plugin resource usage and performance metrics.",
+		});
+
+		// Metrics container
+		const metricsEl = containerEl.createEl("div");
+		metricsEl.style.display = "grid";
+		metricsEl.style.gridTemplateColumns = "1fr 1fr";
+		metricsEl.style.gap = "12px";
+		metricsEl.style.marginBottom = "16px";
+		metricsEl.style.padding = "12px";
+		metricsEl.style.background = "var(--background-secondary)";
+		metricsEl.style.borderRadius = "6px";
+
+		const createMetric = (label: string, value: string) => {
+			const wrapper = metricsEl.createEl("div");
+			wrapper.createEl("div", {
+				text: label,
+				cls: "setting-item-description",
+			}).style.fontSize = "0.8em";
+			const valueEl = wrapper.createEl("div", {
+				text: value,
+				cls: "setting-item-name",
+			});
+			valueEl.style.fontSize = "1.1em";
+			valueEl.style.fontFamily = "var(--font-monospace)";
+			return valueEl;
+		};
+
+		const heapUsedEl = createMetric("JS Heap Used", "—");
+		const heapTotalEl = createMetric("JS Heap Total", "—");
+		const heapLimitEl = createMetric("JS Heap Limit", "—");
+		const domNodesEl = createMetric("DOM Nodes", "—");
+		const sessionsEl = createMetric("Chat Sessions", "—");
+		const messagesEl = createMetric("Total Messages", "—");
+
+		const refreshMetrics = async () => {
+			// Memory (Chromium-specific)
+			const mem = (performance as any).memory;
+			if (mem) {
+				heapUsedEl.textContent = `${(mem.usedJSHeapSize / 1024 / 1024).toFixed(1)} MB`;
+				heapTotalEl.textContent = `${(mem.totalJSHeapSize / 1024 / 1024).toFixed(1)} MB`;
+				heapLimitEl.textContent = `${(mem.jsHeapSizeLimit / 1024 / 1024).toFixed(1)} MB`;
+			} else {
+				heapUsedEl.textContent = "N/A";
+				heapTotalEl.textContent = "N/A";
+				heapLimitEl.textContent = "N/A";
+			}
+
+			// DOM nodes
+			domNodesEl.textContent = String(
+				document.getElementsByTagName("*").length,
+			);
+
+			// Chat data
+			try {
+				const chatData = await this.plugin.loadChatData();
+				const sessionCount = chatData.sessions.length;
+				const msgCount = chatData.sessions.reduce(
+					(sum, s) => sum + s.messages.length,
+					0,
+				);
+				sessionsEl.textContent = String(sessionCount);
+				messagesEl.textContent = String(msgCount);
+			} catch {
+				sessionsEl.textContent = "?";
+				messagesEl.textContent = "?";
+			}
+		};
+
+		// Refresh button
+		new Setting(containerEl)
+			.setName("Refresh metrics")
+			.setDesc("Update the diagnostic numbers above.")
+			.addButton((btn) =>
+				btn
+					.setButtonText("Refresh")
+					.setIcon("refresh-cw")
+					.onClick(() => {
+						btn.setDisabled(true);
+						refreshMetrics().then(() => {
+							btn.setDisabled(false);
+						});
+					}),
+			);
+
+		// Force GC hint
+		new Setting(containerEl)
+			.setName("Force garbage collection")
+			.setDesc(
+				"To force GC, open DevTools (Ctrl/Cmd+Shift+I) and run the GC profiler.",
+			)
+			.addButton((btn) =>
+				btn
+					.setButtonText("Open DevTools")
+					.onClick(() => {
+						// @ts-ignore
+						if (this.app?.vault?.adapter?.openDevTools) {
+							// @ts-ignore
+							this.app.vault.adapter.openDevTools();
+						} else {
+							new Notice(
+								"DevTools shortcut: Ctrl+Shift+I (or Cmd+Opt+I on macOS)",
+								8000,
+							);
+						}
+					}),
+			);
+
+		// Clear chat history
+		new Setting(containerEl)
+			.setName("Clear all chat history")
+			.setDesc(
+				"Permanently delete all saved chat sessions. This frees up storage memory.",
+			)
+			.addButton((btn) =>
+				btn
+					.setButtonText("Clear History")
+					.setWarning()
+					.onClick(async () => {
+						const modal = new Modal(this.app);
+						modal.titleEl.setText("Clear all chat history?");
+						modal.contentEl.createEl("p", {
+							text: "This will permanently delete all chat sessions. This action cannot be undone.",
+						});
+						const btnContainer = modal.contentEl.createEl("div");
+						btnContainer.style.display = "flex";
+						btnContainer.style.gap = "8px";
+						btnContainer.style.marginTop = "12px";
+
+						const cancelBtn = btnContainer.createEl("button", {
+							text: "Cancel",
+						});
+						cancelBtn.addEventListener("click", () => {
+							modal.close();
+						});
+
+						const confirmBtn = btnContainer.createEl("button", {
+							text: "Clear All",
+						});
+						confirmBtn.classList.add("mod-warning");
+						confirmBtn.addEventListener("click", async () => {
+							await this.plugin.saveChatData({
+								sessions: [],
+								activeSessionId: null,
+							});
+							modal.close();
+							new Notice("✓ All chat history cleared.");
+							refreshMetrics();
+						});
+
+						modal.open();
+					}),
+			);
+
+		// Initial load
+		refreshMetrics();
 	}
 
 	private displayCustomCommands(containerEl: HTMLElement): void {

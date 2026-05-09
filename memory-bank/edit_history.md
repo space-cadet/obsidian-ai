@@ -1,8 +1,67 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-    *Last Updated: 2026-05-06 09:30:00 IST*
+    *Last Updated: 2026-05-09 11:51:05 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
+
+---
+
+### 2026-05-09
+
+#### 11:51:05 IST - T11/T13: File debug logger, ErrorBoundary, crash debugging, new agent tools
+
+- Created `src/logger.ts` — `FileLogger` class writing console output to `.obsidian/plugins/obsidian-ai/debug.log`; intercepts `window.onerror` and `window.onunhandledrejection`; logs memory metrics every 10s; exposes `window.__obsidianAiLogger`
+- Created `src/components/ErrorBoundary.tsx` — `ChatErrorBoundary` catches render errors, logs to disk, shows fallback UI
+- Modified `src/main.ts` — Logger initialized first in `onload()`; added `clear-debug-log` command; cleanup in `onunload()`
+- Modified `src/views/ObsidianAIChatView.ts` — Wraps `ChatApp` in `<ChatErrorBoundary>`
+- Modified `src/components/MessageBubble.tsx` — 5-step defensive logging around `MarkdownRenderer.render`
+- Modified `src/components/ChatMessages.tsx` — `StreamingBubble` 5-step logging; `unmounted` cleanup flag; `scrollIntoView({ behavior: "auto" })`
+- Modified `src/agent/ToolExecutor.ts` — Implemented `patchNote()` and `editSection()` tools
+- Modified `src/agent/tools.ts` — Added `patch_note` and `edit_section` Zod schemas
+- Modified `src/modules/WidgetExtension.ts` — Debug logging in `destroy()` and `acceptAction()`
+- Modified `src/modules/diffExtension.ts` — Debug logging in `dispatchAIChanges()` and `applyDiffPlugin`
+- Modified `src/noteEditing/NoteEditingBridge.ts` — try/catch wrappers and detailed logging in `applyToNote()` and `applyToTargetNote()`
+- Updated `memory-bank/tasks/T13.md` — `patch_note`, `edit_section`, crash debugging progress
+- Updated `memory-bank/tasks/T11.md` — Status ⏸️ → 🔄 IN PROGRESS; logger, ErrorBoundary, diagnostics progress
+- Updated `memory-bank/tasks.md` — T11 status updated
+- Updated `memory-bank/activeContext.md` — T11 active, T13 crash debugging
+- Updated `memory-bank/progress.md` — T11 and T13 sections updated
+- Updated `memory-bank/changelog.md` — 2026-05-09 entries added
+- Updated `memory-bank/session_cache.md` — Latest session registered
+- Created `memory-bank/sessions/2026-05-09.md` — Session 2 crash debugging and new tools
+- Created `memory-bank/edits/2026-05-09/logger-errorboundary-new-tools.md` — canonical edit chunk
+
+---
+
+### 2026-05-08
+
+#### 01:55:58 IST - T13: Basename resolution fix, diagnostics panel, tool description polish
+
+- Modified `src/agent/ToolExecutor.ts` — Added `resolveNote()` private helper with three-tier resolution (exact → append `.md` → `metadataCache.getFirstLinkpathDest()`)
+- Modified `src/agent/tools.ts` — Updated tool descriptions to human-friendly basename examples (`"Project Notes"`)
+- Modified `src/components/ChatApp.tsx` — Removed raw `[tool_name: ok/error]` status tag injection from visible messages
+- Modified `src/settings.ts` — Added `displayDiagnostics()` with 6-metric grid, Refresh, DevTools, Clear History
+- Fixed `src/settings.ts` — Added missing `this.displayDiagnostics(containerEl)` call in `display()`
+- Rebuilt `main.js` — Verified compiled output
+- Updated `memory-bank/tasks/T13.md` — progress updated with basename fix and diagnostics
+- Updated `memory-bank/tasks/T11.md` — status changed to 🔄 IN PROGRESS
+- Updated `memory-bank/activeContext.md` — T13 progress updated
+- Updated `memory-bank/progress.md` — T13 and T11 sections updated
+- Created `memory-bank/sessions/2026-05-08.md` — Session 1 basename fix and diagnostics
+- Created `memory-bank/edits/2026-05-08/t13-basename-fix-and-diagnostics.md` — canonical edit chunk
+
+---
+
+### 2026-05-07
+
+#### 06:57:28 UTC - T14: Memory bank update for remote agent connectivity task
+- Created `memory-bank/tasks/T14.md` — full design doc with architecture and completion criteria
+- Updated `memory-bank/tasks.md` — added T14 to registry, updated active task counts
+- Updated `memory-bank/activeContext.md` — T14 set as primary focus
+- Created `memory-bank/sessions/2026-05-07-morning.md` — session log for T14 design work
+- Updated `memory-bank/session_cache.md` — updated focus task, session history, task registry
+- Updated `memory-bank/progress.md` — added T14 section, updated timestamps
+- Modified `memory-bank/tasks/T13.md` — updated status to reflect current progress
 
 ---
 
@@ -232,7 +291,7 @@
 - Created `memory-bank/implementation-details/release-ci-design.md` — two-track pipeline design, version bumping workflow, manual testing steps
 - Updated `memory-bank/tasks.md` — added T7 row, updated summary counts, added completed tasks table
 - Updated `memory-bank/activeContext.md` — updated focus, next steps
-- Updated `memory-bank/sessions/2026-05-02-morning.md` — session 3 update appended
 - Updated `memory-bank/session_cache.md` — T7 complete, focus shifted to T1
+- Updated `memory-bank/sessions/2026-05-02-morning.md` — session 3 update appended
 
 

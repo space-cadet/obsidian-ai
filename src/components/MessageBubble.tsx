@@ -48,14 +48,77 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
 	useEffect(() => {
 		if (!contentRef.current) return;
-		contentRef.current.innerHTML = "";
-		MarkdownRenderer.render(
-			app,
-			message.content,
-			contentRef.current,
-			"",
-			new Component(),
-		).catch(console.error);
+		const logger = (window as any).__obsidianAiLogger;
+		let unmounted = false;
+
+		// Use writeDirect for crash-surviving synchronous flush
+		logger?.writeDirect?.(
+			"debug",
+			`[MessageBubble ${message.id}] Step 1: entering useEffect — ${message.content.length} chars`,
+		);
+
+		try {
+			logger?.writeDirect?.(
+				"debug",
+				`[MessageBubble ${message.id}] Step 2: clearing innerHTML`,
+			);
+			contentRef.current.innerHTML = "";
+
+			logger?.writeDirect?.(
+				"debug",
+				`[MessageBubble ${message.id}] Step 3: creating Component`,
+			);
+			const comp = new Component();
+
+			logger?.writeDirect?.(
+				"debug",
+				`[MessageBubble ${message.id}] Step 4: calling MarkdownRenderer.render`,
+			);
+			MarkdownRenderer.render(
+				app,
+				message.content,
+				contentRef.current,
+				"",
+				comp,
+			).then(() => {
+				if (unmounted) return;
+				logger?.writeDirect?.(
+					"debug",
+					`[MessageBubble ${message.id}] Step 5: MarkdownRenderer.render resolved`,
+				);
+			}).catch((err: any) => {
+				if (unmounted) return;
+				logger?.writeDirect?.(
+					"error",
+					`[MessageBubble ${message.id}] MarkdownRenderer.render rejected:`,
+					err,
+				);
+				if (contentRef.current) {
+					contentRef.current.innerHTML = "";
+					contentRef.current.createEl("pre", {
+						text: message.content,
+						cls: "chat-plaintext-fallback",
+					});
+				}
+			});
+		} catch (err: any) {
+			logger?.writeDirect?.(
+				"fatal",
+				`[MessageBubble ${message.id}] MarkdownRenderer.render threw synchronously:`,
+				err,
+			);
+			if (contentRef.current) {
+				contentRef.current.innerHTML = "";
+				contentRef.current.createEl("pre", {
+					text: message.content,
+					cls: "chat-plaintext-fallback",
+				});
+			}
+		}
+
+		return () => {
+			unmounted = true;
+		};
 	}, [message.content, app]);
 
 	const handleCopy = () => {

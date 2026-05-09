@@ -1,45 +1,47 @@
 # Active Context
 
-*Last Updated: 2026-05-06 09:30:00 IST*
+*Last Updated: 2026-05-09 11:51:05 IST*
 
 ## Current Focus
-**Primary Task:** T14
-**Secondary Tasks:** T13, T8
+**Primary Task:** T13
+**Secondary Tasks:** T11, T14, T8
 
 ## Active Tasks
-- [T6]: Token & Context Management — `tokenEstimator.ts` extracted, `maxContextMessages` setting (default 10) limits conversation history, ContextBar shows `~X / Y tokens` with green/amber/red colour coding.
-- [T3]: Context & Mentions — COMPLETED
-- [T5]: Note Editing — COMPLETED Slash commands now auto-execute without returning content in chat (`/create` creates file directly, `/edit` auto-applies diff, `/append` auto-appends). Retry button added. Targeted actions via message metadata. Remaining: overwrite modal, real-world testing
-- [T2]: Session-based chat history fully implemented. Message editing & resubmit, session rename, auto-title after 2 messages. Pending real-world testing
-- [T10]: Model Discovery — fetchers implemented, model cache fix complete. Cached models reused on subsequent clicks; refresh button in picker modal.
-- [T13]: Agentic Tool Calling — 🔄 IN PROGRESS. MVP foundation built: `types.ts`, `tools.ts`, `ToolExecutor.ts`, `api.ts` (`streamChatWithTools`), `ChatApp.tsx` (inline tool loop), `styles.css` (pending tool UI). Settings panel wired with `enableAgentTools`, `autoApply`, `maxAgentSteps`. Build passes. Awaiting end-to-end testing in Obsidian.
-- [META-1]: Keep memory-bank records aligned with implementation state
+- [T13]: Agentic Tool Calling — `resolveNote()`, `patch_note`, `edit_section` implemented; blank-screen crash debugging in progress
+- [T11]: Debug Logging & Diagnostics — file logger, ErrorBoundary, diagnostics panel all implemented; privacy redaction queued for v2
+- [T14]: Remote Agent Connectivity — design complete; T13 fixes unblock implementation
+- [T8]: Open Source Release — README and metadata branded; final release readiness pass pending
 
 ## Implementation Focus
-`src/agent/types.ts`, `src/agent/tools.ts`, `src/agent/ToolExecutor.ts`, `src/api.ts`, `src/components/ChatApp.tsx`, `src/settings.ts`
+`src/agent/ToolExecutor.ts`, `src/agent/tools.ts`, `src/components/ChatApp.tsx`, `src/components/MessageBubble.tsx`, `src/components/ChatMessages.tsx`, `src/logger.ts`, `src/components/ErrorBoundary.tsx`, `src/settings.ts`
 
 ## Task-Specific Context
 
-### Task T5 — IN PROGRESS (major items complete)
-`NoteEditingBridge` complete with all methods. Slash commands auto-execute without returning AI content in chat: `/create` creates file directly via `vault.create()`, `/edit` auto-applies diff via `applyToTargetNote()`, `/append` auto-appends via `appendToNote()`. Each shows a brief status message (e.g. "✓ Created note: X"). Retry button added. Targeted action buttons render contextually based on `command` metadata. Remaining: overwrite/confirm modal for existing files, end-to-end testing.
+### Task T13 — IN PROGRESS (basename fix + new tools + crash debugging)
+`resolveNote()` helper resolves basenames via three-tier lookup (exact → append `.md` → `metadataCache.getFirstLinkpathDest()`). `patch_note` (search/replace) and `edit_section` (heading rewrite) added to tool registry. Raw status tags removed from visible chat. Blank-screen crash investigation: macOS crash reports confirm native Chromium `SIGTRAP` in renderer process. `MarkdownRenderer.render` resolves successfully; crash occurs on `StreamingBubble` unmount + `MessageBubble` mount transition. Safety fixes applied: `scrollIntoView({ behavior: "auto" })`, unmount cleanup flags.
 
-### Task T2 — IN PROGRESS (implementation complete, pending testing)
-Session-based chat history fully implemented with migration from old flat `chatMessages`. `ChatApp` uses `sessions[]` + `activeSessionId`. Archive-on-New prunes to `maxSavedConversations`. `SessionPickerModal` supports load, delete, and rename (double-click or pencil button). Auto-title setting added (`autoNameSessions`, default false). When enabled, auto-title triggers after 2 user messages. Message editing: pencil icon on user message truncates session and populates input for resubmit. Cancel edit restores original messages.
+### Task T11 — IN PROGRESS (moved from paused)
+File logger (`src/logger.ts`) writes to `.obsidian/plugins/obsidian-ai/debug.log`, intercepts errors, logs memory every 10s. `ChatErrorBoundary` wraps chat panel. Diagnostics panel in Settings shows 6 metrics with Refresh, DevTools, and Clear History. Remaining: privacy redaction, structured event pipeline (v2 refinement).
 
-### Task T3 — IN PROGRESS
-Active note toggle chip in `ContextBar`. `@mention` autocomplete keeps candidate name in textarea. `ContextEngine.resolveContextItems()` resolves all context types with token budget enforcement. Context items stored per-message on `ChatMessage.contextItems` and rendered as a footer under user bubbles. Context is cleared after each send (per-message only). ContextBar no longer shows individual @mention/folder/tag chips — only active note toggle and truncation warning. Token estimation (`chars/4`) computed per message and displayed in UI.
+### Task T5 — COMPLETED
+`NoteEditingBridge` complete with all methods. Slash commands auto-execute without returning AI content in chat. Retry button added. Targeted action buttons render contextually.
+
+### Task T2 — COMPLETED
+Session-based chat history fully implemented. Message editing & resubmit, session rename, auto-title after 2 messages.
 
 ## Current Decisions
+- `resolveNote()` uses `metadataCache.getFirstLinkpathDest()` as final fallback to match Obsidian wiki-link resolution.
+- `patch_note` uses literal string matching (not regex) for predictability; `replace_all` via `split().join()`.
+- `edit_section` splits on `\n` and matches heading lines starting with `# `.
+- ErrorBoundary logs to disk immediately via `flushNow()` so crash data survives renderer restart.
+- `scrollIntoView` behavior changed to `"auto"` to remove animation from the unmount/mount transition path.
 - Both effects (`setSelectionInfoEffect` + `setGeneratedResponseEffect`) dispatched in one transaction.
-- `appendToNote` writes via `vault.modify` (no diff) — simpler UX.
-- Note targeting: `workspace.on('active-leaf-change')` listener in ChatApp updates `lastMarkdownLeafRef` and `targetNoteName` state. NoteEditingBridge methods receive resolved view/file — single source of truth in ChatApp.
-- Chat persistence moving from flat `chatMessages` array to session-store model (`StoredChatData` with `sessions[]` + `activeSessionId`) to support history, load, and archive-on-New.
-- CI fix: `github.ref_name` sanitized with `tr '/' '-'` before use as artifact name.
+- Chat persistence uses session-store model (`StoredChatData` with `sessions[]` + `activeSessionId`).
 
 ## Next Actions By Task
+- [T13]: Deploy and test crash fix with `scrollIntoView({ behavior: "auto" })`; test `patch_note` and `edit_section` end-to-end
+- [T13]: Extract inline AgentLoop from ChatApp into `src/agent/AgentLoop.ts`. Create `PendingToolCard.tsx`.
+- [T11]: Add privacy redaction to file logger (strip API keys, note contents)
+- [T14]: Begin implementation (agent provider type, AgentApiManager, OpenResponses serializer)
 - [T8]: Complete open-source branding and release readiness pass.
-- [T6]: Test `maxContextMessages` and token usage indicator in real Obsidian environment.
-- [T13]: Extract inline AgentLoop from ChatApp into `src/agent/AgentLoop.ts`. Create `PendingToolCard.tsx`. Add provider compatibility check. Test end-to-end in Obsidian.
-- [T8]: Complete open-source branding and release readiness pass.
-- [T10-T12]: Resume paused tasks after T6/T8 are complete.
-- [META-1]: Keep records in canonical template format.
+- [META-1]: Keep memory-bank records aligned with implementation state.

@@ -2,6 +2,7 @@ import { ItemView, WorkspaceLeaf } from "obsidian";
 import { createRoot, Root } from "react-dom/client";
 import { createElement } from "react";
 import ChatApp from "../components/ChatApp";
+import { ChatErrorBoundary } from "../components/ErrorBoundary";
 import { ChatApiManager } from "../api";
 import { App } from "obsidian";
 import { StoredChatData } from "../types";
@@ -41,7 +42,13 @@ export class ObsidianAIChatView extends ItemView {
 
 	async onOpen(): Promise<void> {
 		this.root = createRoot(this.contentEl);
-		this.root.render(createElement(ChatApp, { plugin: this.plugin }));
+		this.root.render(
+			createElement(
+				ChatErrorBoundary,
+				null,
+				createElement(ChatApp, { plugin: this.plugin }),
+			),
+		);
 	}
 
 	async onClose(): Promise<void> {

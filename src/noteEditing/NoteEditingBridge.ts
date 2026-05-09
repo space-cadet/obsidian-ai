@@ -30,19 +30,25 @@ export class NoteEditingBridge {
 		const fullText = doc.sliceString(0, doc.length);
 
 		console.log(
-			`[NoteEditingBridge] applyToNote — note: ${view.file?.path}, aiLen: ${aiText.length}`,
+			`[NoteEditingBridge] applyToNote — note: ${view.file?.path}, aiLen: ${aiText.length}, docLen: ${fullText.length}`,
 		);
 
-		editorView.dispatch({
-			effects: [
-				setSelectionInfoEffect.of({
-					from: 0,
-					to: doc.length,
-					text: fullText,
-				}),
-				setGeneratedResponseEffect.of({ airesponse: aiText, prompt }),
-			],
-		});
+		try {
+			editorView.dispatch({
+				effects: [
+					setSelectionInfoEffect.of({
+						from: 0,
+						to: doc.length,
+						text: fullText,
+					}),
+					setGeneratedResponseEffect.of({ airesponse: aiText, prompt }),
+				],
+			});
+			console.log("[NoteEditingBridge] applyToNote — effects dispatched successfully");
+		} catch (e: any) {
+			console.error("[NoteEditingBridge] applyToNote — dispatch failed:", e);
+			return false;
+		}
 
 		view.leaf.setEphemeralState({ focus: true });
 		return true;
@@ -102,6 +108,8 @@ export class NoteEditingBridge {
 		aiText: string,
 		prompt: string,
 	): Promise<boolean> {
+		console.log(`[NoteEditingBridge] applyToTargetNote — path: ${notePath}, aiLen: ${aiText.length}`);
+
 		// Resolve file
 		let file = app.vault.getAbstractFileByPath(notePath);
 		if (!file || !(file instanceof TFile)) {
@@ -112,12 +120,20 @@ export class NoteEditingBridge {
 		}
 
 		if (!file || !(file instanceof TFile)) {
+			console.error(`[NoteEditingBridge] applyToTargetNote — note not found: ${notePath}`);
 			new Notice(`⚠️ Note not found: ${notePath}`);
 			return false;
 		}
+		console.log(`[NoteEditingBridge] applyToTargetNote — resolved to: ${file.path}`);
 
 		// Open the note
-		await app.workspace.openLinkText(file.path, "", false);
+		try {
+			await app.workspace.openLinkText(file.path, "", false);
+			console.log("[NoteEditingBridge] applyToTargetNote — openLinkText done");
+		} catch (e: any) {
+			console.error("[NoteEditingBridge] applyToTargetNote — openLinkText failed:", e);
+			return false;
+		}
 
 		// Find the leaf
 		const leaf = app.workspace
@@ -129,16 +145,20 @@ export class NoteEditingBridge {
 			);
 
 		if (!leaf || !(leaf.view instanceof MarkdownView)) {
+			console.error(`[NoteEditingBridge] applyToTargetNote — could not find editor leaf for: ${file.path}`);
 			new Notice(`⚠️ Could not open editor for: ${notePath}`);
 			return false;
 		}
+		console.log("[NoteEditingBridge] applyToTargetNote — found leaf, calling applyToNote");
 
-		return NoteEditingBridge.applyToNote(
+		const result = NoteEditingBridge.applyToNote(
 			app,
 			leaf.view,
 			aiText,
 			prompt,
 		);
+		console.log(`[NoteEditingBridge] applyToTargetNote — applyToNote returned: ${result}`);
+		return result;
 	}
 
 	/**

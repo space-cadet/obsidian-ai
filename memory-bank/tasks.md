@@ -1,9 +1,9 @@
 # Task Registry
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-06 09:30:00 IST*
+*Last Updated: 2026-05-09 11:51:05 IST*
 
 ## Summary
-- Active: 1 | Paused: 2 | Completed: 9 | Cancelled: 0
+- Active: 2 | Paused: 1 | Completed: 9 | Cancelled: 0
 
 ## Task Registry Table
 
@@ -20,7 +20,7 @@
 | T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
 | T9 | Settings & Provider Profiles | ✅ | HIGH | 2026-05-02 | T1 | [Details](tasks/T9.md) |
 | T10 | Model Discovery & Picker UX | ✅ | HIGH | 2026-05-02 | T9 | [Details](tasks/T10.md) |
-| T11 | Debug Logging & Diagnostics | ⏸️ | MEDIUM | — | T9 | [Details](tasks/T11.md) |
+| T11 | Debug Logging & Diagnostics | 🔄 | MEDIUM | 2026-05-08 | T9 | [Details](tasks/T11.md) |
 | T12 | Chat Onboarding, Tips & Empty States | ⏸️ | MEDIUM | — | T1, T9 | [Details](tasks/T12.md) |
 | T13 | Agentic Tool Calling for Note Editing | 🔄 | HIGH | 2026-05-06 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
 | T14 | Remote Agent Connectivity (OpenResponses) | 🔄 | HIGH | 2026-05-07 | T1, T5, T9, T13 | [Details](tasks/T14.md) |
@@ -36,22 +36,19 @@
 ### T8 — Open Source Release with Branding *(requires T7)*
 Branding transition and open-source release preparation. See `tasks/T8.md`.
 
+### T11 — Debug Logging & Diagnostics *(requires T9)*
+File-based debug logger, React ErrorBoundary, diagnostics panel in Settings, and crash debugging infrastructure. See `tasks/T11.md`.
+
 ### T13 — Agentic Tool Calling for Note Editing *(requires T1, T3, T5, T9)*
-Advanced AI tool calling for note editing. See `tasks/T13.md`.
+Advanced AI tool calling for note editing. `resolveNote()`, `patch_note`, `edit_section` implemented. Crash debugging in progress. See `tasks/T13.md`.
 
 ### T14 — Remote Agent Connectivity (OpenResponses) *(requires T1, T5, T9, T13)*
 Connect Obsidian chat to remote OpenClaw agents via OpenResponses API. See `tasks/T14.md`.
 
 ## Pending Tasks (v2.0 Development)
 
-### T11 — Debug Logging & Diagnostics *(requires T9)*
-Structured diagnostics with privacy redaction and bounded retention. See `tasks/T11.md`.
-
 ### T12 — Chat Onboarding, Tips & Empty States *(requires T1, T9)*
 Empty states, setup warnings, contextual tips, first-run guidance. See `tasks/T12.md`.
-
-### T13 — Agentic Tool Calling for Note Editing *(requires T1, T3, T5, T9)*
-Advanced AI tool calling for note editing. See `tasks/T13.md`.
 
 ## Completed Tasks
 
@@ -69,4 +66,4 @@ Advanced AI tool calling for note editing. See `tasks/T13.md`.
 
 ## Cancelled / Paused Tasks
 
-*None cancelled. T11, T12 are paused.*
+*T11 moved from ⏸️ PAUSED to 🔄 IN PROGRESS on 2026-05-08. T12 remains paused.*

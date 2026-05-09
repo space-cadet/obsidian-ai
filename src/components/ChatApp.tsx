@@ -526,8 +526,6 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 							assistantMsg,
 							toolMsg,
 						];
-						fullText += `\n\n[${pendingCall.toolName}: ${result.error ? "error" : "ok"}]\n`;
-						setCurrentAiMessage(fullText);
 					}
 				} else {
 					console.log(
@@ -610,6 +608,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					command: commandMeta,
 					estimatedTokens: assistantTokenEstimate,
 				};
+				console.log(
+					`[ChatApp] adding assistantMsg — ${assistantContent.length} chars, id=${assistantMsg.id}`,
+				);
 				setSessions((prev) =>
 					prev.map((s) =>
 						s.id === currentActiveId
@@ -677,6 +678,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					);
 				}
 			} finally {
+				console.log("[ChatApp] finally block — resetting stream state");
 				setIsStreaming(false);
 				setCurrentAiMessage("");
 				controllerRef.current = null;

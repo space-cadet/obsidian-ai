@@ -11,14 +11,76 @@ const StreamingBubble: React.FC<{ content: string; app: App }> = ({
 
 	useEffect(() => {
 		if (!contentRef.current) return;
-		contentRef.current.innerHTML = "";
-		MarkdownRenderer.render(
-			app,
-			content,
-			contentRef.current,
-			"",
-			new Component(),
-		).catch(console.error);
+		const logger = (window as any).__obsidianAiLogger;
+		let unmounted = false;
+
+		logger?.writeDirect?.(
+			"debug",
+			`[StreamingBubble] Step 1: entering useEffect — ${content.length} chars`,
+		);
+
+		try {
+			logger?.writeDirect?.(
+				"debug",
+				`[StreamingBubble] Step 2: clearing innerHTML`,
+			);
+			contentRef.current.innerHTML = "";
+
+			logger?.writeDirect?.(
+				"debug",
+				`[StreamingBubble] Step 3: creating Component`,
+			);
+			const comp = new Component();
+
+			logger?.writeDirect?.(
+				"debug",
+				`[StreamingBubble] Step 4: calling MarkdownRenderer.render`,
+			);
+			MarkdownRenderer.render(
+				app,
+				content,
+				contentRef.current,
+				"",
+				comp,
+			).then(() => {
+				if (unmounted) return;
+				logger?.writeDirect?.(
+					"debug",
+					`[StreamingBubble] Step 5: MarkdownRenderer.render resolved`,
+				);
+			}).catch((err: any) => {
+				if (unmounted) return;
+				logger?.writeDirect?.(
+					"error",
+					`[StreamingBubble] MarkdownRenderer.render rejected:`,
+					err,
+				);
+				if (contentRef.current) {
+					contentRef.current.innerHTML = "";
+					contentRef.current.createEl("pre", {
+						text: content,
+						cls: "chat-plaintext-fallback",
+					});
+				}
+			});
+		} catch (err: any) {
+			logger?.writeDirect?.(
+				"fatal",
+				`[StreamingBubble] MarkdownRenderer.render threw synchronously:`,
+				err,
+			);
+			if (contentRef.current) {
+				contentRef.current.innerHTML = "";
+				contentRef.current.createEl("pre", {
+					text: content,
+					cls: "chat-plaintext-fallback",
+				});
+			}
+		}
+
+		return () => {
+			unmounted = true;
+		};
 	}, [content, app]);
 
 	return (
@@ -65,7 +127,15 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	const bottomRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+		const logger = (window as any).__obsidianAiLogger;
+		logger?.writeDirect?.(
+			"debug",
+			`[ChatMessages] effect — ${messages.length} msgs, streaming=${isStreaming}`,
+		);
+		// Use "auto" instead of "smooth" to avoid Chromium renderer crashes
+		// when rapid DOM mutations (StreamingBubble unmount + MessageBubble mount)
+		// happen simultaneously with scroll animation.
+		bottomRef.current?.scrollIntoView({ behavior: "auto" });
 	}, [messages, isStreaming]);
 
 	return (

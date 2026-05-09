@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased - 2026-05-09
+
+### Added
+- `resolveNote()` helper with three-tier basename resolution for tool paths — T13
+- `patch_note` tool for search/replace note editing with optional `replace_all` — T13
+- `edit_section` tool for rewriting content under a specific heading — T13
+- File-based debug logger (`src/logger.ts`) with console interception and memory metrics — T11
+- React ErrorBoundary (`ChatErrorBoundary`) for chat panel crash recovery — T11
+- Diagnostics panel in Settings with 6 metrics, Refresh, DevTools opener, and Clear History — T11
+- Defensive 5-step logging around `MarkdownRenderer.render` in MessageBubble and StreamingBubble — T11
+
+### Changed
+- Tool descriptions use human-friendly basename examples (e.g. "Project Notes") — T13
+- `scrollIntoView` behavior changed from `"smooth"` to `"auto"` in ChatMessages — T13
+- `displayDiagnostics()` call added to Settings `display()` method — T11
+
+### Fixed
+- `read_note` and other tools now resolve basenames without `.md` extension — T13
+- Raw `[tool_name: ok/error]` status tags removed from visible assistant messages — T13
+- Unmount cleanup flags abort stale `MarkdownRenderer.render` callbacks — T13
+- Missing `displayDiagnostics()` call site in Settings `display()` method — T11
+
 ## Unreleased - 2026-05-02
 
 ### Added

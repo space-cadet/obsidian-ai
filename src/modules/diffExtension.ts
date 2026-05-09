@@ -137,12 +137,17 @@ function dispatchAIChanges(state: EditorState, view: EditorView): void {
 		const selectionFrom = context?.from ?? 0;
 		const selectionTo = context?.to ?? 0;
 
+		console.log(
+			`[diffExtension] dispatchAIChanges — from: ${selectionFrom}, to: ${selectionTo}, insertLen: ${aiText.length}`,
+		);
+
 		// Dispatch the transaction to apply the AI changes
 		view.dispatch({
 			changes: { from: selectionFrom, to: selectionTo, insert: aiText },
 		});
+		console.log("[diffExtension] dispatchAIChanges — transaction dispatched successfully");
 	} catch (error) {
-		console.error("Error applying diff changes:", error);
+		console.error("[diffExtension] Error applying diff changes:", error);
 	}
 }
 
@@ -180,8 +185,10 @@ const applyDiffPlugin = ViewPlugin.fromClass(
 			for (const transaction of update.transactions) {
 				for (const effect of transaction.effects) {
 					if (effect.is(acceptTooltipEffect)) {
+						console.log("[diffExtension] applyDiffPlugin — acceptTooltipEffect detected, scheduling dispatchAIChanges");
 						// Apply the diff changes by dispatching the transaction
 						setTimeout(() => {
+							console.log("[diffExtension] applyDiffPlugin — setTimeout fired, calling dispatchAIChanges");
 							dispatchAIChanges(update.state, update.view);
 						}, 0);
 					}
