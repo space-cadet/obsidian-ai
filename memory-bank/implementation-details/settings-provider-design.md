@@ -1,6 +1,6 @@
 # Settings & Provider Profile Design
 *Created: 2026-05-02 11:46:39 IST*
-*Last Updated: 2026-05-12 11:13:59 IST*
+*Last Updated: 2026-05-12 13:47:10 IST*
 
 ## Overview
 
@@ -203,3 +203,47 @@ Refreshed on 2026-05-12 11:13:59 IST:
 - Restored guarded `display()` refresh behavior to avoid re-entrant loops while changing profiles
 - Restored the cached-model fetch/search picker behavior for provider profiles
 - Replaced the warning-style hero copy with a proper header after visual review
+
+## 2026-05-12 Regression and Rewrite
+
+The original T9 Settings panel included `isDisplaying`/`pendingRefresh` guards to prevent re-entrant `display()` calls. These protections were lost in a later edit, causing the panel to become corrupted. The symptoms were:
+
+1. **Re-entrant / infinite loops**: `saveSettings(true)` called `display()` while `display()` was already running, which triggered further setting changes and more `display()` calls.
+2. **Memory leaks**: Each nested `display()` call recreated DOM nodes and closures while the previous render was still active, leaving orphaned references.
+
+GPT 5.4 Medium performed a clean rewrite of `src/settings.ts` (commit `4fa9e63`) that restored the guard mechanism and restructured the panel into a cleaner sectioned layout.
+
+### Guard Mechanism
+
+```typescript
+private isDisplaying = false;
+private pendingRefresh = false;
+
+private async saveSettings(options?: { refresh?: boolean; quiet?: boolean }) {
+    const refresh = options?.refresh ?? false;
+    await this.plugin.saveSettings();
+    this.plugin.chatapi.updateSettings(this.plugin.settings);
+    if (refresh) {
+        if (this.isDisplaying) {
+            this.pendingRefresh = true;
+            return;
+        }
+        this.display();
+    }
+}
+
+display(): void {
+    this.isDisplaying = true;
+    try {
+        const { containerEl } = this;
+        containerEl.empty();
+        // ... render sections ...
+    } finally {
+        this.isDisplaying = false;
+        if (this.pendingRefresh) {
+            this.pendingRefresh = false;
+            this.display();
+        }
+    }
+}
+```
