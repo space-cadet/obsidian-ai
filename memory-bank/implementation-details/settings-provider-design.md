@@ -1,6 +1,6 @@
 # Settings & Provider Profile Design
 *Created: 2026-05-02 11:46:39 IST*
-*Last Updated: 2026-05-02 16:55:00 IST*
+*Last Updated: 2026-05-12 11:13:59 IST*
 
 ## Overview
 
@@ -195,3 +195,11 @@ Completed on 2026-05-02 12:09:43 IST:
 Enhanced on 2026-05-02 16:55:00 IST:
 
 - Added universal endpoint field for all 9 providers with `getDefaultEndpoint()` fallback (not just custom/azure)
+
+Refreshed on 2026-05-12 11:13:59 IST:
+
+- Replaced the corrupted Settings panel with a cleaner sectioned layout in `src/settings.ts`
+- Added a hero/header treatment and matching `styles.css` styling for the settings experience
+- Restored guarded `display()` refresh behavior to avoid re-entrant loops while changing profiles
+- Restored the cached-model fetch/search picker behavior for provider profiles
+- Replaced the warning-style hero copy with a proper header after visual review

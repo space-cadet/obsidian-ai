@@ -25,10 +25,17 @@ import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/ObsidianAIChatView";
 import { StoredChatData, ChatSession } from "./types";
 import { createFileLogger, FileLogger } from "./logger";
 
+
 export default class ObsidianAIPlugin extends Plugin {
 	settings: ObsidianAISettings = DEFAULT_SETTINGS;
 	chatapi!: ChatApiManager;
 	logger!: FileLogger;
+
+	// Data integrity guards
+	private _backupCreated = false;
+	private _settingsLoadedFromFile = false;
+	private _saveInProgress = false;
+	private _pendingChatData: StoredChatData | null = null;
 
 	async onload() {
 		// Initialize file logger FIRST so any crash during load is captured.
@@ -182,17 +189,53 @@ export default class ObsidianAIPlugin extends Plugin {
 		this.app.workspace.detachLeavesOfType(CHAT_VIEWTYPE);
 	}
 
+	// ─────────────────────────────────────────────────────────────
+	// Safe data persistence layer
+	// ─────────────────────────────────────────────────────────────
+
 	async loadSettings() {
-		this.settings = normalizeSettings(await this.loadData());
+		this.logger?.log("info", "loadSettings: reading data.json");
+		const raw = await this.loadData();
+		this._settingsLoadedFromFile = raw !== null && typeof raw === "object";
+		this.logger?.log(
+			"info",
+			`loadSettings: _settingsLoadedFromFile=${this._settingsLoadedFromFile}, raw=${raw ? "exists" : "null"}`,
+		);
+		this.settings = normalizeSettings(raw);
 	}
 
 	async saveSettings() {
-		// Merge with existing data so chat history (and any other non-settings keys) survive.
+		this.logger?.log(
+			"info",
+			`saveSettings called: _settingsLoadedFromFile=${this._settingsLoadedFromFile}`,
+		);
+
+		// Guard: don't overwrite with defaults if we never successfully loaded user data.
+		if (!this._settingsLoadedFromFile) {
+			this.logger?.log(
+				"warn",
+				"saveSettings blocked: no valid data.json was loaded; refusing to overwrite with defaults",
+			);
+			return;
+		}
+
 		const existing = (await this.loadData()) ?? {};
-		await this.saveData({ ...existing, ...this.settings });
+		const payload = { ...existing, ...this.settings };
+
+		// Skip write if nothing changed
+		if (JSON.stringify(payload) === JSON.stringify(existing)) {
+			this.logger?.log("info", "saveSettings skipped: no changes");
+			return;
+		}
+
+		this.logger?.log("info", "saveSettings: writing data.json to disk");
+		await this._ensureBackup(existing);
+		await this.saveData(payload);
+		this.logger?.log("info", "saveSettings: data.json written successfully");
 	}
 
 	async loadChatData(): Promise<StoredChatData> {
+		this.logger?.log("info", "loadChatData: reading data.json");
 		const data = await this.loadData();
 
 		// New format — ensure contextItems exists on every session
@@ -221,8 +264,6 @@ export default class ObsidianAIPlugin extends Plugin {
 				],
 				activeSessionId: null,
 			};
-			// Save in new format immediately
-			await this.saveData({ ...data, chatData: migrated });
 			return migrated;
 		}
 
@@ -230,7 +271,61 @@ export default class ObsidianAIPlugin extends Plugin {
 	}
 
 	async saveChatData(chatData: StoredChatData): Promise<void> {
-		const data = (await this.loadData()) ?? {};
-		await this.saveData({ ...data, chatData });
+		if (this._saveInProgress) {
+			this._pendingChatData = chatData;
+			this.logger?.log(
+				"info",
+				"saveChatData queued: save already in progress",
+			);
+			return;
+		}
+		this._saveInProgress = true;
+
+		try {
+			let nextChatData: StoredChatData | null = chatData;
+			while (nextChatData) {
+				this._pendingChatData = null;
+				this.logger?.log("info", "saveChatData: writing data.json to disk");
+				const data = (await this.loadData()) ?? {};
+				const payload = { ...data, chatData: nextChatData };
+
+				await this._ensureBackup(data);
+				await this.saveData(payload);
+				this.logger?.log(
+					"info",
+					"saveChatData: data.json written successfully",
+				);
+
+				nextChatData = this._pendingChatData;
+				if (nextChatData) {
+					this.logger?.log(
+						"info",
+						"saveChatData: flushing queued snapshot",
+					);
+				}
+			}
+		} finally {
+			this._saveInProgress = false;
+		}
+	}
+
+	/** Create a .bak copy of data.json before the first write each session */
+	private async _ensureBackup(currentData: unknown): Promise<void> {
+		if (this._backupCreated) return;
+		this._backupCreated = true;
+		try {
+			const adapter = this.app.vault.adapter;
+			const pluginDir = `${this.app.vault.configDir}/plugins/${this.manifest.id}`;
+			const dataPath = `${pluginDir}/data.json`;
+			const backupPath = `${pluginDir}/data.json.bak`;
+			const exists = await adapter.exists(dataPath);
+			if (exists) {
+				const content = await adapter.read(dataPath);
+				await adapter.write(backupPath, content);
+				this.logger?.log("info", `Backup created: ${backupPath}`);
+			}
+		} catch (e) {
+			this.logger?.log("warn", `Failed to create backup: ${e}`);
+		}
 	}
 }

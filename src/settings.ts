@@ -3,6 +3,16 @@ import ObsidianAIPlugin from "./main";
 import { cursorPrompt, selectionPrompt } from "./default_prompts";
 import { SlashCommand } from "./modules/commands/source";
 
+function debounce(fn: () => void, ms: number): () => void {
+	let timeout: ReturnType<typeof setTimeout> | null = null;
+	return () => {
+		if (timeout) {
+			clearTimeout(timeout);
+		}
+		timeout = setTimeout(() => fn(), ms);
+	};
+}
+
 export type ProviderType =
 	| "openai"
 	| "ollama"
@@ -66,7 +76,6 @@ type LegacySettings = Partial<ObsidianAISettings> & {
 const DEFAULT_PROFILE_ID = "default-provider-profile";
 
 const generateId = (): string => {
-	// Avoid crypto.randomUUID — not reliably available in Obsidian's renderer
 	return `profile-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 };
 
@@ -277,6 +286,11 @@ const normalizeProviderProfile = (
 
 export class ObsidianAISettingsTab extends PluginSettingTab {
 	plugin: ObsidianAIPlugin;
+	private isDisplaying = false;
+	private pendingRefresh = false;
+	private debouncedProfileSave = debounce(() => {
+		void this.saveSettings({ quiet: true });
+	}, 250);
 
 	constructor(app: App, plugin: ObsidianAIPlugin) {
 		super(app, plugin);
@@ -287,35 +301,139 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 		return getActiveProviderProfile(this.plugin.settings);
 	}
 
-	private async saveSettings(refresh = false) {
+	private async saveSettings(options?: {
+		refresh?: boolean;
+		quiet?: boolean;
+	}) {
+		const refresh = options?.refresh ?? false;
+		const quiet = options?.quiet ?? false;
 		await this.plugin.saveSettings();
 		this.plugin.chatapi.updateSettings(this.plugin.settings);
+
 		if (refresh) {
+			if (this.isDisplaying) {
+				this.pendingRefresh = true;
+				return;
+			}
 			this.display();
-		} else {
-			new Notice("Settings saved", 2000);
+			return;
+		}
+
+		if (!quiet) {
+			new Notice("Settings saved", 1800);
 		}
 	}
 
 	display(): void {
-		const { containerEl } = this;
-		containerEl.empty();
+		this.isDisplaying = true;
+		try {
+			const { containerEl } = this;
+			containerEl.empty();
+			containerEl.addClass("obsidian-ai-settings");
 
-		this.displayProviderProfiles(containerEl);
-		this.displayChatDefaults(containerEl);
-		this.displayAgentToolsSettings(containerEl);
-		this.displayAdvancedPrompts(containerEl);
-		this.displayCustomCommands(containerEl);
-		this.displayDiagnostics(containerEl);
+			this.renderHero(containerEl);
+			this.renderProviderProfiles(containerEl);
+			this.renderChatDefaults(containerEl);
+			this.renderAgentTools(containerEl);
+			this.renderAdvanced(containerEl);
+			this.renderCustomCommands(containerEl);
+			this.renderDiagnostics(containerEl);
+		} finally {
+			this.isDisplaying = false;
+			if (this.pendingRefresh) {
+				this.pendingRefresh = false;
+				this.display();
+			}
+		}
 	}
 
-	private displayProviderProfiles(containerEl: HTMLElement): void {
-		containerEl.createEl("h3", { text: "Provider Profiles" });
-		containerEl.createEl("p", {
-			text: "Store multiple provider configurations and choose which one Obsidian AI uses for inline edits and chat.",
+	private createSection(
+		containerEl: HTMLElement,
+		title: string,
+		description?: string,
+	): HTMLElement {
+		const sectionEl = containerEl.createDiv({
+			cls: "obsidian-ai-settings-section",
+		});
+		sectionEl.createEl("h3", { text: title });
+		if (description) {
+			sectionEl.createEl("p", {
+				text: description,
+				cls: "obsidian-ai-settings-section-desc",
+			});
+		}
+		return sectionEl;
+	}
+
+	private renderHero(containerEl: HTMLElement): void {
+		const profile = this.activeProfile;
+		const heroEl = containerEl.createDiv({ cls: "obsidian-ai-settings-hero" });
+		const copyEl = heroEl.createDiv();
+		copyEl.createEl("div", {
+			text: "Obsidian AI Settings",
+			cls: "obsidian-ai-settings-eyebrow",
+		});
+		copyEl.createEl("h2", { text: "Settings" });
+		copyEl.createEl("p", {
+			text: "Provider profiles, chat defaults, commands, and diagnostics.",
 		});
 
-		new Setting(containerEl)
+		const metaEl = heroEl.createDiv({ cls: "obsidian-ai-settings-hero-meta" });
+		this.createHeroMeta(metaEl, "Active profile", profile.name);
+		this.createHeroMeta(metaEl, "Provider", this.getProviderLabel(profile.provider));
+		this.createHeroMeta(metaEl, "Model", profile.model || "Unset");
+	}
+
+	private createHeroMeta(
+		containerEl: HTMLElement,
+		label: string,
+		value: string,
+	): void {
+		const itemEl = containerEl.createDiv({
+			cls: "obsidian-ai-settings-hero-item",
+		});
+		itemEl.createEl("div", {
+			text: label,
+			cls: "obsidian-ai-settings-hero-label",
+		});
+		itemEl.createEl("div", {
+			text: value,
+			cls: "obsidian-ai-settings-hero-value",
+		});
+	}
+
+	private getProviderLabel(provider: ProviderType): string {
+		switch (provider) {
+			case "openai":
+				return "OpenAI";
+			case "anthropic":
+				return "Anthropic";
+			case "deepseek":
+				return "DeepSeek";
+			case "kimi":
+				return "Kimi";
+			case "gemini":
+				return "Gemini";
+			case "openrouter":
+				return "OpenRouter";
+			case "azure":
+				return "Azure OpenAI";
+			case "custom":
+				return "Custom endpoint";
+			case "ollama":
+			default:
+				return "Ollama";
+		}
+	}
+
+	private renderProviderProfiles(containerEl: HTMLElement): void {
+		const sectionEl = this.createSection(
+			containerEl,
+			"Provider Profiles",
+			"Store multiple provider configurations and switch between them without rewriting credentials.",
+		);
+
+		new Setting(sectionEl)
 			.setName("Active profile")
 			.setDesc("Choose the provider profile used for AI requests.")
 			.addDropdown((dropdown) => {
@@ -326,7 +444,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.activeProviderProfileId)
 					.onChange(async (value) => {
 						this.plugin.settings.activeProviderProfileId = value;
-						await this.saveSettings(true);
+						await this.saveSettings({ refresh: true, quiet: true });
 					});
 			})
 			.addButton((button) =>
@@ -338,9 +456,8 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 							name: "New profile",
 						});
 						this.plugin.settings.providerProfiles.push(profile);
-						this.plugin.settings.activeProviderProfileId =
-							profile.id;
-						await this.saveSettings(true);
+						this.plugin.settings.activeProviderProfileId = profile.id;
+						await this.saveSettings({ refresh: true, quiet: true });
 					}),
 			)
 			.addButton((button) =>
@@ -357,9 +474,8 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 							updatedAt: Date.now(),
 						});
 						this.plugin.settings.providerProfiles.push(duplicate);
-						this.plugin.settings.activeProviderProfileId =
-							duplicate.id;
-						await this.saveSettings(true);
+						this.plugin.settings.activeProviderProfileId = duplicate.id;
+						await this.saveSettings({ refresh: true, quiet: true });
 					}),
 			)
 			.addButton((button) =>
@@ -374,15 +490,14 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 							new Notice("Keep at least one provider profile.");
 							return;
 						}
-						const activeId =
-							this.plugin.settings.activeProviderProfileId;
+						const activeId = this.plugin.settings.activeProviderProfileId;
 						this.plugin.settings.providerProfiles =
 							this.plugin.settings.providerProfiles.filter(
 								(profile) => profile.id !== activeId,
 							);
 						this.plugin.settings.activeProviderProfileId =
 							this.plugin.settings.providerProfiles[0].id;
-						await this.saveSettings(true);
+						await this.saveSettings({ refresh: true, quiet: true });
 					}),
 			)
 			.addButton((button) =>
@@ -407,22 +522,22 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 
 		const profile = this.activeProfile;
 
-		new Setting(containerEl)
+		new Setting(sectionEl)
 			.setName("Profile name")
 			.setDesc("A local label for this provider configuration.")
 			.addText((text) => {
 				text.setPlaceholder("Writing - OpenAI")
 					.setValue(profile.name)
-					.onChange(async (value) => {
+					.onChange((value) => {
 						profile.name =
 							value.trim() ||
 							getDefaultProfileName(profile.provider);
 						profile.updatedAt = Date.now();
-						await this.saveSettings(true);
+						this.debouncedProfileSave();
 					});
 			});
 
-		new Setting(containerEl)
+		new Setting(sectionEl)
 			.setName("Provider")
 			.setDesc("Choose the inference provider for this profile.")
 			.addDropdown((dropdown) =>
@@ -440,188 +555,48 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						profile.provider = value as ProviderType;
 						profile.model = getDefaultModel(profile.provider);
-						profile.name =
-							profile.name ||
-							getDefaultProfileName(profile.provider);
+						if (
+							!profile.name ||
+							profile.name === getDefaultProfileName("ollama") ||
+							profile.name === getDefaultProfileName("openai") ||
+							profile.name === getDefaultProfileName("anthropic") ||
+							profile.name === getDefaultProfileName("deepseek") ||
+							profile.name === getDefaultProfileName("kimi") ||
+							profile.name === getDefaultProfileName("gemini") ||
+							profile.name === getDefaultProfileName("openrouter") ||
+							profile.name === getDefaultProfileName("custom") ||
+							profile.name === getDefaultProfileName("azure")
+						) {
+							profile.name = getDefaultProfileName(profile.provider);
+						}
 						profile.azureEndpoint = "";
 						profile.customURL = "";
 						profile.modelCache = undefined;
 						profile.updatedAt = Date.now();
-						await this.saveSettings(true);
+						await this.saveSettings({ refresh: true, quiet: true });
 					}),
 			);
 
-		const cachedModels = profile.modelCache?.models ?? [];
-		const hasCache = cachedModels.length > 0;
-
-		const modelSetting = new Setting(containerEl)
-			.setName("Model")
-			.setDesc(
-				hasCache
-					? `${cachedModels.length} models cached for ${profile.provider}. Search and click to select, or type a custom name.`
-					: "Model or deployment name to use for this profile.",
-			);
-
-		// Build a custom searchable model picker in the control area
-		const wrapper = modelSetting.controlEl.createEl("div");
-		wrapper.style.display = "flex";
-		wrapper.style.flexDirection = "column";
-		wrapper.style.gap = "6px";
-		wrapper.style.width = "100%";
-		wrapper.style.minWidth = "280px";
-		wrapper.style.textAlign = "left";
-
-		// Search row: input + fetch button
-		const searchRow = wrapper.createEl("div");
-		searchRow.style.display = "flex";
-		searchRow.style.gap = "8px";
-		searchRow.style.alignItems = "center";
-
-		const searchEl = searchRow.createEl("input", {
-			type: "text",
-			placeholder: hasCache ? "Search models..." : "Type model name...",
-		});
-		searchEl.style.flex = "1";
-		searchEl.value = profile.model;
-
-		const fetchBtn = searchRow.createEl("button", {
-			text: hasCache ? "Refresh" : "Fetch",
-		});
-		fetchBtn.classList.add("mod-cta");
-		fetchBtn.style.cursor = "pointer";
-
-		// Scrollable model list (only when cache exists)
-		let listEl: HTMLDivElement | null = null;
-		if (hasCache) {
-			listEl = wrapper.createEl("div");
-			listEl.style.maxHeight = "200px";
-			listEl.style.overflowY = "auto";
-			listEl.style.border = "1px solid var(--background-modifier-border)";
-			listEl.style.borderRadius = "4px";
-			listEl.style.background = "var(--background-primary)";
-			listEl.style.textAlign = "left";
-		}
-
-		const renderList = (filter: string) => {
-			if (!listEl) return;
-			listEl.empty();
-			const term = filter.trim().toLowerCase();
-			const filtered = term
-				? cachedModels.filter((m) => m.toLowerCase().includes(term))
-				: cachedModels;
-			const displayModels = filtered.slice(0, 200); // performance limit
-
-			for (const m of displayModels) {
-				const item = listEl.createEl("div", { text: m });
-				item.style.padding = "4px 10px";
-				item.style.cursor = "pointer";
-				item.style.fontSize = "0.9em";
-				item.style.borderRadius = "3px";
-				item.style.transition = "background 0.1s";
-				item.style.textAlign = "left";
-
-				const isSelected = m === profile.model;
-				if (isSelected) {
-					item.style.background = "var(--interactive-accent)";
-					item.style.color = "var(--text-on-accent)";
-					item.style.fontWeight = "600";
-				}
-
-				item.addEventListener("click", async () => {
-					profile.model = m;
-					profile.updatedAt = Date.now();
-					await this.saveSettings();
-					searchEl.value = m;
-					// Update visual selection without full re-render
-					for (const child of Array.from(listEl.children)) {
-						const el = child as HTMLElement;
-						el.style.background = "";
-						el.style.color = "";
-						el.style.fontWeight = "";
-					}
-					item.style.background = "var(--interactive-accent)";
-					item.style.color = "var(--text-on-accent)";
-					item.style.fontWeight = "600";
-					new Notice(`Model set to ${m}`);
-				});
-				item.addEventListener("mouseenter", () => {
-					if (!isSelected)
-						item.style.background = "var(--interactive-hover)";
-				});
-				item.addEventListener("mouseleave", () => {
-					if (!isSelected) item.style.background = "";
-				});
-			}
-
-			if (displayModels.length === 0) {
-				listEl.createEl("div", {
-					text: "No models match your search.",
-					cls: "setting-item-description",
-				});
-			} else if (filtered.length > displayModels.length) {
-				listEl.createEl("div", {
-					text: `...and ${filtered.length - displayModels.length} more`,
-					cls: "setting-item-description",
-				});
-			}
-		};
-
-		renderList("");
-
-		searchEl.addEventListener("input", () => {
-			renderList(searchEl.value);
-		});
-
-		searchEl.addEventListener("input", async () => {
-			const value = searchEl.value.trim();
-			if (value && value !== profile.model) {
-				profile.model = value;
-				profile.updatedAt = Date.now();
-				await this.saveSettings();
-			}
-		});
-
-		fetchBtn.addEventListener("click", async () => {
-			fetchBtn.setText("Fetching...");
-			fetchBtn.setAttribute("disabled", "true");
-			try {
-				const models = await this.plugin.chatapi.fetchModels(profile);
-				if (models.length === 0) {
-					new Notice("No models found.");
-				} else {
-					profile.modelCache = {
-						models,
-						fetchedAt: Date.now(),
-					};
-					await this.plugin.saveSettings();
-					new Notice(`✓ ${models.length} models loaded.`);
-					this.display();
-				}
-			} catch (e: any) {
-				new Notice(`❌ ${e.message || e}`);
-			}
-			fetchBtn.setText("Refresh");
-			fetchBtn.removeAttribute("disabled");
-		});
+		this.renderModelPicker(sectionEl, profile);
 
 		if (profile.provider !== "ollama") {
-			new Setting(containerEl)
+			new Setting(sectionEl)
 				.setName("API key")
 				.setDesc("API key for this provider profile.")
 				.addText((text) => {
 					text.inputEl.type = "password";
 					text.setPlaceholder("sk-...")
 						.setValue(profile.apiKey || "")
-						.onChange(async (value) => {
+						.onChange((value) => {
 							profile.apiKey = value.trim();
 							profile.modelCache = undefined;
 							profile.updatedAt = Date.now();
-							await this.saveSettings();
+							this.debouncedProfileSave();
 						});
 				});
 		}
 
-		new Setting(containerEl)
+		new Setting(sectionEl)
 			.setName("Endpoint")
 			.setDesc(
 				profile.provider === "ollama"
@@ -641,21 +616,20 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 							? profile.azureEndpoint || ""
 							: profile.customURL || "",
 					)
-					.onChange(async (value) => {
-						const trimmed = value.trim();
+					.onChange((value) => {
 						if (profile.provider === "azure") {
-							profile.azureEndpoint = value;
+							profile.azureEndpoint = value.trim();
 						} else {
-							profile.customURL = value;
+							profile.customURL = value.trim();
 						}
 						profile.modelCache = undefined;
 						profile.updatedAt = Date.now();
-						await this.saveSettings();
+						this.debouncedProfileSave();
 					});
 			});
 
 		if (profile.provider === "azure") {
-			new Setting(containerEl)
+			new Setting(sectionEl)
 				.setName("Azure API version")
 				.setDesc("Azure OpenAI API version to use.")
 				.addText((text) => {
@@ -663,20 +637,143 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						.setValue(
 							profile.azureApiVersion || "2024-02-15-preview",
 						)
-						.onChange(async (value) => {
+						.onChange((value) => {
 							profile.azureApiVersion = value.trim();
 							profile.modelCache = undefined;
 							profile.updatedAt = Date.now();
-							await this.saveSettings();
+							this.debouncedProfileSave();
 						});
 				});
 		}
 	}
 
-	private displayChatDefaults(containerEl: HTMLElement): void {
-		containerEl.createEl("h3", { text: "Chat Defaults" });
+	private renderModelPicker(
+		containerEl: HTMLElement,
+		profile: ProviderProfile,
+	): void {
+		const cachedModels = profile.modelCache?.models ?? [];
+		const hasCache = cachedModels.length > 0;
 
-		new Setting(containerEl)
+		const modelSetting = new Setting(containerEl)
+			.setName("Model")
+			.setDesc(
+				hasCache
+					? `${cachedModels.length} cached models for ${this.getProviderLabel(profile.provider)}. Search, click to select, or type a custom value.`
+					: "Model or deployment name to use for this profile.",
+			);
+
+		const wrapper = modelSetting.controlEl.createDiv({
+			cls: "obsidian-ai-settings-model-picker",
+		});
+		const searchRow = wrapper.createDiv({
+			cls: "obsidian-ai-settings-model-row",
+		});
+
+		const searchEl = searchRow.createEl("input", {
+			type: "text",
+			placeholder: hasCache ? "Search cached models..." : "Type model name...",
+		});
+		searchEl.value = profile.model;
+
+		const fetchButton = searchRow.createEl("button", {
+			text: hasCache ? "Refresh" : "Fetch",
+		});
+		fetchButton.classList.add("mod-cta");
+
+		let listEl: HTMLDivElement | null = null;
+		if (hasCache) {
+			listEl = wrapper.createDiv({
+				cls: "obsidian-ai-settings-model-list",
+			});
+		}
+
+		const renderList = (filter: string) => {
+			if (!listEl) {
+				return;
+			}
+			listEl.empty();
+			const term = filter.trim().toLowerCase();
+			const filtered = term
+				? cachedModels.filter((model) =>
+						model.toLowerCase().includes(term),
+					)
+				: cachedModels;
+			const visibleModels = filtered.slice(0, 200);
+
+			for (const model of visibleModels) {
+				const itemEl = listEl.createDiv({
+					text: model,
+					cls: "obsidian-ai-settings-model-item",
+				});
+				if (model === profile.model) {
+					itemEl.addClass("is-active");
+				}
+
+				itemEl.addEventListener("click", async () => {
+					profile.model = model;
+					profile.updatedAt = Date.now();
+					searchEl.value = model;
+					await this.saveSettings({ quiet: true });
+					renderList(searchEl.value);
+					new Notice(`Model set to ${model}`, 1800);
+				});
+			}
+
+			if (visibleModels.length === 0) {
+				listEl.createDiv({
+					text: "No cached models match your search.",
+					cls: "obsidian-ai-settings-model-empty",
+				});
+			} else if (filtered.length > visibleModels.length) {
+				listEl.createDiv({
+					text: `Showing first ${visibleModels.length} of ${filtered.length} models.`,
+					cls: "obsidian-ai-settings-model-empty",
+				});
+			}
+		};
+
+		renderList("");
+
+		searchEl.addEventListener("input", () => {
+			profile.model = searchEl.value.trim();
+			profile.updatedAt = Date.now();
+			this.debouncedProfileSave();
+			renderList(searchEl.value);
+		});
+
+		fetchButton.addEventListener("click", async () => {
+			fetchButton.setText("Fetching...");
+			fetchButton.setAttribute("disabled", "true");
+			try {
+				const models = await this.plugin.chatapi.fetchModels(profile);
+				if (models.length === 0) {
+					new Notice("No models found for this provider.", 3000);
+				} else {
+					profile.modelCache = {
+						models,
+						fetchedAt: Date.now(),
+					};
+					profile.updatedAt = Date.now();
+					await this.saveSettings({ refresh: true, quiet: true });
+					new Notice(`Loaded ${models.length} models.`, 2500);
+				}
+			} catch (error: any) {
+				new Notice(`Failed to fetch models: ${error.message || error}`, 5000);
+			} finally {
+				fetchButton.setText(hasCache ? "Refresh" : "Fetch");
+				fetchButton.removeAttribute("disabled");
+			}
+		});
+	}
+
+	private renderChatDefaults(containerEl: HTMLElement): void {
+		const sectionEl = this.createSection(
+			containerEl,
+			"Chat Defaults",
+			"Control what context gets pulled into chat sessions and how much conversation state is retained.",
+		);
+
+		new Setting(sectionEl)
 			.setName("Include active note")
 			.setDesc(
 				"Automatically include the active note when chat context is implemented.",
@@ -690,10 +787,24 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					});
 			});
 
-		new Setting(containerEl)
+		new Setting(sectionEl)
+			.setName("Auto-name sessions")
+			.setDesc(
+				"Generate chat titles automatically once a conversation has enough context.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.autoNameSessions)
+					.onChange(async (value) => {
+						this.plugin.settings.autoNameSessions = value;
+						await this.saveSettings();
+					});
+			});
+
+		new Setting(sectionEl)
 			.setName("Max saved conversations")
 			.setDesc(
-				"Maximum number of conversations to keep once chat persistence is implemented.",
+				"Maximum number of chat sessions to keep before older ones are trimmed.",
 			)
 			.addText((text) => {
 				text.setPlaceholder("20")
@@ -708,7 +819,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					});
 			});
 
-		new Setting(containerEl)
+		new Setting(sectionEl)
 			.setName("Max context tokens")
 			.setDesc("Approximate context budget for note/context loading.")
 			.addText((text) => {
@@ -722,7 +833,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					});
 			});
 
-		new Setting(containerEl)
+		new Setting(sectionEl)
 			.setName("Max context messages")
 			.setDesc(
 				"Maximum previous messages to include in the conversation context. Older messages are silently dropped.",
@@ -739,13 +850,14 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			});
 	}
 
-	private displayAgentToolsSettings(containerEl: HTMLElement): void {
-		containerEl.createEl("h3", { text: "Agent Tools" });
-		containerEl.createEl("p", {
-			text: "Allow the AI to read, edit, create, and append to notes directly via native tool calling.",
-		});
+	private renderAgentTools(containerEl: HTMLElement): void {
+		const sectionEl = this.createSection(
+			containerEl,
+			"Agent Tools",
+			"Allow the AI to read, edit, create, and append to notes through the built-in tool layer.",
+		);
 
-		new Setting(containerEl)
+		new Setting(sectionEl)
 			.setName("Enable agent tools")
 			.setDesc(
 				"When enabled, the AI can invoke tools to interact with your vault during chat conversations.",
@@ -759,7 +871,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					});
 			});
 
-		new Setting(containerEl)
+		new Setting(sectionEl)
 			.setName("Auto-apply edits")
 			.setDesc(
 				"Apply note edits automatically without asking for confirmation. (Not recommended for important notes.)",
@@ -773,7 +885,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					});
 			});
 
-		new Setting(containerEl)
+		new Setting(sectionEl)
 			.setName("Max agent steps")
 			.setDesc(
 				"Maximum number of tool call rounds per message. Higher values allow more complex multi-step reasoning.",
@@ -790,10 +902,14 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			});
 	}
 
-	private displayAdvancedPrompts(containerEl: HTMLElement): void {
-		containerEl.createEl("h3", { text: "Advanced" });
+	private renderAdvanced(containerEl: HTMLElement): void {
+		const sectionEl = this.createSection(
+			containerEl,
+			"Advanced",
+			"Adjust inline prompt behavior and low-level interaction details.",
+		);
 
-		new Setting(containerEl)
+		new Setting(sectionEl)
 			.setName("Selection prompt")
 			.setDesc(
 				"System prompt used when the tooltip is triggered with selected text.",
@@ -810,7 +926,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				textarea.inputEl.classList.add("wide-text-settings");
 			});
 
-		new Setting(containerEl)
+		new Setting(sectionEl)
 			.setName("Cursor prompt")
 			.setDesc(
 				"System prompt used when the tooltip is triggered without selected text.",
@@ -828,8 +944,8 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				textarea.inputEl.classList.add("wide-text-settings");
 			});
 
-		new Setting(containerEl)
-			.setName("Message History")
+		new Setting(sectionEl)
+			.setName("Message history")
 			.setDesc(
 				"Enable prompt history navigation in the inline tooltip using the up/down arrow keys.",
 			)
@@ -843,34 +959,135 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			});
 	}
 
-	private displayDiagnostics(containerEl: HTMLElement): void {
-		containerEl.createEl("h3", { text: "Diagnostics" });
-		containerEl.createEl("p", {
-			text: "Monitor plugin resource usage and performance metrics.",
+	private renderCustomCommands(containerEl: HTMLElement): void {
+		const sectionEl = this.createSection(
+			containerEl,
+			"Custom Commands",
+			"Add reusable inline-edit commands triggered by a shared prefix.",
+		);
+
+		new Setting(sectionEl)
+			.setName("Command prefix")
+			.setDesc("The prefix used to trigger custom commands.")
+			.addText((text) => {
+				text.setPlaceholder("/")
+					.setValue(this.plugin.settings.commandPrefix)
+					.inputEl.addEventListener("blur", async () => {
+						this.plugin.settings.commandPrefix =
+							text.getValue().charAt(0) || "/";
+						await this.saveSettings();
+					});
+			});
+
+		this.plugin.settings.customCommands.forEach((command, index) => {
+			new Setting(sectionEl)
+				.setName(`Command: ${command.keyword}`)
+				.setDesc("Edit the command prompt.")
+				.addText((text) => {
+					text.setValue(command.keyword)
+						.setPlaceholder("Command name")
+						.inputEl.addEventListener("blur", async () => {
+							this.plugin.settings.customCommands[index].keyword =
+								text.getValue();
+							await this.saveSettings();
+						});
+				})
+				.addTextArea((textarea) => {
+					textarea
+						.setValue(command.prompt)
+						.setPlaceholder("Command prompt")
+						.inputEl.addEventListener("blur", async () => {
+							this.plugin.settings.customCommands[index].prompt =
+								textarea.getValue();
+							await this.saveSettings();
+						});
+				})
+				.addExtraButton((btn) =>
+					btn
+						.setIcon("trash")
+						.setTooltip("Delete this command")
+						.onClick(async () => {
+							this.plugin.settings.customCommands.splice(
+								index,
+								1,
+							);
+							await this.saveSettings({
+								refresh: true,
+								quiet: true,
+							});
+						}),
+				);
 		});
 
-		// Metrics container
-		const metricsEl = containerEl.createEl("div");
-		metricsEl.style.display = "grid";
-		metricsEl.style.gridTemplateColumns = "1fr 1fr";
-		metricsEl.style.gap = "12px";
-		metricsEl.style.marginBottom = "16px";
-		metricsEl.style.padding = "12px";
-		metricsEl.style.background = "var(--background-secondary)";
-		metricsEl.style.borderRadius = "6px";
+		new Setting(sectionEl).addButton((btn) =>
+			btn
+				.setButtonText("Add Command")
+				.setCta()
+				.onClick(async () => {
+					this.plugin.settings.customCommands.push({
+						keyword: "new_command",
+						prompt: "",
+					});
+					await this.saveSettings({ refresh: true, quiet: true });
+				}),
+		);
+	}
+
+	private renderDiagnostics(containerEl: HTMLElement): void {
+		const sectionEl = this.createSection(
+			containerEl,
+			"Diagnostics",
+			"Monitor runtime state, manage debug behavior, and clear saved chat data when needed.",
+		);
+
+		new Setting(sectionEl)
+			.setName("Debug log level")
+			.setDesc("Choose how much runtime information the plugin records.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("off", "Off")
+					.addOption("error", "Errors only")
+					.addOption("info", "Info")
+					.addOption("debug", "Debug")
+					.setValue(this.plugin.settings.debugLogLevel)
+					.onChange(async (value) => {
+						this.plugin.settings.debugLogLevel = value as
+							| "off"
+							| "error"
+							| "info"
+							| "debug";
+						await this.saveSettings();
+					}),
+			);
+
+		new Setting(sectionEl)
+			.setName("Debug log retention")
+			.setDesc("Approximate number of log lines to retain before rotation.")
+			.addText((text) => {
+				text.setPlaceholder("200")
+					.setValue(String(this.plugin.settings.debugLogRetention))
+					.inputEl.addEventListener("blur", async () => {
+						const value = Number.parseInt(text.getValue(), 10);
+						this.plugin.settings.debugLogRetention =
+							Number.isFinite(value) && value > 0 ? value : 200;
+						await this.saveSettings();
+					});
+			});
+
+		const metricsEl = sectionEl.createDiv({ cls: "obsidian-ai-settings-metrics" });
 
 		const createMetric = (label: string, value: string) => {
-			const wrapper = metricsEl.createEl("div");
+			const wrapper = metricsEl.createDiv({
+				cls: "obsidian-ai-settings-metric",
+			});
 			wrapper.createEl("div", {
 				text: label,
-				cls: "setting-item-description",
-			}).style.fontSize = "0.8em";
+				cls: "obsidian-ai-settings-metric-label",
+			});
 			const valueEl = wrapper.createEl("div", {
 				text: value,
-				cls: "setting-item-name",
+				cls: "obsidian-ai-settings-metric-value",
 			});
-			valueEl.style.fontSize = "1.1em";
-			valueEl.style.fontFamily = "var(--font-monospace)";
 			return valueEl;
 		};
 
@@ -882,7 +1099,6 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 		const messagesEl = createMetric("Total Messages", "—");
 
 		const refreshMetrics = async () => {
-			// Memory (Chromium-specific)
 			const mem = (performance as any).memory;
 			if (mem) {
 				heapUsedEl.textContent = `${(mem.usedJSHeapSize / 1024 / 1024).toFixed(1)} MB`;
@@ -894,12 +1110,10 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				heapLimitEl.textContent = "N/A";
 			}
 
-			// DOM nodes
 			domNodesEl.textContent = String(
 				document.getElementsByTagName("*").length,
 			);
 
-			// Chat data
 			try {
 				const chatData = await this.plugin.loadChatData();
 				const sessionCount = chatData.sessions.length;
@@ -915,8 +1129,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			}
 		};
 
-		// Refresh button
-		new Setting(containerEl)
+		new Setting(sectionEl)
 			.setName("Refresh metrics")
 			.setDesc("Update the diagnostic numbers above.")
 			.addButton((btn) =>
@@ -931,8 +1144,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					}),
 			);
 
-		// Force GC hint
-		new Setting(containerEl)
+		new Setting(sectionEl)
 			.setName("Force garbage collection")
 			.setDesc(
 				"To force GC, open DevTools (Ctrl/Cmd+Shift+I) and run the GC profiler.",
@@ -954,8 +1166,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					}),
 			);
 
-		// Clear chat history
-		new Setting(containerEl)
+		new Setting(sectionEl)
 			.setName("Clear all chat history")
 			.setDesc(
 				"Permanently delete all saved chat sessions. This frees up storage memory.",
@@ -1000,77 +1211,6 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					}),
 			);
 
-		// Initial load
 		refreshMetrics();
-	}
-
-	private displayCustomCommands(containerEl: HTMLElement): void {
-		containerEl.createEl("h3", { text: "Custom Commands" });
-		containerEl.createEl("p", {
-			text: "Add custom inline-edit commands. Triggered with the prefix defined below.",
-		});
-
-		new Setting(containerEl)
-			.setName("Command Prefix")
-			.setDesc("The prefix used to trigger custom commands.")
-			.addText((text) => {
-				text.setPlaceholder("/")
-					.setValue(this.plugin.settings.commandPrefix)
-					.inputEl.addEventListener("blur", async () => {
-						this.plugin.settings.commandPrefix =
-							text.getValue().charAt(0) || "/";
-						await this.saveSettings(true);
-					});
-			});
-
-		this.plugin.settings.customCommands.forEach((command, index) => {
-			new Setting(containerEl)
-				.setName(`Command: ${command.keyword}`)
-				.setDesc("Edit the command prompt.")
-				.addText((text) => {
-					text.setValue(command.keyword)
-						.setPlaceholder("Command name")
-						.inputEl.addEventListener("blur", async () => {
-							this.plugin.settings.customCommands[index].keyword =
-								text.getValue();
-							await this.saveSettings();
-						});
-				})
-				.addTextArea((textarea) => {
-					textarea
-						.setValue(command.prompt)
-						.setPlaceholder("Command prompt")
-						.inputEl.addEventListener("blur", async () => {
-							this.plugin.settings.customCommands[index].prompt =
-								textarea.getValue();
-							await this.saveSettings();
-						});
-				})
-				.addExtraButton((btn) =>
-					btn
-						.setIcon("trash")
-						.setTooltip("Delete this command")
-						.onClick(async () => {
-							this.plugin.settings.customCommands.splice(
-								index,
-								1,
-							);
-							await this.saveSettings(true);
-						}),
-				);
-		});
-
-		new Setting(containerEl).addButton((btn) =>
-			btn
-				.setButtonText("Add Command")
-				.setCta()
-				.onClick(async () => {
-					this.plugin.settings.customCommands.push({
-						keyword: "new_command",
-						prompt: "",
-					});
-					await this.saveSettings(true);
-				}),
-		);
 	}
 }

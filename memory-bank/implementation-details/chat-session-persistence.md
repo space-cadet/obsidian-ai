@@ -1,6 +1,6 @@
 # Chat Session Persistence Design
 *Created: 2026-05-03 00:18:43 IST*
-*Last Updated: 2026-05-03 00:18:43 IST*
+*Last Updated: 2026-05-12 11:13:59 IST*
 
 ## Overview
 
@@ -183,3 +183,44 @@ Pruning happens on archive (after saving a new session).
 - T2: Conversation Chain & Memory — primary task
 - T1: Chat Panel — UI container
 - T9: Settings — `maxSavedConversations` already defined
+
+## 2026-05-12 Hardening Pass
+
+After the original session persistence work shipped, two follow-up regressions appeared in real use:
+
+1. `debug.log` spam from repeated `saveChatData()` attempts
+2. `data.json` being overwritten on plugin/app load during the initial hydration cycle
+
+### Root Cause
+
+`ChatApp` persisted from a broad `useEffect` tied to `[sessions, activeSessionId]`. A single interaction can trigger several back-to-back `setSessions(...)` updates:
+- add user message
+- add assistant message
+- retry/edit/session management updates
+- context synchronization after UI-local context changes
+
+At the persistence layer, `saveChatData()` used a simple skip-on-busy guard, so overlapping calls were dropped and logged as noisy "already in progress" messages.
+
+### Hardening Applied
+
+```typescript
+// ChatApp
+useEffect(() => {
+  // debounce autosave bursts
+}, [sessions, activeSessionId, chatDataLoaded]);
+
+// main.ts
+async saveChatData(chatData: StoredChatData) {
+  // serialize writes and flush latest queued snapshot
+}
+```
+
+- autosave is debounced in `ChatApp`
+- `saveChatData()` is serialized in `main.ts`
+- overlapping writes queue the latest snapshot instead of dropping it
+- the first autosave is skipped when real stored sessions have just been hydrated
+- no-op `contextItems` rewrites are ignored
+
+### Current Persistence Rule
+
+Persist chat state after meaningful settled transitions, but coalesce bursty React updates so storage writes reflect the latest stable snapshot instead of every intermediate render-state mutation.

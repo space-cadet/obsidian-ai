@@ -127,11 +127,6 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	const bottomRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		const logger = (window as any).__obsidianAiLogger;
-		logger?.writeDirect?.(
-			"debug",
-			`[ChatMessages] effect — ${messages.length} msgs, streaming=${isStreaming}`,
-		);
 		// Use "auto" instead of "smooth" to avoid Chromium renderer crashes
 		// when rapid DOM mutations (StreamingBubble unmount + MessageBubble mount)
 		// happen simultaneously with scroll animation.

@@ -1,9 +1,9 @@
 # Task Registry
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-09 11:51:05 IST*
+*Last Updated: 2026-05-12 11:13:59 IST*
 
 ## Summary
-- Active: 2 | Paused: 1 | Completed: 9 | Cancelled: 0
+- Active: 4 | Paused: 1 | Completed: 9 | Cancelled: 0
 
 ## Task Registry Table
 
@@ -37,7 +37,7 @@
 Branding transition and open-source release preparation. See `tasks/T8.md`.
 
 ### T11 — Debug Logging & Diagnostics *(requires T9)*
-File-based debug logger, React ErrorBoundary, diagnostics panel in Settings, and crash debugging infrastructure. See `tasks/T11.md`.
+File-based debug logger, React ErrorBoundary, diagnostics panel in Settings, and the newer debug-log spam diagnosis plus persistence queue/debounce fix. See `tasks/T11.md`.
 
 ### T13 — Agentic Tool Calling for Note Editing *(requires T1, T3, T5, T9)*
 Advanced AI tool calling for note editing. `resolveNote()`, `patch_note`, `edit_section` implemented. Crash debugging in progress. See `tasks/T13.md`.

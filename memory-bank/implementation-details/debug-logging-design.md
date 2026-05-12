@@ -1,6 +1,6 @@
 # Debug Logging & Diagnostics Design
 *Created: 2026-05-02 11:46:39 IST*
-*Last Updated: 2026-05-09 11:51:05 IST*
+*Last Updated: 2026-05-12 11:13:59 IST*
 
 ## Overview
 
@@ -251,6 +251,28 @@ Safe metadata:
 - Content length counts
 
 **v1 Status**: Redaction NOT implemented. The file logger captures raw console output, which may include note contents or prompts from debugging statements.
+
+## 2026-05-12: Log Spam Root Cause and Fix
+
+The noisy `debug.log` entries that looked like a logger failure were actually caused by chat persistence behavior:
+
+- `ChatApp` persisted chat data from a `useEffect` that fired on every `sessions` change
+- a single send/retry/edit flow triggers multiple `setSessions(...)` updates in quick succession
+- `saveChatData()` previously used a skip-on-busy guard, so overlapping writes logged repeated "save already in progress" lines
+
+This was a persistence orchestration problem, not a file-logger recursion bug.
+
+### Fix Applied
+
+- `src/components/ChatApp.tsx` now debounces autosave requests so bursty UI updates coalesce into one save request
+- `src/main.ts` now serializes `saveChatData()` and flushes the latest queued snapshot after the current write finishes
+- startup hydration now skips the first autosave for real restored chat data to avoid overwriting `data.json` on plugin/app load
+- no-op `contextItems` rewrites are skipped so they do not produce unnecessary save requests
+
+### Resulting Guidance
+
+- treat save-related log spam as a persistence signal first, not necessarily a logger defect
+- keep `debug.log` informative by reducing redundant state-triggered writes before considering log filtering
 
 ## Retention (Design Spec)
 

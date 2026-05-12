@@ -109,6 +109,25 @@ function parseSlashCommand(text: string): SlashCommand | null {
 	};
 }
 
+function contextItemKey(item: ContextItem): string {
+	switch (item.type) {
+		case "note":
+			return `note:${item.path}`;
+		case "folder":
+			return `folder:${item.path}`;
+		case "tag":
+			return `tag:${item.tag}`;
+		case "active-note":
+		default:
+			return `active:${item.id}`;
+	}
+}
+
+function sameContextItems(a: ContextItem[], b: ContextItem[]): boolean {
+	if (a.length !== b.length) return false;
+	return a.every((item, index) => contextItemKey(item) === contextItemKey(b[index]));
+}
+
 const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	const [sessions, setSessions] = useState<ChatSession[]>([]);
 	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -126,7 +145,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(
 		null,
 	);
+	const [chatDataLoaded, setChatDataLoaded] = useState(false);
 	const controllerRef = useRef<AbortController | null>(null);
+	const saveTimerRef = useRef<number | null>(null);
+	const skipNextAutosaveRef = useRef(false);
 	const resolveToolRef = useRef<((result: ToolResult | null) => void) | null>(
 		null,
 	);
@@ -159,9 +181,11 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		const currentActiveId = activeSessionIdRef.current;
 		if (!currentActiveId) return;
 		setSessions((prev) =>
-			prev.map((s) =>
-				s.id === currentActiveId ? { ...s, contextItems } : s,
-			),
+			prev.map((s) => {
+				if (s.id !== currentActiveId) return s;
+				if (sameContextItems(s.contextItems, contextItems)) return s;
+				return { ...s, contextItems };
+			}),
 		);
 		setWasTruncated(false);
 	}, [contextItems]);
@@ -193,10 +217,14 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 
 	// Load persisted sessions on mount
 	useEffect(() => {
+		let cancelled = false;
 		plugin.loadChatData().then((data) => {
-			setSessions(data.sessions);
-			setActiveSessionId(data.activeSessionId);
-			if (!data.activeSessionId && data.sessions.length === 0) {
+			if (cancelled) return;
+			if (data.sessions.length > 0 || data.activeSessionId) {
+				skipNextAutosaveRef.current = true;
+				setSessions(data.sessions);
+				setActiveSessionId(data.activeSessionId);
+			} else {
 				const newSession: ChatSession = {
 					id: makeId(),
 					title: "",
@@ -210,15 +238,36 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				setSessions([newSession]);
 				setActiveSessionId(newSession.id);
 			}
+			setChatDataLoaded(true);
 		});
+		return () => {
+			cancelled = true;
+		};
 	}, [plugin]);
 
-	// Persist sessions whenever they change
+	// Persist sessions whenever they change, but coalesce bursty updates
 	useEffect(() => {
-		if (sessions.length > 0) {
-			plugin.saveChatData({ sessions, activeSessionId });
+		if (!chatDataLoaded) return;
+		if (skipNextAutosaveRef.current) {
+			skipNextAutosaveRef.current = false;
+			return;
 		}
-	}, [sessions, activeSessionId, plugin]);
+		if (sessions.length > 0) {
+			if (saveTimerRef.current) {
+				window.clearTimeout(saveTimerRef.current);
+			}
+			saveTimerRef.current = window.setTimeout(() => {
+				void plugin.saveChatData({ sessions, activeSessionId });
+				saveTimerRef.current = null;
+			}, 150);
+		}
+		return () => {
+			if (saveTimerRef.current) {
+				window.clearTimeout(saveTimerRef.current);
+				saveTimerRef.current = null;
+			}
+		};
+	}, [sessions, activeSessionId, plugin, chatDataLoaded]);
 
 	// Auto-title session after it has a few messages
 	useEffect(() => {

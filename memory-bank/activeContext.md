@@ -1,44 +1,48 @@
 # Active Context
 
-*Last Updated: 2026-05-09 11:51:05 IST*
+*Last Updated: 2026-05-12 11:13:59 IST*
 
 ## Current Focus
-**Primary Task:** T13
-**Secondary Tasks:** T11, T14, T8
+**Primary Task:** T11
+**Secondary Tasks:** T2, T9, T13
 
 ## Active Tasks
-- [T13]: Agentic Tool Calling — `resolveNote()`, `patch_note`, `edit_section` implemented; blank-screen crash debugging in progress
-- [T11]: Debug Logging & Diagnostics — file logger, ErrorBoundary, diagnostics panel all implemented; privacy redaction queued for v2
+- [T11]: Debug Logging & Diagnostics — settings panel rewritten; debug-log spam traced to overlapping chat persistence writes; queued persistence and hydration guard implemented
+- [T2]: Conversation Chain & Memory — completed persistence layer hardened with debounced autosave, queued snapshot flush, and startup overwrite guard
+- [T9]: Settings & Provider Profiles — settings panel rebuilt into a clean sectioned layout with guarded refresh flow and restored model picker behavior
+- [T13]: Agentic Tool Calling — `resolveNote()`, `patch_note`, `edit_section` implemented; blank-screen crash verification still pending
 - [T14]: Remote Agent Connectivity — design complete; T13 fixes unblock implementation
 - [T8]: Open Source Release — README and metadata branded; final release readiness pass pending
 
 ## Implementation Focus
-`src/agent/ToolExecutor.ts`, `src/agent/tools.ts`, `src/components/ChatApp.tsx`, `src/components/MessageBubble.tsx`, `src/components/ChatMessages.tsx`, `src/logger.ts`, `src/components/ErrorBoundary.tsx`, `src/settings.ts`
+`src/components/ChatApp.tsx`, `src/main.ts`, `src/settings.ts`, `styles.css`, `src/logger.ts`, `src/components/ErrorBoundary.tsx`
 
 ## Task-Specific Context
 
-### Task T13 — IN PROGRESS (basename fix + new tools + crash debugging)
-`resolveNote()` helper resolves basenames via three-tier lookup (exact → append `.md` → `metadataCache.getFirstLinkpathDest()`). `patch_note` (search/replace) and `edit_section` (heading rewrite) added to tool registry. Raw status tags removed from visible chat. Blank-screen crash investigation: macOS crash reports confirm native Chromium `SIGTRAP` in renderer process. `MarkdownRenderer.render` resolves successfully; crash occurs on `StreamingBubble` unmount + `MessageBubble` mount transition. Safety fixes applied: `scrollIntoView({ behavior: "auto" })`, unmount cleanup flags.
+### Task T11 — IN PROGRESS (settings rewrite + persistence noise diagnosis)
+The Settings panel was rebuilt into a clean sectioned layout with a proper header, restored model fetch/search behavior, and guarded refresh logic to avoid re-entrant `display()` loops. Debug-log spam was traced to repeated `saveChatData()` attempts from bursty `ChatApp` session updates plus a non-queued save guard.
 
-### Task T11 — IN PROGRESS (moved from paused)
-File logger (`src/logger.ts`) writes to `.obsidian/plugins/obsidian-ai/debug.log`, intercepts errors, logs memory every 10s. `ChatErrorBoundary` wraps chat panel. Diagnostics panel in Settings shows 6 metrics with Refresh, DevTools, and Clear History. Remaining: privacy redaction, structured event pipeline (v2 refinement).
+### Task T2 — COMPLETED (hardened on 2026-05-12)
+Session persistence now coalesces bursty autosaves in `ChatApp`, serializes writes in `main.ts`, and preserves the latest queued snapshot instead of dropping overlapping saves. A startup overwrite regression was then fixed by skipping the first autosave after hydrating real stored sessions and by preventing no-op `contextItems` rewrites of the active session.
+
+### Task T13 — IN PROGRESS (basename fix + new tools + crash debugging)
+`resolveNote()` helper resolves basenames via three-tier lookup (exact → append `.md` → `metadataCache.getFirstLinkpathDest()`). `patch_note` (search/replace) and `edit_section` (heading rewrite) added to tool registry. Blank-screen crash verification is still pending after the earlier safety fixes (`scrollIntoView({ behavior: "auto" })`, unmount cleanup flags).
 
 ### Task T5 — COMPLETED
 `NoteEditingBridge` complete with all methods. Slash commands auto-execute without returning AI content in chat. Retry button added. Targeted action buttons render contextually.
-
-### Task T2 — COMPLETED
-Session-based chat history fully implemented. Message editing & resubmit, session rename, auto-title after 2 messages.
 
 ## Current Decisions
 - `resolveNote()` uses `metadataCache.getFirstLinkpathDest()` as final fallback to match Obsidian wiki-link resolution.
 - `patch_note` uses literal string matching (not regex) for predictability; `replace_all` via `split().join()`.
 - `edit_section` splits on `\n` and matches heading lines starting with `# `.
 - ErrorBoundary logs to disk immediately via `flushNow()` so crash data survives renderer restart.
-- `scrollIntoView` behavior changed to `"auto"` to remove animation from the unmount/mount transition path.
-- Both effects (`setSelectionInfoEffect` + `setGeneratedResponseEffect`) dispatched in one transaction.
-- Chat persistence uses session-store model (`StoredChatData` with `sessions[]` + `activeSessionId`).
+- Chat persistence should never save directly on every intermediate React state change; writes are now debounced in `ChatApp` and serialized in `main.ts`.
+- Overlapping chat saves should flush the latest queued snapshot rather than logging repeated save-noise entries.
+- Hydrated chat state should not be written back during the first mount/effect cascade after plugin load.
 
 ## Next Actions By Task
+- [T11]: Verify in Obsidian that `debug.log` no longer floods on normal chat activity or startup
+- [T2]: Verify persisted sessions survive plugin/app reload without `data.json` churn
 - [T13]: Deploy and test crash fix with `scrollIntoView({ behavior: "auto" })`; test `patch_note` and `edit_section` end-to-end
 - [T13]: Extract inline AgentLoop from ChatApp into `src/agent/AgentLoop.ts`. Create `PendingToolCard.tsx`.
 - [T11]: Add privacy redaction to file logger (strip API keys, note contents)
