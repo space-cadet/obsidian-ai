@@ -23,6 +23,88 @@ export interface AgentLoopResult {
 }
 
 /**
+ * Formats a ToolResult into a human-readable markdown string based on the tool type.
+ * This prevents the LLM from dumping raw JSON in its response.
+ */
+function formatToolResult(toolName: string, result: ToolResult): string {
+	if (result.error) {
+		return `Error: ${result.error}`;
+	}
+
+	switch (toolName) {
+		case "search_notes": {
+			const matches = result.matches ?? [];
+			if (matches.length === 0) return "No matching notes found.";
+			let md = `Found ${matches.length} note${matches.length !== 1 ? "s" : ""}:\n\n`;
+			md += "| Note | Modified | Size |\n";
+			md += "|------|----------|------|\n";
+			for (const m of matches) {
+				const date = m.modified
+					? new Date(m.modified).toLocaleDateString()
+					: "—";
+				md += `| [[${m.basename}]] | ${date} | ${m.size ?? "—"} |\n`;
+			}
+			return md;
+		}
+
+		case "list_notes": {
+			const notes = result.notes ?? [];
+			if (notes.length === 0) return "No notes found in this location.";
+			let md = `${result.count ?? notes.length} note${notes.length !== 1 ? "s" : ""} in ${result.folder ?? "vault"}:\n\n`;
+			md += "| Note | Modified | Size |\n";
+			md += "|------|----------|------|\n";
+			for (const n of notes) {
+				const date = n.modified
+					? new Date(n.modified).toLocaleDateString()
+					: "—";
+				md += `| [[${n.basename}]] | ${date} | ${n.size ?? "—"} |\n`;
+			}
+			return md;
+		}
+
+		case "list_folders": {
+			const folders = result.folders ?? [];
+			if (folders.length === 0) return "No subfolders found.";
+			let md = `${folders.length} folder${folders.length !== 1 ? "s" : ""} under ${result.parent ?? "root"}:\n\n`;
+			for (const f of folders) {
+				md += `- ${f}\n`;
+			}
+			return md;
+		}
+
+		case "get_note_metadata": {
+			const date = (ts: number | undefined) =>
+				ts ? new Date(ts).toLocaleString() : "—";
+			return (
+				`**[[${result.basename ?? result.path}]]**\n\n` +
+				`- Size: ${result.size ?? "—"} bytes\n` +
+				`- Created: ${date(result.created)}\n` +
+				`- Modified: ${date(result.modified)}\n` +
+				`- Words: ${result.wordCount ?? "—"}`
+			);
+		}
+
+		case "read_note":
+			return result.content ?? "(empty note)";
+
+		case "create_note":
+		case "edit_note":
+		case "append_to_note":
+		case "patch_note":
+		case "edit_section":
+		case "create_folder":
+		case "move_note":
+		case "delete_note":
+			return result.success
+				? `✓ ${toolName.replace(/_/g, " ")} completed successfully.`
+				: `✗ ${toolName.replace(/_/g, " ")} failed: ${result.error ?? "unknown error"}`;
+
+		default:
+			return JSON.stringify(result, null, 2);
+	}
+}
+
+/**
  * Orchestrates multi-step tool calling with the Vercel AI SDK.
  *
  * Each call to `run()` performs up to `maxSteps` iterations of:
@@ -147,11 +229,11 @@ export class AgentLoop {
 				content: assistantParts,
 			};
 
-			// Build tool result message
-			const toolResultOutput = result.error
-				? { type: "json", value: { error: result.error } }
-				: { type: "json", value: result };
-
+			// Build tool result message with formatted text (not raw JSON)
+			const formattedResult = formatToolResult(
+				pendingCall.toolName,
+				result,
+			);
 			const toolMsg: any = {
 				role: "tool",
 				content: [
@@ -159,7 +241,10 @@ export class AgentLoop {
 						type: "tool-result",
 						toolCallId: pendingCall.toolCallId,
 						toolName: pendingCall.toolName,
-						output: toolResultOutput,
+						output: {
+							type: "text",
+							value: formattedResult,
+						},
 					},
 				],
 			};
