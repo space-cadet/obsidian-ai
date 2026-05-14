@@ -185,27 +185,49 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	}, [sessions, activeSessionId]);
 	messagesRef.current = messages;
 
-	// Sync contextItems when active session changes
+	// Sync contextItems when active session changes (NOT when sessions data mutates)
+	const prevActiveSessionIdRef = useRef<string | null>(null);
 	useEffect(() => {
-		const s = sessions.find((s) => s.id === activeSessionId);
+		console.log(`[Effect1] fired — activeSessionId=${activeSessionId}, prev=${prevActiveSessionIdRef.current}`);
+		if (activeSessionId === prevActiveSessionIdRef.current) {
+			console.log(`[Effect1] SKIPPED — activeSessionId unchanged`);
+			return; // activeSessionId didn't change — don't sync from session
+		}
+		prevActiveSessionIdRef.current = activeSessionId;
+		const s = sessionsRef.current.find((s) => s.id === activeSessionId);
 		const sessionItems = s?.contextItems ?? [];
-		if (!sameContextItems(contextItemsRef.current, sessionItems)) {
+		const needsUpdate = !sameContextItems(contextItemsRef.current, sessionItems);
+		console.log(`[Effect1] activeSessionId CHANGED — sessionItems=${JSON.stringify(sessionItems.map(contextItemKey))}, current=${JSON.stringify(contextItemsRef.current.map(contextItemKey))}, needsUpdate=${needsUpdate}`);
+		if (needsUpdate) {
+			console.log(`[Effect1] calling setContextItems`);
 			setContextItems(sessionItems);
 		}
 		setWasTruncated(false);
-	}, [activeSessionId, sessions]);
+	}, [activeSessionId]);
 
 	// Persist contextItems to the current session whenever they change
 	useEffect(() => {
 		const currentActiveId = activeSessionIdRef.current;
-		if (!currentActiveId) return;
-		setSessions((prev) =>
-			prev.map((s) => {
+		console.log(`[Effect2] fired — contextItems changed, activeId=${currentActiveId}, items=${JSON.stringify(contextItems.map(contextItemKey))}`);
+		if (!currentActiveId) {
+			console.log(`[Effect2] SKIPPED — no active session`);
+			return;
+		}
+		setSessions((prev) => {
+			const s = prev.find((s) => s.id === currentActiveId);
+			const same = s ? sameContextItems(s.contextItems, contextItems) : false;
+			console.log(`[Effect2] setSessions updater — sameContextItems=${same}, sessionItems=${JSON.stringify(s?.contextItems.map(contextItemKey))}`);
+			if (same) {
+				console.log(`[Effect2] returning same session (no change)`);
+				return prev;
+			}
+			const updated = prev.map((s) => {
 				if (s.id !== currentActiveId) return s;
-				if (sameContextItems(s.contextItems, contextItems)) return s;
 				return { ...s, contextItems };
-			}),
-		);
+			});
+			console.log(`[Effect2] returning updated sessions`);
+			return updated;
+		});
 		setWasTruncated(false);
 	}, [contextItems]);
 
@@ -311,8 +333,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	}, [sessions, activeSessionId, plugin.settings.autoNameSessions]);
 
 	const handleToggleActiveNote = useCallback(() => {
+		console.log(`[handleToggleActiveNote] fired — current items=${JSON.stringify(contextItemsRef.current.map(contextItemKey))}`);
 		setContextItems((prev) => {
 			const hasActive = prev.some((i) => i.type === "active-note");
+			console.log(`[handleToggleActiveNote] hasActive=${hasActive}, prevItems=${JSON.stringify(prev.map(contextItemKey))}`);
 			if (hasActive) {
 				return prev.filter((i) => i.type !== "active-note");
 			}
