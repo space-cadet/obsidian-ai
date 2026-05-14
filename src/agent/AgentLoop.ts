@@ -12,6 +12,8 @@ export interface AgentLoopOptions {
 	onTextDelta: (accumulatedText: string) => void;
 	/** Called when a tool call is detected (before execution/approval). */
 	onToolCall: (call: ToolCall) => void;
+	/** Called when a tool result is available (after execution/approval). */
+	onToolResult?: (call: ToolCall, result: ToolResult) => void;
 	/** Called to request user approval. Return result to approve, null to reject. */
 	requestApproval: (call: ToolCall) => Promise<ToolResult | null>;
 }
@@ -208,6 +210,7 @@ export class AgentLoop {
 				`[AgentLoop] step ${step} tool-result:`,
 				result.error ?? "success",
 			);
+			this.opts.onToolResult?.(pendingCall, result);
 
 			// Build assistant message (text + tool call)
 			const assistantParts: Array<{

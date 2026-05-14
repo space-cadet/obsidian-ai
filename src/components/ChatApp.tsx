@@ -188,7 +188,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	// Sync contextItems when active session changes
 	useEffect(() => {
 		const s = sessions.find((s) => s.id === activeSessionId);
-		setContextItems(s?.contextItems ?? []);
+		const sessionItems = s?.contextItems ?? [];
+		if (!sameContextItems(contextItemsRef.current, sessionItems)) {
+			setContextItems(sessionItems);
+		}
 		setWasTruncated(false);
 	}, [activeSessionId, sessions]);
 
@@ -473,6 +476,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 			];
 
 			let fullText = "";
+			let toolCallsLog: Array<{ call: ToolCall; result?: ToolResult }> = [];
 			try {
 				let assistantContent = fullText;
 				let assistantTokenEstimate = 0;
@@ -495,6 +499,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 								`[ChatApp] tool-call pending: ${call.toolName}`,
 								call.args,
 							);
+							// Add pending tool call to the log
+							toolCallsLog.push({ call });
 						},
 						requestApproval: async (call) => {
 							setPendingToolCall(call);
@@ -504,7 +510,31 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 								resolveToolRef.current = resolve;
 							});
 							setPendingToolCall(null);
+							// Update the last pending tool call with the result
+							const lastIdx = toolCallsLog.length - 1;
+							if (lastIdx >= 0) {
+								toolCallsLog[lastIdx] = {
+									...toolCallsLog[lastIdx],
+									result: resolved || undefined,
+								};
+							}
 							return resolved;
+						},
+						onToolResult: (call, result) => {
+							console.log(
+								`[ChatApp] tool-result: ${call.toolName}`,
+								result.error ?? "success",
+							);
+							// Update the matching tool call with the result
+							const idx = toolCallsLog.findIndex(
+								(tc) => tc.call.toolCallId === call.toolCallId,
+							);
+							if (idx >= 0) {
+								toolCallsLog[idx] = {
+									...toolCallsLog[idx],
+									result,
+								};
+							}
 						},
 					});
 
@@ -598,6 +628,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					timestamp: Date.now(),
 					command: commandMeta,
 					estimatedTokens: assistantTokenEstimate,
+					toolCalls: toolCallsLog.length > 0 ? toolCallsLog : undefined,
 				};
 				console.log(
 					`[ChatApp] adding assistantMsg — ${assistantContent.length} chars, id=${assistantMsg.id}`,

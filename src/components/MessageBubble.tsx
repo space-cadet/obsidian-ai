@@ -1,6 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { App, MarkdownRenderer, Component } from "obsidian";
 import { ChatMessage, ContextItem } from "../types";
+import MessageActions from "./MessageActions";
+import ToolCallNotification from "./ToolCallNotification";
 
 interface MessageBubbleProps {
 	message: ChatMessage;
@@ -45,16 +47,20 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	onAppendToTarget,
 }) => {
 	const contentRef = useRef<HTMLDivElement>(null);
+	const [displayContent, setDisplayContent] = useState(message.content);
+
+	useEffect(() => {
+		setDisplayContent(message.content);
+	}, [message.content]);
 
 	useEffect(() => {
 		if (!contentRef.current) return;
 		const logger = (window as any).__obsidianAiLogger;
 		let unmounted = false;
 
-		// Use writeDirect for crash-surviving synchronous flush
 		logger?.writeDirect?.(
 			"debug",
-			`[MessageBubble ${message.id}] Step 1: entering useEffect — ${message.content.length} chars`,
+			`[MessageBubble ${message.id}] Step 1: entering useEffect — ${displayContent.length} chars`,
 		);
 
 		try {
@@ -76,7 +82,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 			);
 			MarkdownRenderer.render(
 				app,
-				message.content,
+				displayContent,
 				contentRef.current,
 				"",
 				comp,
@@ -96,7 +102,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 				if (contentRef.current) {
 					contentRef.current.innerHTML = "";
 					contentRef.current.createEl("pre", {
-						text: message.content,
+						text: displayContent,
 						cls: "chat-plaintext-fallback",
 					});
 				}
@@ -110,7 +116,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 			if (contentRef.current) {
 				contentRef.current.innerHTML = "";
 				contentRef.current.createEl("pre", {
-					text: message.content,
+					text: displayContent,
 					cls: "chat-plaintext-fallback",
 				});
 			}
@@ -119,7 +125,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 		return () => {
 			unmounted = true;
 		};
-	}, [message.content, app]);
+	}, [displayContent, app]);
 
 	const handleCopy = () => {
 		navigator.clipboard.writeText(message.content);
@@ -142,6 +148,20 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 			</div>
 			<div ref={contentRef} className="chat-bubble-content" />
 
+			{/* Tool call notifications */}
+			{message.toolCalls && message.toolCalls.length > 0 && (
+				<div className="chat-bubble-tool-calls">
+					{message.toolCalls.map((tc, i) => (
+						<ToolCallNotification
+							key={i}
+							toolCall={tc.call}
+							result={tc.result}
+							isPending={!tc.result}
+						/>
+					))}
+				</div>
+			)}
+
 			{/* Context tracking for user messages */}
 			{message.role === "user" && message.contextItems && message.contextItems.length > 0 && (
 				<div className="chat-message-context-footer">
@@ -159,110 +179,28 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 				</div>
 			)}
 
+			{/* Message actions */}
 			{message.role === "assistant" && !message.isError && (
-				<div className="chat-bubble-actions">
-					{message.command?.type === "edit" && (
-						<button
-							className="chat-btn-small"
-							onClick={() =>
-								onApplyToTarget(
-									message.content,
-									message.command!.target,
-								)
-							}
-							title={`Apply as diff to ${message.command.target}`}
-						>
-							✓ Apply → {message.command.target}
-						</button>
-					)}
-					{message.command?.type === "create" && (
-						<button
-							className="chat-btn-small"
-							onClick={() =>
-								onCreateNote(
-									message.content,
-									message.command!.target,
-								)
-							}
-							title={`Create ${message.command.target}`}
-						>
-							✓ Create {message.command.target}
-						</button>
-					)}
-					{message.command?.type === "append" && (
-						<button
-							className="chat-btn-small"
-							onClick={() =>
-								onAppendToTarget(
-									message.content,
-									message.command!.target,
-								)
-							}
-							title={`Append to ${message.command.target}`}
-						>
-							+ Append → {message.command.target}
-						</button>
-					)}
-					{!message.command && (
-						<button
-							className="chat-btn-small"
-							onClick={() => onApply(message.content)}
-							title="Preview changes as a diff in the active note"
-						>
-							✓ Apply
-						</button>
-					)}
-					<button
-						className="chat-btn-small"
-						onClick={() => onInsertAtCursor(message.content)}
-						title="Insert at the current cursor position"
-					>
-						⌶ Insert at Cursor
-					</button>
-					{!message.command && (
-						<button
-							className="chat-btn-small"
-							onClick={() => onAppend(message.content)}
-							title="Append directly to the end of the note — no confirmation step"
-						>
-							+ Append
-						</button>
-					)}
-					<button
-						className="chat-btn-small"
-						onClick={handleCopy}
-						title="Copy response"
-					>
-						⎘ Copy
-					</button>
-					<button
-						className="chat-btn-small"
-						onClick={onRetry}
-						title="Retry this message"
-					>
-						↺ Retry
-					</button>
-				</div>
+				<MessageActions
+					onCopy={handleCopy}
+					onRetry={onRetry}
+					onApply={!message.command ? () => onApply(message.content) : undefined}
+					onInsertAtCursor={() => onInsertAtCursor(message.content)}
+					onAppend={!message.command ? () => onAppend(message.content) : undefined}
+					onApplyToTarget={message.command?.type === "edit" ? () => onApplyToTarget(message.content, message.command!.target) : undefined}
+					onCreateNote={message.command?.type === "create" ? () => onCreateNote(message.content, message.command!.target) : undefined}
+					onAppendToTarget={message.command?.type === "append" ? () => onAppendToTarget(message.content, message.command!.target) : undefined}
+					commandType={message.command?.type}
+				/>
 			)}
 
-			{/* Edit button for user messages */}
+			{/* User message actions */}
 			{message.role === "user" && (
-				<div className="chat-bubble-actions chat-bubble-actions-user">
-					<button
-						className="chat-btn-small"
-						onClick={onEdit}
-						title="Edit and resubmit"
-					>
-						✎ Edit
-					</button>
-					<button
-						className="chat-btn-small"
-						onClick={handleCopy}
-						title="Copy message"
-					>
-						⎘ Copy
-					</button>
-				</div>
+				<MessageActions
+					isUser={true}
+					onCopy={handleCopy}
+					onEdit={onEdit}
+				/>
 			)}
 		</div>
 	);

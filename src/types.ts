@@ -1,3 +1,5 @@
+import type { ToolCall, ToolResult } from "./agent/types";
+
 export interface ChatMessage {
 	id: string;
 	role: "user" | "assistant";
@@ -12,6 +14,11 @@ export interface ChatMessage {
 	contextItems?: ContextItem[];
 	/** Estimated token count for this message (including context for user messages) */
 	estimatedTokens?: number;
+	/** Tool calls made during this message's generation */
+	toolCalls?: Array<{
+		call: ToolCall;
+		result?: ToolResult;
+	}>;
 }
 
 export interface ContextItemBase {
