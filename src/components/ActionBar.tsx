@@ -6,6 +6,8 @@ interface ActionBarProps {
 	onLoadChat: () => void;
 	canLoad: boolean;
 	plugin: ChatPluginLike;
+	autoApprove: boolean;
+	onToggleAutoApprove: () => void;
 }
 
 const ActionBar: React.FC<ActionBarProps> = ({
@@ -13,6 +15,8 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	onLoadChat,
 	canLoad,
 	plugin,
+	autoApprove,
+	onToggleAutoApprove,
 }) => {
 	const openSettings = () => {
 		(plugin.app as any).setting.open();
@@ -31,6 +35,17 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				title={canLoad ? "Load a previous chat session" : "No saved sessions yet"}
 			>
 				↺ Load
+			</button>
+			<button
+				className={`chat-btn chat-auto-approve-btn ${autoApprove ? "is-active" : ""}`}
+				onClick={onToggleAutoApprove}
+				title={
+					autoApprove
+						? "Auto-approve is ON — tool calls run without confirmation"
+						: "Auto-approve is OFF — each tool call requires manual approval"
+				}
+			>
+				{autoApprove ? "🤖 Auto" : "🔒 Manual"}
 			</button>
 			<button
 				className="chat-btn chat-settings-btn"

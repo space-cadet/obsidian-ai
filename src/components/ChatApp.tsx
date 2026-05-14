@@ -1047,6 +1047,18 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 
 	const hasHistory = sessions.some((s) => s.messages.length > 0);
 
+	const handleToggleAutoApprove = useCallback(() => {
+		const newValue = !plugin.settings.autoApply;
+		plugin.settings.autoApply = newValue;
+		void plugin.saveSettings();
+		new Notice(
+			newValue
+				? "🤖 Auto-approve ON — tool calls will run automatically"
+				: "🔒 Manual mode — each tool call will ask for approval",
+			2500,
+		);
+	}, [plugin]);
+
 	return (
 		<div className="chat-panel">
 			<ActionBar
@@ -1054,6 +1066,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				onLoadChat={() => setShowSessionPicker(true)}
 				canLoad={hasHistory}
 				plugin={plugin}
+				autoApprove={plugin.settings.autoApply}
+				onToggleAutoApprove={handleToggleAutoApprove}
 			/>
 			<ChatMessages
 				messages={messages}

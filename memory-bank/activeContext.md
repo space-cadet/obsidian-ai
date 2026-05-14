@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-05-12 13:47:10 IST*
+*Last Updated: 2026-05-14 07:52:41 IST*
 
 ## Current Focus
 **Primary Task:** T11
@@ -25,8 +25,8 @@ The Settings panel was rebuilt into a clean sectioned layout with a proper heade
 ### Task T2 — COMPLETED (hardened on 2026-05-12)
 Session persistence now coalesces bursty autosaves in `ChatApp`, serializes writes in `main.ts`, and preserves the latest queued snapshot instead of dropping overlapping saves. A startup overwrite regression was then fixed by skipping the first autosave after hydrating real stored sessions and by preventing no-op `contextItems` rewrites of the active session.
 
-### Task T13 — IN PROGRESS (basename fix + new tools + crash debugging)
-`resolveNote()` helper resolves basenames via three-tier lookup (exact → append `.md` → `metadataCache.getFirstLinkpathDest()`). `patch_note` (search/replace) and `edit_section` (heading rewrite) added to tool registry. Blank-screen crash verification is still pending after the earlier safety fixes (`scrollIntoView({ behavior: "auto" })`, unmount cleanup flags).
+### Task T13 — IN PROGRESS (auto-approve toggle added; basename fix + new tools + crash debugging)
+`resolveNote()` helper resolves basenames via three-tier lookup (exact → append `.md` → `metadataCache.getFirstLinkpathDest()`). `patch_note` (search/replace) and `edit_section` (heading rewrite) added to tool registry. Auto-approve toggle button added to chat ActionBar for one-click switching between Auto (🤖) and Manual (🔒) tool approval modes. Blank-screen crash verification is still pending after the earlier safety fixes (`scrollIntoView({ behavior: "auto" })`, unmount cleanup flags).
 
 ### Task T5 — COMPLETED
 `NoteEditingBridge` complete with all methods. Slash commands auto-execute without returning AI content in chat. Retry button added. Targeted action buttons render contextually.
@@ -43,7 +43,7 @@ Session persistence now coalesces bursty autosaves in `ChatApp`, serializes writ
 ## Next Actions By Task
 - [T11]: Verify in Obsidian that `debug.log` no longer floods on normal chat activity or startup
 - [T2]: Verify persisted sessions survive plugin/app reload without `data.json` churn
-- [T13]: Deploy and test crash fix with `scrollIntoView({ behavior: "auto" })`; test `patch_note` and `edit_section` end-to-end
+- [T13]: Deploy and test crash fix with `scrollIntoView({ behavior: "auto" })`; test `patch_note` and `edit_section` end-to-end; verify auto-approve toggle in Obsidian
 - [T13]: Extract inline AgentLoop from ChatApp into `src/agent/AgentLoop.ts`. Create `PendingToolCard.tsx`.
 - [T11]: Add privacy redaction to file logger (strip API keys, note contents)
 - [T14]: Begin implementation (agent provider type, AgentApiManager, OpenResponses serializer)

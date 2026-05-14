@@ -362,6 +362,20 @@
 	margin-left: auto;
 }
 
+.chat-auto-approve-btn {
+	transition: background-color 150ms ease, color 150ms ease;
+}
+
+.chat-auto-approve-btn.is-active {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border-color: var(--interactive-accent);
+}
+
+.chat-auto-approve-btn.is-active:hover {
+	opacity: 0.85;
+}
+
 /* Message area */
 .chat-messages {
 	flex: 1;

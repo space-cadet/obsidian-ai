@@ -17,6 +17,7 @@ export interface ChatPluginLike {
 	settings: ObsidianAISettings;
 	loadChatData(): Promise<StoredChatData>;
 	saveChatData(data: StoredChatData): Promise<void>;
+	saveSettings(): Promise<void>;
 }
 
 export class ObsidianAIChatView extends ItemView {
