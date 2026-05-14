@@ -37,10 +37,11 @@ function buildSystemPrompt(
 
 	if (toolsEnabled) {
 		prompt +=
-			"\n\nYou have access to tools that can read, edit, create, and append to Obsidian notes." +
+			"\n\nYou have access to tools that can read, edit, create, and search Obsidian notes." +
 			" When the user asks you to edit or rewrite a note, use the edit_note tool." +
 			" When the user asks you to create a new note, use the create_note tool." +
 			" When the user asks you to add to an existing note without changing current content, use append_to_note." +
+			" When the user asks to find, list, or search for notes, use search_notes." +
 			" Before editing a note you are unfamiliar with, use read_note to see its current content." +
 			"\n\nImportant: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks.";
 	}
@@ -89,6 +90,91 @@ function pruneSessions(
 
 function makeId(): string {
 	return crypto.randomUUID();
+}
+
+/** Summarizes a pending tool call for the approval UI — never dumps full content */
+function PendingToolCallPreview({ toolCall }: { toolCall: ToolCall }): React.ReactElement {
+	const { toolName, args } = toolCall;
+	const path = (args as any).path ?? (args as any).noteName ?? "—";
+
+	const summarizeText = (text: string | undefined, maxLen = 200): { lines: number; preview: string } => {
+		if (!text) return { lines: 0, preview: "" };
+		const lines = text.split("\n").length;
+		const preview = text.length > maxLen ? text.slice(0, maxLen) + "…" : text;
+		return { lines, preview };
+	};
+
+	if (toolName === "read_note") {
+		return (
+			<div className="pending-tool-summary">
+				<div className="pending-tool-title">📖 Read Note</div>
+				<div className="pending-tool-meta">{path}</div>
+			</div>
+		);
+	}
+
+	if (toolName === "edit_note" || toolName === "create_note" || toolName === "append_to_note") {
+		const content = (args as any).content ?? "";
+		const { lines, preview } = summarizeText(content);
+		const action = toolName === "edit_note" ? "📝 Overwrite" : toolName === "create_note" ? "➕ Create" : "⬇️ Append to";
+		return (
+			<div className="pending-tool-summary">
+				<div className="pending-tool-title">{action} <strong>{path}</strong></div>
+				<div className="pending-tool-meta">{lines} line{lines !== 1 ? "s" : ""} · {content.length} chars</div>
+				{preview && <pre className="pending-tool-preview">{preview}</pre>}
+			</div>
+		);
+	}
+
+	if (toolName === "patch_note") {
+		const search = (args as any).search ?? "";
+		const replace = (args as any).replace ?? "";
+		const replaceAll = (args as any).replace_all ?? false;
+		return (
+			<div className="pending-tool-summary">
+				<div className="pending-tool-title">🔧 Patch <strong>{path}</strong></div>
+				<div className="pending-tool-meta">{replaceAll ? "Replace all occurrences" : "Replace first occurrence"}</div>
+				<div className="pending-tool-patch-row">
+					<span className="pending-tool-patch-label">Find:</span>
+					<code className="pending-tool-patch-value">{search.length > 60 ? search.slice(0, 60) + "…" : search}</code>
+				</div>
+				<div className="pending-tool-patch-row">
+					<span className="pending-tool-patch-label">Replace:</span>
+					<code className="pending-tool-patch-value">{replace.length > 60 ? replace.slice(0, 60) + "…" : replace}</code>
+				</div>
+			</div>
+		);
+	}
+
+	if (toolName === "edit_section") {
+		const heading = (args as any).section_heading ?? "";
+		const content = (args as any).new_content ?? "";
+		const { lines, preview } = summarizeText(content);
+		return (
+			<div className="pending-tool-summary">
+				<div className="pending-tool-title">📋 Edit Section <strong>“{heading}”</strong> in {path}</div>
+				<div className="pending-tool-meta">{lines} line{lines !== 1 ? "s" : ""} · {content.length} chars</div>
+				{preview && <pre className="pending-tool-preview">{preview}</pre>}
+			</div>
+		);
+	}
+
+	if (toolName === "search_notes") {
+		const query = (args as any).query ?? "";
+		return (
+			<div className="pending-tool-summary">
+				<div className="pending-tool-title">🔍 Search Notes</div>
+				<div className="pending-tool-meta">Query: <code>{query}</code></div>
+			</div>
+		);
+	}
+
+	return (
+		<div className="pending-tool-summary">
+			<div className="pending-tool-title">🤖 <strong>{toolName}</strong></div>
+			<div className="pending-tool-meta">{path}</div>
+		</div>
+	);
 }
 
 interface SlashCommand {
@@ -1094,10 +1180,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 			/>
 			{pendingToolCall && (
 				<div className="pending-tool-call">
-					<span>
-						🤖 <strong>{pendingToolCall.toolName}</strong>:{" "}
-						{JSON.stringify(pendingToolCall.args)}
-					</span>
+					<PendingToolCallPreview toolCall={pendingToolCall} />
 					<div className="pending-tool-actions">
 						<button className="mod-cta" onClick={handleApproveTool}>
 							Approve

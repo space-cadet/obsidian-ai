@@ -9,6 +9,9 @@ export interface ToolResult {
 	content?: string;
 	error?: string;
 	path?: string;
+	matches?: Array<{ path: string; basename: string }>;
+	count?: number;
+	query?: string;
 }
 
 export type StreamEvent =

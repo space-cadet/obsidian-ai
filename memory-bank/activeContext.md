@@ -25,8 +25,8 @@ The Settings panel was rebuilt into a clean sectioned layout with a proper heade
 ### Task T2 — COMPLETED (hardened on 2026-05-12)
 Session persistence now coalesces bursty autosaves in `ChatApp`, serializes writes in `main.ts`, and preserves the latest queued snapshot instead of dropping overlapping saves. A startup overwrite regression was then fixed by skipping the first autosave after hydrating real stored sessions and by preventing no-op `contextItems` rewrites of the active session.
 
-### Task T13 — IN PROGRESS (auto-approve toggle added; basename fix + new tools + crash debugging)
-`resolveNote()` helper resolves basenames via three-tier lookup (exact → append `.md` → `metadataCache.getFirstLinkpathDest()`). `patch_note` (search/replace) and `edit_section` (heading rewrite) added to tool registry. Auto-approve toggle button added to chat ActionBar for one-click switching between Auto (🤖) and Manual (🔒) tool approval modes. Blank-screen crash verification is still pending after the earlier safety fixes (`scrollIntoView({ behavior: "auto" })`, unmount cleanup flags).
+### Task T13 — IN PROGRESS (auto-approve toggle + pending UI summary + search_notes tool added; basename fix + new tools + crash debugging)
+`resolveNote()` helper resolves basenames via three-tier lookup (exact → append `.md` → `metadataCache.getFirstLinkpathDest()`). `patch_note` (search/replace) and `edit_section` (heading rewrite) added to tool registry. Auto-approve toggle button added to chat ActionBar for one-click switching between Auto (🤖) and Manual (🔒) tool approval modes. Pending tool call UI now shows summary (line count, preview excerpt) instead of full JSON dump. `search_notes` tool added so AI can discover notes without explicit context attachment. Blank-screen crash verification is still pending after the earlier safety fixes (`scrollIntoView({ behavior: "auto" })`, unmount cleanup flags).
 
 ### Task T5 — COMPLETED
 `NoteEditingBridge` complete with all methods. Slash commands auto-execute without returning AI content in chat. Retry button added. Targeted action buttons render contextually.

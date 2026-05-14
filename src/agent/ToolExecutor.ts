@@ -38,12 +38,38 @@ export class ToolExecutor {
 							new_content: string;
 						},
 					);
+				case "search_notes":
+					return await this.searchNotes(
+						call.args as { query: string },
+					);
 				default:
 					return { error: `Unknown tool: ${call.toolName}` };
 			}
 		} catch (e: any) {
 			return { error: e.message || String(e) };
 		}
+	}
+
+	private async searchNotes(args: { query: string }): Promise<ToolResult> {
+		const query = args.query.toLowerCase();
+		const files = this.app.vault.getFiles();
+		const matches = files
+			.filter(
+				(f) =>
+					f.path.toLowerCase().includes(query) ||
+					f.basename.toLowerCase().includes(query),
+			)
+			.map((f) => ({
+				path: f.path,
+				basename: f.basename,
+			}))
+			.slice(0, 50);
+		return {
+			success: true,
+			matches,
+			query: args.query,
+			count: matches.length,
+		};
 	}
 
 	/**

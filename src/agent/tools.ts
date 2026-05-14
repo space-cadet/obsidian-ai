@@ -87,6 +87,20 @@ export const editSectionTool = t({
 	}),
 });
 
+export const searchNotesTool = t({
+	description:
+		"Search for notes in the vault by name or path. " +
+		"Use this when the user asks to find, list, or search for notes without providing specific context. " +
+		"Returns a list of matching note paths.",
+	inputSchema: z.object({
+		query: z
+			.string()
+			.describe(
+				'Search query (case-insensitive substring match), e.g. "meeting" or "daily"',
+			),
+	}),
+});
+
 export const noteTools = {
 	read_note: readNoteTool,
 	edit_note: editNoteTool,
@@ -94,4 +108,5 @@ export const noteTools = {
 	create_note: createNoteTool,
 	patch_note: patchNoteTool,
 	edit_section: editSectionTool,
+	search_notes: searchNotesTool,
 };
