@@ -154,6 +154,53 @@ export const getNoteMetadataTool = t({
 	}),
 });
 
+export const createFolderTool = t({
+	description:
+		"Create a new folder in the Obsidian vault. " +
+		"Use when the user asks to create a folder, directory, or organize notes into a new folder.",
+	inputSchema: z.object({
+		path: z
+			.string()
+			.describe('Folder path to create, e.g. "Research/Papers" or "Meeting Notes/2026"'),
+	}),
+});
+
+export const moveNoteTool = t({
+	description:
+		"Move or rename a note in the vault. " +
+		"Use when the user asks to move a note to a different folder, or rename it. " +
+		"If the destination folder does not exist, it will be created automatically.",
+	inputSchema: z.object({
+		path: z.string().describe('Current note name or path, e.g. "Project Notes" or "Old/Project Notes"'),
+		new_path: z
+			.string()
+			.describe('New destination path, e.g. "Research/Project Notes" or "Project Notes v2"'),
+	}),
+});
+
+export const deleteNoteTool = t({
+	description:
+		"Delete a note from the vault. " +
+		"Use when the user explicitly asks to delete, remove, or trash a note. " +
+		"Returns an error if the note does not exist.",
+	inputSchema: z.object({
+		path: z.string().describe('Note name or path to delete, e.g. "Draft Notes"'),
+	}),
+});
+
+export const listFoldersTool = t({
+	description:
+		"List folders in the vault. " +
+		"Use when the user asks about vault structure, what folders exist, or where to place notes. " +
+		"Returns a tree of folder paths.",
+	inputSchema: z.object({
+		path: z
+			.string()
+			.optional()
+			.describe('Optional parent folder to list subfolders from. Omit to list top-level folders.'),
+	}),
+});
+
 export const noteTools = {
 	read_note: readNoteTool,
 	edit_note: editNoteTool,
@@ -164,4 +211,8 @@ export const noteTools = {
 	search_notes: searchNotesTool,
 	list_notes: listNotesTool,
 	get_note_metadata: getNoteMetadataTool,
+	create_folder: createFolderTool,
+	move_note: moveNoteTool,
+	delete_note: deleteNoteTool,
+	list_folders: listFoldersTool,
 };

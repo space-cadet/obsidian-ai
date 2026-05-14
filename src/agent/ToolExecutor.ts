@@ -50,6 +50,22 @@ export class ToolExecutor {
 					return await this.getNoteMetadata(
 						call.args as { path: string },
 					);
+				case "list_folders":
+					return await this.listFolders(
+						call.args as { path?: string },
+					);
+				case "create_folder":
+					return await this.createFolder(
+						call.args as { path: string },
+					);
+				case "move_note":
+					return await this.moveNote(
+						call.args as { path: string; new_path: string },
+					);
+				case "delete_note":
+					return await this.deleteNote(
+						call.args as { path: string },
+					);
 				default:
 					return { error: `Unknown tool: ${call.toolName}` };
 			}
@@ -329,5 +345,98 @@ export class ToolExecutor {
 		await this.app.vault.modify(file, newLines.join("\n"));
 		new Notice(`✓ Edited section "${targetText}" in ${file.basename}`);
 		return { success: true, path: file.path };
+	}
+
+	private async createFolder(args: { path: string }): Promise<ToolResult> {
+		// Normalize path
+		const folderPath = args.path.replace(/\/+/g, "/").replace(/\/$/, "");
+		if (!folderPath) {
+			return { error: "Folder path cannot be empty" };
+		}
+
+		// Check if already exists
+		const existing = this.app.vault.getAbstractFileByPath(folderPath);
+		if (existing) {
+			return { error: `Folder already exists: ${folderPath}` };
+		}
+
+		await this.app.vault.createFolder(folderPath);
+		new Notice(`✓ Created folder: ${folderPath}`);
+		return { success: true, path: folderPath };
+	}
+
+	private async moveNote(args: { path: string; new_path: string }): Promise<ToolResult> {
+		const file = this.resolveNote(args.path);
+		if (!file) return { error: `Note not found: ${args.path}` };
+
+		// Normalize destination
+		let destPath = args.new_path.replace(/\\+/g, "/").replace(/^\/+/, "");
+		if (!destPath.endsWith(".md")) {
+			destPath += ".md";
+		}
+
+		// Ensure parent folder exists
+		const destFolder = destPath.substring(0, destPath.lastIndexOf("/"));
+		if (destFolder) {
+			const folderExists = this.app.vault.getAbstractFileByPath(destFolder);
+			if (!folderExists) {
+				await this.app.vault.createFolder(destFolder);
+			}
+		}
+
+		// Check for collision at destination
+		const destExists = this.app.vault.getAbstractFileByPath(destPath);
+		if (destExists) {
+			return { error: `Destination already exists: ${destPath}` };
+		}
+
+		await this.app.fileManager.renameFile(file, destPath);
+		new Notice(`✓ Moved ${file.basename} → ${destPath}`);
+		return { success: true, path: destPath, oldPath: file.path };
+	}
+
+	private async deleteNote(args: { path: string }): Promise<ToolResult> {
+		const file = this.resolveNote(args.path);
+		if (!file) return { error: `Note not found: ${args.path}` };
+
+		await this.app.vault.trash(file, false); // system trash
+		new Notice(`✓ Deleted ${file.basename}`);
+		return { success: true, path: file.path };
+	}
+
+	private async listFolders(args: { path?: string }): Promise<ToolResult> {
+		const parentPath = args.path?.replace(/\\+/g, "/").replace(/\/$/, "") ?? "";
+		const allFiles = this.app.vault.getAllLoadedFiles();
+		const folderSet = new Set<string>();
+
+		for (const f of allFiles) {
+			if (f.path === "/") continue;
+			const parts = f.path.split("/");
+			if (parts.length <= 1) continue; // root-level file, no folder
+
+			// Collect all parent folders
+			for (let i = 1; i < parts.length; i++) {
+				const folderPath = parts.slice(0, i).join("/");
+				if (parentPath) {
+					// Only include subfolders of the parent
+					if (folderPath === parentPath || folderPath.startsWith(parentPath + "/")) {
+						folderSet.add(folderPath);
+					}
+				} else {
+					// Top-level: only include immediate subfolders
+					if (i === 1) {
+						folderSet.add(folderPath);
+					}
+				}
+			}
+		}
+
+		const folders = Array.from(folderSet).sort();
+		return {
+			success: true,
+			folders,
+			count: folders.length,
+			parent: parentPath || "(root)",
+		};
 	}
 }

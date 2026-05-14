@@ -9,11 +9,14 @@ export interface ToolResult {
 	content?: string;
 	error?: string;
 	path?: string;
+	oldPath?: string;
 	matches?: Array<{ path: string; basename: string; modified?: number; created?: number; size?: number }>;
 	count?: number;
 	query?: string;
 	folder?: string;
 	notes?: Array<{ path: string; basename: string; modified?: number; created?: number; size?: number }>;
+	folders?: string[];
+	parent?: string;
 	basename?: string;
 	wordCount?: number;
 	created?: number;

@@ -47,10 +47,16 @@ function buildSystemPrompt(
 			"\n- search_notes: Search for notes by filename or path. Use sort_by=name|modified|created, limit, folder, and search_content params." +
 			"\n- list_notes: Browse all notes in the vault or a folder. Use sort_by=name|modified|created and limit params." +
 			"\n- get_note_metadata: Get file stats (size, dates, word count) for a specific note." +
+			"\n- create_folder: Create a new folder in the vault." +
+			"\n- move_note: Move or rename a note to a new folder or name. Creates parent folders if needed." +
+			"\n- delete_note: Delete a note from the vault." +
+			"\n- list_folders: List folders in the vault. Use to understand vault structure." +
 			"\n\nWhen the user asks to find, list, or search for notes, ALWAYS use search_notes or list_notes first." +
 			" Do not say you cannot search — you have the search_notes and list_notes tools." +
 			" Before editing a note you are unfamiliar with, use read_note to see its current content." +
-			"\n\nImportant: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks.";
+			"\n\nImportant: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks." +
+			"\n\nFor moving notes: use move_note(path, new_path). Parent folders are created automatically if needed." +
+			"\nFor creating folders: use create_folder(path). Then use move_note to place notes inside.";
 	}
 
 	if (slashCmd) {
@@ -172,6 +178,47 @@ function PendingToolCallPreview({ toolCall }: { toolCall: ToolCall }): React.Rea
 			<div className="pending-tool-summary">
 				<div className="pending-tool-title">🔍 Search Notes</div>
 				<div className="pending-tool-meta">Query: <code>{query}</code></div>
+			</div>
+		);
+	}
+
+	if (toolName === "create_folder") {
+		const folderPath = (args as any).path ?? "";
+		return (
+			<div className="pending-tool-summary">
+				<div className="pending-tool-title">📁 Create Folder</div>
+				<div className="pending-tool-meta"><code>{folderPath}</code></div>
+			</div>
+		);
+	}
+
+	if (toolName === "move_note") {
+		const from = (args as any).path ?? "";
+		const to = (args as any).new_path ?? "";
+		return (
+			<div className="pending-tool-summary">
+				<div className="pending-tool-title">📦 Move Note</div>
+				<div className="pending-tool-meta">{from} → {to}</div>
+			</div>
+		);
+	}
+
+	if (toolName === "delete_note") {
+		const notePath = (args as any).path ?? "";
+		return (
+			<div className="pending-tool-summary">
+				<div className="pending-tool-title">🗑️ Delete Note</div>
+				<div className="pending-tool-meta"><code>{notePath}</code></div>
+			</div>
+		);
+	}
+
+	if (toolName === "list_folders") {
+		const parent = (args as any).path ?? "(root)";
+		return (
+			<div className="pending-tool-summary">
+				<div className="pending-tool-title">📂 List Folders</div>
+				<div className="pending-tool-meta">Under: <code>{parent}</code></div>
 			</div>
 		);
 	}
