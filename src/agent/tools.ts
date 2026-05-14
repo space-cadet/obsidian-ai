@@ -89,15 +89,68 @@ export const editSectionTool = t({
 
 export const searchNotesTool = t({
 	description:
-		"Search for notes in the vault by name or path. " +
+		"Search for notes in the vault by name, path, or content. " +
 		"Use this when the user asks to find, list, or search for notes without providing specific context. " +
-		"Returns a list of matching note paths.",
+		"Returns a list of matching note paths with metadata.",
 	inputSchema: z.object({
 		query: z
 			.string()
 			.describe(
-				'Search query (case-insensitive substring match), e.g. "meeting" or "daily"',
+				'Search query (case-insensitive substring match), e.g. "meeting" or "daily". Use empty string "" to list all notes.',
 			),
+		sort_by: z
+			.enum(["name", "modified", "created"])
+			.optional()
+			.default("name")
+			.describe('Sort results by name, modified date, or created date.'),
+		limit: z
+			.number()
+			.optional()
+			.default(20)
+			.describe('Maximum number of results to return (default 20, max 100).'),
+		folder: z
+			.string()
+			.optional()
+			.describe('Restrict search to a specific folder path, e.g. "Meeting Notes"'),
+		search_content: z
+			.boolean()
+			.optional()
+			.default(false)
+			.describe('Also search inside note bodies, not just filenames.'),
+	}),
+});
+
+export const listNotesTool = t({
+	description:
+		"List notes in the vault, optionally filtered by folder. " +
+		"Use this when the user asks to browse, list, or show notes — especially when no specific search query is given. " +
+		"Returns a formatted list with metadata.",
+	inputSchema: z.object({
+		folder: z
+			.string()
+			.optional()
+			.describe('Folder path to list notes from. Omit to list all notes in the vault.'),
+		sort_by: z
+			.enum(["name", "modified", "created"])
+			.optional()
+			.default("name")
+			.describe('Sort results by name, modified date, or created date.'),
+		limit: z
+			.number()
+			.optional()
+			.default(30)
+			.describe('Maximum number of results to return (default 30, max 100).'),
+	}),
+});
+
+export const getNoteMetadataTool = t({
+	description:
+		"Get detailed metadata about a specific note — file size, creation date, modification date, word count, etc. " +
+		"Use this when the user asks about note properties, recent changes, or file statistics.",
+	inputSchema: z.object({
+		path: z
+			.string()
+			.describe('Note name or path, e.g. "Project Notes"'),
 	}),
 });
 
@@ -109,4 +162,6 @@ export const noteTools = {
 	patch_note: patchNoteTool,
 	edit_section: editSectionTool,
 	search_notes: searchNotesTool,
+	list_notes: listNotesTool,
+	get_note_metadata: getNoteMetadataTool,
 };

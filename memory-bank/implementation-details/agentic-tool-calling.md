@@ -17,6 +17,40 @@ Enable the LLM to act as an agent that can read, edit, create, and append to Obs
 
 ---
 
+## Phase 2: Discovery & Rendering Enhancement (2026-05-14)
+
+### Problem
+The initial `search_notes` tool (filename/path substring match) is too limited. The AI cannot:
+1. Browse vault contents without a query string
+2. Sort results by date modified/created
+3. Get file metadata (size, dates, word count)
+4. Search **inside** note bodies
+
+Additionally, tool results render as raw JSON text in chat messages, making them unreadable.
+
+### Planned Additions
+
+| # | Tool | Purpose |
+|---|------|---------|
+| 1 | `list_notes` | Browse vault contents with `sort_by` (name/modified/created), `limit`, `folder` filter |
+| 2 | `get_note_metadata` | File stats: created, modified, size, wordCount — enables "recent notes" queries |
+| 3 | `search_notes` v2 | Add `sort_by`, `limit`, `folder`, `search_content` params |
+| 4 | Custom result rendering | Search/list results → markdown tables with `[[wiki-links]]`; readable, not JSON |
+
+### Rendering Approach
+
+Tool results are currently serialized as JSON strings into `ChatMessage.content`, then rendered through `MarkdownRenderer`. This produces unreadable blobs.
+
+**Fix**: Format tool results as markdown before inserting into messages:
+- `search_notes` / `list_notes` → markdown table with `[[Basename|Path]]` wiki-links
+- `get_note_metadata` → markdown list with `**Property**: Value` formatting
+- `read_note` → unchanged (content is already markdown)
+- Edit/append/create/patch → brief success message, not raw JSON
+
+This requires no `ChatMessage` schema changes — just a formatting layer between `ToolResult` and message insertion.
+
+---
+
 ## SDK Version Context
 
 **Installed**: `ai` v6.0.174

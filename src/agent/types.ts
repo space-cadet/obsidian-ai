@@ -9,9 +9,16 @@ export interface ToolResult {
 	content?: string;
 	error?: string;
 	path?: string;
-	matches?: Array<{ path: string; basename: string }>;
+	matches?: Array<{ path: string; basename: string; modified?: number; created?: number; size?: number }>;
 	count?: number;
 	query?: string;
+	folder?: string;
+	notes?: Array<{ path: string; basename: string; modified?: number; created?: number; size?: number }>;
+	basename?: string;
+	wordCount?: number;
+	created?: number;
+	modified?: number;
+	size?: number;
 }
 
 export type StreamEvent =

@@ -37,11 +37,18 @@ function buildSystemPrompt(
 
 	if (toolsEnabled) {
 		prompt +=
-			"\n\nYou have access to tools that can read, edit, create, and search Obsidian notes." +
-			" When the user asks you to edit or rewrite a note, use the edit_note tool." +
-			" When the user asks you to create a new note, use the create_note tool." +
-			" When the user asks you to add to an existing note without changing current content, use append_to_note." +
-			" When the user asks to find, list, or search for notes, use search_notes." +
+			"\n\nYou have access to the following tools for managing Obsidian notes:" +
+			"\n- read_note: Read the full content of a note. Use this before editing to understand current content." +
+			"\n- edit_note: Overwrite the entire content of a note. Provide COMPLETE new content." +
+			"\n- append_to_note: Add content to the end of a note without changing existing content." +
+			"\n- create_note: Create a new note in the vault." +
+			"\n- patch_note: Find and replace text inside a note (small precise edits)." +
+			"\n- edit_section: Rewrite content under a specific heading." +
+			"\n- search_notes: Search for notes by filename or path. Use sort_by=name|modified|created, limit, folder, and search_content params." +
+			"\n- list_notes: Browse all notes in the vault or a folder. Use sort_by=name|modified|created and limit params." +
+			"\n- get_note_metadata: Get file stats (size, dates, word count) for a specific note." +
+			"\n\nWhen the user asks to find, list, or search for notes, ALWAYS use search_notes or list_notes first." +
+			" Do not say you cannot search — you have the search_notes and list_notes tools." +
 			" Before editing a note you are unfamiliar with, use read_note to see its current content." +
 			"\n\nImportant: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks.";
 	}
