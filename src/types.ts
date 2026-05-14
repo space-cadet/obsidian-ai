@@ -1,5 +1,10 @@
 import type { ToolCall, ToolResult } from "./agent/types";
 
+/** A segment of message content — either text or an inline tool call */
+export type ContentPart =
+	| { type: "text"; content: string }
+	| { type: "tool_call"; call: ToolCall; result?: ToolResult };
+
 export interface ChatMessage {
 	id: string;
 	role: "user" | "assistant";
@@ -19,6 +24,8 @@ export interface ChatMessage {
 		call: ToolCall;
 		result?: ToolResult;
 	}>;
+	/** Ordered content parts for inline rendering of tool calls */
+	contentParts?: ContentPart[];
 }
 
 export interface ContextItemBase {

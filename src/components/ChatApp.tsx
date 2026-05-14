@@ -501,6 +501,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 
 			let fullText = "";
 			let toolCallsLog: Array<{ call: ToolCall; result?: ToolResult }> = [];
+			// Ordered content parts for inline tool call rendering
+			let contentParts: Array<import("../types").ContentPart> = [];
+			// Tracks how much of fullText has been consumed into contentParts
+			let textCheckpoint = 0;
 			try {
 				let assistantContent = fullText;
 				let assistantTokenEstimate = 0;
@@ -523,8 +527,16 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 								`[ChatApp] tool-call pending: ${call.toolName}`,
 								call.args,
 							);
-							// Add pending tool call to the log
+							// Capture text accumulated since last checkpoint
+							const pendingText = fullText.slice(textCheckpoint);
+							if (pendingText) {
+								contentParts.push({ type: "text", content: pendingText });
+							}
+							// Add tool call to parts and log
 							toolCallsLog.push({ call });
+							contentParts.push({ type: "tool_call", call });
+							// Advance checkpoint to current position
+							textCheckpoint = fullText.length;
 						},
 						requestApproval: async (call) => {
 							setPendingToolCall(call);
@@ -542,6 +554,16 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 									result: resolved || undefined,
 								};
 							}
+							// Update the matching content part with result
+							const partIdx = contentParts.findIndex(
+								(p) => p.type === "tool_call" && p.call.toolCallId === call.toolCallId
+							);
+							if (partIdx >= 0 && resolved) {
+								const part = contentParts[partIdx];
+								if (part.type === "tool_call") {
+									contentParts[partIdx] = { ...part, result: resolved };
+								}
+							}
 							return resolved;
 						},
 						onToolResult: (call, result) => {
@@ -558,6 +580,16 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 									...toolCallsLog[idx],
 									result,
 								};
+							}
+							// Update the matching content part with result
+							const partIdx = contentParts.findIndex(
+								(p) => p.type === "tool_call" && p.call.toolCallId === call.toolCallId
+							);
+							if (partIdx >= 0) {
+								const part = contentParts[partIdx];
+								if (part.type === "tool_call") {
+									contentParts[partIdx] = { ...part, result };
+								}
 							}
 						},
 					});
@@ -591,6 +623,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					);
 					assistantContent = fullText;
 					assistantTokenEstimate = estimateTokens(fullText);
+					// Non-tool path: single text part
+					contentParts = [{ type: "text", content: fullText }];
 				}
 
 				// For slash commands, execute the action and show a status message
@@ -645,6 +679,14 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					assistantTokenEstimate = estimateTokens(assistantContent);
 				}
 
+				// Finalize any remaining text after all tool calls / streaming
+				if (useTools && !slashCmd) {
+					const remainingText = fullText.slice(textCheckpoint);
+					if (remainingText) {
+						contentParts.push({ type: "text", content: remainingText });
+					}
+				}
+
 				const assistantMsg: ChatMessage = {
 					id: makeId(),
 					role: "assistant",
@@ -653,6 +695,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					command: commandMeta,
 					estimatedTokens: assistantTokenEstimate,
 					toolCalls: toolCallsLog.length > 0 ? toolCallsLog : undefined,
+					contentParts: contentParts.length > 0 ? contentParts : undefined,
 				};
 				console.log(
 					`[ChatApp] adding assistantMsg — ${assistantContent.length} chars, id=${assistantMsg.id}`,
@@ -675,6 +718,17 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 						`[ChatApp] streamChat aborted — partial ${fullText.length} chars`,
 					);
 					if (fullText) {
+						// Build content parts for aborted message
+						let abortedParts: Array<import("../types").ContentPart> = [];
+						if (useTools && !slashCmd) {
+							abortedParts = [...contentParts];
+							const remainingText = fullText.slice(textCheckpoint);
+							if (remainingText) {
+								abortedParts.push({ type: "text", content: remainingText + " [stopped]" });
+							}
+						} else {
+							abortedParts = [{ type: "text", content: fullText + " [stopped]" }];
+						}
 						const stoppedMsg: ChatMessage = {
 							id: makeId(),
 							role: "assistant",
@@ -682,6 +736,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 							timestamp: Date.now(),
 							command: commandMeta,
 							estimatedTokens: estimateTokens(fullText),
+							contentParts: abortedParts,
 						};
 						setSessions((prev) =>
 							prev.map((s) =>

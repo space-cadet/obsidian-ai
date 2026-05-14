@@ -435,7 +435,18 @@
 	opacity: 0.6;
 }
 
-.chat-bubble-content p:last-child {
+/* Inline content parts: text segments + tool calls interleaved */
+.chat-bubble-content-inline {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.chat-bubble-content-segment {
+	/* Inherits from .chat-bubble-content */
+}
+
+.chat-bubble-content-segment p:last-child {
 	margin-bottom: 0;
 }
 
@@ -1024,10 +1035,7 @@
 
 /* ── Message Actions ────────────────────────────────────────────────────── */
 
-.message-actions {
-	display: flex;
-	align-items: center;
-	gap: 2px;
+.message-actions-wrapper {
 	margin-top: 6px;
 	padding-top: 4px;
 	border-top: 1px solid var(--background-modifier-border);
@@ -1035,8 +1043,16 @@
 	transition: opacity 150ms ease;
 }
 
-.chat-bubble:hover .message-actions {
+/* Show on hover (bubble) or active state */
+.chat-bubble:hover .message-actions-wrapper,
+.message-actions-wrapper.is-active {
 	opacity: 1;
+}
+
+.message-actions {
+	display: flex;
+	align-items: center;
+	gap: 2px;
 }
 
 .message-action-btn {
@@ -1118,11 +1134,22 @@
 
 /* ── Tool Call Notifications ────────────────────────────────────────────── */
 
+/* Active bubble state (clicked) */
+.chat-bubble.is-active {
+	box-shadow: 0 0 0 1px var(--interactive-accent);
+}
+
+/* Old tool call block at bottom — kept for legacy messages */
 .chat-bubble-tool-calls {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
 	margin-top: 8px;
+}
+
+/* Inline tool call inside content parts */
+.chat-bubble-content-inline .tool-call-notification {
+	margin-top: 2px;
 }
 
 .tool-call-notification {
