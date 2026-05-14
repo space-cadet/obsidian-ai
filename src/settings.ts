@@ -104,6 +104,8 @@ const getDefaultProfileName = (provider: ProviderType): string => {
 			return "OpenRouter";
 		case "custom":
 			return "Custom endpoint";
+		case "agent":
+			return "Agent (OpenResponses)";
 		case "ollama":
 		default:
 			return "Local Ollama";
@@ -128,6 +130,8 @@ const getDefaultModel = (provider: ProviderType): string => {
 			return "openai/gpt-4o-mini";
 		case "custom":
 			return "gpt-4o-mini";
+		case "agent":
+			return "openclaw";
 		case "ollama":
 		default:
 			return "llama3.2";
@@ -150,6 +154,8 @@ export const getDefaultEndpoint = (provider: ProviderType): string => {
 			return "https://api.moonshot.ai/v1";
 		case "ollama":
 			return "http://localhost:11434/v1";
+		case "agent":
+			return "http://localhost:18789/v1/responses";
 		case "custom":
 			return "";
 		case "azure":
@@ -173,6 +179,12 @@ export const createProviderProfile = (
 		azureEndpoint: overrides.azureEndpoint ?? "",
 		azureApiVersion: overrides.azureApiVersion ?? "2024-02-15-preview",
 		modelCache: overrides.modelCache,
+		// Agent fields
+		endpointUrl: overrides.endpointUrl ?? "",
+		agentId: overrides.agentId ?? "main",
+		sessionKey: overrides.sessionKey ?? "",
+		autoApprove: overrides.autoApprove ?? false,
+		maxSteps: overrides.maxSteps ?? 10,
 		createdAt: overrides.createdAt ?? now,
 		updatedAt: overrides.updatedAt ?? now,
 	};
@@ -190,6 +202,7 @@ const DEFAULT_PROFILES: ProviderProfile[] = [
 	createProviderProfile({ provider: "gemini", name: "Gemini" }),
 	createProviderProfile({ provider: "openrouter", name: "OpenRouter" }),
 	createProviderProfile({ provider: "custom", name: "Custom endpoint" }),
+	createProviderProfile({ provider: "agent", name: "Agent (OpenResponses)" }),
 ];
 
 export const DEFAULT_SETTINGS: ObsidianAISettings = {
@@ -558,6 +571,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					.addOption("azure", "Azure OpenAI")
 					.addOption("ollama", "Ollama")
 					.addOption("custom", "Custom/OpenAI-compatible")
+					.addOption("agent", "Agent (OpenResponses)")
 					.setValue(profile.provider)
 					.onChange(async (value) => {
 						profile.provider = value as ProviderType;
@@ -572,12 +586,14 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 							profile.name === getDefaultProfileName("gemini") ||
 							profile.name === getDefaultProfileName("openrouter") ||
 							profile.name === getDefaultProfileName("custom") ||
+							profile.name === getDefaultProfileName("agent") ||
 							profile.name === getDefaultProfileName("azure")
 						) {
 							profile.name = getDefaultProfileName(profile.provider);
 						}
 						profile.azureEndpoint = "";
 						profile.customURL = "";
+						profile.endpointUrl = "";
 						profile.modelCache = undefined;
 						profile.updatedAt = Date.now();
 						await this.saveSettings({ refresh: true, quiet: true });
@@ -610,7 +626,9 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					? "Override the default http://localhost:11434/v1"
 					: profile.provider === "azure"
 						? "Azure OpenAI endpoint URL"
-						: `Base URL for ${profile.provider}. Leave empty to use the default.`,
+						: profile.provider === "agent"
+					? "OpenResponses endpoint (e.g. http://ember:18789/v1/responses)"
+					: `Base URL for ${profile.provider}. Leave empty to use the default.`,
 			)
 			.addText((text) => {
 				const placeholder =
@@ -621,11 +639,15 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					.setValue(
 						profile.provider === "azure"
 							? profile.azureEndpoint || ""
-							: profile.customURL || "",
+							: profile.provider === "agent"
+								? profile.endpointUrl || ""
+								: profile.customURL || "",
 					)
 					.onChange((value) => {
 						if (profile.provider === "azure") {
 							profile.azureEndpoint = value.trim();
+						} else if (profile.provider === "agent") {
+							profile.endpointUrl = value.trim();
 						} else {
 							profile.customURL = value.trim();
 						}
@@ -634,6 +656,100 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						this.debouncedProfileSave();
 					});
 			});
+
+		if (profile.provider === "agent") {
+			new Setting(sectionEl)
+				.setName("Agent ID")
+				.setDesc("The OpenClaw agent to connect to (x-openclaw-agent-id header).")
+				.addText((text) => {
+					text.setPlaceholder("main")
+						.setValue(profile.agentId || "main")
+						.onChange((value) => {
+							profile.agentId = value.trim() || "main";
+							profile.updatedAt = Date.now();
+							this.debouncedProfileSave();
+						});
+				});
+
+			new Setting(sectionEl)
+				.setName("Auth token (optional)")
+				.setDesc("Bearer token for gateway authentication. Leave empty if unauthenticated.")
+				.addText((text) => {
+					text.inputEl.type = "password";
+					text.setPlaceholder("Bearer token...")
+						.setValue(profile.apiKey || "")
+						.onChange((value) => {
+							profile.apiKey = value.trim();
+							profile.updatedAt = Date.now();
+							this.debouncedProfileSave();
+						});
+				});
+
+			new Setting(sectionEl)
+				.setName("Auto-approve tools")
+				.setDesc("Execute tool calls from this agent without manual approval.")
+				.addToggle((toggle) => {
+					toggle
+						.setValue(profile.autoApprove ?? false)
+						.onChange((value) => {
+							profile.autoApprove = value;
+							profile.updatedAt = Date.now();
+							this.debouncedProfileSave();
+						});
+				});
+
+			new Setting(sectionEl)
+				.setName("Max steps")
+				.setDesc("Maximum tool call rounds for this agent (default: 10).")
+				.addSlider((slider) => {
+					slider
+						.setLimits(1, 50, 1)
+						.setValue(profile.maxSteps ?? 10)
+						.setDynamicTooltip()
+						.onChange((value) => {
+							profile.maxSteps = value;
+							profile.updatedAt = Date.now();
+							this.debouncedProfileSave();
+						});
+				});
+
+			new Setting(sectionEl)
+				.setName("Test connection")
+				.setDesc("Verify the agent is reachable.")
+				.addButton((button) => {
+					button
+						.setButtonText("Test")
+						.onClick(async () => {
+							button.setDisabled(true);
+							button.setButtonText("Testing...");
+							const { AgentApiManager } = await import("./api/AgentApiManager");
+							const agentApi = new AgentApiManager(
+								{
+									id: profile.id,
+									name: profile.name,
+									provider: "agent",
+									model: profile.model,
+									endpointUrl: profile.endpointUrl || "",
+									agentId: profile.agentId || "main",
+									authToken: profile.apiKey,
+									sessionKey: profile.sessionKey,
+									autoApprove: profile.autoApprove ?? false,
+									maxSteps: profile.maxSteps ?? 10,
+								},
+								this.plugin.app,
+							);
+							const result = await agentApi.testConnection();
+							button.setDisabled(false);
+							button.setButtonText("Test");
+							new Notice(
+								result.ok
+									? `✅ ${result.message}`
+									: `❌ ${result.message}`,
+								6000,
+							);
+						});
+				});
+		}
 
 		if (profile.provider === "azure") {
 			new Setting(sectionEl)
