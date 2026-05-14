@@ -486,6 +486,48 @@
 	}
 }
 
+/* Chat bubble: streaming state */
+.chat-bubble-streaming {
+	border-left: 3px solid var(--interactive-accent);
+}
+
+.chat-bubble-streaming .chat-bubble-header {
+	color: var(--interactive-accent);
+}
+
+/* Streaming indicator inside the bubble */
+.chat-streaming-indicator {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-left: 8px;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.chat-streaming-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--interactive-accent);
+	animation: chat-pulse 1.4s ease-in-out infinite;
+}
+
+.chat-streaming-label {
+	font-style: italic;
+}
+
+@keyframes chat-pulse {
+	0%, 100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.4;
+		transform: scale(0.85);
+	}
+}
+
 /* Context bar */
 .chat-context-bar {
 	flex-shrink: 0;

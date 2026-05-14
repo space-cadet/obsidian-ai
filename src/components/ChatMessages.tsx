@@ -87,6 +87,10 @@ const StreamingBubble: React.FC<{ content: string; app: App }> = ({
 		<div className="chat-bubble chat-bubble-assistant chat-bubble-streaming">
 			<div className="chat-bubble-header">
 				<span className="chat-bubble-role">Obsidian AI</span>
+				<span className="chat-streaming-indicator" title="Generating response...">
+					<span className="chat-streaming-dot" />
+					<span className="chat-streaming-label">Generating</span>
+				</span>
 			</div>
 			<div ref={contentRef} className="chat-bubble-content" />
 		</div>
