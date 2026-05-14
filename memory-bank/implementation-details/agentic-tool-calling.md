@@ -1,10 +1,12 @@
-# Agentic Tool Calling Design: LLM-Driven Note Editing
+# Agentic Tool Calling Implementation
 *Created: 2026-05-03 02:40:00 IST*
-*Last Updated: 2026-05-09 11:51:05 IST*
+*Last Updated: 2026-05-14 09:51:00 IST*
 
 ## Overview
 
-Enable the LLM to act as an agent that can read, edit, create, and append to Obsidian notes via native function calling. The Vercel AI SDK (already in the project) provides the tool calling primitives. This document describes how to wire those primitives into the Obsidian plugin's chat panel with user-controlled approval.
+The LLM acts as an agent that can read, edit, create, move, delete, and organize Obsidian notes via native function calling. The Vercel AI SDK provides the tool calling primitives. This document describes the complete implementation.
+
+**Status**: ✅ All 13 tools implemented. AgentLoop extracted. PendingToolCard created. Tool result formatting active.
 
 ## Design Philosophy
 
@@ -14,40 +16,47 @@ Enable the LLM to act as an agent that can read, edit, create, and append to Obs
 - **Reuse existing machinery**: `NoteEditingBridge` and `vault.*` APIs handle the actual file operations; the agent layer only decides *when* to call them.
 - **SDK-agnostic events**: `api.ts` translates SDK-specific stream events into our own `StreamEvent` union. If the SDK changes event shapes in v7, only the adapter changes.
 - **Basename-friendly**: The LLM often passes note names without `.md`. `resolveNote()` handles three-tier resolution so tools work with either basenames or full paths.
+- **Formatted results**: Tool results are formatted as markdown (tables, lists, summaries) before passing back to the LLM, preventing raw JSON dumps in chat.
 
 ---
 
-## Phase 2: Discovery & Rendering Enhancement (2026-05-14)
+## Phase 2: Discovery & Rendering Enhancement — ✅ COMPLETE (2026-05-14)
 
 ### Problem
-The initial `search_notes` tool (filename/path substring match) is too limited. The AI cannot:
+The initial `search_notes` tool (filename/path substring match) was too limited. The AI could not:
 1. Browse vault contents without a query string
 2. Sort results by date modified/created
 3. Get file metadata (size, dates, word count)
 4. Search **inside** note bodies
+5. Create folders, move notes, delete notes, or list folder structure
 
-Additionally, tool results render as raw JSON text in chat messages, making them unreadable.
+Additionally, tool results rendered as raw JSON text in chat messages, making them unreadable.
 
-### Planned Additions
+### Implemented Additions
 
-| # | Tool | Purpose |
-|---|------|---------|
-| 1 | `list_notes` | Browse vault contents with `sort_by` (name/modified/created), `limit`, `folder` filter |
-| 2 | `get_note_metadata` | File stats: created, modified, size, wordCount — enables "recent notes" queries |
-| 3 | `search_notes` v2 | Add `sort_by`, `limit`, `folder`, `search_content` params |
-| 4 | Custom result rendering | Search/list results → markdown tables with `[[wiki-links]]`; readable, not JSON |
+| # | Tool | Purpose | Status |
+|---|------|---------|--------|
+| 1 | `list_notes` | Browse vault contents with `sort_by` (name/modified/created), `limit`, `folder` filter | ✅ |
+| 2 | `get_note_metadata` | File stats: created, modified, size, wordCount | ✅ |
+| 3 | `search_notes` v2 | `sort_by`, `limit`, `folder`, `search_content` params | ✅ |
+| 4 | `create_folder` | Create new folders in vault | ✅ |
+| 5 | `move_note` | Move/rename notes (auto-creates parent folders) | ✅ |
+| 6 | `delete_note` | Delete notes (system trash) | ✅ |
+| 7 | `list_folders` | List vault folder structure | ✅ |
+| 8 | `AgentLoop` extraction | Dedicated class for stream→tool→result cycle | ✅ |
+| 9 | `PendingToolCard` | Dedicated component for approval UI | ✅ |
+| 10 | Custom result rendering | Search/list → markdown tables; folders → bulleted list; metadata → formatted summary | ✅ |
 
-### Rendering Approach
+### Rendering Implementation
 
-Tool results are currently serialized as JSON strings into `ChatMessage.content`, then rendered through `MarkdownRenderer`. This produces unreadable blobs.
+Tool results are formatted as markdown before inserting into messages:
+- `search_notes` / `list_notes` → markdown table with `[[wiki-links]]`
+- `list_folders` → bulleted list
+- `get_note_metadata` → formatted summary with `**Property**: Value`
+- `read_note` → clean content (no JSON wrapper)
+- Edit/append/create/patch/move/delete/folder → brief success text
 
-**Fix**: Format tool results as markdown before inserting into messages:
-- `search_notes` / `list_notes` → markdown table with `[[Basename|Path]]` wiki-links
-- `get_note_metadata` → markdown list with `**Property**: Value` formatting
-- `read_note` → unchanged (content is already markdown)
-- Edit/append/create/patch → brief success message, not raw JSON
-
-This requires no `ChatMessage` schema changes — just a formatting layer between `ToolResult` and message insertion.
+Implementation: `formatToolResult()` in `src/agent/AgentLoop.ts` (lines 38–108). Results passed as `type: "text"` to LLM instead of raw `type: "json"` blobs.
 
 ---
 
@@ -77,68 +86,72 @@ Tools are pure Zod schemas **without `execute` functions**. The LLM sees them; e
 import { z } from 'zod';
 
 export const noteTools = {
+  // --- Content Tools (6) ---
   read_note: {
-    description:
-      'Read the full content of an Obsidian note by its name or path. ' +
-      'Use this before editing to understand the current content.',
-    parameters: z.object({
-      path: z.string().describe('Note name or path, e.g. "Project Notes" or "Folder/Project Notes"'),
-    }),
+    description: 'Read the full content of a note. Use before editing to understand current content.',
+    parameters: z.object({ path: z.string().describe('Note name or path') }),
   },
-
   edit_note: {
-    description:
-      'Overwrite the entire content of an existing note. ' +
-      'Only use when the user explicitly asks to rewrite, edit, or replace a note. ' +
-      'Return the complete new content — do not use diff syntax.',
-    parameters: z.object({
-      path: z.string().describe('Note name or path, e.g. "Project Notes"'),
-      content: z.string().describe('The complete new note content'),
-    }),
+    description: 'Overwrite the entire content of a note. Provide COMPLETE new content.',
+    parameters: z.object({ path: z.string(), content: z.string() }),
   },
-
   append_to_note: {
-    description:
-      'Append content to the end of an existing note. ' +
-      'Use for adding summaries, logs, or follow-ups without changing existing content.',
-    parameters: z.object({
-      path: z.string().describe('Note name or path, e.g. "Project Notes"'),
-      content: z.string().describe('Content to append'),
-    }),
+    description: 'Add content to the end of a note without changing existing content.',
+    parameters: z.object({ path: z.string(), content: z.string() }),
   },
-
   create_note: {
-    description:
-      'Create a new note in the vault with the given content. ' +
-      'Use when the user asks to create a new document, summary, or draft.',
-    parameters: z.object({
-      path: z.string().describe('Note name or path, e.g. "Meeting Summaries/2026-05-03"'),
-      content: z.string().describe('Initial note content'),
-    }),
+    description: 'Create a new note in the vault.',
+    parameters: z.object({ path: z.string(), content: z.string() }),
   },
-
   patch_note: {
-    description:
-      'Find and replace text inside an existing note. Use for small, precise edits ' +
-      '— fixing a word, updating a link, or changing a date. Only replaces the first match ' +
-      'unless replace_all is true.',
-    parameters: z.object({
-      path: z.string().describe('Note name or path, e.g. "Project Notes"'),
-      search: z.string().describe('Exact text to find. Must match literally (case-sensitive).'),
-      replace: z.string().describe('Text to insert in place of the search string.'),
-      replace_all: z.boolean().optional().describe('Replace every occurrence instead of just the first.'),
-    }),
+    description: 'Find and replace text inside a note (small precise edits).',
+    parameters: z.object({ path: z.string(), search: z.string(), replace: z.string(), replace_all: z.boolean().optional() }),
+  },
+  edit_section: {
+    description: 'Rewrite content under a specific heading.',
+    parameters: z.object({ path: z.string(), section_heading: z.string(), new_content: z.string() }),
   },
 
-  edit_section: {
-    description:
-      'Rewrite a specific section of a note identified by its heading. ' +
-      'Use when the user wants to change only one part of a long note.',
+  // --- Discovery Tools (3) ---
+  search_notes: {
+    description: 'Search for notes by filename or path. Use sort_by=name|modified|created, limit, folder, search_content.',
     parameters: z.object({
-      path: z.string().describe('Note name or path, e.g. "Project Notes"'),
-      heading: z.string().describe('Exact heading text (without # marks) of the section to rewrite.'),
-      content: z.string().describe('New content for that section.'),
+      query: z.string(),
+      sort_by: z.enum(['name', 'modified', 'created']).optional(),
+      limit: z.number().optional(),
+      folder: z.string().optional(),
+      search_content: z.boolean().optional(),
     }),
+  },
+  list_notes: {
+    description: 'Browse all notes in the vault or a folder. Use sort_by and limit.',
+    parameters: z.object({
+      folder: z.string().optional(),
+      sort_by: z.enum(['name', 'modified', 'created']).optional(),
+      limit: z.number().optional(),
+    }),
+  },
+  get_note_metadata: {
+    description: 'Get file stats (size, dates, word count) for a specific note.',
+    parameters: z.object({ path: z.string() }),
+  },
+
+  // --- Vault Management Tools (4) ---
+  create_folder: {
+    description: 'Create a new folder in the vault.',
+    parameters: z.object({ path: z.string().describe('Folder path, e.g. "Research/Papers"') }),
+  },
+  move_note: {
+    description: 'Move or rename a note. Parent folders created automatically.',
+    parameters: z.object({ path: z.string(), new_path: z.string() }),
+  },
+  delete_note: {
+    description: 'Delete a note from the vault.',
+    parameters: z.object({ path: z.string() }),
+  },
+  list_folders: {
+    description: 'List folders in the vault. Use to understand vault structure.',
+    parameters: z.object({ path: z.string().optional().describe('Parent folder to list subfolders from') }),
   },
 };
 ```
@@ -161,45 +174,64 @@ This ensures tools work whether the LLM passes `"Project Notes"`, `"Project Note
 
 ## Agent Core
 
-### `AgentLoop` (`src/agent/AgentLoop.ts`) — *Planned extraction*
+### `AgentLoop` (`src/agent/AgentLoop.ts`) — ✅ IMPLEMENTED
 
-Currently the loop is inline in `ChatApp.tsx`. The planned `AgentLoop` class:
+Orchestrates multi-step tool calling with the Vercel AI SDK. Extracted from `ChatApp.tsx` into a dedicated class.
 
 ```typescript
-class AgentLoop {
-  constructor(
-    private api: ChatApiManager,
-    private tools: ToolSet,
-    private maxSteps: number,
-    private autoApply: boolean,
-    private onEvent: (event: StreamEvent) => void,
-    private onToolCall: (call: ToolCall) => Promise<ToolResult | null>,
-  )
+export interface AgentLoopOptions {
+  chatApi: ChatApiManager;
+  toolExecutor: ToolExecutor;
+  maxSteps: number;
+  autoApprove: boolean;
+  onTextDelta: (text: string) => void;
+  onToolCall: (call: ToolCall) => void;
+  requestApproval: (call: ToolCall) => Promise<ToolResult | null>;
+}
 
-  async run(messages: Message[]): Promise<void> {
-    for (let step = 0; step < this.maxSteps; step++) {
-      const events = this.api.streamChatWithTools(messages, this.tools);
-      let pendingToolCall: ToolCall | null = null;
+export class AgentLoop {
+  constructor(opts: AgentLoopOptions) {}
 
-      for await (const event of events) {
-        this.onEvent(event);
-        if (event.type === 'tool-call') {
-          pendingToolCall = event.call;
-        }
-      }
-
-      if (!pendingToolCall) break; // Done — no tools requested
-
-      const result = await this.onToolCall(pendingToolCall);
-      if (result) {
-        messages.push(toolResultToMessage(result));
-      } else {
-        // Rejected — tell the model
-        messages.push(toolRejectionMessage(pendingToolCall));
-      }
-    }
+  async run(
+    messages: Array<any>,
+    tools: any,
+    signal: AbortSignal,
+  ): Promise<{ text: string; tokenEstimate: number; stepsTaken: number }> {
+    // 1. Stream LLM response with tools (single step via stopWhen)
+    // 2. Detect tool calls from stream events
+    // 3. Execute tool (auto-approved or via user confirmation)
+    // 4. Format result as markdown
+    // 5. Feed result back into conversation
+    // 6. Repeat until no more tool calls or maxSteps reached
   }
 }
+```
+
+**Key features:**
+- Callback interface: `onTextDelta` (streaming text), `onToolCall` (detection), `requestApproval` (Promise-based approval)
+- `formatToolResult()` formats all tool results as markdown before passing to LLM
+- AbortSignal propagation for clean cancellation
+- Step logging for debugging
+
+**ChatApp integration:**
+```typescript
+const agent = new AgentLoop({
+  chatApi: plugin.chatapi,
+  toolExecutor: new ToolExecutor(plugin.app),
+  maxSteps: maxAgentSteps,
+  autoApprove,
+  onTextDelta: (text) => { fullText = text; setCurrentAiMessage(text); },
+  onToolCall: (call) => { console.log('tool-call pending:', call.toolName, call.args); },
+  requestApproval: async (call) => {
+    setPendingToolCall(call);
+    const resolved = await new Promise<ToolResult | null>((resolve) => {
+      resolveToolRef.current = resolve;
+    });
+    setPendingToolCall(null);
+    return resolved;
+  },
+});
+const result = await agent.run(chatMessages, noteTools, controller.signal);
 ```
 
 ### `ToolExecutor` (`src/agent/ToolExecutor.ts`)
@@ -395,20 +427,23 @@ public async *streamChatWithTools(
 
 ## Chat UI: Pending Tool Cards
 
-### Component: `PendingToolCard.tsx` — *Planned*
+### `PendingToolCard.tsx` (`src/components/PendingToolCard.tsx`) — ✅ IMPLEMENTED
 
-Renders inline in the chat stream when a tool call is emitted:
+Dedicated component for tool call approval UI. Extracted from inline JSX in `ChatApp.tsx`.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│ 🤖 Agent wants to edit a note                           │
-│                                                         │
-│  ✏️  Edit: Vocabulary Log                               │
-│     (preview first 120 chars of new content...)         │
-│                                                         │
-│              [Approve]  [Reject]                        │
-└─────────────────────────────────────────────────────────┘
-```
+**Features:**
+- Summarizes each of the 13 tools with friendly icons and metadata:
+  - `read_note` → 📖 Read Note
+  - `edit_note`/`create_note`/`append_to_note` → line count, char count, preview excerpt (max 200 chars)
+  - `patch_note` → Find/Replace rows with truncated text
+  - `edit_section` → Section heading + preview
+  - `search_notes` → Query display
+  - `create_folder` → 📁 folder path
+  - `move_note` → From → To arrow
+  - `delete_note` → 🗑️ warning styling
+  - `list_folders` → Parent path
+- Sticky Approve/Reject buttons at bottom of scrollable card
+- Scrollable content area with `max-height` constraint
 
 **Props:**
 ```typescript
@@ -418,19 +453,6 @@ interface PendingToolCardProps {
   onReject: () => void;
 }
 ```
-
-### State Machine in ChatApp
-
-```typescript
-type ToolState =
-  | { status: 'idle' }
-  | { status: 'pending'; call: ToolCall }     // waiting for user
-  | { status: 'executing'; call: ToolCall }   // running handler
-  | { status: 'done'; call: ToolCall; result: ToolResult }
-  | { status: 'rejected'; call: ToolCall };
-```
-
-When `autoApply` is true, pending tools skip the card and go straight to `executing`.
 
 ---
 
@@ -466,39 +488,43 @@ LLM emits tool-call event
 
 ## System Prompt Design
 
-The system prompt is built dynamically based on context and tool availability:
+The system prompt is built dynamically based on context and tool availability. **Critical lesson**: The prompt must explicitly list every tool by name and purpose. The AI said "I cannot search" because an earlier prompt vaguely said "search Obsidian notes" instead of naming `search_notes` and `list_notes`.
 
-```typescript
-function buildSystemPrompt(contextItems: ContextItem[], toolsEnabled: boolean): string {
-  let prompt = 'You are a helpful assistant integrated into an Obsidian note-taking app.';
+### Current System Prompt (excerpt)
 
-  if (toolsEnabled) {
-    prompt += `
-
-You have access to tools that can read, edit, create, and append to Obsidian notes.
-When the user asks you to edit or rewrite a note, use the edit_note tool.
-When the user asks you to create a new note, use the create_note tool.
-When the user asks you to add to an existing note without changing current content, use append_to_note.
-Before editing a note you are unfamiliar with, use read_note to see its current content.
-For small precise changes, use patch_note.
-To rewrite a specific section, use edit_section with the exact heading.
-
-Important: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks.`;
-  }
-
-  const activeNote = contextItems.find(i => i.type === 'active-note');
-  if (activeNote) {
-    prompt += '\n\nThe active note is included in your context.';
-  }
-
-  const mentionedNotes = contextItems.filter(i => i.type === 'note');
-  if (mentionedNotes.length > 0) {
-    prompt += `\n\nThe user has attached these notes: ${mentionedNotes.map(n => n.name).join(', ')}.`;
-  }
-
-  return prompt;
-}
 ```
+You have access to the following tools for managing Obsidian notes:
+- read_note: Read the full content of a note. Use this before editing to understand current content.
+- edit_note: Overwrite the entire content of a note. Provide COMPLETE new content.
+- append_to_note: Add content to the end of a note without changing existing content.
+- create_note: Create a new note in the vault.
+- patch_note: Find and replace text inside a note (small precise edits).
+- edit_section: Rewrite content under a specific heading.
+- search_notes: Search for notes by filename or path. Use sort_by=name|modified|created, limit, folder, and search_content params.
+- list_notes: Browse all notes in the vault or a folder. Use sort_by=name|modified|created and limit params.
+- get_note_metadata: Get file stats (size, dates, word count) for a specific note.
+- create_folder: Create a new folder in the vault.
+- move_note: Move or rename a note to a new folder or name. Creates parent folders if needed.
+- delete_note: Delete a note from the vault.
+- list_folders: List folders in the vault. Use to understand vault structure.
+
+When the user asks to find, list, or search for notes, ALWAYS use search_notes or list_notes first.
+Do not say you cannot search — you have the search_notes and list_notes tools.
+Before editing a note you are unfamiliar with, use read_note to see its current content.
+
+Important: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks.
+
+For moving notes: use move_note(path, new_path). Parent folders are created automatically if needed.
+For creating folders: use create_folder(path). Then use move_note to place notes inside.
+```
+
+### Lessons Learned
+
+1. **System prompt clarity >> brevity** — Explicitly enumerate tools by name. Vague descriptions cause the AI to claim it lacks capabilities.
+2. **Tool result rendering is a UI problem** — Raw JSON in chat messages is unreadable. A formatting layer (`formatToolResult()`) converts structured data into markdown tables/lists/summaries before the LLM sees it.
+3. **Pending approval UI needs constraints** — Full content dump makes buttons unreachable. Summary cards with max-height + sticky actions are essential.
+4. **Three-tier `resolveNote()` handles most LLM path mistakes** — exact → `.md` → `metadataCache.getFirstLinkpathDest()`. The LLM rarely gets paths exactly right.
+5. **TypeScript `ToolResult` must stay ahead of return shapes** — Add optional fields for each new tool (`oldPath` for move, `folders`/`parent` for list_folders).
 
 ---
 
@@ -543,32 +569,37 @@ interface ObsidianAISettings {
 
 | File | Action | Description |
 |---|---|---|
+| `src/agent/AgentLoop.ts` | **Create** | Orchestrates multi-step streamText calls; callback interface; `formatToolResult()` |
+| `src/components/PendingToolCard.tsx` | **Create** | UI for approve/reject with content preview for all 13 tools |
 | `src/agent/types.ts` | **Create** | `StreamEvent` union, `ToolCall`, `ToolResult` types |
-| `src/agent/tools.ts` | **Create** | Zod tool definitions (schemas only, no execute) |
+| `src/agent/tools.ts` | **Create** | Zod tool definitions (13 tools, schemas only, no execute) |
 | `src/agent/ToolExecutor.ts` | **Create** | Executes tool handlers against vault; `resolveNote()`, `patchNote()`, `editSection()` |
-| `src/agent/AgentLoop.ts` | **Create** | Orchestrates multi-step streamText calls *(planned extraction)* |
 | `src/api.ts` | **Modify** | Add `streamChatWithTools` method; keep `streamChat` for fallback |
-| `src/components/ChatApp.tsx` | **Modify** | Creates inline tool loop, handles StreamEvent union, renders pending actions |
-| `src/components/PendingToolCard.tsx` | **Create** | UI for approve/reject with content preview *(planned)* |
+| `src/components/ChatApp.tsx` | **Modify** | Creates AgentLoop, renders PendingToolCard, handles StreamEvent union |
+| `src/components/ActionBar.tsx` | **Modify** | Auto-approve toggle button (🤖/🔒) |
 | `src/settings.ts` | **Modify** | Add `enableAgentTools`, `autoApply`, `maxAgentSteps` |
-| `src/settings.ts` (tab) | **Modify** | UI toggles for new settings |
+| `src/views/ObsidianAIChatView.ts` | **Modify** | Add `saveSettings()` to `ChatPluginLike` interface |
+| `styles.css` | **Modify** | Pending tool call approval card styles, auto-approve button styles |
 
 ---
 
 ## Risks & Mitigations
 
-| Risk | Mitigation |
-|---|---|
-| LLM hallucinates tool arguments | Zod validation on incoming args; error fed back to model |
-| Infinite tool loops | `maxAgentSteps` hard cap (default 5) in inline loop |
-| File overwrites without warning | `edit_note` only modifies existing files; `create_note` checks for existence |
-| Vault path traversal | `resolveNote()` validates paths via Obsidian's own APIs |
-| Basename resolution fails | Three-tier fallback: exact → `.md` → `metadataCache.getFirstLinkpathDest()` |
-| Streaming abort mid-tool | AbortController passed to streamText; ToolExecutor checks signal before vault ops |
-| Model doesn't support tools | Graceful fallback to text-only `streamChat` mode |
-| Large note content in tool args | No inherent size limit, but token budget still applies to messages |
-| SDK v7 changes `fullStream` API | Only `api.ts` changes — `StreamEvent` union insulates the rest of the app |
-| Native renderer crash on streaming completion | `scrollIntoView({ behavior: "auto" })`, unmount cleanup flags, ErrorBoundary for recovery |
+| Risk | Mitigation | Status |
+|---|---|---|
+| LLM hallucinates tool arguments | Zod validation on incoming args; error fed back to model | ✅ Working |
+| Infinite tool loops | `maxAgentSteps` hard cap (default 5) in AgentLoop | ✅ Working |
+| File overwrites without warning | `edit_note` only modifies existing files; `create_note` checks for existence | ✅ Working |
+| Vault path traversal | `resolveNote()` validates paths via Obsidian's own APIs | ✅ Working |
+| Basename resolution fails | Three-tier fallback: exact → `.md` → `metadataCache.getFirstLinkpathDest()` | ✅ Working |
+| Streaming abort mid-tool | AbortController passed to streamText; AgentLoop checks signal | ✅ Working |
+| Model doesn't support tools | Graceful fallback to text-only `streamChat` mode | ✅ Working |
+| Large note content in tool args | No inherent size limit, but token budget still applies | ⚠️ Monitor |
+| SDK v7 changes `fullStream` API | Only `api.ts` changes — `StreamEvent` union insulates the rest | ✅ Design |
+| Native renderer crash on streaming | `scrollIntoView({ behavior: "auto" })`, unmount cleanup, ErrorBoundary | ✅ Applied |
+| AI claims it cannot do X | System prompt must explicitly list all tools by name | ✅ Fixed |
+| Raw JSON in chat responses | `formatToolResult()` converts to markdown before LLM sees it | ✅ Fixed |
+| Approval buttons unreachable | PendingToolCard uses `max-height` + sticky actions | ✅ Fixed |
 
 ---
 
@@ -582,3 +613,66 @@ If the full tool calling architecture is too heavy for v1, an intermediate step 
 4. Execute `vault.modify`
 
 **Trade-off**: Less robust (LLM may not follow XML format reliably). Rejected in favour of native tool calling for long-term reliability.
+
+---
+
+## Tool Result Formatting Implementation
+
+Location: `src/agent/AgentLoop.ts` — `formatToolResult(toolName, result)`
+
+### search_notes / list_notes → Markdown Table
+
+```markdown
+Found 3 notes:
+
+| Note | Modified | Size |
+|------|----------|------|
+| [[Project Notes]] | 5/14/2026 | 1240 |
+| [[Meeting Notes]] | 5/13/2026 | 890 |
+| [[Draft]] | 5/12/2026 | 450 |
+```
+
+### list_folders → Bulleted List
+
+```markdown
+4 folders under (root):
+
+- Research
+- Meeting Notes
+- Archive
+- Templates
+```
+
+### get_note_metadata → Formatted Summary
+
+```markdown
+**[[Project Notes]]**
+
+- Size: 1240 bytes
+- Created: 5/10/2026, 9:00:00 AM
+- Modified: 5/14/2026, 2:30:00 PM
+- Words: 245
+```
+
+### read_note → Clean Content
+
+No JSON wrapper — raw note content passed directly.
+
+### edit/create/move/delete → Success Text
+
+```
+✓ edit note completed successfully.
+```
+
+### Error Handling
+
+All errors formatted as:
+```
+Error: Note not found: Project Notes
+```
+
+**Why this matters**: Before `formatToolResult()`, the LLM received raw JSON like `{"matches":[{"path":"...","basename":"..."}]}` and sometimes dumped it verbatim in chat. Now it receives readable markdown and responds naturally.
+
+---
+
+*Last Updated: 2026-05-14 09:51:00 IST*
