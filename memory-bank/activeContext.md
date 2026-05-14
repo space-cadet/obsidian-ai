@@ -42,10 +42,10 @@ All 13 tools implemented: `read_note`, `edit_note`, `append_to_note`, `create_no
 - `onToolResult` callback propagates tool execution results from AgentLoop to ChatApp for UI update.
 - `MessageActions` component centralizes all message action buttons (primary + dropdown menu).
 - `ToolCallNotification` component renders inline tool call status with expandable details.
-- Active-note toggle flicker: Effect 1 was calling `setContextItems` unconditionally on every `sessions` change, causing feedback loop with Effect 2. Fixed by adding `sameContextItems` guard.
+- Active-note toggle flicker: Effect 1 was calling `setContextItems` unconditionally on every `sessions` change, causing feedback loop with Effect 2. **Fixed** by removing `sessions` from Effect 1's dependency array — now only depends on `activeSessionId`. Uses `sessionsRef.current` for reading session data without subscribing to mutations. `prevActiveSessionIdRef` guard skips sync when active session hasn't actually changed. Debug logging added to `handleToggleActiveNote`, Effect 1, and Effect 2 for runtime tracing in Obsidian console.
 
 ## Next Actions By Task
-- [T11]: Add privacy redaction to file logger (strip API keys, note contents); verify `debug.log` no longer floods on normal chat activity or startup; verify active-note toggle is stable
+- [T11]: Add privacy redaction to file logger (strip API keys, note contents); verify `debug.log` no longer floods on normal chat activity or startup; verify active-note toggle is stable; remove debug logging once confirmed stable
 - [T2]: Verify persisted sessions survive plugin/app reload without `data.json` churn
 - [T14]: Begin implementation (agent provider type, AgentApiManager, OpenResponses serializer)
 - [T8]: Complete open-source branding and release readiness pass.
