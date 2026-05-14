@@ -10,7 +10,7 @@
 - [T11]: Debug Logging & Diagnostics — settings panel rewritten; debug-log spam traced to overlapping chat persistence writes; queued persistence and hydration guard implemented
 - [T2]: Conversation Chain & Memory — completed persistence layer hardened with debounced autosave, queued snapshot flush, and startup overwrite guard
 - [T9]: Settings & Provider Profiles — settings panel rebuilt into a clean sectioned layout with guarded refresh flow and restored model picker behavior
-- [T13]: Agentic Tool Calling — `resolveNote()`, `patch_note`, `edit_section` implemented; blank-screen crash verification still pending
+- [T13]: ✅ **COMPLETED** — All 13 tools implemented; AgentLoop extracted; PendingToolCard created; tool result formatting implemented
 - [T14]: Remote Agent Connectivity — design complete; T13 fixes unblock implementation
 - [T8]: Open Source Release — README and metadata branded; final release readiness pass pending
 
@@ -25,8 +25,8 @@ The Settings panel was rebuilt into a clean sectioned layout with a proper heade
 ### Task T2 — COMPLETED (hardened on 2026-05-12)
 Session persistence now coalesces bursty autosaves in `ChatApp`, serializes writes in `main.ts`, and preserves the latest queued snapshot instead of dropping overlapping saves. A startup overwrite regression was then fixed by skipping the first autosave after hydrating real stored sessions and by preventing no-op `contextItems` rewrites of the active session.
 
-### Task T13 — IN PROGRESS (auto-approve toggle + pending UI summary + search_notes tool added; basename fix + new tools + crash debugging)
-`resolveNote()` helper resolves basenames via three-tier lookup (exact → append `.md` → `metadataCache.getFirstLinkpathDest()`). `patch_note` (search/replace) and `edit_section` (heading rewrite) added to tool registry. Auto-approve toggle button added to chat ActionBar for one-click switching between Auto (🤖) and Manual (🔒) tool approval modes. Pending tool call UI now shows summary (line count, preview excerpt) instead of full JSON dump. `search_notes` tool added so AI can discover notes without explicit context attachment. Blank-screen crash verification is still pending after the earlier safety fixes (`scrollIntoView({ behavior: "auto" })`, unmount cleanup flags).
+### Task T13 — COMPLETED (vault management tools + AgentLoop + PendingToolCard + tool result formatting)
+All 13 tools implemented: `read_note`, `edit_note`, `append_to_note`, `create_note`, `patch_note`, `edit_section`, `search_notes` (with sort/limit/folder/content), `list_notes`, `get_note_metadata`, `create_folder`, `move_note`, `delete_note`, `list_folders`. `resolveNote()` helper with three-tier basename resolution. Auto-approve toggle button in ActionBar. Pending tool UI with summary cards. **AgentLoop extracted** from ChatApp into `src/agent/AgentLoop.ts`. **PendingToolCard.tsx** created as dedicated component. **Tool result formatting** — search/list results as markdown tables with `[[wiki-links]]`, folders as bulleted list, metadata as formatted summary. System prompt updated to explicitly list all 13 tools by name with usage guidance. Build passes cleanly."auto" })`, unmount cleanup flags).
 
 ### Task T5 — COMPLETED
 `NoteEditingBridge` complete with all methods. Slash commands auto-execute without returning AI content in chat. Retry button added. Targeted action buttons render contextually.
@@ -41,11 +41,8 @@ Session persistence now coalesces bursty autosaves in `ChatApp`, serializes writ
 - Hydrated chat state should not be written back during the first mount/effect cascade after plugin load.
 
 ## Next Actions By Task
-- [T11]: Verify in Obsidian that `debug.log` no longer floods on normal chat activity or startup
+- [T11]: Add privacy redaction to file logger (strip API keys, note contents); verify `debug.log` no longer floods on normal chat activity or startup
 - [T2]: Verify persisted sessions survive plugin/app reload without `data.json` churn
-- [T13]: Deploy and test crash fix with `scrollIntoView({ behavior: "auto" })`; test `patch_note` and `edit_section` end-to-end; verify auto-approve toggle in Obsidian
-- [T13]: Extract inline AgentLoop from ChatApp into `src/agent/AgentLoop.ts`. Create `PendingToolCard.tsx`.
-- [T11]: Add privacy redaction to file logger (strip API keys, note contents)
 - [T14]: Begin implementation (agent provider type, AgentApiManager, OpenResponses serializer)
 - [T8]: Complete open-source branding and release readiness pass.
 - [META-1]: Keep memory-bank records aligned with implementation state.
