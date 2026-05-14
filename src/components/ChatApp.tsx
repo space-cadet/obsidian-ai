@@ -14,6 +14,7 @@ import { resolveContextItems } from "../context/ContextEngine";
 import { estimateTokens } from "../context/tokenEstimator";
 import { noteTools } from "../agent/tools";
 import { ToolExecutor } from "../agent/ToolExecutor";
+import { AgentLoop } from "../agent/AgentLoop";
 import type { ToolCall, ToolResult } from "../agent/types";
 import ActionBar from "./ActionBar";
 import ChatMessages from "./ChatMessages";
@@ -603,119 +604,45 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 
 				if (useTools && !slashCmd) {
 					console.log(
-						`[ChatApp] streamChatWithTools start — ${chatMessages.length} msgs`,
+						`[ChatApp] AgentLoop start — ${chatMessages.length} msgs`,
 					);
-					const toolExecutor = new ToolExecutor(plugin.app);
-					let currentMessages: Array<any> =
-						chatMessages as Array<any>;
-					for (let step = 0; step < maxAgentSteps; step++) {
-						let stepText = "";
-						let pendingCall: ToolCall | null = null;
-
-						for await (const event of plugin.chatapi.streamChatWithTools(
-							currentMessages,
-							noteTools,
-							controllerRef.current.signal,
-						)) {
-							if (event.type === "text-delta") {
-								stepText += event.text;
-								fullText += event.text;
-								setCurrentAiMessage(fullText);
-							} else if (event.type === "tool-call") {
-								pendingCall = event.call;
-							} else if (event.type === "error") {
-								throw new Error(event.message);
-							}
-						}
-
-						if (!pendingCall) {
-							assistantContent = fullText;
-							assistantTokenEstimate = estimateTokens(fullText);
+					const agent = new AgentLoop({
+						chatApi: plugin.chatapi,
+						toolExecutor: new ToolExecutor(plugin.app),
+						maxSteps: maxAgentSteps,
+						autoApprove,
+						onTextDelta: (text) => {
+							fullText = text;
+							setCurrentAiMessage(text);
+						},
+						onToolCall: (call) => {
 							console.log(
-								`[ChatApp] streamChatWithTools done — ${fullText.length} chars`,
+								`[ChatApp] tool-call pending: ${call.toolName}`,
+								call.args,
 							);
-							break;
-						}
-
-						console.log(
-							`[ChatApp] tool-call: ${pendingCall.toolName}`,
-							pendingCall.args,
-						);
-
-						let result: ToolResult;
-						if (autoApprove) {
-							result = await toolExecutor.execute(pendingCall);
-						} else {
-							setPendingToolCall(pendingCall);
-							const resolved =
-								await new Promise<ToolResult | null>(
-									(resolve) => {
-										resolveToolRef.current = resolve;
-									},
-								);
-							setPendingToolCall(null);
-							result = resolved ?? {
-								error: "User rejected the tool call",
-							};
-						}
-
-						console.log(
-							`[ChatApp] tool-result:`,
-							result.error ?? "success",
-						);
-
-						// Build assistant message with text + tool call
-						const assistantParts: Array<{
-							type: string;
-							[key: string]: unknown;
-						}> = [];
-						if (stepText) {
-							assistantParts.push({
-								type: "text",
-								text: stepText,
+						},
+						requestApproval: async (call) => {
+							setPendingToolCall(call);
+							const resolved = await new Promise<
+								ToolResult | null
+							>((resolve) => {
+								resolveToolRef.current = resolve;
 							});
-						}
-						assistantParts.push({
-							type: "tool-call",
-							toolCallId: pendingCall.toolCallId,
-							toolName: pendingCall.toolName,
-							input: pendingCall.args,
-						});
+							setPendingToolCall(null);
+							return resolved;
+						},
+					});
 
-						const assistantMsg: any = {
-							role: "assistant",
-							content: assistantParts,
-						};
-
-						// Build tool result message
-						const toolResultOutput = result.error
-							? {
-									type: "json",
-									value: { error: result.error },
-								}
-							: {
-									type: "json",
-									value: result,
-								};
-
-						const toolMsg: any = {
-							role: "tool",
-							content: [
-								{
-									type: "tool-result",
-									toolCallId: pendingCall.toolCallId,
-									toolName: pendingCall.toolName,
-									output: toolResultOutput,
-								},
-							],
-						};
-
-						currentMessages = [
-							...currentMessages,
-							assistantMsg,
-							toolMsg,
-						];
-					}
+					const result = await agent.run(
+						chatMessages as Array<any>,
+						noteTools,
+						controllerRef.current.signal,
+					);
+					assistantContent = result.text;
+					assistantTokenEstimate = result.tokenEstimate;
+					console.log(
+						`[ChatApp] AgentLoop done — ${result.text.length} chars`,
+					);
 				} else {
 					console.log(
 						`[ChatApp] streamChat start — ${chatMessages.length} msgs`,
