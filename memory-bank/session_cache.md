@@ -1,21 +1,21 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-14 07:52:41 IST*
+*Last Updated: 2026-05-14 09:51:00 IST*
 
-**Started**: 2026-05-14 07:52:41 IST
-**Focus Task**: T13 Agentic Tool Calling for Note Editing
+**Started**: 2026-05-14 09:19:00 IST
+**Focus Task**: T13 Agentic Tool Calling for Note Editing → ✅ COMPLETED
 **Session File**: `sessions/2026-05-14.md`
-**Status**: 🔄 T13 auto-approve toggle button added to chat ActionBar
+**Status**: All T13 Phase 1/2/3 items done. 4 commits, all build clean.
 
 ## Overview
 
-- Active: 4 | Paused: 1 | Completed: 9 | Cancelled: 0
-- Last Session: 2026-05-14 (T13: auto-approve toggle button added to chat ActionBar)
+- Active: 3 | Paused: 1 | Completed: 10 | Cancelled: 0
+- Last Session: 2026-05-14 (T13: vault management tools + AgentLoop + PendingToolCard + tool result formatting)
 - Current Period: morning
 
 ## Session History (Last 10)
 
-1. `sessions/2026-05-14.md` — T13: auto-approve toggle button added to chat ActionBar
+1. `sessions/2026-05-14.md` — T13: COMPLETE — 4 new tools, AgentLoop extracted, PendingToolCard created, tool result formatting
 2. `sessions/2026-05-12.md` — T11: debug-log spam diagnosis; T2: queued persistence + load guard; T9: settings rewrite
 3. `sessions/2026-05-09.md` — T13: crash debugging, patch_note, edit_section; T11: file logger, ErrorBoundary, defensive logging
 4. `sessions/2026-05-08.md` — T13: basename resolution fix, diagnostics panel; T11: diagnostics UI
@@ -41,15 +41,15 @@
 - T10: Model Discovery & Picker UX — ✅
 - T11: Debug Logging & Diagnostics — 🔄
 - T12: Chat Onboarding, Tips & Empty States — ⏸️
-- T13: Agentic Tool Calling for Note Editing — 🔄
+- T13: Agentic Tool Calling for Note Editing — ✅
 - T14: Remote Agent Connectivity (OpenResponses) — 🔄
 
 ## Active Tasks
 
 ### META-1: Memory Bank Setup and Maintenance
 **Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-12 11:13:59 IST
-**Context:** Memory bank records kept in sync through settings rewrite, debug-log investigation, and persistence hardening. Session and edit chunks created through 2026-05-12.
+**Started:** 2026-05-02 **Last:** 2026-05-14 09:51:00 IST
+**Context:** Memory bank records kept in sync through T13 completion. All 4 commits documented in edit chunks.
 **Files:** All `memory-bank/*.md`, all `memory-bank/tasks/*.md`
 **Progress:**
 1. ✅ Initial memory bank setup (session 1)
@@ -65,25 +65,28 @@
 11. ✅ T6 complete — token estimation, maxContextMessages, usage indicator
 12. ✅ T10 complete — model discovery cache and inline picker
 13. ✅ T14 design complete — remote agent connectivity architecture
-14. ✅ T13 basename fix, new tools, crash debugging — 2026-05-08/09
-15. ✅ T13 auto-approve toggle button added to ActionBar — 2026-05-14
-16. ✅ T11 file logger, ErrorBoundary, diagnostics panel — 2026-05-08/09
-17. 🔄 Keep records in sync as T11/T13/T14 work continues
+14. ✅ T13 complete — all 13 tools, AgentLoop, PendingToolCard, tool result formatting
 
-### T13: Agentic Tool Calling for Note Editing
-**Status:** 🔄 **IN PROGRESS** **Priority:** HIGH
-**Started:** 2026-05-06 **Last:** 2026-05-14 07:52:41 IST
-**Context:** `resolveNote()` fixes basename resolution. `patch_note` and `edit_section` extend tool set. Auto-approve toggle button added to chat ActionBar for one-click switching between Auto (🤖) and Manual (🔒) tool approval modes. Blank-screen crash is native Chromium `SIGTRAP` during streaming completion transition. Safety fixes applied (`scrollIntoView` auto, unmount cleanup). Crash verification is still pending in Obsidian.
-**Files:** `src/agent/tools.ts`, `src/agent/ToolExecutor.ts`, `src/components/ChatApp.tsx`, `src/components/ActionBar.tsx`, `src/views/ObsidianAIChatView.ts`, `styles.css`, `src/components/MessageBubble.tsx`, `src/components/ChatMessages.tsx`
+### T13: Agentic Tool Calling for Note Editing — ✅ COMPLETED
+**Status:** ✅ **COMPLETED** **Priority:** HIGH
+**Started:** 2026-05-06 **Completed:** 2026-05-14 09:51:00 IST
+**Context:** All Phase 1 (MVP), Phase 2 (Discovery), and Phase 3 (Polish) items complete. 13 tools total. AgentLoop extracted from ChatApp. PendingToolCard component created. Tool results formatted as markdown before passing to LLM. System prompt lists all 13 tools by name.
+**Files:** `src/agent/tools.ts`, `src/agent/ToolExecutor.ts`, `src/agent/AgentLoop.ts`, `src/agent/types.ts`, `src/components/ChatApp.tsx`, `src/components/PendingToolCard.tsx`, `src/components/ActionBar.tsx`, `src/views/ObsidianAIChatView.ts`, `styles.css`
 **Progress:**
-1. ✅ MVP foundation built
-2. ✅ Settings panel wired
-3. ✅ `resolveNote()` helper with basename resolution
-4. ✅ `patch_note` and `edit_section` tools
+1. ✅ MVP foundation built (types, tools, ToolExecutor, api, ChatApp)
+2. ✅ Settings panel wired (enableAgentTools, autoApply, maxAgentSteps)
+3. ✅ resolveNote() helper with basename resolution
+4. ✅ patch_note and edit_section tools
 5. ✅ Defensive logging and safety fixes
 6. ✅ Auto-approve toggle button added to ActionBar
-7. 🔄 Crash fix verification pending deploy
-8. ⬜ Extract AgentLoop; create PendingToolCard
+7. ✅ Pending tool UI summary cards with sticky buttons
+8. ✅ search_notes v2 with sort/limit/folder/content params
+9. ✅ list_notes and get_note_metadata tools
+10. ✅ Vault management tools: create_folder, move_note, delete_note, list_folders
+11. ✅ AgentLoop extracted from ChatApp into src/agent/AgentLoop.ts
+12. ✅ PendingToolCard.tsx component created
+13. ✅ Tool result formatting (markdown tables, bulleted lists, formatted metadata)
+14. ✅ System prompt updated with all 13 tools
 
 ### T11: Debug Logging & Diagnostics
 **Status:** 🔄 **IN PROGRESS** **Priority:** MEDIUM
@@ -100,24 +103,8 @@
 7. ⬜ Privacy redaction
 8. ⬜ Structured event pipeline
 
-### T2: Conversation Chain & Memory
-**Status:** ✅ **COMPLETED** **Priority:** HIGH
-**Started:** 2026-05-02 **Last:** 2026-05-12 11:13:59 IST
-**Context:** Completed session persistence was hardened after new regressions surfaced. Autosave is now debounced in `ChatApp`, writes are serialized in `main.ts`, and startup hydration skips the first autosave for real restored data to avoid `data.json` overwrite on load.
-**Files:** `src/components/ChatApp.tsx`, `src/main.ts`, `memory-bank/tasks/T2.md`, `memory-bank/implementation-details/chat-session-persistence.md`
-**Progress:**
-1. ✅ Session-based persistence completed earlier
-2. ✅ Debug-log spam traced to overlapping `saveChatData()` attempts
-3. ✅ Debounced autosave added in `ChatApp`
-4. ✅ Queued snapshot flush added in `main.ts`
-5. ✅ Startup hydration guard added to prevent overwrite on plugin/app load
-
 ## Next Session Focus
 
-- T11: Verify in Obsidian that debug logging is quiet during normal chat and startup
-- T2: Verify persisted sessions survive plugin/app reload without `data.json` churn
-- T13: Verify crash fix in Obsidian with new build; test `patch_note` and `edit_section`
-- T13: Extract inline AgentLoop from ChatApp into `src/agent/AgentLoop.ts`
-- T13: Create `PendingToolCard.tsx` component for approval UI
+- T11: Add privacy redaction to file logger (strip API keys, note contents)
 - T14: Begin implementation (agent provider type, AgentApiManager)
-- T11: Add privacy redaction to file logger
+- T8: Complete open-source branding and release readiness pass

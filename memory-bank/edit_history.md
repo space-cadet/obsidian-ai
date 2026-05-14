@@ -1,6 +1,6 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-14 07:52:41 IST*
+*Last Updated: 2026-05-14 09:51:00 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
 
@@ -8,7 +8,33 @@
 
 ### 2026-05-14
 
-#### 07:52:41 IST - T13: Add auto-approve toggle button to chat action bar
+#### 09:19:00–09:51:00 IST — T13: Vault management tools, AgentLoop extraction, PendingToolCard, tool result formatting
+- **Commit 1 (e0869b1)**: Added 4 vault management tools — `create_folder`, `move_note`, `delete_note`, `list_folders`
+  - Modified `src/agent/tools.ts` — 4 new Zod tool schemas with descriptions
+  - Modified `src/agent/ToolExecutor.ts` — `createFolder()`, `moveNote()` (auto-creates parents), `deleteNote()` (system trash), `listFolders()` (tree from loaded files)
+  - Modified `src/agent/types.ts` — added `oldPath`, `folders`, `parent` to `ToolResult`
+  - Modified `src/components/ChatApp.tsx` — pending tool preview cases for new tools; system prompt lists all 13 tools
+- **Commit 2 (e2d727d)**: Extracted inline tool loop → `src/agent/AgentLoop.ts`
+  - Created `src/agent/AgentLoop.ts` — `AgentLoop` class with `run()` method; callback interface (`onTextDelta`, `onToolCall`, `requestApproval`); AbortSignal propagation; step logging
+  - Modified `src/components/ChatApp.tsx` — replaced ~70 line inline loop with `new AgentLoop({...}).run()`
+- **Commit 3 (dcee512)**: Created `PendingToolCard.tsx` component
+  - Created `src/components/PendingToolCard.tsx` — all 13 tool preview summaries in dedicated component (line count, preview excerpt, patch rows)
+  - Modified `src/components/ChatApp.tsx` — removed inline `PendingToolCallPreview`; renders `<PendingToolCard />`
+- **Commit 4 (c2307b6)**: Tool result formatting as markdown
+  - Modified `src/agent/AgentLoop.ts` — added `formatToolResult()` function
+    - `search_notes`/`list_notes` → markdown tables with `[[wiki-links]]`
+    - `list_folders` → bulleted list
+    - `get_note_metadata` → formatted summary (size, dates, word count)
+    - `read_note` → clean content; edit/create/move/delete → simple success text
+    - Passed as `type: "text"` to LLM instead of raw `type: "json"` blobs
+- Updated `memory-bank/tasks/T13.md` — marked all Phase 1/2/3 items complete
+- Updated `memory-bank/tasks.md` — T13 moved to ✅ COMPLETED (10 completed, 3 active)
+- Updated `memory-bank/activeContext.md` — T13 status updated; next actions listed
+- Updated `memory-bank/session_cache.md` — full session context with all 4 commits
+- Created `memory-bank/edits/2026-05-14/091900-t13-complete.md` — canonical edit chunk
+- All 4 commits: `tsc -noEmit -skipLibCheck && esbuild` — clean builds
+
+---
 - Modified `src/components/ActionBar.tsx` — Added `autoApprove` and `onToggleAutoApprove` props; inserted toggle button between Load and Settings buttons with visual active/inactive states
 - Modified `src/components/ChatApp.tsx` — Added `handleToggleAutoApprove()` callback that flips `plugin.settings.autoApply`, saves settings, and shows a Notice; wired props to ActionBar
 - Modified `src/views/ObsidianAIChatView.ts` — Added `saveSettings(): Promise<void>` to `ChatPluginLike` interface so ChatApp can persist the toggle

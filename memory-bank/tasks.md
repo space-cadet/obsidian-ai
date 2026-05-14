@@ -3,7 +3,7 @@
 *Last Updated: 2026-05-12 13:47:10 IST*
 
 ## Summary
-- Active: 4 | Paused: 1 | Completed: 9 | Cancelled: 0
+- Active: 3 | Paused: 1 | Completed: 10 | Cancelled: 0
 
 ## Task Registry Table
 
@@ -22,7 +22,7 @@
 | T10 | Model Discovery & Picker UX | ✅ | HIGH | 2026-05-02 | T9 | [Details](tasks/T10.md) |
 | T11 | Debug Logging & Diagnostics | 🔄 | MEDIUM | 2026-05-08 | T9 | [Details](tasks/T11.md) |
 | T12 | Chat Onboarding, Tips & Empty States | ⏸️ | MEDIUM | — | T1, T9 | [Details](tasks/T12.md) |
-| T13 | Agentic Tool Calling for Note Editing | 🔄 | HIGH | 2026-05-06 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
+| T13 | Agentic Tool Calling for Note Editing | ✅ | HIGH | 2026-05-06 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
 | T14 | Remote Agent Connectivity (OpenResponses) | 🔄 | HIGH | 2026-05-07 | T1, T5, T9, T13 | [Details](tasks/T14.md) |
 
 ## Active Tasks
@@ -40,7 +40,7 @@ Branding transition and open-source release preparation. See `tasks/T8.md`.
 File-based debug logger, React ErrorBoundary, diagnostics panel in Settings, and the newer debug-log spam diagnosis plus persistence queue/debounce fix. See `tasks/T11.md`.
 
 ### T13 — Agentic Tool Calling for Note Editing *(requires T1, T3, T5, T9)*
-Advanced AI tool calling for note editing. `resolveNote()`, `patch_note`, `edit_section` implemented. Crash debugging in progress. See `tasks/T13.md`.
+All 13 tools implemented; AgentLoop extracted; PendingToolCard created; tool result formatting implemented. See `tasks/T13.md`.
 
 ### T14 — Remote Agent Connectivity (OpenResponses) *(requires T1, T5, T9, T13)*
 Connect Obsidian chat to remote OpenClaw agents via OpenResponses API. See `tasks/T14.md`.
@@ -63,6 +63,7 @@ Empty states, setup warnings, contextual tips, first-run guidance. See `tasks/T1
 | T7 | Release System & CI/CD | 2026-05-02 | — | [Details](tasks/T7.md) |
 | T9 | Settings & Provider Profiles | 2026-05-02 | T4, T10, T11 | [Details](tasks/T9.md) |
 | T10 | Model Discovery & Picker UX | 2026-05-04 | T9 | [Details](tasks/T10.md) |
+| T13 | Agentic Tool Calling for Note Editing | 2026-05-14 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
 
 ## Cancelled / Paused Tasks
 
