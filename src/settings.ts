@@ -22,7 +22,8 @@ export type ProviderType =
 	| "anthropic"
 	| "deepseek"
 	| "kimi"
-	| "openrouter";
+	| "openrouter"
+	| "agent";
 
 export interface ModelCache {
 	models: string[];
@@ -40,6 +41,12 @@ export interface ProviderProfile {
 	azureEndpoint?: string;
 	azureApiVersion?: string;
 	modelCache?: ModelCache;
+	// Agent provider fields
+	endpointUrl?: string;    // Agent: OpenResponses endpoint URL
+	agentId?: string;        // Agent: x-openclaw-agent-id header
+	sessionKey?: string;     // Agent: stable session key
+	autoApprove?: boolean;   // Agent: auto-execute tool calls
+	maxSteps?: number;       // Agent: max tool iterations
 	createdAt: number;
 	updatedAt: number;
 }

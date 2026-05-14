@@ -26,9 +26,12 @@ import { StoredChatData, ChatSession } from "./types";
 import { createFileLogger, FileLogger } from "./logger";
 
 
+import { AgentApiManager } from "./api/AgentApiManager";
+
 export default class ObsidianAIPlugin extends Plugin {
 	settings: ObsidianAISettings = DEFAULT_SETTINGS;
 	chatapi!: ChatApiManager;
+	agentapi: AgentApiManager | null = null;
 	logger!: FileLogger;
 
 	// Data integrity guards

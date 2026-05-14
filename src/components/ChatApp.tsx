@@ -23,6 +23,10 @@ import ChatInput from "./ChatInput";
 import SessionPickerModal from "./SessionPickerModal";
 import ContextPickerModal from "./ContextPickerModal";
 import PendingToolCard from "./PendingToolCard";
+import { AgentApiManager } from "../api/AgentApiManager";
+import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
+import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
+import { getActiveProviderProfile } from "../settings";
 import { stripThinkingTags } from "./MessageBubble";
 
 interface ChatAppProps {
@@ -483,7 +487,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				userContent = `${resolved.contextString}\n\n${sendText}`;
 			}
 
-			const useTools = plugin.settings.enableAgentTools;
+			const activeProfile = getActiveProviderProfile(plugin.settings);
+			const isAgentProvider = activeProfile.provider === "agent";
+			const useTools = plugin.settings.enableAgentTools || isAgentProvider;
 			const autoApprove = plugin.settings.autoApply;
 			const maxAgentSteps = plugin.settings.maxAgentSteps;
 
@@ -507,10 +513,119 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 			// Tracks how much of fullText has been consumed into contentParts
 			let textCheckpoint = 0;
 			try {
-				let assistantContent = fullText;
-				let assistantTokenEstimate = 0;
+			let assistantContent = fullText;
+			let assistantTokenEstimate = 0;
 
-				if (useTools && !slashCmd) {
+			if (isAgentProvider) {
+				console.log(
+					`[ChatApp] OpenResponsesLoop start — ${chatMessages.length} msgs`,
+				);
+				if (!activeProfile.endpointUrl) {
+					throw new Error("Agent endpoint URL is not configured.");
+				}
+				const agentApi = new AgentApiManager(
+					{
+						id: activeProfile.id,
+						name: activeProfile.name,
+						provider: "agent",
+						model: activeProfile.model,
+						endpointUrl: activeProfile.endpointUrl,
+						agentId: activeProfile.agentId || "main",
+						authToken: activeProfile.apiKey,
+						sessionKey: activeProfile.sessionKey,
+						autoApprove: activeProfile.autoApprove ?? autoApprove,
+						maxSteps: activeProfile.maxSteps ?? maxAgentSteps,
+					},
+					plugin.app,
+				);
+				const openResponsesLoop = new OpenResponsesLoop({
+					agentApi,
+					toolExecutor: new ToolExecutor(plugin.app),
+					maxSteps: activeProfile.maxSteps ?? maxAgentSteps,
+					autoApprove: activeProfile.autoApprove ?? autoApprove,
+					onTextDelta: (text) => {
+						fullText = text;
+						setCurrentAiMessage(stripThinkingTags(text));
+					},
+					onToolCall: (call) => {
+						console.log(
+							`[ChatApp] OR-tool-call pending: ${call.toolName}`,
+							call.args,
+						);
+						const pendingText = stripThinkingTags(
+							fullText.slice(textCheckpoint)
+						);
+						if (pendingText) {
+							contentParts.push({ type: "text", content: pendingText });
+						}
+						toolCallsLog.push({ call });
+						contentParts.push({ type: "tool_call", call });
+						textCheckpoint = fullText.length;
+					},
+					requestApproval: async (call) => {
+						setPendingToolCall(call);
+						const resolved = await new Promise<
+							ToolResult | null
+						>((resolve) => {
+							resolveToolRef.current = resolve;
+						});
+						setPendingToolCall(null);
+						const lastIdx = toolCallsLog.length - 1;
+						if (lastIdx >= 0) {
+							toolCallsLog[lastIdx] = {
+								...toolCallsLog[lastIdx],
+								result: resolved || undefined,
+							};
+						}
+						const partIdx = contentParts.findIndex(
+							(p) => p.type === "tool_call" && p.call.toolCallId === call.toolCallId
+						);
+						if (partIdx >= 0 && resolved) {
+							const part = contentParts[partIdx];
+							if (part.type === "tool_call") {
+								contentParts[partIdx] = { ...part, result: resolved };
+							}
+						}
+						return resolved;
+					},
+					onToolResult: (call, result) => {
+						console.log(
+							`[ChatApp] OR-tool-result: ${call.toolName}`,
+							result.error ?? "success",
+						);
+						const idx = toolCallsLog.findIndex(
+							(tc) => tc.call.toolCallId === call.toolCallId,
+						);
+						if (idx >= 0) {
+							toolCallsLog[idx] = {
+								...toolCallsLog[idx],
+								result,
+							};
+						}
+						const partIdx = contentParts.findIndex(
+							(p) => p.type === "tool_call" && p.call.toolCallId === call.toolCallId
+						);
+						if (partIdx >= 0) {
+							const part = contentParts[partIdx];
+							if (part.type === "tool_call") {
+								contentParts[partIdx] = { ...part, result };
+							}
+						}
+					},
+				});
+
+				const orTools = noteToolsToOpenResponses(noteTools);
+				const resultText = await openResponsesLoop.run(
+					chatMessages as Array<{ role: "user" | "assistant" | "system"; content: string }>,
+					orTools,
+					controllerRef.current.signal,
+				);
+				assistantContent = resultText;
+				assistantTokenEstimate = estimateTokens(resultText);
+				console.log(
+					`[ChatApp] OpenResponsesLoop done — ${resultText.length} chars`,
+				);
+			} else if (useTools && !slashCmd) {
 					console.log(
 						`[ChatApp] AgentLoop start — ${chatMessages.length} msgs`,
 					);
