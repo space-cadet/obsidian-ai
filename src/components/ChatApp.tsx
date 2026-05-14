@@ -23,6 +23,7 @@ import ChatInput from "./ChatInput";
 import SessionPickerModal from "./SessionPickerModal";
 import ContextPickerModal from "./ContextPickerModal";
 import PendingToolCard from "./PendingToolCard";
+import { stripThinkingTags } from "./MessageBubble";
 
 interface ChatAppProps {
 	plugin: ChatPluginLike;
@@ -520,15 +521,18 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 						autoApprove,
 						onTextDelta: (text) => {
 							fullText = text;
-							setCurrentAiMessage(text);
+							// Strip thinking tags from streaming display
+							setCurrentAiMessage(stripThinkingTags(text));
 						},
 						onToolCall: (call) => {
 							console.log(
 								`[ChatApp] tool-call pending: ${call.toolName}`,
 								call.args,
 							);
-							// Capture text accumulated since last checkpoint
-							const pendingText = fullText.slice(textCheckpoint);
+							// Capture text accumulated since last checkpoint, stripping thinking tags
+							const pendingText = stripThinkingTags(
+								fullText.slice(textCheckpoint)
+							);
 							if (pendingText) {
 								contentParts.push({ type: "text", content: pendingText });
 							}
@@ -615,7 +619,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 						fullText += chunk;
 						// Only show streaming content for non-slash commands
 						if (!slashCmd) {
-							setCurrentAiMessage(fullText);
+							setCurrentAiMessage(stripThinkingTags(fullText));
 						}
 					}
 					console.log(
@@ -623,8 +627,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					);
 					assistantContent = fullText;
 					assistantTokenEstimate = estimateTokens(fullText);
-					// Non-tool path: single text part
-					contentParts = [{ type: "text", content: fullText }];
+					// Non-tool path: single text part (strip thinking tags)
+					contentParts = [{ type: "text", content: stripThinkingTags(fullText) }];
 				}
 
 				// For slash commands, execute the action and show a status message
@@ -681,16 +685,20 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 
 				// Finalize any remaining text after all tool calls / streaming
 				if (useTools && !slashCmd) {
-					const remainingText = fullText.slice(textCheckpoint);
+					const remainingText = stripThinkingTags(
+						fullText.slice(textCheckpoint)
+					);
 					if (remainingText) {
 						contentParts.push({ type: "text", content: remainingText });
 					}
 				}
 
+				// Build the assistant message with cleaned content
+				const cleanAssistantContent = stripThinkingTags(assistantContent);
 				const assistantMsg: ChatMessage = {
 					id: makeId(),
 					role: "assistant",
-					content: assistantContent,
+					content: cleanAssistantContent,
 					timestamp: Date.now(),
 					command: commandMeta,
 					estimatedTokens: assistantTokenEstimate,
@@ -722,17 +730,19 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 						let abortedParts: Array<import("../types").ContentPart> = [];
 						if (useTools && !slashCmd) {
 							abortedParts = [...contentParts];
-							const remainingText = fullText.slice(textCheckpoint);
+							const remainingText = stripThinkingTags(
+								fullText.slice(textCheckpoint)
+							);
 							if (remainingText) {
 								abortedParts.push({ type: "text", content: remainingText + " [stopped]" });
 							}
 						} else {
-							abortedParts = [{ type: "text", content: fullText + " [stopped]" }];
+							abortedParts = [{ type: "text", content: stripThinkingTags(fullText) + " [stopped]" }];
 						}
 						const stoppedMsg: ChatMessage = {
 							id: makeId(),
 							role: "assistant",
-							content: fullText + " [stopped]",
+							content: stripThinkingTags(fullText) + " [stopped]",
 							timestamp: Date.now(),
 							command: commandMeta,
 							estimatedTokens: estimateTokens(fullText),

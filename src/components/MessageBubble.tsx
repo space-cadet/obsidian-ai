@@ -35,6 +35,16 @@ function formatContextItems(items: ContextItem[]): string {
 		.join(", ");
 }
 
+/** Strips model thinking/reasoning tag blocks from text */
+export function stripThinkingTags(text: string): string {
+	return text
+		.replace(/<\|channel\|>[\s\S]*?<channel\|>/gi, "")
+		.replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
+		.replace(/<reasoning>[\s\S]*?<\/reasoning>/gi, "")
+		.replace(/<\|thinking\|>[\s\S]*?<\/thinking>/gi, "")
+		.trim();
+}
+
 /** Renders a text segment using Obsidian's MarkdownRenderer */
 function TextSegment({
 	content,
@@ -44,18 +54,20 @@ function TextSegment({
 	app: App;
 }): React.ReactElement {
 	const ref = useRef<HTMLDivElement>(null);
+	const cleanContent = stripThinkingTags(content);
 
 	useEffect(() => {
 		if (!ref.current) return;
 		let unmounted = false;
 		const comp = new Component();
+		ref.current.innerHTML = "";
 
-		MarkdownRenderer.render(app, content, ref.current, "", comp).catch(
+		MarkdownRenderer.render(app, cleanContent, ref.current, "", comp).catch(
 			(err: any) => {
 				if (unmounted || !ref.current) return;
 				ref.current.innerHTML = "";
 				ref.current.createEl("pre", {
-					text: content,
+					text: cleanContent,
 					cls: "chat-plaintext-fallback",
 				});
 			},
@@ -64,7 +76,7 @@ function TextSegment({
 		return () => {
 			unmounted = true;
 		};
-	}, [content, app]);
+	}, [cleanContent, app]);
 
 	return <div ref={ref} className="chat-bubble-content-segment" />;
 }
