@@ -69,7 +69,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				onClick={onManualRename}
 				title="Rename session"
 			>
-				✏️
+				🪄
 			</button>
 			<button
 				className="chat-btn chat-icon-btn"

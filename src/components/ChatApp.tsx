@@ -86,25 +86,45 @@ function buildSystemPrompt(
 }
 
 function generateSessionTitle(messages: ChatMessage[]): string {
-	const firstUser = messages.find((m) => m.role === "user");
-	if (!firstUser) return `Chat ${new Date().toLocaleDateString()}`;
+	const userMsgs = messages.filter((m) => m.role === "user").slice(0, 2);
+	const assistantMsgs = messages.filter((m) => m.role === "assistant").slice(0, 2);
+	if (userMsgs.length === 0) return `Chat ${new Date().toLocaleDateString()}`;
 
-	let text = firstUser.content.trim();
+	// Build combined text from first 2 user messages and first 2 assistant replies
+	let combined = "";
+	for (let i = 0; i < Math.max(userMsgs.length, assistantMsgs.length); i++) {
+		if (userMsgs[i]) {
+			combined += userMsgs[i].content + " ";
+		}
+		if (assistantMsgs[i]) {
+			// Strip any markdown/JSON tool results from assistant messages
+			let assistantText = assistantMsgs[i].content;
+			assistantText = assistantText.replace(/\[.*\]\(.*\)/g, "");
+			assistantText = assistantText.replace(/```[\s\S]*?```/g, "");
+			combined += assistantText + " ";
+		}
+	}
+
+	let text = combined.trim();
 	// Strip all context tags
 	text = text.replace(/<context>[\s\S]*?<\/context>/g, "").trim();
 	// Strip markdown links/images
 	text = text.replace(/!?\[([^\]]*)\]\([^)]+\)/g, "$1").trim();
 	// Strip inline code/backticks
 	text = text.replace(/`([^`]+)`/g, "$1").trim();
+	// Strip block code
+	text = text.replace(/```[\s\S]*?```/g, "").trim();
+	// Strip JSON objects (tool results often have these)
+	text = text.replace(/\{[\s\S]*?\}/g, "").trim();
 
 	if (text.length === 0) return `Chat ${new Date().toLocaleDateString()}`;
 
 	// Extract first sentence (up to first . ! ? or newline)
 	const sentenceMatch = text.match(/^([^.!?\n]{3,80}[.!?\n]?)/);
-	let title = sentenceMatch ? sentenceMatch[1].trim() : text;
+	let title = sentenceMatch ? sentenceMatch[1].trim() : text.slice(0, 80);
 
 	// Remove leading stop words for cleaner titles
-	const stopWords = /^(please\s+|can\s+you\s+|could\s+you\s+|hey\s+|hi\s+|hello\s+|so\s+|um\s+|uh\s+)/i;
+	const stopWords = /^(please\s+|can\s+you\s+|could\s+you\s+|hey\s+|hi\s+|hello\s+|so\s+|um\s+|uh\s+|okay\s+|ok\s+|well\s+|now\s+|then\s+)/i;
 	title = title.replace(stopWords, "").trim();
 
 	// Capitalize first letter
@@ -345,9 +365,12 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		};
 	}, [sessions, activeSessionId, plugin, chatDataLoaded]);
 
+	const [autoApprove, setAutoApprove] = useState(plugin.settings.autoApply);
+	const [autoNameSessions, setAutoNameSessions] = useState(plugin.settings.autoNameSessions);
+
 	// Auto-title session after it has a few messages
 	useEffect(() => {
-		if (!plugin.settings.autoNameSessions) return;
+		if (!autoNameSessions) return;
 		const currentActiveId = activeSessionIdRef.current;
 		if (!currentActiveId) return;
 		const session = sessionsRef.current.find(
@@ -355,7 +378,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		);
 		if (!session || session.title) return;
 		const userMsgs = session.messages.filter((m) => m.role === "user");
-		if (userMsgs.length >= 1) {
+		const assistantMsgs = session.messages.filter((m) => m.role === "assistant");
+		if (userMsgs.length >= 1 && assistantMsgs.length >= 2) {
 			const title = generateSessionTitle(session.messages);
 			if (title) {
 				setSessions((prev) =>
@@ -365,7 +389,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				);
 			}
 		}
-	}, [sessions, activeSessionId, plugin.settings.autoNameSessions]);
+	}, [sessions, activeSessionId, autoNameSessions]);
 
 	const handleToggleActiveNote = useCallback(() => {
 		console.log(`[handleToggleActiveNote] fired — current items=${JSON.stringify(contextItemsRef.current.map(contextItemKey))}`);
@@ -1255,7 +1279,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	const hasHistory = sessions.some((s) => s.messages.length > 0);
 
 	const handleToggleAutoApprove = useCallback(() => {
-		const newValue = !plugin.settings.autoApply;
+		const newValue = !autoApprove;
+		setAutoApprove(newValue);
 		plugin.settings.autoApply = newValue;
 		void plugin.saveSettings();
 		new Notice(
@@ -1264,10 +1289,11 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				: "🔒 Manual mode — each tool call will ask for approval",
 			2500,
 		);
-	}, [plugin]);
+	}, [plugin, autoApprove]);
 
 	const handleToggleAutoName = useCallback(() => {
-		const newValue = !plugin.settings.autoNameSessions;
+		const newValue = !autoNameSessions;
+		setAutoNameSessions(newValue);
 		plugin.settings.autoNameSessions = newValue;
 		void plugin.saveSettings();
 		new Notice(
@@ -1276,7 +1302,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				: "✨ Auto-name OFF — sessions will not be named automatically",
 			2500,
 		);
-	}, [plugin]);
+	}, [plugin, autoNameSessions]);
 
 	const handleManualRename = useCallback(() => {
 		const currentActiveId = activeSessionIdRef.current;
@@ -1306,9 +1332,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				onLoadChat={() => setShowSessionPicker(true)}
 				canLoad={hasHistory}
 				plugin={plugin}
-				autoApprove={plugin.settings.autoApply}
+				autoApprove={autoApprove}
 				onToggleAutoApprove={handleToggleAutoApprove}
-				autoNameSessions={plugin.settings.autoNameSessions}
+				autoNameSessions={autoNameSessions}
 				onToggleAutoName={handleToggleAutoName}
 				onManualRename={handleManualRename}
 			/>

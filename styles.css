@@ -395,6 +395,7 @@
 	justify-content: center;
 }
 
+/* Toggle buttons: distinct from regular action buttons */
 .chat-icon-btn.is-active {
 	background: var(--interactive-accent);
 	color: var(--text-on-accent);
@@ -403,6 +404,16 @@
 
 .chat-icon-btn.is-active:hover {
 	opacity: 0.85;
+}
+
+.chat-icon-btn:not(.is-active) {
+	border-style: dashed;
+	opacity: 0.7;
+}
+
+.chat-icon-btn:not(.is-active):hover {
+	opacity: 1;
+	border-style: solid;
 }
 
 /* Message area */
