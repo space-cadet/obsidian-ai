@@ -24,13 +24,15 @@
 | T12 | Chat Onboarding, Tips & Empty States | ⏸️ | MEDIUM | — | T1, T9 | [Details](tasks/T12.md) |
 | T13 | Agentic Tool Calling for Note Editing | ✅ | HIGH | 2026-05-06 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
 | T14 | Remote Agent Connectivity (OpenResponses) | 🔄 | HIGH | 2026-05-07 | T1, T5, T9, T13 | [Details](tasks/T14.md) |
+| T15 | Tabbed Chat Interface with Multi-Profile | 🔄 | HIGH | 2026-05-15 | T9, T13, T14 | [Details](tasks/T15.md) |
+| T16 | Group Chat (Multi-Agent Conversation) | ⏸️ | HIGH | — | T15 | [Details](tasks/T16.md) |
 
 ## Active Tasks
 
 ### META-1: Memory Bank Setup and Maintenance
 **Status:** 🔄 IN PROGRESS | **Priority:** HIGH | **Started:** 2026-05-02
 - Memory bank structure created and maintained
-- T1–T14 task files created and kept in sync
+- T1–T16 task files created and kept in sync
 - Format normalization complete
 
 ### T8 — Open Source Release with Branding *(requires T7)*
@@ -43,12 +45,18 @@ File-based debug logger, React ErrorBoundary, diagnostics panel in Settings, and
 All 13 tools implemented; AgentLoop extracted; PendingToolCard created; tool result formatting implemented. See `tasks/T13.md`.
 
 ### T14 — Remote Agent Connectivity (OpenResponses) *(requires T1, T5, T9, T13)*
-Connect Obsidian chat to remote OpenClaw agents via OpenResponses API. See `tasks/T14.md`.
+Connect Obsidian chat to remote OpenClaw agents via OpenResponses API. Phase 3 in progress. See `tasks/T14.md`.
+
+### T15 — Tabbed Chat Interface with Multi-Profile *(requires T9, T13, T14)*
+Multi-panel, multi-provider chat interface. Settings UI overhaul for profile list view. See `tasks/T15.md`.
 
 ## Pending Tasks (v2.0 Development)
 
 ### T12 — Chat Onboarding, Tips & Empty States *(requires T1, T9)*
 Empty states, setup warnings, contextual tips, first-run guidance. See `tasks/T12.md`.
+
+### T16 — Group Chat (Multi-Agent Conversation) *(requires T15)*
+Multi-agent group chat with mention-based routing, orchestration, and shared context. Blocked on T15. See `tasks/T16.md`.
 
 ## Completed Tasks
 

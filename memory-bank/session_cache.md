@@ -1,17 +1,50 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-15 06:45 IST*
+*Last Updated: 2026-05-15 09:57 IST*
 
-**Started**: 2026-05-15 06:00:00 IST
-**Focus Task**: T14 Remote Agent Connectivity → 🔄 IN PROGRESS (Phase 3 integration test)
+**Started**: 2026-05-15 09:57:00 IST
+**Focus Task**: T15 Tabbed Chat Interface → 🔄 IN PROGRESS (design complete)
 **Session File**: `sessions/2026-05-15.md`
-**Status**: T14a Tailscale 2/3 complete. ufw IPv4 blocker identified on VPS. Cloudy migration done.
+**Status**: T15 & T16 tasks created. Architecture designed. Awaiting implementation approval.
 
 ## Overview
 
-- Active: 3 | Paused: 1 | Completed: 10 | Cancelled: 0
+- Active: 4 | Paused: 2 | Completed: 10 | Cancelled: 0
 - Last Session: 2026-05-14 (T13: COMPLETE)
 - Current Period: morning
+
+## Session History (Last 10)
+
+1. `sessions/2026-05-15.md` — T15/T16: CREATED — Tabbed chat & group chat tasks, architecture docs
+2. `sessions/2026-05-14.md` — T13: COMPLETE — 4 new tools, AgentLoop extracted, PendingToolCard created, tool result formatting
+3. `sessions/2026-05-12.md` — T11: debug-log spam diagnosis; T2: queued persistence + load guard; T9: settings rewrite
+4. `sessions/2026-05-09.md` — T13: crash debugging, patch_note, edit_section; T11: file logger, ErrorBoundary, defensive logging
+5. `sessions/2026-05-08.md` — T13: basename resolution fix, diagnostics panel; T11: diagnostics UI
+6. `sessions/2026-05-07-morning.md` — T14: remote agent connectivity design; memory bank update
+7. `sessions/2026-05-06.md` — T13: agentic tool calling MVP foundation; settings panel wiring
+8. `sessions/2026-05-04-night.md` — T10: model cache fix; T6: token estimator, maxContextMessages, usage indicator
+9. `sessions/2026-05-04-evening.md` — Memory bank update: T2, T3, T5 marked complete; registry updated
+10. `sessions/2026-05-04-afternoon.md` — T5: retry button, slash commands, applyToTargetNote, createNote, appendToTarget; T3: embedExpander; all queued tasks complete
+
+## Task Registry
+
+- META-1: Memory Bank Setup and Maintenance — 🔄
+- T1: Chat Panel (ItemView + React UI) — ✅
+- T2: Conversation Chain & Memory — ✅
+- T3: Context & Mentions System — ✅
+- T4: Streaming — ✅
+- T5: In-Place Note Editing from Chat — ✅
+- T6: Token & Context Management — ✅
+- T7: Release System & CI/CD — ✅
+- T8: Open Source Release with Branding — 🔄
+- T9: Settings & Provider Profiles — ✅
+- T10: Model Discovery & Picker UX — ✅
+- T11: Debug Logging & Diagnostics — 🔄
+- T12: Chat Onboarding, Tips & Empty States — ⏸️
+- T13: Agentic Tool Calling for Note Editing — ✅
+- T14: Remote Agent Connectivity (OpenResponses) — 🔄
+- T15: Tabbed Chat Interface with Multi-Profile — 🔄
+- T16: Group Chat (Multi-Agent Conversation) — ⏸️
 
 ## Session History (Last 10)
 

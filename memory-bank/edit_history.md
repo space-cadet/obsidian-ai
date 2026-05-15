@@ -1,12 +1,24 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-15 06:45 IST*
+*Last Updated: 2026-05-15 09:57 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
 
 ---
 
 ### 2026-05-15
+
+#### 09:57:00 IST — T15/T16: Tabbed chat and group chat tasks created
+- **No code commit** — task creation and architecture design session
+- Created `memory-bank/tasks/T15.md` — Tabbed Chat Interface with Multi-Profile Support
+  - 6 phases defined: Settings UI profile list, per-panel `profileId`, tab bar, conversation isolation
+  - Settings UI overhaul: profile cards with masked API keys, add/edit/delete/test per profile
+- Created `memory-bank/tasks/T16.md` — Group Chat (Multi-Agent Conversation)
+  - 7 phases defined: mention-based routing, Orchestrator class, parallel/sequential modes
+  - Blocked on T15 completion
+- Updated `memory-bank/tasks.md` — Registry updated with T15 (🔄) and T16 (⏸️)
+- Updated `memory-bank/activeContext.md` — Current focus shifted to T15
+- Updated `memory-bank/session_cache.md` — Task registry includes T15, T16
 
 #### 06:45:00 IST — T14: Tailscale progress, ufw blocker identified
 - **No code commit** — infrastructure/networking session
