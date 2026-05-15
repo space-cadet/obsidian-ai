@@ -1,11 +1,11 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-15 09:57 IST*
+*Last Updated: 2026-05-15 13:15:00 IST*
 
 **Started**: 2026-05-15 09:57:00 IST
 **Focus Task**: T15 Tabbed Chat Interface → 🔄 IN PROGRESS (design complete)
 **Session File**: `sessions/2026-05-15.md`
-**Status**: T15 & T16 tasks created. Architecture designed. Awaiting implementation approval.
+**Status**: T13 auto-naming fixes v1-v3 completed. T15 & T16 tasks created. Awaiting implementation approval.
 
 ## Overview
 
@@ -49,16 +49,16 @@
 
 ## Session History (Last 10)
 
-1. `sessions/2026-05-14.md` — T13: COMPLETE — 4 new tools, AgentLoop extracted, PendingToolCard created, tool result formatting
-2. `sessions/2026-05-12.md` — T11: debug-log spam diagnosis; T2: queued persistence + load guard; T9: settings rewrite
-3. `sessions/2026-05-09.md` — T13: crash debugging, patch_note, edit_section; T11: file logger, ErrorBoundary, defensive logging
-4. `sessions/2026-05-08.md` — T13: basename resolution fix, diagnostics panel; T11: diagnostics UI
-5. `sessions/2026-05-07-morning.md` — T14: remote agent connectivity design; memory bank update
-6. `sessions/2026-05-06.md` — T13: agentic tool calling MVP foundation; settings panel wiring
-7. `sessions/2026-05-04-night.md` — T10: model cache fix; T6: token estimator, maxContextMessages, usage indicator
-8. `sessions/2026-05-04-evening.md` — Memory bank update: T2, T3, T5 marked complete; registry updated
-9. `sessions/2026-05-04-afternoon.md` — T5: retry button, slash commands, applyToTargetNote, createNote, appendToTarget; T3: embedExpander; all queued tasks complete
-10. `sessions/2026-05-03-night.md` — T3: context system implementation; T5: Apply button; T13: agentic tool calling design doc
+1. `sessions/2026-05-15.md` — T13 auto-naming v1-v3: replace g flag, threshold fix, smart titles, compact icon ActionBar, toggle reactivity, context-aware naming, distinct toggle styling, wand icon. T15/T16 created.
+2. `sessions/2026-05-14.md` — T13: COMPLETE — 4 new tools, AgentLoop extracted, PendingToolCard created, tool result formatting
+3. `sessions/2026-05-12.md` — T11: debug-log spam diagnosis; T2: queued persistence + load guard; T9: settings rewrite
+4. `sessions/2026-05-09.md` — T13: crash debugging, patch_note, edit_section; T11: file logger, ErrorBoundary, defensive logging
+5. `sessions/2026-05-08.md` — T13: basename resolution fix, diagnostics panel; T11: diagnostics UI
+6. `sessions/2026-05-07-morning.md` — T14: remote agent connectivity design; memory bank update
+7. `sessions/2026-05-06.md` — T13: agentic tool calling MVP foundation; settings panel wiring
+8. `sessions/2026-05-04-night.md` — T10: model cache fix; T6: token estimator, maxContextMessages, usage indicator
+9. `sessions/2026-05-04-evening.md` — Memory bank update: T2, T3, T5 marked complete; registry updated
+10. `sessions/2026-05-04-afternoon.md` — T5: retry button, slash commands, applyToTargetNote, createNote, appendToTarget; T3: embedExpander; all queued tasks complete
 
 ## Task Registry
 
