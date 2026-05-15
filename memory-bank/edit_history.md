@@ -26,6 +26,19 @@
 - Updated: `tasks.md`, `activeContext.md`, `session_cache.md`
 - Created edit chunk: `edits/2026-05-15/20250515-103000-t17-advanced-vault-tools.md`
 
+#### 12:10:00 IST — Auto-naming fixes: replace g flag, threshold, UI controls
+- **Code commit**: `4538159` — `fix(auto-name): fix session auto-naming and add UI controls`
+- 2 files changed: `src/components/ChatApp.tsx` (42 lines), `src/components/ActionBar.tsx` (24 lines)
+- **Build**: ✅ tsc + esbuild pass cleanly
+- **Fixes applied**:
+  1. `generateSessionTitle()`: Added `g` flag to `replace()` — all context tags stripped, not just first
+  2. Auto-title `useEffect`: Lowered threshold from `>= 2` to `>= 1` user messages
+  3. Removed date-fallback guard that blocked naming context-only messages
+  4. `handleToggleAutoName()`: Toggles `autoNameSessions` setting with Notice feedback
+  5. `handleManualRename()`: Immediately generates title from first user message
+  6. `ActionBar`: Added auto-name toggle button (✨ Auto / ✨ Off) and manual rename button (✏️ Rename)
+- Updated: `tasks/T13.md`, `implementation-details/agentic-tool-calling.md`, `activeContext.md`
+
 ---
 
 ### 2026-05-15

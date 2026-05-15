@@ -20,7 +20,7 @@ The LLM acts as an agent that can read, edit, create, move, delete, and organize
 
 ---
 
-## Phase 2: Discovery & Rendering Enhancement — ✅ COMPLETE (2026-05-14)
+## Phase 2: Discovery & Rendering Enhancement - ✅ COMPLETE (2026-05-14)
 
 ### Problem
 The initial `search_notes` tool (filename/path substring match) was too limited. The AI could not:
@@ -56,7 +56,7 @@ Tool results are formatted as markdown before inserting into messages:
 - `read_note` → clean content (no JSON wrapper)
 - Edit/append/create/patch/move/delete/folder → brief success text
 
-Implementation: `formatToolResult()` in `src/agent/AgentLoop.ts` (lines 38–108). Results passed as `type: "text"` to LLM instead of raw `type: "json"` blobs.
+Implementation: `formatToolResult()` in `src/agent/AgentLoop.ts` (lines 38-108). Results passed as `type: "text"` to LLM instead of raw `type: "json"` blobs.
 
 ---
 
@@ -164,9 +164,9 @@ export const noteTools = {
 
 `ToolExecutor` includes a `resolveNote(path: string): TFile | null` helper that tries three strategies in order:
 
-1. **Exact path** — `vault.getAbstractFileByPath(path)`
-2. **Append `.md`** — `vault.getAbstractFileByPath(path + ".md")`
-3. **Wiki-link resolution** — `metadataCache.getFirstLinkpathDest(path, "")`
+1. **Exact path** - `vault.getAbstractFileByPath(path)`
+2. **Append `.md`** - `vault.getAbstractFileByPath(path + ".md")`
+3. **Wiki-link resolution** - `metadataCache.getFirstLinkpathDest(path, "")`
 
 This ensures tools work whether the LLM passes `"Project Notes"`, `"Project Notes.md"`, or a wiki-link style name.
 
@@ -174,7 +174,7 @@ This ensures tools work whether the LLM passes `"Project Notes"`, `"Project Note
 
 ## Agent Core
 
-### `AgentLoop` (`src/agent/AgentLoop.ts`) — ✅ IMPLEMENTED
+### `AgentLoop` (`src/agent/AgentLoop.ts`) - ✅ IMPLEMENTED
 
 Orchestrates multi-step tool calling with the Vercel AI SDK. Extracted from `ChatApp.tsx` into a dedicated class.
 
@@ -427,7 +427,7 @@ public async *streamChatWithTools(
 
 ## Chat UI: Pending Tool Cards
 
-### `PendingToolCard.tsx` (`src/components/PendingToolCard.tsx`) — ✅ IMPLEMENTED
+### `PendingToolCard.tsx` (`src/components/PendingToolCard.tsx`) - ✅ IMPLEMENTED
 
 Dedicated component for tool call approval UI. Extracted from inline JSX in `ChatApp.tsx`.
 
@@ -509,7 +509,7 @@ You have access to the following tools for managing Obsidian notes:
 - list_folders: List folders in the vault. Use to understand vault structure.
 
 When the user asks to find, list, or search for notes, ALWAYS use search_notes or list_notes first.
-Do not say you cannot search — you have the search_notes and list_notes tools.
+Do not say you cannot search - you have the search_notes and list_notes tools.
 Before editing a note you are unfamiliar with, use read_note to see its current content.
 
 Important: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks.
@@ -520,11 +520,11 @@ For creating folders: use create_folder(path). Then use move_note to place notes
 
 ### Lessons Learned
 
-1. **System prompt clarity >> brevity** — Explicitly enumerate tools by name. Vague descriptions cause the AI to claim it lacks capabilities.
-2. **Tool result rendering is a UI problem** — Raw JSON in chat messages is unreadable. A formatting layer (`formatToolResult()`) converts structured data into markdown tables/lists/summaries before the LLM sees it.
-3. **Pending approval UI needs constraints** — Full content dump makes buttons unreachable. Summary cards with max-height + sticky actions are essential.
-4. **Three-tier `resolveNote()` handles most LLM path mistakes** — exact → `.md` → `metadataCache.getFirstLinkpathDest()`. The LLM rarely gets paths exactly right.
-5. **TypeScript `ToolResult` must stay ahead of return shapes** — Add optional fields for each new tool (`oldPath` for move, `folders`/`parent` for list_folders).
+1. **System prompt clarity >> brevity** - Explicitly enumerate tools by name. Vague descriptions cause the AI to claim it lacks capabilities.
+2. **Tool result rendering is a UI problem** - Raw JSON in chat messages is unreadable. A formatting layer (`formatToolResult()`) converts structured data into markdown tables/lists/summaries before the LLM sees it.
+3. **Pending approval UI needs constraints** - Full content dump makes buttons unreachable. Summary cards with max-height + sticky actions are essential.
+4. **Three-tier `resolveNote()` handles most LLM path mistakes** - exact → `.md` → `metadataCache.getFirstLinkpathDest()`. The LLM rarely gets paths exactly right.
+5. **TypeScript `ToolResult` must stay ahead of return shapes** - Add optional fields for each new tool (`oldPath` for move, `folders`/`parent` for list_folders).
 
 ---
 
@@ -595,7 +595,7 @@ interface ObsidianAISettings {
 | Streaming abort mid-tool | AbortController passed to streamText; AgentLoop checks signal | ✅ Working |
 | Model doesn't support tools | Graceful fallback to text-only `streamChat` mode | ✅ Working |
 | Large note content in tool args | No inherent size limit, but token budget still applies | ⚠️ Monitor |
-| SDK v7 changes `fullStream` API | Only `api.ts` changes — `StreamEvent` union insulates the rest | ✅ Design |
+| SDK v7 changes `fullStream` API | Only `api.ts` changes - `StreamEvent` union insulates the rest | ✅ Design |
 | Native renderer crash on streaming | `scrollIntoView({ behavior: "auto" })`, unmount cleanup, ErrorBoundary | ✅ Applied |
 | AI claims it cannot do X | System prompt must explicitly list all tools by name | ✅ Fixed |
 | Raw JSON in chat responses | `formatToolResult()` converts to markdown before LLM sees it | ✅ Fixed |
@@ -603,7 +603,7 @@ interface ObsidianAISettings {
 
 ---
 
-## Simpler Alternative (XML Parser) — Rejected
+## Simpler Alternative (XML Parser) - Rejected
 
 If the full tool calling architecture is too heavy for v1, an intermediate step is:
 
@@ -618,7 +618,7 @@ If the full tool calling architecture is too heavy for v1, an intermediate step 
 
 ## Tool Result Formatting Implementation
 
-Location: `src/agent/AgentLoop.ts` — `formatToolResult(toolName, result)`
+Location: `src/agent/AgentLoop.ts` - `formatToolResult(toolName, result)`
 
 ### search_notes / list_notes → Markdown Table
 
@@ -656,7 +656,7 @@ Found 3 notes:
 
 ### read_note → Clean Content
 
-No JSON wrapper — raw note content passed directly.
+No JSON wrapper - raw note content passed directly.
 
 ### edit/create/move/delete → Success Text
 
@@ -728,7 +728,7 @@ When multiple notes share the same basename (e.g., `Research/Papers.md` and `Dai
 The `formatToolResult()` function surfaces the warning as a blockquote in the LLM's context:
 
 ```
-> ⚠️ Ambiguous name: 2 notes share the basename "Papers". Reading "Research/Papers.md". 
+> ⚠️ Ambiguous name: 2 notes share the basename "Papers". Reading "Research/Papers.md".
 > Other matches: Daily/Papers.md. Use the full path (e.g., "Folder/Papers") to target a specific note.
 ```
 
@@ -738,4 +738,75 @@ Files changed: `src/agent/ToolExecutor.ts`, `src/agent/AgentLoop.ts`, `src/agent
 
 ---
 
-*Last Updated: 2026-05-15 09:57:00 IST*
+## 2026-05-15: Session Auto-Naming Fixes
+
+### Bug 1: `replace()` Missing `g` Flag
+
+`generateSessionTitle()` in `ChatApp.tsx` stripped `<context>` tags using:
+
+```typescript
+const clean = text.replace(/<context>[\s\S]*?<\/context>/, "").trim();
+//                                    ↑ no 'g' flag
+```
+
+With multiple context items (e.g., `<context>A.md</context> <context>B.md</context> question`), only the first tag was removed. The second context tag leaked into the generated title:
+
+```
+Title: "B.md</context> question"
+```
+
+**Fix**: Added `g` flag: `.replace(/.../g, "")` — now all context tags are stripped.
+
+### Bug 2: User Message Threshold Too High
+
+Auto-naming only fired when `userMsgs.length >= 2`:
+
+```typescript
+const userMsgs = session.messages.filter((m) => m.role === "user");
+if (userMsgs.length >= 2) {   // ← most sessions never hit this
+    const title = generateSessionTitle(session.messages);
+```
+
+Since `generateSessionTitle()` only looks at the **first** user message anyway, requiring 2 messages was unnecessary. Most single-message sessions (especially those that end after one exchange) never got named.
+
+**Fix**: Lowered to `>= 1` — session named after the first user message.
+
+### Bug 3: Date Fallback Blocked Naming
+
+The auto-title code refused to apply titles that were just the date fallback:
+
+```typescript
+if (title && title !== `Chat ${new Date().toLocaleDateString()}`) {
+```
+
+This meant sessions with empty or context-only first messages (where `generateSessionTitle()` returns the date) stayed permanently untitled.
+
+**Fix**: Removed the date-fallback guard. Any generated title is better than an empty one — at least the date gives *some* identifier.
+
+### Bug 4: Sidebar Computed Title Hid the Problem
+
+`SessionPickerModal` computed `displayTitle` on the fly from first message content, making it *look* like sessions had names when `session.title` was actually empty:
+
+```typescript
+const displayTitle =
+    session.title ||   // ← always empty for auto-named sessions
+    (firstUserMsg ? firstUserMsg.content.slice(0, 40) + "…"
+        : `Chat ${new Date(session.createdAt).toLocaleDateString()}`);
+```
+
+**Fix**: Now `session.title` is properly populated by the auto-name logic, so the fallback is only used for truly empty sessions.
+
+### UI: Auto-Name Toggle + Manual Rename
+
+New buttons added to `ActionBar`:
+
+| Button | Icon | Purpose |
+|--------|------|---------|
+| Auto-name toggle | ✨ Auto / ✨ Off | Toggles `autoNameSessions` setting |
+| Manual rename | ✏️ Rename | Immediately generates title from first user message |
+
+**Files changed**: `src/components/ChatApp.tsx`, `src/components/ActionBar.tsx`
+
+---
+
+*Last Updated: 2026-05-15 12:10:00 IST*
