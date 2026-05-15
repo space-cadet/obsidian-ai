@@ -18,6 +18,14 @@
 - Updated `implementation-details/agentic-tool-calling.md` with 2026-05-15 section
 - Updated `activeContext.md` with T13 fix details
 
+#### 10:30:00 IST — T17: Advanced Vault Tools task created from user suggestions
+- **No code commit** — task creation and architecture design
+- Created `memory-bank/tasks/T17.md` — 6 phases, 11 new tools
+- User-prioritized: backlinks + YAML property management first
+- Architecture: Obsidian API map, YAML parsing strategy, new utility file `src/utils/yaml.ts`
+- Updated: `tasks.md`, `activeContext.md`, `session_cache.md`
+- Created edit chunk: `edits/2026-05-15/20250515-103000-t17-advanced-vault-tools.md`
+
 ---
 
 ### 2026-05-15

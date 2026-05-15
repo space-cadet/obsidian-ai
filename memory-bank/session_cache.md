@@ -45,6 +45,7 @@
 - T14: Remote Agent Connectivity (OpenResponses) — 🔄
 - T15: Tabbed Chat Interface with Multi-Profile — 🔄
 - T16: Group Chat (Multi-Agent Conversation) — ⏸️
+- T17: Advanced Vault Tools — Backlinks, YAML, Bulk Ops — ⏸️
 
 ## Session History (Last 10)
 

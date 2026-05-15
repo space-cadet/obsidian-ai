@@ -26,6 +26,7 @@
 | T14 | Remote Agent Connectivity (OpenResponses) | 🔄 | HIGH | 2026-05-07 | T1, T5, T9, T13 | [Details](tasks/T14.md) |
 | T15 | Tabbed Chat Interface with Multi-Profile | 🔄 | HIGH | 2026-05-15 | T9, T13, T14 | [Details](tasks/T15.md) |
 | T16 | Group Chat (Multi-Agent Conversation) | ⏸️ | HIGH | — | T15 | [Details](tasks/T16.md) |
+| T17 | Advanced Vault Tools — Backlinks, YAML, Bulk Ops | ⏸️ | HIGH | — | T13 | [Details](tasks/T17.md) |
 
 ## Active Tasks
 
@@ -57,6 +58,9 @@ Empty states, setup warnings, contextual tips, first-run guidance. See `tasks/T1
 
 ### T16 — Group Chat (Multi-Agent Conversation) *(requires T15)*
 Multi-agent group chat with mention-based routing, orchestration, and shared context. Blocked on T15. See `tasks/T16.md`.
+
+### T17 — Advanced Vault Tools — Backlinks, YAML, Bulk Ops *(requires T13)*
+Networked thought tools (backlinks, outlinks, unlinked mentions), YAML frontmatter management, tag operations, bulk reorganization, templating, and vault maintenance (broken links, orphans). User-prioritized: backlinks + YAML first. See `tasks/T17.md`.
 
 ## Completed Tasks
 
