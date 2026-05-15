@@ -4,6 +4,20 @@
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
 
+#### 10:15:00 IST — T13: Tool result fixes — full paths, search_content removal, ambiguity warnings
+- **Code commit**: `731e1dc` — `fix(tools): include full paths in tool results...`
+- 4 files changed: `AgentLoop.ts`, `ToolExecutor.ts`, `tools.ts`, `types.ts`
+- **Fixes applied**:
+  1. `list_notes`/`search_notes`: render `[[Folder/Note]]` instead of `[[Note]]`
+  2. `get_note_metadata`: use full path in wiki-link
+  3. `search_notes`: removed broken `search_content` parameter (silently returned false)
+  4. `list_folders`: depth consistency — immediate children only
+  5. `resolveNote`: ambiguity detection for duplicate basenames
+  6. `ToolResult` type: added `warning?: string` field
+- Updated `tasks/T13.md` progress and completion criteria
+- Updated `implementation-details/agentic-tool-calling.md` with 2026-05-15 section
+- Updated `activeContext.md` with T13 fix details
+
 ---
 
 ### 2026-05-15

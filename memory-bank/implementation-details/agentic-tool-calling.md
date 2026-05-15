@@ -38,7 +38,7 @@ Additionally, tool results rendered as raw JSON text in chat messages, making th
 |---|------|---------|--------|
 | 1 | `list_notes` | Browse vault contents with `sort_by` (name/modified/created), `limit`, `folder` filter | ✅ |
 | 2 | `get_note_metadata` | File stats: created, modified, size, wordCount | ✅ |
-| 3 | `search_notes` v2 | `sort_by`, `limit`, `folder`, `search_content` params | ✅ |
+| 3 | `search_notes` v2 | `sort_by`, `limit`, `folder` params. `search_content` removed (was broken). | ✅ |
 | 4 | `create_folder` | Create new folders in vault | ✅ |
 | 5 | `move_note` | Move/rename notes (auto-creates parent folders) | ✅ |
 | 6 | `delete_note` | Delete notes (system trash) | ✅ |
@@ -675,4 +675,67 @@ Error: Note not found: Project Notes
 
 ---
 
-*Last Updated: 2026-05-14 09:51:00 IST*
+## 2026-05-15: Tool Result Fixes
+
+### Full Path Rendering
+
+`list_notes`, `search_notes`, and `get_note_metadata` previously rendered wiki-links using only the basename (e.g., `[[Papers]]`). In vaults with duplicate basenames across folders, the LLM could not distinguish `Research/Papers.md` from `Daily/Papers.md`.
+
+**Fix**: All wiki-links now include the full folder path:
+```
+| Note | Modified | Size |
+|------|----------|------|
+| [[Research/Papers]] | May 15 | 2KB |
+| [[Daily/Papers]] | May 14 | 1KB |
+```
+
+Files changed: `src/agent/AgentLoop.ts` (`formatToolResult`)
+
+### `search_content` Parameter Removed
+
+The `search_notes` tool had a `search_content: boolean` parameter claiming to search inside note bodies. The implementation silently returned `false` for all content matches, never actually reading file contents:
+
+```typescript
+if (searchContent) {
+    // Note: content search is expensive; we'll read and check
+    // For now, skip content search to avoid I/O blocking
+    return false;
+}
+```
+
+This misled the LLM into believing it could search content when it couldn't.
+
+**Fix**: Removed `search_content` from the Zod schema and tool description. Search now only matches against filename and path (which is what actually worked).
+
+Files changed: `src/agent/tools.ts`, `src/agent/ToolExecutor.ts`
+
+### `list_folders` Depth Consistency
+
+`list_folders()` with no args returned only top-level folders (depth 1). But `list_folders({path: "Research"})` returned the **entire subtree** under Research at any depth. This was inconsistent and often returned too many paths.
+
+**Fix**: Both modes now return only immediate children (depth 1 relative to the query point):
+- `list_folders()` → top-level folders only
+- `list_folders({path: "Research"})` → immediate subfolders of Research only
+
+Files changed: `src/agent/ToolExecutor.ts`
+
+### Ambiguity Detection in `resolveNote`
+
+When multiple notes share the same basename (e.g., `Research/Papers.md` and `Daily/Papers.md`), `metadataCache.getFirstLinkpathDest()` returns the first match without warning. The agent silently reads the wrong note.
+
+**Fix**: After resolving a note, `resolveNote()` checks if other files share the same basename. If ambiguous, it attaches a `__ambiguous` array to the file object. `readNote()` detects this and returns a `warning` field in the `ToolResult`.
+
+The `formatToolResult()` function surfaces the warning as a blockquote in the LLM's context:
+
+```
+> ⚠️ Ambiguous name: 2 notes share the basename "Papers". Reading "Research/Papers.md". 
+> Other matches: Daily/Papers.md. Use the full path (e.g., "Folder/Papers") to target a specific note.
+```
+
+A `warning?: string` field was added to the `ToolResult` interface for this purpose.
+
+Files changed: `src/agent/ToolExecutor.ts`, `src/agent/AgentLoop.ts`, `src/agent/types.ts`
+
+---
+
+*Last Updated: 2026-05-15 09:57:00 IST*
