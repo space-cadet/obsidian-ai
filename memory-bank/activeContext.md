@@ -11,7 +11,7 @@
 - [T15]: 🔄 **IN PROGRESS** — Design complete. Architecture: per-panel `profileId`, tab bar UI, Settings profile list view. 6 phases defined. Awaiting implementation approval.
 - [T16]: ⏸️ **PENDING** — Blocked on T15. Architecture designed: mention-based routing, Orchestrator class, sequential/parallel modes, full/isolated context strategies.
 - [T17]: ⏸️ **PENDING** — Advanced vault tools architecture complete. User-prioritized: backlinks + YAML first. 6 phases: Networked Thought, YAML Properties, Tags, Bulk Ops, Templating, Maintenance.
-- [T13]: ✅ **COMPLETED** — All 13 tools, AgentLoop, PendingToolCard. **2026-05-15 fixes**: full path rendering in `list_notes`/`search_notes`/`get_note_metadata`; removed broken `search_content` param; `list_folders` depth consistency; `resolveNote` ambiguity detection with `warning` field in `ToolResult`. **2026-05-15**: Session auto-naming fixed (`g` flag on replace, threshold `>=1`, date fallback guard removed, smarter title generation with sentence extraction + stop-word removal) + compact icon-only ActionBar with `overflow-x: auto`.
+- [T13]: ✅ **COMPLETED** — All 13 tools, AgentLoop, PendingToolCard. **2026-05-15 fixes**: full path rendering in `list_notes`/`search_notes`/`get_note_metadata`; removed broken `search_content` param; `list_folders` depth consistency; `resolveNote` ambiguity detection with `warning` field in `ToolResult`. **2026-05-15**: Session auto-naming v3 — toggle reactivity (local React state), context-aware naming (first 2 user + 2 assistant msgs), distinct toggle styling (dashed border when OFF), 🪄 wand icon for manual rename.
 - [T11]: ✅ **COMPLETED**
 
 ## Implementation Focus

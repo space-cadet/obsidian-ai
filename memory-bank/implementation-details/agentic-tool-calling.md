@@ -817,25 +817,28 @@ The original `generateSessionTitle()` was primitive — just first 40 characters
 // → "Summarize my notes about quantum gravity and string theory"
 ```
 
-### UI: Compact Icon-Only ActionBar
+### v3: Context-Aware Naming + Toggle Reactivity
 
-**Problem**: Text buttons (`+ New`, `↺ Load`, `🤖 Auto`, `✨ Auto`, `✏️ Rename`, `⚙`) overflowed in narrow sidebar panels.
+**Problem 1**: Toggle buttons didn't update visually on click — only after a chat message caused re-render. `handleToggleAutoApprove` and `handleToggleAutoName` mutated `plugin.settings` directly without any React state update.
 
-**Fix**: Replaced with compact icon-only buttons using `title` tooltips:
+**Fix**: Added local React state in ChatApp.tsx:
+```typescript
+const [autoApprove, setAutoApprove] = useState(plugin.settings.autoApply);
+const [autoNameSessions, setAutoNameSessions] = useState(plugin.settings.autoNameSessions);
+```
+Toggle handlers now call `setAutoApprove(newValue)` / `setAutoNameSessions(newValue)` immediately, so the ActionBar re-renders with the new `is-active` class right away.
 
-| Button | Icon | Tooltip |
-|--------|------|---------|
-| New chat | `+` | "New chat" |
-| Load | `↺` | "Load previous session" |
-| Auto-approve | `🤖` / `🔒` | "Auto-approve ON/OFF" |
-| Auto-name | `✨` / `✍` | "Auto-name ON/OFF" |
-| Rename | `✏️` | "Rename session" |
-| Settings | `⚙` | "Settings" |
+**Problem 2**: Title generation used only the first user message, missing important context from the assistant's response.
 
-**CSS additions**:
-- `.chat-action-bar`: `overflow-x: auto; scrollbar-width: thin;`
-- `.chat-icon-btn`: `padding: 3px 6px; font-size: 13px; min-width: 24px;`
-- Active state styling for icon buttons
+**Fix**: `generateSessionTitle()` now takes the **first 2 user messages + first 2 assistant replies**, interleaving them. Additional cleanup strips block code (```...```) and JSON objects from assistant messages. Auto-naming now fires when `userMsgs >= 1` **AND** `assistantMsgs >= 2`.
+
+**Problem 3**: Toggle buttons looked identical to regular buttons when OFF.
+
+**Fix**: CSS adds `border-style: dashed` and `opacity: 0.7` to `.chat-icon-btn:not(.is-active)`. When OFF: subtle dashed border. When ON: solid accent-colored background. Hovering an OFF toggle removes the opacity and switches to solid border.
+
+**Problem 4**: Manual rename button used pencil icon (✏️).
+
+**Fix**: Changed to wand icon (🪄).
 
 **Files changed**: `src/components/ChatApp.tsx`, `src/components/ActionBar.tsx`, `styles.css`
 

@@ -26,6 +26,16 @@
 - Updated: `tasks.md`, `activeContext.md`, `session_cache.md`
 - Created edit chunk: `edits/2026-05-15/20250515-103000-t17-advanced-vault-tools.md`
 
+#### 12:55:00 IST — Auto-naming v3: toggle reactivity + context-aware naming + distinct toggle styling
+- **Code commit**: `e23063a` — `fix(ui): toggle button reactivity + smarter naming + distinct toggle styling`
+- 3 files changed: `ChatApp.tsx` (+42/-11), `ActionBar.tsx` (+1/-1), `styles.css` (+11)
+- **Build**: ✅ tsc + esbuild pass cleanly
+- **Toggle reactivity fix**: Added local React state `autoApprove` and `autoNameSessions` in ChatApp.tsx. Toggle handlers now call `setState()` immediately, so `is-active` CSS class updates on click without waiting for a chat message re-render.
+- **Context-aware naming**: `generateSessionTitle()` now takes first 2 user messages + first 2 assistant replies, interleaved. Strips block code and JSON objects from assistant messages. Auto-naming fires after `>= 2` assistant replies (not just `>= 1` user message).
+- **Distinct toggle styling**: CSS `.chat-icon-btn:not(.is-active)` gets `border-style: dashed; opacity: 0.7`. OFF toggles look visually distinct from regular buttons. Hover restores opacity and switches to solid border.
+- **Wand icon**: Manual rename button changed from ✏️ to 🪄
+- Updated: `tasks/T13.md`, `implementation-details/agentic-tool-calling.md`, `activeContext.md`
+
 #### 12:45:00 IST — Auto-naming v2: smarter titles + compact icon ActionBar
 - **Code commit**: `d1d64ad` → `TBD` — `fix(ui): compact icon-only action bar + smarter session title generation`
 - 3 files changed: `ChatApp.tsx`, `ActionBar.tsx`, `styles.css`
