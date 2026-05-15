@@ -8,6 +8,9 @@ interface ActionBarProps {
 	plugin: ChatPluginLike;
 	autoApprove: boolean;
 	onToggleAutoApprove: () => void;
+	autoNameSessions: boolean;
+	onToggleAutoName: () => void;
+	onManualRename: () => void;
 }
 
 const ActionBar: React.FC<ActionBarProps> = ({
@@ -17,6 +20,9 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	plugin,
 	autoApprove,
 	onToggleAutoApprove,
+	autoNameSessions,
+	onToggleAutoName,
+	onManualRename,
 }) => {
 	const openSettings = () => {
 		(plugin.app as any).setting.open();
@@ -46,6 +52,24 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				}
 			>
 				{autoApprove ? "🤖 Auto" : "🔒 Manual"}
+			</button>
+			<button
+				className={`chat-btn chat-auto-name-btn ${autoNameSessions ? "is-active" : ""}`}
+				onClick={onToggleAutoName}
+				title={
+					autoNameSessions
+						? "Auto-name is ON — sessions are named automatically"
+						: "Auto-name is OFF — sessions are not named automatically"
+				}
+			>
+				{autoNameSessions ? "✨ Auto" : "✨ Off"}
+			</button>
+			<button
+				className="chat-btn chat-rename-btn"
+				onClick={onManualRename}
+				title="Rename session from first message"
+			>
+				✏️ Rename
 			</button>
 			<button
 				className="chat-btn chat-settings-btn"

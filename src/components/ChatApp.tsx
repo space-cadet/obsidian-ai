@@ -89,7 +89,7 @@ function generateSessionTitle(messages: ChatMessage[]): string {
 	const firstUser = messages.find((m) => m.role === "user");
 	if (!firstUser) return `Chat ${new Date().toLocaleDateString()}`;
 	const text = firstUser.content.trim();
-	const clean = text.replace(/<context>[\s\S]*?<\/context>/, "").trim();
+	const clean = text.replace(/<context>[\s\S]*?<\/context>/g, "").trim();
 	if (clean.length === 0) return `Chat ${new Date().toLocaleDateString()}`;
 	return clean.length > 40 ? clean.slice(0, 40) + "…" : clean;
 }
@@ -325,9 +325,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		);
 		if (!session || session.title) return;
 		const userMsgs = session.messages.filter((m) => m.role === "user");
-		if (userMsgs.length >= 2) {
+		if (userMsgs.length >= 1) {
 			const title = generateSessionTitle(session.messages);
-			if (title && title !== `Chat ${new Date().toLocaleDateString()}`) {
+			if (title) {
 				setSessions((prev) =>
 					prev.map((s) =>
 						s.id === currentActiveId ? { ...s, title } : s,
@@ -1236,6 +1236,39 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 		);
 	}, [plugin]);
 
+	const handleToggleAutoName = useCallback(() => {
+		const newValue = !plugin.settings.autoNameSessions;
+		plugin.settings.autoNameSessions = newValue;
+		void plugin.saveSettings();
+		new Notice(
+			newValue
+				? "✨ Auto-name ON — sessions will be named automatically"
+				: "✨ Auto-name OFF — sessions will not be named automatically",
+			2500,
+		);
+	}, [plugin]);
+
+	const handleManualRename = useCallback(() => {
+		const currentActiveId = activeSessionIdRef.current;
+		if (!currentActiveId) return;
+		const session = sessionsRef.current.find(
+			(s) => s.id === currentActiveId,
+		);
+		if (!session || session.messages.length === 0) {
+			new Notice("No messages to generate a title from", 2000);
+			return;
+		}
+		const title = generateSessionTitle(session.messages);
+		if (title) {
+			setSessions((prev) =>
+				prev.map((s) =>
+					s.id === currentActiveId ? { ...s, title } : s,
+				),
+			);
+			new Notice(`Session renamed to: "${title}"`, 2500);
+		}
+	}, []);
+
 	return (
 		<div className="chat-panel">
 			<ActionBar
@@ -1245,6 +1278,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				plugin={plugin}
 				autoApprove={plugin.settings.autoApply}
 				onToggleAutoApprove={handleToggleAutoApprove}
+				autoNameSessions={plugin.settings.autoNameSessions}
+				onToggleAutoName={handleToggleAutoName}
+				onManualRename={handleManualRename}
 			/>
 			<ChatMessages
 				messages={messages}
