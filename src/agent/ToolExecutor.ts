@@ -40,7 +40,7 @@ export class ToolExecutor {
 					);
 				case "search_notes":
 					return await this.searchNotes(
-						call.args as { query: string; sort_by?: string; limit?: number; folder?: string; search_content?: boolean },
+						call.args as { query: string; sort_by?: string; limit?: number; folder?: string },
 					);
 				case "list_notes":
 					return await this.listNotes(
@@ -74,12 +74,11 @@ export class ToolExecutor {
 		}
 	}
 
-	private async searchNotes(args: { query: string; sort_by?: string; limit?: number; folder?: string; search_content?: boolean }): Promise<ToolResult> {
+	private async searchNotes(args: { query: string; sort_by?: string; limit?: number; folder?: string }): Promise<ToolResult> {
 		const query = args.query?.toLowerCase() ?? "";
 		const sortBy = args.sort_by ?? "name";
 		const limit = Math.min(args.limit ?? 20, 100);
 		const folder = args.folder;
-		const searchContent = args.search_content ?? false;
 
 		let files = this.app.vault.getFiles();
 
@@ -92,13 +91,7 @@ export class ToolExecutor {
 		if (query) {
 			files = files.filter(f => {
 				const nameMatch = f.path.toLowerCase().includes(query) || f.basename.toLowerCase().includes(query);
-				if (nameMatch) return true;
-				if (searchContent) {
-					// Note: content search is expensive; we'll read and check
-					// For now, skip content search to avoid I/O blocking
-					return false;
-				}
-				return false;
+				return nameMatch;
 			});
 		}
 
@@ -204,15 +197,49 @@ export class ToolExecutor {
 
 		// 3. Obsidian wiki-link resolution (handles basename → path)
 		const resolved = this.app.metadataCache.getFirstLinkpathDest(path, "");
-		if (resolved instanceof TFile) return resolved;
+		if (resolved instanceof TFile) {
+			// Check for ambiguous basename (multiple notes with same name)
+			const ambiguous = this.findAmbiguousMatches(path);
+			if (ambiguous.length > 1) {
+				// Don't block — return the first match, but caller can warn
+				(resolved as any).__ambiguous = ambiguous;
+			}
+			return resolved;
+		}
 
 		return null;
+	}
+
+	/**
+	 * Finds all notes that share the same basename as the given path.
+	 * Used to detect ambiguous wiki-link resolution.
+	 */
+	private findAmbiguousMatches(path: string): string[] {
+		const basename = path.split("/").pop()?.replace(/\.md$/, "") ?? path;
+		const allFiles = this.app.vault.getFiles();
+		const matches: string[] = [];
+		for (const f of allFiles) {
+			if (f.basename === basename) {
+				matches.push(f.path);
+			}
+		}
+		return matches;
 	}
 
 	private async readNote(args: { path: string }): Promise<ToolResult> {
 		const file = this.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
 		const content = await this.app.vault.read(file);
+		const ambiguous = (file as any).__ambiguous as string[] | undefined;
+		if (ambiguous && ambiguous.length > 1) {
+			return {
+				content,
+				path: file.path,
+				warning: `⚠️ Ambiguous name: ${ambiguous.length} notes share the basename "${file.basename}". ` +
+					`Reading "${file.path}". Other matches: ${ambiguous.filter(p => p !== file.path).join(", ")}. ` +
+					`Use the full path (e.g. "Folder/${file.basename}") to target a specific note.`,
+			};
+		}
 		return { content, path: file.path };
 	}
 
@@ -414,20 +441,23 @@ export class ToolExecutor {
 			const parts = f.path.split("/");
 			if (parts.length <= 1) continue; // root-level file, no folder
 
-			// Collect all parent folders
-			for (let i = 1; i < parts.length; i++) {
-				const folderPath = parts.slice(0, i).join("/");
-				if (parentPath) {
-					// Only include subfolders of the parent
-					if (folderPath === parentPath || folderPath.startsWith(parentPath + "/")) {
-						folderSet.add(folderPath);
-					}
-				} else {
-					// Top-level: only include immediate subfolders
-					if (i === 1) {
-						folderSet.add(folderPath);
+			if (parentPath) {
+				// List immediate subfolders of parentPath (depth 1)
+				// For file "Research/Papers/2026/Jan.md" with parentPath "Research/Papers":
+				// → include "Research/Papers/2026" (one level below parent)
+				// → exclude "Research/Papers/2026/Jan" (deeper)
+				if (f.path.startsWith(parentPath + "/")) {
+					const relativePath = f.path.slice(parentPath.length + 1);
+					const relativeParts = relativePath.split("/");
+					if (relativeParts.length >= 2) {
+						// At least one folder below the file name
+						const immediateSub = parentPath + "/" + relativeParts[0];
+						folderSet.add(immediateSub);
 					}
 				}
+			} else {
+				// No parentPath: list top-level folders only (depth 1)
+				folderSet.add(parts[0]);
 			}
 		}
 

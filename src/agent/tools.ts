@@ -89,7 +89,7 @@ export const editSectionTool = t({
 
 export const searchNotesTool = t({
 	description:
-		"Search for notes in the vault by name, path, or content. " +
+		"Search for notes in the vault by name or path. " +
 		"Use this when the user asks to find, list, or search for notes without providing specific context. " +
 		"Returns a list of matching note paths with metadata.",
 	inputSchema: z.object({
@@ -112,11 +112,6 @@ export const searchNotesTool = t({
 			.string()
 			.optional()
 			.describe('Restrict search to a specific folder path, e.g. "Meeting Notes"'),
-		search_content: z
-			.boolean()
-			.optional()
-			.default(false)
-			.describe('Also search inside note bodies, not just filenames.'),
 	}),
 });
 

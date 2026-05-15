@@ -8,6 +8,7 @@ export interface ToolResult {
 	success?: boolean;
 	content?: string;
 	error?: string;
+	warning?: string;
 	path?: string;
 	oldPath?: string;
 	matches?: Array<{ path: string; basename: string; modified?: number; created?: number; size?: number }>;

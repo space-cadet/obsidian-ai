@@ -44,7 +44,8 @@ function formatToolResult(toolName: string, result: ToolResult): string {
 				const date = m.modified
 					? new Date(m.modified).toLocaleDateString()
 					: "—";
-				md += `| [[${m.basename}]] | ${date} | ${m.size ?? "—"} |\n`;
+				const wikiPath = m.path.replace(/\.md$/, "");
+				md += `| [[${wikiPath}]] | ${date} | ${m.size ?? "—"} |\n`;
 			}
 			return md;
 		}
@@ -59,7 +60,8 @@ function formatToolResult(toolName: string, result: ToolResult): string {
 				const date = n.modified
 					? new Date(n.modified).toLocaleDateString()
 					: "—";
-				md += `| [[${n.basename}]] | ${date} | ${n.size ?? "—"} |\n`;
+				const wikiPath = n.path.replace(/\.md$/, "");
+				md += `| [[${wikiPath}]] | ${date} | ${n.size ?? "—"} |\n`;
 			}
 			return md;
 		}
@@ -77,8 +79,9 @@ function formatToolResult(toolName: string, result: ToolResult): string {
 		case "get_note_metadata": {
 			const date = (ts: number | undefined) =>
 				ts ? new Date(ts).toLocaleString() : "—";
+			const wikiPath = (result.path ?? "").replace(/\.md$/, "");
 			return (
-				`**[[${result.basename ?? result.path}]]**\n\n` +
+				`**[[${wikiPath}]]**\n\n` +
 				`- Size: ${result.size ?? "—"} bytes\n` +
 				`- Created: ${date(result.created)}\n` +
 				`- Modified: ${date(result.modified)}\n` +
@@ -86,8 +89,13 @@ function formatToolResult(toolName: string, result: ToolResult): string {
 			);
 		}
 
-		case "read_note":
-			return result.content ?? "(empty note)";
+		case "read_note": {
+			let output = result.content ?? "(empty note)";
+			if (result.warning) {
+				output = `\n\n> ${result.warning}\n\n---\n\n` + output;
+			}
+			return output;
+		}
 
 		case "create_note":
 		case "edit_note":
