@@ -31,48 +31,48 @@ const ActionBar: React.FC<ActionBarProps> = ({
 
 	return (
 		<div className="chat-action-bar">
-			<button className="chat-btn" onClick={onNewChat} title="New chat">
-				+ New
+			<button className="chat-btn chat-icon-btn" onClick={onNewChat} title="New chat">
+				+
 			</button>
 			<button
-				className="chat-btn"
+				className="chat-btn chat-icon-btn"
 				onClick={onLoadChat}
 				disabled={!canLoad}
-				title={canLoad ? "Load a previous chat session" : "No saved sessions yet"}
+				title={canLoad ? "Load previous session" : "No saved sessions"}
 			>
-				↺ Load
+				↺
 			</button>
 			<button
-				className={`chat-btn chat-auto-approve-btn ${autoApprove ? "is-active" : ""}`}
+				className={`chat-btn chat-icon-btn ${autoApprove ? "is-active" : ""}`}
 				onClick={onToggleAutoApprove}
 				title={
 					autoApprove
-						? "Auto-approve is ON — tool calls run without confirmation"
-						: "Auto-approve is OFF — each tool call requires manual approval"
+						? "🤖 Auto-approve ON"
+						: "🔒 Manual approval"
 				}
 			>
-				{autoApprove ? "🤖 Auto" : "🔒 Manual"}
+				{autoApprove ? "🤖" : "🔒"}
 			</button>
 			<button
-				className={`chat-btn chat-auto-name-btn ${autoNameSessions ? "is-active" : ""}`}
+				className={`chat-btn chat-icon-btn ${autoNameSessions ? "is-active" : ""}`}
 				onClick={onToggleAutoName}
 				title={
 					autoNameSessions
-						? "Auto-name is ON — sessions are named automatically"
-						: "Auto-name is OFF — sessions are not named automatically"
+						? "✨ Auto-name ON"
+						: "✨ Auto-name OFF"
 				}
 			>
-				{autoNameSessions ? "✨ Auto" : "✨ Off"}
+				{autoNameSessions ? "✨" : "✍"}
 			</button>
 			<button
-				className="chat-btn chat-rename-btn"
+				className="chat-btn chat-icon-btn"
 				onClick={onManualRename}
-				title="Rename session from first message"
+				title="Rename session"
 			>
-				✏️ Rename
+				✏️
 			</button>
 			<button
-				className="chat-btn chat-settings-btn"
+				className="chat-btn chat-icon-btn"
 				onClick={openSettings}
 				title="Settings"
 			>

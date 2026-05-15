@@ -88,10 +88,40 @@ function buildSystemPrompt(
 function generateSessionTitle(messages: ChatMessage[]): string {
 	const firstUser = messages.find((m) => m.role === "user");
 	if (!firstUser) return `Chat ${new Date().toLocaleDateString()}`;
-	const text = firstUser.content.trim();
-	const clean = text.replace(/<context>[\s\S]*?<\/context>/g, "").trim();
-	if (clean.length === 0) return `Chat ${new Date().toLocaleDateString()}`;
-	return clean.length > 40 ? clean.slice(0, 40) + "…" : clean;
+
+	let text = firstUser.content.trim();
+	// Strip all context tags
+	text = text.replace(/<context>[\s\S]*?<\/context>/g, "").trim();
+	// Strip markdown links/images
+	text = text.replace(/!?\[([^\]]*)\]\([^)]+\)/g, "$1").trim();
+	// Strip inline code/backticks
+	text = text.replace(/`([^`]+)`/g, "$1").trim();
+
+	if (text.length === 0) return `Chat ${new Date().toLocaleDateString()}`;
+
+	// Extract first sentence (up to first . ! ? or newline)
+	const sentenceMatch = text.match(/^([^.!?\n]{3,80}[.!?\n]?)/);
+	let title = sentenceMatch ? sentenceMatch[1].trim() : text;
+
+	// Remove leading stop words for cleaner titles
+	const stopWords = /^(please\s+|can\s+you\s+|could\s+you\s+|hey\s+|hi\s+|hello\s+|so\s+|um\s+|uh\s+)/i;
+	title = title.replace(stopWords, "").trim();
+
+	// Capitalize first letter
+	title = title.charAt(0).toUpperCase() + title.slice(1);
+
+	// Truncate at word boundary near 40 chars
+	if (title.length > 45) {
+		const truncated = title.slice(0, 45);
+		const lastSpace = truncated.lastIndexOf(" ");
+		if (lastSpace > 25) {
+			title = truncated.slice(0, lastSpace) + "…";
+		} else {
+			title = truncated + "…";
+		}
+	}
+
+	return title || `Chat ${new Date().toLocaleDateString()}`;
 }
 
 function pruneSessions(
