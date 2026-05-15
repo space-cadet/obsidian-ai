@@ -26,6 +26,21 @@
 - Updated: `tasks.md`, `activeContext.md`, `session_cache.md`
 - Created edit chunk: `edits/2026-05-15/20250515-103000-t17-advanced-vault-tools.md`
 
+#### 12:45:00 IST — Auto-naming v2: smarter titles + compact icon ActionBar
+- **Code commit**: `d1d64ad` → `TBD` — `fix(ui): compact icon-only action bar + smarter session title generation`
+- 3 files changed: `ChatApp.tsx`, `ActionBar.tsx`, `styles.css`
+- **Build**: ✅ tsc + esbuild pass cleanly
+- **Smarter `generateSessionTitle()`**:
+  - Extracts first sentence (not just first 40 chars)
+  - Strips markdown links `[text](url)` → `text`, inline code `` `code` `` → `code`
+  - Removes leading stop words: "Please", "Can you", "Could you", "Hey", "Hi", "So", "Um"...
+  - Capitalizes first letter
+  - Truncates at word boundary with `…` (not mid-word)
+- **Compact ActionBar**: Icon-only buttons (+, ↺, 🤖/🔒, ✨/✍, ✏️, ⚙) with title tooltips
+- **CSS**: `.chat-action-bar` gets `overflow-x: auto; scrollbar-width: thin;`
+- **CSS**: `.chat-icon-btn` class: `padding: 3px 6px; font-size: 13px; min-width: 24px;`
+- Updated: `tasks/T13.md`, `implementation-details/agentic-tool-calling.md`, `activeContext.md`
+
 #### 12:10:00 IST — Auto-naming fixes: replace g flag, threshold, UI controls
 - **Code commit**: `4538159` — `fix(auto-name): fix session auto-naming and add UI controls`
 - 2 files changed: `src/components/ChatApp.tsx` (42 lines), `src/components/ActionBar.tsx` (24 lines)

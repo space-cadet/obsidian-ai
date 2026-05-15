@@ -796,16 +796,48 @@ const displayTitle =
 
 **Fix**: Now `session.title` is properly populated by the auto-name logic, so the fallback is only used for truly empty sessions.
 
-### UI: Auto-Name Toggle + Manual Rename
+### Smart Title Generation
 
-New buttons added to `ActionBar`:
+The original `generateSessionTitle()` was primitive — just first 40 characters:
 
-| Button | Icon | Purpose |
+```typescript
+// Before: "Please can you summarize my notes about quantum gravity and string theory..."
+// → "Please can you summarize my notes about qua…"
+```
+
+**Rewritten** to be much smarter:
+- Extracts **first sentence** (up to `. ! ? \n`) instead of raw first 40 chars
+- Strips markdown links `[text](url)` → `text`, inline code `` `code` `` → `code`
+- Removes leading stop words: "Please", "Can you", "Could you", "Hey", "Hi", "So", "Um"...
+- Capitalizes first letter
+- Truncates at **word boundary** with `…` (not mid-word)
+
+```typescript
+// After: "Please can you summarize my notes about quantum gravity and string theory?"
+// → "Summarize my notes about quantum gravity and string theory"
+```
+
+### UI: Compact Icon-Only ActionBar
+
+**Problem**: Text buttons (`+ New`, `↺ Load`, `🤖 Auto`, `✨ Auto`, `✏️ Rename`, `⚙`) overflowed in narrow sidebar panels.
+
+**Fix**: Replaced with compact icon-only buttons using `title` tooltips:
+
+| Button | Icon | Tooltip |
 |--------|------|---------|
-| Auto-name toggle | ✨ Auto / ✨ Off | Toggles `autoNameSessions` setting |
-| Manual rename | ✏️ Rename | Immediately generates title from first user message |
+| New chat | `+` | "New chat" |
+| Load | `↺` | "Load previous session" |
+| Auto-approve | `🤖` / `🔒` | "Auto-approve ON/OFF" |
+| Auto-name | `✨` / `✍` | "Auto-name ON/OFF" |
+| Rename | `✏️` | "Rename session" |
+| Settings | `⚙` | "Settings" |
 
-**Files changed**: `src/components/ChatApp.tsx`, `src/components/ActionBar.tsx`
+**CSS additions**:
+- `.chat-action-bar`: `overflow-x: auto; scrollbar-width: thin;`
+- `.chat-icon-btn`: `padding: 3px 6px; font-size: 13px; min-width: 24px;`
+- Active state styling for icon buttons
+
+**Files changed**: `src/components/ChatApp.tsx`, `src/components/ActionBar.tsx`, `styles.css`
 
 ---
 
