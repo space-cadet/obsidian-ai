@@ -1,16 +1,16 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-14 09:51:00 IST*
+*Last Updated: 2026-05-15 06:45 IST*
 
-**Started**: 2026-05-14 09:19:00 IST
-**Focus Task**: T13 Agentic Tool Calling for Note Editing → ✅ COMPLETED
-**Session File**: `sessions/2026-05-14.md`
-**Status**: All T13 Phase 1/2/3 items done. 4 commits, all build clean.
+**Started**: 2026-05-15 06:00:00 IST
+**Focus Task**: T14 Remote Agent Connectivity → 🔄 IN PROGRESS (Phase 3 integration test)
+**Session File**: `sessions/2026-05-15.md`
+**Status**: T14a Tailscale 2/3 complete. ufw IPv4 blocker identified on VPS. Cloudy migration done.
 
 ## Overview
 
 - Active: 3 | Paused: 1 | Completed: 10 | Cancelled: 0
-- Last Session: 2026-05-14 (T13: vault management tools + AgentLoop + PendingToolCard + tool result formatting)
+- Last Session: 2026-05-14 (T13: COMPLETE)
 - Current Period: morning
 
 ## Session History (Last 10)

@@ -1,17 +1,21 @@
 # Active Context
 
-*Last Updated: 2026-05-14 21:45 IST*
+*Last Updated: 2026-05-15 06:45 IST*
 
 ## Current Focus
 **Primary Task:** T14 — Remote Agent Connectivity
-**Secondary Tasks:** T14a (Tailscale network setup — assigned to human)
+**Secondary Tasks:** T14a (Tailscale network setup — assigned to human, 2/3 complete)
 
 ## Active Tasks
-- [T14]: 🔄 **IN PROGRESS** — Phase 1 & 2 complete, Phase 3 blocked on T14a
+- [T14]: 🔄 **IN PROGRESS** — Phase 1 & 2 complete, Phase 3 in progress
   - ✅ Phase 1: Core API Layer (AgentApiManager, OpenResponsesParser, OpenResponsesLoop, toOpenResponses)
   - ✅ Phase 2: Settings & Wiring (settings schema, ChatApp branch, SettingsPanel UI with agent profile form)
-  - ⏳ Phase 3: Integration Test — requires T14a (Tailscale) for end-to-end testing
-- [T14a]: ⏳ **ASSIGNED TO HUMAN** — Tailscale mesh network setup across MacBook, VPS, Android
+  - 🔄 Phase 3: Integration Test — Obsidian settings configured, connection test initiated
+- [T14a]: 🔄 **IN PROGRESS** — Tailscale installed on MacBook + VPS (2/3). Android pending.
+  - ✅ MacBook Air (Sage): `100.92.54.38` — installed via Homebrew, authenticated
+  - ✅ VPS (Cloudy): `100.89.228.41` — installed via install.sh, authenticated as `quantumofgravity`
+  - ⏳ Android (Ember): Not yet set up
+  - ⏳ **Blocker identified:** ufw on VPS blocking inbound IPv4 Tailscale traffic. Only IPv6 rules present. Need `ufw allow in on tailscale0` (IPv4). Ping works VPS→MacBook but not MacBook→VPS.
 - [T13]: ✅ **COMPLETED** — All 13 tools, AgentLoop, PendingToolCard, tool result formatting
 - [T11]: ✅ **COMPLETED** — Debug logging, persistence noise fixed, active-note flicker fixed
 

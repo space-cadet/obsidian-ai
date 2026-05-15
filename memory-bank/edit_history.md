@@ -1,8 +1,21 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-14 09:51:00 IST*
+*Last Updated: 2026-05-15 06:45 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
+
+---
+
+### 2026-05-15
+
+#### 06:45:00 IST — T14: Tailscale progress, ufw blocker identified
+- **No code commit** — infrastructure/networking session
+- Updated `memory-bank/activeContext.md` — T14a 2/3 complete, ufw IPv4 blocker identified
+- Updated `memory-bank/tasks/T14.md` — Phase 3 "in progress" (was "blocked on T14a")
+- **Tailscale installed**: MacBook Air (`100.92.54.38`) + DO VPS (`100.89.228.41`) both authenticated
+- **Obsidian configured**: Agent (OpenResponses) provider selected, endpoint `http://100.89.228.41:18789/v1/responses`
+- **Blocker**: VPS ufw firewall only has IPv6 rules for `tailscale0`. Need `ufw allow in on tailscale0` for IPv4.
+- **Verification pending**: ufw fix → ping test → curl test → Obsidian test connection
 
 ---
 
