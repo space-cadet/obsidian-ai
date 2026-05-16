@@ -2070,3 +2070,80 @@
 	from { opacity: 0; transform: translateX(-50%) translateY(10px); }
 	to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+/* ─── Group Chat ─── */
+.group-chat-roster {
+	display: flex;
+	gap: 8px;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	flex-wrap: wrap;
+}
+
+.group-chat-participant {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 8px;
+	border-radius: 12px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+	font-size: 0.85em;
+}
+
+.group-chat-participant-icon {
+	font-size: 1.1em;
+}
+
+.group-chat-participant-name {
+	font-weight: 500;
+}
+
+.group-chat-typing {
+	color: var(--text-muted);
+	font-size: 0.8em;
+	font-style: italic;
+	animation: group-chat-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes group-chat-pulse {
+	0%, 100% { opacity: 0.5; }
+	50% { opacity: 1; }
+}
+
+.group-chat-typing-indicator {
+	padding: 8px 16px;
+	color: var(--text-muted);
+	font-size: 0.85em;
+	font-style: italic;
+}
+
+.group-chat-badge {
+	padding: 2px 8px;
+	border-radius: 10px;
+	background: #0d9488;
+	color: white;
+	font-size: 0.75em;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+}
+
+/* Agent identity dot in message bubble */
+.chat-bubble-agent-dot {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	margin-left: 6px;
+	vertical-align: middle;
+}
+
+/* Group chat message bubbles get subtle left border */
+.chat-bubble-assistant[data-agent-id] {
+	border-left: 3px solid transparent;
+}
+
+.chat-bubble-assistant[data-agent-color] {
+	border-left-color: attr(data-agent-color);
+}

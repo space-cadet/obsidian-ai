@@ -26,6 +26,21 @@ export interface ChatMessage {
 	}>;
 	/** Ordered content parts for inline rendering of tool calls */
 	contentParts?: ContentPart[];
+	/** Agent ID that generated this message (for group chat) */
+	agentId?: string;
+	/** Agent name for display (for group chat) */
+	agentName?: string;
+	/** Agent color for display (for group chat) */
+	agentColor?: string;
+}
+
+/** Participant in a group chat session */
+export interface GroupChatParticipant {
+	id: string;
+	name: string;
+	profileId: string;
+	color: string;
+	icon?: string;
 }
 
 export interface ContextItemBase {
@@ -47,6 +62,10 @@ export interface ChatSession {
 	contextItems: ContextItem[];
 	/** The profile used for this session. Defaults to active profile if not set. */
 	profileId?: string;
+	/** Group chat mode flag */
+	isGroupChat?: boolean;
+	/** Participants in a group chat (empty for 1:1) */
+	participants?: GroupChatParticipant[];
 }
 
 export interface StoredChatData {

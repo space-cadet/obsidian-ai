@@ -140,8 +140,19 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 		>
 			<div className="chat-bubble-header">
 				<span className="chat-bubble-role">
-					{message.role === "user" ? "You" : "Obsidian AI"}
+					{message.role === "user"
+						? "You"
+						: message.agentName
+							? message.agentName
+							: "Obsidian AI"}
 				</span>
+				{message.agentColor && message.role === "assistant" && (
+					<span
+						className="chat-bubble-agent-dot"
+						style={{ backgroundColor: message.agentColor }}
+						title={message.agentName}
+					/>
+				)}
 				<span className="chat-bubble-time">{time}</span>
 			</div>
 

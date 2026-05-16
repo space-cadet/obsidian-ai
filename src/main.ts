@@ -22,6 +22,7 @@ import {
 } from "./modules/SelectionState";
 import { diffExtension } from "./modules/diffExtension";
 import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/ObsidianAIChatView";
+import { GroupChatView, GROUP_CHAT_VIEWTYPE } from "./views/GroupChatView";
 import { StoredChatData, ChatSession } from "./types";
 import { createFileLogger, FileLogger } from "./logger";
 
@@ -49,9 +50,19 @@ export default class ObsidianAIPlugin extends Plugin {
 		this.chatapi = new ChatApiManager(this.settings, this.app);
 
 		this.registerView(
-			CHAT_VIEWTYPE,
-			(leaf) => new ObsidianAIChatView(leaf, this, {}),
+			GROUP_CHAT_VIEWTYPE,
+			(leaf) => new GroupChatView(leaf, this),
 		);
+
+		this.addRibbonIcon("users", "Open AI Council (Group Chat)", () => {
+			this.activateGroupChatView();
+		});
+
+		this.addCommand({
+			id: "open-ai-council",
+			name: "Open AI Council (Group Chat)",
+			callback: () => this.activateGroupChatView(),
+		});
 
 		this.addRibbonIcon("message-square", "Open Obsidian AI Chat", () => {
 			this.activateChatView();
@@ -186,10 +197,21 @@ export default class ObsidianAIPlugin extends Plugin {
 		workspace.revealLeaf(leaf);
 	}
 
+	async activateGroupChatView() {
+		const { workspace } = this.app;
+		let leaf = workspace.getLeavesOfType(GROUP_CHAT_VIEWTYPE)[0];
+		if (!leaf) {
+			leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf(true);
+			await leaf.setViewState({ type: GROUP_CHAT_VIEWTYPE, active: true });
+		}
+		workspace.revealLeaf(leaf);
+	}
+
 	onunload() {
 		this.logger.stopMemoryLogging();
 		this.logger.flushNow();
 		this.app.workspace.detachLeavesOfType(CHAT_VIEWTYPE);
+		this.app.workspace.detachLeavesOfType(GROUP_CHAT_VIEWTYPE);
 	}
 
 	// ─────────────────────────────────────────────────────────────
