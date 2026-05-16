@@ -437,107 +437,81 @@ export function ProfileCard({
 
 	if (isEditing) {
 		return (
-			<div className="obsidian-ai-profile-card is-editing">
+			<div className="obsidian-ai-profile-row is-editing">
 				<ProfileEditForm profile={profile} onSave={onSave} onCancel={onCancel} />
 			</div>
 		);
 	}
 
 	return (
-		<div
-			className={`obsidian-ai-profile-card${isActive ? " is-active" : ""}`}
-		>
-			<div className="obsidian-ai-profile-card-header">
-				<div
-					className="obsidian-ai-profile-card-icon"
-					style={{ backgroundColor: meta.color }}
-					title={meta.label}
-				>
-					{meta.icon}
-				</div>
-				<div className="obsidian-ai-profile-card-info">
-					<div className="obsidian-ai-profile-card-name-row">
-						<span className="obsidian-ai-profile-card-name">{profile.name}</span>
-						{isActive && (
-							<span className="obsidian-ai-profile-card-badge">Default</span>
-						)}
-					</div>
-					<div className="obsidian-ai-profile-card-meta">
-						{meta.label} · {profile.model}
-					</div>
-				</div>
-				<div className="obsidian-ai-profile-card-status">
+		<div className={`obsidian-ai-profile-row${isActive ? " is-active" : ""}`}>
+			{/* Icon + Name */}
+			<div className="obsidian-ai-profile-col obsidian-ai-profile-col-name">
+				<div className="obsidian-ai-profile-name-wrap">
 					<div
-						className={`obsidian-ai-profile-card-status-dot${
-							auth.ok ? " is-ok" : " is-warn"
-						}`}
-						title={auth.hint || "Ready"}
-					/>
-				</div>
-			</div>
-
-			<div className="obsidian-ai-profile-card-details">
-				<div className="obsidian-ai-profile-card-detail">
-					<span className="obsidian-ai-profile-card-detail-label">Endpoint</span>
-					<span className="obsidian-ai-profile-card-detail-value">
-						{profile.provider === "azure"
-							? profile.azureEndpoint || getDefaultEndpoint("azure")
-							: profile.provider === "agent"
-							? profile.endpointUrl || getDefaultEndpoint("agent")
-							: profile.customURL || getDefaultEndpoint(profile.provider)}
-					</span>
-				</div>
-				{profile.provider !== "ollama" && (
-					<div className="obsidian-ai-profile-card-detail">
-						<span className="obsidian-ai-profile-card-detail-label">Key</span>
-						<span className="obsidian-ai-profile-card-detail-value">
-							{maskKey(profile.apiKey)}
-						</span>
+						className="obsidian-ai-profile-icon-sm"
+						style={{ backgroundColor: meta.color }}
+						title={meta.label}
+					>
+						{meta.icon}
 					</div>
-				)}
+					<div className="obsidian-ai-profile-name-stack">
+						<div className="obsidian-ai-profile-name-row">
+							<span className="obsidian-ai-profile-name">{profile.name}</span>
+							{isActive && (
+								<span className="obsidian-ai-profile-badge">Default</span>
+							)}
+						</div>
+						<div className="obsidian-ai-profile-provider">{meta.label}</div>
+					</div>
+				</div>
 			</div>
 
-			<div className="obsidian-ai-profile-card-actions">
-				<button
-					title="Edit"
-					className="obsidian-ai-icon-btn"
-					onClick={onEdit}
-					type="button"
-				>
-					✏️
-				</button>
-				<button
-					title="Duplicate"
-					className="obsidian-ai-icon-btn"
-					onClick={onDuplicate}
-					type="button"
-				>
-					📋
-				</button>
-				<button
-					title="Test connection"
-					className="obsidian-ai-icon-btn"
-					onClick={onTest}
-					type="button"
-				>
-					🔌
-				</button>
-				<button
-					title="Set as default"
-					className={`obsidian-ai-icon-btn${isActive ? " is-active" : ""}`}
-					onClick={onSetDefault}
-					type="button"
-				>
-					⭐
-				</button>
-				<button
-					title="Delete"
-					className="obsidian-ai-icon-btn is-danger"
-					onClick={onDelete}
-					type="button"
-				>
-					🗑️
-				</button>
+			{/* Model */}
+			<div className="obsidian-ai-profile-col obsidian-ai-profile-col-model">
+				<span className="obsidian-ai-profile-mono" title={profile.model}>{profile.model}</span>
+			</div>
+
+			{/* Endpoint */}
+			<div className="obsidian-ai-profile-col obsidian-ai-profile-col-endpoint">
+				<span className="obsidian-ai-profile-mono" title={
+					profile.provider === "azure"
+						? profile.azureEndpoint || getDefaultEndpoint("azure")
+						: profile.provider === "agent"
+							? profile.endpointUrl || getDefaultEndpoint("agent")
+							: profile.customURL || getDefaultEndpoint(profile.provider)
+				}>
+					{profile.provider === "azure"
+						? (profile.azureEndpoint || getDefaultEndpoint("azure")).replace(/^https?:\/\//, "")
+						: profile.provider === "agent"
+							? (profile.endpointUrl || getDefaultEndpoint("agent")).replace(/^https?:\/\//, "")
+							: (profile.customURL || getDefaultEndpoint(profile.provider)).replace(/^https?:\/\//, "")
+					}
+				</span>
+			</div>
+
+			{/* Key */}
+			<div className="obsidian-ai-profile-col obsidian-ai-profile-col-key">
+				<span className={`obsidian-ai-profile-key${!auth.ok ? " is-missing" : ""}`}>
+					{maskKey(profile.apiKey)}
+				</span>
+			</div>
+
+			{/* Status */}
+			<div className="obsidian-ai-profile-col obsidian-ai-profile-col-status">
+				<div
+					className={`obsidian-ai-profile-status-dot${auth.ok ? " is-ok" : " is-warn"}`}
+					title={auth.hint || "Ready"}
+				/>
+			</div>
+
+			{/* Actions */}
+			<div className="obsidian-ai-profile-col obsidian-ai-profile-col-actions">
+				<button className="obsidian-ai-icon-btn-sm" title="Edit" onClick={onEdit}>✏️</button>
+				<button className="obsidian-ai-icon-btn-sm" title="Duplicate" onClick={onDuplicate}>📋</button>
+				<button className="obsidian-ai-icon-btn-sm" title="Test connection" onClick={onTest}>🔌</button>
+				<button className={`obsidian-ai-icon-btn-sm${isActive ? " is-active" : ""}`} title="Set as default" onClick={onSetDefault}>⭐</button>
+				<button className="obsidian-ai-icon-btn-sm is-danger" title="Delete" onClick={onDelete}>🗑️</button>
 			</div>
 		</div>
 	);
@@ -711,7 +685,7 @@ export function ProfileList({ plugin }: ProfileListProps) {
 					+ New Profile
 				</button>
 			</div>
-			<div className="obsidian-ai-profile-grid">
+			<div className="obsidian-ai-profile-rows">
 				{profiles.map((profile) => (
 					<ProfileCard
 						key={profile.id}
