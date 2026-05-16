@@ -2186,9 +2186,113 @@
 	border-left-color: attr(data-agent-color);
 }
 
-/* ─── Participant Bar: Compact Mode ─── */
-.chat-participant-bar.is-compact {
-	padding: 4px 12px;
+/* ─── Participant Bar ─── */
+.chat-participant-bar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	position: relative;
+	min-height: 36px;
+}
+
+/* Council trigger button with badge */
+.chat-council-trigger {
+	position: relative;
+	display: inline-flex;
+}
+
+.chat-council-badge {
+	position: absolute;
+	top: -4px;
+	right: -4px;
+	min-width: 16px;
+	height: 16px;
+	border-radius: 8px;
+	background: var(--interactive-accent);
+	color: #fff;
+	font-size: 10px;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 4px;
+}
+
+/* Participant dropdown */
+.chat-participant-dropdown {
+	position: absolute;
+	top: calc(100% + 4px);
+	left: 8px;
+	z-index: 100;
+	min-width: 220px;
+	max-width: 280px;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	padding: 6px 0;
+}
+
+.chat-participant-dropdown-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 12px;
+	cursor: pointer;
+	transition: background 0.1s ease;
+	font-size: var(--font-ui-small);
+}
+
+.chat-participant-dropdown-item:hover {
+	background: var(--background-modifier-hover);
+}
+
+.chat-participant-dropdown-item.is-selected {
+	background: var(--background-modifier-active-hover);
+}
+
+.chat-participant-dropdown-item input[type="checkbox"] {
+	margin: 0;
+	cursor: pointer;
+	width: 14px;
+	height: 14px;
+}
+
+.chat-participant-dropdown-name {
+	flex: 1;
+	color: var(--text-normal);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.chat-participant-dropdown-model {
+	font-size: 0.75em;
+	color: var(--text-muted);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 80px;
+}
+
+.chat-participant-dropdown-empty {
+	padding: 8px 12px;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-style: italic;
+}
+
+/* Mobile: dropdown full width */
+@media (max-width: 768px) {
+	.chat-participant-dropdown {
+		left: 4px;
+		right: 4px;
+		min-width: auto;
+		max-width: none;
+	}
 }
 
 .chat-participant-summary {
@@ -2380,6 +2484,3 @@
 	color: var(--text-normal);
 }
 
-.chat-council-toggle-label {
-	font-weight: 500;
-}

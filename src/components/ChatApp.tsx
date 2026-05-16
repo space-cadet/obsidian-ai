@@ -309,7 +309,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	// ─── Group Chat Participants ───
 	const [participants, setParticipants] = useState<GroupChatParticipant[]>([]);
 	const [typingAgents, setTypingAgents] = useState<Set<string>>(new Set());
-	const [showParticipantDetails, setShowParticipantDetails] = useState(false);
+	const [showParticipantDropdown, setShowParticipantDropdown] = useState(false);
 	const isGroupChat = participants.length > 1;
 
 	// ─── Zen Mode ───
@@ -1668,49 +1668,56 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			)}
 
 			{/* Participant Roster / Council Toggle */}
-			<div className="chat-participant-bar">
-				{isGroupChat ? (
-					<>
-						{participants.map((p) => (
-							<div
-								key={p.id}
-								className="chat-participant-chip"
-								style={{ borderColor: p.color }}
-								title={p.name}
-							>
-								<span>{p.icon}</span>
-								<span className="chat-participant-chip-name">{p.name}</span>
-								{typingAgents.has(p.name) && (
-									<span className="chat-participant-typing">…</span>
-								)}
-								<button
-									className="chat-participant-remove"
-									onClick={() => handleRemoveParticipant(p.id)}
-									title="Remove from council"
-								>
-									×
-								</button>
-							</div>
-						))}
+			{!zenMode && (
+				<div className="chat-participant-bar">
+					<div className="chat-council-trigger">
 						<button
 							className="chat-btn chat-icon-btn chat-council-toggle"
-							onClick={handleToggleGroupChat}
-							title="Leave council mode"
+							onClick={() => setShowParticipantDropdown((s) => !s)}
+							title={isGroupChat ? "Manage council participants" : "Start AI Council"}
 						>
-							<ObsidianIcon icon="arrow-left" size={13} />
+							<ObsidianIcon icon="users" size={13} />
+							{participants.length > 0 && (
+								<span className="chat-council-badge">{participants.length}</span>
+							)}
 						</button>
-					</>
-				) : (
-					<button
-						className="chat-btn chat-icon-btn chat-council-toggle"
-						onClick={handleToggleGroupChat}
-						title="Start AI Council (group chat with all profiles)"
-					>
-						<ObsidianIcon icon="users" size={13} />
-						<span className="chat-council-toggle-label">Council</span>
-					</button>
-				)}
-			</div>
+					</div>
+
+					{showParticipantDropdown && (
+						<div className="chat-participant-dropdown">
+							{plugin.settings.providerProfiles.map((profile) => {
+								const isSelected = participants.some((p) => p.id === profile.id);
+								return (
+									<label
+										key={profile.id}
+										className={`chat-participant-dropdown-item${isSelected ? " is-selected" : ""}`}
+									>
+										<input
+											type="checkbox"
+											checked={isSelected}
+											onChange={() => {
+												if (isSelected) {
+														handleRemoveParticipant(profile.id);
+												} else {
+														handleAddParticipant(profile);
+												}
+											}}
+										/>
+										<span style={{ color: getAgentColor(profile.provider) }}>●</span>
+										<span className="chat-participant-dropdown-name">{profile.name}</span>
+										<span className="chat-participant-dropdown-model">{profile.model}</span>
+									</label>
+								);
+							})}
+							{plugin.settings.providerProfiles.length === 0 && (
+								<div className="chat-participant-dropdown-empty">
+									No profiles configured
+								</div>
+							)}
+						</div>
+					)}
+				</div>
+			)}
 
 			{/* Zen mode exit button (floating) */}
 			{zenMode && (
