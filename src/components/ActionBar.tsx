@@ -43,6 +43,9 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	debateMode,
 	onToggleDebateMode,
 }) => {
+	// Debug: log participant count
+	console.log("[ActionBar] participantCount:", participantCount, "debateMode:", debateMode);
+
 	const openSettings = () => {
 		(plugin.app as any).setting.open();
 		(plugin.app as any).setting.openTabById(plugin.manifest.id);
@@ -76,7 +79,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
 						</button>
 					</div>
 				)}
-				{onToggleDebateMode && participantCount && participantCount > 1 && (
+				{onToggleDebateMode && (participantCount ?? 0) >= 2 && (
 					<button
 						className={`chat-btn chat-icon-btn ${debateMode ? "is-active" : ""}`}
 						onClick={onToggleDebateMode}
