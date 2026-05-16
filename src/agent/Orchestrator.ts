@@ -16,6 +16,7 @@ export interface AgentResponse {
 	agentColor: string;
 	text: string;
 	toolCalls?: Array<{ call: ToolCall; result?: ToolResult }>;
+	tokenEstimate?: number;
 	error?: string;
 }
 
@@ -227,6 +228,7 @@ export class Orchestrator {
 					agentColor: engine.color,
 					text: result.text || fullText,
 					toolCalls: toolCallsLog.length > 0 ? toolCallsLog : undefined,
+					tokenEstimate: result.tokenEstimate,
 				};
 			}
 

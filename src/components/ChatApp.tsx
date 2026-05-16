@@ -710,6 +710,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 							agentColor: response.agentColor,
 							isError: !!response.error,
 							toolCalls: response.toolCalls,
+							estimatedTokens: response.tokenEstimate,
 						};
 
 						setSessions((prev) =>

@@ -556,6 +556,19 @@
 	font-size: var(--font-ui-small);
 }
 
+/* Mobile: wider bubbles, less padding */
+@media (max-width: 768px) {
+	.chat-bubble {
+		max-width: 95%;
+		padding: 6px 8px;
+	}
+
+	.chat-messages {
+		padding: 8px 4px;
+		gap: 6px;
+	}
+}
+
 .chat-bubble-user {
 	align-self: flex-end;
 	background: #0d9488;
@@ -1203,6 +1216,31 @@
 .chat-bubble:hover .message-actions-wrapper,
 .message-actions-wrapper.is-active {
 	opacity: 1;
+}
+
+/* Mobile / touch devices: always show message actions (no hover) */
+@media (hover: none) {
+	.message-actions-wrapper {
+		opacity: 1 !important;
+	}
+}
+
+/* Small screens: also always show */
+@media (max-width: 768px) {
+	.message-actions-wrapper {
+		opacity: 1 !important;
+	}
+
+	/* Slightly smaller action buttons on mobile */
+	.message-action-btn {
+		width: 24px;
+		height: 24px;
+	}
+
+	.message-action-btn svg {
+		width: 14px;
+		height: 14px;
+	}
 }
 
 .message-actions {
