@@ -371,6 +371,13 @@
 	border-bottom: 1px solid var(--background-modifier-border);
 	flex-shrink: 0;
 	min-height: 40px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.chat-action-bar::-webkit-scrollbar {
+	display: none;
 }
 
 .chat-action-bar-left {
@@ -2186,16 +2193,14 @@
 	border-left-color: attr(data-agent-color);
 }
 
-/* ─── Participant Bar ─── */
-.chat-participant-bar {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	padding: 6px 12px;
-	border-bottom: 1px solid var(--background-modifier-border);
-	background: var(--background-secondary);
+/* ─── Action Bar Wrapper (holds ActionBar + participant dropdown) ─── */
+.chat-action-bar-wrapper {
 	position: relative;
-	min-height: 36px;
+}
+
+/* ─── Participant Bar (deprecated, now part of ActionBar) ─── */
+.chat-participant-bar {
+	display: none;
 }
 
 /* Council trigger button with badge */
@@ -2221,10 +2226,10 @@
 	padding: 0 4px;
 }
 
-/* Participant dropdown */
+/* Participant dropdown (positioned below ActionBar wrapper) */
 .chat-participant-dropdown {
 	position: absolute;
-	top: calc(100% + 4px);
+	top: calc(100% + 2px);
 	left: 8px;
 	z-index: 100;
 	min-width: 220px;

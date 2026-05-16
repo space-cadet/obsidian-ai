@@ -18,6 +18,8 @@ interface ActionBarProps {
 	sessionTitle?: string;
 	zenMode?: boolean;
 	onToggleZenMode?: () => void;
+	participantCount?: number;
+	onToggleParticipantDropdown?: () => void;
 }
 
 const ActionBar: React.FC<ActionBarProps> = ({
@@ -34,6 +36,8 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	sessionTitle,
 	zenMode,
 	onToggleZenMode,
+	participantCount,
+	onToggleParticipantDropdown,
 }) => {
 	const openSettings = () => {
 		(plugin.app as any).setting.open();
@@ -54,6 +58,20 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				>
 					<ObsidianIcon icon="history" size={15} />
 				</button>
+				{onToggleParticipantDropdown && (
+					<div className="chat-council-trigger">
+						<button
+							className={`chat-btn chat-icon-btn ${participantCount && participantCount > 0 ? "is-active" : ""}`}
+							onClick={onToggleParticipantDropdown}
+							title={participantCount && participantCount > 0 ? `${participantCount} agents in council` : "AI Council"}
+						>
+							<ObsidianIcon icon="users" size={15} />
+							{participantCount && participantCount > 0 && (
+								<span className="chat-council-badge">{participantCount}</span>
+							)}
+						</button>
+					</div>
+				)}
 				<button
 					className={`chat-btn chat-icon-btn ${autoApprove ? "is-active" : ""}`}
 					onClick={onToggleAutoApprove}

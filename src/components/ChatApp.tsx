@@ -1650,39 +1650,24 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	return (
 		<div className={`chat-panel${zenMode ? ' is-zen' : ''}`}>
 			{!zenMode && (
-				<ActionBar
-					onNewChat={handleNewChat}
-					onLoadChat={() => setShowSessionPicker(true)}
-					canLoad={hasHistory}
-					plugin={plugin}
-					autoApprove={autoApprove}
-					onToggleAutoApprove={handleToggleAutoApprove}
-					autoNameSessions={autoNameSessions}
-					onToggleAutoName={handleToggleAutoName}
-					onManualRename={handleManualRename}
-					profile={resolvedProfile}
-					sessionTitle={sessions.find((s) => s.id === activeSessionId)?.title}
-					zenMode={zenMode}
-					onToggleZenMode={() => setZenMode((z) => !z)}
-				/>
-			)}
-
-			{/* Participant Roster / Council Toggle */}
-			{!zenMode && (
-				<div className="chat-participant-bar">
-					<div className="chat-council-trigger">
-						<button
-							className="chat-btn chat-icon-btn chat-council-toggle"
-							onClick={() => setShowParticipantDropdown((s) => !s)}
-							title={isGroupChat ? "Manage council participants" : "Start AI Council"}
-						>
-							<ObsidianIcon icon="users" size={13} />
-							{participants.length > 0 && (
-								<span className="chat-council-badge">{participants.length}</span>
-							)}
-						</button>
-					</div>
-
+				<div className="chat-action-bar-wrapper">
+					<ActionBar
+						onNewChat={handleNewChat}
+						onLoadChat={() => setShowSessionPicker(true)}
+						canLoad={hasHistory}
+						plugin={plugin}
+						autoApprove={autoApprove}
+						onToggleAutoApprove={handleToggleAutoApprove}
+						autoNameSessions={autoNameSessions}
+						onToggleAutoName={handleToggleAutoName}
+						onManualRename={handleManualRename}
+						profile={resolvedProfile}
+						sessionTitle={sessions.find((s) => s.id === activeSessionId)?.title}
+						zenMode={zenMode}
+						onToggleZenMode={() => setZenMode((z) => !z)}
+						participantCount={participants.length}
+						onToggleParticipantDropdown={() => setShowParticipantDropdown((s) => !s)}
+					/>
 					{showParticipantDropdown && (
 						<div className="chat-participant-dropdown">
 							{plugin.settings.providerProfiles.map((profile) => {
@@ -1697,9 +1682,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 											checked={isSelected}
 											onChange={() => {
 												if (isSelected) {
-														handleRemoveParticipant(profile.id);
+													handleRemoveParticipant(profile.id);
 												} else {
-														handleAddParticipant(profile);
+													handleAddParticipant(profile);
 												}
 											}}
 										/>
