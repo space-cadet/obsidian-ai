@@ -314,6 +314,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 
 	// ─── Zen Mode ───
 	const [zenMode, setZenMode] = useState(false);
+	const [debateMode, setDebateMode] = useState(false);
 	const [originalMessages, setOriginalMessages] = useState<ChatMessage[]>([]);
 	const [editMessageText, setEditMessageText] = useState<string>("");
 	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(
@@ -691,11 +692,20 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				setTypingAgents(new Set(targets.map((t) => t.name)));
 
 				try {
-					for await (const response of orchestrator.dispatch(
-						text,
-						sessionsRef.current.find((s) => s.id === currentActiveId)?.messages ?? [],
-						controllerRef.current?.signal,
-					)) {
+					const stream = debateMode
+						? orchestrator.debate(
+								text,
+								sessionsRef.current.find((s) => s.id === currentActiveId)?.messages ?? [],
+								controllerRef.current?.signal,
+								2,
+						  )
+						: orchestrator.dispatch(
+								text,
+								sessionsRef.current.find((s) => s.id === currentActiveId)?.messages ?? [],
+								controllerRef.current?.signal,
+						  );
+
+					for await (const response of stream) {
 						setTypingAgents((prev) => {
 							const next = new Set(prev);
 							next.delete(response.agentName);
@@ -1275,7 +1285,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				setContextItems([]);
 			}
 		},
-		[isStreaming, plugin, orchestrator, isGroupChat, participants, typingAgents],
+		[isStreaming, plugin, orchestrator, isGroupChat, participants, typingAgents, debateMode],
 	);
 
 	const handleStop = useCallback(() => {
@@ -1422,7 +1432,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			);
 			handleSend(userMsg.content);
 		},
-		[isStreaming, handleSend, orchestrator, isGroupChat, participants],
+		[isStreaming, handleSend, orchestrator, isGroupChat, participants, debateMode],
 	);
 
 	const handleEditMessage = useCallback(
@@ -1667,6 +1677,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 						onToggleZenMode={() => setZenMode((z) => !z)}
 						participantCount={participants.length}
 						onToggleParticipantDropdown={() => setShowParticipantDropdown((s) => !s)}
+						debateMode={debateMode}
+						onToggleDebateMode={() => setDebateMode((d) => !d)}
 					/>
 					{showParticipantDropdown && (
 						<div className="chat-participant-dropdown">

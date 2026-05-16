@@ -20,6 +20,8 @@ interface ActionBarProps {
 	onToggleZenMode?: () => void;
 	participantCount?: number;
 	onToggleParticipantDropdown?: () => void;
+	debateMode?: boolean;
+	onToggleDebateMode?: () => void;
 }
 
 const ActionBar: React.FC<ActionBarProps> = ({
@@ -38,6 +40,8 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	onToggleZenMode,
 	participantCount,
 	onToggleParticipantDropdown,
+	debateMode,
+	onToggleDebateMode,
 }) => {
 	const openSettings = () => {
 		(plugin.app as any).setting.open();
@@ -71,6 +75,15 @@ const ActionBar: React.FC<ActionBarProps> = ({
 							)}
 						</button>
 					</div>
+				)}
+				{onToggleDebateMode && participantCount && participantCount > 1 && (
+					<button
+						className={`chat-btn chat-icon-btn ${debateMode ? "is-active" : ""}`}
+						onClick={onToggleDebateMode}
+						title={debateMode ? "🗣️ Debate mode ON" : "🗣️ Debate mode OFF"}
+					>
+						<ObsidianIcon icon={debateMode ? "message-circle" : "message-square"} size={15} />
+					</button>
 				)}
 				<button
 					className={`chat-btn chat-icon-btn ${autoApprove ? "is-active" : ""}`}

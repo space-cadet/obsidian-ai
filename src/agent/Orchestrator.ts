@@ -102,8 +102,98 @@ export class Orchestrator {
 	}
 
 	/**
-	 * Build message context for a specific agent based on strategy.
+	 * Run a multi-round debate where agents respond to each other.
+	 * Round 1: all agents respond to user message.
+	 * Round 2+: agents see all previous responses and can add follow-ups.
+	 * Stops when maxRounds reached or no agent has anything to add.
 	 */
+	async *debate(
+		text: string,
+		thread: ChatMessage[],
+		signal?: AbortSignal,
+		maxRounds: number = 2,
+	): AsyncGenerator<AgentResponse> {
+		const { targets, cleanText } = this.parseAndRoute(text);
+		const workingThread = [...thread];
+
+		// Round 1: all agents respond to user
+		const round1Responses: AgentResponse[] = [];
+		for (const engine of targets) {
+			const response = await this.sendToAgent(engine, workingThread, cleanText, signal);
+			round1Responses.push(response);
+			yield response;
+			if (signal?.aborted) return;
+		}
+
+		// Add round 1 responses to thread context
+		for (const r of round1Responses) {
+			workingThread.push({
+				id: `round1-${r.agentId}`,
+				role: "assistant",
+				content: r.text,
+				timestamp: Date.now(),
+				agentId: r.agentId,
+				agentName: r.agentName,
+				agentColor: r.agentColor,
+			});
+		}
+
+		// Round 2+: agents can respond to each other
+		for (let round = 2; round <= maxRounds; round++) {
+			const roundResponses: AgentResponse[] = [];
+			let anyResponse = false;
+
+			for (const engine of targets) {
+				// Ask agent if it wants to respond to the conversation
+				const prompt = this.buildDebatePrompt(engine.name, round, round1Responses);
+				const response = await this.sendToAgent(engine, workingThread, prompt, signal);
+
+				// Only include if agent actually wants to add something
+				const trimmed = response.text.trim();
+				if (trimmed && !this.isPass(trimmed)) {
+					response.text = trimmed;
+					roundResponses.push(response);
+					yield response;
+					anyResponse = true;
+				}
+				if (signal?.aborted) return;
+			}
+
+			if (!anyResponse) break; // No one had anything to say
+
+			// Add round responses to thread
+			for (const r of roundResponses) {
+				workingThread.push({
+					id: `round${round}-${r.agentId}`,
+					role: "assistant",
+					content: r.text,
+					timestamp: Date.now(),
+					agentId: r.agentId,
+					agentName: r.agentName,
+					agentColor: r.agentColor,
+				});
+			}
+		}
+	}
+
+	private buildDebatePrompt(agentName: string, round: number, prevResponses: AgentResponse[]): string {
+		const otherResponses = prevResponses
+			.filter((r) => r.agentName !== agentName)
+			.map((r) => `${r.agentName}: ${r.text}`)
+			.join("\n\n");
+
+		return (
+			`Other agents have responded to the user's message. ` +
+			`Read their responses below and decide if you have anything meaningful to add.` +
+			`\n\nIf you have nothing to add, reply with exactly "PASS" (no other text).` +
+			`\n\nIf you want to respond, keep it brief (2-3 sentences max).` +
+			`\n\n--- Other responses ---\n${otherResponses}\n\nYour turn:`
+		);
+	}
+
+	private isPass(text: string): boolean {
+		return /^\s*PASS\s*$/i.test(text) || /^\s*pass\s*$/i.test(text);
+	}
 	buildContext(
 		agentId: string,
 		thread: ChatMessage[],
