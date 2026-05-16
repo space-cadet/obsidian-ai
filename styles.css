@@ -108,8 +108,12 @@
 }
 
 .primary-action {
-	background-color: var(--interactive-accent) !important;
-	color: var(--text-on-accent) !important;
+	background-color: #0d9488 !important;
+	color: #ffffff !important;
+}
+
+.primary-action:hover {
+	background-color: #0f766e !important;
 }
 
 .tooltip-button:hover {
@@ -252,8 +256,8 @@
 }
 
 .obsidian-ai-settings-model-item.is-active {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: #0d9488;
+	color: #ffffff;
 	font-weight: 600;
 }
 
@@ -404,6 +408,9 @@
 	white-space: nowrap;
 	cursor: default;
 	transition: border-color 0.15s ease;
+	min-width: 0;
+	overflow: hidden;
+	max-width: 180px;
 }
 
 .chat-profile-chip:hover {
@@ -420,12 +427,43 @@
 .chat-profile-chip-name {
 	font-weight: 600;
 	color: var(--text-normal);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	min-width: 0;
 }
 
 .chat-profile-chip-model {
 	color: var(--text-muted);
 	font-family: var(--font-monospace);
 	font-size: 0.9em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	min-width: 0;
+}
+
+/* Narrow screens: hide model name, shrink chip */
+@media (max-width: 480px) {
+	.chat-profile-chip {
+		max-width: 120px;
+		padding: 2px 6px;
+	}
+	.chat-profile-chip-model {
+		display: none;
+	}
+	.chat-profile-chip-name {
+		max-width: 80px;
+	}
+}
+
+/* Very narrow: show only dot + icon */
+@media (max-width: 360px) {
+	.chat-profile-chip-name {
+		display: none;
+	}
+	.chat-profile-chip {
+		max-width: 40px;
+		padding: 2px 4px;
+	}
 }
 
 .chat-action-bar::-webkit-scrollbar {
@@ -878,8 +916,8 @@
 	font-size: var(--font-ui-smaller);
 	padding: 1px 6px;
 	border-radius: 10px;
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: #0d9488;
+	color: #ffffff;
 	font-weight: 500;
 }
 
@@ -1268,8 +1306,8 @@
 }
 
 .tool-call-notification.tool-call-pending {
-	border-color: var(--interactive-accent);
-	box-shadow: 0 0 0 1px var(--interactive-accent);
+	border-color: #0d9488;
+	box-shadow: 0 0 0 1px #0d9488;
 }
 
 .tool-call-notification.tool-call-error {
@@ -1486,7 +1524,7 @@
 	width: 100%;
 	padding: 4px 8px;
 	border-radius: 4px;
-	border: 1px solid var(--interactive-accent);
+	border: 1px solid #0d9488;
 	background: var(--background-primary);
 	color: var(--text-normal);
 	font-size: var(--font-ui-small);
@@ -1644,14 +1682,14 @@
 }
 
 .obsidian-ai-profile-row:hover {
-	border-color: var(--interactive-accent);
+	border-color: #0d9488;
 	background: var(--background-primary);
 }
 
 .obsidian-ai-profile-row.is-active {
-	border-color: var(--interactive-accent);
+	border-color: #0d9488;
 	background: var(--background-primary);
-	box-shadow: inset 3px 0 0 var(--interactive-accent);
+	box-shadow: inset 3px 0 0 #0d9488;
 }
 
 .obsidian-ai-profile-row.is-editing {
@@ -1757,8 +1795,8 @@
 	font-size: 0.6em;
 	padding: 1px 4px;
 	border-radius: 3px;
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: #0d9488;
+	color: #ffffff;
 	font-weight: 500;
 	white-space: nowrap;
 	flex-shrink: 0;
@@ -1837,8 +1875,9 @@
 }
 
 .obsidian-ai-icon-btn-sm.is-active {
-	background: var(--interactive-accent);
-	border-color: var(--interactive-accent);
+	background: #0d9488;
+	border-color: #0d9488;
+	color: #ffffff;
 }
 
 .obsidian-ai-icon-btn-sm.is-danger:hover {
@@ -1947,8 +1986,8 @@
 }
 
 .obsidian-ai-profile-edit-model-item.is-active {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: #0d9488;
+	color: #ffffff;
 }
 
 .obsidian-ai-profile-edit-model-more {
@@ -2007,8 +2046,8 @@
 	bottom: 20px;
 	left: 50%;
 	transform: translateX(-50%);
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: #0d9488;
+	color: #ffffff;
 	padding: 8px 16px;
 	border-radius: 6px;
 	font-size: 0.9em;

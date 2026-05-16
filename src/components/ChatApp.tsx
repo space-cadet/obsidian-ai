@@ -125,21 +125,30 @@ function generateSessionTitle(messages: ChatMessage[]): string {
 
 	if (candidateTexts.length === 0) return `Chat ${new Date().toLocaleDateString()}`;
 
-	// Try each candidate to find a non-generic title
-	const genericWords = /^(hello|hi|hey|help|please|thanks|thank you|ok|okay|sure|yes|no|what|how|why|when|where|who)$/i;
-	const stopWords = /^(please\s+|can\s+you\s+|could\s+you\s+|hey\s+|hi\s+|hello\s+|so\s+|um\s+|uh\s+|okay\s+|ok\s+|well\s+|now\s+|then\s+)/i;
+	// Generic words that make bad titles — check AFTER stripping punctuation
+	const genericWords = new Set([
+		"hello", "hi", "hey", "help", "please", "thanks", "thank you",
+		"ok", "okay", "sure", "yes", "no", "what", "how", "why", "when", "where", "who",
+		"good morning", "good afternoon", "good evening",
+	]);
+
+	// Stop words to strip from the START of text (with optional punctuation)
+	const stopWords = /^(please\s+|can\s+you\s+|could\s+you\s+|hey[.!?\s]*|hi[.!?\s]*|hello[.!?\s]*|so\s+|um\s+|uh\s+|okay\s+|ok\s+|well\s+|now\s+|then\s+)/i;
 
 	for (let text of candidateTexts) {
 		// Extract first sentence-ish chunk
 		const sentenceMatch = text.match(/^([^.!?\n]{2,80}[.!?\n]?)/);
 		let title = sentenceMatch ? sentenceMatch[1].trim() : text.slice(0, 80);
 
-		// Strip leading stop words
+		// Strip leading stop words (handles "Hello." → "", "Hello " → "")
 		title = title.replace(stopWords, "").trim();
 
-		// Skip if too short or just generic
+		// Skip if too short after stripping
 		if (title.length < 3) continue;
-		if (genericWords.test(title)) continue;
+
+		// Check if remaining title is just generic words (strip punctuation for check)
+		const cleanForCheck = title.replace(/[.!?,;:"'\-]+$/, "").trim().toLowerCase();
+		if (genericWords.has(cleanForCheck)) continue;
 
 		// Capitalize first letter
 		title = title.charAt(0).toUpperCase() + title.slice(1);
@@ -251,6 +260,14 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	// Tracks the last focused markdown leaf
 	const lastMarkdownLeafRef = useRef<WorkspaceLeaf | null>(null);
 
+	// Force re-render when user returns to chat tab (settings may have changed)
+	const [settingsTick, setSettingsTick] = useState(0);
+	useEffect(() => {
+		const onVis = () => { if (!document.hidden) setSettingsTick(t => t + 1); };
+		document.addEventListener("visibilitychange", onVis);
+		return () => document.removeEventListener("visibilitychange", onVis);
+	}, []);
+
 	/** Resolve the profile for this chat panel: explicit profileId → session's stored profile → active profile */
 	const resolvedProfile: ProviderProfile = useMemo(() => {
 		if (profileId) {
@@ -264,7 +281,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			if (p) return p;
 		}
 		return getActiveProviderProfile(plugin.settings);
-	}, [profileId, activeSessionId, plugin.settings.providerProfiles, sessions]);
+	}, [profileId, activeSessionId, plugin.settings.providerProfiles, sessions, settingsTick]);
 
 	const messages = useMemo(() => {
 		const s = sessions.find((s) => s.id === activeSessionId);
