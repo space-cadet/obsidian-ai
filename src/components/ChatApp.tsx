@@ -1351,6 +1351,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			return pruneSessions(withNew, max, newSession.id);
 		});
 		setActiveSessionId(newSession.id);
+		setParticipants([]);
+		setDebateMode(false);
 		setWasTruncated(false);
 	}, [isStreaming, plugin]);
 
@@ -1554,6 +1556,17 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	const handleLoadSession = useCallback((sessionId: string) => {
 		setActiveSessionId(sessionId);
 		setShowSessionPicker(false);
+		// Restore participants for the loaded session
+		const session = sessionsRef.current.find((s) => s.id === sessionId);
+		if (session?.participants && session.participants.length > 0) {
+			setParticipants(session.participants);
+		} else {
+			setParticipants([]);
+		}
+		// Also restore debate mode state if it was stored
+		if (session?.isGroupChat) {
+			setDebateMode(false); // Default to off, user can toggle
+		}
 	}, []);
 
 	const handleDeleteSession = useCallback((sessionId: string) => {
@@ -1566,6 +1579,12 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				)[0];
 				if (mostRecent) {
 					setActiveSessionId(mostRecent.id);
+					// Restore participants for the new active session
+					if (mostRecent.participants && mostRecent.participants.length > 0) {
+						setParticipants(mostRecent.participants);
+					} else {
+						setParticipants([]);
+					}
 				} else {
 					// No sessions left — create a new empty one
 					const empty: ChatSession = {
@@ -1581,6 +1600,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 					};
 					filtered.push(empty);
 					setActiveSessionId(empty.id);
+					setParticipants([]);
 				}
 			}
 			return filtered;
