@@ -196,6 +196,23 @@ export const listFoldersTool = t({
 	}),
 });
 
+export const searchWebTool = t({
+	description:
+		"Search the web for current information. " +
+		"Use when the user asks about recent events, news, facts you may not know, or anything requiring up-to-date information from the internet. " +
+		"Returns a list of search results with title, URL, and snippet for each result.",
+	inputSchema: z.object({
+		query: z
+			.string()
+			.describe('The search query string. Be specific and include key terms for better results.'),
+		limit: z
+			.number()
+			.optional()
+			.default(5)
+			.describe('Maximum number of results to return (default 5, max 20).'),
+	}),
+});
+
 export const noteTools = {
 	read_note: readNoteTool,
 	edit_note: editNoteTool,
@@ -210,4 +227,5 @@ export const noteTools = {
 	move_note: moveNoteTool,
 	delete_note: deleteNoteTool,
 	list_folders: listFoldersTool,
+	search_web: searchWebTool,
 };

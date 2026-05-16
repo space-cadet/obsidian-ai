@@ -25,6 +25,8 @@ export type ProviderType =
 	| "openrouter"
 	| "agent";
 
+export type WebSearchProvider = "brave" | "duckduckgo" | "searxng";
+
 export interface ModelCache {
 	models: string[];
 	fetchedAt: number;
@@ -69,6 +71,10 @@ export interface ObsidianAISettings {
 	enableAgentTools: boolean;
 	autoApply: boolean;
 	maxAgentSteps: number;
+	// Web Search settings
+	webSearchProvider: WebSearchProvider;
+	braveApiKey: string;
+	searxngUrl: string;
 }
 
 type LegacySettings = Partial<ObsidianAISettings> & {
@@ -240,6 +246,9 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	enableAgentTools: true,
 	autoApply: false,
 	maxAgentSteps: 5,
+	webSearchProvider: "duckduckgo",
+	braveApiKey: "",
+	searxngUrl: "",
 };
 
 export const normalizeSettings = (
@@ -280,6 +289,9 @@ export const normalizeSettings = (
 		enableAgentTools: Boolean(merged.enableAgentTools ?? true),
 		autoApply: Boolean(merged.autoApply ?? false),
 		maxAgentSteps: merged.maxAgentSteps ?? 5,
+		webSearchProvider: (merged.webSearchProvider as WebSearchProvider) ?? "duckduckgo",
+		braveApiKey: merged.braveApiKey ?? "",
+		searxngUrl: merged.searxngUrl ?? "",
 	};
 };
 
@@ -372,6 +384,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			this.renderProviderProfiles(containerEl);
 			this.renderChatDefaults(containerEl);
 			this.renderAgentTools(containerEl);
+			this.renderWebSearch(containerEl);
 			this.renderAdvanced(containerEl);
 			this.renderCustomCommands(containerEl);
 			this.renderDiagnostics(containerEl);
@@ -746,6 +759,64 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						await this.saveSettings();
 					});
 			});
+	}
+
+	private renderWebSearch(containerEl: HTMLElement): void {
+		const sectionEl = this.createSection(
+			containerEl,
+			"Web Search",
+			"Configure how the AI searches the web for current information.",
+		);
+
+		new Setting(sectionEl)
+			.setName("Search provider")
+			.setDesc("Choose the search engine to use for web queries.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("duckduckgo", "DuckDuckGo (free, no API key)")
+					.addOption("brave", "Brave Search API (requires key)")
+					.addOption("searxng", "SearXNG (self-hosted)")
+					.setValue(this.plugin.settings.webSearchProvider)
+					.onChange(async (value) => {
+						this.plugin.settings.webSearchProvider = value as WebSearchProvider;
+						await this.saveSettings({ refresh: true, quiet: true });
+					}),
+			);
+
+		// Brave API key (only shown when Brave is selected)
+		if (this.plugin.settings.webSearchProvider === "brave") {
+			new Setting(sectionEl)
+				.setName("Brave API key")
+				.setDesc(
+					"Your Brave Search API key. Get one at https://brave.com/search/api/ (2000 free queries/month).",
+				)
+				.addText((text) => {
+					text.setPlaceholder("BS...")
+						.setValue(this.plugin.settings.braveApiKey)
+						.inputEl.addEventListener("blur", async () => {
+							this.plugin.settings.braveApiKey = text.getValue().trim();
+							await this.saveSettings();
+						});
+					text.inputEl.type = "password";
+				});
+		}
+
+		// SearXNG URL (only shown when SearXNG is selected)
+		if (this.plugin.settings.webSearchProvider === "searxng") {
+			new Setting(sectionEl)
+				.setName("SearXNG instance URL")
+				.setDesc(
+					"URL of your SearXNG instance, e.g. https://search.example.com",
+				)
+				.addText((text) => {
+					text.setPlaceholder("https://...")
+						.setValue(this.plugin.settings.searxngUrl)
+						.inputEl.addEventListener("blur", async () => {
+							this.plugin.settings.searxngUrl = text.getValue().trim().replace(/\/$/, "");
+							await this.saveSettings();
+						});
+				});
+		}
 	}
 
 	private renderAdvanced(containerEl: HTMLElement): void {

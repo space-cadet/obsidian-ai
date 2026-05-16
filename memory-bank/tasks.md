@@ -3,7 +3,7 @@
 *Last Updated: 2026-05-16 16:20:00 IST*
 
 ## Summary
-- Active: 4 | Paused: 1 | Completed: 10 | Cancelled: 0
+- Active: 4 | Paused: 1 | Completed: 11 | Cancelled: 0
 
 ## Task Registry Table
 
@@ -27,6 +27,7 @@
 | T15 | Tabbed Chat Interface with Multi-Profile | 🔄 | HIGH | 2026-05-15 | T9, T13, T14 | [Details](tasks/T15.md) |
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
 | T17 | Advanced Vault Tools — Backlinks, YAML, Bulk Ops | ⏸️ | HIGH | — | T13 | [Details](tasks/T17.md) |
+| T18 | Web Search Tool for Chat | ✅ | MEDIUM | 2026-05-16 | T13, T9 | [Details](tasks/T18.md) |
 
 ## Active Tasks
 
@@ -73,6 +74,7 @@ Networked thought tools (backlinks, outlinks, unlinked mentions), YAML frontmatt
 | T9 | Settings & Provider Profiles | 2026-05-02 | T4, T10, T11 | [Details](tasks/T9.md) |
 | T10 | Model Discovery & Picker UX | 2026-05-04 | T9 | [Details](tasks/T10.md) |
 | T13 | Agentic Tool Calling for Note Editing | 2026-05-14 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
+| T18 | Web Search Tool for Chat | 2026-05-16 | T13, T9 | [Details](tasks/T18.md) |
 
 ## Cancelled / Paused Tasks
 

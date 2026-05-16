@@ -67,6 +67,7 @@ function buildSystemPrompt(
 			"\n- move_note: Move or rename a note to a new folder or name. Creates parent folders if needed." +
 			"\n- delete_note: Delete a note from the vault." +
 			"\n- list_folders: List folders in the vault. Use to understand vault structure." +
+			"\n- search_web: Search the web for current information. Use when the user asks about recent events, news, or facts that may have changed since your training data." +
 			"\n\nWhen the user asks to find, list, or search for notes, ALWAYS use search_notes or list_notes first." +
 			" Do not say you cannot search — you have the search_notes and list_notes tools." +
 			" Before editing a note you are unfamiliar with, use read_note to see its current content." +
@@ -384,7 +385,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			enableTools: plugin.settings.enableAgentTools,
 			autoApprove: plugin.settings.autoApply,
 			maxSteps: plugin.settings.maxAgentSteps,
-			toolExecutor: new ToolExecutor(plugin.app),
+			toolExecutor: new ToolExecutor(plugin.app, plugin.settings),
 		});
 		// Override engine profiles
 		orch.engines = resolved.map((e) => ({
@@ -925,7 +926,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				);
 				const openResponsesLoop = new OpenResponsesLoop({
 					agentApi,
-					toolExecutor: new ToolExecutor(plugin.app),
+					toolExecutor: new ToolExecutor(plugin.app, plugin.settings),
 					maxSteps: activeProfile.maxSteps ?? maxAgentSteps,
 					autoApprove: activeProfile.autoApprove ?? autoApprove,
 					onTextDelta: (text) => {
@@ -1016,7 +1017,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 					);
 					const agent = new AgentLoop({
 						chatApi: plugin.chatapi,
-						toolExecutor: new ToolExecutor(plugin.app),
+						toolExecutor: new ToolExecutor(plugin.app, plugin.settings),
 						maxSteps: maxAgentSteps,
 						autoApprove,
 						profile: resolvedProfile,
@@ -1619,7 +1620,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 
 	const handleApproveTool = useCallback(async () => {
 		if (!pendingToolCall) return;
-		const toolExecutor = new ToolExecutor(plugin.app);
+		const toolExecutor = new ToolExecutor(plugin.app, plugin.settings);
 		const result = await toolExecutor.execute(pendingToolCall);
 		resolveToolRef.current?.(result);
 		resolveToolRef.current = null;

@@ -1,8 +1,12 @@
 import { App, Notice, TFile } from "obsidian";
 import type { ToolCall, ToolResult } from "./types";
+import type { ObsidianAISettings, WebSearchProvider } from "../settings";
 
 export class ToolExecutor {
-	constructor(private app: App) {}
+	constructor(
+		private app: App,
+		private settings?: ObsidianAISettings,
+	) {}
 
 	async execute(call: ToolCall): Promise<ToolResult> {
 		try {
@@ -53,6 +57,10 @@ export class ToolExecutor {
 				case "list_folders":
 					return await this.listFolders(
 						call.args as { path?: string },
+					);
+				case "search_web":
+					return await this.searchWeb(
+						call.args as { query: string; limit?: number },
 					);
 				case "create_folder":
 					return await this.createFolder(
@@ -468,5 +476,212 @@ export class ToolExecutor {
 			count: folders.length,
 			parent: parentPath || "(root)",
 		};
+	}
+
+	/* ───────────────────────────────────────────────────────────
+	 * Web Search
+	 * ─────────────────────────────────────────────────────────── */
+
+	private async searchWeb(args: {
+		query: string;
+		limit?: number;
+	}): Promise<ToolResult> {
+		const provider = this.settings?.webSearchProvider ?? "duckduckgo";
+		const limit = Math.min(args.limit ?? 5, 20);
+
+		try {
+			let results: Array<{ title: string; url: string; snippet: string }> = [];
+
+			if (provider === "brave") {
+				results = await this.searchBrave(args.query, limit);
+			} else if (provider === "duckduckgo") {
+				results = await this.searchDuckDuckGo(args.query, limit);
+			} else if (provider === "searxng") {
+				results = await this.searchSearXNG(args.query, limit);
+			}
+
+			if (results.length === 0) {
+				return { error: "No search results found." };
+			}
+
+			// Format as markdown for the LLM
+			const formatted = results
+				.map(
+					(r, i) =>
+						`${i + 1}. **${r.title}**\n   URL: ${r.url}\n   ${r.snippet}`,
+				)
+				.join("\n\n");
+
+			return {
+				success: true,
+				content: formatted,
+				query: args.query,
+				count: results.length,
+			};
+		} catch (e: any) {
+			return {
+				error: `Web search failed (${provider}): ${e.message || String(e)}`,
+			};
+		}
+	}
+
+	private async searchBrave(
+		query: string,
+		limit: number,
+	): Promise<Array<{ title: string; url: string; snippet: string }>> {
+		const apiKey = this.settings?.braveApiKey;
+		if (!apiKey) {
+			throw new Error(
+				"Brave Search API key not configured. Add it in Settings → Web Search.",
+			);
+		}
+
+		const url = new URL("https://api.search.brave.com/res/v1/web/search");
+		url.searchParams.set("q", query);
+		url.searchParams.set("count", String(limit));
+		url.searchParams.set("offset", "0");
+
+		const res = await fetch(url.toString(), {
+			headers: {
+				"X-Subscription-Token": apiKey,
+				Accept: "application/json",
+			},
+		});
+
+		if (!res.ok) {
+			const text = await res.text().catch(() => "");
+			throw new Error(`Brave API ${res.status}: ${text}`);
+		}
+
+		const data = await res.json();
+		const results = data.web?.results ?? [];
+
+		return results.slice(0, limit).map((r: any) => ({
+			title: r.title ?? "Untitled",
+			url: r.url ?? "",
+			snippet: r.description ?? "",
+		}));
+	}
+
+	private async searchDuckDuckGo(
+		query: string,
+		limit: number,
+	): Promise<Array<{ title: string; url: string; snippet: string }>> {
+		// DuckDuckGo HTML scraping — no API key needed
+		const url = new URL("https://html.duckduckgo.com/html/");
+		url.searchParams.set("q", query);
+		url.searchParams.set("kl", "us-en"); // region
+
+		const res = await fetch(url.toString(), {
+			headers: {
+				"User-Agent":
+					"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.0",
+			},
+		});
+
+		if (!res.ok) {
+			throw new Error(`DuckDuckGo ${res.status}`);
+		}
+
+		const html = await res.text();
+		const results: Array<{ title: string; url: string; snippet: string }> =
+			[];
+
+		// Parse DuckDuckGo HTML results
+		// Each result is in a .result div
+		const resultRegex =
+			/<div class="result[^"]*"[^>]*>.*?<a[^>]+href="([^"]*)"[^>]*class="result__a"[^>]*>(.*?)<\/a>.*?<a[^>]+class="result__snippet"[^>]*>(.*?)<\/a>.*?<\/div>/gs;
+
+		let match;
+		while ((match = resultRegex.exec(html)) !== null && results.length < limit) {
+			const rawUrl = match[1];
+			const title = this.stripHtml(match[2]);
+			const snippet = this.stripHtml(match[3]);
+
+			// DuckDuckGo redirects through their own URL — try to extract real URL
+			let url = rawUrl;
+			if (rawUrl.startsWith("//duckduckgo.com/l/")) {
+				try {
+					const u = new URL("https:" + rawUrl);
+					url = u.searchParams.get("uddg") ?? rawUrl;
+				} catch {
+					// keep rawUrl
+				}
+			}
+
+			if (title && url) {
+				results.push({ title, url, snippet });
+			}
+		}
+
+		// Fallback: if regex didn't match, try simpler parsing
+		if (results.length === 0) {
+			const linkRegex =
+				/<a[^>]+class="result__a"[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gs;
+			while (
+				(match = linkRegex.exec(html)) !== null &&
+				results.length < limit
+			) {
+				const rawUrl = match[1];
+				const title = this.stripHtml(match[2]);
+				let url = rawUrl;
+				if (rawUrl.startsWith("//duckduckgo.com/l/")) {
+					try {
+						const u = new URL("https:" + rawUrl);
+						url = u.searchParams.get("uddg") ?? rawUrl;
+					} catch {
+						// keep rawUrl
+					}
+				}
+				if (title && url) {
+					results.push({ title, url, snippet: "" });
+				}
+			}
+		}
+
+		return results;
+	}
+
+	private async searchSearXNG(
+		query: string,
+		limit: number,
+	): Promise<Array<{ title: string; url: string; snippet: string }>> {
+		const baseUrl = this.settings?.searxngUrl?.replace(/\/$/, "");
+		if (!baseUrl) {
+			throw new Error(
+				"SearXNG URL not configured. Add it in Settings → Web Search.",
+			);
+		}
+
+		const url = new URL(`${baseUrl}/search`);
+		url.searchParams.set("q", query);
+		url.searchParams.set("format", "json");
+		url.searchParams.set("language", "en");
+
+		const res = await fetch(url.toString());
+		if (!res.ok) {
+			throw new Error(`SearXNG ${res.status}`);
+		}
+
+		const data = await res.json();
+		const results = data.results ?? [];
+
+		return results.slice(0, limit).map((r: any) => ({
+			title: r.title ?? "Untitled",
+			url: r.url ?? "",
+			snippet: r.content ?? r.abstract ?? "",
+		}));
+	}
+
+	private stripHtml(html: string): string {
+		return html
+			.replace(/<[^>]+>/g, "")
+			.replace(/&amp;/g, "&")
+			.replace(/&lt;/g, "<")
+			.replace(/&gt;/g, ">")
+			.replace(/&quot;/g, '"')
+			.replace(/&#39;/g, "'")
+			.replace(/&nbsp;/g, " ")
+			.trim();
 	}
 }

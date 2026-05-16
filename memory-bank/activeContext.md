@@ -1,17 +1,18 @@
 # Active Context
 
-*Last Updated: 2026-05-16 16:20:00 IST*
+*Last Updated: 2026-05-16 23:30 IST*
 
 ## Current Focus
-**Primary Task:** T16 — Group Chat (Multi-Agent Conversation) — Debate mode working, UI refined, participant persistence fixed
-**Secondary Tasks:** T15 (Tabbed Chat — Phases 1–2 done, Phase 3 paused), T14 (Remote Agent)
+**Primary Task:** T18 — Web Search Tool — ✅ COMPLETE
+**Secondary Tasks:** T16 (Group Chat — testing), T15 (Tabbed Chat — paused), T14 (Remote Agent)
 
 ## Active Tasks
-- [T16]: 🔄 **IN PROGRESS** — Phases 1–16 implemented. MVP done. UI refined (dropdown, ActionBar, zen mode). Debate mode working (agents talk to each other). Participant persistence fixed. User testing ongoing.
+- [T16]: 🔄 **IN PROGRESS** — Phases 1–16 implemented. Debate mode working. UI refined. Participant persistence fixed.
 - [T14]: 🔄 **IN PROGRESS** — Phase 3 integration test. Tailscale 2/3 complete.
 - [T15]: 🔄 **IN PROGRESS** — Phase 1–2 complete. Phase 3 (TabBar UI) paused in favor of T16.
 - [T17]: ⏸️ **PENDING** — Advanced vault tools. Backlinks + YAML first.
 - [T13]: ✅ **COMPLETED** — All 13 tools, AgentLoop, PendingToolCard.
+- [T18]: ✅ **COMPLETED** — Web search tool with 3 providers (DuckDuckGo, Brave, SearXNG).
 
 ## T16 Progress Update (2026-05-16)
 
