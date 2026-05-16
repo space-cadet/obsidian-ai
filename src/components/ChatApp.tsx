@@ -26,11 +26,16 @@ import PendingToolCard from "./PendingToolCard";
 import { AgentApiManager } from "../api/AgentApiManager";
 import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
 import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
-import { getActiveProviderProfile } from "../settings";
+import {
+	getActiveProviderProfile,
+	ProviderProfile,
+} from "../settings";
 import { stripThinkingTags } from "./MessageBubble";
 
 interface ChatAppProps {
 	plugin: ChatPluginLike;
+	/** Optional profile ID to use for this chat panel. Falls back to active profile. */
+	profileId?: string;
 }
 
 function buildSystemPrompt(
@@ -199,7 +204,7 @@ function sameContextItems(a: ContextItem[], b: ContextItem[]): boolean {
 	return a.every((item, index) => contextItemKey(item) === contextItemKey(b[index]));
 }
 
-const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
+const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	const [sessions, setSessions] = useState<ChatSession[]>([]);
 	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 	const [isStreaming, setIsStreaming] = useState(false);
@@ -233,6 +238,21 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 	activeSessionIdRef.current = activeSessionId;
 	// Tracks the last focused markdown leaf
 	const lastMarkdownLeafRef = useRef<WorkspaceLeaf | null>(null);
+
+	/** Resolve the profile for this chat panel: explicit profileId → session's stored profile → active profile */
+	const resolvedProfile: ProviderProfile = useMemo(() => {
+		if (profileId) {
+			const p = plugin.settings.providerProfiles.find((pr) => pr.id === profileId);
+			if (p) return p;
+		}
+		// If a session is active and has a stored profileId, use it
+		const activeSession = sessions.find((s) => s.id === activeSessionId);
+		if (activeSession?.profileId) {
+			const p = plugin.settings.providerProfiles.find((pr) => pr.id === activeSession.profileId);
+			if (p) return p;
+		}
+		return getActiveProviderProfile(plugin.settings);
+	}, [profileId, activeSessionId, plugin.settings.providerProfiles, sessions]);
 
 	const messages = useMemo(() => {
 		const s = sessions.find((s) => s.id === activeSessionId);
@@ -330,6 +350,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					contextItems: plugin.settings.includeActiveNote
 						? [{ type: "active-note", id: makeId() }]
 						: [],
+					profileId: profileId || undefined,
 				};
 				setSessions([newSession]);
 				setActiveSessionId(newSession.id);
@@ -541,7 +562,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 				userContent = `${resolved.contextString}\n\n${sendText}`;
 			}
 
-			const activeProfile = getActiveProviderProfile(plugin.settings);
+			const activeProfile = resolvedProfile;
 			const isAgentProvider = activeProfile.provider === "agent";
 			const useTools = plugin.settings.enableAgentTools || isAgentProvider;
 			const autoApprove = plugin.settings.autoApply;
@@ -688,6 +709,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 						toolExecutor: new ToolExecutor(plugin.app),
 						maxSteps: maxAgentSteps,
 						autoApprove,
+						profile: resolvedProfile,
 						onTextDelta: (text) => {
 							fullText = text;
 							// Strip thinking tags from streaming display
@@ -784,6 +806,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 					for await (const chunk of plugin.chatapi.streamChat(
 						chatMessages,
 						controllerRef.current.signal,
+						resolvedProfile,
 					)) {
 						fullText += chunk;
 						// Only show streaming content for non-slash commands
@@ -989,6 +1012,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 			contextItems: plugin.settings.includeActiveNote
 				? [{ type: "active-note", id: makeId() }]
 				: [],
+			profileId: profileId || undefined,
 		};
 
 		setSessions((prev) => {
@@ -1243,6 +1267,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin }) => {
 						contextItems: plugin.settings.includeActiveNote
 							? [{ type: "active-note", id: makeId() }]
 							: [],
+						profileId: profileId || undefined,
 					};
 					filtered.push(empty);
 					setActiveSessionId(empty.id);

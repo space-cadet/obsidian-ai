@@ -349,9 +349,10 @@ export class ChatApiManager {
 	public async callApi(
 		systemMessage: string,
 		message: string,
+		profile?: ProviderProfile,
 	): Promise<string> {
 		const model = createLanguageModel(
-			getActiveProviderProfile(this.settings),
+			profile ?? getActiveProviderProfile(this.settings),
 		);
 		if (!model) {
 			new Notice(
@@ -386,9 +387,10 @@ export class ChatApiManager {
 			content: string;
 		}>,
 		signal?: AbortSignal,
+		profile?: ProviderProfile,
 	): AsyncIterable<string> {
 		const model = createLanguageModel(
-			getActiveProviderProfile(this.settings),
+			profile ?? getActiveProviderProfile(this.settings),
 		);
 		if (!model) {
 			throw new Error("Chat client is not initialized.");
@@ -418,9 +420,10 @@ export class ChatApiManager {
 		messages: Array<any>,
 		tools: any,
 		signal?: AbortSignal,
+		profile?: ProviderProfile,
 	): AsyncIterable<StreamEvent> {
 		const model = createLanguageModel(
-			getActiveProviderProfile(this.settings),
+			profile ?? getActiveProviderProfile(this.settings),
 		);
 		if (!model) {
 			throw new Error("Chat client is not initialized.");

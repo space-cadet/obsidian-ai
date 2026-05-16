@@ -45,6 +45,8 @@ export interface ChatSession {
 	updatedAt: number;
 	messages: ChatMessage[];
 	contextItems: ContextItem[];
+	/** The profile used for this session. Defaults to active profile if not set. */
+	profileId?: string;
 }
 
 export interface StoredChatData {

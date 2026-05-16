@@ -50,7 +50,7 @@ export default class ObsidianAIPlugin extends Plugin {
 
 		this.registerView(
 			CHAT_VIEWTYPE,
-			(leaf) => new ObsidianAIChatView(leaf, this),
+			(leaf) => new ObsidianAIChatView(leaf, this, {}),
 		);
 
 		this.addRibbonIcon("message-square", "Open Obsidian AI Chat", () => {

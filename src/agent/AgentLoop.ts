@@ -2,12 +2,15 @@ import { ChatApiManager } from "../api";
 import { ToolExecutor } from "./ToolExecutor";
 import type { ToolCall, ToolResult, StreamEvent } from "./types";
 import { estimateTokens } from "../context/tokenEstimator";
+import type { ProviderProfile } from "../settings";
 
 export interface AgentLoopOptions {
 	chatApi: ChatApiManager;
 	toolExecutor: ToolExecutor;
 	maxSteps: number;
 	autoApprove: boolean;
+	/** Optional profile to use for API calls. */
+	profile?: ProviderProfile;
 	/** Called with accumulated text whenever a text-delta arrives. */
 	onTextDelta: (accumulatedText: string) => void;
 	/** Called when a tool call is detected (before execution/approval). */
@@ -161,6 +164,7 @@ export class AgentLoop {
 				currentMessages,
 				tools,
 				signal,
+				this.opts.profile,
 			)) {
 				if (signal.aborted) break;
 

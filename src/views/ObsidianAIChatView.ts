@@ -20,13 +20,24 @@ export interface ChatPluginLike {
 	saveSettings(): Promise<void>;
 }
 
+export interface ObsidianAIChatViewOptions {
+	/** Optional profile ID to bind this chat panel to. */
+	profileId?: string;
+}
+
 export class ObsidianAIChatView extends ItemView {
 	private root: Root | null = null;
 	private plugin: ChatPluginLike;
+	private options: ObsidianAIChatViewOptions;
 
-	constructor(leaf: WorkspaceLeaf, plugin: ChatPluginLike) {
+	constructor(
+		leaf: WorkspaceLeaf,
+		plugin: ChatPluginLike,
+		options: ObsidianAIChatViewOptions = {},
+	) {
 		super(leaf);
 		this.plugin = plugin;
+		this.options = options;
 	}
 
 	getViewType(): string {
@@ -47,7 +58,10 @@ export class ObsidianAIChatView extends ItemView {
 			createElement(
 				ChatErrorBoundary,
 				null,
-				createElement(ChatApp, { plugin: this.plugin }),
+				createElement(ChatApp, {
+					plugin: this.plugin,
+					profileId: this.options.profileId,
+				}),
 			),
 		);
 	}
