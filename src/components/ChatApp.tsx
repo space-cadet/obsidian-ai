@@ -9,13 +9,15 @@ import { MarkdownView, Notice, TFile, WorkspaceLeaf } from "obsidian";
 
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
 import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
-import { ChatMessage, ChatSession, ContextItem } from "../types";
+import { ChatMessage, ChatSession, ContextItem, GroupChatParticipant } from "../types";
 import { resolveContextItems } from "../context/ContextEngine";
 import { estimateTokens } from "../context/tokenEstimator";
 import { noteTools } from "../agent/tools";
 import { ToolExecutor } from "../agent/ToolExecutor";
 import { AgentLoop } from "../agent/AgentLoop";
 import type { ToolCall, ToolResult } from "../agent/types";
+import { Orchestrator, AgentResponse } from "../agent/Orchestrator";
+import { parseMentions } from "../agent/MentionParser";
 import ActionBar from "./ActionBar";
 import ChatMessages from "./ChatMessages";
 import ContextBar from "./ContextBar";
@@ -23,6 +25,7 @@ import ChatInput from "./ChatInput";
 import SessionPickerModal from "./SessionPickerModal";
 import ContextPickerModal from "./ContextPickerModal";
 import PendingToolCard from "./PendingToolCard";
+import ObsidianIcon from "./ObsidianIcon";
 import { AgentApiManager } from "../api/AgentApiManager";
 import { ChatApiManager } from "../api";
 import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
@@ -267,6 +270,30 @@ function sameContextItems(a: ContextItem[], b: ContextItem[]): boolean {
 	return a.every((item, index) => contextItemKey(item) === contextItemKey(b[index]));
 }
 
+/** Get a consistent color for a provider type */
+function getAgentColor(provider: string): string {
+	switch (provider) {
+		case "gemini": return "#6366f1";
+		case "openai": return "#10b981";
+		case "anthropic": return "#f43f5e";
+		case "agent": return "#06b6d4";
+		case "ollama": return "#f59e0b";
+		default: return "#8b5cf6";
+	}
+}
+
+/** Get a consistent icon for a provider type */
+function getAgentIcon(provider: string): string {
+	switch (provider) {
+		case "gemini": return "💎";
+		case "openai": return "🌐";
+		case "anthropic": return "🧠";
+		case "agent": return "☁️";
+		case "ollama": return "🔥";
+		default: return "🤖";
+	}
+}
+
 const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	const [sessions, setSessions] = useState<ChatSession[]>([]);
 	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
@@ -279,6 +306,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	const [showSessionPicker, setShowSessionPicker] = useState(false);
 	const [showContextPicker, setShowContextPicker] = useState(false);
 	const [isEditing, setIsEditing] = useState(false);
+	// ─── Group Chat Participants ───
+	const [participants, setParticipants] = useState<GroupChatParticipant[]>([]);
+	const [typingAgents, setTypingAgents] = useState<Set<string>>(new Set());
+	const isGroupChat = participants.length > 1;
 	const [originalMessages, setOriginalMessages] = useState<ChatMessage[]>([]);
 	const [editMessageText, setEditMessageText] = useState<string>("");
 	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(
@@ -326,6 +357,79 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		}
 		return getActiveProviderProfile(plugin.settings);
 	}, [profileId, activeSessionId, plugin.settings.providerProfiles, sessions, settingsTick]);
+
+	// ─── Group Chat Orchestrator ───
+	const orchestrator = useMemo(() => {
+		if (!isGroupChat || participants.length === 0) return null;
+		const resolved = participants.map((p) => {
+			const profile = plugin.settings.providerProfiles.find((pr) => pr.id === p.profileId);
+			return { ...p, profile: profile ?? undefined };
+		});
+		const orch = new Orchestrator({
+			api: plugin.chatapi,
+			participants: resolved.map((e) => ({
+				id: e.id,
+				name: e.name,
+				profileId: e.profileId,
+				color: e.color,
+				icon: e.icon,
+			})),
+			mode: "sequential",
+			contextStrategy: "full",
+			enableTools: plugin.settings.enableAgentTools,
+			autoApprove: plugin.settings.autoApply,
+			maxSteps: plugin.settings.maxAgentSteps,
+		});
+		// Override engine profiles
+		orch.engines = resolved.map((e) => ({
+			id: e.id,
+			name: e.name,
+			color: e.color,
+			profile: e.profile ?? {
+				id: e.profileId,
+				name: e.name,
+				provider: "custom",
+				model: "default",
+				createdAt: Date.now(),
+				updatedAt: Date.now(),
+			} as ProviderProfile,
+		}));
+		return orch;
+	}, [isGroupChat, participants, plugin.chatapi, plugin.settings]);
+
+	// ─── Participant Management ───
+	const handleAddParticipant = useCallback((profile: ProviderProfile) => {
+		const newParticipant: GroupChatParticipant = {
+			id: profile.id,
+			name: profile.name,
+			profileId: profile.id,
+			color: getAgentColor(profile.provider),
+			icon: getAgentIcon(profile.provider),
+		};
+		setParticipants((prev) => {
+			if (prev.some((p) => p.id === newParticipant.id)) return prev;
+			return [...prev, newParticipant];
+		});
+	}, []);
+
+	const handleRemoveParticipant = useCallback((id: string) => {
+		setParticipants((prev) => prev.filter((p) => p.id !== id));
+	}, []);
+
+	const handleToggleGroupChat = useCallback(() => {
+		if (isGroupChat) {
+			setParticipants([]);
+		} else {
+			const all = plugin.settings.providerProfiles.map((p) => ({
+				id: p.id,
+				name: p.name,
+				profileId: p.id,
+				color: getAgentColor(p.provider),
+				icon: getAgentIcon(p.provider),
+			}));
+			setParticipants(all);
+		}
+	}, [isGroupChat, plugin.settings.providerProfiles]);
 
 	const messages = useMemo(() => {
 		const s = sessions.find((s) => s.id === activeSessionId);
@@ -556,6 +660,86 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	const handleSend = useCallback(
 		async (text: string) => {
 			if (!text.trim() || isStreaming) return;
+
+			// ═══════════════════════════════════════════════════════
+			// GROUP CHAT PATH
+			// ═══════════════════════════════════════════════════════
+			if (isGroupChat && orchestrator) {
+				const userMsg: ChatMessage = {
+					id: makeId(),
+					role: "user",
+					content: text,
+					timestamp: Date.now(),
+				};
+				const currentActiveId = activeSessionIdRef.current;
+				setSessions((prev) =>
+					prev.map((s) =>
+						s.id === currentActiveId
+							? { ...s, messages: [...s.messages, userMsg], updatedAt: Date.now() }
+							: s,
+					),
+				);
+				setIsStreaming(true);
+				controllerRef.current = new AbortController();
+
+				const { targets } = orchestrator.parseAndRoute(text);
+				setTypingAgents(new Set(targets.map((t) => t.name)));
+
+				try {
+					for await (const response of orchestrator.dispatch(
+						text,
+						sessionsRef.current.find((s) => s.id === currentActiveId)?.messages ?? [],
+					)) {
+						setTypingAgents((prev) => {
+							const next = new Set(prev);
+							next.delete(response.agentName);
+							return next;
+						});
+
+						const assistantMsg: ChatMessage = {
+							id: makeId(),
+							role: "assistant",
+							content: response.error
+								? `⚠️ ${response.agentName} failed: ${response.error}`
+								: response.text,
+							timestamp: Date.now(),
+							agentId: response.agentId,
+							agentName: response.agentName,
+							agentColor: response.agentColor,
+							isError: !!response.error,
+						};
+
+						setSessions((prev) =>
+							prev.map((s) =>
+								s.id === currentActiveId
+									? { ...s, messages: [...s.messages, assistantMsg], updatedAt: Date.now() }
+									: s,
+							),
+						);
+					}
+				} catch (error: any) {
+					new Notice(`❌ Group chat error: ${error.message}`);
+					const errorMsg: ChatMessage = {
+						id: makeId(),
+						role: "assistant",
+						content: `⚠️ Council error: ${error.message}`,
+						timestamp: Date.now(),
+						isError: true,
+					};
+					setSessions((prev) =>
+						prev.map((s) =>
+							s.id === currentActiveId
+								? { ...s, messages: [...s.messages, errorMsg], updatedAt: Date.now() }
+								: s,
+						),
+					);
+				} finally {
+					setIsStreaming(false);
+					setTypingAgents(new Set());
+					controllerRef.current = null;
+				}
+				return;
+			}
 
 			// Parse slash commands
 			const slashCmd = parseSlashCommand(text);
@@ -1470,6 +1654,52 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				profile={resolvedProfile}
 				sessionTitle={sessions.find((s) => s.id === activeSessionId)?.title}
 			/>
+
+			{/* Participant Roster / Council Toggle */}
+			<div className="chat-participant-bar">
+				{isGroupChat ? (
+					<>
+						{participants.map((p) => (
+							<div
+								key={p.id}
+								className="chat-participant-chip"
+								style={{ borderColor: p.color }}
+								title={p.name}
+							>
+								<span>{p.icon}</span>
+								<span className="chat-participant-chip-name">{p.name}</span>
+								{typingAgents.has(p.name) && (
+									<span className="chat-participant-typing">…</span>
+								)}
+								<button
+									className="chat-participant-remove"
+									onClick={() => handleRemoveParticipant(p.id)}
+									title="Remove from council"
+								>
+									×
+								</button>
+							</div>
+						))}
+						<button
+							className="chat-btn chat-icon-btn chat-council-toggle"
+							onClick={handleToggleGroupChat}
+							title="Leave council mode"
+						>
+							<ObsidianIcon icon="arrow-left" size={13} />
+						</button>
+					</>
+				) : (
+					<button
+						className="chat-btn chat-icon-btn chat-council-toggle"
+						onClick={handleToggleGroupChat}
+						title="Start AI Council (group chat with all profiles)"
+					>
+						<ObsidianIcon icon="users" size={13} />
+						<span className="chat-council-toggle-label">Council</span>
+					</button>
+				)}
+			</div>
+
 			<ChatMessages
 				messages={messages}
 				currentAiMessage={currentAiMessage}
