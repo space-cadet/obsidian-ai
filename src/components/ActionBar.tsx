@@ -1,5 +1,8 @@
 import React from "react";
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
+import { ProviderProfile } from "../settings";
+import ObsidianIcon from "./ObsidianIcon";
+import ProfileIndicator from "./ProfileIndicator";
 
 interface ActionBarProps {
 	onNewChat: () => void;
@@ -11,6 +14,8 @@ interface ActionBarProps {
 	autoNameSessions: boolean;
 	onToggleAutoName: () => void;
 	onManualRename: () => void;
+	profile: ProviderProfile;
+	sessionTitle?: string;
 }
 
 const ActionBar: React.FC<ActionBarProps> = ({
@@ -23,6 +28,8 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	autoNameSessions,
 	onToggleAutoName,
 	onManualRename,
+	profile,
+	sessionTitle,
 }) => {
 	const openSettings = () => {
 		(plugin.app as any).setting.open();
@@ -31,53 +38,57 @@ const ActionBar: React.FC<ActionBarProps> = ({
 
 	return (
 		<div className="chat-action-bar">
-			<button className="chat-btn chat-icon-btn" onClick={onNewChat} title="New chat">
-				+
-			</button>
-			<button
-				className="chat-btn chat-icon-btn"
-				onClick={onLoadChat}
-				disabled={!canLoad}
-				title={canLoad ? "Load previous session" : "No saved sessions"}
-			>
-				↺
-			</button>
-			<button
-				className={`chat-btn chat-icon-btn ${autoApprove ? "is-active" : ""}`}
-				onClick={onToggleAutoApprove}
-				title={
-					autoApprove
-						? "🤖 Auto-approve ON"
-						: "🔒 Manual approval"
-				}
-			>
-				{autoApprove ? "🤖" : "🔒"}
-			</button>
-			<button
-				className={`chat-btn chat-icon-btn ${autoNameSessions ? "is-active" : ""}`}
-				onClick={onToggleAutoName}
-				title={
-					autoNameSessions
-						? "✨ Auto-name ON"
-						: "✨ Auto-name OFF"
-				}
-			>
-				{autoNameSessions ? "✨" : "✍"}
-			</button>
-			<button
-				className="chat-btn chat-icon-btn"
-				onClick={onManualRename}
-				title="Rename session"
-			>
-				🪄
-			</button>
-			<button
-				className="chat-btn chat-icon-btn"
-				onClick={openSettings}
-				title="Settings"
-			>
-				⚙
-			</button>
+			<div className="chat-action-bar-left">
+				<button className="chat-btn chat-icon-btn" onClick={onNewChat} title="New chat">
+					<ObsidianIcon icon="plus" size={15} />
+				</button>
+				<button
+					className="chat-btn chat-icon-btn"
+					onClick={onLoadChat}
+					disabled={!canLoad}
+					title={canLoad ? "Load previous session" : "No saved sessions"}
+				>
+					<ObsidianIcon icon="history" size={15} />
+				</button>
+				<button
+					className={`chat-btn chat-icon-btn ${autoApprove ? "is-active" : ""}`}
+					onClick={onToggleAutoApprove}
+					title={autoApprove ? "🤖 Auto-approve ON" : "🔒 Manual approval"}
+				>
+					<ObsidianIcon icon={autoApprove ? "bot" : "lock"} size={15} />
+				</button>
+				<button
+					className={`chat-btn chat-icon-btn ${autoNameSessions ? "is-active" : ""}`}
+					onClick={onToggleAutoName}
+					title={autoNameSessions ? "✨ Auto-name ON" : "✨ Auto-name OFF"}
+				>
+					<ObsidianIcon icon={autoNameSessions ? "sparkles" : "type"} size={15} />
+				</button>
+				<button
+					className="chat-btn chat-icon-btn"
+					onClick={onManualRename}
+					title="Rename session"
+				>
+					<ObsidianIcon icon="wand-2" size={15} />
+				</button>
+				<button
+					className="chat-btn chat-icon-btn"
+					onClick={openSettings}
+					title="Settings"
+				>
+					<ObsidianIcon icon="settings" size={15} />
+				</button>
+			</div>
+			<div className="chat-action-bar-center">
+				{sessionTitle && (
+					<span className="chat-session-title-display" title={sessionTitle}>
+						{sessionTitle}
+					</span>
+				)}
+			</div>
+			<div className="chat-action-bar-right">
+				<ProfileIndicator profile={profile} />
+			</div>
 		</div>
 	);
 };

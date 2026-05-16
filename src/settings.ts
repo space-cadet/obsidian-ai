@@ -86,6 +86,23 @@ const generateId = (): string => {
 	return `profile-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 };
 
+export const getProviderColor = (provider: ProviderType): string => {
+	const colors: Record<string, string> = {
+		openai: "#10a37f",
+		anthropic: "#d97757",
+		google: "#4285f4",
+		gemini: "#4285f4",
+		deepseek: "#4d6bfa",
+		ollama: "#ff6b35",
+		openrouter: "#ef4444",
+		kimi: "#2563eb",
+		azure: "#0078d4",
+		custom: "#8b5cf6",
+		agent: "#f59e0b",
+	};
+	return colors[provider] || "#6b7280";
+};
+
 export const getDefaultProfileName = (provider: ProviderType): string => {
 	switch (provider) {
 		case "openai":

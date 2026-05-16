@@ -356,9 +356,76 @@
 	padding: 6px 8px;
 	border-bottom: 1px solid var(--background-modifier-border);
 	flex-shrink: 0;
-	overflow-x: auto;
-	scrollbar-width: thin;
+	min-height: 40px;
+}
+
+.chat-action-bar-left {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-shrink: 0;
+}
+
+.chat-action-bar-center {
+	flex: 1;
+	min-width: 0;
+	padding: 0 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.chat-action-bar-right {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+}
+
+.chat-session-title-display {
+	font-size: 0.85em;
+	font-weight: 600;
+	color: var(--text-normal);
 	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 100%;
+	opacity: 0.85;
+}
+
+.chat-profile-chip {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	padding: 2px 8px;
+	background: var(--background-primary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 12px;
+	font-size: 0.75em;
+	white-space: nowrap;
+	cursor: default;
+	transition: border-color 0.15s ease;
+}
+
+.chat-profile-chip:hover {
+	border-color: var(--background-modifier-border-hover);
+}
+
+.chat-profile-chip-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.chat-profile-chip-name {
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.chat-profile-chip-model {
+	color: var(--text-muted);
+	font-family: var(--font-monospace);
+	font-size: 0.9em;
 }
 
 .chat-action-bar::-webkit-scrollbar {
@@ -370,50 +437,50 @@
 	border-radius: 3px;
 }
 
-.chat-settings-btn {
-	margin-left: auto;
-}
-
-.chat-auto-approve-btn {
-	transition: background-color 150ms ease, color 150ms ease;
-}
-
-.chat-auto-approve-btn.is-active {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
-	border-color: var(--interactive-accent);
-}
-
-.chat-auto-approve-btn.is-active:hover {
-	opacity: 0.85;
-}
-
 .chat-icon-btn {
-	padding: 3px 6px;
+	padding: 4px;
 	font-size: 13px;
-	min-width: 24px;
+	min-width: 26px;
+	min-height: 26px;
+	justify-content: center;
+	border-radius: 6px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary-alt);
+	color: var(--text-muted);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	display: inline-flex;
+	align-items: center;
 	justify-content: center;
 }
 
 /* Toggle buttons: distinct from regular action buttons */
 .chat-icon-btn.is-active {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
-	border-color: var(--interactive-accent);
+	background: #0d9488;
+	color: #ffffff;
+	border-color: #0d9488;
 }
 
 .chat-icon-btn.is-active:hover {
-	opacity: 0.85;
+	background: #0f766e;
+	border-color: #0f766e;
 }
 
 .chat-icon-btn:not(.is-active) {
-	border-style: dashed;
-	opacity: 0.7;
+	border-style: solid;
+	opacity: 0.75;
 }
 
 .chat-icon-btn:not(.is-active):hover {
 	opacity: 1;
-	border-style: solid;
+	background: var(--background-modifier-hover);
+	border-color: var(--background-modifier-border-hover);
+	color: var(--text-normal);
+}
+
+.chat-icon-btn:disabled {
+	opacity: 0.35;
+	cursor: not-allowed;
 }
 
 /* Message area */
@@ -443,8 +510,8 @@
 
 .chat-bubble-user {
 	align-self: flex-end;
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: #0d9488;
+	color: #ffffff;
 }
 
 .chat-bubble-assistant {
@@ -539,11 +606,11 @@
 
 /* Chat bubble: streaming state */
 .chat-bubble-streaming {
-	border-left: 3px solid var(--interactive-accent);
+	border-left: 3px solid #0d9488;
 }
 
 .chat-bubble-streaming .chat-bubble-header {
-	color: var(--interactive-accent);
+	color: #0d9488;
 }
 
 /* Streaming indicator inside the bubble */
@@ -605,14 +672,14 @@
 }
 
 .chat-context-chip-active {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
-	border-color: var(--interactive-accent);
+	background: #0d9488;
+	color: #ffffff;
+	border-color: #0d9488;
 }
 
 .chat-context-chip-active:hover {
 	opacity: 0.85;
-	color: var(--text-on-accent);
+	color: #ffffff;
 }
 
 /* Input area */
@@ -665,13 +732,14 @@
 }
 
 .chat-send-btn {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
-	border-color: var(--interactive-accent);
+	background: #0d9488;
+	color: #ffffff;
+	border-color: #0d9488;
 }
 
 .chat-send-btn:hover {
-	opacity: 0.85;
+	background: #0f766e;
+	border-color: #0f766e;
 }
 
 .chat-stop-btn {
@@ -788,7 +856,7 @@
 }
 
 .chat-session-item-active {
-	border-color: var(--interactive-accent);
+	border-color: #0d9488;
 	background: var(--background-modifier-hover);
 }
 
@@ -1121,12 +1189,12 @@
 }
 
 .message-action-primary {
-	color: var(--interactive-accent);
+	color: #0d9488;
 }
 
 .message-action-primary:hover {
-	background: var(--interactive-accent-hover);
-	color: var(--text-on-accent);
+	background: #0f766e;
+	color: #ffffff;
 }
 
 /* More actions menu */
@@ -1176,7 +1244,7 @@
 
 /* Active bubble state (clicked) */
 .chat-bubble.is-active {
-	box-shadow: 0 0 0 1px var(--interactive-accent);
+	box-shadow: 0 0 0 1px #0d9488;
 }
 
 /* Old tool call block at bottom — kept for legacy messages */

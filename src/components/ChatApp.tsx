@@ -91,62 +91,74 @@ function buildSystemPrompt(
 }
 
 function generateSessionTitle(messages: ChatMessage[]): string {
-	const userMsgs = messages.filter((m) => m.role === "user").slice(0, 2);
-	const assistantMsgs = messages.filter((m) => m.role === "assistant").slice(0, 2);
+	const userMsgs = messages.filter((m) => m.role === "user");
+	const assistantMsgs = messages.filter((m) => m.role === "assistant");
 	if (userMsgs.length === 0) return `Chat ${new Date().toLocaleDateString()}`;
 
-	// Build combined text from first 2 user messages and first 2 assistant replies
-	let combined = "";
-	for (let i = 0; i < Math.max(userMsgs.length, assistantMsgs.length); i++) {
-		if (userMsgs[i]) {
-			combined += userMsgs[i].content + " ";
-		}
-		if (assistantMsgs[i]) {
-			// Strip any markdown/JSON tool results from assistant messages
-			let assistantText = assistantMsgs[i].content;
-			assistantText = assistantText.replace(/\[.*\]\(.*\)/g, "");
-			assistantText = assistantText.replace(/```[\s\S]*?```/g, "");
-			combined += assistantText + " ";
+	// Prefer user messages for titles — they're the actual intent
+	const candidateTexts: string[] = [];
+
+	// Try first 2 user messages
+	for (const msg of userMsgs.slice(0, 2)) {
+		let text = msg.content;
+		// Strip context tags
+		text = text.replace(/<context>[\s\S]*?<\/context>/g, "").trim();
+		// Strip markdown links/images
+		text = text.replace(/!?\[([^\]]*)\]\([^)]+\)/g, "$1").trim();
+		// Strip code blocks
+		text = text.replace(/```[\s\S]*?```/g, "").trim();
+		// Strip inline code
+		text = text.replace(/`([^`]+)`/g, "$1").trim();
+		// Strip JSON
+		text = text.replace(/\{[\s\S]*?\}/g, "").trim();
+		if (text.length >= 3) candidateTexts.push(text);
+	}
+
+	// Fallback to assistant if no good user candidate
+	if (candidateTexts.length === 0) {
+		for (const msg of assistantMsgs.slice(0, 1)) {
+			let text = msg.content.replace(/```[\s\S]*?```/g, "").trim();
+			text = text.replace(/\{[\s\S]*?\}/g, "").trim();
+			if (text.length >= 3) candidateTexts.push(text);
 		}
 	}
 
-	let text = combined.trim();
-	// Strip all context tags
-	text = text.replace(/<context>[\s\S]*?<\/context>/g, "").trim();
-	// Strip markdown links/images
-	text = text.replace(/!?\[([^\]]*)\]\([^)]+\)/g, "$1").trim();
-	// Strip inline code/backticks
-	text = text.replace(/`([^`]+)`/g, "$1").trim();
-	// Strip block code
-	text = text.replace(/```[\s\S]*?```/g, "").trim();
-	// Strip JSON objects (tool results often have these)
-	text = text.replace(/\{[\s\S]*?\}/g, "").trim();
+	if (candidateTexts.length === 0) return `Chat ${new Date().toLocaleDateString()}`;
 
-	if (text.length === 0) return `Chat ${new Date().toLocaleDateString()}`;
-
-	// Extract first sentence (up to first . ! ? or newline)
-	const sentenceMatch = text.match(/^([^.!?\n]{3,80}[.!?\n]?)/);
-	let title = sentenceMatch ? sentenceMatch[1].trim() : text.slice(0, 80);
-
-	// Remove leading stop words for cleaner titles
+	// Try each candidate to find a non-generic title
+	const genericWords = /^(hello|hi|hey|help|please|thanks|thank you|ok|okay|sure|yes|no|what|how|why|when|where|who)$/i;
 	const stopWords = /^(please\s+|can\s+you\s+|could\s+you\s+|hey\s+|hi\s+|hello\s+|so\s+|um\s+|uh\s+|okay\s+|ok\s+|well\s+|now\s+|then\s+)/i;
-	title = title.replace(stopWords, "").trim();
 
-	// Capitalize first letter
-	title = title.charAt(0).toUpperCase() + title.slice(1);
+	for (let text of candidateTexts) {
+		// Extract first sentence-ish chunk
+		const sentenceMatch = text.match(/^([^.!?\n]{2,80}[.!?\n]?)/);
+		let title = sentenceMatch ? sentenceMatch[1].trim() : text.slice(0, 80);
 
-	// Truncate at word boundary near 40 chars
-	if (title.length > 45) {
-		const truncated = title.slice(0, 45);
-		const lastSpace = truncated.lastIndexOf(" ");
-		if (lastSpace > 25) {
-			title = truncated.slice(0, lastSpace) + "…";
-		} else {
-			title = truncated + "…";
+		// Strip leading stop words
+		title = title.replace(stopWords, "").trim();
+
+		// Skip if too short or just generic
+		if (title.length < 3) continue;
+		if (genericWords.test(title)) continue;
+
+		// Capitalize first letter
+		title = title.charAt(0).toUpperCase() + title.slice(1);
+
+		// Truncate at word boundary near 40 chars
+		if (title.length > 45) {
+			const truncated = title.slice(0, 45);
+			const lastSpace = truncated.lastIndexOf(" ");
+			if (lastSpace > 25) {
+				title = truncated.slice(0, lastSpace) + "…";
+			} else {
+				title = truncated + "…";
+			}
 		}
+
+		return title;
 	}
 
-	return title || `Chat ${new Date().toLocaleDateString()}`;
+	return `Chat ${new Date().toLocaleDateString()}`;
 }
 
 function pruneSessions(
@@ -1362,6 +1374,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				autoNameSessions={autoNameSessions}
 				onToggleAutoName={handleToggleAutoName}
 				onManualRename={handleManualRename}
+				profile={resolvedProfile}
+				sessionTitle={sessions.find((s) => s.id === activeSessionId)?.title}
 			/>
 			<ChatMessages
 				messages={messages}
