@@ -1,30 +1,30 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-16 07:56:00 IST*
+*Last Updated: 2026-05-16 09:45:00 IST*
 
-**Started**: 2026-05-16 05:43:00 IST
-**Focus Task**: T15 Tabbed Chat Interface → Phase 1 ✅, Phase 2 ✅, Phase 3 awaiting approval
+**Started**: 2026-05-16 14:45:00 IST
+**Focus Task**: T16 Group Chat MVP → IMPLEMENTED, USER CONFIRMED
 **Session File**: `sessions/2026-05-16.md`
-**Status**: T15 Phase 1 & 2 implemented. UI overhaul complete. LLM naming approved and implemented.
+**Status**: T16 Phases 1–5 implemented. Bug fix for stale orchestrator complete. User confirmed working.
 
 ## Overview
 
-- Active: 3 | Paused: 2 | Completed: 10 | Cancelled: 0
-- Last Session: 2026-05-15 (T13 fixes + T15/T16 task creation)
-- Current Period: morning
+- Active: 4 | Paused: 2 | Completed: 10 | Cancelled: 0
+- Last Session: 2026-05-16 morning (T15 Phases 1–2, UI overhaul, LLM naming)
+- Current Period: afternoon
 
 ## Session History (Last 10)
 
-1. `sessions/2026-05-16.md` — T15: Phase 1 ✅ (Settings profile list), Phase 2 ✅ (Per-profile engine), UI overhaul, LLM naming
-2. `sessions/2026-05-15.md` — T15/T16: CREATED — Tabbed chat & group chat tasks, architecture docs
-3. `sessions/2026-05-14.md` — T13: COMPLETE — 4 new tools, AgentLoop extracted, PendingToolCard created
-4. `sessions/2026-05-12.md` — T11: debug-log spam diagnosis; T2: queued persistence + load guard; T9: settings rewrite
-5. `sessions/2026-05-09.md` — T13: crash debugging, patch_note, edit_section; T11: file logger, ErrorBoundary
-6. `sessions/2026-05-08.md` — T13: basename resolution fix, diagnostics panel; T11: diagnostics UI
-7. `sessions/2026-05-07-morning.md` — T14: remote agent connectivity design; memory bank update
-8. `sessions/2026-05-06.md` — T13: agentic tool calling MVP foundation; settings panel wiring
-9. `sessions/2026-05-04-night.md` — T10: model cache fix; T6: token estimator, maxContextMessages
-10. `sessions/2026-05-04-evening.md` — Memory bank update: T2, T3, T5 marked complete
+1. `sessions/2026-05-16.md` — T16: Group Chat MVP — MentionParser, Orchestrator, unified ChatApp, participant roster, council toggle, identity badges, handleSend fix
+2. `sessions/2026-05-16.md` — T15: Phase 1 ✅ (Settings profile list), Phase 2 ✅ (Per-profile engine), UI overhaul, LLM naming
+3. `sessions/2026-05-15.md` — T15/T16: CREATED — Tabbed chat & group chat tasks, architecture docs
+4. `sessions/2026-05-14.md` — T13: COMPLETE — 4 new tools, AgentLoop extracted, PendingToolCard created
+5. `sessions/2026-05-12.md` — T11: debug-log spam diagnosis; T2: queued persistence + load guard; T9: settings rewrite
+6. `sessions/2026-05-09.md` — T13: crash debugging, patch_note, edit_section; T11: file logger, ErrorBoundary
+7. `sessions/2026-05-08.md` — T13: basename resolution fix, diagnostics panel; T11: diagnostics UI
+8. `sessions/2026-05-07-morning.md` — T14: remote agent connectivity design; memory bank update
+9. `sessions/2026-05-06.md` — T13: agentic tool calling MVP foundation; settings panel wiring
+10. `sessions/2026-05-04-night.md` — T10: model cache fix; T6: token estimator, maxContextMessages
 
 ## Task Registry
 
@@ -43,48 +43,42 @@
 - T12: Chat Onboarding, Tips & Empty States — ⏸️
 - T13: Agentic Tool Calling for Note Editing — ✅
 - T14: Remote Agent Connectivity (OpenResponses) — 🔄
-- T15: Tabbed Chat Interface with Multi-Profile — 🔄 (Phases 1–2 complete)
-- T16: Group Chat (Multi-Agent Conversation) — ⏸️
+- T15: Tabbed Chat Interface with Multi-Profile — 🔄 (Phases 1–2 complete, Phase 3 paused)
+- T16: Group Chat (Multi-Agent Conversation) — 🔄 (MVP implemented, user confirmed)
 - T17: Advanced Vault Tools — Backlinks, YAML, Bulk Ops — ⏸️
 
 ## Current Session Details
 
-**Commits**: `6fa3da9` → `0c9ebd8` (8 commits)
-**Files touched**: 10+ files, +1,425 / -362 lines
+**Commits**: 36db2ff → 9ecb0ed (4 commits)
+**Files touched**: 10+ files
 **Build status**: ✅ tsc + esbuild pass all commits
 **Pushed to**: `origin/main`
 
-### T15 Phase 1: Settings Profile List
-- `src/components/ProfileCard.tsx` — new component
-- `src/settings.ts` — export helpers, React mount
-- `styles.css` — profile list CSS (responsive, progressive disclosure)
+### T16 Group Chat MVP
+- `src/agent/MentionParser.ts` — NEW: mention parsing
+- `src/agent/Orchestrator.ts` — NEW: multi-agent dispatch
+- `src/views/GroupChatView.ts` — NEW: dedicated group chat view
+- `src/components/GroupChatApp.tsx` — NEW: standalone group chat app
+- `src/components/ChatApp.tsx` — MODIFIED: unified chat with council mode
+- `src/types.ts` — MODIFIED: agent identity fields, group chat fields
+- `src/components/MessageBubble.tsx` — MODIFIED: agent identity dot + name
+- `src/main.ts` — MODIFIED: group chat view registration
+- `styles.css` — MODIFIED: group chat roster, participant chips, typing pulse
 
-### T15 Phase 2: Per-Profile Engine
-- `src/types.ts` — `profileId?: string` in `ChatSession`
-- `src/api.ts` — optional `profile` param on API methods
-- `src/agent/AgentLoop.ts` — `profile` in options
-- `src/components/ChatApp.tsx` — `profileId` prop, `resolvedProfile`
-- `src/views/ObsidianAIChatView.ts` — `options` constructor param
-- `src/main.ts` — pass `{}` options
-
-### UI Overhaul
-- `src/components/ObsidianIcon.tsx` — new: Lucide icon wrapper
-- `src/components/ProfileIndicator.tsx` — new: profile chip
-- `src/components/ActionBar.tsx` — rewritten: icons, left/center/right layout
-- `styles.css` — teal theme replaces purple
-
-### LLM Naming
-- `src/components/ChatApp.tsx` — `generateSessionTitleLLM()`, `llmNamedRef`
+### Bug Fixes
+- `src/main.ts` — restore CHAT_VIEWTYPE registration (863064f)
+- `src/components/ChatApp.tsx` — handleSend dependency array (9ecb0ed)
 
 ## User Feedback
-- Profile list overflow fixed: user confirmed "Much better"
-- Settings CTA buttons still purple → fixed with `.mod-cta` override
-- "Hello" title bug reported and fixed
-- Profile chip overflow on mobile reported and fixed
-- Settings refresh issue reported and fixed
-- User approved: LLM-powered naming, teal theme, Lucide icons, TabBar Phase 3
+- Council panel opened successfully
+- All three agents (Gemini, Cloudy, Ember) responded sequentially
+- User removed Tailscale agent → bug discovered (stale orchestrator)
+- Bug fix confirmed: "Yes. Excellent."
+- User requested: memory bank update, implementation docs
 
 ## Next Steps
-- Phase 3: TabBar UI component (user approved)
-- Phase 4: Per-tab localStorage isolation
-- Phase 5–6: Integration testing
+- T16 Phase 10: Individual add/remove participants
+- T16 Phase 11: Mention autocomplete
+- T16 Phase 6: Parallel dispatch toggle
+- T16 Phase 9: Session persistence
+- Return to T15 Phase 3 (TabBar) when user ready

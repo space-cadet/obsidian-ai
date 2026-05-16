@@ -1,9 +1,9 @@
 # Task Registry
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-15 13:15:00 IST*
+*Last Updated: 2026-05-16 09:45:00 IST*
 
 ## Summary
-- Active: 3 | Paused: 1 | Completed: 10 | Cancelled: 0
+- Active: 4 | Paused: 1 | Completed: 10 | Cancelled: 0
 
 ## Task Registry Table
 
@@ -25,7 +25,7 @@
 | T13 | Agentic Tool Calling for Note Editing | ✅ | HIGH | 2026-05-06 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
 | T14 | Remote Agent Connectivity (OpenResponses) | 🔄 | HIGH | 2026-05-07 | T1, T5, T9, T13 | [Details](tasks/T14.md) |
 | T15 | Tabbed Chat Interface with Multi-Profile | 🔄 | HIGH | 2026-05-15 | T9, T13, T14 | [Details](tasks/T15.md) |
-| T16 | Group Chat (Multi-Agent Conversation) | ⏸️ | HIGH | — | T15 | [Details](tasks/T16.md) |
+| T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
 | T17 | Advanced Vault Tools — Backlinks, YAML, Bulk Ops | ⏸️ | HIGH | — | T13 | [Details](tasks/T17.md) |
 
 ## Active Tasks
@@ -33,7 +33,7 @@
 ### META-1: Memory Bank Setup and Maintenance
 **Status:** 🔄 IN PROGRESS | **Priority:** HIGH | **Started:** 2026-05-02
 - Memory bank structure created and maintained
-- T1–T16 task files created and kept in sync
+- T1–T17 task files created and kept in sync
 - Format normalization complete
 
 ### T8 — Open Source Release with Branding *(requires T7)*
@@ -42,22 +42,19 @@ Branding transition and open-source release preparation. See `tasks/T8.md`.
 ### T11 — Debug Logging & Diagnostics *(requires T9)*
 File-based debug logger, React ErrorBoundary, diagnostics panel in Settings, and the newer debug-log spam diagnosis plus persistence queue/debounce fix. See `tasks/T11.md`.
 
-### T13 — Agentic Tool Calling for Note Editing *(requires T1, T3, T5, T9)*
-All 13 tools implemented; AgentLoop extracted; PendingToolCard created; tool result formatting implemented. See `tasks/T13.md`.
-
 ### T14 — Remote Agent Connectivity (OpenResponses) *(requires T1, T5, T9, T13)*
 Connect Obsidian chat to remote OpenClaw agents via OpenResponses API. Phase 3 in progress. See `tasks/T14.md`.
 
 ### T15 — Tabbed Chat Interface with Multi-Profile *(requires T9, T13, T14)*
-Multi-panel, multi-provider chat interface. Settings UI overhaul for profile list view. See `tasks/T15.md`.
+Multi-panel, multi-provider chat interface. Phases 1–2 complete. Phase 3 (TabBar UI) pending. See `tasks/T15.md`.
+
+### T16 — Group Chat (Multi-Agent Conversation) *(requires T15)*
+Multi-agent group chat with mention-based routing, orchestration, and shared context. MVP implemented. User confirmed working. See `tasks/T16.md`.
 
 ## Pending Tasks (v2.0 Development)
 
 ### T12 — Chat Onboarding, Tips & Empty States *(requires T1, T9)*
 Empty states, setup warnings, contextual tips, first-run guidance. See `tasks/T12.md`.
-
-### T16 — Group Chat (Multi-Agent Conversation) *(requires T15)*
-Multi-agent group chat with mention-based routing, orchestration, and shared context. Blocked on T15. See `tasks/T16.md`.
 
 ### T17 — Advanced Vault Tools — Backlinks, YAML, Bulk Ops *(requires T13)*
 Networked thought tools (backlinks, outlinks, unlinked mentions), YAML frontmatter management, tag operations, bulk reorganization, templating, and vault maintenance (broken links, orphans). User-prioritized: backlinks + YAML first. See `tasks/T17.md`.
@@ -79,4 +76,4 @@ Networked thought tools (backlinks, outlinks, unlinked mentions), YAML frontmatt
 
 ## Cancelled / Paused Tasks
 
-*T11 moved from ⏸️ PAUSED to 🔄 IN PROGRESS on 2026-05-08. T12 remains paused.*
+*T11 moved from ⏸️ PAUSED to 🔄 IN PROGRESS on 2026-05-08. T12 remains paused. T17 remains paused.*

@@ -1,376 +1,210 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-16 07:56:00 IST*
-
-*Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
-
-#### 07:56:00 IST — T15 Phase 1 & 2 + UI Overhaul + LLM Naming — 8 commits
-- **Edit chunk**: `edits/2026-05-16/20260516-075600-t15-ui-naming.md`
-- **Code commits**: `6fa3da9` → `960288a` → `242668e` → `fc04ef0` → `6f99ddd` → `8df3fc4` → `11d5eaa` → `0c9ebd8`
-- **Build**: ✅ all 8 commits pass `tsc + esbuild` cleanly
-- **Phase 1** (Settings profile list): `ProfileCard.tsx` created, `settings.ts` exports helpers, responsive CSS with progressive disclosure
-- **Phase 2** (Per-profile engine): `profileId` in `ChatSession`, `ChatApiManager` methods accept override profile, `AgentLoop` passes profile through, `ObsidianAIChatView` accepts options
-- **UI modernization**: Teal `#0d9488` theme replaces purple, Lucide icons via `ObsidianIcon` wrapper, `ProfileIndicator` chip in action bar, session title display
-- **UI fixes**: "Hello" title bug (regex fix + Set generic detection), profile chip overflow (responsive breakpoints), settings refresh (`settingsTick` + `visibilitychange`), settings CTA buttons teal override
-- **LLM naming**: `generateSessionTitleLLM()` calls active LLM with 3–6 word prompt, first 6 messages capped at 200 chars, auto and manual both use LLM with heuristic fallback
-- Updated: `tasks/T15.md`, `tasks.md`, `activeContext.md`, `session_cache.md`
-
-#### 10:15:00 IST — T13: Tool result fixes — full paths, search_content removal, ambiguity warnings
-- **Code commit**: `731e1dc` — `fix(tools): include full paths in tool results...`
-- 4 files changed: `AgentLoop.ts`, `ToolExecutor.ts`, `tools.ts`, `types.ts`
-- **Fixes applied**:
-  1. `list_notes`/`search_notes`: render `[[Folder/Note]]` instead of `[[Note]]`
-  2. `get_note_metadata`: use full path in wiki-link
-  3. `search_notes`: removed broken `search_content` parameter (silently returned false)
-  4. `list_folders`: depth consistency — immediate children only
-  5. `resolveNote`: ambiguity detection for duplicate basenames
-  6. `ToolResult` type: added `warning?: string` field
-- Updated `tasks/T13.md` progress and completion criteria
-- Updated `implementation-details/agentic-tool-calling.md` with 2026-05-15 section
-- Updated `activeContext.md` with T13 fix details
-
-#### 10:30:00 IST — T17: Advanced Vault Tools task created from user suggestions
-- **No code commit** — task creation and architecture design
-- Created `memory-bank/tasks/T17.md` — 6 phases, 11 new tools
-- User-prioritized: backlinks + YAML property management first
-- Architecture: Obsidian API map, YAML parsing strategy, new utility file `src/utils/yaml.ts`
-- Updated: `tasks.md`, `activeContext.md`, `session_cache.md`
-- Created edit chunk: `edits/2026-05-15/20250515-103000-t17-advanced-vault-tools.md`
-
-#### 12:55:00 IST — Auto-naming v3: toggle reactivity + context-aware naming + distinct toggle styling
-- **Code commit**: `e23063a` — `fix(ui): toggle button reactivity + smarter naming + distinct toggle styling`
-- 3 files changed: `ChatApp.tsx` (+42/-11), `ActionBar.tsx` (+1/-1), `styles.css` (+11)
-- **Build**: ✅ tsc + esbuild pass cleanly
-- **Toggle reactivity fix**: Added local React state `autoApprove` and `autoNameSessions` in ChatApp.tsx. Toggle handlers now call `setState()` immediately, so `is-active` CSS class updates on click without waiting for a chat message re-render.
-- **Context-aware naming**: `generateSessionTitle()` now takes first 2 user messages + first 2 assistant replies, interleaved. Strips block code and JSON objects from assistant messages. Auto-naming fires after `>= 2` assistant replies (not just `>= 1` user message).
-- **Distinct toggle styling**: CSS `.chat-icon-btn:not(.is-active)` gets `border-style: dashed; opacity: 0.7`. OFF toggles look visually distinct from regular buttons. Hover restores opacity and switches to solid border.
-- **Wand icon**: Manual rename button changed from ✏️ to 🪄
-- Updated: `tasks/T13.md`, `implementation-details/agentic-tool-calling.md`, `activeContext.md`
-
-#### 12:45:00 IST — Auto-naming v2: smarter titles + compact icon ActionBar
-- **Code commit**: `d1d64ad` → `TBD` — `fix(ui): compact icon-only action bar + smarter session title generation`
-- 3 files changed: `ChatApp.tsx`, `ActionBar.tsx`, `styles.css`
-- **Build**: ✅ tsc + esbuild pass cleanly
-- **Smarter `generateSessionTitle()`**:
-  - Extracts first sentence (not just first 40 chars)
-  - Strips markdown links `[text](url)` → `text`, inline code `` `code` `` → `code`
-  - Removes leading stop words: "Please", "Can you", "Could you", "Hey", "Hi", "So", "Um"...
-  - Capitalizes first letter
-  - Truncates at word boundary with `…` (not mid-word)
-- **Compact ActionBar**: Icon-only buttons (+, ↺, 🤖/🔒, ✨/✍, ✏️, ⚙) with title tooltips
-- **CSS**: `.chat-action-bar` gets `overflow-x: auto; scrollbar-width: thin;`
-- **CSS**: `.chat-icon-btn` class: `padding: 3px 6px; font-size: 13px; min-width: 24px;`
-- Updated: `tasks/T13.md`, `implementation-details/agentic-tool-calling.md`, `activeContext.md`
-
-#### 12:10:00 IST — Auto-naming fixes: replace g flag, threshold, UI controls
-- **Code commit**: `4538159` — `fix(auto-name): fix session auto-naming and add UI controls`
-- 2 files changed: `src/components/ChatApp.tsx` (42 lines), `src/components/ActionBar.tsx` (24 lines)
-- **Build**: ✅ tsc + esbuild pass cleanly
-- **Fixes applied**:
-  1. `generateSessionTitle()`: Added `g` flag to `replace()` — all context tags stripped, not just first
-  2. Auto-title `useEffect`: Lowered threshold from `>= 2` to `>= 1` user messages
-  3. Removed date-fallback guard that blocked naming context-only messages
-  4. `handleToggleAutoName()`: Toggles `autoNameSessions` setting with Notice feedback
-  5. `handleManualRename()`: Immediately generates title from first user message
-  6. `ActionBar`: Added auto-name toggle button (✨ Auto / ✨ Off) and manual rename button (✏️ Rename)
-- Updated: `tasks/T13.md`, `implementation-details/agentic-tool-calling.md`, `activeContext.md`
+*Last Updated: 2026-05-16 09:45:00 IST*
 
 ---
 
-### 2026-05-15
+## Edit Chunk: 2026-05-16 09:30:00 IST — T16: Fix handleSend Dependency Array
+**Session**: `sessions/2026-05-16.md`
+**Source Branch**: main
+**Source Commit**: `9ecb0ed`
+**Task**: T16
 
-#### 09:57:00 IST — T15/T16: Tabbed chat and group chat tasks created
-- **No code commit** — task creation and architecture design session
-- Created `memory-bank/tasks/T15.md` — Tabbed Chat Interface with Multi-Profile Support
-  - 6 phases defined: Settings UI profile list, per-panel `profileId`, tab bar, conversation isolation
-  - Settings UI overhaul: profile cards with masked API keys, add/edit/delete/test per profile
-- Created `memory-bank/tasks/T16.md` — Group Chat (Multi-Agent Conversation)
-  - 7 phases defined: mention-based routing, Orchestrator class, parallel/sequential modes
-  - Blocked on T15 completion
-- Updated `memory-bank/tasks.md` — Registry updated with T15 (🔄) and T16 (⏸️)
-- Updated `memory-bank/activeContext.md` — Current focus shifted to T15
-- Updated `memory-bank/session_cache.md` — Task registry includes T15, T16
+### Files Modified
+- `src/components/ChatApp.tsx` — handleSend dependency array: [isStreaming, plugin] → [isStreaming, plugin, orchestrator, isGroupChat, participants, typingAgents]
+- `src/components/ChatApp.tsx` — handleRetry dependency array: added orchestrator, isGroupChat, participants
 
-#### 06:45:00 IST — T14: Tailscale progress, ufw blocker identified
-- **No code commit** — infrastructure/networking session
-- Updated `memory-bank/activeContext.md` — T14a 2/3 complete, ufw IPv4 blocker identified
-- Updated `memory-bank/tasks/T14.md` — Phase 3 "in progress" (was "blocked on T14a")
-- **Tailscale installed**: MacBook Air (`100.92.54.38`) + DO VPS (`100.89.228.41`) both authenticated
-- **Obsidian configured**: Agent (OpenResponses) provider selected, endpoint `http://100.89.228.41:18789/v1/responses`
-- **Blocker**: VPS ufw firewall only has IPv6 rules for `tailscale0`. Need `ufw allow in on tailscale0` for IPv4.
-- **Verification pending**: ufw fix → ping test → curl test → Obsidian test connection
+### Context
+handleSend had `[isStreaming, plugin]` as React useCallback deps, which captured a stale orchestrator closure. After removing a participant from the roster, handleSend still dispatched to the removed agent because it held the old Orchestrator instance. Fixed by including orchestrator, isGroupChat, participants, typingAgents in the dependency array.
 
 ---
 
-### 2026-05-14
+## Edit Chunk: 2026-05-16 09:15:00 IST — T16: Unified ChatApp with Participant Roster
+**Session**: `sessions/2026-05-16.md`
+**Source Branch**: main
+**Source Commit**: `70d1e19`
+**Task**: T16
 
-#### 09:19:00–09:51:00 IST — T13: Vault management tools, AgentLoop extraction, PendingToolCard, tool result formatting
-- **Commit 1 (e0869b1)**: Added 4 vault management tools — `create_folder`, `move_note`, `delete_note`, `list_folders`
-  - Modified `src/agent/tools.ts` — 4 new Zod tool schemas with descriptions
-  - Modified `src/agent/ToolExecutor.ts` — `createFolder()`, `moveNote()` (auto-creates parents), `deleteNote()` (system trash), `listFolders()` (tree from loaded files)
-  - Modified `src/agent/types.ts` — added `oldPath`, `folders`, `parent` to `ToolResult`
-  - Modified `src/components/ChatApp.tsx` — pending tool preview cases for new tools; system prompt lists all 13 tools
-- **Commit 2 (e2d727d)**: Extracted inline tool loop → `src/agent/AgentLoop.ts`
-  - Created `src/agent/AgentLoop.ts` — `AgentLoop` class with `run()` method; callback interface (`onTextDelta`, `onToolCall`, `requestApproval`); AbortSignal propagation; step logging
-  - Modified `src/components/ChatApp.tsx` — replaced ~70 line inline loop with `new AgentLoop({...}).run()`
-- **Commit 3 (dcee512)**: Created `PendingToolCard.tsx` component
-  - Created `src/components/PendingToolCard.tsx` — all 13 tool preview summaries in dedicated component (line count, preview excerpt, patch rows)
-  - Modified `src/components/ChatApp.tsx` — removed inline `PendingToolCallPreview`; renders `<PendingToolCard />`
-- **Commit 4 (c2307b6)**: Tool result formatting as markdown
-  - Modified `src/agent/AgentLoop.ts` — added `formatToolResult()` function
-    - `search_notes`/`list_notes` → markdown tables with `[[wiki-links]]`
-    - `list_folders` → bulleted list
-    - `get_note_metadata` → formatted summary (size, dates, word count)
-    - `read_note` → clean content; edit/create/move/delete → simple success text
-    - Passed as `type: "text"` to LLM instead of raw `type: "json"` blobs
-- Updated `memory-bank/tasks/T13.md` — marked all Phase 1/2/3 items complete
-- Updated `memory-bank/tasks.md` — T13 moved to ✅ COMPLETED (10 completed, 3 active)
-- Updated `memory-bank/activeContext.md` — T13 status updated; next actions listed
-- Updated `memory-bank/session_cache.md` — full session context with all 4 commits
-- Created `memory-bank/edits/2026-05-14/091900-t13-complete.md` — canonical edit chunk
-- All 4 commits: `tsc -noEmit -skipLibCheck && esbuild` — clean builds
+### Files Modified
+- `src/components/ChatApp.tsx` — merged group chat into same panel: imports, participant state, orchestrator useMemo, handleSend branches, handleAddParticipant, handleRemoveParticipant, handleToggleGroupChat, participant bar UI
+- `src/components/ChatApp.tsx` — helper functions: getAgentColor(provider), getAgentIcon(provider)
+- `styles.css` — .chat-participant-bar, .chat-participant-chip, .chat-participant-chip-name, .chat-participant-typing (chat-typing-pulse), .chat-participant-remove, .chat-council-toggle, .chat-council-toggle-label
 
----
-- Modified `src/components/ActionBar.tsx` — Added `autoApprove` and `onToggleAutoApprove` props; inserted toggle button between Load and Settings buttons with visual active/inactive states
-- Modified `src/components/ChatApp.tsx` — Added `handleToggleAutoApprove()` callback that flips `plugin.settings.autoApply`, saves settings, and shows a Notice; wired props to ActionBar
-- Modified `src/views/ObsidianAIChatView.ts` — Added `saveSettings(): Promise<void>` to `ChatPluginLike` interface so ChatApp can persist the toggle
-- Modified `styles.css` — Added `.chat-auto-approve-btn` transition and `.chat-auto-approve-btn.is-active` accent styling
-- Created `memory-bank/edits/2026-05-14/075241-auto-approve-toggle.md` — canonical edit chunk
+### Context
+User explicitly requested same ChatApp panel for both 1:1 and group chat. Council toggle switches between modes. Participant bar shows chips with icon, name, typing indicator, and remove button.
 
 ---
 
-### 2026-05-12
+## Edit Chunk: 2026-05-16 09:20:00 IST — T16: Fix main.ts CHAT_VIEWTYPE Registration
+**Session**: `sessions/2026-05-16.md`
+**Source Branch**: main
+**Source Commit**: `863064f`
+**Task**: T16
 
-#### 13:47:10 IST - T9/META-1: Document GPT 5.4 Medium Settings rewrite, regression context, and memory sync
+### Files Modified
+- `src/main.ts` — restored CHAT_VIEWTYPE registration alongside GROUP_CHAT_VIEWTYPE
 
-- Updated `memory-bank/tasks/T9.md` — Added Regression Context section documenting lost re-entrancy guards, infinite re-entrant loops, memory leaks, and GPT 5.4 Medium rewrite credit
-- Updated `memory-bank/implementation-details/settings-provider-design.md` — Added 2026-05-12 Regression and Rewrite section with symptom description, GPT 5.4 Medium credit, and guard mechanism code block
-- Updated `memory-bank/sessions/2026-05-12.md` — Added GPT 5.4 Medium credit to focus task and work completed; documented Settings panel regression (lost guards → infinite loops + memory leaks)
-- Updated `memory-bank/edits/2026-05-12/111359-t11-t2-t9-memory-sync.md` — Added GPT 5.4 Medium Session Context section explaining the regression and rewrite
-- Updated `memory-bank/activeContext.md` — Updated Last Updated timestamp
-- Updated `memory-bank/session_cache.md` — Updated Last Updated timestamp
-- Updated `memory-bank/tasks.md` — Updated Last Updated timestamp
-- Created `memory-bank/edits/2026-05-12/134710-t9-gpt54-memory-sync.md` — Canonical edit chunk following template format
-
-#### 11:13:59 IST - T11: Settings rewrite (GPT 5.4 Medium), persistence diagnosis, and memory sync
-- Updated `memory-bank/activeContext.md` - Shifted focus to T11 and recorded settings rewrite plus persistence hardening decisions
-- Updated `memory-bank/session_cache.md` - Added 2026-05-12 session context and T11/T2/T9 progress details
-- Updated `memory-bank/tasks/T11.md` - Documented debug-log spam root cause and queued persistence fix
-- Updated `memory-bank/tasks/T2.md` - Recorded post-completion persistence hardening for save storms and startup overwrite
-- Updated `memory-bank/tasks/T9.md` - Recorded Settings panel rewrite and guarded refresh/model picker restoration
-- Updated `memory-bank/tasks.md` - Synced registry timestamp, active counts, and T11 summary
-- Updated `memory-bank/implementation-details/debug-logging-design.md` - Added root-cause analysis for save-related log noise
-- Updated `memory-bank/implementation-details/chat-session-persistence.md` - Added hardening notes for debounced autosave, queued writes, and hydration guard
-- Updated `memory-bank/implementation-details/settings-provider-design.md` - Recorded the sectioned settings UI refresh and proper header
-- Created `memory-bank/sessions/2026-05-12.md` - Logged the 2026-05-12 settings/persistence/debugging session
+### Context
+Group chat view registration accidentally replaced the regular chat view registration, breaking both panels. Both are now registered separately.
 
 ---
 
-### 2026-05-09
+## Edit Chunk: 2026-05-16 09:00:00 IST — T16: Group Chat MVP
+**Session**: `sessions/2026-05-16.md`
+**Source Branch**: main
+**Source Commit**: `36db2ff`
+**Task**: T16
 
-#### 11:51:05 IST - T11/T13: File debug logger, ErrorBoundary, crash debugging, new agent tools
+### Files Created
+- `src/agent/MentionParser.ts` — parseMentions(), hasMentions() with @AgentName regex
+- `src/agent/Orchestrator.ts` — Orchestrator class: sequential dispatch, full/isolated context strategies, profile resolution
+- `src/views/GroupChatView.ts` — GROUP_CHAT_VIEWTYPE ItemView with React root
+- `src/components/GroupChatApp.tsx` — participant roster, typing indicators, council rendering
 
-- Created `src/logger.ts` — `FileLogger` class writing console output to `.obsidian/plugins/obsidian-ai/debug.log`; intercepts `window.onerror` and `window.onunhandledrejection`; logs memory metrics every 10s; exposes `window.__obsidianAiLogger`
-- Created `src/components/ErrorBoundary.tsx` — `ChatErrorBoundary` catches render errors, logs to disk, shows fallback UI
-- Modified `src/main.ts` — Logger initialized first in `onload()`; added `clear-debug-log` command; cleanup in `onunload()`
-- Modified `src/views/ObsidianAIChatView.ts` — Wraps `ChatApp` in `<ChatErrorBoundary>`
-- Modified `src/components/MessageBubble.tsx` — 5-step defensive logging around `MarkdownRenderer.render`
-- Modified `src/components/ChatMessages.tsx` — `StreamingBubble` 5-step logging; `unmounted` cleanup flag; `scrollIntoView({ behavior: "auto" })`
-- Modified `src/agent/ToolExecutor.ts` — Implemented `patchNote()` and `editSection()` tools
-- Modified `src/agent/tools.ts` — Added `patch_note` and `edit_section` Zod schemas
-- Modified `src/modules/WidgetExtension.ts` — Debug logging in `destroy()` and `acceptAction()`
-- Modified `src/modules/diffExtension.ts` — Debug logging in `dispatchAIChanges()` and `applyDiffPlugin`
-- Modified `src/noteEditing/NoteEditingBridge.ts` — try/catch wrappers and detailed logging in `applyToNote()` and `applyToTargetNote()`
-- Updated `memory-bank/tasks/T13.md` — `patch_note`, `edit_section`, crash debugging progress
-- Updated `memory-bank/tasks/T11.md` — Status ⏸️ → 🔄 IN PROGRESS; logger, ErrorBoundary, diagnostics progress
-- Updated `memory-bank/tasks.md` — T11 status updated
-- Updated `memory-bank/activeContext.md` — T11 active, T13 crash debugging
-- Updated `memory-bank/progress.md` — T11 and T13 sections updated
-- Updated `memory-bank/changelog.md` — 2026-05-09 entries added
-- Updated `memory-bank/session_cache.md` — Latest session registered
-- Created `memory-bank/sessions/2026-05-09.md` — Session 2 crash debugging and new tools
-- Created `memory-bank/edits/2026-05-09/logger-errorboundary-new-tools.md` — canonical edit chunk
+### Files Modified
+- `src/types.ts` — ChatMessage: +agentId, +agentName, +agentColor; +GroupChatParticipant; ChatSession: +isGroupChat, +participants
+- `src/components/MessageBubble.tsx` — agent identity dot (colored) + agentName display
+- `src/main.ts` — registerView(GROUP_CHAT_VIEWTYPE), addRibbonIcon("users"), addCommand("open-ai-council")
+- `styles.css` — .group-chat-roster, .group-chat-participant, .group-chat-typing (pulse animation), .chat-bubble-agent-dot
 
 ---
 
-### 2026-05-08
+## Edit Chunk: 2026-05-16 07:56:00 IST — T15 Phase 1 & 2, UI Overhaul, LLM Naming
+**Session**: `sessions/2026-05-16.md`
+**Source Branch**: main
+**Source Commit**: `6fa3da9` → `0c9ebd8` (8 commits)
+**Task**: T15
 
-#### 01:55:58 IST - T13: Basename resolution fix, diagnostics panel, tool description polish
+### Files Created
+- `src/components/ProfileCard.tsx` — React profile list component
+- `src/components/ObsidianIcon.tsx` — Lucide icon wrapper for React
+- `src/components/ProfileIndicator.tsx` — Profile chip for action bar
 
-- Modified `src/agent/ToolExecutor.ts` — Added `resolveNote()` private helper with three-tier resolution (exact → append `.md` → `metadataCache.getFirstLinkpathDest()`)
-- Modified `src/agent/tools.ts` — Updated tool descriptions to human-friendly basename examples (`"Project Notes"`)
-- Modified `src/components/ChatApp.tsx` — Removed raw `[tool_name: ok/error]` status tag injection from visible messages
-- Modified `src/settings.ts` — Added `displayDiagnostics()` with 6-metric grid, Refresh, DevTools, Clear History
-- Fixed `src/settings.ts` — Added missing `this.displayDiagnostics(containerEl)` call in `display()`
-- Rebuilt `main.js` — Verified compiled output
-- Updated `memory-bank/tasks/T13.md` — progress updated with basename fix and diagnostics
-- Updated `memory-bank/tasks/T11.md` — status changed to 🔄 IN PROGRESS
-- Updated `memory-bank/activeContext.md` — T13 progress updated
-- Updated `memory-bank/progress.md` — T13 and T11 sections updated
-- Created `memory-bank/sessions/2026-05-08.md` — Session 1 basename fix and diagnostics
-- Created `memory-bank/edits/2026-05-08/t13-basename-fix-and-diagnostics.md` — canonical edit chunk
-
----
-
-### 2026-05-07
-
-#### 06:57:28 UTC - T14: Memory bank update for remote agent connectivity task
-- Created `memory-bank/tasks/T14.md` — full design doc with architecture and completion criteria
-- Updated `memory-bank/tasks.md` — added T14 to registry, updated active task counts
-- Updated `memory-bank/activeContext.md` — T14 set as primary focus
-- Created `memory-bank/sessions/2026-05-07-morning.md` — session log for T14 design work
-- Updated `memory-bank/session_cache.md` — updated focus task, session history, task registry
-- Updated `memory-bank/progress.md` — added T14 section, updated timestamps
-- Modified `memory-bank/tasks/T13.md` — updated status to reflect current progress
-- Created `memory-bank/edits/2026-05-07/065728-t14-mb-update.md` — canonical edit chunk
+### Files Modified
+- `src/settings.ts` — Export helpers, React mount
+- `src/types.ts` — ChatSession.profileId
+- `src/api.ts` — Optional profile parameter on API methods
+- `src/agent/AgentLoop.ts` — Profile in options
+- `src/components/ChatApp.tsx` — profileId prop, resolvedProfile, generateSessionTitleLLM()
+- `src/components/ActionBar.tsx` — Icon-only compact layout, left/center/right
+- `src/views/ObsidianAIChatView.ts` — Options constructor param
+- `src/main.ts` — Pass {} options
+- `styles.css` — Teal theme, profile list, participant bar, council toggle
 
 ---
 
-### 2026-05-06
+## Edit Chunk: 2026-05-15 12:55:00 IST — Auto-naming v3: Toggle Reactivity + Context-Aware Naming
+**Session**: `sessions/2026-05-15.md`
+**Source Branch**: main
+**Source Commit**: `23e38e9` → `e23063a`
+**Task**: T13
 
-#### 09:30:00 IST - T13: Agentic tool calling MVP foundation and settings wiring
-- Created `src/agent/types.ts` — `StreamEvent` union, `ToolCall`, `ToolResult` interfaces
-- Created `src/agent/tools.ts` — 4 Zod tool schemas (`read_note`, `edit_note`, `append_to_note`, `create_note`)
-- Created `src/agent/ToolExecutor.ts` — `ToolExecutor` class with vault operations
-- Modified `src/api.ts` — added `streamChatWithTools()` generator
-- Modified `src/components/ChatApp.tsx` — integrated tool loop, `pendingToolCall` state, approve/reject handlers
-- Modified `src/settings.ts` — added `enableAgentTools`, `autoApply`, `maxAgentSteps` settings
-- Modified `styles.css` — pending tool call approval card styles
-- Updated `memory-bank/tasks/T13.md` — marked settings completion criteria as done; added progress entries
-- Updated `memory-bank/tasks.md` — T13 status changed from ⬜ to 🔄 IN PROGRESS
-- Updated `memory-bank/session_cache.md` — focus task shifted to T13
-- Updated `memory-bank/activeContext.md` — current focus and implementation focus updated to T13
-- Created `memory-bank/sessions/2026-05-06.md` — session file documenting MVP build
-- Created `memory-bank/edits/2026-05-06/T13-settings-and-mvp.md` — canonical edit chunk
+### Files Modified
+- `src/components/ChatApp.tsx` — Local React state for toggles, context-aware naming (2 user + 2 assistant messages)
+- `src/components/ActionBar.tsx` — Distinct toggle styling (dashed when OFF)
+- `styles.css` — Toggle button dashed/solid states
 
 ---
 
-### 2026-05-04
+## Edit Chunk: 2026-05-15 12:45:00 IST — Auto-naming v2: Smart Titles + Icon ActionBar
+**Session**: `sessions/2026-05-15.md`
+**Source Branch**: main
+**Source Commit**: `d1d64ad`
+**Task**: T13
 
-#### 22:46:16 IST - T6/T10: Token estimator and model discovery cache completion
-- Modified `src/components/ChatApp.tsx` — token estimation display wired into send flow
-- Modified `src/api.ts` — model list caching with `fetchedAt` timestamp
-- Modified `src/settings.ts` — model fetch/search UI restored after provider profile refactor
-- Updated `memory-bank/tasks/T6.md` — completion criteria marked done
-- Updated `memory-bank/tasks/T10.md` — completion criteria marked done
-- Updated `memory-bank/tasks.md` — T6 and T10 marked ✅ COMPLETED
-- Updated `memory-bank/session_cache.md` — task registry updated
-- Updated `memory-bank/progress.md` — T6 and T10 sections added
-- Created `memory-bank/edits/2026-05-04/224616-T6-T10-completion.md` — canonical edit chunk
-
-#### 18:11:57 IST - T2/T3/T5: Session history, context system, and note editing completion
-- Modified `src/components/ChatApp.tsx` — session-based chat history with persistence
-- Created `src/components/ContextPicker.tsx` — mention-based context selection with tabs
-- Modified `src/noteEditing/NoteEditingBridge.ts` — apply, append, create, target note operations
-- Modified `src/settings.ts` — custom commands section with add/delete
-- Updated `memory-bank/tasks/T2.md` — marked COMPLETED
-- Updated `memory-bank/tasks/T3.md` — marked COMPLETED
-- Updated `memory-bank/tasks/T5.md` — marked COMPLETED
-- Updated `memory-bank/tasks.md` — T2, T3, T5 moved to completed table
-- Updated `memory-bank/session_cache.md` — registry and history updated
-- Updated `memory-bank/progress.md` — T2, T3, T5 sections completed
-- Created `memory-bank/edits/2026-05-04/181157-T2-T3-T5-completion.md` — canonical edit chunk
-
-#### 14:59:36 IST - T3/T5: Context system implementation and note editing improvements
-- Modified `src/components/ChatApp.tsx` — context items XML block in system prompt; mention parsing with `@`
-- Created `src/components/ContextPicker.tsx` — modal for selecting notes, folders, tags as context
-- Modified `src/noteEditing/NoteEditingBridge.ts` — `applyToTargetNote()` for editing non-active notes
-- Modified `src/settings.ts` — `customCommands` array with add/delete UI
-- Updated `memory-bank/tasks/T3.md` — progress updated
-- Updated `memory-bank/tasks/T5.md` — progress updated
-- Created `memory-bank/edits/2026-05-04/145936-t3-t5-mem-update.md` — canonical edit chunk
+### Files Modified
+- `src/components/ChatApp.tsx` — generateSessionTitle() with sentence extraction, stop word removal, word-boundary truncation
+- `src/components/ActionBar.tsx` — Compact icon-only buttons with title tooltips
+- `styles.css` — Compact action bar styles
 
 ---
 
-### 2026-05-03
+## Edit Chunk: 2026-05-15 12:10:00 IST — Auto-naming Fixes: g Flag, Threshold, UI Controls
+**Session**: `sessions/2026-05-15.md`
+**Source Branch**: main
+**Source Commit**: `4538159`
+**Task**: T13
 
-#### 02:47:31 IST - T3: Context system implementation
-- Modified `src/components/ChatApp.tsx` — context items resolved into XML block prepended to system prompt
-- Created `src/components/ContextPicker.tsx` — modal for selecting context items (notes, folders, tags)
-- Modified `src/settings.ts` — `includeActiveNote` setting toggle
-- Updated `memory-bank/tasks/T3.md` — design decisions and progress documented
-- Updated `memory-bank/session_cache.md` — T3 progress updated
-- Created `memory-bank/edits/2026-05-03/024731-T3-context-system-impl.md` — canonical edit chunk
-
-#### 00:52:00 IST - T2: Session history implementation
-- Modified `src/components/ChatApp.tsx` — `loadChatData()` / `saveChatData()` integration; `New Chat` and `Load` buttons
-- Modified `src/main.ts` — `loadChatData()` / `saveChatData()` with `this.saveData()` / `this.loadData()`
-- Created `src/components/SessionPicker.tsx` — modal listing saved sessions with rename/delete
-- Updated `memory-bank/tasks/T2.md` — completion criteria updated
-- Updated `memory-bank/session_cache.md` — T2 progress updated
-- Created `memory-bank/edits/2026-05-03/005200-T2-session-history-impl.md` — canonical edit chunk
-
-#### 00:18:43 IST - T2: Session history design
-- Created `src/types.ts` — `StoredChatData`, `ChatSession`, `ChatMessage` interfaces
-- Modified `src/main.ts` — `loadChatData()` and `saveChatData()` stubs
-- Updated `memory-bank/tasks/T2.md` — design decisions and file map added
-- Created `memory-bank/edits/2026-05-03/001843-T2-session-history-design.md` — canonical edit chunk
+### Files Modified
+- `src/components/ChatApp.tsx` — `g` flag on replace(), threshold lowered to >= 1, date-fallback guard removed
+- `src/components/ActionBar.tsx` — Auto-name toggle, manual rename button
 
 ---
 
-### 2026-05-02
+## Edit Chunk: 2026-05-15 10:30:00 IST — T17: Advanced Vault Tools Task Created
+**Session**: `sessions/2026-05-15.md`
+**Source Branch**: main
+**Source Commit**: N/A (task creation)
+**Task**: T17
 
-#### 23:56:30 IST - T5/T2: Note targeting fix and persistence hardening
-- Fixed `src/noteEditing/NoteEditingBridge.ts` — `getEditorForNote()` now uses `app.workspace.getMostRecentLeaf()` for active note fallback instead of `getLastViewState()`
-- Modified `src/noteEditing/NoteEditingBridge.ts` — `applyToTargetNote()` uses `app.workspace.openLinkText()` then `app.workspace.getActiveFile()` for robust targeting
-- Modified `src/components/ChatApp.tsx` — stale closure fix in `handleApproveTool` and `handleRejectTool` (cached `resolveToolRef` pattern)
-- Modified `src/main.ts` — `saveChatData()` now checks `data.activeSessionId` before saving to prevent empty overwrites
-- Updated `memory-bank/tasks/T5.md` — note targeting fix documented
-- Updated `memory-bank/tasks/T2.md` — persistence guard documented
-- Updated `memory-bank/session_cache.md` — progress and history updated
-- Created `memory-bank/edits/2026-05-02/235630-T5-T2-note-targeting-persistence.md` — canonical edit chunk
+### Files Created
+- `memory-bank/tasks/T17.md` — Advanced Vault Tools (6 phases)
+- Updated `tasks.md`, `activeContext.md`, `session_cache.md`
 
-#### 23:21:14 IST - T4/T5/T3: Streaming fixes and note editing buttons
-- Fixed `src/api.ts` — `streamChat()` generator now yields `finish` event so UI stops spinner
-- Modified `src/components/MessageBubble.tsx` — added targeted action buttons (Apply, Append, Create, Retry) with conditional rendering
-- Modified `src/components/ChatApp.tsx` — retry handler wired to `MessageBubble`; `createNote()` / `appendToNote()` handlers added
-- Modified `src/settings.ts` — `customCommands` stub added for future slash commands
-- Updated `memory-bank/tasks/T4.md` — streaming completion fix documented
-- Updated `memory-bank/tasks/T5.md` — targeted action buttons documented
-- Created `memory-bank/edits/2026-05-02/232114-T4-T5-T3-fixes.md` — canonical edit chunk
+---
 
-#### 23:21:14 IST - T7: CI/CD release pipeline fix
-- Modified `.github/workflows/release.yml` — fixed artifact path for `main.js`
-- Modified `manifest.json` — version bump to 1.2.0
-- Updated `memory-bank/tasks/T7.md` — CI fix documented
-- Created `memory-bank/edits/2026-05-02/232114-T7-ci-fix.md` — canonical edit chunk
+## Edit Chunk: 2026-05-15 10:15:00 IST — T13: Tool Result Rendering and Schema Fixes
+**Session**: `sessions/2026-05-15.md`
+**Source Branch**: main
+**Source Commit**: `731e1dc`
+**Task**: T13
 
-#### 17:48:45 IST - Memory bank setup and initial task documentation
-- Created `memory-bank/tasks.md` — task registry with T1–T14
-- Created `memory-bank/tasks/T1.md` through `memory-bank/tasks/T14.md` — individual task files
-- Created `memory-bank/activeContext.md` — current focus and active tasks
-- Created `memory-bank/session_cache.md` — session state and history
-- Created `memory-bank/progress.md` — implementation progress tracking
-- Created `memory-bank/projectbrief.md` — project overview
-- Created `memory-bank/systemPatterns.md` — architecture and patterns
-- Created `memory-bank/techContext.md` — technical details
-- Created `memory-bank/implementation-details/` — detailed docs for each subsystem
-- Created `memory-bank/sessions/2026-05-02.md` — first session log
-- Created `memory-bank/edits/2026-05-02/174845-mem-update.md` — canonical edit chunk
+### Files Modified
+- `src/agent/AgentLoop.ts` — Full path rendering in tool results
+- `src/agent/ToolExecutor.ts` — Removed broken search_content param
+- `src/agent/tools.ts` — Removed search_content from Zod schema
+- `src/agent/types.ts` — Type updates
 
-#### 11:12:44 IST - T8: Open source release with branding
-- Created `README.md` — project branding, installation, usage, development
-- Modified `manifest.json` — updated description and author
-- Created `LICENSE` — MIT license
-- Updated `memory-bank/tasks/T8.md` — open-source release criteria marked done
-- Created `memory-bank/edits/2026-05-02/111244-T8.md` — canonical edit chunk
+---
 
-#### 09:41:00 IST - T7: Release system and CI/CD
-- Created `.github/workflows/release.yml` — GitHub Actions workflow for release
-- Created `.github/workflows/ci.yml` — GitHub Actions workflow for CI
-- Modified `package.json` — added `release` script
-- Updated `memory-bank/tasks/T7.md` — release system documented
-- Created `memory-bank/edits/2026-05-02/094100-T7.md` — canonical edit chunk
+## Edit Chunk: 2026-05-15 09:57:00 IST — T15/T16: Task Creation and Architecture Design
+**Session**: `sessions/2026-05-15.md`
+**Source Branch**: main
+**Source Commit**: N/A (task creation)
+**Task**: T15, T16
 
-#### 09:34:00 IST - T1: Chat panel foundation
-- Created `src/views/ObsidianAIChatView.ts` — `ItemView` with React root
-- Created `src/components/ChatApp.tsx` — main chat component with send/receive
-- Created `src/components/ChatMessages.tsx` — message list with streaming bubble
-- Created `src/components/MessageBubble.tsx` — user/assistant message rendering
-- Created `src/components/ActionBar.tsx` — new/load chat buttons
-- Created `src/components/ChatInput.tsx` — textarea with send button
-- Created `src/components/ErrorBoundary.tsx` — error boundary for chat panel
-- Modified `styles.css` — chat panel styles (bubbles, input, action bar)
-- Modified `src/main.ts` — registered chat view and ribbon icon
-- Updated `memory-bank/tasks/T1.md` — chat panel completion criteria marked done
-- Created `memory-bank/edits/2026-05-02/093400-T1.md` — canonical edit chunk
+### Files Created
+- `memory-bank/tasks/T15.md` — Tabbed Chat Interface with Multi-Profile Support
+- `memory-bank/tasks/T16.md` — Group Chat (Multi-Agent Conversation)
+- `memory-bank/edits/2026-05-15/20250515-095700-t15-t16-task-creation.md`
+
+### Files Modified
+- `memory-bank/tasks.md` — Added T15 and T16 to registry
+- `memory-bank/activeContext.md` — Updated focus to T15
+- `memory-bank/session_cache.md` — Updated task registry
+
+---
+
+## Edit Chunk: 2026-05-15 06:45:00 IST — T14: Tailscale Progress Update
+**Session**: `sessions/2026-05-15.md`
+**Source Branch**: main
+**Source Commit**: N/A
+**Task**: T14
+
+### Files Modified
+- `memory-bank/activeContext.md` — T14a status updated to IN PROGRESS (2/3 complete)
+- `memory-bank/tasks/T14.md` — Phase 3 status updated to in progress
+
+### Context
+Cloudy migration to DO VPS completed. Tailscale installed on MacBook and VPS. ufw blocking IPv4 Tailscale traffic identified as blocker.
+
+---
+
+## Edit Chunk: 2026-05-14 09:19:00 IST — T13: Complete (All 13 Tools + AgentLoop + PendingToolCard)
+**Session**: `sessions/2026-05-14.md`
+**Source Branch**: main
+**Source Commit**: `731e1dc`
+**Task**: T13
+
+### Files Created
+- `src/agent/AgentLoop.ts` — Extracted from ChatApp
+- `src/components/PendingToolCard.tsx` — Compact expandable inline tool cards
+
+### Files Modified
+- `src/agent/tools.ts` — 13 tools implemented
+- `src/components/ChatApp.tsx` — Integrated AgentLoop, PendingToolCard
+- `src/agent/types.ts` — Tool types
+
+---
+
+*Full edit history available in `edits/` directory. Regenerated 2026-05-16 09:45:00 IST.*
