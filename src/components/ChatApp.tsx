@@ -1267,7 +1267,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				setContextItems([]);
 			}
 		},
-		[isStreaming, plugin],
+		[isStreaming, plugin, orchestrator, isGroupChat, participants, typingAgents],
 	);
 
 	const handleStop = useCallback(() => {
@@ -1414,7 +1414,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			);
 			handleSend(userMsg.content);
 		},
-		[isStreaming, handleSend],
+		[isStreaming, handleSend, orchestrator, isGroupChat, participants],
 	);
 
 	const handleEditMessage = useCallback(
