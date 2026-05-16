@@ -50,6 +50,11 @@ export default class ObsidianAIPlugin extends Plugin {
 		this.chatapi = new ChatApiManager(this.settings, this.app);
 
 		this.registerView(
+			CHAT_VIEWTYPE,
+			(leaf) => new ObsidianAIChatView(leaf, this, {}),
+		);
+
+		this.registerView(
 			GROUP_CHAT_VIEWTYPE,
 			(leaf) => new GroupChatView(leaf, this),
 		);
