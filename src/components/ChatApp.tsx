@@ -1554,19 +1554,17 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	);
 
 	const handleLoadSession = useCallback((sessionId: string) => {
-		setActiveSessionId(sessionId);
 		setShowSessionPicker(false);
-		// Restore participants for the loaded session
+		// Restore participants for the loaded session BEFORE changing activeSessionId
+		// so the sync effect sees the correct participants
 		const session = sessionsRef.current.find((s) => s.id === sessionId);
 		if (session?.participants && session.participants.length > 0) {
 			setParticipants(session.participants);
 		} else {
 			setParticipants([]);
 		}
-		// Also restore debate mode state if it was stored
-		if (session?.isGroupChat) {
-			setDebateMode(false); // Default to off, user can toggle
-		}
+		setDebateMode(false);
+		setActiveSessionId(sessionId);
 	}, []);
 
 	const handleDeleteSession = useCallback((sessionId: string) => {
@@ -1578,13 +1576,14 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 					(a, b) => b.updatedAt - a.updatedAt,
 				)[0];
 				if (mostRecent) {
-					setActiveSessionId(mostRecent.id);
-					// Restore participants for the new active session
+					// Restore participants BEFORE changing active session
 					if (mostRecent.participants && mostRecent.participants.length > 0) {
 						setParticipants(mostRecent.participants);
 					} else {
 						setParticipants([]);
 					}
+					setDebateMode(false);
+					setActiveSessionId(mostRecent.id);
 				} else {
 					// No sessions left — create a new empty one
 					const empty: ChatSession = {
