@@ -145,7 +145,7 @@ export class Orchestrator {
 
 			for (const engine of targets) {
 				// Ask agent if it wants to respond to the conversation
-				const prompt = this.buildDebatePrompt(engine.name, round, round1Responses);
+				const prompt = this.buildDebatePrompt(engine.name, round, round1Responses, cleanText);
 				const response = await this.sendToAgent(engine, workingThread, prompt, signal);
 
 				// Only include if agent actually wants to add something
@@ -176,18 +176,22 @@ export class Orchestrator {
 		}
 	}
 
-	private buildDebatePrompt(agentName: string, round: number, prevResponses: AgentResponse[]): string {
+	private buildDebatePrompt(agentName: string, round: number, prevResponses: AgentResponse[], originalQuestion: string): string {
 		const otherResponses = prevResponses
 			.filter((r) => r.agentName !== agentName)
 			.map((r) => `${r.agentName}: ${r.text}`)
 			.join("\n\n");
 
 		return (
-			`Other agents have responded to the user's message. ` +
-			`Read their responses below and decide if you have anything meaningful to add.` +
-			`\n\nIf you have nothing to add, reply with exactly "PASS" (no other text).` +
-			`\n\nIf you want to respond, keep it brief (2-3 sentences max).` +
-			`\n\n--- Other responses ---\n${otherResponses}\n\nYour turn:`
+			`The user asked: "${originalQuestion}"` +
+			`\n\nOther assistants shared these perspectives:` +
+			`\n\n${otherResponses}` +
+			`\n\n---` +
+			`\n\nBased on your knowledge and perspective, what would you add? ` +
+			`Do you agree, disagree, want to correct something, or offer a different angle? ` +
+			`Be concise (2-3 sentences).` +
+			`\n\nIf you're satisfied with what's been said and have nothing new to add, reply with exactly: PASS` +
+			`\n\nYour response:`
 		);
 	}
 
@@ -351,8 +355,11 @@ export class Orchestrator {
 		const engine = this.engines.find((e) => e.id === agentId);
 		const name = engine?.name ?? "Assistant";
 		let prompt = (
-			`You are ${name}, participating in a group conversation with other AI assistants. ` +
-			`Respond naturally as yourself. If you have nothing to add, say so briefly.` +
+			`You are ${name}, participating in a collaborative discussion with other AI assistants. ` +
+			`You each bring different strengths and knowledge. ` +
+			`When asked to compare or review other assistants' perspectives, offer your own view — ` +
+			`agree, disagree, add nuance, or correct errors. This is normal collaborative discussion. ` +
+			`Be concise and helpful.` +
 			`\n\nYou are integrated into an Obsidian note-taking app and can help with notes, research, and tasks.`
 		);
 
