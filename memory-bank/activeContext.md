@@ -1,13 +1,13 @@
 # Active Context
 
-*Last Updated: 2026-05-16 10:45:00 IST*
+*Last Updated: 2026-05-16 16:20:00 IST*
 
 ## Current Focus
-**Primary Task:** T16 — Group Chat (Multi-Agent Conversation) — Tool calling now works in council mode
+**Primary Task:** T16 — Group Chat (Multi-Agent Conversation) — Debate mode working, UI refined, participant persistence fixed
 **Secondary Tasks:** T15 (Tabbed Chat — Phases 1–2 done, Phase 3 paused), T14 (Remote Agent)
 
 ## Active Tasks
-- [T16]: 🔄 **IN PROGRESS** — MVP implemented: MentionParser, Orchestrator, unified ChatApp with council mode, participant roster, identity badges, handleSend fix. User confirmed working.
+- [T16]: 🔄 **IN PROGRESS** — Phases 1–16 implemented. MVP done. UI refined (dropdown, ActionBar, zen mode). Debate mode working (agents talk to each other). Participant persistence fixed. User testing ongoing.
 - [T14]: 🔄 **IN PROGRESS** — Phase 3 integration test. Tailscale 2/3 complete.
 - [T15]: 🔄 **IN PROGRESS** — Phase 1–2 complete. Phase 3 (TabBar UI) paused in favor of T16.
 - [T17]: ⏸️ **PENDING** — Advanced vault tools. Backlinks + YAML first.
@@ -62,24 +62,28 @@
 - Phase 2 (Per-profile engine) ✅ COMPLETE
 - Phase 3 (TabBar UI) ⏸️ PAUSED — user chose T16 first
 
+## T16 Current Status (2026-05-16 16:20)
+- All phases 1–16 implemented. Debate mode working. UI refined.
+- User confirmed: "It's fantastic. The debate is working."
+- Known: Gemini occasionally gives guardrail responses; OpenRouter/Gemma works better.
+- Bug: Participant badge sometimes doesn't update on session switch (fixed in 971c63c).
+
 ## Next Steps
-1. **Real multi-agent behavior**: Agents can reply to each other (not just respond to user)
-2. T16 Phase 10: Individual add/remove participants (not all-or-nothing)
-3. T16 Phase 11: Mention autocomplete (@ dropdown)
-4. T16 Phase 7: Parallel dispatch mode toggle
-5. T16 Phase 9: Session persistence for council chats
-6. Return to T15 Phase 3 when user is ready
+1. **Continue T16 testing**: Participant session switching, debate mode with different models
+2. **T16 future**: Mention autocomplete, parallel dispatch toggle, manual tool approval in council mode
+3. Return to T15 Phase 3 (TabBar) when user is ready
+4. T17 Phase 1: Backlinks + YAML tools
 
 ## Current Decisions
 - Unified UI chosen over separate panels (user explicitly requested)
-- All-or-nothing toggle as MVP (individual add/remove is future)
+- All-or-nothing toggle REPLACED by individual checkbox dropdown (Phase 11)
 - Sequential dispatch as default (parallel exists in code but not wired)
 - **Tool calling in council mode: ENABLED** — uses AgentLoop with auto-approve only. Manual approval UI deferred.
+- **Debate mode**: Round 1 all agents respond to user, Round 2 agents see each other's responses. PASS to skip.
 - T15 tab bar deprioritized in favor of T16 group chat
-- **Next major decision**: Real multi-agent behavior (agents replying to each other) vs T15/T17
 
 ## Session Context
-- **Session**: 2026-05-16 afternoon
-- **Commits**: 36db2ff → bfbf80f (5 commits)
+- **Session**: 2026-05-16 afternoon/evening
+- **Commits**: 49fd6aa → 971c63c (10 commits post-10:45)
 - **Build status**: ✅ tsc + esbuild pass all commits
 - **Pushed to**: origin/main
