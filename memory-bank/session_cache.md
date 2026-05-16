@@ -3,9 +3,9 @@
 *Last Updated: 2026-05-16 09:45:00 IST*
 
 **Started**: 2026-05-16 14:45:00 IST
-**Focus Task**: T16 Group Chat MVP → IMPLEMENTED, USER CONFIRMED
+**Focus Task**: T16 Group Chat — Tool calling enabled in council mode
 **Session File**: `sessions/2026-05-16.md`
-**Status**: T16 Phases 1–5 implemented. Bug fix for stale orchestrator complete. User confirmed working.
+**Status**: T16 Phases 1–5 implemented. Tool calling fix applied. Build passes. Pushed.
 
 ## Overview
 
@@ -49,21 +49,27 @@
 
 ## Current Session Details
 
-**Commits**: 36db2ff → 9ecb0ed (4 commits)
+**Commits**: 36db2ff → bfbf80f (5 commits)
 **Files touched**: 10+ files
 **Build status**: ✅ tsc + esbuild pass all commits
 **Pushed to**: `origin/main`
 
-### T16 Group Chat MVP
-- `src/agent/MentionParser.ts` — NEW: mention parsing
-- `src/agent/Orchestrator.ts` — NEW: multi-agent dispatch
-- `src/views/GroupChatView.ts` — NEW: dedicated group chat view
-- `src/components/GroupChatApp.tsx` — NEW: standalone group chat app
-- `src/components/ChatApp.tsx` — MODIFIED: unified chat with council mode
-- `src/types.ts` — MODIFIED: agent identity fields, group chat fields
-- `src/components/MessageBubble.tsx` — MODIFIED: agent identity dot + name
-- `src/main.ts` — MODIFIED: group chat view registration
-- `styles.css` — MODIFIED: group chat roster, participant chips, typing pulse
+### T16 Group Chat
+- `src/agent/MentionParser.ts` — mention parsing
+- `src/agent/Orchestrator.ts` — multi-agent dispatch, **tool calling enabled via AgentLoop**
+- `src/views/GroupChatView.ts` — dedicated group chat view
+- `src/components/GroupChatApp.tsx` — standalone group chat app
+- `src/components/ChatApp.tsx` — unified chat with council mode, participant roster, tool call surfacing
+- `src/types.ts` — agent identity fields, group chat fields
+- `src/components/MessageBubble.tsx` — agent identity dot + name
+- `src/main.ts` — group chat view registration
+- `styles.css` — group chat roster, participant chips, typing pulse
+
+### Tool Calling Fix (bfbf80f)
+- `Orchestrator.ts` — added `toolExecutor` option, `AgentLoop` integration, tool descriptions in system prompt
+- `ChatApp.tsx` — pass `ToolExecutor` to orchestrator, pass abort signal, surface `toolCalls`
+- **Safety**: Single-user path untouched (AgentLoop.ts, api.ts, ToolExecutor.ts unmodified)
+- **Limitation**: Manual approval UI not shown in council mode; auto-approve only
 
 ### Bug Fixes
 - `src/main.ts` — restore CHAT_VIEWTYPE registration (863064f)
@@ -75,10 +81,15 @@
 - User removed Tailscale agent → bug discovered (stale orchestrator)
 - Bug fix confirmed: "Yes. Excellent."
 - User requested: memory bank update, implementation docs
+- User asked: "what should be done next?" → discussed options A–E
+- User wants tool calling in group chat + real multi-agent behavior
+- User requirement: don't break single-user chat. Sage proposed safety strategy, user approved: "Proceed"
 
 ## Next Steps
+- **Real multi-agent behavior**: Agents can reply to each other (not just respond to user)
 - T16 Phase 10: Individual add/remove participants
 - T16 Phase 11: Mention autocomplete
-- T16 Phase 6: Parallel dispatch toggle
+- T16 Phase 7: Parallel dispatch toggle
 - T16 Phase 9: Session persistence
 - Return to T15 Phase 3 (TabBar) when user ready
+- T17 Phase 1: Backlinks + YAML tools

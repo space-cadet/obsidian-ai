@@ -1,9 +1,9 @@
 # Active Context
 
-*Last Updated: 2026-05-16 09:45:00 IST*
+*Last Updated: 2026-05-16 10:45:00 IST*
 
 ## Current Focus
-**Primary Task:** T16 — Group Chat (Multi-Agent Conversation) — MVP COMPLETE
+**Primary Task:** T16 — Group Chat (Multi-Agent Conversation) — Tool calling now works in council mode
 **Secondary Tasks:** T15 (Tabbed Chat — Phases 1–2 done, Phase 3 paused), T14 (Remote Agent)
 
 ## Active Tasks
@@ -48,27 +48,38 @@
 - Fixed: removed agent still responding after participant removal
 - User confirmed: "Yes. Excellent."
 
+### Phase 6: Tool Calling in Council Mode ✅ (2026-05-16 10:45)
+- Orchestrator now uses `AgentLoop` (same class as single-user path) when `enableTools=true`
+- `ToolExecutor` passed to Orchestrator constructor
+- Tool descriptions added to system prompt for group chat agents
+- `AbortSignal` passed through dispatch for cancellation support
+- `toolCalls` returned in `AgentResponse` and surfaced in UI
+- **Safety**: Single-user path untouched. `AgentLoop.ts`, `api.ts`, `ToolExecutor.ts` unmodified.
+- **Limitation**: Manual approval UI not shown in council mode. Auto-approve only. If autoApprove is OFF, tools rejected with helpful message.
+
 ## T15 Status (Paused for T16)
 - Phase 1 (Settings profile list) ✅ COMPLETE
 - Phase 2 (Per-profile engine) ✅ COMPLETE
 - Phase 3 (TabBar UI) ⏸️ PAUSED — user chose T16 first
 
 ## Next Steps
-1. T16 Phase 10: Individual add/remove participants (not all-or-nothing)
-2. T16 Phase 11: Mention autocomplete (@ dropdown)
-3. T16 Phase 6: Parallel dispatch mode toggle
-4. T16 Phase 9: Session persistence for council chats
-5. Return to T15 Phase 3 when user is ready
+1. **Real multi-agent behavior**: Agents can reply to each other (not just respond to user)
+2. T16 Phase 10: Individual add/remove participants (not all-or-nothing)
+3. T16 Phase 11: Mention autocomplete (@ dropdown)
+4. T16 Phase 7: Parallel dispatch mode toggle
+5. T16 Phase 9: Session persistence for council chats
+6. Return to T15 Phase 3 when user is ready
 
 ## Current Decisions
 - Unified UI chosen over separate panels (user explicitly requested)
 - All-or-nothing toggle as MVP (individual add/remove is future)
 - Sequential dispatch as default (parallel exists in code but not wired)
-- No tool calling in council mode yet (requires attribution + locking)
+- **Tool calling in council mode: ENABLED** — uses AgentLoop with auto-approve only. Manual approval UI deferred.
 - T15 tab bar deprioritized in favor of T16 group chat
+- **Next major decision**: Real multi-agent behavior (agents replying to each other) vs T15/T17
 
 ## Session Context
 - **Session**: 2026-05-16 afternoon
-- **Commits**: 36db2ff → 9ecb0ed (4 commits)
+- **Commits**: 36db2ff → bfbf80f (5 commits)
 - **Build status**: ✅ tsc + esbuild pass all commits
 - **Pushed to**: origin/main
