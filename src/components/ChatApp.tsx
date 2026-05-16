@@ -379,6 +379,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			enableTools: plugin.settings.enableAgentTools,
 			autoApprove: plugin.settings.autoApply,
 			maxSteps: plugin.settings.maxAgentSteps,
+			toolExecutor: new ToolExecutor(plugin.app),
 		});
 		// Override engine profiles
 		orch.engines = resolved.map((e) => ({
@@ -395,7 +396,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			} as ProviderProfile,
 		}));
 		return orch;
-	}, [isGroupChat, participants, plugin.chatapi, plugin.settings]);
+	}, [isGroupChat, participants, plugin.chatapi, plugin.settings, plugin.app]);
 
 	// ─── Participant Management ───
 	const handleAddParticipant = useCallback((profile: ProviderProfile) => {
@@ -689,6 +690,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 					for await (const response of orchestrator.dispatch(
 						text,
 						sessionsRef.current.find((s) => s.id === currentActiveId)?.messages ?? [],
+						controllerRef.current?.signal,
 					)) {
 						setTypingAgents((prev) => {
 							const next = new Set(prev);
@@ -707,6 +709,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 							agentName: response.agentName,
 							agentColor: response.agentColor,
 							isError: !!response.error,
+							toolCalls: response.toolCalls,
 						};
 
 						setSessions((prev) =>

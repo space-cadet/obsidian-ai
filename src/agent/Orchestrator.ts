@@ -3,6 +3,9 @@ import { ChatMessage, GroupChatParticipant } from "../types";
 import { ProviderProfile } from "../settings";
 import { parseMentions, ParsedMention } from "./MentionParser";
 import type { ToolCall, ToolResult } from "./types";
+import { AgentLoop } from "./AgentLoop";
+import { ToolExecutor } from "./ToolExecutor";
+import { noteTools } from "./tools";
 
 export type DispatchMode = "sequential" | "parallel";
 export type ContextStrategy = "full" | "isolated";
@@ -31,6 +34,8 @@ export interface OrchestratorOptions {
 	enableTools?: boolean;
 	autoApprove?: boolean;
 	maxSteps?: number;
+	/** Tool executor for running Obsidian note tools. If provided with enableTools=true, agents will use tool calling. */
+	toolExecutor?: ToolExecutor;
 }
 
 /**
@@ -48,6 +53,7 @@ export class Orchestrator {
 	enableTools: boolean;
 	autoApprove: boolean;
 	maxSteps: number;
+	toolExecutor?: ToolExecutor;
 
 	constructor(options: OrchestratorOptions) {
 		this.api = options.api;
@@ -62,6 +68,7 @@ export class Orchestrator {
 		this.enableTools = options.enableTools ?? false;
 		this.autoApprove = options.autoApprove ?? false;
 		this.maxSteps = options.maxSteps ?? 5;
+		this.toolExecutor = options.toolExecutor;
 	}
 
 	private resolveProfile(profileId: string): ProviderProfile {
@@ -139,13 +146,14 @@ export class Orchestrator {
 	async *dispatch(
 		text: string,
 		thread: ChatMessage[],
+		signal?: AbortSignal,
 	): AsyncGenerator<AgentResponse> {
 		const { targets, cleanText } = this.parseAndRoute(text);
 
 		if (this.mode === "parallel") {
 			// Launch all in parallel, yield as they complete
 			const promises = targets.map(async (engine) => {
-				const response = await this.sendToAgent(engine, thread, cleanText);
+				const response = await this.sendToAgent(engine, thread, cleanText, signal);
 				return response;
 			});
 
@@ -155,7 +163,7 @@ export class Orchestrator {
 		} else {
 			// Sequential: one at a time
 			for (const engine of targets) {
-				yield await this.sendToAgent(engine, thread, cleanText);
+				yield await this.sendToAgent(engine, thread, cleanText, signal);
 			}
 		}
 	}
@@ -167,14 +175,66 @@ export class Orchestrator {
 		engine: AgentEngine,
 		thread: ChatMessage[],
 		cleanText: string,
+		signal?: AbortSignal,
 	): Promise<AgentResponse> {
 		try {
 			const messages = this.buildContext(engine.id, thread, cleanText);
-			let fullText = "";
 
-			// Simple non-tooling path for MVP
+			// Tool-enabled path: use AgentLoop (same as single-user chat)
+			if (this.enableTools && this.toolExecutor) {
+				let fullText = "";
+				const toolCallsLog: Array<{ call: ToolCall; result?: ToolResult }> = [];
+
+				const agent = new AgentLoop({
+					chatApi: this.api,
+					toolExecutor: this.toolExecutor,
+					maxSteps: this.maxSteps,
+					autoApprove: this.autoApprove,
+					profile: engine.profile,
+					onTextDelta: (text) => {
+						fullText = text;
+					},
+					onToolCall: (call) => {
+						toolCallsLog.push({ call });
+					},
+					requestApproval: async (call) => {
+						// In group chat, auto-approve if enabled; otherwise reject with a note.
+						// Manual approval UI for group chat is a future enhancement.
+						if (this.autoApprove) {
+							return await this.toolExecutor!.execute(call);
+						}
+						return { error: "Tool call rejected: manual approval is not supported in group chat. Enable auto-approve to use tools in council mode." };
+					},
+					onToolResult: (call, result) => {
+						const idx = toolCallsLog.findIndex(
+							(tc) => tc.call.toolCallId === call.toolCallId,
+						);
+						if (idx >= 0) {
+							toolCallsLog[idx] = { ...toolCallsLog[idx], result };
+						}
+					},
+				});
+
+				const result = await agent.run(
+					messages,
+					noteTools,
+					signal ?? new AbortController().signal,
+				);
+
+				return {
+					agentId: engine.id,
+					agentName: engine.name,
+					agentColor: engine.color,
+					text: result.text || fullText,
+					toolCalls: toolCallsLog.length > 0 ? toolCallsLog : undefined,
+				};
+			}
+
+			// Simple non-tooling path (original MVP behavior preserved)
+			let fullText = "";
 			const stream = this.api.streamChat(messages, undefined, engine.profile);
 			for await (const chunk of stream) {
+				if (signal?.aborted) break;
 				fullText += chunk;
 			}
 
@@ -198,10 +258,36 @@ export class Orchestrator {
 	private buildSystemPrompt(agentId: string): string {
 		const engine = this.engines.find((e) => e.id === agentId);
 		const name = engine?.name ?? "Assistant";
-		return (
+		let prompt = (
 			`You are ${name}, participating in a group conversation with other AI assistants. ` +
 			`Respond naturally as yourself. If you have nothing to add, say so briefly.` +
 			`\n\nYou are integrated into an Obsidian note-taking app and can help with notes, research, and tasks.`
 		);
+
+		if (this.enableTools) {
+			prompt += (
+				"\n\nYou have access to the following tools for managing Obsidian notes:" +
+				"\n- read_note: Read the full content of a note. Use this before editing to understand current content." +
+				"\n- edit_note: Overwrite the entire content of a note. Provide COMPLETE new content." +
+				"\n- append_to_note: Add content to the end of a note without changing existing content." +
+				"\n- create_note: Create a new note in the vault." +
+				"\n- patch_note: Find and replace text inside a note (small precise edits)." +
+				"\n- edit_section: Rewrite content under a specific heading." +
+				"\n- search_notes: Search for notes by filename or path." +
+				"\n- list_notes: Browse all notes in the vault or a folder." +
+				"\n- get_note_metadata: Get file stats (size, dates, word count) for a specific note." +
+				"\n- create_folder: Create a new folder in the vault." +
+				"\n- move_note: Move or rename a note to a new folder or name." +
+				"\n- delete_note: Delete a note from the vault." +
+				"\n- list_folders: List folders in the vault." +
+				"\n\nWhen the user asks to find, list, or search for notes, ALWAYS use search_notes or list_notes first." +
+				" Do not say you cannot search — you have the search_notes and list_notes tools." +
+				" Before editing a note you are unfamiliar with, use read_note to see its current content." +
+				"\n\nImportant: When using edit_note, provide the COMPLETE new note content." +
+				" Do not use diff syntax or markdown code blocks."
+			);
+		}
+
+		return prompt;
 	}
 }
