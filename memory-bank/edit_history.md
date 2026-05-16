@@ -1,8 +1,19 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-15 13:15:00 IST*
+*Last Updated: 2026-05-16 07:56:00 IST*
 
 *Newest entries first. Canonical chunks stored in `edits/YYYY-MM-DD/`.*
+
+#### 07:56:00 IST — T15 Phase 1 & 2 + UI Overhaul + LLM Naming — 8 commits
+- **Edit chunk**: `edits/2026-05-16/20260516-075600-t15-ui-naming.md`
+- **Code commits**: `6fa3da9` → `960288a` → `242668e` → `fc04ef0` → `6f99ddd` → `8df3fc4` → `11d5eaa` → `0c9ebd8`
+- **Build**: ✅ all 8 commits pass `tsc + esbuild` cleanly
+- **Phase 1** (Settings profile list): `ProfileCard.tsx` created, `settings.ts` exports helpers, responsive CSS with progressive disclosure
+- **Phase 2** (Per-profile engine): `profileId` in `ChatSession`, `ChatApiManager` methods accept override profile, `AgentLoop` passes profile through, `ObsidianAIChatView` accepts options
+- **UI modernization**: Teal `#0d9488` theme replaces purple, Lucide icons via `ObsidianIcon` wrapper, `ProfileIndicator` chip in action bar, session title display
+- **UI fixes**: "Hello" title bug (regex fix + Set generic detection), profile chip overflow (responsive breakpoints), settings refresh (`settingsTick` + `visibilitychange`), settings CTA buttons teal override
+- **LLM naming**: `generateSessionTitleLLM()` calls active LLM with 3–6 word prompt, first 6 messages capped at 200 chars, auto and manual both use LLM with heuristic fallback
+- Updated: `tasks/T15.md`, `tasks.md`, `activeContext.md`, `session_cache.md`
 
 #### 10:15:00 IST — T13: Tool result fixes — full paths, search_content removal, ambiguity warnings
 - **Code commit**: `731e1dc` — `fix(tools): include full paths in tool results...`

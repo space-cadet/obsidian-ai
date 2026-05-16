@@ -1,68 +1,56 @@
 # Active Context
 
-*Last Updated: 2026-05-15 13:15:00 IST*
+*Last Updated: 2026-05-16 07:56:00 IST*
 
 ## Current Focus
 **Primary Task:** T15 — Tabbed Chat Interface with Multi-Profile
-**Secondary Tasks:** T14 (Remote Agent — Tailscale integration test), T16 (Group Chat — pending T15)
+**Secondary Tasks:** T14 (Remote Agent), T16 (Group Chat — pending T15)
 
 ## Active Tasks
-- [T14]: 🔄 **IN PROGRESS** — Phase 3 integration test. Tailscale 2/3 complete. ufw IPv4 fixed. Connection test initiated, Obsidian hanging on response parsing (agent hallucinating note names with Gemini provider — separate issue).
-- [T15]: 🔄 **IN PROGRESS** — Design complete. Architecture: per-panel `profileId`, tab bar UI, Settings profile list view. 6 phases defined. Awaiting implementation approval.
-- [T16]: ⏸️ **PENDING** — Blocked on T15. Architecture designed: mention-based routing, Orchestrator class, sequential/parallel modes, full/isolated context strategies.
-- [T17]: ⏸️ **PENDING** — Advanced vault tools architecture complete. User-prioritized: backlinks + YAML first. 6 phases: Networked Thought, YAML Properties, Tags, Bulk Ops, Templating, Maintenance.
-- [T13]: ✅ **COMPLETED** — All 13 tools, AgentLoop, PendingToolCard. **2026-05-15 fixes**: full path rendering in `list_notes`/`search_notes`/`get_note_metadata`; removed broken `search_content` param; `list_folders` depth consistency; `resolveNote` ambiguity detection with `warning` field in `ToolResult`. **2026-05-15**: Session auto-naming v3 — toggle reactivity (local React state), context-aware naming (first 2 user + 2 assistant msgs), distinct toggle styling (dashed border when OFF), 🪄 wand icon for manual rename.
-- [T11]: ✅ **COMPLETED**
+- [T14]: 🔄 **IN PROGRESS** — Phase 3 integration test. Tailscale 2/3 complete. ufw IPv4 fixed.
+- [T15]: 🔄 **IN PROGRESS** — Phase 1 (Settings profile list) ✅ COMPLETE. Phase 2 (Per-profile engine) ✅ COMPLETE. Awaiting Phase 3 (TabBar UI) implementation approval.
+- [T16]: ⏸️ **PENDING** — Blocked on T15.
+- [T17]: ⏸️ **PENDING** — Advanced vault tools. Backlinks + YAML first.
+- [T13]: ✅ **COMPLETED** — All 13 tools, AgentLoop, PendingToolCard. v3 auto-naming: toggle reactivity, context-aware naming, wand icon. **2026-05-16**: LLM-powered naming replaces heuristic.
 
-## Implementation Focus
-`src/settings.ts`, `src/components/SettingsPanel.tsx` (profile list view), `src/components/ProfileCard.tsx`, `src/components/TabBar.tsx`, `src/components/ChatApp.tsx`, `src/hooks/useChat.ts`, `src/core/ChatEngine.ts`
+## T15 Progress Update (2026-05-16)
 
-## Task-Specific Context
+### Phase 1: Settings UI — Profile List View ✅ COMPLETE
+- `ProfileCard.tsx` component created with React-based profile list
+- Each row: provider icon, name, model, endpoint, masked key, status dot, actions
+- Actions: Edit (inline form with model picker), Duplicate, Test, Set Default (star), Delete
+- Responsive: progressive disclosure via media queries (model @ 500px, endpoint @ 650px)
+- CSS: flex-shrink, ellipsis truncation, overflow-x: auto, mobile stacking under 420px
 
-### Task T15 — Tabbed Chat Interface
-**Goal:** Transform single-profile chat into multi-panel, multi-provider interface.
-**Key change:** Settings UI must display ALL enabled profiles with providers and API keys, not just the selected one.
-**Architecture:**
-- `ChatEngine` accepts optional `profileId` prop
-- `useChat` hook accepts optional `profileId`, falls back to global default
-- `ChatApp` renders `TabBar` with per-profile tabs
-- Settings: `ProfileCard` list with add/edit/delete/test buttons
-- Conversation history: namespaced by `profileId` in `localStorage`
+### Phase 2: Core Data Model — Per-Panel Profile ✅ COMPLETE
+- `ChatSession` type: added `profileId?: string`
+- `ChatApiManager.callApi/streamChat/streamChatWithTools`: optional `profile` parameter
+- `AgentLoop`: accepts `profile` in options, passes to API
+- `ChatApp`: accepts `profileId` prop, `resolvedProfile` useMemo (explicit → session → active)
+- `ObsidianAIChatView`: accepts `options: { profileId?: string }` via constructor
+- All session creation points set `profileId`
 
-**Settings UI changes:**
-- New "Profiles" section with list view
-- Each card: provider icon + name + model/endpoint + auth status + masked API key
-- Add Profile → provider picker → profile form
-- Edit → inline form expansion
-- Delete → confirmation dialog
-- Test Connection → per-profile health check
-- Set as Default → star icon
+### UI Overhaul (2026-05-16)
+- **Teal theme**: `#0d9488` replaces purple across chat UI, settings, profile components
+- **Lucide icons**: `ObsidianIcon` wrapper for Obsidian's `setIcon()` — real icons in React
+- **ProfileIndicator**: chip showing provider color dot + icon + name + model in action bar right
+- **Session title**: displayed in action bar center with ellipsis truncation
+- **ActionBar**: left/center/right layout with icon buttons
 
-### Task T16 — Group Chat (Multi-Agent)
-**Goal:** Single conversation with multiple agents responding.
-**Orchestration strategies:**
-1. **Mention-based** (MVP): `@Cloudy fetch arxiv` → only Cloudy responds
-2. **Round-robin**: Each agent gets a turn
-3. **Parallel**: All agents respond simultaneously
-4. **All-at-once**: All agents see the same prompt, respond concurrently
-
-**Context sharing:**
-- Full Transparency (default): Agents see each other's responses
-- Isolated: Each agent only sees user + own messages
-
-**Tool execution:**
-- Per-agent attribution: "☁️ Cloudy wants to read `Note.md`"
-- File-level locking for concurrent edits
-- Tool results returned to requesting agent only
-
-## Current Decisions
-- T15 is prerequisite for T16. Tab infrastructure must exist before group orchestration.
-- Settings UI overhaul is part of T15 Phase 1, not a separate task.
-- Profile list view replaces the current single-profile settings form.
-- Lazy engine init: inactive tabs don't maintain SSE connections.
+### LLM-Powered Naming (2026-05-16)
+- `generateSessionTitleLLM()`: calls active LLM with 3–6 word title prompt
+- Sends first 6 messages (200 char cap each), strips artifacts
+- Manual rename (wand): shows "🪄 Asking model…", LLM first, heuristic fallback
+- Auto-name: LLM naming with `Set` dedup (`llmNamedRef`) to avoid re-calling
+- Token cost: ~200–400 per naming call
 
 ## Next Steps
-1. Get user approval on T15 architecture
-2. Begin T15 Phase 1: Settings UI profile list view
-3. Begin T15 Phase 2: Core data model (`profileId` in ChatEngine/useChat)
-4. T14: Continue debugging Obsidian → agent connection (separate from T15/16)
+1. Phase 3: TabBar UI component (user approved to continue)
+2. Phase 4: Per-tab localStorage isolation
+3. Phase 5–6: Integration test with multiple providers
+
+## Current Decisions
+- T15 Phase 1 & 2 complete without approval bottlenecks (user was actively testing)
+- LLM naming approved as replacement for heuristic naming
+- Teal theme approved over purple
+- TabBar architecture: internal tabs within ChatApp, not separate Obsidian panes
