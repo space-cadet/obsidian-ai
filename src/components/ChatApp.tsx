@@ -523,6 +523,11 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				skipNextAutosaveRef.current = true;
 				setSessions(data.sessions);
 				setActiveSessionId(data.activeSessionId);
+				// Restore participants from the active session
+				const activeSession = data.sessions.find((s) => s.id === data.activeSessionId);
+				if (activeSession?.participants && activeSession.participants.length > 0) {
+					setParticipants(activeSession.participants);
+				}
 			} else {
 				const newSession: ChatSession = {
 					id: makeId(),
@@ -544,6 +549,18 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			cancelled = true;
 		};
 	}, [plugin]);
+
+	// Sync participants into the active session whenever they change
+	useEffect(() => {
+		if (!activeSessionId || participants.length === 0) return;
+		setSessions((prev) =>
+			prev.map((s) =>
+				s.id === activeSessionId
+					? { ...s, participants: [...participants], isGroupChat: participants.length > 1 }
+					: s,
+			),
+		);
+	}, [participants, activeSessionId]);
 
 	// Persist sessions whenever they change, but coalesce bursty updates
 	useEffect(() => {
