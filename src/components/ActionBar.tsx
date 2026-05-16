@@ -16,6 +16,8 @@ interface ActionBarProps {
 	onManualRename: () => void;
 	profile: ProviderProfile;
 	sessionTitle?: string;
+	zenMode?: boolean;
+	onToggleZenMode?: () => void;
 }
 
 const ActionBar: React.FC<ActionBarProps> = ({
@@ -30,6 +32,8 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	onManualRename,
 	profile,
 	sessionTitle,
+	zenMode,
+	onToggleZenMode,
 }) => {
 	const openSettings = () => {
 		(plugin.app as any).setting.open();
@@ -87,6 +91,15 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				)}
 			</div>
 			<div className="chat-action-bar-right">
+				{onToggleZenMode && (
+					<button
+						className={`chat-btn chat-icon-btn ${zenMode ? "is-active" : ""}`}
+						onClick={onToggleZenMode}
+						title={zenMode ? "Exit zen mode" : "Zen mode (focus)"}
+					>
+						<ObsidianIcon icon={zenMode ? "eye-off" : "eye"} size={15} />
+					</button>
+				)}
 				<ProfileIndicator profile={profile} />
 			</div>
 		</div>

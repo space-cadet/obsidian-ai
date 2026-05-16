@@ -11,6 +11,8 @@ interface ChatInputProps {
 	isEditing?: boolean;
 	onCancel?: () => void;
 	editMessage?: string;
+	onToggleActiveNote?: () => void;
+	hasActiveNote?: boolean;
 }
 
 type AutoType = "mention" | "slash" | "wikilink";
@@ -82,10 +84,24 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	isEditing,
 	onCancel,
 	editMessage,
+	onToggleActiveNote,
+	hasActiveNote,
 }) => {
 	const [value, setValue] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const [auto, setAuto] = useState<AutoState | null>(null);
+
+	// Auto-resize textarea based on content
+	useEffect(() => {
+		const textarea = textareaRef.current;
+		if (!textarea) return;
+		// Reset to auto to shrink when deleting
+		textarea.style.height = "auto";
+		// Grow up to max 4 lines (~96px) then scroll
+		const maxHeight = 96;
+		const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+		textarea.style.height = newHeight + "px";
+	}, [value]);
 
 	useEffect(() => {
 		if (editMessage !== undefined) {
@@ -351,10 +367,20 @@ const ChatInput: React.FC<ChatInputProps> = ({
 				</div>
 			)}
 			<div className="chat-input-area">
+				{onToggleActiveNote && (
+					<button
+						className={`chat-input-attach${hasActiveNote ? " is-active" : ""}`}
+						onClick={onToggleActiveNote}
+						title={hasActiveNote ? "Remove active note from context" : "Include active note as context"}
+						type="button"
+					>
+						📎
+					</button>
+				)}
 				<textarea
 					ref={textareaRef}
 					className="chat-textarea"
-					rows={2}
+					rows={1}
 					placeholder="Ask anything... (Shift+Enter for new line)"
 					value={value}
 					onChange={handleInputChange}
@@ -363,13 +389,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
 				/>
 				{isStreaming ? (
 					<button
-						className="chat-btn chat-stop-btn"
+						className="chat-btn chat-stop-btn chat-send-icon"
 						onClick={onStop}
+						title="Stop"
 					>
-						⏹ Stop
+						⏹
 					</button>
 				) : isEditing ? (
-					<div style={{ display: "flex", gap: "6px" }}>
+					<div className="chat-input-actions">
 						<button
 							className="chat-btn chat-send-btn"
 							onClick={() => {
@@ -397,7 +424,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 					</div>
 				) : (
 					<button
-						className="chat-btn chat-send-btn"
+						className="chat-btn chat-send-btn chat-send-icon"
 						onClick={() => {
 							const trimmed = value.trim();
 							if (trimmed) {
@@ -407,8 +434,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
 							}
 						}}
 						disabled={!value.trim()}
+						title="Send"
 					>
-						Send
+						▶
 					</button>
 				)}
 			</div>

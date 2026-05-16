@@ -309,7 +309,11 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	// ─── Group Chat Participants ───
 	const [participants, setParticipants] = useState<GroupChatParticipant[]>([]);
 	const [typingAgents, setTypingAgents] = useState<Set<string>>(new Set());
+	const [showParticipantDetails, setShowParticipantDetails] = useState(false);
 	const isGroupChat = participants.length > 1;
+
+	// ─── Zen Mode ───
+	const [zenMode, setZenMode] = useState(false);
 	const [originalMessages, setOriginalMessages] = useState<ChatMessage[]>([]);
 	const [editMessageText, setEditMessageText] = useState<string>("");
 	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(
@@ -1644,20 +1648,24 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	}, [resolvedProfile, plugin.chatapi]);
 
 	return (
-		<div className="chat-panel">
-			<ActionBar
-				onNewChat={handleNewChat}
-				onLoadChat={() => setShowSessionPicker(true)}
-				canLoad={hasHistory}
-				plugin={plugin}
-				autoApprove={autoApprove}
-				onToggleAutoApprove={handleToggleAutoApprove}
-				autoNameSessions={autoNameSessions}
-				onToggleAutoName={handleToggleAutoName}
-				onManualRename={handleManualRename}
-				profile={resolvedProfile}
-				sessionTitle={sessions.find((s) => s.id === activeSessionId)?.title}
-			/>
+		<div className={`chat-panel${zenMode ? ' is-zen' : ''}`}>
+			{!zenMode && (
+				<ActionBar
+					onNewChat={handleNewChat}
+					onLoadChat={() => setShowSessionPicker(true)}
+					canLoad={hasHistory}
+					plugin={plugin}
+					autoApprove={autoApprove}
+					onToggleAutoApprove={handleToggleAutoApprove}
+					autoNameSessions={autoNameSessions}
+					onToggleAutoName={handleToggleAutoName}
+					onManualRename={handleManualRename}
+					profile={resolvedProfile}
+					sessionTitle={sessions.find((s) => s.id === activeSessionId)?.title}
+					zenMode={zenMode}
+					onToggleZenMode={() => setZenMode((z) => !z)}
+				/>
+			)}
 
 			{/* Participant Roster / Council Toggle */}
 			<div className="chat-participant-bar">
@@ -1704,6 +1712,17 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				)}
 			</div>
 
+			{/* Zen mode exit button (floating) */}
+			{zenMode && (
+				<button
+					className="chat-btn chat-icon-btn chat-zen-exit"
+					onClick={() => setZenMode(false)}
+					title="Exit zen mode"
+				>
+					<ObsidianIcon icon="eye-off" size={15} />
+				</button>
+			)}
+
 			<ChatMessages
 				messages={messages}
 				currentAiMessage={currentAiMessage}
@@ -1719,14 +1738,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				onCreateNote={handleCreateNote}
 				onAppendToTarget={handleAppendToTarget}
 			/>
-			<ContextBar
-				contextItems={contextItems}
-				activeNoteName={targetNoteName}
-				wasTruncated={wasTruncated}
-				onToggleActiveNote={handleToggleActiveNote}
-				estimatedTokens={contextTokenCount}
-				maxTokens={plugin.settings.maxContextTokens || 8000}
-			/>
+
 			{pendingToolCall && (
 				<PendingToolCard
 					toolCall={pendingToolCall}
@@ -1744,6 +1756,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				isEditing={isEditing}
 				onCancel={handleCancelEdit}
 				editMessage={editMessageText}
+				onToggleActiveNote={handleToggleActiveNote}
+				hasActiveNote={contextItems.some((item) => item.type === "active-note")}
 			/>
 			{showSessionPicker && (
 				<SessionPickerModal

@@ -2186,16 +2186,129 @@
 	border-left-color: attr(data-agent-color);
 }
 
-/* ─── Participant Roster (Unified ChatApp) ─── */
-.chat-participant-bar {
-	display: flex;
+/* ─── Participant Bar: Compact Mode ─── */
+.chat-participant-bar.is-compact {
+	padding: 4px 12px;
+}
+
+.chat-participant-summary {
+	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	padding: 6px 12px;
-	border-bottom: 1px solid var(--background-modifier-border);
-	background: var(--background-secondary);
-	flex-wrap: wrap;
-	min-height: 36px;
+	padding: 3px 10px;
+	border-radius: 12px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+	font-size: 0.82em;
+	cursor: pointer;
+	transition: border-color 0.15s ease;
+	color: var(--text-normal);
+}
+
+.chat-participant-summary:hover {
+	border-color: var(--interactive-accent);
+}
+
+.chat-participant-summary-dots {
+	display: inline-flex;
+	gap: 2px;
+	font-size: 0.7em;
+}
+
+/* ─── Zen Mode ─── */
+.chat-panel.is-zen .chat-action-bar,
+.chat-panel.is-zen .chat-participant-bar,
+.chat-panel.is-zen .chat-context-bar {
+	display: none !important;
+}
+
+.chat-panel.is-zen .chat-messages {
+	padding-bottom: 0;
+}
+
+.chat-zen-exit {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	z-index: 100;
+	opacity: 0.5;
+	transition: opacity 0.15s ease;
+}
+
+.chat-zen-exit:hover {
+	opacity: 1;
+}
+
+/* ─── Chat Input: Attach Icon + Auto-expand ─── */
+.chat-input-attach {
+	padding: 4px 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background: transparent;
+	color: var(--text-muted);
+	font-size: 16px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+
+.chat-input-attach:hover {
+	border-color: var(--interactive-accent);
+	color: var(--text-normal);
+}
+
+.chat-input-attach.is-active {
+	background: #0d9488;
+	border-color: #0d9488;
+	color: #ffffff;
+}
+
+.chat-textarea {
+	flex: 1;
+	resize: none;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 6px 8px;
+	font-size: var(--font-ui-small);
+	font-family: inherit;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	line-height: 1.4;
+	min-height: 28px;
+	overflow-y: auto;
+}
+
+/* Compact send/stop buttons (icon-only) */
+.chat-send-icon {
+	padding: 4px 8px;
+	min-width: 32px;
+	min-height: 32px;
+	font-size: 14px;
+}
+
+.chat-input-actions {
+	display: flex;
+	gap: 6px;
+	flex-shrink: 0;
+}
+
+/* Mobile: tighter input */
+@media (max-width: 768px) {
+	.chat-input-area {
+		padding: 6px;
+		gap: 4px;
+	}
+
+	.chat-textarea {
+		padding: 5px 6px;
+		font-size: var(--font-ui-smaller);
+	}
+
+	.chat-send-icon {
+		min-width: 28px;
+		min-height: 28px;
+		padding: 3px 6px;
+	}
 }
 
 .chat-participant-chip {
