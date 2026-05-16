@@ -32,7 +32,7 @@ export type HistoryMessage = {
  * Maps a provider type to its required credential fields.
  * Returns an error message string if validation fails, or null if valid.
  */
-function validateProfile(profile: ProviderProfile): string | null {
+export function validateProfile(profile: ProviderProfile): string | null {
 	switch (profile.provider) {
 		case "openai":
 			return profile.apiKey ? null : "OpenAI API key is required.";

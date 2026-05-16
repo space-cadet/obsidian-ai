@@ -1530,3 +1530,335 @@
 	color: var(--text-normal);
 	word-break: break-word;
 }
+
+/* ─── Profile Card List (T15) ────────────────────────────────────── */
+
+.obsidian-ai-settings-react-profiles {
+	margin-top: 12px;
+}
+
+.obsidian-ai-profile-list {
+	width: 100%;
+}
+
+.obsidian-ai-profile-list-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 16px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.obsidian-ai-profile-list-header h3 {
+	margin: 0;
+	font-size: 1.1em;
+}
+
+.obsidian-ai-profile-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+	gap: 12px;
+}
+
+/* Profile Card */
+.obsidian-ai-profile-card {
+	background: var(--background-primary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	padding: 14px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.obsidian-ai-profile-card:hover {
+	border-color: var(--interactive-accent);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.obsidian-ai-profile-card.is-active {
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 2px var(--interactive-accent-hover);
+}
+
+.obsidian-ai-profile-card.is-editing {
+	grid-column: 1 / -1;
+	max-width: 600px;
+}
+
+/* Card Header */
+.obsidian-ai-profile-card-header {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.obsidian-ai-profile-card-icon {
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	font-weight: 600;
+	color: white;
+	flex-shrink: 0;
+	text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.obsidian-ai-profile-card-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.obsidian-ai-profile-card-name-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.obsidian-ai-profile-card-name {
+	font-weight: 600;
+	font-size: 1.05em;
+	color: var(--text-normal);
+}
+
+.obsidian-ai-profile-card-badge {
+	font-size: 0.7em;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	font-weight: 500;
+}
+
+.obsidian-ai-profile-card-meta {
+	font-size: 0.85em;
+	color: var(--text-muted);
+	margin-top: 2px;
+}
+
+/* Status */
+.obsidian-ai-profile-card-status {
+	flex-shrink: 0;
+}
+
+.obsidian-ai-profile-card-status-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: var(--text-faint);
+	display: inline-block;
+}
+
+.obsidian-ai-profile-card-status-dot.is-ok {
+	background: var(--background-modifier-success);
+}
+
+.obsidian-ai-profile-card-status-dot.is-warn {
+	background: var(--background-modifier-error);
+}
+
+/* Details */
+.obsidian-ai-profile-card-details {
+	margin: 10px 0;
+	padding-top: 8px;
+	border-top: 1px solid var(--background-modifier-border-hover);
+}
+
+.obsidian-ai-profile-card-detail {
+	display: flex;
+	gap: 8px;
+	font-size: 0.82em;
+	margin-bottom: 3px;
+}
+
+.obsidian-ai-profile-card-detail-label {
+	color: var(--text-muted);
+	min-width: 56px;
+	flex-shrink: 0;
+}
+
+.obsidian-ai-profile-card-detail-value {
+	color: var(--text-normal);
+	font-family: var(--font-monospace);
+	word-break: break-all;
+}
+
+/* Actions */
+.obsidian-ai-profile-card-actions {
+	display: flex;
+	gap: 4px;
+	margin-top: 10px;
+	padding-top: 8px;
+	border-top: 1px solid var(--background-modifier-border-hover);
+}
+
+.obsidian-ai-icon-btn {
+	background: transparent;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 4px 8px;
+	cursor: pointer;
+	font-size: 14px;
+	line-height: 1;
+	transition: background 0.1s ease;
+}
+
+.obsidian-ai-icon-btn:hover {
+	background: var(--background-modifier-hover);
+}
+
+.obsidian-ai-icon-btn.is-active {
+	background: var(--interactive-accent);
+	border-color: var(--interactive-accent);
+}
+
+.obsidian-ai-icon-btn.is-danger:hover {
+	background: var(--background-modifier-error);
+	color: var(--text-on-accent);
+}
+
+/* Edit Form */
+.obsidian-ai-profile-edit-form {
+	padding: 8px 0;
+}
+
+.obsidian-ai-profile-edit-row {
+	margin-bottom: 12px;
+}
+
+.obsidian-ai-profile-edit-row label {
+	display: block;
+	font-size: 0.85em;
+	font-weight: 500;
+	color: var(--text-muted);
+	margin-bottom: 4px;
+}
+
+.obsidian-ai-profile-edit-row input[type="text"],
+.obsidian-ai-profile-edit-row input[type="password"],
+.obsidian-ai-profile-edit-row select {
+	width: 100%;
+	padding: 6px 10px;
+	border-radius: 4px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: 0.9em;
+}
+
+.obsidian-ai-profile-edit-row input:focus,
+.obsidian-ai-profile-edit-row select:focus {
+	outline: none;
+	border-color: var(--interactive-accent);
+}
+
+.obsidian-ai-profile-edit-model {
+	display: flex;
+	gap: 8px;
+}
+
+.obsidian-ai-profile-edit-model input {
+	flex: 1;
+}
+
+.obsidian-ai-profile-edit-model-search {
+	margin-top: 6px;
+}
+
+.obsidian-ai-profile-edit-model-list {
+	max-height: 160px;
+	overflow-y: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	margin-top: 6px;
+	background: var(--background-primary);
+}
+
+.obsidian-ai-profile-edit-model-item {
+	padding: 4px 10px;
+	font-size: 0.85em;
+	cursor: pointer;
+	font-family: var(--font-monospace);
+}
+
+.obsidian-ai-profile-edit-model-item:hover {
+	background: var(--background-modifier-hover);
+}
+
+.obsidian-ai-profile-edit-model-item.is-active {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.obsidian-ai-profile-edit-model-more {
+	padding: 4px 10px;
+	font-size: 0.8em;
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.obsidian-ai-profile-edit-toggle {
+	display: flex !important;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+}
+
+.obsidian-ai-profile-edit-toggle input {
+	width: auto !important;
+}
+
+.obsidian-ai-profile-edit-step-value {
+	margin-left: 8px;
+	font-size: 0.9em;
+	color: var(--text-muted);
+	min-width: 24px;
+	display: inline-block;
+}
+
+.obsidian-ai-profile-edit-test-btn {
+	margin-right: 10px;
+}
+
+.obsidian-ai-profile-edit-test-status {
+	font-size: 0.85em;
+}
+
+.obsidian-ai-profile-edit-test-status.is-ok {
+	color: var(--background-modifier-success);
+}
+
+.obsidian-ai-profile-edit-test-status.is-error {
+	color: var(--background-modifier-error);
+}
+
+.obsidian-ai-profile-edit-actions {
+	display: flex;
+	gap: 10px;
+	margin-top: 16px;
+	padding-top: 12px;
+	border-top: 1px solid var(--background-modifier-border-hover);
+}
+
+.obsidian-ai-profile-testing-toast {
+	position: fixed;
+	bottom: 20px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	padding: 8px 16px;
+	border-radius: 6px;
+	font-size: 0.9em;
+	z-index: 1000;
+	animation: obsidian-ai-fade-in 0.2s ease;
+}
+
+@keyframes obsidian-ai-fade-in {
+	from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+	to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

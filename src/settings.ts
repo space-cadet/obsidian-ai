@@ -86,7 +86,7 @@ const generateId = (): string => {
 	return `profile-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 };
 
-const getDefaultProfileName = (provider: ProviderType): string => {
+export const getDefaultProfileName = (provider: ProviderType): string => {
 	switch (provider) {
 		case "openai":
 			return "OpenAI";
@@ -112,7 +112,7 @@ const getDefaultProfileName = (provider: ProviderType): string => {
 	}
 };
 
-const getDefaultModel = (provider: ProviderType): string => {
+export const getDefaultModel = (provider: ProviderType): string => {
 	switch (provider) {
 		case "openai":
 			return "gpt-4o-mini";
@@ -453,321 +453,27 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			"Store multiple provider configurations and switch between them without rewriting credentials.",
 		);
 
-		new Setting(sectionEl)
-			.setName("Active profile")
-			.setDesc("Choose the provider profile used for AI requests.")
-			.addDropdown((dropdown) => {
-				for (const profile of this.plugin.settings.providerProfiles) {
-					dropdown.addOption(profile.id, profile.name);
-				}
-				dropdown
-					.setValue(this.plugin.settings.activeProviderProfileId)
-					.onChange(async (value) => {
-						this.plugin.settings.activeProviderProfileId = value;
-						await this.saveSettings({ refresh: true, quiet: true });
-					});
-			})
-			.addButton((button) =>
-				button
-					.setButtonText("New")
-					.setTooltip("Create a new provider profile")
-					.onClick(async () => {
-						const profile = createProviderProfile({
-							name: "New profile",
-						});
-						this.plugin.settings.providerProfiles.push(profile);
-						this.plugin.settings.activeProviderProfileId = profile.id;
-						await this.saveSettings({ refresh: true, quiet: true });
-					}),
-			)
-			.addButton((button) =>
-				button
-					.setButtonText("Duplicate")
-					.setTooltip("Duplicate the active provider profile")
-					.onClick(async () => {
-						const source = this.activeProfile;
-						const duplicate = createProviderProfile({
-							...source,
-							id: generateId(),
-							name: `${source.name} copy`,
-							createdAt: Date.now(),
-							updatedAt: Date.now(),
-						});
-						this.plugin.settings.providerProfiles.push(duplicate);
-						this.plugin.settings.activeProviderProfileId = duplicate.id;
-						await this.saveSettings({ refresh: true, quiet: true });
-					}),
-			)
-			.addButton((button) =>
-				button
-					.setButtonText("Delete")
-					.setTooltip("Delete the active provider profile")
-					.setDisabled(
-						this.plugin.settings.providerProfiles.length <= 1,
-					)
-					.onClick(async () => {
-						if (this.plugin.settings.providerProfiles.length <= 1) {
-							new Notice("Keep at least one provider profile.");
-							return;
-						}
-						const activeId = this.plugin.settings.activeProviderProfileId;
-						this.plugin.settings.providerProfiles =
-							this.plugin.settings.providerProfiles.filter(
-								(profile) => profile.id !== activeId,
-							);
-						this.plugin.settings.activeProviderProfileId =
-							this.plugin.settings.providerProfiles[0].id;
-						await this.saveSettings({ refresh: true, quiet: true });
-					}),
-			)
-			.addButton((button) =>
-				button
-					.setButtonText("Test")
-					.setTooltip("Test the active provider profile")
-					.onClick(async () => {
-						button.setDisabled(true);
-						button.setButtonText("Testing...");
-						const result =
-							await this.plugin.chatapi.testApiConnection();
-						button.setDisabled(false);
-						button.setButtonText("Test");
-						new Notice(
-							result.ok
-								? `✅ ${result.message}`
-								: `❌ ${result.message}`,
-							6000,
-						);
-					}),
-			);
+		// Mount React profile list into a dedicated container
+		const reactContainer = sectionEl.createDiv({
+			cls: "obsidian-ai-settings-react-profiles",
+		});
 
-		const profile = this.activeProfile;
+		const { createRoot } = require("react-dom/client");
+		const { createElement } = require("react");
+		const { ProfileList } = require("./components/ProfileCard");
+		const { ChatErrorBoundary } = require("./components/ErrorBoundary");
 
-		new Setting(sectionEl)
-			.setName("Profile name")
-			.setDesc("A local label for this provider configuration.")
-			.addText((text) => {
-				text.setPlaceholder("Writing - OpenAI")
-					.setValue(profile.name)
-					.onChange((value) => {
-						profile.name =
-							value.trim() ||
-							getDefaultProfileName(profile.provider);
-						profile.updatedAt = Date.now();
-						this.debouncedProfileSave();
-					});
-			});
+		const root = createRoot(reactContainer);
+		root.render(
+			createElement(
+				ChatErrorBoundary,
+				null,
+				createElement(ProfileList, { plugin: this.plugin }),
+			),
+		);
 
-		new Setting(sectionEl)
-			.setName("Provider")
-			.setDesc("Choose the inference provider for this profile.")
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption("openai", "OpenAI")
-					.addOption("anthropic", "Anthropic")
-					.addOption("deepseek", "DeepSeek")
-					.addOption("kimi", "Kimi")
-					.addOption("gemini", "Gemini")
-					.addOption("openrouter", "OpenRouter")
-					.addOption("azure", "Azure OpenAI")
-					.addOption("ollama", "Ollama")
-					.addOption("custom", "Custom/OpenAI-compatible")
-					.addOption("agent", "Agent (OpenResponses)")
-					.setValue(profile.provider)
-					.onChange(async (value) => {
-						profile.provider = value as ProviderType;
-						profile.model = getDefaultModel(profile.provider);
-						if (
-							!profile.name ||
-							profile.name === getDefaultProfileName("ollama") ||
-							profile.name === getDefaultProfileName("openai") ||
-							profile.name === getDefaultProfileName("anthropic") ||
-							profile.name === getDefaultProfileName("deepseek") ||
-							profile.name === getDefaultProfileName("kimi") ||
-							profile.name === getDefaultProfileName("gemini") ||
-							profile.name === getDefaultProfileName("openrouter") ||
-							profile.name === getDefaultProfileName("custom") ||
-							profile.name === getDefaultProfileName("agent") ||
-							profile.name === getDefaultProfileName("azure")
-						) {
-							profile.name = getDefaultProfileName(profile.provider);
-						}
-						profile.azureEndpoint = "";
-						profile.customURL = "";
-						profile.endpointUrl = "";
-						profile.modelCache = undefined;
-						profile.updatedAt = Date.now();
-						await this.saveSettings({ refresh: true, quiet: true });
-					}),
-			);
-
-		this.renderModelPicker(sectionEl, profile);
-
-		if (profile.provider !== "ollama") {
-			new Setting(sectionEl)
-				.setName("API key")
-				.setDesc("API key for this provider profile.")
-				.addText((text) => {
-					text.inputEl.type = "password";
-					text.setPlaceholder("sk-...")
-						.setValue(profile.apiKey || "")
-						.onChange((value) => {
-							profile.apiKey = value.trim();
-							profile.modelCache = undefined;
-							profile.updatedAt = Date.now();
-							this.debouncedProfileSave();
-						});
-				});
-		}
-
-		new Setting(sectionEl)
-			.setName("Endpoint")
-			.setDesc(
-				profile.provider === "ollama"
-					? "Override the default http://localhost:11434/v1"
-					: profile.provider === "azure"
-						? "Azure OpenAI endpoint URL"
-						: profile.provider === "agent"
-					? "OpenResponses endpoint (e.g. http://ember:18789/v1/responses)"
-					: `Base URL for ${profile.provider}. Leave empty to use the default.`,
-			)
-			.addText((text) => {
-				const placeholder =
-					profile.provider === "azure"
-						? "https://your-resource.openai.azure.com"
-						: getDefaultEndpoint(profile.provider);
-				text.setPlaceholder(placeholder)
-					.setValue(
-						profile.provider === "azure"
-							? profile.azureEndpoint || ""
-							: profile.provider === "agent"
-								? profile.endpointUrl || ""
-								: profile.customURL || "",
-					)
-					.onChange((value) => {
-						if (profile.provider === "azure") {
-							profile.azureEndpoint = value.trim();
-						} else if (profile.provider === "agent") {
-							profile.endpointUrl = value.trim();
-						} else {
-							profile.customURL = value.trim();
-						}
-						profile.modelCache = undefined;
-						profile.updatedAt = Date.now();
-						this.debouncedProfileSave();
-					});
-			});
-
-		if (profile.provider === "agent") {
-			new Setting(sectionEl)
-				.setName("Agent ID")
-				.setDesc("The OpenClaw agent to connect to (x-openclaw-agent-id header).")
-				.addText((text) => {
-					text.setPlaceholder("main")
-						.setValue(profile.agentId || "main")
-						.onChange((value) => {
-							profile.agentId = value.trim() || "main";
-							profile.updatedAt = Date.now();
-							this.debouncedProfileSave();
-						});
-				});
-
-			new Setting(sectionEl)
-				.setName("Auth token (optional)")
-				.setDesc("Bearer token for gateway authentication. Leave empty if unauthenticated.")
-				.addText((text) => {
-					text.inputEl.type = "password";
-					text.setPlaceholder("Bearer token...")
-						.setValue(profile.apiKey || "")
-						.onChange((value) => {
-							profile.apiKey = value.trim();
-							profile.updatedAt = Date.now();
-							this.debouncedProfileSave();
-						});
-				});
-
-			new Setting(sectionEl)
-				.setName("Auto-approve tools")
-				.setDesc("Execute tool calls from this agent without manual approval.")
-				.addToggle((toggle) => {
-					toggle
-						.setValue(profile.autoApprove ?? false)
-						.onChange((value) => {
-							profile.autoApprove = value;
-							profile.updatedAt = Date.now();
-							this.debouncedProfileSave();
-						});
-				});
-
-			new Setting(sectionEl)
-				.setName("Max steps")
-				.setDesc("Maximum tool call rounds for this agent (default: 10).")
-				.addSlider((slider) => {
-					slider
-						.setLimits(1, 50, 1)
-						.setValue(profile.maxSteps ?? 10)
-						.setDynamicTooltip()
-						.onChange((value) => {
-							profile.maxSteps = value;
-							profile.updatedAt = Date.now();
-							this.debouncedProfileSave();
-						});
-				});
-
-			new Setting(sectionEl)
-				.setName("Test connection")
-				.setDesc("Verify the agent is reachable.")
-				.addButton((button) => {
-					button
-						.setButtonText("Test")
-						.onClick(async () => {
-							button.setDisabled(true);
-							button.setButtonText("Testing...");
-							const { AgentApiManager } = await import("./api/AgentApiManager");
-							const agentApi = new AgentApiManager(
-								{
-									id: profile.id,
-									name: profile.name,
-									provider: "agent",
-									model: profile.model,
-									endpointUrl: profile.endpointUrl || "",
-									agentId: profile.agentId || "main",
-									authToken: profile.apiKey,
-									sessionKey: profile.sessionKey,
-									autoApprove: profile.autoApprove ?? false,
-									maxSteps: profile.maxSteps ?? 10,
-								},
-								this.plugin.app,
-							);
-							const result = await agentApi.testConnection();
-							button.setDisabled(false);
-							button.setButtonText("Test");
-							new Notice(
-								result.ok
-									? `✅ ${result.message}`
-									: `❌ ${result.message}`,
-								6000,
-							);
-						});
-				});
-		}
-
-		if (profile.provider === "azure") {
-			new Setting(sectionEl)
-				.setName("Azure API version")
-				.setDesc("Azure OpenAI API version to use.")
-				.addText((text) => {
-					text.setPlaceholder("2024-02-15-preview")
-						.setValue(
-							profile.azureApiVersion || "2024-02-15-preview",
-						)
-						.onChange((value) => {
-							profile.azureApiVersion = value.trim();
-							profile.modelCache = undefined;
-							profile.updatedAt = Date.now();
-							this.debouncedProfileSave();
-						});
-				});
-		}
+		// Store root so we can unmount on refresh
+		(reactContainer as any).__reactRoot = root;
 	}
 
 	private renderModelPicker(
