@@ -24,6 +24,7 @@ import SessionPickerModal from "./SessionPickerModal";
 import ContextPickerModal from "./ContextPickerModal";
 import PendingToolCard from "./PendingToolCard";
 import { AgentApiManager } from "../api/AgentApiManager";
+import { ChatApiManager } from "../api";
 import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
 import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
 import {
@@ -170,6 +171,47 @@ function generateSessionTitle(messages: ChatMessage[]): string {
 	return `Chat ${new Date().toLocaleDateString()}`;
 }
 
+/** Ask the LLM to suggest a short title for the conversation.
+ *  Falls back to heuristic naming on error or if LLM returns nothing useful. */
+async function generateSessionTitleLLM(
+	messages: ChatMessage[],
+	profile: ProviderProfile,
+	chatapi: ChatApiManager,
+): Promise<string | null> {
+	if (messages.length === 0) return null;
+
+	// Build a minimal context: first 3 user + 3 assistant messages
+	const context = messages
+		.slice(0, 6)
+		.map((m) => {
+			let content = m.content.slice(0, 200); // cap each message
+			// Strip heavy artifacts
+			content = content.replace(/```[\s\S]*?```/g, "[code]");
+			content = content.replace(/\{[\s\S]*?\}/g, "[data]");
+			content = content.replace(/<context>[\s\S]*?<\/context>/g, "");
+			return `${m.role}: ${content}`;
+		})
+		.join("\n");
+
+	const system =
+		"You are a helpful assistant. Given a short conversation, produce a concise, descriptive title (3–6 words). " +
+		"Use the user's language. Output ONLY the title text, no quotes, no explanation.";
+
+	const prompt = `Conversation:\n${context}\n\nTitle:`;
+
+	try {
+		const result = await chatapi.callApi(system, prompt, profile);
+		let title = result.trim();
+		// Strip quotes if the model added them
+		title = title.replace(/^["']|["']$/g, "").trim();
+		if (title.length < 2 || title.length > 60) return null;
+		return title;
+	} catch (e) {
+		console.error("[generateSessionTitleLLM] failed, falling back", e);
+		return null;
+	}
+}
+
 function pruneSessions(
 	sessions: ChatSession[],
 	max: number,
@@ -259,6 +301,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	activeSessionIdRef.current = activeSessionId;
 	// Tracks the last focused markdown leaf
 	const lastMarkdownLeafRef = useRef<WorkspaceLeaf | null>(null);
+	// Track which sessions have been LLM-named to avoid re-calling
+	const llmNamedRef = useRef<Set<string>>(new Set());
 
 	// Force re-render when user returns to chat tab (settings may have changed)
 	const [settingsTick, setSettingsTick] = useState(0);
@@ -423,6 +467,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		if (!autoNameSessions) return;
 		const currentActiveId = activeSessionIdRef.current;
 		if (!currentActiveId) return;
+		if (llmNamedRef.current.has(currentActiveId)) return; // already named
 		const session = sessionsRef.current.find(
 			(s) => s.id === currentActiveId,
 		);
@@ -430,15 +475,32 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		const userMsgs = session.messages.filter((m) => m.role === "user");
 		const assistantMsgs = session.messages.filter((m) => m.role === "assistant");
 		if (userMsgs.length >= 1 && assistantMsgs.length >= 2) {
-			const title = generateSessionTitle(session.messages);
-			if (title) {
-				setSessions((prev) =>
-					prev.map((s) =>
-						s.id === currentActiveId ? { ...s, title } : s,
-					),
+			llmNamedRef.current.add(currentActiveId);
+			// Try LLM naming first, then fall back to heuristic
+			void (async () => {
+				const title = await generateSessionTitleLLM(
+					session.messages.slice(0, 6),
+					resolvedProfile,
+					plugin.chatapi,
 				);
-			}
+				if (title) {
+					setSessions((prev) =>
+						prev.map((s) =>
+							s.id === currentActiveId ? { ...s, title } : s,
+						),
+					);
+				} else {
+					// LLM failed — use heuristic
+					const fallback = generateSessionTitle(session.messages);
+					setSessions((prev) =>
+						prev.map((s) =>
+							s.id === currentActiveId ? { ...s, title: fallback } : s,
+						),
+					);
+				}
+			})();
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [sessions, activeSessionId, autoNameSessions]);
 
 	const handleToggleActiveNote = useCallback(() => {
@@ -1358,7 +1420,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		);
 	}, [plugin, autoNameSessions]);
 
-	const handleManualRename = useCallback(() => {
+	const handleManualRename = useCallback(async () => {
 		const currentActiveId = activeSessionIdRef.current;
 		if (!currentActiveId) return;
 		const session = sessionsRef.current.find(
@@ -1368,7 +1430,12 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			new Notice("No messages to generate a title from", 2000);
 			return;
 		}
-		const title = generateSessionTitle(session.messages);
+		new Notice("🪄 Asking model for a title…", 1500);
+		const title = await generateSessionTitleLLM(
+			session.messages,
+			resolvedProfile,
+			plugin.chatapi,
+		);
 		if (title) {
 			setSessions((prev) =>
 				prev.map((s) =>
@@ -1376,8 +1443,17 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				),
 			);
 			new Notice(`Session renamed to: "${title}"`, 2500);
+		} else {
+			// Fallback to heuristic
+			const fallback = generateSessionTitle(session.messages);
+			setSessions((prev) =>
+				prev.map((s) =>
+					s.id === currentActiveId ? { ...s, title: fallback } : s,
+				),
+			);
+			new Notice(`Session renamed to: "${fallback}"`, 2500);
 		}
-	}, []);
+	}, [resolvedProfile, plugin.chatapi]);
 
 	return (
 		<div className="chat-panel">
