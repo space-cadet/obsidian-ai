@@ -1726,19 +1726,31 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 						<div className="chat-participant-dropdown">
 							{plugin.settings.providerProfiles.map((profile) => {
 								const isSelected = participants.some((p) => p.id === profile.id);
+								const isActiveProfile = resolvedProfile.id === profile.id;
+								// In 1:1 mode (no participants), show active profile as checked
+								const showChecked = participants.length > 0 ? isSelected : isActiveProfile;
 								return (
 									<label
 										key={profile.id}
-										className={`chat-participant-dropdown-item${isSelected ? " is-selected" : ""}`}
+										className={`chat-participant-dropdown-item${showChecked ? " is-selected" : ""}`}
 									>
 										<input
-											type="checkbox"
-											checked={isSelected}
+											type={participants.length > 0 ? "checkbox" : "radio"}
+											name={participants.length > 0 ? undefined : "active-profile"}
+											checked={showChecked}
 											onChange={() => {
-												if (isSelected) {
-													handleRemoveParticipant(profile.id);
+												if (participants.length > 0) {
+													// Council mode: toggle participant
+													if (isSelected) {
+														handleRemoveParticipant(profile.id);
+													} else {
+														handleAddParticipant(profile);
+													}
 												} else {
-													handleAddParticipant(profile);
+													// 1:1 mode: switch active profile
+													plugin.settings.activeProviderProfileId = profile.id;
+													void plugin.saveSettings();
+													new Notice(`Switched to ${profile.name}`, 1500);
 												}
 											}}
 										/>

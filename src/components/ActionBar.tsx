@@ -68,14 +68,12 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				{onToggleParticipantDropdown && (
 					<div className="chat-council-trigger">
 						<button
-							className={`chat-btn chat-icon-btn ${participantCount && participantCount > 0 ? "is-active" : ""}`}
+							className={`chat-btn chat-icon-btn ${(participantCount ?? 0) > 0 ? "is-active" : ""}`}
 							onClick={onToggleParticipantDropdown}
-							title={participantCount && participantCount > 0 ? `${participantCount} agents in council` : "AI Council"}
+							title={(participantCount ?? 0) > 0 ? `${participantCount} agents in council` : "AI Council"}
 						>
 							<ObsidianIcon icon="users" size={15} />
-							{participantCount && participantCount > 0 && (
-								<span className="chat-council-badge">{participantCount}</span>
-							)}
+							<span className="chat-council-badge">{participantCount && participantCount > 0 ? participantCount : 1}</span>
 						</button>
 					</div>
 				)}
