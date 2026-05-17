@@ -1750,6 +1750,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 													// 1:1 mode: switch active profile
 													plugin.settings.activeProviderProfileId = profile.id;
 													void plugin.saveSettings();
+													setSettingsTick(t => t + 1); // Force re-render with new profile
 													new Notice(`Switched to ${profile.name}`, 1500);
 												}
 											}}
