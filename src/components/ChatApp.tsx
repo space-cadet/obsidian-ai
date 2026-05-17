@@ -859,6 +859,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			setIsStreaming(true);
 			setCurrentAiMessage("");
 			controllerRef.current = new AbortController();
+			const streamStartTime = Date.now();
 
 			const maxContextMessages = plugin.settings.maxContextMessages || 10;
 			const history = messagesRef.current
@@ -1205,6 +1206,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 					timestamp: Date.now(),
 					command: commandMeta,
 					estimatedTokens: assistantTokenEstimate,
+					modelName: activeProfile.model,
+					responseTimeMs: Date.now() - streamStartTime,
 					toolCalls: toolCallsLog.length > 0 ? toolCallsLog : undefined,
 					contentParts: contentParts.length > 0 ? contentParts : undefined,
 				};
@@ -1249,6 +1252,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 							timestamp: Date.now(),
 							command: commandMeta,
 							estimatedTokens: estimateTokens(fullText),
+							modelName: activeProfile.model,
+							responseTimeMs: Date.now() - streamStartTime,
 							contentParts: abortedParts,
 						};
 						setSessions((prev) =>

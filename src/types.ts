@@ -19,6 +19,10 @@ export interface ChatMessage {
 	contextItems?: ContextItem[];
 	/** Estimated token count for this message (including context for user messages) */
 	estimatedTokens?: number;
+	/** Model name that generated this message (e.g. "gpt-4o", "gemini-1.5-pro") */
+	modelName?: string;
+	/** Response time in milliseconds */
+	responseTimeMs?: number;
 	/** Tool calls made during this message's generation */
 	toolCalls?: Array<{
 		call: ToolCall;

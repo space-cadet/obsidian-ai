@@ -1574,6 +1574,38 @@
 	text-align: left;
 }
 
+/* Message metadata row (model, timing, tokens) */
+.chat-message-metadata {
+	margin-top: 4px;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	opacity: 0.7;
+	text-align: right;
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	flex-wrap: wrap;
+}
+
+.chat-bubble-assistant .chat-message-metadata {
+	text-align: left;
+	justify-content: flex-start;
+}
+
+.chat-message-metadata span {
+	white-space: nowrap;
+}
+
+.chat-message-model {
+	font-weight: 500;
+}
+
+.chat-message-timing {
+}
+
+.chat-message-tokens {
+}
+
 /* Session rename input */
 .chat-session-rename-input {
 	width: 100%;
