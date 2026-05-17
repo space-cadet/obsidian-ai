@@ -1308,7 +1308,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				setContextItems([]);
 			}
 		},
-		[isStreaming, plugin, orchestrator, isGroupChat, participants, typingAgents, debateMode],
+		[isStreaming, plugin, orchestrator, isGroupChat, participants, typingAgents, debateMode, resolvedProfile],
 	);
 
 	const handleStop = useCallback(() => {
