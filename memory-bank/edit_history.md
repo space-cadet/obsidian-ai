@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-05-17
+
+| Time | Task | Summary | File |
+|------|------|---------|------|
+| 11:01 | T18 | Tavily + Exa search providers added to web search tool | `110100-t18-tavily-exa.md` |
+| 11:12 | T16 | Message metadata (model name + response time) in bubbles | `111200-t16-message-metadata.md` |
+| 11:25 | T16 | Profile dropdown mid-session switching (radio in 1:1, checkbox in council) | `112500-t16-profile-dropdown-switch.md` |
+| 11:36 | T16 | Fix: settingsTick increments on profile switch for resolvedProfile update | `113600-t16-settingsTick-fix.md` |
+| 12:16 | T16 | Fix: resolvedProfile added to handleSend deps for correct retry profile | `121600-t16-retry-profile-fix.md` |
+
 ## 2026-05-16
 
 | Time | Task | Summary | File |
@@ -27,4 +37,4 @@
 
 ---
 
-*Generation: 2026-05-16 16:20 IST*
+*Generation: 2026-05-17 12:45 IST*

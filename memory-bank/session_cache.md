@@ -1,11 +1,11 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-16 16:20:00 IST*
+*Last Updated: 2026-05-17 12:45 IST*
 
-**Started**: 2026-05-16 14:45:00 IST
-**Focus Task**: T16 Group Chat — Debate mode working, UI refined, participant persistence fixed
-**Session File**: `sessions/2026-05-16.md`
-**Status**: T16 Phases 1–16 implemented. Debate mode working. User confirmed. Build passes. Pushed.
+**Started**: 2026-05-17 11:00 IST
+**Focus Task**: T16 Group Chat — Profile switching fixes, message metadata; T18 Web Search — Tavily + Exa
+**Session File**: `sessions/2026-05-17.md`
+**Status**: T18 complete (5 providers). T16 profile switching working. Build passes. Pushed.
 
 ## Overview
 
@@ -15,7 +15,8 @@
 
 ## Session History (Last 10)
 
-1. `sessions/2026-05-16.md` — T16: Post-MVP refinement — Mobile UI, zen mode, participant dropdown, debate mode, participant persistence, session switching fixes (10 commits)
+1. `sessions/2026-05-17.md` — T18: Tavily + Exa providers; T16: Message metadata, profile dropdown switching, settingsTick fix, retry profile fix (5 commits)
+2. `sessions/2026-05-16.md` — T16: Post-MVP refinement — Mobile UI, zen mode, participant dropdown, debate mode, participant persistence, session switching fixes (10 commits)
 2. `sessions/2026-05-16.md` — T16: Group Chat MVP — MentionParser, Orchestrator, unified ChatApp, participant roster, council toggle, identity badges, handleSend fix
 3. `sessions/2026-05-16.md` — T15: Phase 1 ✅ (Settings profile list), Phase 2 ✅ (Per-profile engine), UI overhaul, LLM naming
 3. `sessions/2026-05-15.md` — T15/T16: CREATED — Tabbed chat & group chat tasks, architecture docs
@@ -50,23 +51,31 @@
 
 ## Current Session Details
 
-**Commits**: 49fd6aa → 971c63c (10 commits post-10:45)
-**Files touched**: 15+ files
+**Commits**: 189b655 → 64276ca (6 commits post-May 16 23:30)
+**Files touched**: 7 files
 **Build status**: ✅ tsc + esbuild pass all commits
 **Pushed to**: `origin/main`
 
-### T16 Group Chat — Post-MVP Refinement
-- `src/agent/Orchestrator.ts` — added `debate()` method, `buildDebatePrompt()`, `isPass()` helpers
-- `src/components/ActionBar.tsx` — participant dropdown trigger, debate mode toggle, zen mode toggle
-- `src/components/ChatApp.tsx` — zen mode state, debate mode state, participant persistence sync, session switch fixes
-- `src/components/ChatInput.tsx` — auto-expand textarea, compact icon-only buttons
-- `src/main.ts` — hidden GroupChatView registration (code preserved)
-- `styles.css` — zen mode styles, dropdown styling, mobile media queries, horizontal scroll
+### T18 Web Search — Tavily + Exa Providers (d3c8d8b)
+- `src/agent/ToolExecutor.ts` — `searchTavily()`, `searchExa()` implementations
+- `src/settings.ts` — Tavily/Exa API keys, dropdown options
+- Total providers: 5 (DuckDuckGo, Brave, Tavily, Exa, SearXNG)
 
-### Debate Mode (58fa794)
-- Round 1: all agents respond to user
-- Round 2: agents see each other's responses, can add follow-ups (2-3 sentences) or reply PASS
-- Prompt reframed to avoid "As an AI I don't have opinions" guardrail responses (9dad84b)
+### T16 Group Chat — Message Metadata (fa060c1)
+- `src/types.ts` — `modelName`, `responseTimeMs` fields on `ChatMessage`
+- `src/components/ChatApp.tsx` — stream timing tracking
+- `src/components/MessageBubble.tsx` — metadata row rendering
+- `styles.css` — `.chat-message-metadata` styling
+
+### T16 Group Chat — Profile Dropdown Switching (7ddeeca)
+- `src/components/ChatApp.tsx` — radio buttons in 1:1 mode, profile switch logic
+- `src/components/ActionBar.tsx` — badge always shows ≥1
+
+### T16 Group Chat — settingsTick Fix (f0e5471)
+- `src/components/ChatApp.tsx` — increment settingsTick on profile switch
+
+### T16 Group Chat — Retry Profile Fix (64276ca)
+- `src/components/ChatApp.tsx` — add `resolvedProfile` to handleSend deps
 
 ### Participant Persistence (35f76e8, 7e485a7, 971c63c)
 - Sessions store `participants` and `isGroupChat` flag
