@@ -498,6 +498,10 @@ export class ToolExecutor {
 				results = await this.searchDuckDuckGo(args.query, limit);
 			} else if (provider === "searxng") {
 				results = await this.searchSearXNG(args.query, limit);
+			} else if (provider === "tavily") {
+				results = await this.searchTavily(args.query, limit);
+			} else if (provider === "exa") {
+				results = await this.searchExa(args.query, limit);
 			}
 
 			if (results.length === 0) {
@@ -670,6 +674,90 @@ export class ToolExecutor {
 			title: r.title ?? "Untitled",
 			url: r.url ?? "",
 			snippet: r.content ?? r.abstract ?? "",
+		}));
+	}
+
+	private async searchTavily(
+		query: string,
+		limit: number,
+	): Promise<Array<{ title: string; url: string; snippet: string }>> {
+		const apiKey = this.settings?.tavilyApiKey;
+		if (!apiKey) {
+			throw new Error(
+				"Tavily API key not configured. Add it in Settings → Web Search.",
+			);
+		}
+
+		const res = await fetch("https://api.tavily.com/search", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				api_key: apiKey,
+				query,
+				search_depth: "basic",
+				max_results: limit,
+				include_answer: false,
+				include_images: false,
+				include_raw_content: false,
+			}),
+		});
+
+		if (!res.ok) {
+			const text = await res.text().catch(() => "");
+			throw new Error(`Tavily API ${res.status}: ${text}`);
+		}
+
+		const data = await res.json();
+		const results = data.results ?? [];
+
+		return results.slice(0, limit).map((r: any) => ({
+			title: r.title ?? "Untitled",
+			url: r.url ?? "",
+			snippet: r.content ?? r.snippet ?? "",
+		}));
+	}
+
+	private async searchExa(
+		query: string,
+		limit: number,
+	): Promise<Array<{ title: string; url: string; snippet: string }>> {
+		const apiKey = this.settings?.exaApiKey;
+		if (!apiKey) {
+			throw new Error(
+				"Exa API key not configured. Add it in Settings → Web Search.",
+			);
+		}
+
+		const res = await fetch("https://api.exa.ai/search", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${apiKey}`,
+			},
+			body: JSON.stringify({
+				query,
+				num_results: limit,
+				use_autoprompt: false,
+				contents: {
+					text: { max_characters: 500 },
+				},
+			}),
+		});
+
+		if (!res.ok) {
+			const text = await res.text().catch(() => "");
+			throw new Error(`Exa API ${res.status}: ${text}`);
+		}
+
+		const data = await res.json();
+		const results = data.results ?? [];
+
+		return results.slice(0, limit).map((r: any) => ({
+			title: r.title ?? r.author ?? "Untitled",
+			url: r.url ?? "",
+			snippet: r.text ?? r.highlight ?? "",
 		}));
 	}
 

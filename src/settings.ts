@@ -25,7 +25,7 @@ export type ProviderType =
 	| "openrouter"
 	| "agent";
 
-export type WebSearchProvider = "brave" | "duckduckgo" | "searxng";
+export type WebSearchProvider = "brave" | "duckduckgo" | "searxng" | "tavily" | "exa";
 
 export interface ModelCache {
 	models: string[];
@@ -75,6 +75,8 @@ export interface ObsidianAISettings {
 	webSearchProvider: WebSearchProvider;
 	braveApiKey: string;
 	searxngUrl: string;
+	tavilyApiKey: string;
+	exaApiKey: string;
 }
 
 type LegacySettings = Partial<ObsidianAISettings> & {
@@ -249,6 +251,8 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	webSearchProvider: "duckduckgo",
 	braveApiKey: "",
 	searxngUrl: "",
+	tavilyApiKey: "",
+	exaApiKey: "",
 };
 
 export const normalizeSettings = (
@@ -292,6 +296,8 @@ export const normalizeSettings = (
 		webSearchProvider: (merged.webSearchProvider as WebSearchProvider) ?? "duckduckgo",
 		braveApiKey: merged.braveApiKey ?? "",
 		searxngUrl: merged.searxngUrl ?? "",
+		tavilyApiKey: merged.tavilyApiKey ?? "",
+		exaApiKey: merged.exaApiKey ?? "",
 	};
 };
 
@@ -775,6 +781,8 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				dropdown
 					.addOption("duckduckgo", "DuckDuckGo (free, no API key)")
 					.addOption("brave", "Brave Search API (requires key)")
+					.addOption("tavily", "Tavily AI Search (requires key)")
+					.addOption("exa", "Exa AI Search (requires key)")
 					.addOption("searxng", "SearXNG (self-hosted)")
 					.setValue(this.plugin.settings.webSearchProvider)
 					.onChange(async (value) => {
@@ -795,6 +803,42 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						.setValue(this.plugin.settings.braveApiKey)
 						.inputEl.addEventListener("blur", async () => {
 							this.plugin.settings.braveApiKey = text.getValue().trim();
+							await this.saveSettings();
+						});
+					text.inputEl.type = "password";
+				});
+		}
+
+		// Tavily API key (only shown when Tavily is selected)
+		if (this.plugin.settings.webSearchProvider === "tavily") {
+			new Setting(sectionEl)
+				.setName("Tavily API key")
+				.setDesc(
+					"Your Tavily API key. Get one at https://tavily.com/ (free tier available).",
+				)
+				.addText((text) => {
+					text.setPlaceholder("tvly-...")
+						.setValue(this.plugin.settings.tavilyApiKey)
+						.inputEl.addEventListener("blur", async () => {
+							this.plugin.settings.tavilyApiKey = text.getValue().trim();
+							await this.saveSettings();
+						});
+					text.inputEl.type = "password";
+				});
+		}
+
+		// Exa API key (only shown when Exa is selected)
+		if (this.plugin.settings.webSearchProvider === "exa") {
+			new Setting(sectionEl)
+				.setName("Exa API key")
+				.setDesc(
+					"Your Exa API key. Get one at https://exa.ai/ (free tier available).",
+				)
+				.addText((text) => {
+					text.setPlaceholder("exa-...")
+						.setValue(this.plugin.settings.exaApiKey)
+						.inputEl.addEventListener("blur", async () => {
+							this.plugin.settings.exaApiKey = text.getValue().trim();
 							await this.saveSettings();
 						});
 					text.inputEl.type = "password";
