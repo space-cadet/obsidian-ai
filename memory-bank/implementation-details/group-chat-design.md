@@ -90,6 +90,58 @@ Round 2: For each agent:
 - Root cause: `activeSessionId` change triggers sync effect with OLD participant list
 - Fix: setParticipants() before setActiveSessionId() so sync effect sees correct data
 
+### May 17 Updates
+
+#### Message Metadata in Bubbles
+
+**ChatMessage fields added:**
+- `modelName?: string` — which model generated the response (e.g., "gpt-4o", "gemini-1.5-pro")
+- `responseTimeMs?: number` — how long the stream took
+
+**ChatApp.tsx tracking:**
+- `streamStartTime` recorded when streaming begins
+- On stream completion: `responseTimeMs = Date.now() - streamStartTime`
+- `modelName` extracted from `resolvedProfile.model` (or `resolvedProfile.metadata?.model`)
+
+**MessageBubble.tsx rendering:**
+- Metadata row shown only for assistant messages (not user)
+- Format: `modelName | responseTimeMs | estimatedTokens`
+- CSS: `.chat-message-metadata` — flex row, small text, muted color
+
+#### Profile Dropdown Mid-Session Switching
+
+**Dropdown modes:**
+- **1:1 mode** (`participants.length < 2`): Radio buttons — single selection
+  - Clicking a profile switches `activeProviderProfileId` immediately
+  - Updates `settingsTick` to force `resolvedProfile` re-computation
+  - Saves settings to disk
+  - Badge shows "1"
+- **Council mode** (`participants.length >= 2`): Checkboxes — multi-selection (unchanged)
+  - Badge shows participant count
+
+**ActionBar badge fix:**
+- Badge always shows at least 1 (was showing 0 in 1:1 mode)
+
+#### SettingsTick Pattern
+
+**Problem:** `resolvedProfile` useMemo cached old profile after dropdown switch.
+**Solution:** Increment `settingsTick` when profile changes via dropdown.
+```typescript
+setActiveProviderProfileId(profileId);
+setSettingsTick(t => t + 1); // Force re-computation
+await plugin.saveSettings();
+```
+
+#### Retry Profile Fix
+
+**Problem:** `handleSend` useCallback captured `resolvedProfile` but it wasn't in deps array.
+**Solution:** Added `resolvedProfile` to dependency array.
+```typescript
+const handleSend = useCallback(async () => {
+  // ... uses resolvedProfile ...
+}, [isStreaming, plugin, orchestrator, isGroupChat, participants, typingAgents, resolvedProfile]);
+```
+
 ---
 
-*Last Updated: 2026-05-16 16:20 IST*
+*Last Updated: 2026-05-17 12:45 IST*

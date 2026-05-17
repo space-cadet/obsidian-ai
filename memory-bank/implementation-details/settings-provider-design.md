@@ -1,6 +1,6 @@
 # Settings & Provider Profile Design
 *Created: 2026-05-02 11:46:39 IST*
-*Last Updated: 2026-05-12 13:47:10 IST*
+*Last Updated: 2026-05-17 12:45 IST*
 
 ## Overview
 
@@ -203,6 +203,57 @@ Refreshed on 2026-05-12 11:13:59 IST:
 - Restored guarded `display()` refresh behavior to avoid re-entrant loops while changing profiles
 - Restored the cached-model fetch/search picker behavior for provider profiles
 - Replaced the warning-style hero copy with a proper header after visual review
+
+### Web Search Settings (T18, 2026-05-16)
+
+Added web search provider configuration to Settings panel:
+
+```typescript
+type WebSearchProvider = "brave" | "duckduckgo" | "tavily" | "exa" | "searxng";
+
+interface ObsidianAISettings {
+  // ... existing fields ...
+  webSearchProvider: WebSearchProvider;  // default: "duckduckgo"
+  braveApiKey: string;
+  tavilyApiKey: string;
+  exaApiKey: string;
+  searxngUrl: string;
+}
+```
+
+**UI Section:** `renderWebSearch(containerEl)`
+- Provider dropdown with 5 options, each labeled with cost/requirements:
+  - DuckDuckGo — free, no API key
+  - Brave Search — 2000 queries/month free, requires API key
+  - Tavily — AI search, free tier, requires API key
+  - Exa — neural search, free tier, requires API key
+  - SearXNG — self-hosted, no API key
+- Conditional API key fields (password input) for Brave, Tavily, Exa
+- Conditional URL field for SearXNG
+- Added between "Agent Tools" and "Advanced" sections
+
+### Profile Dropdown Behavior (T16, 2026-05-17)
+
+The participant dropdown in ChatApp doubles as a profile switcher in 1:1 mode:
+
+**1:1 Mode (single participant):**
+- Dropdown shows radio buttons (single selection)
+- Clicking a different profile:
+  1. Updates `activeProviderProfileId` in settings
+  2. Increments `settingsTick` to force `resolvedProfile` re-computation
+  3. Saves settings to disk
+  4. Next message uses the new profile
+
+**Council Mode (2+ participants):**
+- Dropdown shows checkboxes (multi-selection)
+- Adding/removing participants updates council composition
+- Does NOT change `activeProviderProfileId`
+
+**Badge behavior:**
+- Always shows at least 1 (fixed from showing 0 in 1:1 mode)
+- Council mode: shows participant count
+
+**Implementation note:** The `settingsTick` increment pattern is used to force React to re-compute `resolvedProfile` useMemo when the active profile changes outside the normal settings panel flow.
 
 ## 2026-05-12 Regression and Rewrite
 
