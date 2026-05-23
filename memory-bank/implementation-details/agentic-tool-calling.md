@@ -844,4 +844,98 @@ Toggle handlers now call `setAutoApprove(newValue)` / `setAutoNameSessions(newVa
 
 ---
 
-*Last Updated: 2026-05-15 12:10:00 IST*
+## 2026-05-23: Context Overload Fix + Tool Enhancements
+
+### Problem: Folder Context Token Bloat
+
+When a folder or tag was attached as context (via `+` button in ChatInput), `ContextEngine.ts` read the **full contents of every file** in that folder/tag and inlined them into the system prompt. For large folders (e.g., a research folder with 50+ notes), this caused:
+- Context window exhaustion (85%+ tokens)
+- Agent stuck in read loops, unable to proceed
+- Session compaction and unresponsiveness
+
+**Example**: Attaching a folder with 30 notes × 2KB each = 60KB of raw text injected into the prompt.
+
+### Solution: File Listings + Tool Instructions
+
+Folder and tag context items now return a **structured file listing with tool-usage instructions** instead of full file contents:
+
+```
+<folder path="Research/LQG">
+The following notes are available in this folder.
+Use list_notes(folder: "Research/LQG") to see all files.
+Use read_note(path: "Research/LQG/Note Name") to read a specific note.
+</folder>
+```
+
+**Key change**: The LLM is instructed to use `list_notes` or `read_note` if it needs specific file contents. This keeps the context compact while preserving discoverability.
+
+**Files changed**: `src/context/ContextEngine.ts`
+
+---
+
+### Enhancement: `list_notes` Subfolder Support
+
+**New parameters**:
+- `include_subfolders` (boolean, default `true`) — whether to recurse into subfolders
+- `depth` (number, default `1`, max `3`) — recursion depth limit
+
+**New return field**: `subfolders` array alongside `files`
+
+**Example result**:
+```json
+{
+  "files": ["Note A.md", "Note B.md"],
+  "subfolders": ["Subfolder 1", "Subfolder 2"],
+  "total": 2,
+  "folder": "Research"
+}
+```
+
+This gives the LLM visibility into folder structure without needing a separate `list_folders` call.
+
+**Files changed**: `src/agent/tools.ts` (Zod schema), `src/agent/ToolExecutor.ts` (implementation)
+
+---
+
+### Fix: `count_notes` Accuracy Breakdown
+
+**Problem**: `count_notes` previously returned a single `count` number that was ambiguous — it wasn't clear if this included subfolder files or only direct files.
+
+**Solution**: Five distinct counts with clear semantics:
+
+| Field | Meaning |
+|-------|---------|
+| `totalCount` | All files recursively (including subfolders) |
+| `markdownCount` | All `.md` files recursively |
+| `directCount` | Files directly in the queried folder |
+| `directMarkdownCount` | `.md` files directly in the queried folder |
+| `subfolderCount` | Number of immediate subfolders |
+
+**Example formatted result**:
+```
+📊 Note Count for "Research/LQG":
+- Total files (recursive): 47
+- Markdown files (recursive): 42
+- Direct files in folder: 12
+- Direct markdown files: 10
+- Subfolders: 3
+```
+
+This prevents the LLM from being misled by large recursive counts when asking about a specific folder.
+
+**Files changed**: `src/agent/ToolExecutor.ts`
+
+---
+
+### System Prompt Updates
+
+`buildSystemPrompt()` in `ChatApp.tsx` now describes the enhanced capabilities:
+- Mentions `list_notes` with `include_subfolders` and `depth` parameters
+- Describes the `count_notes` breakdown so the LLM knows to use it for folder statistics
+- Reinforces the pattern: "For folders with many files, use list_notes first instead of reading all contents"
+
+**Files changed**: `src/components/ChatApp.tsx`
+
+---
+
+*Last Updated: 2026-05-23 23:54 IST*

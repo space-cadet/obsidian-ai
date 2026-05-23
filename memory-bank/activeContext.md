@@ -1,10 +1,10 @@
 # Active Context
 
-*Last Updated: 2026-05-17 12:45 IST*
+*Last Updated: 2026-05-23 23:54 IST*
 
 ## Current Focus
-**Primary Task:** T18 — Web Search Tool — ✅ COMPLETE
-**Secondary Tasks:** T16 (Group Chat — testing), T15 (Tabbed Chat — paused), T14 (Remote Agent)
+**Primary Task:** T13 — Agentic Tool Calling — Context Overload Fix ✅ COMPLETE
+**Secondary Tasks:** T16 (Group Chat — export feature pending), T15 (Tabbed Chat — paused), T14 (Remote Agent), T17 (Backlinks + YAML — pending)
 
 ## Active Tasks
 - [T16]: 🔄 **IN PROGRESS** — Phases 1–16 implemented. Debate mode working. UI refined. Participant persistence fixed. **May 17: Message metadata, profile dropdown switching, retry profile fixes.**
@@ -63,38 +63,42 @@
 - Phase 2 (Per-profile engine) ✅ COMPLETE
 - Phase 3 (TabBar UI) ⏸️ PAUSED — user chose T16 first
 
-## T16 Current Status (2026-05-17 12:16)
+## T13 Current Status (2026-05-23)
+- ✅ **All 13 tools implemented** — AgentLoop, PendingToolCard, tool result formatting
+- ✅ **Context overload fix** — Folder/tag context now returns file listings with tool instructions instead of full file contents
+- ✅ **`list_notes` enhanced** — `include_subfolders` (default true), `depth` (default 1, max 3), returns `subfolders` array
+- ✅ **`count_notes` accuracy** — Five-count breakdown: total, markdown, direct, directMarkdown, subfolder
+- ✅ **System prompt updated** — `buildSystemPrompt()` describes enhanced capabilities
+- Commits: `6c396bb`, `d19de84`
+
+## T16 Current Status (2026-05-17 + 2026-05-23)
 - All phases 1–16 implemented. Debate mode working. User confirmed.
-- **May 17 additions:**
-  - Message metadata: model name + response time shown in bubbles (fa060c1)
-  - Profile dropdown: mid-session profile switching via dropdown in 1:1 mode (7ddeeca)
-  - Fix: settingsTick increments on profile switch so resolvedProfile updates (f0e5471)
-  - Fix: resolvedProfile added to handleSend deps so retry uses correct profile (64276ca)
-- Known: Gemini occasionally gives guardrail responses; OpenRouter/Gemma works better.
-- All participant/session bugs fixed.
+- **May 17 additions:** Message metadata, profile dropdown switching, settingsTick fix, retry profile fix
+- **May 23:** Export feature investigated — no existing "note list drop-down" in ActionBar. Needs UI design.
+- Known issues: Gemini guardrails, manual approval in council mode deferred, parallel dispatch not wired
 
 ## Next Steps
-1. **Continue T16 testing**: Participant session switching, debate mode with different models
-2. **T16 future**: Mention autocomplete, parallel dispatch toggle, manual tool approval in council mode
-3. Return to T15 Phase 3 (TabBar) when user is ready
-4. T17 Phase 1: Backlinks + YAML tools
+1. **Export feature**: Needs exact UI location specification from user
+2. **Issue #3**: Token usage for tool calls (`stepTokenEstimates` in AgentLoop.ts)
+3. **Issue #4**: Agent dropdown click-outside handler completion
+4. **Issue #2**: Tool-call streaming ContentPart import cleanup
+5. **T17 Phase 1**: Backlinks + YAML tools (user-prioritized)
+6. Return to T15 Phase 3 (TabBar) when user ready
+7. **README**: New demo GIF needed (current shows old inline editing)
 
 ## Current Decisions
 - Unified UI chosen over separate panels (user explicitly requested)
-- All-or-nothing toggle REPLACED by individual checkbox dropdown (Phase 11)
+- Individual checkbox dropdown for participants (replaced all-or-nothing toggle)
 - Sequential dispatch as default (parallel exists in code but not wired)
-- **Tool calling in council mode: ENABLED** — uses AgentLoop with auto-approve only. Manual approval UI deferred.
-- **Debate mode**: Round 1 all agents respond to user, Round 2 agents see each other's responses. PASS to skip.
+- Tool calling in council mode: ENABLED — auto-approve only; manual approval UI deferred
+- Debate mode: Round 1 all agents respond to user, Round 2 agents see each other's responses. PASS to skip.
+- **Folder context: NEVER inline full file contents** — tool instructions are the correct pattern for large collections
 - T15 tab bar deprioritized in favor of T16 group chat
 
 ## Session Context
-- **Session**: 2026-05-17 morning
-- **Commits**: 189b655 → 64276ca (6 commits post-May 16 23:30)
-  - 189b655: T18 Web search tool (3 providers)
-  - d3c8d8b: T18 Tavily + Exa providers
-  - fa060c1: Message metadata (model name, response time)
-  - 7ddeeca: Profile dropdown mid-session switching
-  - f0e5471: Fix settingsTick on profile switch
-  - 64276ca: Fix resolvedProfile in handleSend deps
-- **Build status**: ✅ tsc + esbuild pass all commits
+- **Session**: 2026-05-23 night
+- **Commits**: `6c396bb`, `d19de84`
+  - `6c396bb`: T13 `list_notes` subfolders + `count_notes` breakdown
+  - `d19de84`: T13 context overload fix (folder/tag context returns listings, not full contents)
+- **Build status**: ✅ tsc + esbuild pass
 - **Pushed to**: origin/main

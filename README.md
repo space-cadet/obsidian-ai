@@ -14,13 +14,23 @@
 
 ---
 
-> **🤖 AI-Powered Writing Assistant for Obsidian**
+> **🤖 AI-Powered Assistant for Obsidian**
 >
-> Transform your Obsidian workflow with intelligent inline editing and a persistent AI chat panel. Highlight text for instant rewrites, chat with your vault using `@mentions`, and edit notes directly from the conversation — all without leaving your editor.
+> An AI chat panel that can read, edit, create, and organize your Obsidian notes — with support for multiple AI agents in a single conversation. Bring your own API keys. Your data stays in your vault.
 
 ---
 
-## ✨ Features
+## ✨ What It Does
+
+Obsidian AI adds a **persistent chat panel** to your Obsidian sidebar. Unlike typical chat plugins, this one can **directly manipulate your vault** through native tool calling — search notes, edit content, create files, move documents, and more — all from the conversation.
+
+It also supports **group chat mode**: talk to multiple AI agents (different models or remote agents) in the same thread, with each agent aware of the conversation context.
+
+And it includes **inline AI editing**: highlight text in any note, press a hotkey, and get AI-powered transformations with a visual diff preview before you commit.
+
+---
+
+## 🚀 Features
 
 ### Inline AI Editing
 
@@ -29,25 +39,56 @@
 - **One-Click Apply / Discard** — Accept changes instantly or dismiss them without touching your note
 - **Custom Slash Commands** — Define your own system prompts and trigger them with `/` shortcuts
 
-### Persistent Chat Panel
+### Agentic Note Editing (13 Tools)
 
-- **Sidebar Conversations** — Dedicated AI chat panel alongside your notes with full multi-turn dialogue
-- **Session History** — Conversations are saved and restored across Obsidian restarts
-- **Archive & Rename** — Organize past chats, prune old sessions automatically, and resume any conversation
-- **Edit & Resubmit** — Fix a previous message and regenerate the response from that point
+The AI can directly manage your vault through structured tool calls:
+
+| Tool | What It Does |
+|------|-------------|
+| `read_note` | Read any note's full content |
+| `edit_note` | Overwrite a note with new content |
+| `append_to_note` | Add content to the end of a note |
+| `create_note` | Create a new note in any folder |
+| `patch_note` | Find-and-replace inside a note |
+| `edit_section` | Rewrite content under a specific heading |
+| `search_notes` | Search by filename or path |
+| `list_notes` | Browse folders with subfolder support |
+| `get_note_metadata` | File stats (size, dates, word count) |
+| `create_folder` | Create new folders |
+| `move_note` | Move or rename notes |
+| `delete_note` | Delete notes (to system trash) |
+| `list_folders` | Navigate vault structure |
+
+**Approval Flow**: By default, every tool call shows a preview card in chat — you approve or reject before it executes. Toggle **Auto-Apply** (🤖) to skip approval for trusted workflows.
+
+**Smart Results**: Tool outputs are formatted as markdown tables and lists before the AI sees them — no raw JSON dumps in your chat.
+
+### Group Chat / Council Mode
+
+Talk to multiple AI agents in one conversation:
+
+- **Multi-Agent Panel** — Select which profiles participate via checkbox dropdown
+- **Sequential Dispatch** — Agents respond one after another, building on previous answers
+- **Debate Mode** — Agents see each other's responses and can add follow-ups (or pass)
+- **Mention Routing** — `@Cloudy fetch arxiv` sends that request only to Cloudy
+- **Identity Badges** — Each agent gets a colored dot and name label on their messages
+- **Zen Mode** — Hide all chrome, see only messages and input
+- **Mobile-Responsive** — Works on tablet and phone layouts
 
 ### Vault-Aware Context
 
-- **`@mention` Notes** — Reference any note in your vault directly in chat
-- **Folder & Tag Context** — Attach entire folders or all notes matching a tag to the conversation
-- **Active Note** — Include the note you're currently editing as context with one toggle
-- **Embed Expansion** — Inline embeds (`![[...]]`) are recursively resolved up to depth 2
+- **`@mention` Notes** — Reference any note in chat
+- **Folder & Tag Context** — Attach folders or tags (returns file listings, not full contents — no token bloat)
+- **Active Note** — Include the note you're currently editing
+- **Embed Expansion** — `![[...]]` embeds resolved recursively up to depth 2
 
-### Note Editing from Chat
+### Web Search
 
-- **`/create`**, **`/edit`**, **`/append`** — Create new notes, rewrite existing ones, or append summaries directly from chat responses
-- **Targeted Actions** — AI responses that look like edits show contextual buttons: *Apply → Note*, *Create Note*, *Append → Note*
-- **Retry** — Regenerate a response if the first attempt wasn't right
+Ask about recent events or facts beyond the model's training data:
+
+- **5 Providers**: DuckDuckGo (free), Brave Search API, Tavily, Exa, SearXNG (self-hosted)
+- **No extra setup** for DuckDuckGo — works immediately
+- **API keys** for Brave, Tavily, Exa entered in Settings
 
 ### Multi-Provider Support
 
@@ -64,15 +105,24 @@ Bring your own keys. No data leaves your machine unless you choose it to.
 | **Azure OpenAI** | Enterprise GPT models | Cloud |
 | **Custom** | Any OpenAI-compatible endpoint | Either |
 
-- **Model Discovery** — Fetch available models from your provider instead of typing names manually
-- **Per-Provider Profiles** — Save multiple provider configurations and switch between them instantly
+- **Per-Provider Profiles** — Save multiple configurations and switch between them
+- **Model Discovery** — Fetch available models from your provider automatically
+- **Mid-Session Switching** — Change profile without starting a new chat
 
-### Quality-of-Life
+### Streaming & Quality-of-Life
 
-- **Streaming Responses** — See AI output appear in real time, not after a long wait
-- **Token Usage Indicator** — Visual feedback on how much context budget you're using (green → amber → red)
-- **Context Limits** — Cap conversation history to stay within model context windows
-- **Abort** — Cancel a streaming response mid-generation
+- **Streaming Responses** — See output appear in real time
+- **Token Usage Indicator** — Visual feedback on context budget (green → amber → red)
+- **Session History** — Conversations saved and restored across restarts
+- **Archive & Rename** — Organize past chats, auto-name sessions
+- **Abort** — Cancel streaming mid-generation
+- **Retry** — Regenerate a response with one click
+
+### Debug & Diagnostics
+
+- **Diagnostics Panel** — Memory usage, DOM nodes, chat sessions, total messages
+- **File-Based Logger** — Debug logs written to disk for troubleshooting
+- **Error Boundary** — Catches React render crashes, shows fallback UI
 
 ---
 
@@ -94,18 +144,16 @@ Bring your own keys. No data leaves your machine unless you choose it to.
 
 ---
 
-## 🚀 Quick Start
+## ⚡ Quick Start
 
 ### 1. Configure Your Provider
 
 Open **Settings** → **Obsidian AI** → **Provider Profiles**.
 
 Click **Add Profile**, choose your provider, and enter:
-- **API Key** (if required by the provider)
-- **Model** — type a model name, or click **Fetch Models** to discover available ones
+- **API Key** (if required)
+- **Model** — type a name or click **Fetch Models** to discover
 - **Custom URL** (for Ollama or custom endpoints)
-
-Switch between profiles anytime from the chat panel header.
 
 ### 2. Inline Editing
 
@@ -135,6 +183,29 @@ Or use slash commands in your message:
 - `/edit [[Note Name]]` — overwrite an existing note
 - `/append [[Note Name]]` — append to an existing note
 
+### 5. Agentic Tools
+
+Ask the AI to manage your vault directly:
+
+> "Summarize my `[[Project Notes]]` and create a draft in `Drafts/`"
+
+The AI will:
+1. Read `Project Notes` via `read_note`
+2. Generate a summary
+3. Create the draft via `create_note` — pending your approval (unless Auto-Apply is on)
+
+### 6. Group Chat (Optional)
+
+Click the **👥** participant button in the chat header. Select multiple profiles. Type a message — all selected agents will respond.
+
+Toggle **Debate Mode** (🗣️) to have agents discuss each other's responses.
+
+### 7. Web Search (Optional)
+
+Open **Settings** → **Web Search**. Choose a provider (DuckDuckGo works without setup). Now you can ask:
+
+> "What happened in quantum gravity research this week?"
+
 ---
 
 ## 🛠️ Development
@@ -161,9 +232,17 @@ pnpm run package
 
 ```
 src/
-├── components/          # React UI (ChatApp, ChatInput, MessageBubble, etc.)
-├── context/             # ContextEngine, tokenEstimator, embedExpander
-├── modules/             # Core CodeMirror extensions (inline tooltip, diff, commands)
+├── agent/               # Agentic tool calling: AgentLoop, ToolExecutor, tools, types
+│   ├── AgentLoop.ts     # Multi-step tool calling orchestration
+│   ├── ToolExecutor.ts  # Vault operation handlers (13 tools)
+│   ├── tools.ts         # Zod tool definitions
+│   ├── types.ts         # StreamEvent union, ToolCall, ToolResult
+│   └── Orchestrator.ts  # Multi-agent dispatch for group chat
+├── components/          # React UI (ChatApp, ChatInput, MessageBubble, PendingToolCard, etc.)
+├── context/             # ContextEngine (vault context assembly, token estimation)
+├── core/                # ChatEngine, useChat hook, streaming logic
+├── adapters/            # LLMAdapter, ToolAdapter, RAGAdapter, PersistenceAdapter
+├── modules/             # CodeMirror extensions (inline tooltip, diff, commands)
 ├── noteEditing/         # NoteEditingBridge (apply, append, create from chat)
 ├── views/               # Obsidian ItemView registration
 ├── api.ts               # Provider abstractions & streaming
@@ -182,15 +261,11 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 - **Feature Requests**: [Start a discussion](https://github.com/space-cadet/obsidian-ai/discussions)
 - **Showcase**: Share your workflows in [Discussions → Showcase](https://github.com/space-cadet/obsidian-ai/discussions/categories/showcase)
 
----
-
 ## Acknowledgments
 
-This plugin was originally forked from [FBarrca/obsidian-inlineAI](https://github.com/FBarrca/obsidian-inlineAI) and has been significantly extended with chat, context, and vault-aware features.
+This plugin was originally forked from [FBarrca/obsidian-inlineAI](https://github.com/FBarrca/obsidian-inlineAI) and has been significantly extended with chat, context, agentic tools, and multi-agent features.
 
 UI and design patterns inspired by [Logan Yang](https://github.com/logancyang)'s excellent [Obsidian Copilot](https://github.com/logancyang/obsidian-copilot) plugin.
-
----
 
 ## License
 
