@@ -82,23 +82,33 @@ async function resolveSingleItem(
 		}
 		case "folder": {
 			const files = getFilesForFolder(app, item.path);
-			const results: ResolvedNote[] = [];
-			for (const file of files) {
-				const raw = await app.vault.read(file);
-				const content = await expandEmbeds(raw, app);
-				results.push({ name: file.basename, path: file.path, content });
-			}
-			return results;
+			const prefix = item.path === "" ? "" : item.path + "/";
+			const totalInFolder = app.vault
+				.getMarkdownFiles()
+				.filter((f) => f.path.startsWith(prefix)).length;
+			const fileList = files.map((f) => `- ${f.basename}`).join("\n");
+			const content =
+				`Folder: ${item.name || item.path || "Vault root"}\n` +
+				`Showing ${files.length} most recent files (of ${totalInFolder} total):\n` +
+				`${fileList}\n\n` +
+				`You can:\n` +
+				`- Use read_note(path) to read any file\n` +
+				`- Use search_notes(query, folder="${item.path}", limit=100) to find more files\n` +
+				`- Use list_notes(folder="${item.path}", sort_by="modified", limit=100) to see all files`;
+			return [{ name: item.name || item.path || "Folder", path: item.path, content }];
 		}
 		case "tag": {
 			const files = getFilesForTag(app, item.tag);
-			const results: ResolvedNote[] = [];
-			for (const file of files) {
-				const raw = await app.vault.read(file);
-				const content = await expandEmbeds(raw, app);
-				results.push({ name: file.basename, path: file.path, content });
-			}
-			return results;
+			const fileList = files.map((f) => `- ${f.basename}`).join("\n");
+			const content =
+				`Tag: #${item.tag}\n` +
+				`Showing ${files.length} most recent files with this tag:\n` +
+				`${fileList}\n\n` +
+				`You can:\n` +
+				`- Use read_note(path) to read any file\n` +
+				`- Use search_notes(query, limit=100) to find more files\n` +
+				`- Use list_notes(sort_by="modified", limit=100) to browse all notes`;
+			return [{ name: `Tag: #${item.tag}`, path: `#${item.tag}`, content }];
 		}
 		case "active-note": {
 			const file = app.workspace.getActiveFile();

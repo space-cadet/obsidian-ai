@@ -9,7 +9,7 @@ import { MarkdownView, Notice, TFile, WorkspaceLeaf } from "obsidian";
 
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
 import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
-import { ChatMessage, ChatSession, ContextItem, GroupChatParticipant } from "../types";
+import { ChatMessage, ChatSession, ContextItem, GroupChatParticipant, ContentPart } from "../types";
 import { resolveContextItems } from "../context/ContextEngine";
 import { estimateTokens } from "../context/tokenEstimator";
 import { noteTools } from "../agent/tools";
@@ -300,6 +300,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 	const [isStreaming, setIsStreaming] = useState(false);
 	const [currentAiMessage, setCurrentAiMessage] = useState("");
+	const [currentContentParts, setCurrentContentParts] = useState<ContentPart[]>([]);
 	const [contextItems, setContextItems] = useState<ContextItem[]>([]);
 	const [wasTruncated, setWasTruncated] = useState(false);
 	const [contextTokenCount, setContextTokenCount] = useState(0);
@@ -311,7 +312,24 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	const [participants, setParticipants] = useState<GroupChatParticipant[]>([]);
 	const [typingAgents, setTypingAgents] = useState<Set<string>>(new Set());
 	const [showParticipantDropdown, setShowParticipantDropdown] = useState(false);
+	const participantDropdownRef = useRef<HTMLDivElement>(null);
 	const isGroupChat = participants.length > 1;
+
+	// Close participant dropdown when clicking outside
+	useEffect(() => {
+		if (!showParticipantDropdown) return;
+		const handleClick = (e: MouseEvent) => {
+			const target = e.target as Node;
+			if (
+				participantDropdownRef.current &&
+				!participantDropdownRef.current.contains(target)
+			) {
+				setShowParticipantDropdown(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClick);
+		return () => document.removeEventListener("mousedown", handleClick);
+	}, [showParticipantDropdown]);
 
 	// ─── Zen Mode ───
 	const [zenMode, setZenMode] = useState(false);
@@ -858,6 +876,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			);
 			setIsStreaming(true);
 			setCurrentAiMessage("");
+			setCurrentContentParts([]);
 			controllerRef.current = new AbortController();
 			const streamStartTime = Date.now();
 
@@ -947,6 +966,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 						}
 						toolCallsLog.push({ call });
 						contentParts.push({ type: "tool_call", call });
+						setCurrentContentParts([...contentParts]);
 						textCheckpoint = fullText.length;
 					},
 					requestApproval: async (call) => {
@@ -1042,6 +1062,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 							// Add tool call to parts and log
 							toolCallsLog.push({ call });
 							contentParts.push({ type: "tool_call", call });
+							// Update live streaming state
+							setCurrentContentParts([...contentParts]);
 							// Advance checkpoint to current position
 							textCheckpoint = fullText.length;
 						},
@@ -1300,6 +1322,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				console.log("[ChatApp] finally block — resetting stream state");
 				setIsStreaming(false);
 				setCurrentAiMessage("");
+				setCurrentContentParts([]);
 				controllerRef.current = null;
 				setIsEditing(false);
 				setOriginalMessages([]);
@@ -1723,7 +1746,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 						onToggleDebateMode={() => setDebateMode((d) => !d)}
 					/>
 					{showParticipantDropdown && (
-						<div className="chat-participant-dropdown">
+						<div ref={participantDropdownRef} className="chat-participant-dropdown">
 							{plugin.settings.providerProfiles.map((profile) => {
 								const isSelected = participants.some((p) => p.id === profile.id);
 								const isActiveProfile = resolvedProfile.id === profile.id;
@@ -1785,6 +1808,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			<ChatMessages
 				messages={messages}
 				currentAiMessage={currentAiMessage}
+				currentContentParts={currentContentParts}
 				isStreaming={isStreaming}
 				isEditing={isEditing}
 				app={plugin.app}

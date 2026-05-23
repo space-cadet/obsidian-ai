@@ -25,6 +25,8 @@ export interface AgentLoopResult {
 	text: string;
 	tokenEstimate: number;
 	stepsTaken: number;
+	/** Token estimates for each step's assistant message (text + tool calls) */
+	stepTokenEstimates?: number[];
 }
 
 /**
@@ -155,6 +157,7 @@ export class AgentLoop {
 
 		let fullText = "";
 		let currentMessages = messages;
+		const stepTokenEstimates: number[] = [];
 
 		for (let step = 0; step < maxSteps; step++) {
 			let stepText = "";
@@ -269,12 +272,19 @@ export class AgentLoop {
 				assistantMsg,
 				toolMsg,
 			];
+			
+			// Track tokens for this step
+			const stepTokens = estimateTokens(stepText) + estimateTokens(JSON.stringify(pendingCall.args)) + estimateTokens(formattedResult);
+			stepTokenEstimates.push(stepTokens);
 		}
+
+		const totalTokens = estimateTokens(fullText) + stepTokenEstimates.reduce((a, b) => a + b, 0);
 
 		return {
 			text: fullText,
-			tokenEstimate: estimateTokens(fullText),
+			tokenEstimate: totalTokens,
 			stepsTaken: maxSteps, // Simplified; could track actual
+			stepTokenEstimates,
 		};
 	}
 }
