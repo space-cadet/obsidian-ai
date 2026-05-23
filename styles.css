@@ -627,12 +627,14 @@
 	align-self: flex-end;
 	background: #0d9488;
 	color: #ffffff;
+	user-select: text;
 }
 
 .chat-bubble-assistant {
 	align-self: flex-start;
 	background: var(--background-secondary);
 	color: var(--text-normal);
+	user-select: text;
 }
 
 .chat-bubble-error {
