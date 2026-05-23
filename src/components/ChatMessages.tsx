@@ -1,12 +1,14 @@
 import React, { useEffect, useRef } from "react";
 import { App, Component, MarkdownRenderer } from "obsidian";
-import { ChatMessage } from "../types";
+import { ChatMessage, ContentPart } from "../types";
 import MessageBubble from "./MessageBubble";
+import PendingToolCard from "./PendingToolCard";
 
-const StreamingBubble: React.FC<{ content: string; app: App }> = ({
-	content,
-	app,
-}) => {
+const StreamingBubble: React.FC<{
+	content: string;
+	contentParts?: ContentPart[];
+	app: App;
+}> = ({ content, contentParts, app }) => {
 	const contentRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -16,7 +18,7 @@ const StreamingBubble: React.FC<{ content: string; app: App }> = ({
 
 		logger?.writeDirect?.(
 			"debug",
-			`[StreamingBubble] Step 1: entering useEffect — ${content.length} chars`,
+			`[StreamingBubble] Step 1: entering useEffect — ${content.length} chars, ${contentParts?.length ?? 0} parts`,
 		);
 
 		try {
@@ -26,43 +28,76 @@ const StreamingBubble: React.FC<{ content: string; app: App }> = ({
 			);
 			contentRef.current.innerHTML = "";
 
-			logger?.writeDirect?.(
-				"debug",
-				`[StreamingBubble] Step 3: creating Component`,
-			);
-			const comp = new Component();
-
-			logger?.writeDirect?.(
-				"debug",
-				`[StreamingBubble] Step 4: calling MarkdownRenderer.render`,
-			);
-			MarkdownRenderer.render(
-				app,
-				content,
-				contentRef.current,
-				"",
-				comp,
-			).then(() => {
-				if (unmounted) return;
+			// If we have contentParts with tool calls, render them as structured UI
+			if (contentParts && contentParts.length > 0) {
+				for (const part of contentParts) {
+					if (part.type === "text") {
+						const textDiv = contentRef.current.createDiv({ cls: "chat-bubble-text" });
+						const comp = new Component();
+						MarkdownRenderer.render(app, part.content, textDiv, "", comp);
+					} else if (part.type === "tool_call") {
+						const toolDiv = contentRef.current.createDiv({ cls: "chat-bubble-tool" });
+						if (part.result) {
+							// Render completed tool result
+							const resultDiv = toolDiv.createDiv();
+							resultDiv.innerHTML = `<div class="tool-result-inline">✓ ${part.call.toolName}</div>`;
+						} else {
+							// Render pending tool call
+							const pendingDiv = toolDiv.createDiv();
+							pendingDiv.innerHTML = `<div class="tool-pending-inline">⏳ ${part.call.toolName}...</div>`;
+						}
+					}
+				}
+				// Render any remaining text after last checkpoint
+				const lastTextPart = contentParts.filter(p => p.type === "text").pop();
+				if (lastTextPart && lastTextPart.type === "text") {
+					const remainingText = content.slice(content.lastIndexOf(lastTextPart.content) + lastTextPart.content.length);
+					if (remainingText.trim()) {
+						const remainDiv = contentRef.current.createDiv({ cls: "chat-bubble-text" });
+						const comp = new Component();
+						MarkdownRenderer.render(app, remainingText, remainDiv, "", comp);
+					}
+				}
+			} else {
+				// Simple text-only streaming (no tool calls)
 				logger?.writeDirect?.(
 					"debug",
-					`[StreamingBubble] Step 5: MarkdownRenderer.render resolved`,
+					`[StreamingBubble] Step 3: creating Component`,
 				);
-			}).catch((err: any) => {
-				if (unmounted) return;
+				const comp = new Component();
+
 				logger?.writeDirect?.(
-					"error",
-					`[StreamingBubble] MarkdownRenderer.render rejected:`,
-					err,
+					"debug",
+					`[StreamingBubble] Step 4: calling MarkdownRenderer.render`,
 				);
-				if (contentRef.current) {
-					contentRef.current.innerHTML = "";
-					contentRef.current.createEl("pre", {
-						text: content,
-						cls: "chat-plaintext-fallback",
-					});
-				}
-			});
+				MarkdownRenderer.render(
+					app,
+					content,
+					contentRef.current,
+					"",
+					comp,
+				).then(() => {
+					if (unmounted) return;
+					logger?.writeDirect?.(
+						"debug",
+						`[StreamingBubble] Step 5: MarkdownRenderer.render resolved`,
+					);
+				}).catch((err: any) => {
+					if (unmounted) return;
+					logger?.writeDirect?.(
+						"error",
+						`[StreamingBubble] MarkdownRenderer.render rejected:`,
+						err,
+					);
+					if (contentRef.current) {
+						contentRef.current.innerHTML = "";
+						contentRef.current.createEl("pre", {
+							text: content,
+							cls: "chat-plaintext-fallback",
+						});
+					}
+				});
+			}
 		} catch (err: any) {
 			logger?.writeDirect?.(
 				"fatal",
@@ -81,7 +116,7 @@ const StreamingBubble: React.FC<{ content: string; app: App }> = ({
 		return () => {
 			unmounted = true;
 		};
-	}, [content, app]);
+	}, [content, contentParts, app]);
 
 	return (
 		<div className="chat-bubble chat-bubble-assistant chat-bubble-streaming">
@@ -100,6 +135,7 @@ const StreamingBubble: React.FC<{ content: string; app: App }> = ({
 interface ChatMessagesProps {
 	messages: ChatMessage[];
 	currentAiMessage: string;
+	currentContentParts?: ContentPart[];
 	isStreaming: boolean;
 	isEditing: boolean;
 	app: App;
@@ -116,6 +152,7 @@ interface ChatMessagesProps {
 const ChatMessages: React.FC<ChatMessagesProps> = ({
 	messages,
 	currentAiMessage,
+	currentContentParts,
 	isStreaming,
 	isEditing,
 	app,
@@ -160,7 +197,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 				/>
 			))}
 			{isStreaming && currentAiMessage && (
-				<StreamingBubble content={currentAiMessage} app={app} />
+				<StreamingBubble content={currentAiMessage} contentParts={currentContentParts} app={app} />
 			)}
 			{isStreaming && !currentAiMessage && (
 				<div className="chat-typing-indicator">

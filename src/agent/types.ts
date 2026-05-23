@@ -13,6 +13,12 @@ export interface ToolResult {
 	oldPath?: string;
 	matches?: Array<{ path: string; basename: string; modified?: number; created?: number; size?: number }>;
 	count?: number;
+	totalCount?: number;
+	markdownCount?: number;
+	directCount?: number;
+	directMarkdownCount?: number;
+	subfolderCount?: number;
+	subfolders?: string[];
 	query?: string;
 	folder?: string;
 	notes?: Array<{ path: string; basename: string; modified?: number; created?: number; size?: number }>;

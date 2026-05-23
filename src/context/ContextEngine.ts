@@ -82,23 +82,43 @@ async function resolveSingleItem(
 		}
 		case "folder": {
 			const files = getFilesForFolder(app, item.path);
-			const results: ResolvedNote[] = [];
-			for (const file of files) {
-				const raw = await app.vault.read(file);
-				const content = await expandEmbeds(raw, app);
-				results.push({ name: file.basename, path: file.path, content });
-			}
-			return results;
+			const prefix = item.path === "" ? "" : item.path + "/";
+			const totalInFolder = app.vault
+				.getMarkdownFiles()
+				.filter((f) => f.path.startsWith(prefix)).length;
+			// Show files with creation date (ctime) for chronological context
+			const fileList = files
+				.map((f) => {
+					const created = new Date(f.stat.ctime).toLocaleDateString();
+					const modified = new Date(f.stat.mtime).toLocaleDateString();
+					return `- ${f.basename} (created: ${created}, modified: ${modified})`;
+				})
+				.join("\n");
+			const content =
+				`Folder: ${item.name || item.path || "Vault root"}\n` +
+				`Showing ${files.length} most recently MODIFIED files (of ${totalInFolder} total):\n` +
+				`${fileList}\n\n` +
+				`IMPORTANT: This list is sorted by modification time (most recent first), NOT creation time. ` +
+				`The oldest notes by creation date may not appear here.\n\n` +
+				`To find the OLDEST notes in this folder:\n` +
+				`- list_notes(folder="${item.path}", sort_by="created", limit=100) — then check the LAST items (sorted newest first)\n\n` +
+				`You can also:\n` +
+				`- Use read_note(path) to read any file\n` +
+				`- Use search_notes(query, folder="${item.path}", limit=100) to find specific files`;
+			return [{ name: item.name || item.path || "Folder", path: item.path, content }];
 		}
 		case "tag": {
 			const files = getFilesForTag(app, item.tag);
-			const results: ResolvedNote[] = [];
-			for (const file of files) {
-				const raw = await app.vault.read(file);
-				const content = await expandEmbeds(raw, app);
-				results.push({ name: file.basename, path: file.path, content });
-			}
-			return results;
+			const fileList = files.map((f) => `- ${f.basename}`).join("\n");
+			const content =
+				`Tag: #${item.tag}\n` +
+				`Showing ${files.length} most recent files with this tag:\n` +
+				`${fileList}\n\n` +
+				`You can:\n` +
+				`- Use read_note(path) to read any file\n` +
+				`- Use search_notes(query, limit=100) to find more files\n` +
+				`- Use list_notes(sort_by="modified", limit=100) to browse all notes`;
+			return [{ name: `Tag: #${item.tag}`, path: `#${item.tag}`, content }];
 		}
 		case "active-note": {
 			const file = app.workspace.getActiveFile();

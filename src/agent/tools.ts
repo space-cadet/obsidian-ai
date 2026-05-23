@@ -119,7 +119,7 @@ export const listNotesTool = t({
 	description:
 		"List notes in the vault, optionally filtered by folder. " +
 		"Use this when the user asks to browse, list, or show notes — especially when no specific search query is given. " +
-		"Returns a formatted list with metadata.",
+		"Returns a formatted list with metadata. Also shows subfolders if present.",
 	inputSchema: z.object({
 		folder: z
 			.string()
@@ -135,6 +135,16 @@ export const listNotesTool = t({
 			.optional()
 			.default(30)
 			.describe('Maximum number of results to return (default 30, max 100).'),
+		include_subfolders: z
+			.boolean()
+			.optional()
+			.default(true)
+			.describe('Whether to include subfolder names in the result (default true).'),
+		depth: z
+			.number()
+			.optional()
+			.default(1)
+			.describe('How many levels of subfolders to show (default 1, max 3).'),
 	}),
 });
 
@@ -183,6 +193,19 @@ export const deleteNoteTool = t({
 	}),
 });
 
+export const countNotesTool = t({
+	description:
+		"Count notes in a folder or the entire vault. " +
+		"Use when the user asks how many notes exist, how large a folder is, or for vault statistics. " +
+		"Returns total count, including notes not shown by list_notes due to limit.",
+	inputSchema: z.object({
+		folder: z
+			.string()
+			.optional()
+			.describe('Folder path to count notes in. Omit to count all notes in the vault.'),
+	}),
+});
+
 export const listFoldersTool = t({
 	description:
 		"List folders in the vault. " +
@@ -222,6 +245,7 @@ export const noteTools = {
 	edit_section: editSectionTool,
 	search_notes: searchNotesTool,
 	list_notes: listNotesTool,
+	count_notes: countNotesTool,
 	get_note_metadata: getNoteMetadataTool,
 	create_folder: createFolderTool,
 	move_note: moveNoteTool,
