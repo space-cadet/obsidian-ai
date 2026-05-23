@@ -662,20 +662,38 @@
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
+	user-select: text;
 }
 
 .chat-bubble-content-segment {
 	/* Inherits from .chat-bubble-content */
+	user-select: text;
 }
 
 .chat-bubble-content-segment p:last-child {
 	margin-bottom: 0;
 }
 
+/* Ensure text selection works inside rendered markdown */
+.chat-bubble-content-segment pre,
+.chat-bubble-content-segment code,
+.chat-bubble-content-segment p,
+.chat-bubble-content-segment ul,
+.chat-bubble-content-segment ol,
+.chat-bubble-content-segment li,
+.chat-bubble-content-segment blockquote,
+.chat-bubble-content-segment table,
+.chat-bubble-content-segment td,
+.chat-bubble-content-segment th {
+	user-select: text;
+}
+
+/* But keep action buttons non-selectable */
 .chat-bubble-actions {
 	margin-top: 6px;
 	display: none;
 	gap: 4px;
+	user-select: none;
 }
 
 .chat-bubble:hover .chat-bubble-actions {
