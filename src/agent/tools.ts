@@ -183,6 +183,19 @@ export const deleteNoteTool = t({
 	}),
 });
 
+export const countNotesTool = t({
+	description:
+		"Count notes in a folder or the entire vault. " +
+		"Use when the user asks how many notes exist, how large a folder is, or for vault statistics. " +
+		"Returns total count, including notes not shown by list_notes due to limit.",
+	inputSchema: z.object({
+		folder: z
+			.string()
+			.optional()
+			.describe('Folder path to count notes in. Omit to count all notes in the vault.'),
+	}),
+});
+
 export const listFoldersTool = t({
 	description:
 		"List folders in the vault. " +
@@ -222,6 +235,7 @@ export const noteTools = {
 	edit_section: editSectionTool,
 	search_notes: searchNotesTool,
 	list_notes: listNotesTool,
+	count_notes: countNotesTool,
 	get_note_metadata: getNoteMetadataTool,
 	create_folder: createFolderTool,
 	move_note: moveNoteTool,

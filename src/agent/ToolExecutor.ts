@@ -50,6 +50,10 @@ export class ToolExecutor {
 					return await this.listNotes(
 						call.args as { folder?: string; sort_by?: string; limit?: number },
 					);
+				case "count_notes":
+					return await this.countNotes(
+						call.args as { folder?: string },
+					);
 				case "get_note_metadata":
 					return await this.getNoteMetadata(
 						call.args as { path: string },
@@ -152,6 +156,46 @@ export class ToolExecutor {
 			notes,
 			folder: folder ?? "(all vault)",
 			count: notes.length,
+		};
+	}
+
+	private async countNotes(args: { folder?: string }): Promise<ToolResult> {
+		const folder = args.folder;
+		let files = this.app.vault.getMarkdownFiles();
+
+		if (folder) {
+			files = files.filter(f => f.path.startsWith(folder + "/") || f.parent?.path === folder);
+		}
+
+		const totalCount = files.length;
+
+		// Also count subfolders for context
+		const allLoaded = this.app.vault.getAllLoadedFiles();
+		const folderSet = new Set<string>();
+		for (const f of allLoaded) {
+			if (f.path === "/") continue;
+			const parts = f.path.split("/");
+			if (parts.length <= 1) continue;
+			if (folder) {
+				if (f.path.startsWith(folder + "/")) {
+					const relativePath = f.path.slice(folder.length + 1);
+					const relativeParts = relativePath.split("/");
+					if (relativeParts.length >= 2) {
+						folderSet.add(folder + "/" + relativeParts[0]);
+					}
+				}
+			} else {
+				folderSet.add(parts[0]);
+			}
+		}
+		const subfolderCount = folderSet.size;
+
+		return {
+			success: true,
+			folder: folder ?? "(entire vault)",
+			totalCount,
+			subfolderCount,
+			content: `${totalCount} note${totalCount !== 1 ? "s" : ""} in ${folder ?? "the entire vault"}${subfolderCount > 0 ? ` (${subfolderCount} subfolder${subfolderCount !== 1 ? "s" : ""})` : ""}`,
 		};
 	}
 

@@ -62,6 +62,7 @@ function buildSystemPrompt(
 			"\n- edit_section: Rewrite content under a specific heading." +
 			"\n- search_notes: Search for notes by filename or path. Use sort_by=name|modified|created, limit, folder, and search_content params." +
 			"\n- list_notes: Browse all notes in the vault or a folder. Use sort_by=name|modified|created and limit params." +
+			"\n- count_notes: Count notes in a folder or the entire vault. Use when the user asks how many notes exist or for folder statistics." +
 			"\n- get_note_metadata: Get file stats (size, dates, word count) for a specific note." +
 			"\n- create_folder: Create a new folder in the vault." +
 			"\n- move_note: Move or rename a note to a new folder or name. Creates parent folders if needed." +
