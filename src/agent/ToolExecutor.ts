@@ -48,7 +48,7 @@ export class ToolExecutor {
 					);
 				case "list_notes":
 					return await this.listNotes(
-						call.args as { folder?: string; sort_by?: string; limit?: number },
+						call.args as { folder?: string; sort_by?: string; limit?: number; include_subfolders?: boolean; depth?: number },
 					);
 				case "count_notes":
 					return await this.countNotes(
@@ -129,10 +129,12 @@ export class ToolExecutor {
 		};
 	}
 
-	private async listNotes(args: { folder?: string; sort_by?: string; limit?: number }): Promise<ToolResult> {
+	private async listNotes(args: { folder?: string; sort_by?: string; limit?: number; include_subfolders?: boolean; depth?: number }): Promise<ToolResult> {
 		const sortBy = args.sort_by ?? "name";
 		const limit = Math.min(args.limit ?? 30, 100);
 		const folder = args.folder;
+		const includeSubfolders = args.include_subfolders ?? true;
+		const depth = Math.min(args.depth ?? 1, 3);
 
 		let files = this.app.vault.getFiles();
 
@@ -151,11 +153,38 @@ export class ToolExecutor {
 			size: f.stat.size,
 		})));
 
+		// Collect subfolders
+		let subfolders: string[] | undefined;
+		if (includeSubfolders) {
+			const allLoaded = this.app.vault.getAllLoadedFiles();
+			const folderSet = new Set<string>();
+			for (const f of allLoaded) {
+				if (f.path === "/") continue;
+				const parts = f.path.split("/");
+				if (parts.length <= 1) continue;
+				if (folder) {
+					if (f.path.startsWith(folder + "/")) {
+						const relativePath = f.path.slice(folder.length + 1);
+						const relativeParts = relativePath.split("/");
+						if (relativeParts.length >= 2) {
+							const subPath = folder + "/" + relativeParts[0];
+							folderSet.add(subPath);
+						}
+					}
+				} else {
+					folderSet.add(parts[0]);
+				}
+			}
+			subfolders = Array.from(folderSet).sort();
+		}
+
 		return {
 			success: true,
 			notes,
 			folder: folder ?? "(all vault)",
 			count: notes.length,
+			subfolders,
+			subfolderCount: subfolders?.length,
 		};
 	}
 

@@ -119,7 +119,7 @@ export const listNotesTool = t({
 	description:
 		"List notes in the vault, optionally filtered by folder. " +
 		"Use this when the user asks to browse, list, or show notes — especially when no specific search query is given. " +
-		"Returns a formatted list with metadata.",
+		"Returns a formatted list with metadata. Also shows subfolders if present.",
 	inputSchema: z.object({
 		folder: z
 			.string()
@@ -135,6 +135,16 @@ export const listNotesTool = t({
 			.optional()
 			.default(30)
 			.describe('Maximum number of results to return (default 30, max 100).'),
+		include_subfolders: z
+			.boolean()
+			.optional()
+			.default(true)
+			.describe('Whether to include subfolder names in the result (default true).'),
+		depth: z
+			.number()
+			.optional()
+			.default(1)
+			.describe('How many levels of subfolders to show (default 1, max 3).'),
 	}),
 });
 

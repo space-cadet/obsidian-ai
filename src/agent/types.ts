@@ -19,6 +19,7 @@ export interface ToolResult {
 	folder?: string;
 	notes?: Array<{ path: string; basename: string; modified?: number; created?: number; size?: number }>;
 	folders?: string[];
+	subfolders?: string[];
 	parent?: string;
 	basename?: string;
 	wordCount?: number;
