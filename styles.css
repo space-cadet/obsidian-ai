@@ -548,6 +548,53 @@
 	gap: 10px;
 }
 
+/* Scroll wrapper for positioning scroll buttons */
+.chat-messages-scroll-wrapper {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	position: relative;
+}
+
+.chat-messages-scroll-wrapper .chat-messages {
+	flex: 1;
+	overflow-y: auto;
+}
+
+/* Scroll buttons */
+.chat-scroll-btn {
+	position: absolute;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+	color: var(--text-muted);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 10;
+	transition: background-color 120ms ease, color 120ms ease, opacity 120ms ease;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.chat-scroll-btn:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.chat-scroll-top {
+	top: 12px;
+	right: 12px;
+}
+
+.chat-scroll-bottom {
+	bottom: 12px;
+	right: 12px;
+}
+
 .chat-empty-state {
 	text-align: center;
 	color: var(--text-faint);
