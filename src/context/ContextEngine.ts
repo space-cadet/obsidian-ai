@@ -86,15 +86,25 @@ async function resolveSingleItem(
 			const totalInFolder = app.vault
 				.getMarkdownFiles()
 				.filter((f) => f.path.startsWith(prefix)).length;
-			const fileList = files.map((f) => `- ${f.basename}`).join("\n");
+			// Show files with creation date (ctime) for chronological context
+			const fileList = files
+				.map((f) => {
+					const created = new Date(f.stat.ctime).toLocaleDateString();
+					const modified = new Date(f.stat.mtime).toLocaleDateString();
+					return `- ${f.basename} (created: ${created}, modified: ${modified})`;
+				})
+				.join("\n");
 			const content =
 				`Folder: ${item.name || item.path || "Vault root"}\n` +
-				`Showing ${files.length} most recent files (of ${totalInFolder} total):\n` +
+				`Showing ${files.length} most recently MODIFIED files (of ${totalInFolder} total):\n` +
 				`${fileList}\n\n` +
-				`You can:\n` +
+				`IMPORTANT: This list is sorted by modification time (most recent first), NOT creation time. ` +
+				`The oldest notes by creation date may not appear here.\n\n` +
+				`To find the OLDEST notes in this folder:\n` +
+				`- list_notes(folder="${item.path}", sort_by="created", limit=100) — then check the LAST items (sorted newest first)\n\n` +
+				`You can also:\n` +
 				`- Use read_note(path) to read any file\n` +
-				`- Use search_notes(query, folder="${item.path}", limit=100) to find more files\n` +
-				`- Use list_notes(folder="${item.path}", sort_by="modified", limit=100) to see all files`;
+				`- Use search_notes(query, folder="${item.path}", limit=100) to find specific files`;
 			return [{ name: item.name || item.path || "Folder", path: item.path, content }];
 		}
 		case "tag": {
