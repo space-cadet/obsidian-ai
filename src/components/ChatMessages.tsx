@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { App, Component, MarkdownRenderer } from "obsidian";
 import { ChatMessage, ContentPart } from "../types";
 import MessageBubble from "./MessageBubble";
@@ -165,48 +165,142 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	onCreateNote,
 	onAppendToTarget,
 }) => {
+	const scrollRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
+	const [showScrollTop, setShowScrollTop] = useState(false);
+	const [showScrollBottom, setShowScrollBottom] = useState(false);
+	const isNearBottomRef = useRef(true);
+	const prevMessagesLength = useRef(messages.length);
 
+	/** Check scroll position and update button visibility */
+	const checkScrollPosition = useCallback(() => {
+		const container = scrollRef.current;
+		if (!container) return;
+		const threshold = 80;
+		const distanceFromBottom =
+			container.scrollHeight - container.scrollTop - container.clientHeight;
+		const atBottom = distanceFromBottom < threshold;
+		isNearBottomRef.current = atBottom;
+		setShowScrollBottom(!atBottom && messages.length > 0);
+		setShowScrollTop(container.scrollTop > 200);
+	}, [messages.length]);
+
+	/** Attach scroll listener */
 	useEffect(() => {
-		// Use "auto" instead of "smooth" to avoid Chromium renderer crashes
-		// when rapid DOM mutations (StreamingBubble unmount + MessageBubble mount)
-		// happen simultaneously with scroll animation.
-		bottomRef.current?.scrollIntoView({ behavior: "auto" });
-	}, [messages, isStreaming]);
+		const container = scrollRef.current;
+		if (!container) return;
+		const onScroll = () => checkScrollPosition();
+		container.addEventListener("scroll", onScroll, { passive: true });
+		checkScrollPosition();
+		return () => container.removeEventListener("scroll", onScroll);
+	}, [checkScrollPosition]);
+
+	/** Auto-scroll to bottom on new messages — but ONLY if user is already near bottom */
+	useEffect(() => {
+		if (messages.length > prevMessagesLength.current || isStreaming) {
+			if (isNearBottomRef.current) {
+				bottomRef.current?.scrollIntoView({ behavior: "auto" });
+			}
+			// Update button visibility after render
+			requestAnimationFrame(checkScrollPosition);
+		}
+		prevMessagesLength.current = messages.length;
+	}, [messages, isStreaming, checkScrollPosition]);
+
+	/** Scroll to bottom on mount if there are messages */
+	useEffect(() => {
+		if (messages.length > 0) {
+			bottomRef.current?.scrollIntoView({ behavior: "auto" });
+			isNearBottomRef.current = true;
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
+	const scrollToTop = useCallback(() => {
+		scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+	}, []);
+
+	const scrollToBottom = useCallback(() => {
+		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+		isNearBottomRef.current = true;
+		setShowScrollBottom(false);
+	}, []);
 
 	return (
-		<div className="chat-messages">
-			{messages.length === 0 && (
-				<div className="chat-empty-state">
-					Ask anything about your vault...
-				</div>
+		<div className="chat-messages-scroll-wrapper">
+			<div className="chat-messages" ref={scrollRef}>
+				{messages.length === 0 && (
+					<div className="chat-empty-state">
+						Ask anything about your vault...
+					</div>
+				)}
+				{messages.map((msg) => (
+					<MessageBubble
+						key={msg.id}
+						message={msg}
+						app={app}
+						onAppend={onAppend}
+						onInsertAtCursor={onInsertAtCursor}
+						onApply={onApply}
+						onRetry={() => onRetry(msg.id)}
+						onEdit={() => onEdit(msg.id)}
+						onApplyToTarget={onApplyToTarget}
+						onCreateNote={onCreateNote}
+						onAppendToTarget={onAppendToTarget}
+					/>
+				))}
+				{isStreaming && currentAiMessage && (
+					<StreamingBubble content={currentAiMessage} contentParts={currentContentParts} app={app} />
+				)}
+				{isStreaming && !currentAiMessage && (
+					<div className="chat-typing-indicator">
+						<span />
+						<span />
+						<span />
+					</div>
+				)}
+				<div ref={bottomRef} />
+			</div>
+			{showScrollTop && (
+				<button
+					className="chat-scroll-btn chat-scroll-top"
+					onClick={scrollToTop}
+					title="Scroll to top"
+				>
+					<svg
+						viewBox="0 0 24 24"
+						width="16"
+						height="16"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2.5"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					>
+						<polyline points="18 15 12 9 6 15" />
+					</svg>
+				</button>
 			)}
-			{messages.map((msg) => (
-				<MessageBubble
-					key={msg.id}
-					message={msg}
-					app={app}
-					onAppend={onAppend}
-					onInsertAtCursor={onInsertAtCursor}
-					onApply={onApply}
-					onRetry={() => onRetry(msg.id)}
-					onEdit={() => onEdit(msg.id)}
-					onApplyToTarget={onApplyToTarget}
-					onCreateNote={onCreateNote}
-					onAppendToTarget={onAppendToTarget}
-				/>
-			))}
-			{isStreaming && currentAiMessage && (
-				<StreamingBubble content={currentAiMessage} contentParts={currentContentParts} app={app} />
+			{showScrollBottom && (
+				<button
+					className="chat-scroll-btn chat-scroll-bottom"
+					onClick={scrollToBottom}
+					title="Scroll to bottom"
+				>
+					<svg
+						viewBox="0 0 24 24"
+						width="16"
+						height="16"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2.5"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+					>
+						<polyline points="6 9 12 15 18 9" />
+					</svg>
+				</button>
 			)}
-			{isStreaming && !currentAiMessage && (
-				<div className="chat-typing-indicator">
-					<span />
-					<span />
-					<span />
-				</div>
-			)}
-			<div ref={bottomRef} />
 		</div>
 	);
 };

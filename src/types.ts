@@ -70,6 +70,8 @@ export interface ChatSession {
 	isGroupChat?: boolean;
 	/** Participants in a group chat (empty for 1:1) */
 	participants?: GroupChatParticipant[];
+	/** IDs of profiles selected in the multi-select toolbar */
+	selectedProfileIds?: string[];
 }
 
 export interface StoredChatData {

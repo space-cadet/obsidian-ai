@@ -7,6 +7,7 @@ import ProfileIndicator from "./ProfileIndicator";
 interface ActionBarProps {
 	onNewChat: () => void;
 	onLoadChat: () => void;
+	onExportChat: () => void;
 	canLoad: boolean;
 	plugin: ChatPluginLike;
 	autoApprove: boolean;
@@ -27,6 +28,7 @@ interface ActionBarProps {
 const ActionBar: React.FC<ActionBarProps> = ({
 	onNewChat,
 	onLoadChat,
+	onExportChat,
 	canLoad,
 	plugin,
 	autoApprove,
@@ -64,6 +66,13 @@ const ActionBar: React.FC<ActionBarProps> = ({
 					title={canLoad ? "Load previous session" : "No saved sessions"}
 				>
 					<ObsidianIcon icon="history" size={15} />
+				</button>
+				<button
+					className="chat-btn chat-icon-btn"
+					onClick={onExportChat}
+					title="Export chat sessions"
+				>
+					<ObsidianIcon icon="download" size={15} />
 				</button>
 				{onToggleParticipantDropdown && (
 					<div className="chat-council-trigger">

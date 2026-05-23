@@ -136,7 +136,19 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 		<div
 			ref={bubbleRef}
 			className={`chat-bubble chat-bubble-${message.role}${message.isError ? " chat-bubble-error" : ""}${isActive ? " is-active" : ""}${isStreaming ? " chat-bubble-streaming" : ""}`}
-			onClick={() => setIsActive(true)}
+			onClick={() => {
+				// Don't activate bubble if user is selecting/highlighting text
+				const selection = window.getSelection();
+				if (selection && selection.toString().trim().length > 0) {
+					if (
+						bubbleRef.current &&
+						selection.containsNode(bubbleRef.current, true)
+					) {
+						return;
+					}
+				}
+				setIsActive(true);
+			}}
 		>
 			<div className="chat-bubble-header">
 				<span className="chat-bubble-role">

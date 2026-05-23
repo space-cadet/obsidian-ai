@@ -56,6 +56,8 @@ export interface ProviderProfile {
 export interface ObsidianAISettings {
 	providerProfiles: ProviderProfile[];
 	activeProviderProfileId: string;
+	/** IDs of profiles selected in the multi-select toolbar (global default) */
+	selectedProfileIds: string[];
 	selectionPrompt: string;
 	cursorPrompt: string;
 	customCommands: SlashCommand[];
@@ -233,6 +235,7 @@ const DEFAULT_PROFILES: ProviderProfile[] = [
 export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	providerProfiles: DEFAULT_PROFILES,
 	activeProviderProfileId: DEFAULT_PROFILE_ID,
+	selectedProfileIds: [],
 	selectionPrompt: selectionPrompt,
 	cursorPrompt: cursorPrompt,
 	customCommands: [],
@@ -275,9 +278,16 @@ export const normalizeSettings = (
 		? (loadedSettings?.activeProviderProfileId as string)
 		: providerProfiles[0].id;
 
+	const selectedProfileIds: string[] = Array.isArray(loadedSettings?.selectedProfileIds)
+		? loadedSettings.selectedProfileIds.filter((id) =>
+			providerProfiles.some((p) => p.id === id),
+		)
+		: [];
+
 	return {
 		providerProfiles,
 		activeProviderProfileId,
+		selectedProfileIds,
 		selectionPrompt: merged.selectionPrompt,
 		cursorPrompt: merged.cursorPrompt,
 		customCommands: merged.customCommands ?? [],
