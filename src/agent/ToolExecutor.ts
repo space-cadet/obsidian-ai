@@ -190,15 +190,28 @@ export class ToolExecutor {
 
 	private async countNotes(args: { folder?: string }): Promise<ToolResult> {
 		const folder = args.folder;
-		let files = this.app.vault.getMarkdownFiles();
+		let allFiles = this.app.vault.getFiles();
+		let markdownFiles = this.app.vault.getMarkdownFiles();
 
 		if (folder) {
-			files = files.filter(f => f.path.startsWith(folder + "/") || f.parent?.path === folder);
+			allFiles = allFiles.filter(f => f.path.startsWith(folder + "/") || f.parent?.path === folder);
+			markdownFiles = markdownFiles.filter(f => f.path.startsWith(folder + "/") || f.parent?.path === folder);
 		}
 
-		const totalCount = files.length;
+		const totalCount = allFiles.length;
+		const markdownCount = markdownFiles.length;
 
-		// Also count subfolders for context
+		// Count direct files (not in subfolders)
+		const directAllFiles = allFiles.filter(f => {
+			const relativePath = folder ? f.path.slice(folder.length + 1) : f.path;
+			return !relativePath.includes("/");
+		});
+		const directMarkdownFiles = markdownFiles.filter(f => {
+			const relativePath = folder ? f.path.slice(folder.length + 1) : f.path;
+			return !relativePath.includes("/");
+		});
+
+		// Count subfolders
 		const allLoaded = this.app.vault.getAllLoadedFiles();
 		const folderSet = new Set<string>();
 		for (const f of allLoaded) {
@@ -223,8 +236,12 @@ export class ToolExecutor {
 			success: true,
 			folder: folder ?? "(entire vault)",
 			totalCount,
+			markdownCount,
+			directCount: directAllFiles.length,
+			directMarkdownCount: directMarkdownFiles.length,
 			subfolderCount,
-			content: `${totalCount} note${totalCount !== 1 ? "s" : ""} in ${folder ?? "the entire vault"}${subfolderCount > 0 ? ` (${subfolderCount} subfolder${subfolderCount !== 1 ? "s" : ""})` : ""}`,
+			content: `${folder ?? "Vault"}: ${totalCount} total files (${markdownCount} markdown, ${totalCount - markdownCount} non-markdown). ` +
+				`${directAllFiles.length} directly in folder, ${totalCount - directAllFiles.length} in ${subfolderCount} subfolder${subfolderCount !== 1 ? "s" : ""}.`,
 		};
 	}
 
