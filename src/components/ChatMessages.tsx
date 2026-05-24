@@ -195,7 +195,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		return () => container.removeEventListener("scroll", onScroll);
 	}, [checkScrollPosition]);
 
-	/** Auto-scroll to bottom on new messages — but ONLY if user is already near bottom */
+	/** Auto-scroll to bottom on new messages or streaming content — but ONLY if user is already near bottom */
 	useEffect(() => {
 		if (messages.length > prevMessagesLength.current || isStreaming) {
 			if (isNearBottomRef.current) {
@@ -205,7 +205,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 			requestAnimationFrame(checkScrollPosition);
 		}
 		prevMessagesLength.current = messages.length;
-	}, [messages, isStreaming, checkScrollPosition]);
+	}, [messages, isStreaming, currentAiMessage, checkScrollPosition]);
 
 	/** Scroll to bottom on mount if there are messages */
 	useEffect(() => {
