@@ -90,6 +90,96 @@ Round 2: For each agent:
 - Root cause: `activeSessionId` change triggers sync effect with OLD participant list
 - Fix: setParticipants() before setActiveSessionId() so sync effect sees correct data
 
+### May 24 Bug Fixes
+
+#### Profile Dropdown Single-Select (commit `15f6dc8`)
+
+**Problem:** When exactly 1 profile was selected in the participant dropdown (checkbox list), the non-group-chat path ignored the selection and used the Settings default profile instead.
+
+**Root cause:** The `handleSend` function's non-group-chat branch used `const activeProfile = resolvedProfile` unconditionally. The `selectedProfileIds` state was only consulted when `selectedProfileIds.size >= 2` (group chat path).
+
+**Fix:** Added a check for `selectedProfileIds.size === 1` before falling back to `resolvedProfile`:
+
+```typescript
+const selectedIds = Array.from(selectedProfileIds);
+const activeProfile: ProviderProfile =
+    selectedIds.length === 1
+        ? (plugin.settings.providerProfiles.find((p) => p.id === selectedIds[0]) ?? resolvedProfile)
+        : resolvedProfile;
+```
+
+**Behavior:**
+- 0 selected → `resolvedProfile` (Settings default)
+- 1 selected → that profile from dropdown
+- 2+ selected → group chat path (unchanged)
+
+**File:** `src/components/ChatApp.tsx` (~line 915)
+
+#### Auto-Scroll During Streaming (commit `8055cd5`)
+
+**Problem:** Chat panel didn't auto-scroll while an agent was streaming a response. The scroll only happened when streaming started/stopped, not during the stream.
+
+**Root cause:** The auto-scroll `useEffect` in `ChatMessages.tsx` had `isStreaming` in its dependency array. Since `isStreaming` is a boolean that only toggles (true → false → true), the effect didn't re-run during a single continuous stream. The state that changes every chunk is `currentAiMessage` (the accumulating response text).
+
+**Fix:** Added `currentAiMessage` to the `useEffect` dependency array:
+
+```typescript
+useEffect(() => {
+    if (isStreaming && isNearBottomRef.current) {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+}, [isStreaming, currentAiMessage]); // ← added currentAiMessage
+```
+
+**Preserved behavior:** Only auto-scrolls if `isNearBottomRef.current === true` (user hasn't scrolled up to read history).
+
+**File:** `src/components/ChatMessages.tsx`
+
+### May 24 Bug Fixes
+
+#### Profile Dropdown Single-Select (commit `15f6dc8`)
+
+**Problem:** When exactly 1 profile was selected in the participant dropdown (checkbox list), the non-group-chat path ignored the selection and used the Settings default profile instead.
+
+**Root cause:** The `handleSend` function's non-group-chat branch used `const activeProfile = resolvedProfile` unconditionally. The `selectedProfileIds` state was only consulted when `selectedProfileIds.size >= 2` (group chat path).
+
+**Fix:** Added a check for `selectedProfileIds.size === 1` before falling back to `resolvedProfile`:
+
+```typescript
+const selectedIds = Array.from(selectedProfileIds);
+const activeProfile: ProviderProfile =
+    selectedIds.length === 1
+        ? (plugin.settings.providerProfiles.find((p) => p.id === selectedIds[0]) ?? resolvedProfile)
+        : resolvedProfile;
+```
+
+**Behavior:**
+- 0 selected → `resolvedProfile` (Settings default)
+- 1 selected → that profile from dropdown
+- 2+ selected → group chat path (unchanged)
+
+**File:** `src/components/ChatApp.tsx` (~line 915)
+
+#### Auto-Scroll During Streaming (commit `8055cd5`)
+
+**Problem:** Chat panel didn't auto-scroll while an agent was streaming a response. The scroll only happened when streaming started/stopped, not during the stream.
+
+**Root cause:** The auto-scroll `useEffect` in `ChatMessages.tsx` had `isStreaming` in its dependency array. Since `isStreaming` is a boolean that only toggles (true → false → true), the effect didn't re-run during a single continuous stream. The state that changes every chunk is `currentAiMessage` (the accumulating response text).
+
+**Fix:** Added `currentAiMessage` to the `useEffect` dependency array:
+
+```typescript
+useEffect(() => {
+    if (isStreaming && isNearBottomRef.current) {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+}, [isStreaming, currentAiMessage]); // ← added currentAiMessage
+```
+
+**Preserved behavior:** Only auto-scrolls if `isNearBottomRef.current === true` (user hasn't scrolled up to read history).
+
+**File:** `src/components/ChatMessages.tsx`
+
 ### May 17 Updates
 
 #### Message Metadata in Bubbles
