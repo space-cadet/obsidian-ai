@@ -924,7 +924,16 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				userContent = `${resolved.contextString}\n\n${sendText}`;
 			}
 
-			const activeProfile = resolvedProfile;
+			// When exactly 1 profile is selected in the dropdown, use it instead of
+			// the settings default (resolvedProfile).  2+ selections are handled by
+			// the group-chat path above; 0 selections fall back to resolvedProfile.
+			const selectedIds = Array.from(selectedProfileIds);
+			const activeProfile: ProviderProfile =
+				selectedIds.length === 1
+					? (plugin.settings.providerProfiles.find(
+							(p) => p.id === selectedIds[0],
+						) ?? resolvedProfile)
+					: resolvedProfile;
 			const isAgentProvider = activeProfile.provider === "agent";
 			const useTools = plugin.settings.enableAgentTools || isAgentProvider;
 			const autoApprove = plugin.settings.autoApply;
