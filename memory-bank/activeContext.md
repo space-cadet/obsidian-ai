@@ -1,20 +1,32 @@
 # Active Context
 
-*Last Updated: 2026-05-23 23:54 IST*
+*Last Updated: 2026-05-24 17:10 IST*
 
 ## Current Focus
-**Primary Task:** T13 — Agentic Tool Calling — Context Overload Fix ✅ COMPLETE
-**Secondary Tasks:** T16 (Group Chat — export feature pending), T15 (Tabbed Chat — paused), T14 (Remote Agent), T17 (Backlinks + YAML — pending)
+**Primary Task:** T16 — Group Chat — Bug Fixes (profile dropdown + auto-scroll) ✅ COMPLETE
+**Secondary Tasks:** T15 (Tabbed Chat — paused), T14 (Remote Agent), T17 (Backlinks + YAML — pending), T13 (Agentic Tool Calling — complete)
 
 ## Active Tasks
-- [T16]: 🔄 **IN PROGRESS** — Phases 1–16 implemented. Debate mode working. UI refined. Participant persistence fixed. **May 17: Message metadata, profile dropdown switching, retry profile fixes.**
+- [T16]: 🔄 **IN PROGRESS** — Phases 1–16 implemented. Debate mode working. UI refined. Participant persistence fixed. **May 24: Fixed single-select profile dropdown bug (commit `15f6dc8`) and auto-scroll during streaming (commit `8055cd5`).**
 - [T14]: 🔄 **IN PROGRESS** — Phase 3 integration test. Tailscale 2/3 complete.
 - [T15]: 🔄 **IN PROGRESS** — Phase 1–2 complete. Phase 3 (TabBar UI) paused in favor of T16.
 - [T17]: ⏸️ **PENDING** — Advanced vault tools. Backlinks + YAML first.
 - [T13]: ✅ **COMPLETED** — All 13 tools, AgentLoop, PendingToolCard.
 - [T18]: ✅ **COMPLETED** — Web search tool with 5 providers (DuckDuckGo, Brave, Tavily, Exa, SearXNG).
 
-## T16 Progress Update (2026-05-16)
+## T16 Progress Update (2026-05-24)
+
+### Bug Fix: Single-select Profile Dropdown (commit `15f6dc8`)
+- **Problem**: When exactly 1 profile selected in dropdown, chat used Settings default instead
+- **Root cause**: Non-group-chat path used `resolvedProfile` (Settings default) without checking `selectedProfileIds`
+- **Fix**: Added check for `selectedProfileIds.size === 1` in `handleSend` non-group-chat path
+- **File**: `src/components/ChatApp.tsx`
+
+### Bug Fix: Auto-scroll During Streaming (commit `8055cd5`)
+- **Problem**: Chat didn't auto-scroll while agent was streaming a response
+- **Root cause**: `useEffect` dependency array had `isStreaming` (boolean toggle) not `currentAiMessage` (changes every chunk)
+- **Fix**: Added `currentAiMessage` to `useEffect` dependency array in `ChatMessages.tsx`
+- **File**: `src/components/ChatMessages.tsx`
 
 ### Phase 1: Identity-Aware Message Model ✅
 - `ChatMessage` extended with `agentId`, `agentName`, `agentColor`

@@ -1,46 +1,162 @@
 # Edit History
+*Created: 2026-05-02 08:00:01 IST*
+*Last Updated: 2026-05-24 17:10 IST*
 
-*Auto-generated from `edits/YYYY-MM-DD/*.md` — do not edit manually.*
+### 2026-05-24
 
----
+#### 17:05:00 IST - T16: Profile dropdown single-select + auto-scroll fixes
+- Modified `src/components/ChatApp.tsx` - Added check for `selectedProfileIds.size === 1` in non-group-chat path to use selected profile instead of Settings default
+- Modified `src/components/ChatMessages.tsx` - Added `currentAiMessage` to auto-scroll `useEffect` dependency array so chat scrolls on every streaming chunk
+- Modified `memory-bank/tasks/T16.md` - Updated known issues (resolved #10 and #11), added commits to progress log, updated source_commit to 8055cd5
 
-## 2026-05-23
+### 2026-05-23
 
-| Time | Task | Summary | File |
-|------|------|---------|------|
-| 23:54 | T13 | Fixed folder context overload, enhanced list_notes, fixed count_notes accuracy | `235400-t13-context-fixes.md` |
+#### 23:54:00 IST - T13: Context overload fix + list_notes enhancement + count_notes accuracy
+- Modified `src/context/ContextEngine.ts` - Folder/tag context returns file listings + tool instructions instead of full file contents
+- Modified `src/agent/tools.ts` - `list_notes` gains `include_subfolders` (default true) and `depth` (default 1, max 3) parameters
+- Modified `src/agent/ToolExecutor.ts` - `listNotes()` returns `subfolders` array alongside files; `countNotes()` reports 5-count breakdown (total, markdown, direct, directMarkdown, subfolder)
+- Modified `src/components/ChatApp.tsx` - `buildSystemPrompt()` describes enhanced `list_notes` and `count_notes` capabilities
 
-## 2026-05-17
+### 2026-05-17
 
-| Time | Task | Summary | File |
-|------|------|---------|------|
-| 11:01 | T18 | Tavily + Exa search providers added to web search tool | `110100-t18-tavily-exa.md` |
-| 11:12 | T16 | Message metadata (model name + response time) in bubbles | `111200-t16-message-metadata.md` |
-| 11:25 | T16 | Profile dropdown mid-session switching (radio in 1:1, checkbox in council) | `112500-t16-profile-dropdown-switch.md` |
-| 11:36 | T16 | Fix: settingsTick increments on profile switch for resolvedProfile update | `113600-t16-settingsTick-fix.md` |
-| 12:16 | T16 | Fix: resolvedProfile added to handleSend deps for correct retry profile | `121600-t16-retry-profile-fix.md` |
+#### 12:16:00 IST - T16: Profile switching + message metadata + settingsTick fix
+- Modified `src/components/ChatApp.tsx` - `resolvedProfile` added to `handleSend` dependency array; `settingsTick` increments on profile switch
+- Modified `src/components/MessageBubble.tsx` - Model name + response time shown in assistant message bubbles
+- Modified `src/components/ActionBar.tsx` - Profile dropdown with radio buttons (1:1) and checkboxes (council)
 
-## 2026-05-16
+### 2026-05-16
 
-| Time | Task | Summary | File |
-|------|------|---------|------|
-| 07:56 | T15 | UI overhaul: SettingsPanel, ActionBar, ChatInput, SessionPickerModal, LLM naming | `20260516-075600-t15-ui-naming.md` |
-| 09:00 | T16 | MVP: MentionParser, Orchestrator, GroupChatView, GroupChatApp, identity badges | `090000-t16-mvp.md` |
-| 09:15 | T16 | Unified ChatApp with participant roster + council mode toggle | `091500-t16-unified.md` |
-| 09:20 | T16 | Fix: restore CHAT_VIEWTYPE registration alongside GROUP_CHAT_VIEWTYPE | `092000-t16-fix-main.md` |
-| 09:30 | T16 | Fix: handleSend dependency array includes orchestrator + participants | `093000-t16-fix-deps.md` |
-| 10:45 | T16 | Enable tool calling in group chat via AgentLoop (single-user path untouched) | `104500-t16-tools.md` |
-| 12:48 | T16 | Mobile-responsive UI: zen mode, auto-expand textarea, compact participant bar | `124800-t16-mobile-zen.md` |
-| 12:59 | T16 | Participant dropdown with checkboxes + icon-only council button | `125900-t16-dropdown.md` |
-| 13:12 | T16 | Move participant button to ActionBar + mobile horizontal scroll | `131200-t16-actionbar-move.md` |
-| 13:26 | T16 | Hide separate GroupChatView from plugin UI (code preserved) | `132600-t16-hide-groupchat.md` |
-| 13:31 | T16 | Debate mode: agents talk to each other (round 1 respond, round 2 discuss) | `133100-t16-debate-mode.md` |
-| 15:13 | T16 | Fix: debate mode toggle shows for 2+ agents (condition fix) | `151300-t16-debate-toggle-fix.md` |
-| 15:22 | T16 | Fix: reframe debate prompts to prevent "As an AI" guardrail responses | `152200-t16-debate-prompt.md` |
-| 15:40 | T16 | Fix: persist participants across plugin reloads | `154000-t16-persist-participants.md` |
-| 15:48 | T16 | Fix: sync participants when switching between sessions | `154800-t16-session-sync.md` |
-| 15:53 | T16 | Fix: set participants BEFORE activeSessionId to prevent race condition | `155300-t16-session-switch-fix.md` |
+#### 15:53:00 IST - T16: Participant persistence + session sync + race condition fix
+- Modified `src/components/ChatApp.tsx` - `setParticipants()` before `setActiveSessionId()` to prevent sync effect overwrite
+- Modified `src/types.ts` - `ChatSession` gains `selectedProfileIds`, `isGroupChat`, `participants` fields
+- Modified `src/settings.ts` - `pluginSettings` gains `selectedProfileIds` array
 
----
+#### 15:40:00 IST - T16: Persist participants across reloads
+- Modified `src/components/ChatApp.tsx` - Restore `selectedProfileIds` from active session on load; sync to session on change
 
-*Generation: 2026-05-23 23:58 IST*
+#### 15:31:00 IST - T16: Debate mode (agents talk to each other)
+- Created `src/agent/Orchestrator.ts` - `debate()` method for multi-round agent discussion
+- Modified `src/components/ChatApp.tsx` - Debate mode toggle in ActionBar; `handleSend` uses `debate()` when enabled
+
+#### 15:26:00 IST - T16: Hide separate GroupChatView
+- Modified `src/main.ts` - Commented out `GroupChatView` registration (ribbon icon, command, view)
+
+#### 15:12:00 IST - T16: Participant button in ActionBar
+- Modified `src/components/ActionBar.tsx` - Participant dropdown trigger integrated; horizontal scroll on mobile
+- Modified `src/components/ChatApp.tsx` - Removed separate participant bar row
+- Modified `styles.css` - ActionBar horizontal scroll, dropdown positioning
+
+#### 12:59:00 IST - T16: Individual participant dropdown (checkboxes)
+- Modified `src/components/ChatApp.tsx` - Checkbox list for individual profile selection
+- Modified `styles.css` - Badge styling, dropdown item hover/active states
+
+#### 12:48:00 IST - T16: Mobile-responsive UI + Zen mode
+- Modified `src/components/ChatApp.tsx` - Zen mode toggle, auto-expand textarea, compact participant bar
+- Modified `styles.css` - Zen mode styles, mobile media queries, touch device handling
+
+#### 10:45:00 IST - T16: Tool calling in council mode
+- Modified `src/agent/Orchestrator.ts` - Uses `AgentLoop` with `noteTools` when `enableAgentTools=true`
+
+#### 09:45:00 IST - T16: Stale orchestrator fix
+- Modified `src/components/ChatApp.tsx` - `handleSend` dependency array includes `orchestrator`, `participants`
+
+#### 09:30:00 IST - T16: Unified ChatApp merged
+- Modified `src/components/ChatApp.tsx` - Council mode toggle, participant bar, handleSend branching
+
+#### 09:15:00 IST - T16: Main.ts CHAT_VIEWTYPE registration restored
+- Modified `src/main.ts` - Restored `CHAT_VIEWTYPE` view registration
+
+#### 08:30:00 IST - T16: Phase 1-5 MVP
+- Created `src/agent/MentionParser.ts` - Parses `@AgentName` mentions
+- Created `src/agent/Orchestrator.ts` - Sequential dispatch, full/isolated context
+- Created `src/components/GroupChatApp.tsx` - Separate group chat panel (later hidden)
+- Modified `src/types.ts` - `ChatMessage` gains `agentId`, `agentName`, `agentColor`
+- Modified `src/components/MessageBubble.tsx` - Agent identity badge display
+
+### 2026-05-15
+
+#### 09:57:00 IST - T15/T16: Tasks created
+- Created `memory-bank/tasks/T15.md` - Tabbed Chat Interface task definition
+- Created `memory-bank/tasks/T16.md` - Group Chat task definition
+- Created `memory-bank/implementation-details/group-chat-architecture.md` - Architecture design doc
+
+### 2026-05-14
+
+#### 17:30:00 IST - T13: Agentic Tool Calling COMPLETE
+- Created `src/agent/AgentLoop.ts` - Extracted inline tool loop from ChatApp
+- Created `src/components/PendingToolCard.tsx` - Pending approval UI with summary + sticky actions
+- Modified `src/agent/tools.ts` - 13 tools implemented (read, edit, append, create, patch, edit_section, search, list, get_metadata, create_folder, move, delete, list_folders)
+- Modified `src/components/ChatApp.tsx` - `AgentLoop` integration, `PendingToolCard` usage
+
+### 2026-05-12
+
+#### 22:15:00 IST - T11: Debug-log spam diagnosis
+- Modified `src/utils/logger.ts` - Fixed log level filtering to prevent debug spam in production
+- Modified `src/utils/persistence.ts` - Added load guard for malformed data.json
+
+### 2026-05-09
+
+#### 18:45:00 IST - T13: Crash debugging + patch_note + edit_section
+- Created `src/agent/tools.ts` - `patch_note` and `edit_section` tools
+- Modified `src/components/ChatApp.tsx` - Tool result formatting (markdown tables, bulleted lists)
+
+#### 16:30:00 IST - T11: File logger + ErrorBoundary
+- Created `src/utils/logger.ts` - File-based debug logger
+- Created `src/components/ErrorBoundary.tsx` - React error boundary for chat panel
+- Modified `src/settings.ts` - Diagnostics settings (log level, log file path)
+
+### 2026-05-08
+
+#### 14:20:00 IST - T13: Basename resolution fix + diagnostics panel
+- Modified `src/agent/tools.ts` - `resolveNote()` three-tier resolution (exact path → append .md → metadataCache)
+- Created `src/components/DiagnosticsPanel.tsx` - Settings panel for debug logging
+- Modified `src/settings.ts` - Diagnostics tab in settings UI
+
+### 2026-05-07
+
+#### 11:00:00 IST - T14: Remote Agent Connectivity task created
+- Created `memory-bank/tasks/T14.md` - OpenResponses API integration task
+- Created `memory-bank/implementation-details/openresponses-integration.md` - Integration design doc
+
+### 2026-05-06
+
+#### 15:30:00 IST - T13: Agentic Tool Calling task created
+- Created `memory-bank/tasks/T13.md` - Tool calling task definition
+- Created `memory-bank/implementation-details/agentic-tool-calling.md` - Tool calling architecture doc
+
+### 2026-05-04
+
+#### 20:00:00 IST - T10: Model Discovery & Picker UX COMPLETE
+- Modified `src/settings.ts` - Provider profile management (add/edit/delete/reorder)
+- Modified `src/components/SettingsPanel.tsx` - Profile list with model picker
+
+#### 18:30:00 IST - T5: In-Place Note Editing COMPLETE
+- Created `src/noteEditing/NoteEditingBridge.ts` - Bridge between chat and note editor
+- Modified `src/components/ChatApp.tsx` - Slash commands (`/edit`, `/create`, `/append`)
+
+#### 16:00:00 IST - T3: Context & Mentions System COMPLETE
+- Created `src/context/ContextEngine.ts` - Context resolution and token estimation
+- Modified `src/components/ChatApp.tsx` - Context bar with note/folder/tag mentions
+
+#### 14:00:00 IST - T2: Conversation Chain & Memory COMPLETE
+- Created `src/utils/persistence.ts` - Chat data save/load to data.json
+- Modified `src/components/ChatApp.tsx` - Session management (new/load/delete)
+
+### 2026-05-02
+
+#### 20:00:00 IST - T9: Settings & Provider Profiles COMPLETE
+- Created `src/settings.ts` - Plugin settings with provider profiles
+- Created `src/components/SettingsPanel.tsx` - Settings UI
+
+#### 18:00:00 IST - T7: Release System & CI/CD COMPLETE
+- Created `.github/workflows/release.yml` - GitHub Actions release workflow
+- Modified `manifest.json` - Version bump to 1.2.0
+
+#### 16:00:00 IST - T4: Streaming COMPLETE
+- Modified `src/api/ChatApiManager.ts` - SSE streaming with AbortController
+- Modified `src/components/ChatApp.tsx` - Streaming UI with stop button
+
+#### 14:00:00 IST - T1: Chat Panel COMPLETE
+- Created `src/views/ObsidianAIChatView.ts` - ItemView for chat panel
+- Created `src/components/ChatApp.tsx` - Main React chat component
+- Modified `src/main.ts` - View registration, ribbon icon, command

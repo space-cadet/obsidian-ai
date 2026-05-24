@@ -1,11 +1,11 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-23 23:54 IST*
+*Last Updated: 2026-05-24 17:10 IST*
 
-**Started**: 2026-05-23 23:54 IST
-**Focus Task**: T13 — Agentic Tool Calling (ContextEngine fixes, list_notes enhancement, count_notes accuracy)
-**Session File**: `sessions/2026-05-23.md`
-**Status**: T13 context overload fixes complete. Commits pushed.
+**Started**: 2026-05-24 15:45 IST
+**Focus Task**: T16 — Group Chat (profile dropdown fix + auto-scroll fix)
+**Session File**: `sessions/2026-05-24.md`
+**Status**: T16 bug fixes complete. Commits pushed.
 
 ## Overview
 
@@ -50,23 +50,21 @@
 
 ## Current Session Details
 
-**Commits**: `6c396bb`, `d19de84`
-**Files touched**: `src/context/ContextEngine.ts`, `src/agent/tools.ts`, `src/agent/ToolExecutor.ts`, `src/components/ChatApp.tsx`
+**Commits**: `15f6dc8`, `8055cd5`
+**Files touched**: `src/components/ChatApp.tsx`, `src/components/ChatMessages.tsx`
 **Build status**: ✅ tsc + esbuild pass
 **Pushed to**: `origin/main`
 
-### T13 — Context Engine Fixes
-- `src/context/ContextEngine.ts` — Folder/tag context returns file listings + tool instructions instead of full file contents
-- `src/agent/tools.ts` — `list_notes` gains `include_subfolders` and `depth` parameters
-- `src/agent/ToolExecutor.ts` — `listNotes()` returns `subfolders` array; `countNotes()` reports 5-count breakdown
-- `src/components/ChatApp.tsx` — `buildSystemPrompt()` describes enhanced capabilities
+### T16 — Bug Fixes (2026-05-24)
+- `src/components/ChatApp.tsx` — Single-select profile dropdown fix: check `selectedProfileIds.size === 1` and use selected profile instead of Settings default
+- `src/components/ChatMessages.tsx` — Auto-scroll during streaming: add `currentAiMessage` to `useEffect` dependency array so chat scrolls on every chunk
 
 ## User Feedback
-- "Your context is overloaded. You've done enough work as is." — Session ended due to context compaction.
-- Export feature request needs UI clarification.
+- "Please make the needed fix" — User approved both bug fixes after investigation
+- "Commit it" — User approved commits for both fixes
 
 ## Next Steps
-- Export feature: Needs exact UI location specification
+- Pull latest to `~/code/obsidian-ai/` (canonical repo) and test in actual Obsidian
 - Issue #3: Token usage for tool calls (`stepTokenEstimates`)
 - Issue #4: Agent dropdown click-outside handler
 - Issue #2: Tool-call streaming ContentPart cleanup
