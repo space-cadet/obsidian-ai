@@ -72,6 +72,8 @@ export interface ChatSession {
 	participants?: GroupChatParticipant[];
 	/** IDs of profiles selected in the multi-select toolbar */
 	selectedProfileIds?: string[];
+	/** Whether thinking/reasoning is enabled for this session */
+	thinkingEnabled?: boolean;
 }
 
 export interface StoredChatData {

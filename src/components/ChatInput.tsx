@@ -13,6 +13,10 @@ interface ChatInputProps {
 	editMessage?: string;
 	onToggleActiveNote?: () => void;
 	hasActiveNote?: boolean;
+	/** Whether thinking mode is enabled */
+	thinkingEnabled?: boolean;
+	/** Toggle thinking mode */
+	onToggleThinking?: () => void;
 }
 
 type AutoType = "mention" | "slash" | "wikilink";
@@ -86,6 +90,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	editMessage,
 	onToggleActiveNote,
 	hasActiveNote,
+	thinkingEnabled,
+	onToggleThinking,
 }) => {
 	const [value, setValue] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -375,6 +381,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
 						type="button"
 					>
 						📎
+					</button>
+				)}
+				{onToggleThinking && (
+					<button
+						className={`chat-input-thinking${thinkingEnabled ? " is-active" : ""}`}
+						onClick={onToggleThinking}
+						title={thinkingEnabled ? "Thinking mode ON — Click to disable" : "Thinking mode OFF — Click to enable"}
+						type="button"
+					>
+						{thinkingEnabled ? "🧠" : "💤"}
 					</button>
 				)}
 				<textarea
