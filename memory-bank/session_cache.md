@@ -1,30 +1,30 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-24 17:10 IST*
+*Last Updated: 2026-05-25 13:01 IST*
 
-**Started**: 2026-05-24 15:45 IST
-**Focus Task**: T16 — Group Chat (profile dropdown fix + auto-scroll fix)
-**Session File**: `sessions/2026-05-24.md`
-**Status**: T16 bug fixes complete. Commits pushed.
+**Started**: 2026-05-25 12:03 IST
+**Focus Task**: T16 — Group Chat (Issue #12 duplicate profile + Issue #13 model fetching)
+**Session File**: `sessions/2026-05-25.md`
+**Status**: T16 bug fixes complete. 2 issues fixed, committed, pushed.
 
 ## Overview
 
 - Active: 4 | Paused: 2 | Completed: 11 | Cancelled: 0
-- Last Session: 2026-05-17 (T18 Tavily+Exa; T16 profile switching fixes)
-- Current Period: night
+- Last Session: 2026-05-24 (T16 profile dropdown + auto-scroll fixes)
+- Current Period: afternoon
 
 ## Session History (Last 10)
 
-1. `sessions/2026-05-23.md` — T13: Fixed folder context overload, enhanced `list_notes` (subfolders + depth), fixed `count_notes` accuracy. Commits: `6c396bb`, `d19de84`
-2. `sessions/2026-05-17.md` — T18: Tavily + Exa providers; T16: Message metadata, profile dropdown switching, settingsTick fix, retry profile fix (5 commits)
-3. `sessions/2026-05-16.md` — T16: Post-MVP refinement — Mobile UI, zen mode, participant dropdown, debate mode, participant persistence, session switching fixes (10 commits)
-4. `sessions/2026-05-16.md` — T16: Group Chat MVP — MentionParser, Orchestrator, unified ChatApp, participant roster, council toggle, identity badges, handleSend fix
-5. `sessions/2026-05-16.md` — T15: Phase 1 ✅ (Settings profile list), Phase 2 ✅ (Per-profile engine), UI overhaul, LLM naming
-6. `sessions/2026-05-15.md` — T15/T16: CREATED — Tabbed chat & group chat tasks, architecture docs
-7. `sessions/2026-05-14.md` — T13: COMPLETE — 4 new tools, AgentLoop extracted, PendingToolCard created
-8. `sessions/2026-05-12.md` — T11: debug-log spam diagnosis; T2: queued persistence + load guard; T9: settings rewrite
-9. `sessions/2026-05-09.md` — T13: crash debugging, patch_note, edit_section; T11: file logger, ErrorBoundary
-10. `sessions/2026-05-08.md` — T13: basename resolution fix, diagnostics panel; T11: diagnostics UI
+1. `sessions/2026-05-25.md` — T16: Fixed duplicate profile ID on copy (de84c4a) + model fetching for all providers (9d3d1a3)
+2. `sessions/2026-05-24.md` — T16: Profile dropdown single-select + auto-scroll streaming fixes
+3. `sessions/2026-05-23.md` — T13: Fixed folder context overload, enhanced `list_notes` (subfolders + depth), fixed `count_notes` accuracy. Commits: `6c396bb`, `d19de84`
+4. `sessions/2026-05-17.md` — T18: Tavily + Exa providers; T16: Message metadata, profile dropdown switching, settingsTick fix, retry profile fix (5 commits)
+5. `sessions/2026-05-16.md` — T16: Post-MVP refinement — Mobile UI, zen mode, participant dropdown, debate mode, participant persistence, session switching fixes (10 commits)
+6. `sessions/2026-05-16.md` — T16: Group Chat MVP — MentionParser, Orchestrator, unified ChatApp, participant roster, council toggle, identity badges, handleSend fix
+7. `sessions/2026-05-16.md` — T15: Phase 1 ✅ (Settings profile list), Phase 2 ✅ (Per-profile engine), UI overhaul, LLM naming
+8. `sessions/2026-05-15.md` — T15/T16: CREATED — Tabbed chat & group chat tasks, architecture docs
+9. `sessions/2026-05-14.md` — T13: COMPLETE — 4 new tools, AgentLoop extracted, PendingToolCard created
+10. `sessions/2026-05-12.md` — T11: debug-log spam diagnosis; T2: queued persistence + load guard; T9: settings rewrite
 
 ## Task Registry
 
