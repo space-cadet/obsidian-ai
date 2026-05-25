@@ -13,6 +13,8 @@ interface ChatInputProps {
 	editMessage?: string;
 	onToggleActiveNote?: () => void;
 	hasActiveNote?: boolean;
+	showThinking?: boolean;
+	onToggleThinking?: () => void;
 }
 
 type AutoType = "mention" | "slash" | "wikilink";
@@ -86,6 +88,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	editMessage,
 	onToggleActiveNote,
 	hasActiveNote,
+	showThinking,
+	onToggleThinking,
 }) => {
 	const [value, setValue] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -423,21 +427,33 @@ const ChatInput: React.FC<ChatInputProps> = ({
 						</button>
 					</div>
 				) : (
-					<button
-						className="chat-btn chat-send-btn chat-send-icon"
-						onClick={() => {
-							const trimmed = value.trim();
-							if (trimmed) {
-								onSend(trimmed);
-								setValue("");
-								setAuto(null);
-							}
-						}}
-						disabled={!value.trim()}
-						title="Send"
-					>
-						▶
-					</button>
+					<>
+						{onToggleThinking && (
+							<button
+								className={`chat-btn chat-icon-btn${showThinking ? " is-active" : ""}`}
+								onClick={onToggleThinking}
+								title={showThinking ? "Hide thinking/reasoning" : "Show thinking/reasoning"}
+								type="button"
+							>
+								💭
+							</button>
+						)}
+						<button
+							className="chat-btn chat-send-btn chat-send-icon"
+							onClick={() => {
+								const trimmed = value.trim();
+								if (trimmed) {
+									onSend(trimmed);
+									setValue("");
+									setAuto(null);
+								}
+							}}
+							disabled={!value.trim()}
+							title="Send"
+						>
+							▶
+						</button>
+					</>
 				)}
 			</div>
 		</div>
