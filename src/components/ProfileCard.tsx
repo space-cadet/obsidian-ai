@@ -607,8 +607,10 @@ export function ProfileList({ plugin }: ProfileListProps) {
 		(id: string) => {
 			const source = profiles.find((p) => p.id === id);
 			if (!source) return;
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { id: _unused, ...sourceWithoutId } = source;
 			const dup = createProviderProfile({
-				...source,
+				...sourceWithoutId,
 				name: `${source.name} copy`,
 			});
 			const next = [...profiles, dup];
