@@ -336,6 +336,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	// ─── Zen Mode ───
 	const [zenMode, setZenMode] = useState(false);
 	const [debateMode, setDebateMode] = useState(false);
+	const [showThinking, setShowThinking] = useState(false);
 	const [originalMessages, setOriginalMessages] = useState<ChatMessage[]>([]);
 	const [editMessageText, setEditMessageText] = useState<string>("");
 	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(
@@ -1430,7 +1431,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		if (plugin.settings.selectedProfileIds.length > 0) {
 			setSelectedProfileIds(new Set(plugin.settings.selectedProfileIds));
 		} else {
-			setSelectedProfileIds(new Set());
+			// Fall back to the active provider profile so the dropdown is never empty
+			const activeProfile = getActiveProviderProfile(plugin.settings);
+			setSelectedProfileIds(new Set([activeProfile.id]));
 		}
 		setDebateMode(false);
 		setWasTruncated(false);
@@ -1853,6 +1856,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				isStreaming={isStreaming}
 				isEditing={isEditing}
 				app={plugin.app}
+				showThinking={showThinking}
 				onAppend={handleAppend}
 				onInsertAtCursor={handleInsertAtCursor}
 				onApply={handleApply}
@@ -1882,6 +1886,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				editMessage={editMessageText}
 				onToggleActiveNote={handleToggleActiveNote}
 				hasActiveNote={contextItems.some((item) => item.type === "active-note")}
+				showThinking={showThinking}
+				onToggleThinking={() => setShowThinking((t) => !t)}
 			/>
 			{showSessionPicker && (
 				<SessionPickerModal

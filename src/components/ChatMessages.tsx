@@ -147,6 +147,7 @@ interface ChatMessagesProps {
 	onApplyToTarget: (content: string, target: string) => void;
 	onCreateNote: (content: string, target: string) => void;
 	onAppendToTarget: (content: string, target: string) => void;
+	showThinking?: boolean;
 }
 
 const ChatMessages: React.FC<ChatMessagesProps> = ({
@@ -164,6 +165,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	onApplyToTarget,
 	onCreateNote,
 	onAppendToTarget,
+	showThinking,
 }) => {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
@@ -239,6 +241,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 						key={msg.id}
 						message={msg}
 						app={app}
+						showThinking={showThinking}
 						onAppend={onAppend}
 						onInsertAtCursor={onInsertAtCursor}
 						onApply={onApply}

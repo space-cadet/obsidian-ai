@@ -8,6 +8,7 @@ interface MessageBubbleProps {
 	message: ChatMessage;
 	app: App;
 	isStreaming?: boolean;
+	showThinking?: boolean;
 	onAppend: (content: string) => void;
 	onInsertAtCursor: (content: string) => void;
 	onApply: (content: string) => void;
@@ -49,12 +50,14 @@ export function stripThinkingTags(text: string): string {
 function TextSegment({
 	content,
 	app,
+	showThinking,
 }: {
 	content: string;
 	app: App;
+	showThinking?: boolean;
 }): React.ReactElement {
 	const ref = useRef<HTMLDivElement>(null);
-	const cleanContent = stripThinkingTags(content);
+	const cleanContent = showThinking ? content : stripThinkingTags(content);
 
 	useEffect(() => {
 		if (!ref.current) return;
@@ -85,6 +88,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	message,
 	app,
 	isStreaming,
+	showThinking,
 	onAppend,
 	onInsertAtCursor,
 	onApply,
@@ -175,7 +179,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 				<div className="chat-bubble-content-inline">
 					{renderParts!.map((part, i) =>
 						part.type === "text" ? (
-							<TextSegment key={i} content={part.content} app={app} />
+							<TextSegment key={i} content={part.content} app={app} showThinking={showThinking} />
 						) : (
 							<ToolCallNotification
 								key={i}
