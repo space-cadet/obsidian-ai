@@ -11,6 +11,7 @@ import { ChatPluginLike } from "../views/ObsidianAIChatView";
 import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
 import { ChatMessage, ChatSession, ContextItem, GroupChatParticipant, ContentPart } from "../types";
 import { resolveContextItems } from "../context/ContextEngine";
+import { resolveAttachments } from "../context/AttachmentEngine";
 import { estimateTokens } from "../context/tokenEstimator";
 import { noteTools } from "../agent/tools";
 import { ToolExecutor } from "../agent/ToolExecutor";
@@ -343,6 +344,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		null,
 	);
 	const [chatDataLoaded, setChatDataLoaded] = useState(false);
+	/** Current message attachments (passed to ChatInput) */
+	const [messageAttachments, setMessageAttachments] = useState<import("../types").Attachment[]>([]);
 	const controllerRef = useRef<AbortController | null>(null);
 	const saveTimerRef = useRef<number | null>(null);
 	const skipNextAutosaveRef = useRef(false);
@@ -738,8 +741,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	}, []);
 
 	const handleSend = useCallback(
-		async (text: string) => {
-			if (!text.trim() || isStreaming) return;
+		async (text: string, attachments?: import("../types").Attachment[]) => {
+			if ((!text.trim() && (!attachments || attachments.length === 0)) || isStreaming) return;
 
 			// ═══════════════════════════════════════════════════════
 			// GROUP CHAT PATH
@@ -750,6 +753,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 					role: "user",
 					content: text,
 					timestamp: Date.now(),
+					attachments: messageAttachments && messageAttachments.length > 0 ? messageAttachments : undefined,
 				};
 				const currentActiveId = activeSessionIdRef.current;
 				setSessions((prev) =>
@@ -762,7 +766,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				setIsStreaming(true);
 				controllerRef.current = new AbortController();
 
-				const { targets } = orchestrator.parseAndRoute(text);
+				const { targets } = orchestrator.parseAndRoute(text, messageAttachments);
 				setTypingAgents(new Set(targets.map((t) => t.name)));
 
 				try {
@@ -896,6 +900,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				content: text,
 				timestamp: Date.now(),
 				contextItems: sendContextItems,
+				attachments: attachments && attachments.length > 0 ? attachments : undefined,
 				estimatedTokens: userTokenEstimate,
 			};
 
@@ -946,6 +951,22 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			const autoApprove = plugin.settings.autoApply;
 			const maxAgentSteps = plugin.settings.maxAgentSteps;
 
+			// Resolve attachments to multimodal content parts if present
+			let userMessageContent: string | import("../api").MessageContentPart[] = userContent;
+			if (attachments && attachments.length > 0) {
+				const resolvedParts = await resolveAttachments(
+					attachments,
+					plugin.app,
+					activeProfile.provider,
+				);
+				if (resolvedParts.length > 0) {
+					userMessageContent = [
+						{ type: "text", text: userContent },
+						...resolvedParts,
+					];
+				}
+			}
+
 			const chatMessages = [
 				{
 					role: "system" as const,
@@ -956,7 +977,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 					),
 				},
 				...history,
-				{ role: "user" as const, content: userContent },
+				{ role: "user" as const, content: userMessageContent },
 			];
 
 			let fullText = "";
@@ -1888,6 +1909,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				hasActiveNote={contextItems.some((item) => item.type === "active-note")}
 				showThinking={showThinking}
 				onToggleThinking={() => setShowThinking((t) => !t)}
+				attachments={messageAttachments}
+				onAttachmentsChange={setMessageAttachments}
 			/>
 			{showSessionPicker && (
 				<SessionPickerModal

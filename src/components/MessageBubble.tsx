@@ -202,6 +202,20 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 				</div>
 			)}
 
+			{/* Attachments for user messages */}
+			{message.role === "user" && message.attachments && message.attachments.length > 0 && (
+				<div className="chat-message-attachments">
+					{message.attachments.map((att) => (
+						<div key={att.id} className="chat-attachment-chip chat-attachment-chip-readonly">
+							<span className="chat-attachment-icon">
+								{att.type === "image" ? "🖼️" : att.type === "pdf" ? "📑" : "📄"}
+							</span>
+							<span className="chat-attachment-name">{att.name}</span>
+						</div>
+					))}
+				</div>
+			)}
+
 			{/* Token count + metadata */}
 			{(message.estimatedTokens !== undefined || message.modelName || message.responseTimeMs) && (
 				<div className="chat-message-metadata">

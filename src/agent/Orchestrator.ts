@@ -90,7 +90,7 @@ export class Orchestrator {
 	 * If no mentions: all agents respond.
 	 * If mentions: only mentioned agents respond.
 	 */
-	parseAndRoute(text: string): { targets: AgentEngine[]; cleanText: string } {
+	parseAndRoute(text: string, attachments?: import("../types").Attachment[]): { targets: AgentEngine[]; cleanText: string } {
 		const parsed = parseMentions(text);
 		if (parsed.mentions.length > 0) {
 			const targets = this.engines.filter((e) =>

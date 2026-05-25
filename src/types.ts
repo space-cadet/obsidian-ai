@@ -1,5 +1,13 @@
 import type { ToolCall, ToolResult } from "./agent/types";
 
+/** Attachment to a chat message — vault file the LLM should consume */
+export interface Attachment {
+	id: string;
+	type: "markdown" | "image" | "pdf";
+	path: string;
+	name: string;
+}
+
 /** A segment of message content — either text or an inline tool call */
 export type ContentPart =
 	| { type: "text"; content: string }
@@ -17,6 +25,8 @@ export interface ChatMessage {
 	};
 	/** Context items attached when this message was sent */
 	contextItems?: ContextItem[];
+	/** Files attached to this message for the LLM to consume */
+	attachments?: Attachment[];
 	/** Estimated token count for this message (including context for user messages) */
 	estimatedTokens?: number;
 	/** Model name that generated this message (e.g. "gpt-4o", "gemini-1.5-pro") */

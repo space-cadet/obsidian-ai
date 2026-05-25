@@ -21,7 +21,22 @@ import { setGeneratedResponseEffect } from "./modules/AIExtension";
 import { parseCommand } from "./modules/commands/parser";
 import { MessageQueue } from "./modules/messageHistory/queue";
 
-const MESSAGE_HISTORY_LIMIT = 20;
+/**
+ * Content part for multimodal messages — text, image, or file.
+ */
+export type MessageContentPart =
+	| { type: "text"; text: string }
+	| { type: "image"; image: string }
+	| { type: "file"; data: string; mimeType: string };
+
+/**
+ * A chat message for the AI SDK — supports string or multimodal content.
+ * Uses SDK-compatible typing with proper role discrimination.
+ */
+export type SdkMessage =
+	| { role: "system"; content: string | MessageContentPart[] }
+	| { role: "user"; content: string | MessageContentPart[] }
+	| { role: "assistant"; content: string | MessageContentPart[] };
 
 export type HistoryMessage = {
 	mode: string;
@@ -335,7 +350,7 @@ export class ChatApiManager {
 		this.app = app;
 		this.settings = settings;
 		this.messageHistory = new MessageQueue<HistoryMessage>(
-			settings.messageHistory ? MESSAGE_HISTORY_LIMIT : 0,
+			settings.messageHistory ? (settings.maxContextMessages || 50) : 0,
 		);
 	}
 
@@ -382,10 +397,7 @@ export class ChatApiManager {
 	 * @param signal - AbortSignal for cancellation.
 	 */
 	public async *streamChat(
-		messages: Array<{
-			role: "user" | "assistant" | "system";
-			content: string;
-		}>,
+		messages: SdkMessage[],
 		signal?: AbortSignal,
 		profile?: ProviderProfile,
 	): AsyncIterable<string> {
@@ -398,7 +410,7 @@ export class ChatApiManager {
 
 		const result = streamText({
 			model,
-			messages,
+			messages: messages as any,
 			abortSignal: signal,
 		});
 
@@ -417,7 +429,7 @@ export class ChatApiManager {
 	 * @param signal - AbortSignal for cancellation.
 	 */
 	public async *streamChatWithTools(
-		messages: Array<any>,
+		messages: SdkMessage[],
 		tools: any,
 		signal?: AbortSignal,
 		profile?: ProviderProfile,
@@ -431,7 +443,7 @@ export class ChatApiManager {
 
 		const result = streamText({
 			model,
-			messages,
+			messages: messages as any,
 			tools,
 			stopWhen: stepCountIs(1),
 			abortSignal: signal,
@@ -575,7 +587,7 @@ export class ChatApiManager {
 	public updateSettings(settings: ObsidianAISettings): void {
 		this.settings = settings;
 		this.messageHistory = new MessageQueue<HistoryMessage>(
-			settings.messageHistory ? MESSAGE_HISTORY_LIMIT : 0,
+			settings.messageHistory ? (settings.maxContextMessages || 50) : 0,
 		);
 	}
 

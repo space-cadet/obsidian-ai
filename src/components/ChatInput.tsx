@@ -1,10 +1,10 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { App, TFile, TFolder } from "obsidian";
+import { App, Notice, TFile, TFolder } from "obsidian";
 import { ContextItem } from "../types";
 
 interface ChatInputProps {
 	app: App;
-	onSend: (text: string) => void;
+	onSend: (text: string, attachments?: import("../types").Attachment[]) => void;
 	onStop: () => void;
 	onAddMention: (item: ContextItem) => void;
 	isStreaming: boolean;
@@ -19,6 +19,10 @@ interface ChatInputProps {
 	onToggleThinking?: () => void;
 	/** Whether to show thinking/reasoning content in messages */
 	showThinking?: boolean;
+	/** Current attachments (for rendering chips) */
+	attachments?: import("../types").Attachment[];
+	/** Callback when attachments change */
+	onAttachmentsChange?: (attachments: import("../types").Attachment[]) => void;
 }
 
 type AutoType = "mention" | "slash" | "wikilink";
@@ -95,10 +99,77 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	thinkingEnabled,
 	onToggleThinking,
 	showThinking,
+	attachments = [],
+	onAttachmentsChange,
 }) => {
 	const [value, setValue] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const [auto, setAuto] = useState<AutoState | null>(null);
+	const [showAttachDropdown, setShowAttachDropdown] = useState(false);
+	const attachDropdownRef = useRef<HTMLDivElement>(null);
+
+	// Close attachment dropdown when clicking outside
+	useEffect(() => {
+		if (!showAttachDropdown) return;
+		const handleClick = (e: MouseEvent) => {
+			const target = e.target as Node;
+			if (
+				attachDropdownRef.current &&
+				!attachDropdownRef.current.contains(target)
+			) {
+				setShowAttachDropdown(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClick);
+		return () => document.removeEventListener("mousedown", handleClick);
+	}, [showAttachDropdown]);
+
+	const handleAttachFile = useCallback((type: "note" | "image" | "pdf") => {
+		setShowAttachDropdown(false);
+		// Use Obsidian's suggester modal for file picking
+		const files = app.vault.getAllLoadedFiles().filter((f) => {
+			if (!(f instanceof TFile)) return false;
+			if (type === "note") return f.extension === "md";
+			if (type === "image") return ["png", "jpg", "jpeg", "gif", "webp", "bmp"].includes(f.extension);
+			if (type === "pdf") return f.extension === "pdf";
+			return false;
+		}) as TFile[];
+
+		if (files.length === 0) {
+			new Notice(`No ${type} files found in vault.`);
+			return;
+		}
+
+		// Simple picker: show dropdown with file list
+		const modal = document.createElement("div");
+		modal.className = "chat-attach-modal";
+		modal.innerHTML = `
+			<div class="chat-attach-modal-content">
+				<h4>Select ${type === "note" ? "Note" : type === "image" ? "Image" : "PDF"}</h4>
+				<div class="chat-attach-list"></div>
+				<button class="chat-btn chat-attach-cancel">Cancel</button>
+			</div>
+		`;
+		const list = modal.querySelector(".chat-attach-list")!;
+		files.forEach((file) => {
+			const item = document.createElement("div");
+			item.className = "chat-attach-item";
+			item.textContent = file.path;
+			item.addEventListener("click", () => {
+				const { createAttachment } = require("../context/AttachmentEngine");
+				const att = createAttachment(file.path);
+				onAttachmentsChange?.([...attachments, att]);
+				modal.remove();
+			});
+			list.appendChild(item);
+		});
+		modal.querySelector(".chat-attach-cancel")!.addEventListener("click", () => modal.remove());
+		document.body.appendChild(modal);
+	}, [app, attachments, onAttachmentsChange]);
+
+	const handleRemoveAttachment = useCallback((id: string) => {
+		onAttachmentsChange?.(attachments.filter((a) => a.id !== id));
+	}, [attachments, onAttachmentsChange]);
 
 	// Auto-resize textarea based on content
 	useEffect(() => {
@@ -330,10 +401,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			if (e.key === "Enter" && !e.shiftKey) {
 				e.preventDefault();
 				const trimmed = value.trim();
-				if (trimmed && !isStreaming) {
-					onSend(trimmed);
+				if ((trimmed || attachments.length > 0) && !isStreaming) {
+					onSend(trimmed, attachments.length > 0 ? attachments : undefined);
 					setValue("");
 					setAuto(null);
+					onAttachmentsChange?.([]);
 				}
 			}
 		},
@@ -344,6 +416,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			value,
 			isStreaming,
 			onSend,
+			attachments,
+			onAttachmentsChange,
 		],
 	);
 
@@ -376,6 +450,51 @@ const ChatInput: React.FC<ChatInputProps> = ({
 				</div>
 			)}
 			<div className="chat-input-area">
+				{/* Attachment dropdown */}
+				<div style={{ position: "relative" }} ref={attachDropdownRef}>
+					<button
+						className="chat-input-attach"
+						onClick={() => setShowAttachDropdown((v) => !v)}
+						title="Attach file"
+						type="button"
+					>
+						📎
+					</button>
+					{showAttachDropdown && (
+						<div className="chat-mention-dropdown">
+							<div
+								className="chat-mention-item"
+								onMouseDown={(e) => {
+									e.preventDefault();
+									handleAttachFile("note");
+								}}
+							>
+								<span className="chat-mention-icon">📄</span>
+								<span className="chat-mention-label">Attach Note</span>
+							</div>
+							<div
+								className="chat-mention-item"
+								onMouseDown={(e) => {
+									e.preventDefault();
+									handleAttachFile("image");
+								}}
+							>
+								<span className="chat-mention-icon">🖼️</span>
+								<span className="chat-mention-label">Attach Image</span>
+							</div>
+							<div
+								className="chat-mention-item"
+								onMouseDown={(e) => {
+									e.preventDefault();
+									handleAttachFile("pdf");
+								}}
+							>
+								<span className="chat-mention-icon">📑</span>
+								<span className="chat-mention-label">Attach PDF</span>
+							</div>
+						</div>
+					)}
+				</div>
 				{onToggleActiveNote && (
 					<button
 						className={`chat-input-attach${hasActiveNote ? " is-active" : ""}`}
@@ -383,7 +502,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 						title={hasActiveNote ? "Remove active note from context" : "Include active note as context"}
 						type="button"
 					>
-						📎
+						📌
 					</button>
 				)}
 				{onToggleThinking && (
@@ -406,6 +525,27 @@ const ChatInput: React.FC<ChatInputProps> = ({
 					onKeyDown={handleKeyDown}
 					disabled={isStreaming}
 				/>
+				{/* Attachment chips */}
+				{attachments.length > 0 && (
+					<div className="chat-attachment-chips">
+						{attachments.map((att) => (
+							<div key={att.id} className="chat-attachment-chip">
+								<span className="chat-attachment-icon">
+									{att.type === "image" ? "🖼️" : att.type === "pdf" ? "📑" : "📄"}
+								</span>
+								<span className="chat-attachment-name">{att.name}</span>
+								<button
+									className="chat-attachment-remove"
+									onClick={() => handleRemoveAttachment(att.id)}
+									title="Remove attachment"
+									type="button"
+								>
+									×
+								</button>
+							</div>
+						))}
+					</div>
+				)}
 				{isStreaming ? (
 					<button
 						className="chat-btn chat-stop-btn chat-send-icon"
@@ -420,13 +560,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
 							className="chat-btn chat-send-btn"
 							onClick={() => {
 								const trimmed = value.trim();
-								if (trimmed) {
-									onSend(trimmed);
+								if ((trimmed || attachments.length > 0) && !isStreaming) {
+									onSend(trimmed, attachments.length > 0 ? attachments : undefined);
 									setValue("");
 									setAuto(null);
+									onAttachmentsChange?.([]);
 								}
 							}}
-							disabled={!value.trim()}
+							disabled={!value.trim() && attachments.length === 0}
 						>
 							Resubmit
 						</button>
@@ -457,13 +598,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
 							className="chat-btn chat-send-btn chat-send-icon"
 							onClick={() => {
 								const trimmed = value.trim();
-								if (trimmed) {
-									onSend(trimmed);
+								if ((trimmed || attachments.length > 0) && !isStreaming) {
+									onSend(trimmed, attachments.length > 0 ? attachments : undefined);
 									setValue("");
 									setAuto(null);
+									onAttachmentsChange?.([]);
 								}
 							}}
-							disabled={!value.trim()}
+							disabled={!value.trim() && attachments.length === 0}
 							title="Send"
 						>
 							▶
