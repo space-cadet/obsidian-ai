@@ -47,4 +47,41 @@ setSelectedProfileIds(new Set([fallbackId]));
 
 ---
 
-*Last Updated: 2026-05-25 19:09 IST*
+---
+
+## File Attachments (📎)
+
+**Feature:** Allow users to attach vault files (markdown notes, images, PDFs) to chat messages for LLM consumption.
+
+**State:**
+- `messageAttachments: Attachment[]` in `ChatApp.tsx`
+- Passed down: `ChatApp` → `ChatInput` via `attachments` and `onAttachmentsChange` props
+
+**UI:**
+- 📎 button in `ChatInput.tsx`, opens dropdown with "Attach Note", "Attach Image", "Attach PDF"
+- Attachment chips shown above textarea with file type icon (📄/🖼️/📑) and name
+- Remove button (×) on each chip
+- Read-only chips rendered below user messages in `MessageBubble`
+
+**Attachment Resolution:**
+- `AttachmentEngine.resolveAttachments()` in `src/context/AttachmentEngine.ts`
+- Markdown → `TextPart` with file header
+- Image → `ImagePart` (base64, resized to 1024px max via canvas)
+- PDF → `FilePart` for Gemini; text extract or skip for other providers
+
+**API Integration:**
+- `handleSend()` in `ChatApp.tsx` calls `resolveAttachments()` before API call
+- Resolved parts combined with text: `[{type:"text", text}, ...resolvedParts]`
+- `SdkMessage` type in `api.ts` supports `string | MessageContentPart[]` content
+
+**Files:**
+- `src/components/ChatApp.tsx` — `messageAttachments` state, resolution in `handleSend()`
+- `src/components/ChatInput.tsx` — 📎 dropdown, attachment chips, `onAttachmentsChange`
+- `src/components/MessageBubble.tsx` — read-only attachment chip rendering
+- `src/context/AttachmentEngine.ts` — attachment resolution engine
+- `src/api.ts` — `SdkMessage`, `MessageContentPart` multimodal types
+- `src/types.ts` — `Attachment` interface
+
+---
+
+*Last Updated: 2026-05-25 23:03 IST*

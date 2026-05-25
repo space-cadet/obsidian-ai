@@ -1,6 +1,37 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-25 20:45 IST*
+*Last Updated: 2026-05-25 23:03 IST*
+
+### 2026-05-25
+
+#### 23:03:00 IST - META-1: Memory bank update for T19 implementation + T21 creation
+- Modified `memory-bank/tasks/T19.md` - Marked core implementation complete, updated Last Active to 2026-05-25 23:03, added commit a071a24
+- Modified `memory-bank/tasks/T16.md` - Added Phase 17 thinking display toggle, updated Last Active
+- Modified `memory-bank/tasks.md` - Added T21 to registry (Active: 6), updated T19 description
+- Modified `memory-bank/activeContext.md` - Updated current focus to T19, added T21 and T19 implementation sections
+- Modified `memory-bank/progress.md` - Added T19 and T21 progress sections, updated Last Updated
+- Modified `memory-bank/session_cache.md` - Updated for T19 completion and T21 creation
+- Modified `memory-bank/sessions/2026-05-25.md` - Appended night session for T19 implementation work
+- Modified `memory-bank/techContext.md` - Added Attachment System architecture and multimodal message types
+- Created `memory-bank/edits/2026-05-25/2244-T19-implementation.md` - Edit chunk for T19 implementation
+
+#### 22:51:00 IST - T18: Web search implementation doc relocated
+- Created `memory-bank/implementation-details/web-search.md` - Moved from stale `memory-bank/implementation/` location
+- Deleted `memory-bank/implementation/T18-web-search.md` - Content now in implementation-details
+
+#### 22:50:00 IST - T21: CLI test harness task and implementation doc created
+- Created `memory-bank/tasks/T21.md` - Task file with completion criteria, architecture, and test script plans
+- Created `memory-bank/implementation-details/cli-test-harness.md` - Implementation doc with mock vault, settings loader, provider support matrix
+
+#### 22:44:00 IST - T19: File attachments core implementation complete
+- Created `src/context/AttachmentEngine.ts` - Resolve vault files to AI SDK content parts (markdown→TextPart, image→ImagePart, PDF→FilePart)
+- Modified `src/types.ts` - Added `Attachment` interface
+- Modified `src/components/ChatInput.tsx` - Added 📎 dropdown with note/image/PDF picker, attachment chips, showThinking prop
+- Modified `src/components/MessageBubble.tsx` - Render attachment chips below user messages, conditional stripThinkingTags
+- Modified `src/api.ts` - Added `SdkMessage` and `MessageContentPart` types; multimodal support in streamChat/streamChatWithTools
+- Modified `src/components/ChatApp.tsx` - handleSend resolves attachments; messageAttachments state; showThinking state
+- Modified `src/components/ChatMessages.tsx` - showThinking prop pass-through
+- Modified `src/agent/Orchestrator.ts` - parseAndRoute accepts optional attachments param
 
 ### 2026-05-25
 

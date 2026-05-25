@@ -1,6 +1,6 @@
 # Technical Context: Obsidian AI Plugin
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 11:46:39 IST*
+*Last Updated: 2026-05-25 23:03 IST*
 
 ## Runtime Environment
 
@@ -202,6 +202,78 @@ DebugLogService (NEW)
 
 ---
 
+## Attachment System (v2.0 — T19)
+
+### Attachment Interface
+```typescript
+export interface Attachment {
+  id: string;
+  type: "markdown" | "image" | "pdf";
+  path: string;
+  name: string;
+}
+```
+
+### AttachmentEngine (`src/context/AttachmentEngine.ts`)
+Resolves vault files to AI SDK content parts for multimodal messages:
+
+| File Type | Resolution | Output |
+|-----------|-----------|--------|
+| Markdown | `vault.read()` → text with file header | `TextPart` |
+| Image | `vault.readBinary()` → canvas resize → base64 | `ImagePart` (max 1024px) |
+| PDF | Gemini: `FilePart`; Others: text extract or skip | `FilePart` or `TextPart` |
+
+```typescript
+export async function resolveAttachments(
+  attachments: Attachment[],
+  app: App,
+  provider: string,
+): Promise<MessageContentPart[]>
+```
+
+### Multimodal Message Types (`src/api.ts`)
+```typescript
+export type MessageContentPart =
+  | { type: "text"; text: string }
+  | { type: "image"; image: string }
+  | { type: "file"; data: string; mimeType: string };
+
+export type SdkMessage =
+  | { role: "system"; content: string | MessageContentPart[] }
+  | { role: "user"; content: string | MessageContentPart[] }
+  | { role: "assistant"; content: string | MessageContentPart[] };
+```
+
+### Provider Support Matrix
+| Provider | Images | PDFs | Notes |
+|----------|--------|------|-------|
+| Gemini | Native base64 | Native `FilePart` | Best support |
+| OpenAI | `image_url` base64 | No native | Extract text client-side |
+| Anthropic | base64 | No native | Extract text client-side |
+| Kimi | `image_url` | No native | Extract text client-side |
+| DeepSeek | ? | No | Likely no vision |
+| Ollama | Model-dependent | No | Depends on local model |
+
+### Data Flow
+```
+User selects file in ChatInput:
+        │
+        ▼
+[ChatInput] → attachment chips UI
+        │
+        ▼
+[ChatApp.handleSend()] → resolveAttachments()
+        │
+        ├── Markdown → vault.read() → TextPart
+        ├── Image → readBinary → resize → ImagePart
+        └── PDF → FilePart (Gemini) or text → TextPart
+        │
+        ▼
+[api.ts] → streamChat() / streamChatWithTools() → LLM
+```
+
+---
+
 ## Settings Schema (v2.0 additions)
 
 ```typescript
@@ -216,14 +288,20 @@ interface ObsidianAISettings {
   includeActiveNote: boolean                     // auto-include active note
   maxContextTokens: number                       // default 8000
   maxSavedConversations: number                  // default 20
+  maxContextMessages: number                     // default 50 (was MESSAGE_HISTORY_LIMIT)
   debugLogLevel: "off" | "error" | "info" | "debug"
   debugLogRetention: number
+  webSearchProvider: "brave" | "duckduckgo" | "tavily" | "exa" | "searxng"
+  braveApiKey: string
+  tavilyApiKey: string
+  exaApiKey: string
+  searxngUrl: string
 }
 
 interface ProviderProfile {
   id: string
   name: string
-  provider: "openai" | "ollama" | "custom" | "gemini" | "azure"
+  provider: "openai" | "ollama" | "custom" | "gemini" | "azure" | "openrouter" | "deepseek" | "kimi" | "anthropic"
   model: string
   apiKey?: string
   customURL?: string

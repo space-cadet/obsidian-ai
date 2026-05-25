@@ -1,22 +1,23 @@
 # Session Cache
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-25 20:45 IST*
+*Last Updated: 2026-05-25 23:03 IST*
 
-**Started**: 2026-05-25 12:03 IST
-**Focus Task**: META-1 — Memory Bank Format Normalization (evening continuation)
+**Started**: 2026-05-25 22:50 IST
+**Focus Task**: T19 — File Attachments Implementation + T21 CLI Test Harness Creation
 **Session File**: `sessions/2026-05-25.md`
-**Status**: T16 bug fixes complete + META-1 format normalization in progress.
+**Status**: T19 core implementation complete. T21 task created. Memory bank updated.
 
 ## Overview
 
-- Active: 5 | Paused: 1 | Completed: 11 | Cancelled: 0
+- Active: 7 | Paused: 1 | Completed: 11 | Cancelled: 0
 - Last Session: 2026-05-25 afternoon (T16 bug fixes)
 - Current Period: evening
 
 ## Session History (Last 10)
 
-1. `sessions/2026-05-25.md` — META-1: Format-normalized 10 task files (T1, T7-T12, T14a, T18), added T19 to registry, deleted stale T14-impl.md
-2. `sessions/2026-05-25.md` — T16: Fixed duplicate profile ID on copy (de84c4a) + model fetching for all providers (9d3d1a3)
+1. `sessions/2026-05-25.md` — T19: File attachments core implementation complete (a071a24). T21 CLI test harness created.
+2. `sessions/2026-05-25.md` — META-1: Format-normalized 10 task files (T1, T7-T12, T14a, T18), added T19 to registry, deleted stale T14-impl.md
+3. `sessions/2026-05-25.md` — T16: Fixed duplicate profile ID on copy (de84c4a) + model fetching for all providers (9d3d1a3)
 3. `sessions/2026-05-24.md` — T16: Profile dropdown single-select + auto-scroll streaming fixes
 4. `sessions/2026-05-23.md` — T13: Fixed folder context overload, enhanced `list_notes` (subfolders + depth), fixed `count_notes` accuracy. Commits: `6c396bb`, `d19de84`
 5. `sessions/2026-05-17.md` — T18: Tavily + Exa providers; T16: Message metadata, profile dropdown switching, settingsTick fix, retry profile fix (5 commits)
@@ -51,22 +52,37 @@
 
 ## Current Session Details
 
-**Commits**: `de84c4a`, `9d3d1a3` (afternoon); pending commit for META-1 (evening)
-**Files touched**: `memory-bank/tasks.md`, `memory-bank/tasks/T1.md`, `memory-bank/tasks/T7.md`, `memory-bank/tasks/T8.md`, `memory-bank/tasks/T9.md`, `memory-bank/tasks/T10.md`, `memory-bank/tasks/T11.md`, `memory-bank/tasks/T12.md`, `memory-bank/tasks/T14a.md`, `memory-bank/tasks/T18.md`
-**Files deleted**: `memory-bank/tasks/T14-impl.md`
-**Build status**: N/A (documentation only)
+**Commits**: `a071a24` (T19 implementation), `1b6e432` (thinking toggle merge), `de84c4a`, `9d3d1a3` (T16 bug fixes)
+**Files touched**: `src/types.ts`, `src/context/AttachmentEngine.ts`, `src/components/ChatInput.tsx`, `src/components/MessageBubble.tsx`, `src/api.ts`, `src/components/ChatApp.tsx`, `src/components/ChatMessages.tsx`, `src/agent/Orchestrator.ts`, `memory-bank/tasks/T19.md`, `memory-bank/tasks/T21.md`, `memory-bank/implementation-details/cli-test-harness.md`, `memory-bank/implementation-details/web-search.md`
+**Files deleted**: `memory-bank/implementation/T18-web-search.md`
+**Build status**: ✅ Passes (T19 implementation)
+
+### T19 — File Attachments Implementation (2026-05-25 22:50–23:03)
+- `Attachment` interface added to `src/types.ts`
+- `AttachmentEngine.ts` created — resolves markdown/image/PDF to AI SDK content parts
+- ChatInput.tsx: 📎 dropdown with note/image/PDF picker, attachment chips, remove button
+- MessageBubble.tsx: renders attachment chips below user messages
+- `api.ts`: `SdkMessage` and `MessageContentPart` types for multimodal messages
+- `ChatApp.tsx`: `handleSend()` resolves attachments before API call; `messageAttachments` state; `showThinking` state
+- `Orchestrator.ts`: `parseAndRoute()` accepts optional `attachments` param
+- `MESSAGE_HISTORY_LIMIT` renamed to `maxContextMessages`
+
+### T21 — CLI Test Harness Created (2026-05-25 22:50)
+- Task file `memory-bank/tasks/T21.md` created
+- Implementation doc `memory-bank/implementation-details/cli-test-harness.md` created
+- Planned scripts: test-attachments, test-stream-chat, test-tool-calling, test-multimodal, test-pdf
+- Mock vault (`scripts/lib/mockApp.ts`) and settings loader (`scripts/lib/loadSettings.ts`) designed
 
 ### META-1 — Format Normalization (2026-05-25 evening)
 - Standardized frontmatter (`---` at top) across all task files
 - Restructured headers to use `##` sections instead of bold lines
 - Added `Started`/`Last Active`/`Dependencies`/`Related Files` fields where missing
 - Consolidated duplicate `Dependencies` sections (T18)
-- Added T19 to task registry (Active count: 5)
+- Added T19 to task registry
 - Deleted stale `T14-impl.md` (content merged into T14a.md + implementation docs)
 
-## User Feedback
-- "YOU ARE SUPPOSED TO READ THE FUCKING RULES AND SEE WHAT NEEDS TO BE DONE" — User frustrated that I didn't follow mb-text-workflow Step 0 (Discovery) to identify the uncommitted changes in the workspace copy.
-
 ## Next Steps
-- Commit META-1 changes
-- Continue with T19 implementation or T17 Phase 1
+- Test T19 with Gemini (images + PDFs)
+- Test T19 with OpenAI/Anthropic (images)
+- Implement T21 CLI test harness scripts
+- Continue with T17 Phase 1 (backlinks + YAML) when prioritized

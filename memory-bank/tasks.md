@@ -1,9 +1,9 @@
 # Task Registry
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-25 13:01 IST*
+*Last Updated: 2026-05-25 23:03 IST*
 
 ## Summary
-- Active: 5 | Paused: 1 | Completed: 11 | Cancelled: 0
+- Active: 7 | Paused: 1 | Completed: 11 | Cancelled: 0
 
 ## Task Registry Table
 
@@ -29,6 +29,7 @@
 | T17 | Advanced Vault Tools — Backlinks, YAML, Bulk Ops | ⏸️ | HIGH | — | T13 | [Details](tasks/T17.md) |
 | T18 | Web Search Tool for Chat | ✅ | MEDIUM | 2026-05-16 | T13, T9 | [Details](tasks/T18.md) |
 | T19 | File Attachments for Chat Messages | 🔄 | HIGH | 2026-05-25 | T13, T4, T9 | [Details](tasks/T19.md) |
+| T21 | CLI Test Harness for AI Features | 🔄 | MEDIUM | 2026-05-25 | T19, T4, T13 | [Details](tasks/T21.md) |
 
 ## Active Tasks
 
@@ -51,10 +52,10 @@ Connect Obsidian chat to remote OpenClaw agents via OpenResponses API. Phase 3 i
 Multi-panel, multi-provider chat interface. Phases 1–2 complete. Phase 3 (TabBar UI) pending. See `tasks/T15.md`.
 
 ### T16 — Group Chat (Multi-Agent Conversation) *(requires T15)*
-Multi-agent group chat with mention-based routing, orchestration, and shared context. MVP implemented. User confirmed working. **May 25: Fixed duplicate profile ID on copy (commit `de84c4a`) and model fetching for all providers (commit `9d3d1a3`).** See `tasks/T16.md`.
+Multi-agent group chat with mention-based routing, orchestration, and shared context. MVP implemented. User confirmed working. **May 25: Fixed duplicate profile ID on copy (commit `de84c4a`) and model fetching for all providers (commit `9d3d1a3`). Added thinking display toggle.** See `tasks/T16.md`.
 
 ### T19 — File Attachments for Chat Messages *(requires T13, T4, T9)*
-Enable users to attach markdown files, images, and PDFs to chat messages so the LLM can consume their content. Multimodal support via Vercel AI SDK v6 `ImagePart`/`FilePart`. Scoping complete. See `tasks/T19.md`.
+Enable users to attach markdown files, images, and PDFs to chat messages so the LLM can consume their content. Multimodal support via Vercel AI SDK v6 `ImagePart`/`FilePart`. Core implementation complete (commit `a071a24`). Build passes. Group chat broadcasting deferred. See `tasks/T19.md`.
 
 ## Pending Tasks (v2.0 Development)
 
@@ -79,6 +80,9 @@ Networked thought tools (backlinks, outlinks, unlinked mentions), YAML frontmatt
 | T10 | Model Discovery & Picker UX | 2026-05-04 | T9 | [Details](tasks/T10.md) |
 | T13 | Agentic Tool Calling for Note Editing | 2026-05-14 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
 | T18 | Web Search Tool for Chat | 2026-05-16 | T13, T9 | [Details](tasks/T18.md) |
+
+### T21 — CLI Test Harness for AI Features *(requires T19, T4, T13)*
+Standalone CLI test scripts for exercising AI features without Obsidian runtime. Tests attachment resolution, streaming, tool calling, and multimodal APIs. Task created. See `tasks/T21.md`.
 
 ## Cancelled / Paused Tasks
 

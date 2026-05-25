@@ -1,5 +1,5 @@
 # Implementation Progress
-*Last Updated: 2026-05-23 23:54 IST*
+*Last Updated: 2026-05-25 23:03 IST*
 
 ## Active Tasks
 
@@ -14,7 +14,7 @@
 - ✅ Implementation docs updated for agentic tool calling, context engine, list_notes, count_notes
 
 #### Current Work
-- 🔄 Keep memory bank current as T13/T16 work continues
+- 🔄 Keep memory bank current as T13/T16/T19 work continues
 
 ### T13: Agentic Tool Calling for Note Editing
 **Status:** ✅ COMPLETED (with ongoing refinements)
@@ -48,10 +48,11 @@
 **Started:** 2026-05-16
 
 #### Completed Steps
-- ✅ Phases 1–16 implemented (MVP through debate mode, participant persistence, session sync)
+- ✅ Phases 1–17 implemented (MVP through debate mode, participant persistence, session sync, thinking toggle)
 - ✅ Message metadata (model name + response time)
 - ✅ Profile dropdown mid-session switching
 - ✅ All participant/session bug fixes
+- ✅ Thinking display toggle (`showThinking` state in ChatApp)
 
 #### Current Work
 - 🔄 Export feature request — needs UI design clarification
@@ -149,3 +150,41 @@
 ### T18: Web Search Tool for Chat
 **Completed:** 2026-05-17
 **Summary:** Web search tool with 5 providers (DuckDuckGo, Brave, Tavily, Exa, SearXNG).
+
+### T19: File Attachments for Chat Messages
+**Status:** 🔄 IN PROGRESS
+**Priority:** HIGH
+**Started:** 2026-05-25
+
+#### Completed Steps
+- ✅ `Attachment` interface in `src/types.ts`
+- ✅ `AttachmentEngine.ts` — resolves markdown/image/PDF to AI SDK content parts
+- ✅ ChatInput 📎 dropdown with note/image/PDF picker
+- ✅ MessageBubble attachment chip rendering
+- ✅ `api.ts` multimodal support (`SdkMessage`, `MessageContentPart`)
+- ✅ `ChatApp.tsx` attachment resolution in `handleSend()`
+- ✅ `Orchestrator.ts` accepts attachments param
+
+#### Current Work
+- 🔄 Group chat attachment broadcasting (deferred per user request)
+
+#### Up Next
+- ⬜ Test with Gemini (images + PDFs)
+- ⬜ Test with OpenAI/Anthropic (images only)
+- ⬜ Test with Kimi/DeepSeek/Ollama
+
+### T21: CLI Test Harness for AI Features
+**Status:** 🔄 IN PROGRESS
+**Priority:** MEDIUM
+**Started:** 2026-05-25
+
+#### Completed Steps
+- ✅ Task file created
+- ✅ Implementation doc created (`memory-bank/implementation-details/cli-test-harness.md`)
+
+#### Up Next
+- ⬜ Create `scripts/test-attachments.ts`
+- ⬜ Create `scripts/test-stream-chat.ts`
+- ⬜ Create `scripts/test-tool-calling.ts`
+- ⬜ Create `scripts/test-multimodal.ts`
+- ⬜ Create `scripts/lib/mockApp.ts` and `loadSettings.ts`
