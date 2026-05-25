@@ -578,7 +578,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				};
 				setSessions([newSession]);
 				setActiveSessionId(newSession.id);
-				setSelectedProfileIds(new Set(defaultSelectedIds));
+				if (plugin.settings.selectedProfileIds.length > 0) {
+					setSelectedProfileIds(new Set(plugin.settings.selectedProfileIds));
+				}
 			}
 			setChatDataLoaded(true);
 		});
@@ -1386,11 +1388,6 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		if (isStreaming) controllerRef.current?.abort();
 
 		const currentActiveId = activeSessionIdRef.current;
-		const activeProfile = getActiveProviderProfile(plugin.settings);
-		const defaultSelectedIds = plugin.settings.selectedProfileIds?.length > 0
-			? plugin.settings.selectedProfileIds
-			: [activeProfile.id];
-
 		const newSession: ChatSession = {
 			id: makeId(),
 			title: "",
@@ -1400,8 +1397,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			contextItems: plugin.settings.includeActiveNote
 				? [{ type: "active-note", id: makeId() }]
 				: [],
-			profileId: profileId || activeProfile.id,
-			selectedProfileIds: defaultSelectedIds,
+			profileId: profileId || undefined,
 		};
 
 		setSessions((prev) => {
@@ -1430,8 +1426,12 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			return pruneSessions(withNew, max, newSession.id);
 		});
 		setActiveSessionId(newSession.id);
-		// Select the default profile(s) for the new chat
-		setSelectedProfileIds(new Set(defaultSelectedIds));
+		// Select the default profile(s) from settings for the new chat
+		if (plugin.settings.selectedProfileIds.length > 0) {
+			setSelectedProfileIds(new Set(plugin.settings.selectedProfileIds));
+		} else {
+			setSelectedProfileIds(new Set());
+		}
 		setDebateMode(false);
 		setWasTruncated(false);
 	}, [isStreaming, plugin]);
