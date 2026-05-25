@@ -3,7 +3,7 @@
 *Last Updated: 2026-05-25 13:01 IST*
 
 ## Summary
-- Active: 4 | Paused: 1 | Completed: 11 | Cancelled: 0
+- Active: 5 | Paused: 1 | Completed: 11 | Cancelled: 0
 
 ## Task Registry Table
 
@@ -28,13 +28,14 @@
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
 | T17 | Advanced Vault Tools — Backlinks, YAML, Bulk Ops | ⏸️ | HIGH | — | T13 | [Details](tasks/T17.md) |
 | T18 | Web Search Tool for Chat | ✅ | MEDIUM | 2026-05-16 | T13, T9 | [Details](tasks/T18.md) |
+| T19 | File Attachments for Chat Messages | 🔄 | HIGH | 2026-05-25 | T13, T4, T9 | [Details](tasks/T19.md) |
 
 ## Active Tasks
 
 ### META-1: Memory Bank Setup and Maintenance
 **Status:** 🔄 IN PROGRESS | **Priority:** HIGH | **Started:** 2026-05-02
 - Memory bank structure created and maintained
-- T1–T17 task files created and kept in sync
+- T1–T19 task files created and kept in sync
 - Format normalization complete
 
 ### T8 — Open Source Release with Branding *(requires T7)*
@@ -51,6 +52,9 @@ Multi-panel, multi-provider chat interface. Phases 1–2 complete. Phase 3 (TabB
 
 ### T16 — Group Chat (Multi-Agent Conversation) *(requires T15)*
 Multi-agent group chat with mention-based routing, orchestration, and shared context. MVP implemented. User confirmed working. **May 25: Fixed duplicate profile ID on copy (commit `de84c4a`) and model fetching for all providers (commit `9d3d1a3`).** See `tasks/T16.md`.
+
+### T19 — File Attachments for Chat Messages *(requires T13, T4, T9)*
+Enable users to attach markdown files, images, and PDFs to chat messages so the LLM can consume their content. Multimodal support via Vercel AI SDK v6 `ImagePart`/`FilePart`. Scoping complete. See `tasks/T19.md`.
 
 ## Pending Tasks (v2.0 Development)
 
