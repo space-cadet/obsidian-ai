@@ -76,6 +76,7 @@ export interface ProfileCardProps {
 	onSetDefault: () => void;
 	onDuplicate: () => void;
 	onTest: () => void;
+	plugin: ChatPluginLike;
 }
 
 // ─── ProfileEditForm ────────────────────────────────────────────────
@@ -84,10 +85,12 @@ function ProfileEditForm({
 	profile,
 	onSave,
 	onCancel,
+	plugin,
 }: {
 	profile: ProviderProfile;
 	onSave: (p: ProviderProfile) => void;
 	onCancel: () => void;
+	plugin: ChatPluginLike;
 }) {
 	const [draft, setDraft] = useState<ProviderProfile>({ ...profile });
 	const [fetching, setFetching] = useState(false);
@@ -130,31 +133,9 @@ function ProfileEditForm({
 	const handleFetchModels = useCallback(async () => {
 		setFetching(true);
 		try {
-			// Use the same logic as ChatApiManager.fetchProviderModels
 			const { ChatApiManager } = await import("../api");
-			// We need access to a ChatApiManager instance or the static method
-			// For now, do a simple fetch based on provider
-			let url = "";
-			let headers: Record<string, string> = {};
-			switch (draft.provider) {
-				case "openai":
-					url = `${draft.customURL?.trim() || "https://api.openai.com/v1"}/models`;
-					headers = { Authorization: `Bearer ${draft.apiKey}` };
-					break;
-				case "ollama":
-					url = `${draft.customURL?.trim() || "http://localhost:11434/v1"}/models`;
-					break;
-				default:
-					new Notice("Model fetching not supported for this provider yet.");
-					setFetching(false);
-					return;
-			}
-			const res = await fetch(url, { headers });
-			if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-			const data = await res.json();
-			const fetched = (data.data ?? [])
-				.map((m: any) => m.id)
-				.filter((id: string) => typeof id === "string");
+			const chatApi = new ChatApiManager(plugin.settings, plugin.app);
+			const fetched = await chatApi.fetchModels(draft);
 			setModels(fetched);
 			updateDraft("modelCache", { models: fetched, fetchedAt: Date.now() });
 			new Notice(`Fetched ${fetched.length} models`, 2000);
@@ -163,7 +144,7 @@ function ProfileEditForm({
 		} finally {
 			setFetching(false);
 		}
-	}, [draft.provider, draft.apiKey, draft.customURL, updateDraft]);
+	}, [draft, plugin, updateDraft]);
 
 	const handleTest = useCallback(async () => {
 		setTestStatus(null);
@@ -431,6 +412,7 @@ export function ProfileCard({
 	onSetDefault,
 	onDuplicate,
 	onTest,
+	plugin,
 }: ProfileCardProps) {
 	const meta = getProviderMeta(profile.provider);
 	const auth = validateProfileQuick(profile);
@@ -438,7 +420,7 @@ export function ProfileCard({
 	if (isEditing) {
 		return (
 			<div className="obsidian-ai-profile-row is-editing">
-				<ProfileEditForm profile={profile} onSave={onSave} onCancel={onCancel} />
+				<ProfileEditForm profile={profile} onSave={onSave} onCancel={onCancel} plugin={plugin} />
 			</div>
 		);
 	}
@@ -701,6 +683,7 @@ export function ProfileList({ plugin }: ProfileListProps) {
 						onSetDefault={() => handleSetDefault(profile.id)}
 						onDuplicate={() => handleDuplicate(profile.id)}
 						onTest={() => handleTest(profile.id)}
+						plugin={plugin}
 					/>
 				))}
 			</div>
