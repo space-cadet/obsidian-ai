@@ -1,0 +1,14 @@
+{
+  "name": "obsidian-ai-memory-bank",
+  "version": "1.0.0",
+  "description": "Database-native memory bank workflow for obsidian-ai",
+  "type": "module",
+  "scripts": {
+    "init-db": "node -e \"import('./lib/sqlite.js').then(m => m.openDb('./memory_bank.db')).then(() => console.log('DB initialized'))\"",
+    "record": "node -e \"import('./lib/workflow.js').then(m => m.recordSessionWork({task_id: process.argv[1], task_description: process.argv[2]}))\"",
+    "regenerate": "node -e \"import('./lib/regenerate.js').then(m => m.regenerateAll({editHistory: '../edit_history.md', tasks: '../tasks.md', sessionCache: '../session_cache.md', tasksDir: '../tasks', sessionsDir: '../sessions', editsDir: '../edits'}))\""
+  },
+  "dependencies": {
+    "sql.js": "1.14.1"
+  }
+}
