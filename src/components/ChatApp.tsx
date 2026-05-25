@@ -558,6 +558,12 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 					setSelectedProfileIds(new Set(ids));
 				}
 			} else {
+				// Default to the active provider profile for new chats
+				const activeProfile = getActiveProviderProfile(plugin.settings);
+				const defaultSelectedIds = plugin.settings.selectedProfileIds?.length > 0
+					? plugin.settings.selectedProfileIds
+					: [activeProfile.id];
+
 				const newSession: ChatSession = {
 					id: makeId(),
 					title: "",
@@ -567,8 +573,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 					contextItems: plugin.settings.includeActiveNote
 						? [{ type: "active-note", id: makeId() }]
 						: [],
-					profileId: profileId || undefined,
-					selectedProfileIds: Array.from(plugin.settings.selectedProfileIds || []),
+					profileId: profileId || activeProfile.id,
+					selectedProfileIds: defaultSelectedIds,
 				};
 				setSessions([newSession]);
 				setActiveSessionId(newSession.id);
@@ -1420,7 +1426,12 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			return pruneSessions(withNew, max, newSession.id);
 		});
 		setActiveSessionId(newSession.id);
-		setSelectedProfileIds(new Set());
+		// Select the default profile(s) from settings for the new chat
+		if (plugin.settings.selectedProfileIds.length > 0) {
+			setSelectedProfileIds(new Set(plugin.settings.selectedProfileIds));
+		} else {
+			setSelectedProfileIds(new Set());
+		}
 		setDebateMode(false);
 		setWasTruncated(false);
 	}, [isStreaming, plugin]);
