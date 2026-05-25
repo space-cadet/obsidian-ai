@@ -1,8 +1,21 @@
 # Edit History
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-25 13:01 IST*
+*Last Updated: 2026-05-25 20:45 IST*
 
 ### 2026-05-25
+
+#### 20:45:00 IST - META-1: Format normalize task files + add T19 to registry
+- Modified `memory-bank/tasks.md` - Added T19 to registry (Active: 5), updated META-1 description to T1–T19, added T19 active task section
+- Modified `memory-bank/tasks/T1.md` - Fixed frontmatter format, restructured headers to use ## sections, added Started/Last Active/Dependencies/Related Files fields
+- Modified `memory-bank/tasks/T10.md` - Same format normalization
+- Modified `memory-bank/tasks/T11.md` - Same format normalization
+- Modified `memory-bank/tasks/T12.md` - Same format normalization
+- Deleted `memory-bank/tasks/T14-impl.md` - Removed stale duplicate implementation file
+- Modified `memory-bank/tasks/T14a.md` - Added frontmatter, restructured headers, added Completion Criteria/Related Files/Progress/Context sections
+- Modified `memory-bank/tasks/T18.md` - Fixed frontmatter placement, restructured headers, consolidated duplicate Dependencies section, added Related Files
+- Modified `memory-bank/tasks/T7.md` - Same format normalization
+- Modified `memory-bank/tasks/T8.md` - Same format normalization
+- Modified `memory-bank/tasks/T9.md` - Same format normalization
 
 #### 13:01:00 IST - T16: Fix model fetching for all providers in ProfileCard
 - Modified `src/components/ProfileCard.tsx` - Replaced inline handleFetchModels with ChatApiManager.fetchModels() delegation
