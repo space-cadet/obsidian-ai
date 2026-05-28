@@ -3,7 +3,7 @@
 *Last Updated: 2026-05-28 22:38 IST*
 
 ## Summary
-- Active: 7 | Paused: 1 | Completed: 11 | Cancelled: 0
+- Active: **9** | Paused: 1 | Completed: 11 | Cancelled: 0
 
 ## Task Registry Table
 
@@ -30,6 +30,8 @@
 | T18 | Web Search Tool for Chat | ✅ | MEDIUM | 2026-05-16 | T13, T9 | [Details](tasks/T18.md) |
 | T19 | File Attachments for Chat Messages | 🔄 | HIGH | 2026-05-25 | T13, T4, T9 | [Details](tasks/T19.md) |
 | T21 | CLI Test Harness for AI Features | 🔄 | MEDIUM | 2026-05-25 | T19, T4, T13 | [Details](tasks/T21.md) |
+| **T22** | **ChatApp.tsx Component Decomposition** | 🔄 | **HIGH** | **2026-05-28** | — | **[Details](tasks/T22.md)** |
+| **T23** | **Settings.ts Decomposition** | 🔄 | **HIGH** | **2026-05-28** | — | **[Details](tasks/T23.md)** |
 
 ## Active Tasks
 
@@ -81,7 +83,11 @@ Networked thought tools (backlinks, outlinks, unlinked mentions), YAML frontmatt
 | T13 | Agentic Tool Calling for Note Editing | 2026-05-14 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
 | T18 | Web Search Tool for Chat | 2026-05-16 | T13, T9 | [Details](tasks/T18.md) |
 
-### T21 — CLI Test Harness for AI Features *(requires T19, T4, T13)*
+### T22 — ChatApp.tsx Component Decomposition *(no dependencies)*
+Break down the 1,948-line `ChatApp.tsx` into focused hooks and sub-components. **Phase 0 complete**: Extracted 6 standalone utility modules (`agentVisuals`, `contextUtils`, `slashCommand`, `sessionUtils`, `sessionTitle`, `systemPrompt`) — 1,948→1,700 lines. **Phase 1 complete**: Created `useChatSession` hook managing session state, persistence (load/save), auto-naming, and CRUD operations — 1,700→1,533 lines. Build passes at every step. Remaining phases: `useChatUI` hook, `useMessageActions` hook, layout components.
+
+### T23 — Settings.ts Decomposition *(no dependencies)*
+Move the 836-line `ObsidianAISettingsTab` UI class out of `settings.ts` into dedicated section files. `settings.ts` should remain pure config (types, defaults, helpers). See `tasks/T23.md` and `implementation-details/chatapp-settings-decomposition.md`.
 Standalone CLI test scripts for exercising AI features without Obsidian runtime. Tests attachment resolution, streaming, tool calling, and multimodal APIs. Task created. See `tasks/T21.md`.
 
 ## Cancelled / Paused Tasks

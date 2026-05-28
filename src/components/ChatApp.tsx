@@ -19,6 +19,12 @@ import { AgentLoop } from "../agent/AgentLoop";
 import type { ToolCall, ToolResult } from "../agent/types";
 import { Orchestrator, AgentResponse } from "../agent/Orchestrator";
 import { parseMentions } from "../agent/MentionParser";
+import { getAgentColor, getAgentIcon } from "../lib/agentVisuals";
+import { contextItemKey, sameContextItems } from "../lib/contextUtils";
+import { parseSlashCommand, SlashCommand } from "../lib/slashCommand";
+import { makeId } from "../lib/sessionUtils";
+import { buildSystemPrompt } from "../lib/systemPrompt";
+import { useChatSession } from "../hooks/useChatSession";
 import ActionBar from "./ActionBar";
 import ChatMessages from "./ChatMessages";
 import ContextBar from "./ContextBar";
@@ -44,263 +50,24 @@ interface ChatAppProps {
 	profileId?: string;
 }
 
-function buildSystemPrompt(
-	contextItems: ContextItem[],
-	slashCmd?: SlashCommand,
-	toolsEnabled = false,
-): string {
-	let prompt =
-		"You are a helpful assistant integrated into an Obsidian note-taking app.";
-	const hasActiveNote = contextItems.some((i) => i.type === "active-note");
-
-	if (toolsEnabled) {
-		prompt +=
-			"\n\nYou have access to the following tools for managing Obsidian notes:" +
-			"\n- read_note: Read the full content of a note. Use this before editing to understand current content." +
-			"\n- edit_note: Overwrite the entire content of a note. Provide COMPLETE new content." +
-			"\n- append_to_note: Add content to the end of a note without changing existing content." +
-			"\n- create_note: Create a new note in the vault." +
-			"\n- patch_note: Find and replace text inside a note (small precise edits)." +
-			"\n- edit_section: Rewrite content under a specific heading." +
-			"\n- search_notes: Search for notes by filename or path. Use sort_by=name|modified|created, limit, folder, and search_content params." +
-			"\n- list_notes: Browse notes in the vault or a folder. Use sort_by=name|modified|created, limit, and include_subfolders (default true) params. Shows subfolders alongside files." +
-			"\n- count_notes: Count files in a folder or the entire vault. Returns total files, markdown files, direct files, and subfolder counts. Use when the user asks how many notes/files exist or for folder statistics." +
-			"\n- get_note_metadata: Get file stats (size, dates, word count) for a specific note." +
-			"\n- create_folder: Create a new folder in the vault." +
-			"\n- move_note: Move or rename a note to a new folder or name. Creates parent folders if needed." +
-			"\n- delete_note: Delete a note from the vault." +
-			"\n- list_folders: List folders in the vault. Use to understand vault structure." +
-			"\n- search_web: Search the web for current information. Use when the user asks about recent events, news, or facts that may have changed since your training data." +
-			"\n\nWhen the user asks to find, list, or search for notes, ALWAYS use search_notes or list_notes first." +
-			" Do not say you cannot search — you have the search_notes and list_notes tools." +
-			" Before editing a note you are unfamiliar with, use read_note to see its current content." +
-			"\n\nImportant: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks." +
-			"\n\nFor moving notes: use move_note(path, new_path). Parent folders are created automatically if needed." +
-			"\nFor creating folders: use create_folder(path). Then use move_note to place notes inside.";
-	}
-
-	if (slashCmd) {
-		switch (slashCmd.command) {
-			case "edit":
-				prompt += `\n\nThe user wants to edit the note "${slashCmd.target}". Return ONLY the complete revised note content. Do not wrap it in markdown code blocks or add explanations.`;
-				break;
-			case "create":
-				prompt += `\n\nThe user wants to create a new note named "${slashCmd.target}". Return the complete note content.`;
-				break;
-			case "append":
-				prompt += `\n\nThe user wants to append to the note "${slashCmd.target}". Return only the new content to append.`;
-				break;
-		}
-	} else if (hasActiveNote) {
-		prompt +=
-			"\n\nThe active note is included in context. When the user asks you to edit, rewrite, or improve the note, return ONLY the complete revised note content. Do not wrap it in markdown code blocks or add explanations.";
-	}
-	return prompt;
-}
-
-function generateSessionTitle(messages: ChatMessage[]): string {
-	const userMsgs = messages.filter((m) => m.role === "user");
-	const assistantMsgs = messages.filter((m) => m.role === "assistant");
-	if (userMsgs.length === 0) return `Chat ${new Date().toLocaleDateString()}`;
-
-	// Prefer user messages for titles — they're the actual intent
-	const candidateTexts: string[] = [];
-
-	// Try first 2 user messages
-	for (const msg of userMsgs.slice(0, 2)) {
-		let text = msg.content;
-		// Strip context tags
-		text = text.replace(/<context>[\s\S]*?<\/context>/g, "").trim();
-		// Strip markdown links/images
-		text = text.replace(/!?\[([^\]]*)\]\([^)]+\)/g, "$1").trim();
-		// Strip code blocks
-		text = text.replace(/```[\s\S]*?```/g, "").trim();
-		// Strip inline code
-		text = text.replace(/`([^`]+)`/g, "$1").trim();
-		// Strip JSON
-		text = text.replace(/\{[\s\S]*?\}/g, "").trim();
-		if (text.length >= 3) candidateTexts.push(text);
-	}
-
-	// Fallback to assistant if no good user candidate
-	if (candidateTexts.length === 0) {
-		for (const msg of assistantMsgs.slice(0, 1)) {
-			let text = msg.content.replace(/```[\s\S]*?```/g, "").trim();
-			text = text.replace(/\{[\s\S]*?\}/g, "").trim();
-			if (text.length >= 3) candidateTexts.push(text);
-		}
-	}
-
-	if (candidateTexts.length === 0) return `Chat ${new Date().toLocaleDateString()}`;
-
-	// Generic words that make bad titles — check AFTER stripping punctuation
-	const genericWords = new Set([
-		"hello", "hi", "hey", "help", "please", "thanks", "thank you",
-		"ok", "okay", "sure", "yes", "no", "what", "how", "why", "when", "where", "who",
-		"good morning", "good afternoon", "good evening",
-	]);
-
-	// Stop words to strip from the START of text (with optional punctuation)
-	const stopWords = /^(please\s+|can\s+you\s+|could\s+you\s+|hey[.!?\s]*|hi[.!?\s]*|hello[.!?\s]*|so\s+|um\s+|uh\s+|okay\s+|ok\s+|well\s+|now\s+|then\s+)/i;
-
-	for (let text of candidateTexts) {
-		// Extract first sentence-ish chunk
-		const sentenceMatch = text.match(/^([^.!?\n]{2,80}[.!?\n]?)/);
-		let title = sentenceMatch ? sentenceMatch[1].trim() : text.slice(0, 80);
-
-		// Strip leading stop words (handles "Hello." → "", "Hello " → "")
-		title = title.replace(stopWords, "").trim();
-
-		// Skip if too short after stripping
-		if (title.length < 3) continue;
-
-		// Check if remaining title is just generic words (strip punctuation for check)
-		const cleanForCheck = title.replace(/[.!?,;:"'\-]+$/, "").trim().toLowerCase();
-		if (genericWords.has(cleanForCheck)) continue;
-
-		// Capitalize first letter
-		title = title.charAt(0).toUpperCase() + title.slice(1);
-
-		// Truncate at word boundary near 40 chars
-		if (title.length > 45) {
-			const truncated = title.slice(0, 45);
-			const lastSpace = truncated.lastIndexOf(" ");
-			if (lastSpace > 25) {
-				title = truncated.slice(0, lastSpace) + "…";
-			} else {
-				title = truncated + "…";
-			}
-		}
-
-		return title;
-	}
-
-	return `Chat ${new Date().toLocaleDateString()}`;
-}
-
-/** Ask the LLM to suggest a short title for the conversation.
- *  Falls back to heuristic naming on error or if LLM returns nothing useful. */
-async function generateSessionTitleLLM(
-	messages: ChatMessage[],
-	profile: ProviderProfile,
-	chatapi: ChatApiManager,
-): Promise<string | null> {
-	if (messages.length === 0) return null;
-
-	// Build a minimal context: first 3 user + 3 assistant messages
-	const context = messages
-		.slice(0, 6)
-		.map((m) => {
-			let content = m.content.slice(0, 200); // cap each message
-			// Strip heavy artifacts
-			content = content.replace(/```[\s\S]*?```/g, "[code]");
-			content = content.replace(/\{[\s\S]*?\}/g, "[data]");
-			content = content.replace(/<context>[\s\S]*?<\/context>/g, "");
-			return `${m.role}: ${content}`;
-		})
-		.join("\n");
-
-	const system =
-		"You are a helpful assistant. Given a short conversation, produce a concise, descriptive title (3–6 words). " +
-		"Use the user's language. Output ONLY the title text, no quotes, no explanation.";
-
-	const prompt = `Conversation:\n${context}\n\nTitle:`;
-
-	try {
-		const result = await chatapi.callApi(system, prompt, profile);
-		let title = result.trim();
-		// Strip quotes if the model added them
-		title = title.replace(/^["']|["']$/g, "").trim();
-		if (title.length < 2 || title.length > 60) return null;
-		return title;
-	} catch (e) {
-		console.error("[generateSessionTitleLLM] failed, falling back", e);
-		return null;
-	}
-}
-
-function pruneSessions(
-	sessions: ChatSession[],
-	max: number,
-	activeId: string | null,
-): ChatSession[] {
-	if (sessions.length <= max) return sessions;
-	const sorted = [...sessions].sort((a, b) => a.updatedAt - b.updatedAt);
-	const toRemove = sorted.slice(0, sessions.length - max);
-	const removeIds = new Set(toRemove.map((s) => s.id));
-	// Never prune the active session
-	if (activeId) removeIds.delete(activeId);
-	return sessions.filter((s) => !removeIds.has(s.id));
-}
-
-function makeId(): string {
-	return crypto.randomUUID();
-}
-
-interface SlashCommand {
-	command: "edit" | "create" | "append";
-	target: string;
-	prompt: string;
-}
-
-function parseSlashCommand(text: string): SlashCommand | null {
-	const match = text.match(
-		/^\/(edit|create|append)\s+(?:\[\[)?([^\]\n]+?)(?:\]\])?(?:\s+([\s\S]*))?$/i,
-	);
-	if (!match) return null;
-	return {
-		command: match[1].toLowerCase() as "edit" | "create" | "append",
-		target: match[2].trim(),
-		prompt: (match[3] ?? "").trim(),
-	};
-}
-
-function contextItemKey(item: ContextItem): string {
-	switch (item.type) {
-		case "note":
-			return `note:${item.path}`;
-		case "folder":
-			return `folder:${item.path}`;
-		case "tag":
-			return `tag:${item.tag}`;
-		case "active-note":
-		default:
-			return `active:${item.id}`;
-	}
-}
-
-function sameContextItems(a: ContextItem[], b: ContextItem[]): boolean {
-	if (a.length !== b.length) return false;
-	return a.every((item, index) => contextItemKey(item) === contextItemKey(b[index]));
-}
-
-/** Get a consistent color for a provider type */
-function getAgentColor(provider: string): string {
-	switch (provider) {
-		case "gemini": return "#6366f1";
-		case "openai": return "#10b981";
-		case "anthropic": return "#f43f5e";
-		case "agent": return "#06b6d4";
-		case "ollama": return "#f59e0b";
-		default: return "#8b5cf6";
-	}
-}
-
-/** Get a consistent icon for a provider type */
-function getAgentIcon(provider: string): string {
-	switch (provider) {
-		case "gemini": return "💎";
-		case "openai": return "🌐";
-		case "anthropic": return "🧠";
-		case "agent": return "☁️";
-		case "ollama": return "🔥";
-		default: return "🤖";
-	}
-}
-
 const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
-	const [sessions, setSessions] = useState<ChatSession[]>([]);
-	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+	const {
+		sessions,
+		setSessions,
+		activeSessionId,
+		setActiveSessionId,
+		chatDataLoaded,
+		sessionsRef,
+		activeSessionIdRef,
+		createNewSession,
+		renameSession,
+		updateSessionMessages,
+		updateSessionContextItems,
+		manualRenameActiveSession,
+		autoNameSessions,
+		setAutoNameSessions,
+	} = useChatSession({ plugin, profileId });
+
 	const [isStreaming, setIsStreaming] = useState(false);
 	const [currentAiMessage, setCurrentAiMessage] = useState("");
 	const [currentContentParts, setCurrentContentParts] = useState<ContentPart[]>([]);
@@ -345,27 +112,18 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(
 		null,
 	);
-	const [chatDataLoaded, setChatDataLoaded] = useState(false);
 	/** Current message attachments (passed to ChatInput) */
 	const [messageAttachments, setMessageAttachments] = useState<import("../types").Attachment[]>([]);
 	const controllerRef = useRef<AbortController | null>(null);
-	const saveTimerRef = useRef<number | null>(null);
-	const skipNextAutosaveRef = useRef(false);
 	const resolveToolRef = useRef<((result: ToolResult | null) => void) | null>(
 		null,
 	);
 	// Refs so callbacks always see latest values without stale closures
 	const messagesRef = useRef<ChatMessage[]>([]);
 	const contextItemsRef = useRef<ContextItem[]>([]);
-	const sessionsRef = useRef<ChatSession[]>([]);
 	contextItemsRef.current = contextItems;
-	sessionsRef.current = sessions;
-	const activeSessionIdRef = useRef<string | null>(null);
-	activeSessionIdRef.current = activeSessionId;
 	// Tracks the last focused markdown leaf
 	const lastMarkdownLeafRef = useRef<WorkspaceLeaf | null>(null);
-	// Track which sessions have been LLM-named to avoid re-calling
-	const llmNamedRef = useRef<Set<string>>(new Set());
 
 	// Force re-render when user returns to chat tab (settings may have changed)
 	const [settingsTick, setSettingsTick] = useState(0);
@@ -542,59 +300,6 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			plugin.app.workspace.off("active-leaf-change", onLeafChange as any);
 	}, [plugin]);
 
-	// Load persisted sessions on mount
-	useEffect(() => {
-		let cancelled = false;
-		plugin.loadChatData().then((data) => {
-			if (cancelled) return;
-			if (data.sessions.length > 0 || data.activeSessionId) {
-				skipNextAutosaveRef.current = true;
-				setSessions(data.sessions);
-				setActiveSessionId(data.activeSessionId);
-				// Restore selected profile IDs from the active session
-				const activeSession = data.sessions.find((s) => s.id === data.activeSessionId);
-				if (activeSession?.selectedProfileIds && activeSession.selectedProfileIds.length > 0) {
-					setSelectedProfileIds(new Set(activeSession.selectedProfileIds));
-				} else if (plugin.settings.selectedProfileIds.length > 0) {
-					setSelectedProfileIds(new Set(plugin.settings.selectedProfileIds));
-				}
-				// Restore legacy participants if present (backward compat)
-				if (activeSession?.participants && activeSession.participants.length > 0) {
-					const ids = activeSession.participants.map((p) => p.id);
-					setSelectedProfileIds(new Set(ids));
-				}
-			} else {
-				// Default to the active provider profile for new chats
-				const activeProfile = getActiveProviderProfile(plugin.settings);
-				const defaultSelectedIds = plugin.settings.selectedProfileIds?.length > 0
-					? plugin.settings.selectedProfileIds
-					: [activeProfile.id];
-
-				const newSession: ChatSession = {
-					id: makeId(),
-					title: "",
-					createdAt: Date.now(),
-					updatedAt: Date.now(),
-					messages: [],
-					contextItems: plugin.settings.includeActiveNote
-						? [{ type: "active-note", id: makeId() }]
-						: [],
-					profileId: profileId || activeProfile.id,
-					selectedProfileIds: defaultSelectedIds,
-				};
-				setSessions([newSession]);
-				setActiveSessionId(newSession.id);
-				if (plugin.settings.selectedProfileIds.length > 0) {
-					setSelectedProfileIds(new Set(plugin.settings.selectedProfileIds));
-				}
-			}
-			setChatDataLoaded(true);
-		});
-		return () => {
-			cancelled = true;
-		};
-	}, [plugin]);
-
 	// Sync selectedProfileIds into the active session whenever they change
 	useEffect(() => {
 		if (!activeSessionId) return;
@@ -624,73 +329,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		);
 	}, [selectedProfileIds, activeSessionId, plugin.settings.providerProfiles]);
 
-	// Persist sessions whenever they change, but coalesce bursty updates
-	useEffect(() => {
-		if (!chatDataLoaded) return;
-		if (skipNextAutosaveRef.current) {
-			skipNextAutosaveRef.current = false;
-			return;
-		}
-		if (sessions.length > 0) {
-			if (saveTimerRef.current) {
-				window.clearTimeout(saveTimerRef.current);
-			}
-			saveTimerRef.current = window.setTimeout(() => {
-				void plugin.saveChatData({ sessions, activeSessionId });
-				saveTimerRef.current = null;
-			}, 150);
-		}
-		return () => {
-			if (saveTimerRef.current) {
-				window.clearTimeout(saveTimerRef.current);
-				saveTimerRef.current = null;
-			}
-		};
-	}, [sessions, activeSessionId, plugin, chatDataLoaded]);
-
 	const [autoApprove, setAutoApprove] = useState(plugin.settings.autoApply);
-	const [autoNameSessions, setAutoNameSessions] = useState(plugin.settings.autoNameSessions);
-
-	// Auto-title session after it has a few messages
-	useEffect(() => {
-		if (!autoNameSessions) return;
-		const currentActiveId = activeSessionIdRef.current;
-		if (!currentActiveId) return;
-		if (llmNamedRef.current.has(currentActiveId)) return; // already named
-		const session = sessionsRef.current.find(
-			(s) => s.id === currentActiveId,
-		);
-		if (!session || session.title) return;
-		const userMsgs = session.messages.filter((m) => m.role === "user");
-		const assistantMsgs = session.messages.filter((m) => m.role === "assistant");
-		if (userMsgs.length >= 1 && assistantMsgs.length >= 2) {
-			llmNamedRef.current.add(currentActiveId);
-			// Try LLM naming first, then fall back to heuristic
-			void (async () => {
-				const title = await generateSessionTitleLLM(
-					session.messages.slice(0, 6),
-					resolvedProfile,
-					plugin.chatapi,
-				);
-				if (title) {
-					setSessions((prev) =>
-						prev.map((s) =>
-							s.id === currentActiveId ? { ...s, title } : s,
-						),
-					);
-				} else {
-					// LLM failed — use heuristic
-					const fallback = generateSessionTitle(session.messages);
-					setSessions((prev) =>
-						prev.map((s) =>
-							s.id === currentActiveId ? { ...s, title: fallback } : s,
-						),
-					);
-				}
-			})();
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [sessions, activeSessionId, autoNameSessions]);
 
 	const handleToggleActiveNote = useCallback(() => {
 		console.log(`[handleToggleActiveNote] fired — current items=${JSON.stringify(contextItemsRef.current.map(contextItemKey))}`);
@@ -1412,46 +1051,11 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 
 	const handleNewChat = useCallback(() => {
 		if (isStreaming) controllerRef.current?.abort();
-
-		const currentActiveId = activeSessionIdRef.current;
-		const newSession: ChatSession = {
-			id: makeId(),
-			title: "",
-			createdAt: Date.now(),
-			updatedAt: Date.now(),
-			messages: [],
-			contextItems: plugin.settings.includeActiveNote
-				? [{ type: "active-note", id: makeId() }]
-				: [],
-			profileId: profileId || undefined,
-		};
-
-		setSessions((prev) => {
-			const currentSession = prev.find((s) => s.id === currentActiveId);
-			// If current session is empty, just keep it instead of creating another empty one
-			if (currentSession && currentSession.messages.length === 0) {
-				return prev.map((s) =>
-					s.id === currentActiveId
-						? { ...s, updatedAt: Date.now() }
-						: s,
-				);
-			}
-			const updated = prev.map((s) =>
-				s.id === currentActiveId
-					? {
-							...s,
-							title: plugin.settings.autoNameSessions
-								? s.title || generateSessionTitle(s.messages)
-								: s.title,
-							updatedAt: Date.now(),
-						}
-					: s,
-			);
-			const withNew = [...updated, newSession];
-			const max = plugin.settings.maxSavedConversations || 20;
-			return pruneSessions(withNew, max, newSession.id);
+		createNewSession({
+			includeActiveNote: plugin.settings.includeActiveNote,
+			selectedProfileIds: plugin.settings.selectedProfileIds,
+			autoNameSessions: plugin.settings.autoNameSessions,
 		});
-		setActiveSessionId(newSession.id);
 		// Select the default profile(s) from settings for the new chat
 		if (plugin.settings.selectedProfileIds.length > 0) {
 			setSelectedProfileIds(new Set(plugin.settings.selectedProfileIds));
@@ -1462,7 +1066,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		}
 		setDebateMode(false);
 		setWasTruncated(false);
-	}, [isStreaming, plugin]);
+	}, [isStreaming, plugin, createNewSession]);
 
 	const handleAppend = useCallback(
 		async (content: string) => {
@@ -1720,13 +1324,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 
 	const handleRenameSession = useCallback(
 		(sessionId: string, newTitle: string) => {
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === sessionId ? { ...s, title: newTitle.trim() } : s,
-				),
-			);
+			renameSession(sessionId, newTitle);
 		},
-		[],
+		[renameSession],
 	);
 
 	const handleApproveTool = useCallback(async () => {
@@ -1768,7 +1368,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				: "✨ Auto-name OFF — sessions will not be named automatically",
 			2500,
 		);
-	}, [plugin, autoNameSessions]);
+	}, [plugin, autoNameSessions, setAutoNameSessions]);
 
 	const handleManualRename = useCallback(async () => {
 		const currentActiveId = activeSessionIdRef.current;
@@ -1781,29 +1381,14 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			return;
 		}
 		new Notice("🪄 Asking model for a title…", 1500);
-		const title = await generateSessionTitleLLM(
-			session.messages,
+		const title = await manualRenameActiveSession(
 			resolvedProfile,
 			plugin.chatapi,
 		);
 		if (title) {
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === currentActiveId ? { ...s, title } : s,
-				),
-			);
 			new Notice(`Session renamed to: "${title}"`, 2500);
-		} else {
-			// Fallback to heuristic
-			const fallback = generateSessionTitle(session.messages);
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === currentActiveId ? { ...s, title: fallback } : s,
-				),
-			);
-			new Notice(`Session renamed to: "${fallback}"`, 2500);
 		}
-	}, [resolvedProfile, plugin.chatapi]);
+	}, [resolvedProfile, plugin.chatapi, manualRenameActiveSession]);
 
 	const handleExportChat = useCallback(() => {
 		setShowExportModal(true);

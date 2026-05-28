@@ -1,12 +1,18 @@
 # Active Context
 
-*Last Updated: 2026-05-25 23:03 IST*
+*Last Updated: 2026-05-28 23:10 IST*
 
 ## Current Focus
-**Primary Task:** T19 — File Attachments for Chat Messages — Core implementation ✅ COMPLETE
-**Secondary Tasks:** T16 (Group Chat — thinking toggle added), T15 (Tabbed Chat — paused), T14 (Remote Agent), T17 (Backlinks + YAML — pending), T13 (Agentic Tool Calling — complete), T21 (CLI Test Harness — created)
+**Primary Task:** T22 — ChatApp.tsx Component Decomposition — Phase 0 + Phase 1 COMPLETE
+**Status:** `ChatApp.tsx` reduced from 1,948 to 1,533 lines (-415). Build passes.
+- **Phase 0**: Extracted 6 utility modules (`agentVisuals`, `contextUtils`, `slashCommand`, `sessionUtils`, `sessionTitle`, `systemPrompt`)
+- **Phase 1**: Created `useChatSession` hook with session CRUD, persistence, auto-naming, manual rename
+
+**Secondary Tasks:** T23 (Settings.ts decomposition — task created, not started)
 
 ## Active Tasks
+- **[T22]**: 🔄 **IN PROGRESS** — **Phase 0 + Phase 1 COMPLETE**. ChatApp.tsx: 1,948 → 1,533 lines (-415). Extracted 6 utility modules + `useChatSession` hook. Build passes. Remaining: `useChatUI` hook, `useMessageActions` hook, layout components.
+- **[T23]**: 🔄 **IN PROGRESS** — Task file created. Not started.
 - [T16]: 🔄 **IN PROGRESS** — Phases 1–17 implemented. Debate mode working. UI refined. Participant persistence fixed. Thinking display toggle added. **May 25: Fixed duplicate profile ID on copy (commit `de84c4a`) and model fetching for all providers (commit `9d3d1a3`).**
 - [T14]: 🔄 **IN PROGRESS** — Phase 3 integration test. Tailscale 2/3 complete.
 - [T15]: 🔄 **IN PROGRESS** — Phase 1–2 complete. Phase 3 (TabBar UI) paused in favor of T16.
@@ -15,6 +21,30 @@
 - [T18]: ✅ **COMPLETED** — Web search tool with 5 providers (DuckDuckGo, Brave, Tavily, Exa, SearXNG).
 - [T19]: 🔄 **IN PROGRESS** — Core implementation complete (commit `a071a24`). AttachmentEngine, ChatInput 📎 dropdown, MessageBubble chips, api.ts multimodal support. Group chat broadcasting deferred. Testing pending.
 - [T21]: 🔄 **IN PROGRESS** — CLI test harness task created. Scripts for attachment resolution, streaming, tool calling, multimodal testing.
+
+## File Size Analysis (May 28, 2026)
+Deepak requested analysis of oversized files. **Refactoring in progress**:
+
+| File | Lines | Size | Verdict |
+|------|-------|------|---------|
+| `src/components/ChatApp.tsx` | **1,533** | ~48 KB | 🔄 **In progress** — Phase 0+1 complete. Target: ~300 lines |
+| `src/settings.ts` | **1,187** | 34 KB | 🔥 **Critical** — 836 lines of UI in config file |
+| `src/agent/ToolExecutor.ts` | 865 | 25 KB | ⚠️ Large — tool defs + execution + formatting |
+| `src/components/ProfileCard.tsx` | 698 | 21 KB | ⚠️ Large — UI component |
+| `src/api.ts` | 689 | 19 KB | ⚠️ Large — broad API surface |
+| `src/components/ChatInput.tsx` | 616 | 16 KB | ⚠️ Large |
+| `src/modules/WidgetExtension.ts` | 577 | 15 KB | ⚠️ Large |
+
+**New modules created**:
+- `src/lib/agentVisuals.ts` — 28 lines
+- `src/lib/contextUtils.ts` — 26 lines
+- `src/lib/slashCommand.ts` — 23 lines
+- `src/lib/sessionUtils.ts` — 24 lines
+- `src/lib/sessionTitle.ts` — 137 lines
+- `src/lib/systemPrompt.ts` — 67 lines
+- `src/hooks/useChatSession.ts` — 317 lines
+
+Total TypeScript source: ~13,500+ lines (new modules offset removal from ChatApp).
 
 ## T16 Progress Update (2026-05-25)
 
@@ -107,13 +137,14 @@
 - Known issues: Gemini guardrails, manual approval in council mode deferred, parallel dispatch not wired
 
 ## Next Steps
-1. **Export feature**: Needs exact UI location specification from user
-2. **Issue #3**: Token usage for tool calls (`stepTokenEstimates` in AgentLoop.ts)
-3. **Issue #4**: Agent dropdown click-outside handler completion
-4. **Issue #2**: Tool-call streaming ContentPart import cleanup
-5. **T17 Phase 1**: Backlinks + YAML tools (user-prioritized)
-6. Return to T15 Phase 3 (TabBar) when user ready
-7. **README**: New demo GIF needed (current shows old inline editing)
+1. **T22 Phase 2**: Extract `useChatUI` hook (zenMode, debateMode, modals, dropdowns, editing state) from ChatApp.tsx
+2. **T22 Phase 3**: Extract `useMessageActions` hook (send, stop, retry, edit, apply, append)
+3. **T23 Phase 1**: Move `ObsidianAISettingsTab` to dedicated file
+4. **Export feature**: Needs exact UI location specification from user
+5. **Issue #3**: Token usage for tool calls (`stepTokenEstimates` in AgentLoop.ts)
+6. **Issue #4**: Agent dropdown click-outside handler completion
+7. **T17 Phase 1**: Backlinks + YAML tools (user-prioritized)
+8. Return to T15 Phase 3 (TabBar) when user ready
 
 ## Current Decisions
 - Unified UI chosen over separate panels (user explicitly requested)
@@ -123,11 +154,12 @@
 - Debate mode: Round 1 all agents respond to user, Round 2 agents see each other's responses. PASS to skip.
 - **Folder context: NEVER inline full file contents** — tool instructions are the correct pattern for large collections
 - T15 tab bar deprioritized in favor of T16 group chat
+- **T22 + T23 priority**: ChatApp and Settings decomposition is now highest priority per user request (May 28)
 
 ## Session Context
-- **Session**: 2026-05-23 night
-- **Commits**: `6c396bb`, `d19de84`
-  - `6c396bb`: T13 `list_notes` subfolders + `count_notes` breakdown
-  - `d19de84`: T13 context overload fix (folder/tag context returns listings, not full contents)
-- **Build status**: ✅ tsc + esbuild pass
+- **Session**: 2026-05-28 night
+- **File size analysis completed**
+- **Task files created**: T22.md, T23.md
+- **Implementation doc created**: `chatapp-settings-decomposition.md`
+- **Build status**: ✅ tsc + esbuild pass (pre-refactor)
 - **Pushed to**: origin/main
