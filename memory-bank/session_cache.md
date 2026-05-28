@@ -1,23 +1,17 @@
-# Session Cache — 2026-05-28 23:45 IST
+# Session End — 2026-05-29 00:40 IST
 
 **Session Start**: 2026-05-28 23:00 IST
+**End Trigger**: `/end` command
+**Duration**: ~40 minutes
 **Current Task**: T22 — ChatApp.tsx Component Decomposition
 **Status**: Phase 0 + Phase 1 COMPLETE
 
 ## Actions Taken
-1. **Phase 0**: Extracted 6 standalone utility modules from ChatApp.tsx into `src/lib/`:
-   - `agentVisuals.ts` (28 lines) — `getAgentColor`, `getAgentIcon`
-   - `contextUtils.ts` (26 lines) — `contextItemKey`, `sameContextItems`
-   - `slashCommand.ts` (23 lines) — `SlashCommand`, `parseSlashCommand`
-   - `sessionUtils.ts` (24 lines) — `makeId`, `pruneSessions`
-   - `sessionTitle.ts` (137 lines) — `generateSessionTitle`, `generateSessionTitleLLM`
-   - `systemPrompt.ts` (67 lines) — `buildSystemPrompt`
-2. **Phase 1**: Created `useChatSession` hook (`src/hooks/useChatSession.ts`, 317 lines) managing:
-   - Session state, persistence (load/save), auto-naming, CRUD operations
-3. **Wired hook into ChatApp.tsx**: Removed inline state, load/save/auto-name effects, updated handlers
-
-## Build Status
-✅ `npm run build` passes at every step
+1. **Phase 0**: Extracted 6 standalone utility modules from ChatApp.tsx into `src/lib/`
+2. **Phase 1**: Created `useChatSession` hook with session CRUD, persistence, auto-naming
+3. **Wired hook into ChatApp.tsx**: Replaced inline state/effects/handlers
+4. **Build verification**: `npm run build` passes at every step
+5. **Git commit + push**: Commit `56caaa7` pushed to origin/main
 
 ## Line Count Progress
 | Step | Lines | Change |
@@ -36,11 +30,13 @@
 - `src/lib/systemPrompt.ts`
 - `src/hooks/useChatSession.ts`
 
-## Updated Files
-- `src/components/ChatApp.tsx` (imports + state + effects + handlers)
-- `memory-bank/tasks.md`
-- `memory-bank/tasks/T22.md`
-- `memory-bank/activeContext.md`
+## Git Commit
+- `56caaa7` — refactor(T22): Phase 0 + Phase 1 — extract utilities + useChatSession hook
+- 16 files changed, 1,184 insertions(+), 545 deletions(-)
 
 ## Next Step
 Phase 2: Extract `useChatUI` hook (modals, zen mode, debate mode, thinking, auto-approve, typing indicators) OR switch to T23 (settings.ts decomposition).
+
+## Notes
+- No build errors, no crashes
+- All functionality preserved (no behavior changes, just moved code)
