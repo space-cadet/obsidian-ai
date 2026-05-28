@@ -81,6 +81,28 @@ export function validateProfile(profile: ProviderProfile): string | null {
 /**
  * Creates a Vercel AI SDK language model from a provider profile.
  */
+function getThinkingProviderOptions(profile: ProviderProfile, thinkingEnabled?: boolean): Record<string, any> | undefined {
+	if (!thinkingEnabled) return undefined;
+	switch (profile.provider) {
+		case "deepseek":
+			return { deepseek: { reasoningEffort: "medium" } };
+		case "openai":
+			// Only reasoning models (o1, o3, etc.) support reasoningEffort
+			if (profile.model?.startsWith("o")) {
+				return { openai: { reasoningEffort: "medium" } };
+			}
+			return undefined;
+		case "anthropic":
+			// Claude 3.7 Sonnet supports extended thinking via providerOptions
+			if (profile.model?.includes("claude-3-7")) {
+				return { anthropic: { thinking: { type: "enabled", budgetTokens: 12000 } } };
+			}
+			return undefined;
+		default:
+			return undefined;
+	}
+}
+
 function createLanguageModel(profile: ProviderProfile): LanguageModelV3 | null {
 	const error = validateProfile(profile);
 	if (error) {
@@ -400,6 +422,7 @@ export class ChatApiManager {
 		messages: SdkMessage[],
 		signal?: AbortSignal,
 		profile?: ProviderProfile,
+		thinkingEnabled?: boolean,
 	): AsyncIterable<string> {
 		const model = createLanguageModel(
 			profile ?? getActiveProviderProfile(this.settings),
@@ -412,6 +435,7 @@ export class ChatApiManager {
 			model,
 			messages: messages as any,
 			abortSignal: signal,
+			providerOptions: getThinkingProviderOptions(profile ?? getActiveProviderProfile(this.settings), thinkingEnabled),
 		});
 
 		for await (const chunk of result.textStream) {
@@ -433,6 +457,7 @@ export class ChatApiManager {
 		tools: any,
 		signal?: AbortSignal,
 		profile?: ProviderProfile,
+		thinkingEnabled?: boolean,
 	): AsyncIterable<StreamEvent> {
 		const model = createLanguageModel(
 			profile ?? getActiveProviderProfile(this.settings),
@@ -447,6 +472,7 @@ export class ChatApiManager {
 			tools,
 			stopWhen: stepCountIs(1),
 			abortSignal: signal,
+			providerOptions: getThinkingProviderOptions(profile ?? getActiveProviderProfile(this.settings), thinkingEnabled),
 		});
 
 		for await (const part of result.fullStream) {

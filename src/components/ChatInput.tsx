@@ -17,8 +17,6 @@ interface ChatInputProps {
 	thinkingEnabled?: boolean;
 	/** Toggle thinking mode */
 	onToggleThinking?: () => void;
-	/** Whether to show thinking/reasoning content in messages */
-	showThinking?: boolean;
 	/** Current attachments (for rendering chips) */
 	attachments?: import("../types").Attachment[];
 	/** Callback when attachments change */
@@ -98,7 +96,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	hasActiveNote,
 	thinkingEnabled,
 	onToggleThinking,
-	showThinking,
 	attachments = [],
 	onAttachmentsChange,
 }) => {
@@ -591,16 +588,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 							</div>
 						) : (
 							<>
-								{onToggleThinking && (
-									<button
-										className={`chat-btn chat-icon-btn${showThinking ? " is-active" : ""}`}
-										onClick={onToggleThinking}
-										title={showThinking ? "Hide thinking/reasoning" : "Show thinking/reasoning"}
-										type="button"
-									>
-										💭
-									</button>
-								)}
 								<button
 									className="chat-btn chat-send-btn chat-send-icon"
 									onClick={() => {

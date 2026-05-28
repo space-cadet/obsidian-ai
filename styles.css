@@ -2447,6 +2447,96 @@
 	opacity: 1;
 }
 
+/* ─── Chat Input: Wrapper + Row Layout ─── */
+.chat-input-wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 8px;
+	border-top: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	flex-shrink: 0;
+}
+
+.chat-input-row {
+	display: flex;
+	align-items: flex-end;
+	gap: 6px;
+	width: 100%;
+}
+
+.chat-input-left {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-shrink: 0;
+}
+
+.chat-input-right {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-shrink: 0;
+}
+
+/* Attachment chips row */
+.chat-attachment-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	padding: 2px 0;
+	max-width: 100%;
+}
+
+/* Textarea sizing */
+.chat-textarea {
+	flex: 1;
+	resize: none;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 6px 8px;
+	font-size: var(--font-ui-small);
+	font-family: inherit;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	line-height: 1.4;
+	min-height: 32px;
+	max-height: 96px;
+	overflow-y: auto;
+	min-width: 120px;
+}
+
+.chat-textarea:focus {
+	outline: none;
+	border-color: var(--interactive-accent);
+}
+
+/* Mobile: tighter spacing */
+@media (max-width: 768px) {
+	.chat-input-wrapper {
+		padding: 6px;
+	}
+	.chat-textarea {
+		padding: 5px 6px;
+		font-size: var(--font-ui-smaller);
+		min-width: 80px;
+	}
+	.chat-input-row {
+		gap: 4px;
+	}
+}
+
+@media (max-width: 420px) {
+	.chat-textarea {
+		min-width: 60px;
+		padding: 4px 5px;
+	}
+	.chat-input-left,
+	.chat-input-right {
+		gap: 2px;
+	}
+}
+
 /* ─── Chat Input: Attach Icon + Auto-expand ─── */
 .chat-input-attach {
 	padding: 4px 8px;

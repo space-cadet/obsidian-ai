@@ -11,6 +11,8 @@ export interface AgentLoopOptions {
 	autoApprove: boolean;
 	/** Optional profile to use for API calls. */
 	profile?: ProviderProfile;
+	/** Whether to enable thinking/reasoning mode for LLM requests. */
+	thinkingEnabled?: boolean;
 	/** Called with accumulated text whenever a text-delta arrives. */
 	onTextDelta: (accumulatedText: string) => void;
 	/** Called when a tool call is detected (before execution/approval). */
@@ -168,6 +170,7 @@ export class AgentLoop {
 				tools,
 				signal,
 				this.opts.profile,
+				this.opts.thinkingEnabled,
 			)) {
 				if (signal.aborted) break;
 

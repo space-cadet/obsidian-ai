@@ -338,6 +338,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	const [zenMode, setZenMode] = useState(false);
 	const [debateMode, setDebateMode] = useState(false);
 	const [showThinking, setShowThinking] = useState(false);
+	/** Whether thinking mode is enabled for LLM requests */
+	const [thinkingEnabled, setThinkingEnabled] = useState(false);
 	const [originalMessages, setOriginalMessages] = useState<ChatMessage[]>([]);
 	const [editMessageText, setEditMessageText] = useState<string>("");
 	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(
@@ -1110,6 +1112,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 						maxSteps: maxAgentSteps,
 						autoApprove,
 						profile: resolvedProfile,
+						thinkingEnabled,
 						onTextDelta: (text) => {
 							fullText = text;
 							// Strip thinking tags from streaming display
@@ -1209,6 +1212,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 						chatMessages,
 						controllerRef.current.signal,
 						resolvedProfile,
+						thinkingEnabled,
 					)) {
 						fullText += chunk;
 						// Only show streaming content for non-slash commands
@@ -1877,7 +1881,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				isStreaming={isStreaming}
 				isEditing={isEditing}
 				app={plugin.app}
-				showThinking={showThinking}
+				showThinking={thinkingEnabled}
 				onAppend={handleAppend}
 				onInsertAtCursor={handleInsertAtCursor}
 				onApply={handleApply}
@@ -1907,8 +1911,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				editMessage={editMessageText}
 				onToggleActiveNote={handleToggleActiveNote}
 				hasActiveNote={contextItems.some((item) => item.type === "active-note")}
-				showThinking={showThinking}
-				onToggleThinking={() => setShowThinking((t) => !t)}
+				thinkingEnabled={thinkingEnabled}
+				onToggleThinking={() => setThinkingEnabled((t) => !t)}
 				attachments={messageAttachments}
 				onAttachmentsChange={setMessageAttachments}
 			/>
