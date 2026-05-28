@@ -1111,7 +1111,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 						toolExecutor: new ToolExecutor(plugin.app, plugin.settings),
 						maxSteps: maxAgentSteps,
 						autoApprove,
-						profile: resolvedProfile,
+						profile: activeProfile,
 						thinkingEnabled,
 						onTextDelta: (text) => {
 							fullText = text;
@@ -1211,7 +1211,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 					for await (const chunk of plugin.chatapi.streamChat(
 						chatMessages,
 						controllerRef.current.signal,
-						resolvedProfile,
+						activeProfile,
 						thinkingEnabled,
 					)) {
 						fullText += chunk;
