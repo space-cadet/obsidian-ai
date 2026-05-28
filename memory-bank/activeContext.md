@@ -1,18 +1,19 @@
 # Active Context
 
-*Last Updated: 2026-05-28 23:10 IST*
+*Last Updated: 2026-05-29 02:15 IST*
 
 ## Current Focus
-**Primary Task:** T22 — ChatApp.tsx Component Decomposition — Phases 0+1+2 COMPLETE
-**Status:** `ChatApp.tsx` reduced from 1,948 to 1,483 lines (-465). Build passes. Tests pass.
+**Primary Task:** T22 — ChatApp.tsx Component Decomposition — Phases 0+1+2+3 COMPLETE
+**Status:** `ChatApp.tsx` reduced from 1,948 to **636 lines** (-1,312, -67%). Build passes. 52 tests pass.
 - **Phase 0**: Extracted 6 utility modules (`agentVisuals`, `contextUtils`, `slashCommand`, `sessionUtils`, `sessionTitle`, `systemPrompt`)
 - **Phase 1**: Created `useChatSession` hook (317 lines) — session CRUD, persistence, auto-naming, manual rename
 - **Phase 2**: Created `useChatUI` hook (264 lines) + 31 tests — modals, zen/debate/thinking toggles, participant dropdown, typing indicators, editing state, attachments, auto-approve
+- **Phase 3**: Created `useMessageActions` hook (1,111 lines) + 21 tests — send, stop, retry, edit, apply, append, tool approval/rejection
 
 **Secondary Tasks:** T23 (Settings.ts decomposition — task created, not started)
 
 ## Active Tasks
-- **[T22]**: 🔄 **IN PROGRESS** — **Phases 0+1+2 COMPLETE**. ChatApp.tsx: 1,948 → 1,483 lines (-465). Extracted 6 utility modules + `useChatSession` hook (317 lines) + `useChatUI` hook (264 lines, 31 tests). Build + tests pass. Remaining: `useMessageActions` hook, layout components.
+- **[T22]**: 🔄 **IN PROGRESS** — **Phases 0+1+2+3 COMPLETE**. ChatApp.tsx: 1,948 → **636 lines** (-1,312, -67%). Extracted 6 utility modules + `useChatSession` (317 lines) + `useChatUI` (264 lines, 31 tests) + `useMessageActions` (1,111 lines, 21 tests). Build + tests pass. Remaining: session/settings/export handlers, layout components.
 - **[T23]**: 🔄 **IN PROGRESS** — Task file created. Not started.
 - [T16]: 🔄 **IN PROGRESS** — Phases 1–17 implemented. Debate mode working. UI refined. Participant persistence fixed. Thinking display toggle added. **May 25: Fixed duplicate profile ID on copy (commit `de84c4a`) and model fetching for all providers (commit `9d3d1a3`).**
 - [T14]: 🔄 **IN PROGRESS** — Phase 3 integration test. Tailscale 2/3 complete.
@@ -28,7 +29,7 @@ Deepak requested analysis of oversized files. **Refactoring in progress**:
 
 | File | Lines | Size | Verdict |
 |------|-------|------|---------|
-| `src/components/ChatApp.tsx` | **1,483** | ~46 KB | 🔄 **In progress** — Phases 0+1+2 complete. Target: ~300 lines |
+| `src/components/ChatApp.tsx` | **636** | ~20 KB | 🔄 **In progress** — Phases 0–3 complete. Target: ~300 lines |
 | `src/settings.ts` | **1,187** | 34 KB | 🔥 **Critical** — 836 lines of UI in config file |
 | `src/agent/ToolExecutor.ts` | 865 | 25 KB | ⚠️ Large — tool defs + execution + formatting |
 | `src/components/ProfileCard.tsx` | 698 | 21 KB | ⚠️ Large — UI component |
@@ -140,8 +141,8 @@ Total TypeScript source: ~13,500+ lines (new modules offset removal from ChatApp
 - Known issues: Gemini guardrails, manual approval in council mode deferred, parallel dispatch not wired
 
 ## Next Steps
-1. **T22 Phase 3**: Extract `useMessageActions` hook (send, stop, retry, edit, apply, append)
-2. **T22 Phase 4**: Extract layout sub-components (ChatLayout, ChatToolbar, ChatMainArea)
+1. **T22 Phase 4**: Extract session/settings/export handlers (`useSessionActions`, `useSettingsActions`, `useExportActions`)
+2. **T22 Phase 5**: Extract layout sub-components (ChatLayout, ChatToolbar, ChatMainArea)
 3. **T23 Phase 1**: Move `ObsidianAISettingsTab` to dedicated file
 4. **Export feature**: Needs exact UI location specification from user
 5. **Issue #3**: Token usage for tool calls (`stepTokenEstimates` in AgentLoop.ts)

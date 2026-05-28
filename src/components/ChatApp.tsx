@@ -26,6 +26,7 @@ import { makeId } from "../lib/sessionUtils";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { useChatSession } from "../hooks/useChatSession";
 import { useChatUI } from "../hooks/useChatUI";
+import { useMessageActions } from "../hooks/useMessageActions";
 import ActionBar from "./ActionBar";
 import ChatMessages from "./ChatMessages";
 import ContextBar from "./ContextBar";
@@ -78,6 +79,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	const [targetNoteName, setTargetNoteName] = useState<string | null>(null);
 	const [thinkingEnabled, setThinkingEnabled] = useState(false);
 	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(null);
+	const pendingToolCallRef = useRef<ToolCall | null>(null);
+	useEffect(() => {
+		pendingToolCallRef.current = pendingToolCall;
+	}, [pendingToolCall]);
 	const controllerRef = useRef<AbortController | null>(null);
 	const resolveToolRef = useRef<((result: ToolResult | null) => void) | null>(null);
 	// Refs so callbacks always see latest values without stale closures
@@ -330,674 +335,34 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		});
 		ui.setShowContextPicker(false);
 	}, []);
+	const hasHistory = sessions.some((s) => s.messages.length > 0);
 
-	const handleSend = useCallback(
-		async (text: string, attachments?: import("../types").Attachment[]) => {
-			if ((!text.trim() && (!attachments || attachments.length === 0)) || isStreaming) return;
+	const actions = useMessageActions({
+		plugin,
+		orchestrator,
+		resolvedProfile,
+		isGroupChat,
+		participants,
+		thinkingEnabled,
+		sessionsRef,
+		activeSessionIdRef,
+		setSessions,
+		setIsStreaming,
+		setCurrentAiMessage,
+		setCurrentContentParts,
+		setPendingToolCall,
+		setWasTruncated,
+		setContextTokenCount,
+		setContextItems,
+		controllerRef,
+		resolveToolRef,
+		messagesRef,
+		contextItemsRef,
+		lastMarkdownLeafRef,
+		pendingToolCallRef,
+		ui,
+	});
 
-			// ═══════════════════════════════════════════════════════
-			// GROUP CHAT PATH
-			// ═══════════════════════════════════════════════════════
-			if (isGroupChat && orchestrator) {
-				const userMsg: ChatMessage = {
-					id: makeId(),
-					role: "user",
-					content: text,
-					timestamp: Date.now(),
-					attachments: ui.messageAttachments && ui.messageAttachments.length > 0 ? ui.messageAttachments : undefined,
-				};
-				const currentActiveId = activeSessionIdRef.current;
-				setSessions((prev) =>
-					prev.map((s) =>
-						s.id === currentActiveId
-							? { ...s, messages: [...s.messages, userMsg], updatedAt: Date.now() }
-							: s,
-					),
-				);
-				setIsStreaming(true);
-				controllerRef.current = new AbortController();
-
-				const { targets } = orchestrator.parseAndRoute(text, ui.messageAttachments);
-				ui.setTypingAgents(new Set(targets.map((t) => t.name)));
-
-				try {
-					const stream = ui.debateMode
-						? orchestrator.debate(
-								text,
-								sessionsRef.current.find((s) => s.id === currentActiveId)?.messages ?? [],
-								controllerRef.current?.signal,
-								2,
-						  )
-						: orchestrator.dispatch(
-								text,
-								sessionsRef.current.find((s) => s.id === currentActiveId)?.messages ?? [],
-								controllerRef.current?.signal,
-						  );
-
-					for await (const response of stream) {
-						ui.setTypingAgents((prev) => {
-							const next = new Set(prev);
-							next.delete(response.agentName);
-							return next;
-						});
-
-						const assistantMsg: ChatMessage = {
-							id: makeId(),
-							role: "assistant",
-							content: response.error
-								? `⚠️ ${response.agentName} failed: ${response.error}`
-								: response.text,
-							timestamp: Date.now(),
-							agentId: response.agentId,
-							agentName: response.agentName,
-							agentColor: response.agentColor,
-							isError: !!response.error,
-							toolCalls: response.toolCalls,
-							estimatedTokens: response.tokenEstimate,
-						};
-
-						setSessions((prev) =>
-							prev.map((s) =>
-								s.id === currentActiveId
-									? { ...s, messages: [...s.messages, assistantMsg], updatedAt: Date.now() }
-									: s,
-							),
-						);
-					}
-				} catch (error: any) {
-					new Notice(`❌ Group chat error: ${error.message}`);
-					const errorMsg: ChatMessage = {
-						id: makeId(),
-						role: "assistant",
-						content: `⚠️ Council error: ${error.message}`,
-						timestamp: Date.now(),
-						isError: true,
-					};
-					setSessions((prev) =>
-						prev.map((s) =>
-							s.id === currentActiveId
-								? { ...s, messages: [...s.messages, errorMsg], updatedAt: Date.now() }
-								: s,
-						),
-					);
-				} finally {
-					setIsStreaming(false);
-					ui.setTypingAgents(new Set());
-					controllerRef.current = null;
-				}
-				return;
-			}
-
-			// Parse slash commands
-			const slashCmd = parseSlashCommand(text);
-			let sendText = text;
-			let sendContextItems = contextItemsRef.current;
-			let commandMeta: ChatMessage["command"] = undefined;
-
-			if (slashCmd) {
-				commandMeta = {
-					type: slashCmd.command,
-					target: slashCmd.target,
-				};
-				sendText =
-					slashCmd.prompt ||
-					`Please ${slashCmd.command} ${slashCmd.target}`;
-
-				if (
-					slashCmd.command === "edit" ||
-					slashCmd.command === "append"
-				) {
-					// Resolve target note and add to context
-					const file = plugin.app.metadataCache.getFirstLinkpathDest(
-						slashCmd.target,
-						"",
-					);
-					if (file && file instanceof TFile) {
-						const exists = sendContextItems.some(
-							(i) => i.type === "note" && i.path === file.path,
-						);
-						if (!exists) {
-							sendContextItems = [
-								...sendContextItems,
-								{
-									type: "note",
-									path: file.path,
-									name: file.basename,
-									id: makeId(),
-								},
-							];
-						}
-					}
-				}
-			}
-
-			const resolved = await resolveContextItems(
-				sendContextItems,
-				plugin.app,
-				plugin.settings.maxContextTokens || 8000,
-			);
-			setWasTruncated(resolved.wasTruncated);
-			setContextTokenCount(resolved.stats.estimatedTokens);
-
-			const userTokenEstimate = estimateTokens(
-				(resolved.contextString
-					? resolved.contextString + "\n\n"
-					: "") + sendText,
-			);
-
-			const userMsg: ChatMessage = {
-				id: makeId(),
-				role: "user",
-				content: text,
-				timestamp: Date.now(),
-				contextItems: sendContextItems,
-				attachments: attachments && attachments.length > 0 ? attachments : undefined,
-				estimatedTokens: userTokenEstimate,
-			};
-
-			const currentActiveId = activeSessionIdRef.current;
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === currentActiveId
-						? {
-								...s,
-								messages: [...s.messages, userMsg],
-								updatedAt: Date.now(),
-								contextItems: sendContextItems,
-							}
-						: s,
-				),
-			);
-			setIsStreaming(true);
-			setCurrentAiMessage("");
-			setCurrentContentParts([]);
-			controllerRef.current = new AbortController();
-			const streamStartTime = Date.now();
-
-			const maxContextMessages = plugin.settings.maxContextMessages || 10;
-			const history = messagesRef.current
-				.slice(-maxContextMessages)
-				.map((m) => ({
-					role: m.role as "user" | "assistant",
-					content: m.content,
-				}));
-
-			let userContent = sendText;
-			if (resolved.contextString) {
-				userContent = `${resolved.contextString}\n\n${sendText}`;
-			}
-
-			// When exactly 1 profile is selected in the dropdown, use it instead of
-			// the settings default (resolvedProfile).  2+ selections are handled by
-			// the group-chat path above; 0 selections fall back to resolvedProfile.
-			const selectedIds = Array.from(ui.selectedProfileIds);
-			const activeProfile: ProviderProfile =
-				selectedIds.length === 1
-					? (plugin.settings.providerProfiles.find(
-							(p) => p.id === selectedIds[0],
-						) ?? resolvedProfile)
-					: resolvedProfile;
-			const isAgentProvider = activeProfile.provider === "agent";
-			const useTools = plugin.settings.enableAgentTools || isAgentProvider;
-			const autoApprove = plugin.settings.autoApply;
-			const maxAgentSteps = plugin.settings.maxAgentSteps;
-
-			// Resolve attachments to multimodal content parts if present
-			let userMessageContent: string | import("../api").MessageContentPart[] = userContent;
-			if (attachments && attachments.length > 0) {
-				const resolvedParts = await resolveAttachments(
-					attachments,
-					plugin.app,
-					activeProfile.provider,
-				);
-				if (resolvedParts.length > 0) {
-					userMessageContent = [
-						{ type: "text", text: userContent },
-						...resolvedParts,
-					];
-				}
-			}
-
-			const chatMessages = [
-				{
-					role: "system" as const,
-					content: buildSystemPrompt(
-						sendContextItems,
-						slashCmd ?? undefined,
-						useTools && !slashCmd,
-					),
-				},
-				...history,
-				{ role: "user" as const, content: userMessageContent },
-			];
-
-			let fullText = "";
-			let toolCallsLog: Array<{ call: ToolCall; result?: ToolResult }> = [];
-			// Ordered content parts for inline tool call rendering
-			let contentParts: Array<import("../types").ContentPart> = [];
-			// Tracks how much of fullText has been consumed into contentParts
-			let textCheckpoint = 0;
-			try {
-			let assistantContent = fullText;
-			let assistantTokenEstimate = 0;
-
-			if (isAgentProvider) {
-				console.log(
-					`[ChatApp] OpenResponsesLoop start — ${chatMessages.length} msgs`,
-				);
-				if (!activeProfile.endpointUrl) {
-					throw new Error("Agent endpoint URL is not configured.");
-				}
-				const agentApi = new AgentApiManager(
-					{
-						id: activeProfile.id,
-						name: activeProfile.name,
-						provider: "agent",
-						model: activeProfile.model,
-						endpointUrl: activeProfile.endpointUrl,
-						agentId: activeProfile.agentId || "main",
-						authToken: activeProfile.apiKey,
-						sessionKey: activeProfile.sessionKey,
-						autoApprove: activeProfile.autoApprove ?? autoApprove,
-						maxSteps: activeProfile.maxSteps ?? maxAgentSteps,
-					},
-					plugin.app,
-				);
-				const openResponsesLoop = new OpenResponsesLoop({
-					agentApi,
-					toolExecutor: new ToolExecutor(plugin.app, plugin.settings),
-					maxSteps: activeProfile.maxSteps ?? maxAgentSteps,
-					autoApprove: activeProfile.autoApprove ?? autoApprove,
-					onTextDelta: (text) => {
-						fullText = text;
-						setCurrentAiMessage(stripThinkingTags(text));
-					},
-					onToolCall: (call) => {
-						console.log(
-							`[ChatApp] OR-tool-call pending: ${call.toolName}`,
-							call.args,
-						);
-						const pendingText = stripThinkingTags(
-							fullText.slice(textCheckpoint)
-						);
-						if (pendingText) {
-							contentParts.push({ type: "text", content: pendingText });
-						}
-						toolCallsLog.push({ call });
-						contentParts.push({ type: "tool_call", call });
-						setCurrentContentParts([...contentParts]);
-						textCheckpoint = fullText.length;
-					},
-					requestApproval: async (call) => {
-						setPendingToolCall(call);
-						const resolved = await new Promise<
-							ToolResult | null
-						>((resolve) => {
-							resolveToolRef.current = resolve;
-						});
-						setPendingToolCall(null);
-						const lastIdx = toolCallsLog.length - 1;
-						if (lastIdx >= 0) {
-							toolCallsLog[lastIdx] = {
-								...toolCallsLog[lastIdx],
-								result: resolved || undefined,
-							};
-						}
-						const partIdx = contentParts.findIndex(
-							(p) => p.type === "tool_call" && p.call.toolCallId === call.toolCallId
-						);
-						if (partIdx >= 0 && resolved) {
-							const part = contentParts[partIdx];
-							if (part.type === "tool_call") {
-								contentParts[partIdx] = { ...part, result: resolved };
-							}
-						}
-						return resolved;
-					},
-					onToolResult: (call, result) => {
-						console.log(
-							`[ChatApp] OR-tool-result: ${call.toolName}`,
-							result.error ?? "success",
-						);
-						const idx = toolCallsLog.findIndex(
-							(tc) => tc.call.toolCallId === call.toolCallId,
-						);
-						if (idx >= 0) {
-							toolCallsLog[idx] = {
-								...toolCallsLog[idx],
-								result,
-							};
-						}
-						const partIdx = contentParts.findIndex(
-							(p) => p.type === "tool_call" && p.call.toolCallId === call.toolCallId
-						);
-						if (partIdx >= 0) {
-							const part = contentParts[partIdx];
-							if (part.type === "tool_call") {
-								contentParts[partIdx] = { ...part, result };
-							}
-						}
-					},
-				});
-
-				const orTools = noteToolsToOpenResponses(noteTools);
-				const resultText = await openResponsesLoop.run(
-					chatMessages as Array<{ role: "user" | "assistant" | "system"; content: string }>,
-					orTools,
-					controllerRef.current.signal,
-				);
-				assistantContent = resultText;
-				assistantTokenEstimate = estimateTokens(resultText);
-				console.log(
-					`[ChatApp] OpenResponsesLoop done — ${resultText.length} chars`,
-				);
-			} else if (useTools && !slashCmd) {
-					console.log(
-						`[ChatApp] AgentLoop start — ${chatMessages.length} msgs`,
-					);
-					const agent = new AgentLoop({
-						chatApi: plugin.chatapi,
-						toolExecutor: new ToolExecutor(plugin.app, plugin.settings),
-						maxSteps: maxAgentSteps,
-						autoApprove,
-						profile: activeProfile,
-						thinkingEnabled,
-						onTextDelta: (text) => {
-							fullText = text;
-							// Strip thinking tags from streaming display
-							setCurrentAiMessage(stripThinkingTags(text));
-						},
-						onToolCall: (call) => {
-							console.log(
-								`[ChatApp] tool-call pending: ${call.toolName}`,
-								call.args,
-							);
-							// Capture text accumulated since last checkpoint, stripping thinking tags
-							const pendingText = stripThinkingTags(
-								fullText.slice(textCheckpoint)
-							);
-							if (pendingText) {
-								contentParts.push({ type: "text", content: pendingText });
-							}
-							// Add tool call to parts and log
-							toolCallsLog.push({ call });
-							contentParts.push({ type: "tool_call", call });
-							// Update live streaming state
-							setCurrentContentParts([...contentParts]);
-							// Advance checkpoint to current position
-							textCheckpoint = fullText.length;
-						},
-						requestApproval: async (call) => {
-							setPendingToolCall(call);
-							const resolved = await new Promise<
-								ToolResult | null
-							>((resolve) => {
-								resolveToolRef.current = resolve;
-							});
-							setPendingToolCall(null);
-							// Update the last pending tool call with the result
-							const lastIdx = toolCallsLog.length - 1;
-							if (lastIdx >= 0) {
-								toolCallsLog[lastIdx] = {
-									...toolCallsLog[lastIdx],
-									result: resolved || undefined,
-								};
-							}
-							// Update the matching content part with result
-							const partIdx = contentParts.findIndex(
-								(p) => p.type === "tool_call" && p.call.toolCallId === call.toolCallId
-							);
-							if (partIdx >= 0 && resolved) {
-								const part = contentParts[partIdx];
-								if (part.type === "tool_call") {
-									contentParts[partIdx] = { ...part, result: resolved };
-								}
-							}
-							return resolved;
-						},
-						onToolResult: (call, result) => {
-							console.log(
-								`[ChatApp] tool-result: ${call.toolName}`,
-								result.error ?? "success",
-							);
-							// Update the matching tool call with the result
-							const idx = toolCallsLog.findIndex(
-								(tc) => tc.call.toolCallId === call.toolCallId,
-							);
-							if (idx >= 0) {
-								toolCallsLog[idx] = {
-									...toolCallsLog[idx],
-									result,
-								};
-							}
-							// Update the matching content part with result
-							const partIdx = contentParts.findIndex(
-								(p) => p.type === "tool_call" && p.call.toolCallId === call.toolCallId
-							);
-							if (partIdx >= 0) {
-								const part = contentParts[partIdx];
-								if (part.type === "tool_call") {
-									contentParts[partIdx] = { ...part, result };
-								}
-							}
-						},
-					});
-
-					const result = await agent.run(
-						chatMessages as Array<any>,
-						noteTools,
-						controllerRef.current.signal,
-					);
-					assistantContent = result.text;
-					assistantTokenEstimate = result.tokenEstimate;
-					console.log(
-						`[ChatApp] AgentLoop done — ${result.text.length} chars`,
-					);
-				} else {
-					console.log(
-						`[ChatApp] streamChat start — ${chatMessages.length} msgs`,
-					);
-					for await (const chunk of plugin.chatapi.streamChat(
-						chatMessages,
-						controllerRef.current.signal,
-						activeProfile,
-						thinkingEnabled,
-					)) {
-						fullText += chunk;
-						// Only show streaming content for non-slash commands
-						if (!slashCmd) {
-							setCurrentAiMessage(stripThinkingTags(fullText));
-						}
-					}
-					console.log(
-						`[ChatApp] streamChat done — ${fullText.length} chars`,
-					);
-					assistantContent = fullText;
-					assistantTokenEstimate = estimateTokens(fullText);
-					// Non-tool path: single text part (strip thinking tags)
-					contentParts = [{ type: "text", content: stripThinkingTags(fullText) }];
-				}
-
-				// For slash commands, execute the action and show a status message
-				if (slashCmd?.command === "create" && fullText) {
-					const fileName = slashCmd.target.endsWith(".md")
-						? slashCmd.target
-						: `${slashCmd.target}.md`;
-					try {
-						await plugin.app.vault.create(fileName, fullText);
-						new Notice(`✓ Created note: ${slashCmd.target}`);
-						assistantContent = `✓ Created note: ${slashCmd.target}`;
-					} catch (e: any) {
-						new Notice(`⚠️ Could not create note: ${e.message}`);
-						assistantContent = `⚠️ Could not create note: ${e.message}`;
-					}
-					assistantTokenEstimate = estimateTokens(assistantContent);
-				} else if (slashCmd?.command === "edit" && fullText) {
-					const success = await NoteEditingBridge.applyToTargetNote(
-						plugin.app,
-						slashCmd.target,
-						fullText,
-						"Apply AI edit",
-					);
-					assistantContent = success
-						? `✓ Applied edits to ${slashCmd.target}`
-						: `⚠️ Could not apply edits to ${slashCmd.target}`;
-					assistantTokenEstimate = estimateTokens(assistantContent);
-				} else if (slashCmd?.command === "append" && fullText) {
-					let file = plugin.app.vault.getAbstractFileByPath(
-						slashCmd.target,
-					);
-					if (!file || !(file instanceof TFile)) {
-						const resolved =
-							plugin.app.metadataCache.getFirstLinkpathDest(
-								slashCmd.target,
-								"",
-							);
-						if (resolved && resolved instanceof TFile) {
-							file = resolved;
-						}
-					}
-					if (file && file instanceof TFile) {
-						await NoteEditingBridge.appendToNote(
-							plugin.app,
-							file,
-							fullText,
-						);
-						assistantContent = `✓ Appended to ${slashCmd.target}`;
-					} else {
-						assistantContent = `⚠️ Note not found: ${slashCmd.target}`;
-					}
-					assistantTokenEstimate = estimateTokens(assistantContent);
-				}
-
-				// Finalize any remaining text after all tool calls / streaming
-				if (useTools && !slashCmd) {
-					const remainingText = stripThinkingTags(
-						fullText.slice(textCheckpoint)
-					);
-					if (remainingText) {
-						contentParts.push({ type: "text", content: remainingText });
-					}
-				}
-
-				// Build the assistant message with cleaned content
-				const cleanAssistantContent = stripThinkingTags(assistantContent);
-				const assistantMsg: ChatMessage = {
-					id: makeId(),
-					role: "assistant",
-					content: cleanAssistantContent,
-					timestamp: Date.now(),
-					command: commandMeta,
-					estimatedTokens: assistantTokenEstimate,
-					modelName: activeProfile.model,
-					responseTimeMs: Date.now() - streamStartTime,
-					toolCalls: toolCallsLog.length > 0 ? toolCallsLog : undefined,
-					contentParts: contentParts.length > 0 ? contentParts : undefined,
-				};
-				console.log(
-					`[ChatApp] adding assistantMsg — ${assistantContent.length} chars, id=${assistantMsg.id}`,
-				);
-				setSessions((prev) =>
-					prev.map((s) =>
-						s.id === currentActiveId
-							? {
-									...s,
-									messages: [...s.messages, assistantMsg],
-									updatedAt: Date.now(),
-									contextItems: sendContextItems,
-								}
-							: s,
-					),
-				);
-			} catch (e: any) {
-				if (e.name === "AbortError") {
-					console.log(
-						`[ChatApp] streamChat aborted — partial ${fullText.length} chars`,
-					);
-					if (fullText) {
-						// Build content parts for aborted message
-						let abortedParts: Array<import("../types").ContentPart> = [];
-						if (useTools && !slashCmd) {
-							abortedParts = [...contentParts];
-							const remainingText = stripThinkingTags(
-								fullText.slice(textCheckpoint)
-							);
-							if (remainingText) {
-								abortedParts.push({ type: "text", content: remainingText + " [stopped]" });
-							}
-						} else {
-							abortedParts = [{ type: "text", content: stripThinkingTags(fullText) + " [stopped]" }];
-						}
-						const stoppedMsg: ChatMessage = {
-							id: makeId(),
-							role: "assistant",
-							content: stripThinkingTags(fullText) + " [stopped]",
-							timestamp: Date.now(),
-							command: commandMeta,
-							estimatedTokens: estimateTokens(fullText),
-							modelName: activeProfile.model,
-							responseTimeMs: Date.now() - streamStartTime,
-							contentParts: abortedParts,
-						};
-						setSessions((prev) =>
-							prev.map((s) =>
-								s.id === currentActiveId
-									? {
-											...s,
-											messages: [
-												...s.messages,
-												stoppedMsg,
-											],
-											updatedAt: Date.now(),
-											contextItems: sendContextItems,
-										}
-									: s,
-							),
-						);
-					}
-				} else {
-					console.error("[ChatApp] streamChat error:", e.message);
-					const errorMsg: ChatMessage = {
-						id: makeId(),
-						role: "assistant",
-						content: `Error: ${e.message}`,
-						timestamp: Date.now(),
-						isError: true,
-						command: commandMeta,
-						estimatedTokens: estimateTokens(`Error: ${e.message}`),
-					};
-					setSessions((prev) =>
-						prev.map((s) =>
-							s.id === currentActiveId
-								? {
-										...s,
-										messages: [...s.messages, errorMsg],
-										updatedAt: Date.now(),
-										contextItems: sendContextItems,
-									}
-								: s,
-						),
-					);
-				}
-			} finally {
-				console.log("[ChatApp] finally block — resetting stream state");
-				setIsStreaming(false);
-				setCurrentAiMessage("");
-				setCurrentContentParts([]);
-				controllerRef.current = null;
-				ui.setIsEditing(false);
-				ui.setOriginalMessages([]);
-				ui.setEditMessageText("");
-				// Clear context items after send (context is per-message)
-				setContextItems([]);
-			}
-		},
-		[isStreaming, plugin, orchestrator, isGroupChat, participants, ui.typingAgents, ui.debateMode, resolvedProfile],
-	);
-
-	const handleStop = useCallback(() => {
-		controllerRef.current?.abort();
-	}, []);
 
 	const handleNewChat = useCallback(() => {
 		if (isStreaming) controllerRef.current?.abort();
@@ -1017,203 +382,6 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		ui.setDebateMode(false);
 		setWasTruncated(false);
 	}, [isStreaming, plugin, createNewSession]);
-
-	const handleAppend = useCallback(
-		async (content: string) => {
-			const leaf = lastMarkdownLeafRef.current;
-			const file =
-				leaf?.view instanceof MarkdownView
-					? (leaf.view as MarkdownView).file
-					: null;
-			if (!(file instanceof TFile)) {
-				new Notice("⚠️ No active note to append to.");
-				return;
-			}
-			await NoteEditingBridge.appendToNote(plugin.app, file, content);
-		},
-		[plugin],
-	);
-
-	const handleInsertAtCursor = useCallback(
-		(content: string) => {
-			const leaf = lastMarkdownLeafRef.current;
-			if (!(leaf?.view instanceof MarkdownView)) {
-				new Notice("⚠️ Open a note first to insert at cursor.");
-				return;
-			}
-			NoteEditingBridge.insertAtCursor(
-				plugin.app,
-				leaf.view as MarkdownView,
-				content,
-			);
-		},
-		[plugin],
-	);
-
-	const handleApply = useCallback(
-		(content: string) => {
-			const leaf = lastMarkdownLeafRef.current;
-			if (!(leaf?.view instanceof MarkdownView)) {
-				new Notice("⚠️ Open a note first to apply edits.");
-				return;
-			}
-			const view = leaf.view as MarkdownView;
-			NoteEditingBridge.applyToNote(
-				plugin.app,
-				view,
-				content,
-				"Apply AI edit",
-			);
-		},
-		[plugin],
-	);
-
-	const handleRetry = useCallback(
-		(messageId: string) => {
-			if (isStreaming) return;
-			const currentActiveId = activeSessionIdRef.current;
-			if (!currentActiveId) return;
-
-			const session = sessionsRef.current.find(
-				(s) => s.id === currentActiveId,
-			);
-			if (!session) return;
-
-			const assistantIndex = session.messages.findIndex(
-				(m) => m.id === messageId,
-			);
-			if (assistantIndex <= 0) return;
-
-			// Find the preceding user message
-			let userIndex = -1;
-			for (let i = assistantIndex - 1; i >= 0; i--) {
-				if (session.messages[i].role === "user") {
-					userIndex = i;
-					break;
-				}
-			}
-			if (userIndex === -1) return;
-
-			const userMsg = session.messages[userIndex];
-			const truncated = session.messages.slice(0, userIndex);
-
-			// Update ref so handleSend sees truncated history
-			messagesRef.current = truncated;
-
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === currentActiveId
-						? { ...s, messages: truncated, updatedAt: Date.now() }
-						: s,
-				),
-			);
-
-			console.log(
-				`[ChatApp] retry message ${messageId} — re-sending user msg`,
-			);
-			handleSend(userMsg.content);
-		},
-		[isStreaming, handleSend, orchestrator, isGroupChat, participants, ui.debateMode],
-	);
-
-	const handleEditMessage = useCallback(
-		(messageId: string) => {
-			if (isStreaming) return;
-			const currentActiveId = activeSessionIdRef.current;
-			if (!currentActiveId) return;
-
-			const session = sessionsRef.current.find(
-				(s) => s.id === currentActiveId,
-			);
-			if (!session) return;
-
-			const index = session.messages.findIndex((m) => m.id === messageId);
-			if (index < 0 || session.messages[index].role !== "user") return;
-
-			const msg = session.messages[index];
-			const truncated = session.messages.slice(0, index);
-
-			ui.setOriginalMessages([...session.messages]);
-			messagesRef.current = truncated;
-
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === currentActiveId
-						? { ...s, messages: truncated, updatedAt: Date.now() }
-						: s,
-				),
-			);
-			ui.setIsEditing(true);
-			ui.setEditMessageText(msg.content);
-			// The input value will be set via a ref callback in ChatInput
-		},
-		[isStreaming],
-	);
-
-	const handleCancelEdit = useCallback(() => {
-		const currentActiveId = activeSessionIdRef.current;
-		if (!currentActiveId || ui.originalMessages.length === 0) return;
-
-		setSessions((prev) =>
-			prev.map((s) =>
-				s.id === currentActiveId
-					? {
-							...s,
-							messages: ui.originalMessages,
-							updatedAt: Date.now(),
-						}
-					: s,
-			),
-		);
-		ui.setIsEditing(false);
-		ui.setOriginalMessages([]);
-		ui.setEditMessageText("");
-	}, [ui.originalMessages]);
-
-	const handleApplyToTarget = useCallback(
-		async (content: string, target: string) => {
-			await NoteEditingBridge.applyToTargetNote(
-				plugin.app,
-				target,
-				content,
-				"Apply AI edit",
-			);
-		},
-		[plugin],
-	);
-
-	const handleCreateNote = useCallback(
-		async (content: string, target: string) => {
-			await NoteEditingBridge.createNote(
-				plugin.app,
-				target,
-				content,
-				"Create note",
-			);
-		},
-		[plugin],
-	);
-
-	const handleAppendToTarget = useCallback(
-		async (content: string, target: string) => {
-			let file = plugin.app.vault.getAbstractFileByPath(target);
-			if (!file || !(file instanceof TFile)) {
-				const resolved = plugin.app.metadataCache.getFirstLinkpathDest(
-					target,
-					"",
-				);
-				if (resolved && resolved instanceof TFile) {
-					file = resolved;
-				}
-			}
-			if (!file || !(file instanceof TFile)) {
-				new Notice(`⚠️ Note not found: ${target}`);
-				return;
-			}
-			await NoteEditingBridge.appendToNote(plugin.app, file, content);
-		},
-		[plugin],
-	);
 
 	const handleLoadSession = useCallback((sessionId: string) => {
 		ui.setShowSessionPicker(false);
@@ -1278,21 +446,6 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		},
 		[renameSession],
 	);
-
-	const handleApproveTool = useCallback(async () => {
-		if (!pendingToolCall) return;
-		const toolExecutor = new ToolExecutor(plugin.app, plugin.settings);
-		const result = await toolExecutor.execute(pendingToolCall);
-		resolveToolRef.current?.(result);
-		resolveToolRef.current = null;
-	}, [pendingToolCall, plugin.app]);
-
-	const handleRejectTool = useCallback(() => {
-		resolveToolRef.current?.(null);
-		resolveToolRef.current = null;
-	}, []);
-
-	const hasHistory = sessions.some((s) => s.messages.length > 0);
 
 	const handleToggleAutoApprove = useCallback(() => {
 		const newValue = !autoApprove;
@@ -1417,32 +570,32 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				isEditing={ui.isEditing}
 				app={plugin.app}
 				showThinking={thinkingEnabled}
-				onAppend={handleAppend}
-				onInsertAtCursor={handleInsertAtCursor}
-				onApply={handleApply}
-				onRetry={handleRetry}
-				onEdit={handleEditMessage}
-				onApplyToTarget={handleApplyToTarget}
-				onCreateNote={handleCreateNote}
-				onAppendToTarget={handleAppendToTarget}
+				onAppend={actions.handleAppend}
+				onInsertAtCursor={actions.handleInsertAtCursor}
+				onApply={actions.handleApply}
+				onRetry={actions.handleRetry}
+				onEdit={actions.handleEditMessage}
+				onApplyToTarget={actions.handleApplyToTarget}
+				onCreateNote={actions.handleCreateNote}
+				onAppendToTarget={actions.handleAppendToTarget}
 			/>
 
 			{pendingToolCall && (
 				<PendingToolCard
 					toolCall={pendingToolCall}
-					onApprove={handleApproveTool}
-					onReject={handleRejectTool}
+					onApprove={actions.handleApproveTool}
+					onReject={actions.handleRejectTool}
 				/>
 			)}
 
 			<ChatInput
 				app={plugin.app}
-				onSend={handleSend}
-				onStop={handleStop}
+				onSend={actions.handleSend}
+				onStop={actions.handleStop}
 				onAddMention={handleAddMention}
 				isStreaming={isStreaming}
 				isEditing={ui.isEditing}
-				onCancel={handleCancelEdit}
+				onCancel={actions.handleCancelEdit}
 				editMessage={ui.editMessageText}
 				onToggleActiveNote={handleToggleActiveNote}
 				hasActiveNote={contextItems.some((item) => item.type === "active-note")}

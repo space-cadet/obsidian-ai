@@ -1,0 +1,591 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { renderHook, act } from "@testing-library/react";
+import { useMessageActions, UseMessageActionsDeps } from "../useMessageActions";
+
+// ── Mocks ─────────────────────────────────────────────────────────
+const mockNotice = vi.fn();
+const mockCreate = vi.fn();
+const mockGetAbstractFileByPath = vi.fn();
+const mockMetadataCacheGetFirstLinkpathDest = vi.fn();
+const mockVault = {
+	create: mockCreate,
+	getAbstractFileByPath: mockGetAbstractFileByPath,
+};
+const mockApp = {
+	vault: mockVault,
+	metadataCache: {
+		getFirstLinkpathDest: mockMetadataCacheGetFirstLinkpathDest,
+	},
+};
+const mockPlugin = {
+	app: mockApp,
+	settings: {
+		providerProfiles: [],
+		maxContextTokens: 8000,
+		maxContextMessages: 10,
+		autoApply: false,
+		maxAgentSteps: 5,
+		enableAgentTools: false,
+	},
+	chatapi: {},
+};
+
+vi.mock("obsidian", () => ({
+	Notice: class {
+		constructor(msg: string) {
+			mockNotice(msg);
+		}
+	},
+	TFile: class {},
+	MarkdownView: class {},
+	WorkspaceLeaf: class {},
+}));
+
+vi.mock("../noteEditing/NoteEditingBridge", () => ({
+	NoteEditingBridge: {
+		appendToNote: vi.fn(),
+		insertAtCursor: vi.fn(),
+		applyToNote: vi.fn(),
+		applyToTargetNote: vi.fn(),
+		createNote: vi.fn(),
+	},
+}));
+
+vi.mock("../context/ContextEngine", () => ({
+	resolveContextItems: vi.fn().mockResolvedValue({
+		contextString: "",
+		wasTruncated: false,
+		stats: { estimatedTokens: 0 },
+	}),
+}));
+
+vi.mock("../context/AttachmentEngine", () => ({
+	resolveAttachments: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("../context/tokenEstimator", () => ({
+	estimateTokens: vi.fn(() => 42),
+}));
+
+vi.mock("../lib/systemPrompt", () => ({
+	buildSystemPrompt: vi.fn(() => "system"),
+}));
+
+vi.mock("../lib/slashCommand", () => ({
+	parseSlashCommand: vi.fn(() => null),
+}));
+
+vi.mock("../lib/sessionUtils", () => ({
+	makeId: vi.fn(() => "mock-id"),
+}));
+
+vi.mock("../agent/ToolExecutor", () => ({
+	ToolExecutor: vi.fn().mockImplementation(() => ({
+		execute: vi.fn().mockResolvedValue({ success: true }),
+	})),
+}));
+
+vi.mock("../agent/AgentLoop", () => ({
+	AgentLoop: vi.fn().mockImplementation(() => ({
+		run: vi.fn().mockResolvedValue({ text: "done", tokenEstimate: 10 }),
+	})),
+}));
+
+vi.mock("../api/AgentApiManager", () => ({
+	AgentApiManager: vi.fn(),
+}));
+
+vi.mock("../agent/OpenResponsesLoop", () => ({
+	OpenResponsesLoop: vi.fn().mockImplementation(() => ({
+		run: vi.fn().mockResolvedValue("agent result"),
+	})),
+}));
+
+vi.mock("../agent/tools/toOpenResponses", () => ({
+	noteToolsToOpenResponses: vi.fn(() => []),
+}));
+
+vi.mock("../components/MessageBubble", () => ({
+	stripThinkingTags: vi.fn((t: string) => t),
+}));
+
+// ── Helper to build minimal deps ──────────────────────────────────
+function makeDeps(
+	overrides: Partial<UseMessageActionsDeps> = {},
+): UseMessageActionsDeps {
+	const sessionsRef = { current: [] as any[] };
+	const activeSessionIdRef = { current: "session-1" };
+	const controllerRef = { current: null };
+	const resolveToolRef = { current: null };
+	const messagesRef = { current: [] as any[] };
+	const contextItemsRef = { current: [] as any[] };
+	const lastMarkdownLeafRef = { current: null };
+	const pendingToolCallRef = { current: null };
+	const setSessions = vi.fn();
+	const setIsStreaming = vi.fn();
+	const setCurrentAiMessage = vi.fn();
+	const setCurrentContentParts = vi.fn();
+	const setPendingToolCall = vi.fn();
+	const setWasTruncated = vi.fn();
+	const setContextTokenCount = vi.fn();
+	const setContextItems = vi.fn();
+	const ui = {
+		selectedProfileIds: new Set<string>(),
+		setSelectedProfileIds: vi.fn(),
+		isDropdownOpen: false,
+		setIsDropdownOpen: vi.fn(),
+		dropdownRef: { current: null },
+		showSessionPicker: false,
+		setShowSessionPicker: vi.fn(),
+		showExportModal: false,
+		setShowExportModal: vi.fn(),
+		showContextPicker: false,
+		setShowContextPicker: vi.fn(),
+		isZenMode: false,
+		setIsZenMode: vi.fn(),
+		debateMode: false,
+		setDebateMode: vi.fn(),
+		isEditing: false,
+		setIsEditing: vi.fn(),
+		originalMessages: [],
+		setOriginalMessages: vi.fn(),
+		editMessageText: "",
+		setEditMessageText: vi.fn(),
+		messageAttachments: [],
+		setMessageAttachments: vi.fn(),
+		typingAgents: new Set<string>(),
+		setTypingAgents: vi.fn(),
+		resetUIState: vi.fn(),
+	};
+	return {
+		plugin: mockPlugin as any,
+		orchestrator: null,
+		resolvedProfile: {
+			id: "p1",
+			name: "Test",
+			provider: "openai",
+			model: "gpt-4",
+			apiKey: "",
+			baseUrl: "",
+		} as any,
+		isGroupChat: false,
+		participants: [],
+		thinkingEnabled: false,
+		sessionsRef,
+		activeSessionIdRef,
+		setSessions,
+		setIsStreaming,
+		setCurrentAiMessage,
+		setCurrentContentParts,
+		setPendingToolCall,
+		setWasTruncated,
+		setContextTokenCount,
+		setContextItems,
+		controllerRef,
+		resolveToolRef,
+		messagesRef,
+		contextItemsRef,
+		lastMarkdownLeafRef,
+		pendingToolCallRef,
+		ui: ui as any,
+		...overrides,
+	};
+}
+
+// ── Tests ─────────────────────────────────────────────────────────
+describe("useMessageActions", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	describe("handleStop", () => {
+		it("aborts the current controller", () => {
+			const abortFn = vi.fn();
+			const deps = makeDeps({
+				controllerRef: { current: { abort: abortFn } as any },
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			act(() => {
+				result.current.handleStop();
+			});
+			expect(abortFn).toHaveBeenCalled();
+		});
+
+		it("does nothing if controller is null", () => {
+			const deps = makeDeps({
+				controllerRef: { current: null },
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			expect(() =>
+				act(() => result.current.handleStop()),
+			).not.toThrow();
+		});
+	});
+
+	describe("handleEditMessage", () => {
+		it("sets editing state and truncates messages at the user message", () => {
+			const setSessions = vi.fn();
+			const ui = makeDeps().ui;
+			const session = {
+				id: "session-1",
+				messages: [
+					{ id: "m1", role: "user", content: "hello" },
+					{ id: "m2", role: "assistant", content: "hi" },
+					{ id: "m3", role: "user", content: "retry me" },
+					{ id: "m4", role: "assistant", content: "ok" },
+				],
+			} as any;
+			const deps = makeDeps({
+				sessionsRef: { current: [session] },
+				activeSessionIdRef: { current: "session-1" },
+				setSessions,
+				ui,
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			act(() => {
+				result.current.handleEditMessage("m3");
+			});
+			expect(ui.setOriginalMessages).toHaveBeenCalledWith(session.messages);
+			expect(ui.setIsEditing).toHaveBeenCalledWith(true);
+			expect(ui.setEditMessageText).toHaveBeenCalledWith("retry me");
+			expect(setSessions).toHaveBeenCalled();
+		});
+
+		it("does nothing if message is not a user message", () => {
+			const setSessions = vi.fn();
+			const ui = makeDeps().ui;
+			const session = {
+				id: "session-1",
+				messages: [
+					{ id: "m1", role: "user", content: "hello", timestamp: 1 },
+					{ id: "m2", role: "assistant", content: "hi", timestamp: 2 },
+				],
+				title: "Test",
+				createdAt: 1,
+				updatedAt: 1,
+				contextItems: [],
+			} as any;
+			const deps = makeDeps({
+				sessionsRef: { current: [session] },
+				activeSessionIdRef: { current: "session-1" },
+				setSessions,
+				ui,
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			act(() => {
+				result.current.handleEditMessage("m2");
+			});
+			expect(setSessions).not.toHaveBeenCalled();
+			expect(ui.setIsEditing).not.toHaveBeenCalled();
+		});
+
+		it("does nothing if controller is active", () => {
+			const setSessions = vi.fn();
+			const ui = makeDeps().ui;
+			const deps = makeDeps({
+				controllerRef: { current: {} as any },
+				setSessions,
+				ui,
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			act(() => {
+				result.current.handleEditMessage("m1");
+			});
+			expect(setSessions).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("handleCancelEdit", () => {
+		it("restores original messages and clears editing state", () => {
+			const setSessions = vi.fn();
+			const ui = makeDeps().ui;
+			ui.originalMessages = [
+				{ id: "m1", role: "user", content: "hello", timestamp: 1 },
+				{ id: "m2", role: "assistant", content: "hi", timestamp: 2 },
+			];
+			const deps = makeDeps({
+				activeSessionIdRef: { current: "session-1" },
+				setSessions,
+				ui,
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			act(() => {
+				result.current.handleCancelEdit();
+			});
+			expect(setSessions).toHaveBeenCalled();
+			expect(ui.setIsEditing).toHaveBeenCalledWith(false);
+			expect(ui.setOriginalMessages).toHaveBeenCalledWith([]);
+			expect(ui.setEditMessageText).toHaveBeenCalledWith("");
+		});
+
+		it("does nothing if no original messages", () => {
+			const setSessions = vi.fn();
+			const ui = makeDeps().ui;
+			ui.originalMessages = [];
+			const deps = makeDeps({
+				activeSessionIdRef: { current: "session-1" },
+				setSessions,
+				ui,
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			act(() => {
+				result.current.handleCancelEdit();
+			});
+			expect(setSessions).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("handleRetry", () => {
+		it("truncates to before the assistant message and re-sends user content", async () => {
+			const setSessions = vi.fn();
+			const session = {
+				id: "session-1",
+				messages: [
+					{ id: "m1", role: "user", content: "hello", timestamp: 1 },
+					{ id: "m2", role: "assistant", content: "hi", timestamp: 2 },
+					{ id: "m3", role: "user", content: "world", timestamp: 3 },
+					{ id: "m4", role: "assistant", content: "earth", timestamp: 4 },
+				],
+				title: "Test",
+				createdAt: 1,
+				updatedAt: 1,
+				contextItems: [],
+			} as any;
+			const deps = makeDeps({
+				sessionsRef: { current: [session] },
+				activeSessionIdRef: { current: "session-1" },
+				setSessions,
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			await act(async () => {
+				await result.current.handleRetry("m4");
+			});
+			expect(setSessions).toHaveBeenCalled();
+		});
+
+		it("does nothing if no preceding user message found", async () => {
+			const setSessions = vi.fn();
+			const session = {
+				id: "session-1",
+				messages: [
+					{ id: "m1", role: "assistant", content: "hi", timestamp: 1 },
+				],
+				title: "Test",
+				createdAt: 1,
+				updatedAt: 1,
+				contextItems: [],
+			} as any;
+			const deps = makeDeps({
+				sessionsRef: { current: [session] },
+				activeSessionIdRef: { current: "session-1" },
+				setSessions,
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			await act(async () => {
+				await result.current.handleRetry("m1");
+			});
+			expect(setSessions).not.toHaveBeenCalled();
+		});
+
+		it("does nothing if controller is active", async () => {
+			const setSessions = vi.fn();
+			const deps = makeDeps({
+				controllerRef: { current: {} as any },
+				setSessions,
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			await act(async () => {
+				await result.current.handleRetry("m1");
+			});
+			expect(setSessions).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("handleApproveTool", () => {
+		it("executes pending tool and resolves", async () => {
+			const resolve = vi.fn();
+			const deps = makeDeps({
+				resolveToolRef: { current: resolve },
+				pendingToolCallRef: {
+					current: {
+						toolCallId: "tc1",
+						toolName: "read_note",
+						args: { path: "test.md" },
+					},
+				},
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			await act(async () => {
+				await result.current.handleApproveTool();
+			});
+			expect(resolve).toHaveBeenCalled();
+		});
+
+		it("does nothing if no pending tool call", async () => {
+			const resolve = vi.fn();
+			const deps = makeDeps({
+				resolveToolRef: { current: resolve },
+				pendingToolCallRef: { current: null },
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			await act(async () => {
+				await result.current.handleApproveTool();
+			});
+			expect(resolve).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("handleRejectTool", () => {
+		it("resolves with null", () => {
+			const resolve = vi.fn();
+			const deps = makeDeps({
+				resolveToolRef: { current: resolve },
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			act(() => {
+				result.current.handleRejectTool();
+			});
+			expect(resolve).toHaveBeenCalledWith(null);
+		});
+	});
+
+	describe("handleAppend", () => {
+		it("shows notice if no active markdown leaf", async () => {
+			const deps = makeDeps({
+				lastMarkdownLeafRef: { current: null },
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			await act(async () => {
+				await result.current.handleAppend("content");
+			});
+			expect(mockNotice).toHaveBeenCalledWith(
+				"⚠️ No active note to append to.",
+			);
+		});
+	});
+
+	describe("handleInsertAtCursor", () => {
+		it("shows notice if no active markdown view", () => {
+			const deps = makeDeps({
+				lastMarkdownLeafRef: { current: null },
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			act(() => {
+				result.current.handleInsertAtCursor("content");
+			});
+			expect(mockNotice).toHaveBeenCalledWith(
+				"⚠️ Open a note first to insert at cursor.",
+			);
+		});
+	});
+
+	describe("handleApply", () => {
+		it("shows notice if no active markdown view", () => {
+			const deps = makeDeps({
+				lastMarkdownLeafRef: { current: null },
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			act(() => {
+				result.current.handleApply("content");
+			});
+			expect(mockNotice).toHaveBeenCalledWith(
+				"⚠️ Open a note first to apply edits.",
+			);
+		});
+	});
+
+	describe("handleSend — group chat path", () => {
+		it("dispatches to orchestrator and adds user + assistant messages", async () => {
+			const setSessions = vi.fn();
+			const setIsStreaming = vi.fn();
+			const ui = makeDeps().ui;
+			const mockStream = async function* () {
+				yield {
+					agentId: "a1",
+					agentName: "Agent1",
+					agentColor: "#ff0000",
+					text: "response",
+					toolCalls: undefined,
+					tokenEstimate: 5,
+					error: undefined,
+				};
+			};
+			const orchestrator = {
+				parseAndRoute: vi.fn().mockReturnValue({
+					targets: [{ name: "Agent1" }],
+				}),
+				dispatch: vi.fn().mockReturnValue(mockStream()),
+			};
+			const session = {
+				id: "session-1",
+				messages: [],
+				updatedAt: 0,
+				title: "Test",
+				createdAt: 1,
+				contextItems: [],
+			} as any;
+			const deps = makeDeps({
+				isGroupChat: true,
+				orchestrator: orchestrator as any,
+				activeSessionIdRef: { current: "session-1" },
+				sessionsRef: { current: [session] },
+				setSessions,
+				setIsStreaming,
+				ui,
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			await act(async () => {
+				await result.current.handleSend("hello");
+			});
+			expect(orchestrator.parseAndRoute).toHaveBeenCalledWith(
+				"hello",
+				[],
+			);
+			expect(setIsStreaming).toHaveBeenCalledWith(true);
+			expect(setIsStreaming).toHaveBeenCalledWith(false);
+			expect(setSessions).toHaveBeenCalled();
+		});
+
+		it("does nothing if text is empty", async () => {
+			const deps = makeDeps();
+			const { result } = renderHook(() => useMessageActions(deps));
+			await act(async () => {
+				await result.current.handleSend("  ");
+			});
+			expect(deps.setSessions).not.toHaveBeenCalled();
+		});
+
+		it("does nothing if controller is already active", async () => {
+			const deps = makeDeps({
+				controllerRef: { current: { abort: vi.fn() } as any },
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			await act(async () => {
+				await result.current.handleSend("hello");
+			});
+			expect(deps.setSessions).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("handleSend — single chat guardrails", () => {
+		it("does nothing on empty input with no attachments", async () => {
+			const deps = makeDeps();
+			const { result } = renderHook(() => useMessageActions(deps));
+			await act(async () => {
+				await result.current.handleSend("   ");
+			});
+			expect(deps.setIsStreaming).not.toHaveBeenCalled();
+		});
+
+		it("does nothing when controller is active", async () => {
+			const deps = makeDeps({
+				controllerRef: { current: { signal: {} } as any },
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			await act(async () => {
+				await result.current.handleSend("hello");
+			});
+			expect(deps.setIsStreaming).not.toHaveBeenCalled();
+		});
+	});
+});
