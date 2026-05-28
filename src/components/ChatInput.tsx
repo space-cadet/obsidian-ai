@@ -449,83 +449,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
 					))}
 				</div>
 			)}
-			<div className="chat-input-area">
-				{/* Attachment dropdown */}
-				<div style={{ position: "relative" }} ref={attachDropdownRef}>
-					<button
-						className="chat-input-attach"
-						onClick={() => setShowAttachDropdown((v) => !v)}
-						title="Attach file"
-						type="button"
-					>
-						📎
-					</button>
-					{showAttachDropdown && (
-						<div className="chat-mention-dropdown">
-							<div
-								className="chat-mention-item"
-								onMouseDown={(e) => {
-									e.preventDefault();
-									handleAttachFile("note");
-								}}
-							>
-								<span className="chat-mention-icon">📄</span>
-								<span className="chat-mention-label">Attach Note</span>
-							</div>
-							<div
-								className="chat-mention-item"
-								onMouseDown={(e) => {
-									e.preventDefault();
-									handleAttachFile("image");
-								}}
-							>
-								<span className="chat-mention-icon">🖼️</span>
-								<span className="chat-mention-label">Attach Image</span>
-							</div>
-							<div
-								className="chat-mention-item"
-								onMouseDown={(e) => {
-									e.preventDefault();
-									handleAttachFile("pdf");
-								}}
-							>
-								<span className="chat-mention-icon">📑</span>
-								<span className="chat-mention-label">Attach PDF</span>
-							</div>
-						</div>
-					)}
-				</div>
-				{onToggleActiveNote && (
-					<button
-						className={`chat-input-attach${hasActiveNote ? " is-active" : ""}`}
-						onClick={onToggleActiveNote}
-						title={hasActiveNote ? "Remove active note from context" : "Include active note as context"}
-						type="button"
-					>
-						📌
-					</button>
-				)}
-				{onToggleThinking && (
-					<button
-						className={`chat-input-thinking${thinkingEnabled ? " is-active" : ""}`}
-						onClick={onToggleThinking}
-						title={thinkingEnabled ? "Thinking mode ON — Click to disable" : "Thinking mode OFF — Click to enable"}
-						type="button"
-					>
-						{thinkingEnabled ? "🧠" : "💤"}
-					</button>
-				)}
-				<textarea
-					ref={textareaRef}
-					className="chat-textarea"
-					rows={1}
-					placeholder="Ask anything... (Shift+Enter for new line)"
-					value={value}
-					onChange={handleInputChange}
-					onKeyDown={handleKeyDown}
-					disabled={isStreaming}
-				/>
-				{/* Attachment chips */}
+			<div className="chat-input-wrapper">
+				{/* Row 1: Attachment chips */}
 				{attachments.length > 0 && (
 					<div className="chat-attachment-chips">
 						{attachments.map((att) => (
@@ -546,72 +471,156 @@ const ChatInput: React.FC<ChatInputProps> = ({
 						))}
 					</div>
 				)}
-				{isStreaming ? (
-					<button
-						className="chat-btn chat-stop-btn chat-send-icon"
-						onClick={onStop}
-						title="Stop"
-					>
-						⏹
-					</button>
-				) : isEditing ? (
-					<div className="chat-input-actions">
-						<button
-							className="chat-btn chat-send-btn"
-							onClick={() => {
-								const trimmed = value.trim();
-								if ((trimmed || attachments.length > 0) && !isStreaming) {
-									onSend(trimmed, attachments.length > 0 ? attachments : undefined);
-									setValue("");
-									setAuto(null);
-									onAttachmentsChange?.([]);
-								}
-							}}
-							disabled={!value.trim() && attachments.length === 0}
-						>
-							Resubmit
-						</button>
-						<button
-							className="chat-btn"
-							onClick={() => {
-								setValue("");
-								setAuto(null);
-								onCancel?.();
-							}}
-						>
-							Cancel
-						</button>
-					</div>
-				) : (
-					<>
-						{onToggleThinking && (
+				{/* Row 2: Buttons + textarea + send */}
+				<div className="chat-input-row">
+					{/* Left: attach, pin, thinking */}
+					<div className="chat-input-left">
+						<div style={{ position: "relative" }} ref={attachDropdownRef}>
 							<button
-								className={`chat-btn chat-icon-btn${showThinking ? " is-active" : ""}`}
-								onClick={onToggleThinking}
-								title={showThinking ? "Hide thinking/reasoning" : "Show thinking/reasoning"}
+								className="chat-input-attach"
+								onClick={() => setShowAttachDropdown((v) => !v)}
+								title="Attach file"
 								type="button"
 							>
-								💭
+								📎
+							</button>
+							{showAttachDropdown && (
+								<div className="chat-attach-dropdown">
+									<div
+										className="chat-attach-dropdown-item"
+										onMouseDown={(e) => {
+											e.preventDefault();
+											handleAttachFile("note");
+										}}
+									>
+										<span>📄</span>
+										<span>Attach Note</span>
+									</div>
+									<div
+										className="chat-attach-dropdown-item"
+										onMouseDown={(e) => {
+											e.preventDefault();
+											handleAttachFile("image");
+										}}
+									>
+										<span>🖼️</span>
+										<span>Attach Image</span>
+									</div>
+									<div
+										className="chat-attach-dropdown-item"
+										onMouseDown={(e) => {
+											e.preventDefault();
+											handleAttachFile("pdf");
+										}}
+									>
+										<span>📑</span>
+										<span>Attach PDF</span>
+									</div>
+								</div>
+							)}
+						</div>
+						{onToggleActiveNote && (
+							<button
+								className={`chat-input-attach${hasActiveNote ? " is-active" : ""}`}
+								onClick={onToggleActiveNote}
+								title={hasActiveNote ? "Remove active note from context" : "Include active note as context"}
+								type="button"
+							>
+								📌
 							</button>
 						)}
-						<button
-							className="chat-btn chat-send-btn chat-send-icon"
-							onClick={() => {
-								const trimmed = value.trim();
-								if ((trimmed || attachments.length > 0) && !isStreaming) {
-									onSend(trimmed, attachments.length > 0 ? attachments : undefined);
-									setValue("");
-									setAuto(null);
-									onAttachmentsChange?.([]);
-								}
-							}}
-							disabled={!value.trim() && attachments.length === 0}
-							title="Send"
-						>
-							▶
-						</button>
-					</>
-				)}
+						{onToggleThinking && (
+							<button
+								className={`chat-input-thinking${thinkingEnabled ? " is-active" : ""}`}
+								onClick={onToggleThinking}
+								title={thinkingEnabled ? "Thinking mode ON — Click to disable" : "Thinking mode OFF — Click to enable"}
+								type="button"
+							>
+								{thinkingEnabled ? "🧠" : "💤"}
+							</button>
+						)}
+					</div>
+					{/* Center: textarea */}
+					<textarea
+						ref={textareaRef}
+						className="chat-textarea"
+						rows={1}
+						placeholder="Ask anything... (Shift+Enter for new line)"
+						value={value}
+						onChange={handleInputChange}
+						onKeyDown={handleKeyDown}
+						disabled={isStreaming}
+					/>
+					{/* Right: send/stop/edit actions */}
+					<div className="chat-input-right">
+						{isStreaming ? (
+							<button
+								className="chat-btn chat-stop-btn chat-send-icon"
+								onClick={onStop}
+								title="Stop"
+							>
+								⏹
+							</button>
+						) : isEditing ? (
+							<div className="chat-input-actions">
+								<button
+									className="chat-btn chat-send-btn"
+									onClick={() => {
+										const trimmed = value.trim();
+										if ((trimmed || attachments.length > 0) && !isStreaming) {
+											onSend(trimmed, attachments.length > 0 ? attachments : undefined);
+											setValue("");
+											setAuto(null);
+											onAttachmentsChange?.([]);
+										}
+									}}
+									disabled={!value.trim() && attachments.length === 0}
+								>
+									Resubmit
+								</button>
+								<button
+									className="chat-btn"
+									onClick={() => {
+										setValue("");
+										setAuto(null);
+										onCancel?.();
+									}}
+								>
+									Cancel
+								</button>
+							</div>
+						) : (
+							<>
+								{onToggleThinking && (
+									<button
+										className={`chat-btn chat-icon-btn${showThinking ? " is-active" : ""}`}
+										onClick={onToggleThinking}
+										title={showThinking ? "Hide thinking/reasoning" : "Show thinking/reasoning"}
+										type="button"
+									>
+										💭
+									</button>
+								)}
+								<button
+									className="chat-btn chat-send-btn chat-send-icon"
+									onClick={() => {
+										const trimmed = value.trim();
+										if ((trimmed || attachments.length > 0) && !isStreaming) {
+											onSend(trimmed, attachments.length > 0 ? attachments : undefined);
+											setValue("");
+											setAuto(null);
+											onAttachmentsChange?.([]);
+										}
+									}}
+									disabled={!value.trim() && attachments.length === 0}
+									title="Send"
+								>
+									▶
+								</button>
+							</>
+						)}
+					</div>
+				</div>
 			</div>
 		</div>
 	);
