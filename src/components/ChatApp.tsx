@@ -25,6 +25,7 @@ import { parseSlashCommand, SlashCommand } from "../lib/slashCommand";
 import { makeId } from "../lib/sessionUtils";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { useChatSession } from "../hooks/useChatSession";
+import { useChatUI } from "../hooks/useChatUI";
 import ActionBar from "./ActionBar";
 import ChatMessages from "./ChatMessages";
 import ContextBar from "./ContextBar";
@@ -75,49 +76,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	const [wasTruncated, setWasTruncated] = useState(false);
 	const [contextTokenCount, setContextTokenCount] = useState(0);
 	const [targetNoteName, setTargetNoteName] = useState<string | null>(null);
-	const [showSessionPicker, setShowSessionPicker] = useState(false);
-	const [showExportModal, setShowExportModal] = useState(false);
-	const [showContextPicker, setShowContextPicker] = useState(false);
-	const [isEditing, setIsEditing] = useState(false);
-	// ─── Multi-select Toolbar ───
-	const [selectedProfileIds, setSelectedProfileIds] = useState<Set<string>>(new Set());
-	const [typingAgents, setTypingAgents] = useState<Set<string>>(new Set());
-	const [showParticipantDropdown, setShowParticipantDropdown] = useState(false);
-	const participantDropdownRef = useRef<HTMLDivElement>(null);
-
-	// Close participant dropdown when clicking outside
-	useEffect(() => {
-		if (!showParticipantDropdown) return;
-		const handleClick = (e: MouseEvent) => {
-			const target = e.target as Node;
-			if (
-				participantDropdownRef.current &&
-				!participantDropdownRef.current.contains(target)
-			) {
-				setShowParticipantDropdown(false);
-			}
-		};
-		document.addEventListener("mousedown", handleClick);
-		return () => document.removeEventListener("mousedown", handleClick);
-	}, [showParticipantDropdown]);
-
-	// ─── Zen Mode ───
-	const [zenMode, setZenMode] = useState(false);
-	const [debateMode, setDebateMode] = useState(false);
-	const [showThinking, setShowThinking] = useState(false);
-	/** Whether thinking mode is enabled for LLM requests */
 	const [thinkingEnabled, setThinkingEnabled] = useState(false);
-	const [originalMessages, setOriginalMessages] = useState<ChatMessage[]>([]);
-	const [editMessageText, setEditMessageText] = useState<string>("");
-	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(
-		null,
-	);
-	/** Current message attachments (passed to ChatInput) */
-	const [messageAttachments, setMessageAttachments] = useState<import("../types").Attachment[]>([]);
+	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(null);
 	const controllerRef = useRef<AbortController | null>(null);
-	const resolveToolRef = useRef<((result: ToolResult | null) => void) | null>(
-		null,
-	);
+	const resolveToolRef = useRef<((result: ToolResult | null) => void) | null>(null);
 	// Refs so callbacks always see latest values without stale closures
 	const messagesRef = useRef<ChatMessage[]>([]);
 	const contextItemsRef = useRef<ContextItem[]>([]);
@@ -132,6 +94,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		document.addEventListener("visibilitychange", onVis);
 		return () => document.removeEventListener("visibilitychange", onVis);
 	}, []);
+
+	const ui = useChatUI();
 
 	/** Resolve the profile for this chat panel: explicit profileId → session's stored profile → active profile */
 	const resolvedProfile: ProviderProfile = useMemo(() => {
@@ -150,7 +114,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 
 	// ─── Derive participants from selectedProfileIds (auto group chat when 2+ selected) ───
 	const participants = useMemo(() => {
-		const ids = Array.from(selectedProfileIds);
+		const ids = Array.from(ui.selectedProfileIds);
 		if (ids.length < 2) return [];
 		return ids.map((id) => {
 			const profile = plugin.settings.providerProfiles.find((p) => p.id === id);
@@ -162,7 +126,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				icon: getAgentIcon(profile?.provider ?? "custom"),
 			};
 		});
-	}, [selectedProfileIds, plugin.settings.providerProfiles]);
+	}, [ui.selectedProfileIds, plugin.settings.providerProfiles]);
 
 	const isGroupChat = participants.length >= 2;
 
@@ -207,21 +171,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	}, [isGroupChat, participants, plugin.chatapi, plugin.settings, plugin.app]);
 
 	// ─── Multi-select Toolbar Handlers ───
-	const handleToggleProfile = useCallback((profile: ProviderProfile) => {
-		setSelectedProfileIds((prev) => {
-			const next = new Set(prev);
-			if (next.has(profile.id)) {
-				next.delete(profile.id);
-			} else {
-				next.add(profile.id);
-			}
-			return next;
-		});
-	}, []);
 
-	const handleToggleDebateMode = useCallback(() => {
-		setDebateMode((d) => !d);
-	}, []);
 
 	const messages = useMemo(() => {
 		const s = sessions.find((s) => s.id === activeSessionId);
@@ -303,7 +253,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	// Sync selectedProfileIds into the active session whenever they change
 	useEffect(() => {
 		if (!activeSessionId) return;
-		const ids = Array.from(selectedProfileIds);
+		const ids = Array.from(ui.selectedProfileIds);
 		setSessions((prev) =>
 			prev.map((s) =>
 				s.id === activeSessionId
@@ -327,7 +277,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 					: s,
 			),
 		);
-	}, [selectedProfileIds, activeSessionId, plugin.settings.providerProfiles]);
+	}, [ui.selectedProfileIds, activeSessionId, plugin.settings.providerProfiles]);
 
 	const [autoApprove, setAutoApprove] = useState(plugin.settings.autoApply);
 
@@ -378,7 +328,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			}
 			return merged;
 		});
-		setShowContextPicker(false);
+		ui.setShowContextPicker(false);
 	}, []);
 
 	const handleSend = useCallback(
@@ -394,7 +344,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 					role: "user",
 					content: text,
 					timestamp: Date.now(),
-					attachments: messageAttachments && messageAttachments.length > 0 ? messageAttachments : undefined,
+					attachments: ui.messageAttachments && ui.messageAttachments.length > 0 ? ui.messageAttachments : undefined,
 				};
 				const currentActiveId = activeSessionIdRef.current;
 				setSessions((prev) =>
@@ -407,11 +357,11 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				setIsStreaming(true);
 				controllerRef.current = new AbortController();
 
-				const { targets } = orchestrator.parseAndRoute(text, messageAttachments);
-				setTypingAgents(new Set(targets.map((t) => t.name)));
+				const { targets } = orchestrator.parseAndRoute(text, ui.messageAttachments);
+				ui.setTypingAgents(new Set(targets.map((t) => t.name)));
 
 				try {
-					const stream = debateMode
+					const stream = ui.debateMode
 						? orchestrator.debate(
 								text,
 								sessionsRef.current.find((s) => s.id === currentActiveId)?.messages ?? [],
@@ -425,7 +375,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 						  );
 
 					for await (const response of stream) {
-						setTypingAgents((prev) => {
+						ui.setTypingAgents((prev) => {
 							const next = new Set(prev);
 							next.delete(response.agentName);
 							return next;
@@ -472,7 +422,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 					);
 				} finally {
 					setIsStreaming(false);
-					setTypingAgents(new Set());
+					ui.setTypingAgents(new Set());
 					controllerRef.current = null;
 				}
 				return;
@@ -580,7 +530,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			// When exactly 1 profile is selected in the dropdown, use it instead of
 			// the settings default (resolvedProfile).  2+ selections are handled by
 			// the group-chat path above; 0 selections fall back to resolvedProfile.
-			const selectedIds = Array.from(selectedProfileIds);
+			const selectedIds = Array.from(ui.selectedProfileIds);
 			const activeProfile: ProviderProfile =
 				selectedIds.length === 1
 					? (plugin.settings.providerProfiles.find(
@@ -1035,14 +985,14 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				setCurrentAiMessage("");
 				setCurrentContentParts([]);
 				controllerRef.current = null;
-				setIsEditing(false);
-				setOriginalMessages([]);
-				setEditMessageText("");
+				ui.setIsEditing(false);
+				ui.setOriginalMessages([]);
+				ui.setEditMessageText("");
 				// Clear context items after send (context is per-message)
 				setContextItems([]);
 			}
 		},
-		[isStreaming, plugin, orchestrator, isGroupChat, participants, typingAgents, debateMode, resolvedProfile],
+		[isStreaming, plugin, orchestrator, isGroupChat, participants, ui.typingAgents, ui.debateMode, resolvedProfile],
 	);
 
 	const handleStop = useCallback(() => {
@@ -1058,13 +1008,13 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		});
 		// Select the default profile(s) from settings for the new chat
 		if (plugin.settings.selectedProfileIds.length > 0) {
-			setSelectedProfileIds(new Set(plugin.settings.selectedProfileIds));
+			ui.setSelectedProfileIds(new Set(plugin.settings.selectedProfileIds));
 		} else {
 			// Fall back to the active provider profile so the dropdown is never empty
 			const activeProfile = getActiveProviderProfile(plugin.settings);
-			setSelectedProfileIds(new Set([activeProfile.id]));
+			ui.setSelectedProfileIds(new Set([activeProfile.id]));
 		}
-		setDebateMode(false);
+		ui.setDebateMode(false);
 		setWasTruncated(false);
 	}, [isStreaming, plugin, createNewSession]);
 
@@ -1163,7 +1113,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			);
 			handleSend(userMsg.content);
 		},
-		[isStreaming, handleSend, orchestrator, isGroupChat, participants, debateMode],
+		[isStreaming, handleSend, orchestrator, isGroupChat, participants, ui.debateMode],
 	);
 
 	const handleEditMessage = useCallback(
@@ -1183,7 +1133,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			const msg = session.messages[index];
 			const truncated = session.messages.slice(0, index);
 
-			setOriginalMessages([...session.messages]);
+			ui.setOriginalMessages([...session.messages]);
 			messagesRef.current = truncated;
 
 			setSessions((prev) =>
@@ -1193,8 +1143,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 						: s,
 				),
 			);
-			setIsEditing(true);
-			setEditMessageText(msg.content);
+			ui.setIsEditing(true);
+			ui.setEditMessageText(msg.content);
 			// The input value will be set via a ref callback in ChatInput
 		},
 		[isStreaming],
@@ -1202,23 +1152,23 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 
 	const handleCancelEdit = useCallback(() => {
 		const currentActiveId = activeSessionIdRef.current;
-		if (!currentActiveId || originalMessages.length === 0) return;
+		if (!currentActiveId || ui.originalMessages.length === 0) return;
 
 		setSessions((prev) =>
 			prev.map((s) =>
 				s.id === currentActiveId
 					? {
 							...s,
-							messages: originalMessages,
+							messages: ui.originalMessages,
 							updatedAt: Date.now(),
 						}
 					: s,
 			),
 		);
-		setIsEditing(false);
-		setOriginalMessages([]);
-		setEditMessageText("");
-	}, [originalMessages]);
+		ui.setIsEditing(false);
+		ui.setOriginalMessages([]);
+		ui.setEditMessageText("");
+	}, [ui.originalMessages]);
 
 	const handleApplyToTarget = useCallback(
 		async (content: string, target: string) => {
@@ -1266,18 +1216,18 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	);
 
 	const handleLoadSession = useCallback((sessionId: string) => {
-		setShowSessionPicker(false);
+		ui.setShowSessionPicker(false);
 		// Restore selectedProfileIds for the loaded session BEFORE changing activeSessionId
 		const session = sessionsRef.current.find((s) => s.id === sessionId);
 		if (session?.selectedProfileIds && session.selectedProfileIds.length > 0) {
-			setSelectedProfileIds(new Set(session.selectedProfileIds));
+			ui.setSelectedProfileIds(new Set(session.selectedProfileIds));
 		} else if (session?.participants && session.participants.length > 0) {
 			// Backward compat: derive from legacy participants
-			setSelectedProfileIds(new Set(session.participants.map((p) => p.id)));
+			ui.setSelectedProfileIds(new Set(session.participants.map((p) => p.id)));
 		} else {
-			setSelectedProfileIds(new Set());
+			ui.setSelectedProfileIds(new Set());
 		}
-		setDebateMode(false);
+		ui.setDebateMode(false);
 		setActiveSessionId(sessionId);
 	}, []);
 
@@ -1292,13 +1242,13 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				if (mostRecent) {
 					// Restore selectedProfileIds BEFORE changing active session
 					if (mostRecent.selectedProfileIds && mostRecent.selectedProfileIds.length > 0) {
-						setSelectedProfileIds(new Set(mostRecent.selectedProfileIds));
+						ui.setSelectedProfileIds(new Set(mostRecent.selectedProfileIds));
 					} else if (mostRecent.participants && mostRecent.participants.length > 0) {
-						setSelectedProfileIds(new Set(mostRecent.participants.map((p) => p.id)));
+						ui.setSelectedProfileIds(new Set(mostRecent.participants.map((p) => p.id)));
 					} else {
-						setSelectedProfileIds(new Set());
+						ui.setSelectedProfileIds(new Set());
 					}
-					setDebateMode(false);
+					ui.setDebateMode(false);
 					setActiveSessionId(mostRecent.id);
 				} else {
 					// No sessions left — create a new empty one
@@ -1315,7 +1265,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 					};
 					filtered.push(empty);
 					setActiveSessionId(empty.id);
-					setSelectedProfileIds(new Set());
+					ui.setSelectedProfileIds(new Set());
 				}
 			}
 			return filtered;
@@ -1391,16 +1341,16 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	}, [resolvedProfile, plugin.chatapi, manualRenameActiveSession]);
 
 	const handleExportChat = useCallback(() => {
-		setShowExportModal(true);
+		ui.setShowExportModal(true);
 	}, []);
 
 	return (
-		<div className={`chat-panel${zenMode ? ' is-zen' : ''}`}>
-			{!zenMode && (
+		<div className={`chat-panel${ui.zenMode ? ' is-zen' : ''}`}>
+			{!ui.zenMode && (
 				<div className="chat-action-bar-wrapper">
 					<ActionBar
 						onNewChat={handleNewChat}
-						onLoadChat={() => setShowSessionPicker(true)}
+						onLoadChat={() => ui.setShowSessionPicker(true)}
 						onExportChat={handleExportChat}
 						canLoad={hasHistory}
 						plugin={plugin}
@@ -1411,17 +1361,17 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 						onManualRename={handleManualRename}
 						profile={resolvedProfile}
 						sessionTitle={sessions.find((s) => s.id === activeSessionId)?.title}
-						zenMode={zenMode}
-						onToggleZenMode={() => setZenMode((z) => !z)}
+						zenMode={ui.zenMode}
+						onToggleZenMode={ui.toggleZenMode}
 						participantCount={participants.length}
-						onToggleParticipantDropdown={() => setShowParticipantDropdown((s) => !s)}
-						debateMode={debateMode}
-						onToggleDebateMode={() => setDebateMode((d) => !d)}
+						onToggleParticipantDropdown={ui.toggleParticipantDropdown}
+						debateMode={ui.debateMode}
+						onToggleDebateMode={ui.toggleDebateMode}
 					/>
-					{showParticipantDropdown && (
-						<div ref={participantDropdownRef} className="chat-participant-dropdown">
+					{ui.showParticipantDropdown && (
+						<div ref={ui.participantDropdownRef} className="chat-participant-dropdown">
 							{plugin.settings.providerProfiles.map((profile) => {
-								const isSelected = selectedProfileIds.has(profile.id);
+								const isSelected = ui.selectedProfileIds.has(profile.id);
 								return (
 									<label
 										key={profile.id}
@@ -1430,7 +1380,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 										<input
 											type="checkbox"
 											checked={isSelected}
-											onChange={() => handleToggleProfile(profile)}
+											onChange={() => ui.toggleProfile(profile.id)}
 										/>
 										<span style={{ color: getAgentColor(profile.provider) }}>●</span>
 										<span className="chat-participant-dropdown-name">{profile.name}</span>
@@ -1449,10 +1399,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			)}
 
 			{/* Zen mode exit button (floating) */}
-			{zenMode && (
+			{ui.zenMode && (
 				<button
 					className="chat-btn chat-icon-btn chat-zen-exit"
-					onClick={() => setZenMode(false)}
+					onClick={() => ui.setZenMode(false)}
 					title="Exit zen mode"
 				>
 					<ObsidianIcon icon="eye-off" size={15} />
@@ -1464,7 +1414,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				currentAiMessage={currentAiMessage}
 				currentContentParts={currentContentParts}
 				isStreaming={isStreaming}
-				isEditing={isEditing}
+				isEditing={ui.isEditing}
 				app={plugin.app}
 				showThinking={thinkingEnabled}
 				onAppend={handleAppend}
@@ -1491,39 +1441,39 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				onStop={handleStop}
 				onAddMention={handleAddMention}
 				isStreaming={isStreaming}
-				isEditing={isEditing}
+				isEditing={ui.isEditing}
 				onCancel={handleCancelEdit}
-				editMessage={editMessageText}
+				editMessage={ui.editMessageText}
 				onToggleActiveNote={handleToggleActiveNote}
 				hasActiveNote={contextItems.some((item) => item.type === "active-note")}
 				thinkingEnabled={thinkingEnabled}
 				onToggleThinking={() => setThinkingEnabled((t) => !t)}
-				attachments={messageAttachments}
-				onAttachmentsChange={setMessageAttachments}
+				attachments={ui.messageAttachments}
+				onAttachmentsChange={ui.setMessageAttachments}
 			/>
-			{showSessionPicker && (
+			{ui.showSessionPicker && (
 				<SessionPickerModal
 					sessions={sessions}
 					activeSessionId={activeSessionId}
 					onLoad={handleLoadSession}
 					onDelete={handleDeleteSession}
 					onRename={handleRenameSession}
-					onClose={() => setShowSessionPicker(false)}
+					onClose={() => ui.setShowSessionPicker(false)}
 				/>
 			)}
-			{showExportModal && (
+			{ui.showExportModal && (
 				<ExportModal
 					sessions={sessions}
 					activeSessionId={activeSessionId}
 					plugin={plugin}
-					onClose={() => setShowExportModal(false)}
+					onClose={() => ui.setShowExportModal(false)}
 				/>
 			)}
-			{showContextPicker && (
+			{ui.showContextPicker && (
 				<ContextPickerModal
 					app={plugin.app}
 					onAdd={handleAddContextItems}
-					onClose={() => setShowContextPicker(false)}
+					onClose={() => ui.setShowContextPicker(false)}
 				/>
 			)}
 		</div>
