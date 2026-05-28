@@ -821,8 +821,8 @@
 .chat-input-area {
 	display: flex;
 	align-items: flex-end;
-	gap: 6px;
-	padding: 8px;
+	gap: 8px;
+	padding: 12px 14px;
 	border-top: 1px solid var(--background-modifier-border);
 	flex-shrink: 0;
 }
@@ -831,13 +831,14 @@
 	flex: 1;
 	resize: none;
 	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
-	padding: 6px 8px;
-	font-size: var(--font-ui-small);
+	border-radius: 8px;
+	padding: 10px 12px;
+	font-size: var(--font-ui-medium);
 	font-family: inherit;
 	background: var(--background-primary);
 	color: var(--text-normal);
-	line-height: 1.4;
+	line-height: 1.5;
+	min-height: 44px;
 }
 
 .chat-textarea:focus {

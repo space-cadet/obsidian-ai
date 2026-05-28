@@ -1,6 +1,6 @@
 # Task Registry
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-25 23:03 IST*
+*Last Updated: 2026-05-28 22:38 IST*
 
 ## Summary
 - Active: 7 | Paused: 1 | Completed: 11 | Cancelled: 0
@@ -52,7 +52,7 @@ Connect Obsidian chat to remote OpenClaw agents via OpenResponses API. Phase 3 i
 Multi-panel, multi-provider chat interface. Phases 1–2 complete. Phase 3 (TabBar UI) pending. See `tasks/T15.md`.
 
 ### T16 — Group Chat (Multi-Agent Conversation) *(requires T15)*
-Multi-agent group chat with mention-based routing, orchestration, and shared context. MVP implemented. User confirmed working. **May 25: Fixed duplicate profile ID on copy (commit `de84c4a`) and model fetching for all providers (commit `9d3d1a3`). Added thinking display toggle.** See `tasks/T16.md`.
+Multi-agent group chat with mention-based routing, orchestration, and shared context. MVP implemented. User confirmed working. **May 25: Fixed duplicate profile ID on copy (commit `de84c4a`) and model fetching for all providers (commit `9d3d1a3`). Added thinking display toggle. May 28: Wired thinkingEnabled to LLM calls, fixed model picker to use selected profile (commits `2d4e53c`, `6e96212`).** See `tasks/T16.md`.
 
 ### T19 — File Attachments for Chat Messages *(requires T13, T4, T9)*
 Enable users to attach markdown files, images, and PDFs to chat messages so the LLM can consume their content. Multimodal support via Vercel AI SDK v6 `ImagePart`/`FilePart`. Core implementation complete (commit `a071a24`). Build passes. Group chat broadcasting deferred. See `tasks/T19.md`.
