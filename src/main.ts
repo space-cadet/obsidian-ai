@@ -4,9 +4,9 @@ import { EditorView } from "@codemirror/view";
 import {
 	ObsidianAISettings,
 	DEFAULT_SETTINGS,
-	ObsidianAISettingsTab,
 	normalizeSettings,
 } from "./settings";
+import { ObsidianAISettingsTab } from "./settings-sections/SettingsTab";
 import {
 	acceptTooltipEffect,
 	commandEffect,
