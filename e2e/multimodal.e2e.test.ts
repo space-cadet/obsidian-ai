@@ -80,6 +80,31 @@ describe("E2E: Multimodal (Image)", () => {
       expect(text.length).toBeGreaterThan(0);
     });
   });
+
+  describeIfProvider("openrouter", "OpenRouter", () => {
+    it("streams a response that references image content via OpenRouter (Gemini)", async () => {
+      const profile = buildTestProfile("openrouter", {
+        model: "google/gemini-2.0-flash-001",
+      });
+      const settings = buildTestSettings(profile);
+      const api = new ChatApiManager(settings, createMockApp());
+      const messages: SdkMessage[] = [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Describe this image in one word." },
+            { type: "image", image: TEST_IMAGE_BASE64 },
+          ],
+        },
+      ];
+      let text = "";
+      for await (const chunk of api.streamChat(messages, undefined, profile)) {
+        text += chunk;
+      }
+      expect(text.length).toBeGreaterThan(0);
+      expect(text.toLowerCase()).toMatch(/red|square|pixel|image|color/);
+    });
+  });
 });
 
 // PDF tests require a real PDF file on disk. Place a test PDF at:

@@ -49,11 +49,11 @@ function getDefaultTestModel(provider: string): string {
 		case "anthropic":
 			return "claude-3-5-haiku-latest";
 		case "gemini":
-			return "gemini-1.5-flash-latest";
+			return "gemini-2.0-flash";
 		case "deepseek":
 			return "deepseek-chat";
 		case "kimi":
-			return "moonshot-v1-8k";
+			return "kimi-k2.5";
 		case "openrouter":
 			return "openai/gpt-4o-mini";
 		case "ollama":
