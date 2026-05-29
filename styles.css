@@ -2480,15 +2480,6 @@
 	flex-shrink: 0;
 }
 
-/* Attachment chips row */
-.chat-attachment-chips {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 4px;
-	padding: 2px 0;
-	max-width: 100%;
-}
-
 /* Textarea sizing */
 .chat-textarea {
 	flex: 1;
@@ -2720,6 +2711,65 @@
 }
 
 .chat-attachment-remove:hover {
+	color: var(--text-error);
+}
+
+/* Reference chips (attachments + context items + wiki-links) */
+.chat-reference-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	padding: 4px 0;
+	max-width: 100%;
+}
+
+.chat-reference-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border-radius: 10px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary-alt);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-normal);
+	max-width: 100%;
+}
+
+.chat-context-chip {
+	background: var(--background-secondary-alt);
+	border-color: var(--interactive-accent);
+}
+
+.chat-wikilink-chip {
+	background: hsla(var(--interactive-accent-hsl), 0.15);
+	border-color: var(--interactive-accent);
+	color: var(--interactive-accent);
+}
+
+.chat-reference-icon {
+	flex-shrink: 0;
+}
+
+.chat-reference-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	min-width: 0;
+}
+
+.chat-reference-remove {
+	background: none;
+	border: none;
+	color: var(--text-muted);
+	cursor: pointer;
+	padding: 0 2px;
+	font-size: 14px;
+	line-height: 1;
+	flex-shrink: 0;
+}
+
+.chat-reference-remove:hover {
 	color: var(--text-error);
 }
 

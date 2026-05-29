@@ -22,6 +22,10 @@ interface ChatInputProps {
 	attachments?: import("../types").Attachment[];
 	/** Callback when attachments change */
 	onAttachmentsChange?: (attachments: import("../types").Attachment[]) => void;
+	/** Current context items (for rendering chips) */
+	contextItems?: ContextItem[];
+	/** Callback when a context item is removed */
+	onRemoveContextItem?: (id: string) => void;
 }
 
 type AutoType = "mention" | "slash" | "wikilink";
@@ -99,6 +103,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	onToggleThinking,
 	attachments = [],
 	onAttachmentsChange,
+	contextItems = [],
+	onRemoveContextItem,
 }) => {
 	const [value, setValue] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -122,6 +128,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		document.addEventListener("mousedown", handleClick);
 		return () => document.removeEventListener("mousedown", handleClick);
 	}, [showAttachDropdown]);
+
+	// Parse wiki-link references from textarea value for visual display
+	const wikiLinks = useMemo(() => {
+		const matches = value.match(/\[\[(.*?)\]\]/g) || [];
+		return matches.map((m) => m.slice(2, -2));
+	}, [value]);
 
 	const handleAttachFile = useCallback((type: "note" | "image" | "pdf") => {
 		setShowAttachDropdown(false);
@@ -506,23 +518,50 @@ const ChatInput: React.FC<ChatInputProps> = ({
 				</div>
 			)}
 			<div className={`chat-input-wrapper${isDragOver ? " drag-over" : ""}`}>
-				{/* Row 1: Attachment chips */}
-				{attachments.length > 0 && (
-					<div className="chat-attachment-chips">
+				{/* Row 1: Reference chips (attachments + context items + wiki-links) */}
+				{(attachments.length > 0 || contextItems.length > 0 || wikiLinks.length > 0) && (
+					<div className="chat-reference-chips">
 						{attachments.map((att) => (
-							<div key={att.id} className="chat-attachment-chip">
-								<span className="chat-attachment-icon">
+							<div key={att.id} className="chat-reference-chip chat-attachment-chip">
+								<span className="chat-reference-icon">
 									{att.type === "image" ? "🖼️" : att.type === "pdf" ? "📑" : "📄"}
 								</span>
-								<span className="chat-attachment-name">{att.name}</span>
+								<span className="chat-reference-name">{att.name}</span>
 								<button
-									className="chat-attachment-remove"
+									className="chat-reference-remove"
 									onClick={() => handleRemoveAttachment(att.id)}
 									title="Remove attachment"
 									type="button"
 								>
 									×
 								</button>
+							</div>
+						))}
+						{contextItems.map((item) => {
+							const label = item.type === "tag" ? item.tag : item.type === "active-note" ? "Active note" : item.name ?? item.path;
+							return (
+								<div key={item.id} className="chat-reference-chip chat-context-chip">
+									<span className="chat-reference-icon">
+										{item.type === "note" ? "📄" : item.type === "folder" ? "📁" : item.type === "tag" ? "#" : "📌"}
+									</span>
+									<span className="chat-reference-name">{label}</span>
+									{onRemoveContextItem && (
+										<button
+											className="chat-reference-remove"
+											onClick={() => onRemoveContextItem(item.id)}
+											title="Remove context"
+											type="button"
+										>
+											×
+										</button>
+									)}
+								</div>
+							);
+						})}
+						{wikiLinks.map((link, i) => (
+							<div key={`wiki-${link}-${i}`} className="chat-reference-chip chat-wikilink-chip">
+								<span className="chat-reference-icon">🔗</span>
+								<span className="chat-reference-name">{link}</span>
 							</div>
 						))}
 					</div>

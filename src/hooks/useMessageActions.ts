@@ -846,6 +846,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				ui.setIsEditing(false);
 				ui.setOriginalMessages([]);
 				ui.setEditMessageText("");
+				ui.setMessageAttachments([]);
 				setContextItems([]);
 			}
 		},
@@ -943,6 +944,10 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			ui.setOriginalMessages([...session.messages]);
 			messagesRef.current = truncated;
 
+			// Restore attachments and context items from the message being edited
+			ui.setMessageAttachments(msg.attachments ?? []);
+			setContextItems(msg.contextItems ?? []);
+
 			setSessions((prev) =>
 				prev.map((s) =>
 					s.id === currentActiveId
@@ -979,7 +984,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 		ui.setIsEditing(false);
 		ui.setOriginalMessages([]);
 		ui.setEditMessageText("");
-	}, [activeSessionIdRef, setSessions, ui]);
+		ui.setMessageAttachments([]);
+		setContextItems([]);
+	}, [activeSessionIdRef, setSessions, setContextItems, ui]);
 
 	// ═══════════════════════════════════════════════════════
 	// NOTE ACTIONS

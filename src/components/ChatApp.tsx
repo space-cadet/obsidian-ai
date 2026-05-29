@@ -603,6 +603,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				onToggleThinking={() => setThinkingEnabled((t) => !t)}
 				attachments={ui.messageAttachments}
 				onAttachmentsChange={ui.setMessageAttachments}
+				contextItems={contextItems}
+				onRemoveContextItem={handleRemoveContextItem}
 			/>
 			{ui.showSessionPicker && (
 				<SessionPickerModal
