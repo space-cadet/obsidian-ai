@@ -1,0 +1,221 @@
+# Refactored Architecture Guide
+
+*Created: 2026-05-29*
+*Applies to: obsidian-ai plugin codebase*
+
+## Overview
+
+This document describes the refactored codebase architecture after T22 (ChatApp.tsx decomposition) and T23 (Settings.ts decomposition). It serves as the canonical reference for where code lives, how modules relate, and what conventions to follow when adding new features.
+
+## Guiding Principles
+
+1. **Single Responsibility**: Each file does one thing. A settings file holds config. A component renders UI. A hook manages state.
+2. **Size Budgets**: No file in `src/` should exceed 1,000 lines. Target: <500 lines for components, <300 for hooks, <200 for utilities.
+3. **Co-location**: Related code lives together. Settings UI sections live in `settings-sections/`. Chat UI hooks live in `hooks/`.
+4. **Pure Config Separated from UI**: Types, defaults, and pure helpers live in data files. UI rendering lives in component files.
+5. **Backward Compatibility**: When moving code, re-export from the old location so existing imports don't break.
+
+## Module Structure
+
+```
+src/
+├── settings.ts                    # Pure config: types, defaults, normalizeSettings
+├── settings-sections/             # Settings tab UI (T23)
+│   ├── SettingsTab.ts             # Orchestrator: display() method
+│   ├── helpers.ts                 # Shared: createSection, getProviderLabel
+│   ├── hero.ts                    # Hero banner with active profile
+│   ├── providerProfiles.ts        # React ProfileList mount
+│   ├── chatDefaults.ts            # Context, auto-name, limits
+│   ├── agentTools.ts              # Tools toggle, auto-apply, max steps
+│   ├── webSearch.ts               # Provider dropdown, API keys
+│   ├── advanced.ts                # Prompts, message history
+│   ├── customCommands.ts          # Slash command CRUD
+│   └── diagnostics.ts             # Metrics, debug level, clear history
+│
+├── components/                    # React UI components
+│   ├── ChatApp.tsx                # Main chat container (636 lines, was 1,948)
+│   ├── ChatMessages.tsx           # Message list rendering
+│   ├── MessageBubble.tsx          # Individual message bubble
+│   ├── ChatInput.tsx              # Input bar with attachments
+│   ├── ActionBar.tsx              # Toolbar with participant controls
+│   ├── ProfileCard.tsx            # Profile editor UI
+│   ├── ProfileIndicator.tsx       # Active profile badge
+│   ├── PendingToolCard.tsx        # Tool approval card
+│   ├── ToolResultCard.tsx         # Tool result display
+│   ├── ContextPickerModal.tsx     # Note selection modal
+│   └── GroupChatApp.tsx           # Group chat variant
+│
+├── hooks/                         # React hooks
+│   ├── useChatSession.ts          # Session CRUD, persistence, auto-naming
+│   ├── useChatUI.ts               # UI state: modals, toggles, typing indicators
+│   ├── useMessageActions.ts       # Send, retry, edit, apply, tool approval
+│   ├── useSettings.ts             # Settings access
+│   └── __tests__/                 # Hook tests
+│       ├── useChatUI.test.ts      # 31 tests for UI state
+│       └── useMessageActions.test.ts # 21 tests for message actions
+│
+├── lib/                           # Utility functions (T22 Phase 0)
+│   ├── agentVisuals.ts            # Agent color/icon helpers
+│   ├── contextUtils.ts            # Context building utilities
+│   ├── slashCommand.ts            # Command parsing
+│   ├── sessionUtils.ts            # Session manipulation
+│   ├── sessionTitle.ts            # Auto-title generation
+│   └── systemPrompt.ts            # System prompt construction
+│
+├── agent/                         # Agentic logic
+│   ├── AgentLoop.ts               # Tool calling loop
+│   ├── ToolExecutor.ts            # Tool execution engine (865 lines)
+│   ├── Orchestrator.ts            # Multi-agent dispatch
+│   └── MentionParser.ts           # @AgentName parsing
+│
+├── api.ts                         # LLM API abstraction (689 lines)
+│
+├── modules/                       # Obsidian integrations
+│   ├── WidgetExtension.ts         # Inline tooltip (577 lines)
+│   └── commands/                  # Slash commands
+│       └── source.ts
+│
+├── context/                       # Context management
+│   ├── AttachmentEngine.ts        # File attachment resolution
+│   └── ChatContext.ts             # Chat context building
+│
+├── types.ts                       # Shared TypeScript types
+├── main.ts                        # Plugin entry point
+└── default_prompts.ts             # Default prompt templates
+```
+
+## Settings Architecture (T23)
+
+### Before
+- `src/settings.ts` (1,187 lines): types + defaults + UI rendering + 836-line `ObsidianAISettingsTab` class
+
+### After
+- `src/settings.ts` (341 lines): types, defaults, pure helpers, legacy migration
+- `src/settings-sections/SettingsTab.ts` (87 lines): `ObsidianAISettingsTab` class, `display()` orchestrator
+- `src/settings-sections/*.ts` (35–189 lines each): Individual section renderers
+- `src/settings-sections/helpers.ts` (46 lines): Shared `createSection()` and `getProviderLabel()`
+
+### Pattern
+Each section exports a function with signature:
+```typescript
+export function renderXSection(
+  containerEl: HTMLElement,
+  plugin: ObsidianAIPlugin,
+  saveSettings: (options?: { refresh?: boolean; quiet?: boolean }) => Promise<void>,
+  ... // additional params as needed (e.g., app for diagnostics)
+): void
+```
+
+The section appends its DOM elements to `containerEl`. It does not return anything. State mutations go through `plugin.settings` and `saveSettings()`.
+
+### Adding a New Settings Section
+1. Create `src/settings-sections/mySection.ts`
+2. Export `renderMySection(containerEl, plugin, saveSettings)`
+3. Import and call it in `SettingsTab.ts` `display()` method
+4. Add CSS class `obsidian-ai-settings-section` to the container
+
+## ChatApp Architecture (T22)
+
+### Before
+- `src/components/ChatApp.tsx` (1,948 lines): state, effects, handlers, UI, utilities all inline
+
+### After
+- `src/components/ChatApp.tsx` (636 lines): composition of hooks + JSX layout
+- `src/hooks/useChatSession.ts` (317 lines): session state, persistence, CRUD
+- `src/hooks/useChatUI.ts` (264 lines): UI state, modals, toggles, typing indicators
+- `src/hooks/useMessageActions.ts` (1,111 lines): message action handlers
+- `src/lib/*.ts` (23–137 lines): extracted utilities
+
+### Pattern
+ChatApp.tsx is now a thin composition layer:
+```typescript
+const { sessions, activeSessionId, createSession, ... } = useChatSession(plugin);
+const { isZenMode, isDebateMode, showThinking, ... } = useChatUI(plugin);
+const { handleSend, handleStop, handleRetry, ... } = useMessageActions({
+  plugin, sessions, activeSessionId, ...
+});
+```
+
+### Hook Responsibilities
+- **useChatSession**: Everything about session lifecycle. Creating, deleting, switching, loading, saving, auto-naming, manual renaming.
+- **useChatUI**: Everything about UI state that is not message data. Modals (open/closed), toggles (zen/debate/thinking), dropdowns, typing indicators, attachment state, editing state.
+- **useMessageActions**: Everything that happens when the user interacts with messages. Send, stop, retry, edit, delete, apply, append, approve/reject tools.
+
+## Import Conventions
+
+### Settings (T23)
+```typescript
+// From main.ts or other files that need the tab
+import { ObsidianAISettingsTab } from "./settings-sections/SettingsTab";
+
+// From files that need types/config only
+import { ProviderProfile, ObsidianAISettings } from "./settings";
+
+// settings.ts re-exports for backward compatibility:
+export { ObsidianAISettingsTab } from "./settings-sections/SettingsTab";
+```
+
+### Chat (T22)
+```typescript
+// Hooks
+import { useChatSession } from "../hooks/useChatSession";
+import { useChatUI } from "../hooks/useChatUI";
+import { useMessageActions } from "../hooks/useMessageActions";
+
+// Utilities
+import { getAgentColor } from "../lib/agentVisuals";
+import { buildContext } from "../lib/contextUtils";
+```
+
+## Size Budgets
+
+| Category | Target Max | Hard Limit | Current Largest |
+|----------|-----------|------------|-----------------|
+| Settings config | 400 lines | 500 | settings.ts: 341 ✅ |
+| Settings sections | 200 lines | 300 | diagnostics.ts: 189 ✅ |
+| React components | 500 lines | 700 | ChatApp.tsx: 636 ✅ |
+| Hooks | 400 lines | 600 | useMessageActions.ts: 1,111 ⚠️ |
+| Utilities | 150 lines | 200 | sessionTitle.ts: 137 ✅ |
+| Agent logic | 500 lines | 700 | ToolExecutor.ts: 865 ⚠️ |
+| API layer | 400 lines | 500 | api.ts: 689 ⚠️ |
+
+**Note**: `useMessageActions.ts` (1,111), `ToolExecutor.ts` (865), `api.ts` (689), and `ProfileCard.tsx` (698) are the next candidates for decomposition if the user wants to continue.
+
+## Testing
+
+### Hook Tests
+- `src/hooks/__tests__/useChatUI.test.ts` — 31 tests for UI state management
+- `src/hooks/__tests__/useMessageActions.test.ts` — 21 tests for message actions
+
+### Running Tests
+```bash
+pnpm test        # vitest run
+pnpm test:watch  # vitest watch mode
+```
+
+### Adding Tests for New Hooks
+1. Create `src/hooks/__tests__/useMyHook.test.ts`
+2. Mock `ObsidianAIPlugin` and `App` as needed
+3. Test state transitions, not implementation details
+
+## Refactoring Checklist
+
+When a file grows beyond its target size:
+
+- [ ] Identify the natural boundaries (UI sections, state domains, utility categories)
+- [ ] Extract pure utilities first (no dependencies, easy to move)
+- [ ] Extract hooks second (self-contained state + effects)
+- [ ] Extract sub-components third (JSX + local state)
+- [ ] Keep the original file as a composition layer (thin orchestrator)
+- [ ] Re-export from original location for backward compatibility
+- [ ] Run `pnpm run build` after each extraction step
+- [ ] Run `pnpm run test` after each extraction step
+- [ ] Update memory bank task files
+- [ ] Update this architecture doc if patterns change
+
+## History
+
+- **2026-05-28**: T22 Phase 0+1 — Extracted 6 utility modules + `useChatSession` hook. ChatApp.tsx: 1,948 → 1,533 lines.
+- **2026-05-28**: T22 Phase 2 — Extracted `useChatUI` hook + 31 tests. ChatApp.tsx: 1,533 → 1,269 lines.
+- **2026-05-28**: T22 Phase 3 — Extracted `useMessageActions` hook + 21 tests. ChatApp.tsx: 1,269 → 636 lines.
+- **2026-05-29**: T23 — Extracted `ObsidianAISettingsTab` + decomposed into 8 section files. settings.ts: 1,187 → 341 lines. No files >1,000 lines remain.

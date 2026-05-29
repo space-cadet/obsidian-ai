@@ -58,3 +58,4 @@
 - [2026-05-28/2230-thinking-toggle-model-picker-fix](edits/2026-05-28/2230-thinking-toggle-model-picker-fix.md)
 - [2026-05-28/2345-T22-phase0-phase1](edits/2026-05-28/2345-T22-phase0-phase1.md)
 - [2026-05-29/100000-t23-completion](edits/2026-05-29/100000-t23-completion.md)
+- [implementation-details/refactored-architecture.md](implementation-details/refactored-architecture.md)
