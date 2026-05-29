@@ -163,6 +163,7 @@ export class AgentLoop {
 
 		for (let step = 0; step < maxSteps; step++) {
 			let stepText = "";
+			let stepReasoning = "";
 			let pendingCall: ToolCall | null = null;
 
 			for await (const event of chatApi.streamChatWithTools(
@@ -179,6 +180,9 @@ export class AgentLoop {
 						stepText += event.text;
 						fullText += event.text;
 						onTextDelta(fullText);
+						break;
+					case "reasoning-delta":
+						stepReasoning += event.text;
 						break;
 					case "tool-call":
 						pendingCall = event.call;
@@ -230,11 +234,14 @@ export class AgentLoop {
 			);
 			this.opts.onToolResult?.(pendingCall, result);
 
-			// Build assistant message (text + tool call)
+			// Build assistant message (reasoning + text + tool call)
 			const assistantParts: Array<{
 				type: string;
 				[key: string]: unknown;
 			}> = [];
+			if (stepReasoning) {
+				assistantParts.push({ type: "reasoning", text: stepReasoning });
+			}
 			if (stepText) {
 				assistantParts.push({ type: "text", text: stepText });
 			}

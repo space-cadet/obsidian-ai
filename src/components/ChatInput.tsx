@@ -631,7 +631,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 						) : isEditing ? (
 							<div className="chat-input-actions">
 								<button
-									className="chat-btn chat-send-btn"
+									className="chat-btn chat-send-btn chat-send-icon"
 									onClick={() => {
 										const trimmed = value.trim();
 										if ((trimmed || attachments.length > 0) && !isStreaming) {
@@ -642,18 +642,20 @@ const ChatInput: React.FC<ChatInputProps> = ({
 										}
 									}}
 									disabled={!value.trim() && attachments.length === 0}
+									title="Resubmit"
 								>
-									Resubmit
+									▶
 								</button>
 								<button
-									className="chat-btn"
+									className="chat-btn chat-send-icon"
 									onClick={() => {
 										setValue("");
 										setAuto(null);
 										onCancel?.();
 									}}
+									title="Cancel"
 								>
-									Cancel
+									✕
 								</button>
 							</div>
 						) : (

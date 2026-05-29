@@ -477,6 +477,9 @@ export class ChatApiManager {
 
 		for await (const part of result.fullStream) {
 			switch (part.type) {
+				case "reasoning-delta":
+					yield { type: "reasoning-delta", text: part.text };
+					break;
 				case "text-delta":
 					yield { type: "text-delta", text: part.text };
 					break;

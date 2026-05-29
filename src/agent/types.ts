@@ -33,6 +33,7 @@ export interface ToolResult {
 
 export type StreamEvent =
 	| { type: "text-delta"; text: string }
+	| { type: "reasoning-delta"; text: string }
 	| { type: "tool-call"; call: ToolCall }
 	| { type: "tool-result"; callId: string; result: unknown }
 	| { type: "tool-error"; callId: string; error: string }
