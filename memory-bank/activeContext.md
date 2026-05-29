@@ -1,100 +1,56 @@
 # Active Context
 
-*Last Updated: 2026-05-29 10:05 IST*
+*Last Updated: 2026-05-30 03:41 IST*
 
 ## Current Focus
-**T19 — File Attachments: Three major improvements completed (May 29, 2026)**
-- Token counting for images/PDFs now accurate
-- PDF support expanded to OpenAI, Anthropic, OpenRouter (not just Gemini)
-- External file attachments (drag-and-drop + file picker) now supported
-- Commit `eab64d3` pushed to origin/main
-
-**Primary Task:** T21 — E2E Test Harness for AI Features ✅ COMPLETE (Fully tested with real API keys)
-- Built comprehensive Vitest-based E2E test suite for all LLM-powered features
-- 5 test files covering: connection, streaming, tool calling, model discovery, multimodal, thinking
-- **Tested with real API keys**: DeepSeek ✅, OpenRouter ✅, Kimi ✅ (fixed), Gemini ⚠️ (quota exceeded)
-- **Key fix**: Kimi integration was broken because default model `moonshot-v1-8k` returns `engine_overloaded_error`. Changed to `kimi-k2.5` — now works.
-- **Key fix**: Gemini `gemini-1.5-flash-latest` was removed from API. Changed to `gemini-2.0-flash`.
-- **Image attachments tested**: OpenRouter → Gemini vision works end-to-end
-- 26 tests total — all skip gracefully when provider API keys are missing
-- Uses `.env` file for key management (never committed)
-- Commit `33e8e9d` pushed to origin/main (includes OpenRouter multimodal + Kimi fix)
-
-**Secondary Task:** T22 — ChatApp.tsx Component Decomposition ✅ COMPLETE (Phases 0–3)
-- `ChatApp.tsx` reduced from 1,948 to **636 lines** (-67%). 52 tests pass.
+**T19 — File Attachments: COMPLETED (May 30, 2026)**
+- Edit mode now restores `msg.attachments` and `msg.contextItems`
+- ChatInput layout refactored: buttons moved below textarea, pin button removed
+- `pressEnterToSend` setting added (default: true)
+- Reasoning content bug with Kimi-k2.6 partially fixed (still happening in some cases — needs deeper investigation)
+- Commits: `baf7b39`, `653d84b`, `8f6b94a` pushed to origin/main
 
 ## Active Tasks
-- **[T23]**: ✅ **COMPLETED** — Settings.ts decomposed. See `tasks/T23.md`.
 - **[T22]**: 🔄 **IN PROGRESS** — Phases 0–3 complete. ChatApp.tsx: 1,948 → 636 lines. Remaining: Phase 4 (handlers), Phase 5 (layout components).
-- [T16]: 🔄 **IN PROGRESS** — Phases 1–17 implemented. Debate mode working. UI refined. Participant persistence fixed. Thinking display toggle added. **May 25: Fixed duplicate profile ID on copy (commit `de84c4a`) and model fetching for all providers (commit `9d3d1a3`).**
-- [T14]: 🔄 **IN PROGRESS** — Phase 3 integration test. Tailscale 2/3 complete.
-- [T15]: 🔄 **IN PROGRESS** — Phase 1–2 complete. Phase 3 (TabBar UI) paused in favor of T16.
-- [T17]: ⏸️ **PENDING** — Advanced vault tools. Backlinks + YAML first.
-- [T13]: ✅ **COMPLETED** — All 13 tools, AgentLoop, PendingToolCard.
-- [T18]: ✅ **COMPLETED** — Web search tool with 5 providers (DuckDuckGo, Brave, Tavily, Exa, SearXNG).
-- [T19]: 🔄 **IN PROGRESS** — Core implementation complete (commit `a071a24`). AttachmentEngine, ChatInput 📎 dropdown, MessageBubble chips, api.ts multimodal support. Group chat broadcasting deferred. Testing pending.
-- [T21]: ✅ **COMPLETED** — E2E test suite with 26 tests across 5 files. **Tested with real keys**: DeepSeek ✅, OpenRouter ✅, Kimi ✅ (fixed model), Gemini ⚠️ (quota exceeded). Commit `33e8e9d`.
+- **[T16]**: 🔄 **IN PROGRESS** — Phases 1–17 implemented. Debate mode working. UI refined. Participant persistence fixed. Thinking display toggle added.
+- **[T14]**: 🔄 **IN PROGRESS** — Phase 3 integration test. Tailscale 2/3 complete.
+- **[T15]**: 🔄 **IN PROGRESS** — Phase 1–2 complete. Phase 3 (TabBar UI) paused in favor of T16.
+- **[T17]**: ⏸️ **PENDING** — Advanced vault tools. Backlinks + YAML first.
+- **[T13]**: ✅ **COMPLETED** — All 13 tools, AgentLoop, PendingToolCard.
+- **[T18]**: ✅ **COMPLETED** — Web search tool with 5 providers.
+- **[T19]**: ✅ **COMPLETED** — Core implementation complete. Edit mode attachment restoration fixed. ChatInput layout refactored.
+- **[T21]**: ✅ **COMPLETED** — E2E test suite with 26 tests.
+- **[T23]**: ✅ **COMPLETED** — Settings.ts decomposed.
 
-## File Size Analysis (May 29, 2026)
-**T23 complete — no files over 1,000 lines remaining.**
-
+## File Size Analysis (May 30, 2026)
 | File | Lines | Size | Verdict |
 |------|-------|------|---------|
-| `src/settings.ts` | **341** | ~11 KB | ✅ **Decomposed** — pure config only |
-| `src/components/ChatApp.tsx` | **636** | ~20 KB | 🔄 **In progress** — Phases 0–3 complete. Target: ~300 lines |
-| `src/hooks/useMessageActions.ts` | **1,111** | ~33 KB | ⚠️ **Newly extracted** — just created in T22 Phase 3, may be refactored later |
-| `src/agent/ToolExecutor.ts` | 865 | 25 KB | ⚠️ Large — tool defs + execution + formatting |
-| `src/components/ProfileCard.tsx` | 698 | 21 KB | ⚠️ Large — UI component |
-| `src/api.ts` | 689 | 19 KB | ⚠️ Large — broad API surface |
-| `src/components/ChatInput.tsx` | 616 | 16 KB | ⚠️ Large |
+| `src/settings.ts` | **341** | ~11 KB | ✅ Decomposed — pure config only |
+| `src/components/ChatApp.tsx` | **636** | ~20 KB | 🔄 In progress — Phases 0–3 complete |
+| `src/hooks/useMessageActions.ts` | **1,111** | ~33 KB | ⚠️ Large — just extracted in T22 |
+| `src/agent/ToolExecutor.ts` | 865 | 25 KB | ⚠️ Large |
+| `src/components/ProfileCard.tsx` | 698 | 21 KB | ⚠️ Large |
+| `src/api.ts` | 689 | 19 KB | ⚠️ Large |
+| `src/components/ChatInput.tsx` | ~400 | ~13 KB | ✅ Refactored — layout improved, buttons moved below |
 | `src/modules/WidgetExtension.ts` | 577 | 15 KB | ⚠️ Large |
 
-**New modules created today (T23)**:
-- `src/settings-sections/SettingsTab.ts` — 87 lines (orchestrator)
-- `src/settings-sections/hero.ts` — 45 lines
-- `src/settings-sections/providerProfiles.ts` — 35 lines
-- `src/settings-sections/chatDefaults.ts` — 91 lines
-- `src/settings-sections/agentTools.ts` — 59 lines
-- `src/settings-sections/webSearch.ts` — 104 lines
-- `src/settings-sections/advanced.ts` — 64 lines
-- `src/settings-sections/customCommands.ts` — 81 lines
-- `src/settings-sections/diagnostics.ts` — 189 lines
-- `src/settings-sections/helpers.ts` — 46 lines
-
-## T23 Completion Details (2026-05-29 10:00)
-- **Commit**: `dbed5a5` — refactor(T23): decompose settings.ts into section files
-- **Build**: ✅ tsc + esbuild pass
-- **Tests**: ✅ 52 tests pass
-- **Lockfile fix**: `a0b113c` — regenerated pnpm-lock.yaml after test deps update
-- **Memory bank**: `8f8dddc` — updated tasks.md, T23.md
-
 ## Next Steps
-1. **Fix Gemini quota**: User's free tier is exhausted. Upgrade at https://ai.dev/rate-limit or wait for reset.
-2. **T22 Phase 4**: Extract session/settings/export handlers (`useSessionActions`, `useSettingsActions`, `useExportActions`)
-3. **T22 Phase 5**: Extract layout sub-components (ChatLayout, ChatToolbar, ChatMainArea)
-4. **Export feature**: Needs exact UI location specification from user
-5. **Issue #3**: Token usage for tool calls (`stepTokenEstimates` in AgentLoop.ts)
-6. **Issue #4**: Agent dropdown click-outside handler completion
-7. **T17 Phase 1**: Backlinks + YAML tools (user-prioritized)
-8. **T19**: File attachment testing — PDF test needs `e2e/fixtures/test.pdf`
-9. **T21**: Add more provider keys (OpenAI, Anthropic) to complete full E2E coverage
+1. **Thinking error follow-up**: Kimi-k2.6 still throws `reasoning_content is missing` in some cases. Needs deeper investigation into how Vercel AI SDK handles reasoning with tool calls.
+2. **T22 Phase 4**: Extract session/settings/export handlers
+3. **T22 Phase 5**: Extract layout sub-components
+4. **T17 Phase 1**: Backlinks + YAML tools (user-prioritized)
+5. **Export feature**: Needs exact UI location specification from user
 
 ## Current Decisions
-- Unified UI chosen over separate panels (user explicitly requested)
-- Individual checkbox dropdown for participants (replaced all-or-nothing toggle)
-- Sequential dispatch as default (parallel exists in code but not wired)
-- Tool calling in council mode: ENABLED — auto-approve only; manual approval UI deferred
-- Debate mode: Round 1 all agents respond to user, Round 2 agents see each other's responses. PASS to skip.
-- **Folder context: NEVER inline full file contents** — tool instructions are the correct pattern for large collections
-- T15 tab bar deprioritized in favor of T16 group chat
-- **T22 + T23 priority**: COMPLETE — no files over 1,000 lines remain
-- **Kimi model fix**: `moonshot-v1-8k` is overloaded and returns `engine_overloaded_error`. Use `kimi-k2.5` instead.
-- **Gemini model update**: `gemini-1.5-flash-latest` was removed from API. Use `gemini-2.0-flash`.
-- **OpenRouter multimodal**: Works for image vision via `google/gemini-2.0-flash-001`.
+- **Pin current button removed**: Redundant since @mention works for any note
+- **Reference chips reverted**: User prefers inline formatting over chip-based layout
+- **pressEnterToSend**: Default true. Enter sends, Shift+Enter for newline. Toggle in Settings → Chat Defaults.
+- **Reasoning fix**: SDK's OpenAI provider strips `type: "reasoning"` parts. Current fix excludes reasoning from message history loop. May need SDK-level workaround.
+- **Attachment restoration**: Edit mode now preserves both `attachments` and `contextItems` from original message.
 
 ## Session Context
-- **Session**: 2026-05-29 morning
-- **Duration**: ~45 minutes
-- **Commits**: `a0b113c` (lockfile fix), `dbed5a5` (T23 refactor), `8f8dddc` (memory bank)
+- **Session**: 2026-05-30 early morning
+- **Duration**: ~1 hour
+- **Commits**: `baf7b39`, `653d84b`, `8f6b94a`
 - **Build status**: ✅ tsc + esbuild pass
 - **Pushed to**: origin/main

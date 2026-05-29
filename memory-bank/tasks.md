@@ -1,6 +1,6 @@
 # Task Registry
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-28 22:38 IST*
+*Last Updated: 2026-05-30 03:41 IST*
 
 ## Summary
 - Active: **7** | Paused: 1 | Completed: 13 | Cancelled: 0
@@ -28,7 +28,7 @@
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
 | T17 | Advanced Vault Tools — Backlinks, YAML, Bulk Ops | ⏸️ | HIGH | — | T13 | [Details](tasks/T17.md) |
 | T18 | Web Search Tool for Chat | ✅ | MEDIUM | 2026-05-16 | T13, T9 | [Details](tasks/T18.md) |
-| T19 | File Attachments for Chat Messages | 🔄 | HIGH | 2026-05-25 | T13, T4, T9 | [Details](tasks/T19.md) |
+| T19 | File Attachments for Chat Messages | ✅ | HIGH | 2026-05-25 | T13, T4, T9 | [Details](tasks/T19.md) |
 | T21 | CLI Test Harness for AI Features | ✅ | MEDIUM | 2026-05-25 | T19, T4, T13 | [Details](tasks/T21.md) |
 | **T22** | **ChatApp.tsx Component Decomposition** | 🔄 | **HIGH** | **2026-05-28** | — | **[Details](tasks/T22.md)** |
 | **T23** | **Settings.ts Decomposition** | ✅ | **HIGH** | **2026-05-28** | — | **[Details](tasks/T23.md)** |

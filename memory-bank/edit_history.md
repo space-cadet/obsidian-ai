@@ -1,5 +1,89 @@
 ---
 
+## 0320-chatinput-ux-fixes.md
+
+# ChatInput UI/UX Fixes — Layout Refactor, Edit Mode Restoration, Reasoning Bug
+
+*Session: 2026-05-30 02:25–03:20 IST*
+*Tasks: T19 (File Attachments), T22 (Component Decomposition)*
+*Commits: `baf7b39`, `653d84b`, `8f6b94a`*
+
+## What Changed
+
+Fixed four UI/UX bugs and one API error in the ChatInput component and related files.
+
+### 1. Reasoning Content Error with Kimi-k2.6 (Bug)
+- **Problem**: `AI_APICallError: thinking is enabled but reasoning_content is missing` when using Kimi-k2.6 with tool calls enabled
+- **Root cause**: Vercel AI SDK v6 OpenAI provider silently strips `type: "reasoning"` content parts when converting assistant messages. Kimi uses OpenAI-compatible API, so the API rejects requests missing reasoning content.
+- **Fix**: `AgentLoop.ts` accumulates reasoning-delta events but does NOT include `{ type: "reasoning" }` in the assistant message content parts sent back to the LLM. Reasoning is captured for potential display but excluded from the conversation loop.
+- **Files**: `src/agent/AgentLoop.ts`, `src/agent/types.ts`, `src/api.ts`
+- **Status**: Partially fixed — still occurring in some edge cases. Needs deeper SDK investigation.
+
+### 2. Edit Mode Input Bar Scrunched (Bug)
+- **Problem**: When editing a message, the "Resubmit" and "Cancel" text buttons made the input bar tiny and crowded
+- **Fix**: Replaced text-labeled buttons with icon-only compact buttons (▶ / ✕) using existing `chat-send-icon` class
+- **Files**: `src/components/ChatInput.tsx`, `styles.css`
+
+### 3. Button Crowding Around Input Bar (Bug)
+- **Problem**: Buttons (📎, 🧠/💤, 📌) were too close to the textarea, causing visual crowding
+- **Fix**: Moved all buttons except send/stop to a new toolbar row BELOW the textarea. Send button stays adjacent to textarea.
+- **Files**: `src/components/ChatInput.tsx`, `styles.css`
+
+### 4. Edit Mode Loses Attachments/Context Items (Bug)
+- **Problem**: When editing a message that had inline attachments (e.g., `[[Learning Chinese]]`), the attachment metadata was lost and became plain text
+- **Fix**: `handleEditMessage` in `useMessageActions.ts` now restores both `msg.attachments` and `msg.contextItems`. `handleCancelEdit` clears them. `handleSend` finally block clears `messageAttachments`.
+- **Files**: `src/hooks/useMessageActions.ts`, `src/components/ChatInput.tsx`, `src/components/ChatApp.tsx`
+
+### 5. Pin Current Button Removed (UX)
+- **Problem**: The 📌 pin-current button was redundant since users can always use @mention to add any note
+- **Fix**: Removed the pin button from ChatInput. Users should use @mention or [[wikilink]] for note references.
+- **Files**: `src/components/ChatInput.tsx`, `src/components/ChatApp.tsx`
+
+### 6. Press Enter to Send Setting (Feature)
+- **Added**: New `pressEnterToSend: boolean` setting (default `true`) in `ObsidianAISettings`
+- **UI**: Toggle in Settings → Chat Defaults: "Press Enter to send"
+- **Behavior**: When enabled (default), Enter sends and Shift+Enter inserts newline. When disabled, Enter inserts newline and user must click send button.
+- **Files**: `src/settings.ts`, `src/settings-sections/chatDefaults.ts`, `src/components/ChatInput.tsx`
+
+## Layout Changes
+
+**Before**:
+```
+[📌] [🧠] [textarea] [▶]
+[📎]
+```
+
+**After**:
+```
+[textarea] [▶]
+[📎 attach] [🧠 thinking] [attachment chips...]
+```
+
+## Files Changed
+- `src/agent/AgentLoop.ts` — reasoning accumulation, exclude from message history
+- `src/agent/types.ts` — added `reasoning-delta` to `StreamEvent`
+- `src/api.ts` — handle `reasoning-delta` in `streamChatWithTools`
+- `src/hooks/useMessageActions.ts` — restore/clear attachments and contextItems on edit
+- `src/components/ChatInput.tsx` — layout refactor, remove pin button, add pressEnterToSend
+- `src/components/ChatApp.tsx` — pass pressEnterToSend, remove pin button props
+- `src/settings.ts` — add `pressEnterToSend` to interface and defaults
+- `src/settings-sections/chatDefaults.ts` — add toggle UI
+- `styles.css` — toolbar layout, attachment chip styling
+
+## Verification
+- Build: ✅ tsc + esbuild pass
+- Tests: ✅ 52 tests pass
+- Push: ✅ origin/main updated (commits `baf7b39`, `653d84b`, `8f6b94a`)
+
+## Next Steps
+- Deep investigation into Kimi-k2.6 reasoning bug (still occurring)
+- User to test new ChatInput layout with real messages
+- T22 Phase 4: extract handler hooks from ChatApp.tsx
+
+---
+
+---
+
 ## 1740-T19-attachment-fixes.md
 
 # T19 Attachment Improvements — Token Counting, PDFs, External Files
