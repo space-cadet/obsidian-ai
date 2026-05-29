@@ -3,17 +3,15 @@
 *Last Updated: 2026-05-29 10:05 IST*
 
 ## Current Focus
-**Primary Task:** T23 — Settings.ts Decomposition ✅ COMPLETE
-- `settings.ts` reduced from 1,187 to **341 lines** (-846, -71%). Build passes. Tests pass.
-- Extracted `ObsidianAISettingsTab` to `src/settings-sections/SettingsTab.ts` (87 lines)
-- Decomposed into 8 focused section files (35–189 lines each)
-- Removed dead code: `renderModelPicker` (~120 lines)
-- **No more files over 1,000 lines in `src/`**
+**Primary Task:** T21 — E2E Test Harness for AI Features ✅ COMPLETE
+- Built comprehensive Vitest-based E2E test suite for all LLM-powered features
+- 5 test files covering: connection, streaming, tool calling, model discovery, multimodal, thinking
+- 26 tests total — all skip gracefully when provider API keys are missing
+- Uses `.env` file for key management (never committed)
+- Commit `ddc25e0` pushed to origin/main
 
 **Secondary Task:** T22 — ChatApp.tsx Component Decomposition ✅ COMPLETE (Phases 0–3)
-- `ChatApp.tsx` reduced from 1,948 to **636 lines** (-1,312, -67%). Build passes. 52 tests pass.
-- Extracted: 6 utility modules + `useChatSession` + `useChatUI` (31 tests) + `useMessageActions` (21 tests)
-- Remaining: Phases 4–5 (session/settings/export handlers, layout components) — not yet started
+- `ChatApp.tsx` reduced from 1,948 to **636 lines** (-67%). 52 tests pass.
 
 ## Active Tasks
 - **[T23]**: ✅ **COMPLETED** — Settings.ts decomposed. See `tasks/T23.md`.
@@ -25,7 +23,7 @@
 - [T13]: ✅ **COMPLETED** — All 13 tools, AgentLoop, PendingToolCard.
 - [T18]: ✅ **COMPLETED** — Web search tool with 5 providers (DuckDuckGo, Brave, Tavily, Exa, SearXNG).
 - [T19]: 🔄 **IN PROGRESS** — Core implementation complete (commit `a071a24`). AttachmentEngine, ChatInput 📎 dropdown, MessageBubble chips, api.ts multimodal support. Group chat broadcasting deferred. Testing pending.
-- [T21]: 🔄 **IN PROGRESS** — CLI test harness task created. Scripts for attachment resolution, streaming, tool calling, multimodal testing.
+- [T21]: ✅ **COMPLETED** — E2E test suite with 26 tests across 5 files (connection, streaming, tools, model discovery, multimodal, thinking). Uses `.env` for API keys. Commit `ddc25e0`.
 
 ## File Size Analysis (May 29, 2026)
 **T23 complete — no files over 1,000 lines remaining.**

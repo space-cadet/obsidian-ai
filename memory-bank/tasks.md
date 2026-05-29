@@ -29,7 +29,7 @@
 | T17 | Advanced Vault Tools — Backlinks, YAML, Bulk Ops | ⏸️ | HIGH | — | T13 | [Details](tasks/T17.md) |
 | T18 | Web Search Tool for Chat | ✅ | MEDIUM | 2026-05-16 | T13, T9 | [Details](tasks/T18.md) |
 | T19 | File Attachments for Chat Messages | 🔄 | HIGH | 2026-05-25 | T13, T4, T9 | [Details](tasks/T19.md) |
-| T21 | CLI Test Harness for AI Features | 🔄 | MEDIUM | 2026-05-25 | T19, T4, T13 | [Details](tasks/T21.md) |
+| T21 | CLI Test Harness for AI Features | ✅ | MEDIUM | 2026-05-25 | T19, T4, T13 | [Details](tasks/T21.md) |
 | **T22** | **ChatApp.tsx Component Decomposition** | 🔄 | **HIGH** | **2026-05-28** | — | **[Details](tasks/T22.md)** |
 | **T23** | **Settings.ts Decomposition** | ✅ | **HIGH** | **2026-05-28** | — | **[Details](tasks/T23.md)** |
 
@@ -82,6 +82,7 @@ Networked thought tools (backlinks, outlinks, unlinked mentions), YAML frontmatt
 | T10 | Model Discovery & Picker UX | 2026-05-04 | T9 | [Details](tasks/T10.md) |
 | T13 | Agentic Tool Calling for Note Editing | 2026-05-14 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
 | T18 | Web Search Tool for Chat | 2026-05-16 | T13, T9 | [Details](tasks/T18.md) |
+| T21 | CLI Test Harness for AI Features | 2026-05-29 | T19, T4, T13 | [Details](tasks/T21.md) |
 | T22 | ChatApp.tsx Component Decomposition | 2026-05-29 | — | [Details](tasks/T22.md) |
 | T23 | Settings.ts Decomposition | 2026-05-29 | — | [Details](tasks/T23.md) |
 

@@ -1,61 +1,131 @@
-- [2026-05-02/093400-T7](edits/2026-05-02/093400-T7.md)
-- [2026-05-02/094100-T1](edits/2026-05-02/094100-T1.md)
-- [2026-05-02/111244-T8](edits/2026-05-02/111244-T8.md)
-- [2026-05-02/174845-mem-update](edits/2026-05-02/174845-mem-update.md)
-- [2026-05-02/223252-T4-T5](edits/2026-05-02/223252-T4-T5.md)
-- [2026-05-02/232114-T4-T5-T3-fixes](edits/2026-05-02/232114-T4-T5-T3-fixes.md)
-- [2026-05-02/232114-T7-ci-fix](edits/2026-05-02/232114-T7-ci-fix.md)
-- [2026-05-02/235630-T5-T2-note-targeting-persistence](edits/2026-05-02/235630-T5-T2-note-targeting-persistence.md)
-- [2026-05-03/001843-T2-session-history-design](edits/2026-05-03/001843-T2-session-history-design.md)
-- [2026-05-03/004500-T2-session-history-impl](edits/2026-05-03/004500-T2-session-history-impl.md)
-- [2026-05-03/005200-T2-mem-sync](edits/2026-05-03/005200-T2-mem-sync.md)
-- [2026-05-03/024731-T3-context-system-impl](edits/2026-05-03/024731-T3-context-system-impl.md)
-- [2026-05-04/145936-t3-t5-mem-update](edits/2026-05-04/145936-t3-t5-mem-update.md)
-- [2026-05-04/181157-T2-T3-T5-completion](edits/2026-05-04/181157-T2-T3-T5-completion.md)
-- [2026-05-04/224616-T6-T10-completion](edits/2026-05-04/224616-T6-T10-completion.md)
-- [2026-05-06/T13-settings-and-mvp](edits/2026-05-06/T13-settings-and-mvp.md)
-- [2026-05-07/065728-t14-mb-update](edits/2026-05-07/065728-t14-mb-update.md)
-- [2026-05-08/t13-basename-fix-and-diagnostics](edits/2026-05-08/t13-basename-fix-and-diagnostics.md)
-- [2026-05-09/logger-errorboundary-new-tools](edits/2026-05-09/logger-errorboundary-new-tools.md)
-- [2026-05-12/111359-t11-t2-t9-memory-sync](edits/2026-05-12/111359-t11-t2-t9-memory-sync.md)
-- [2026-05-12/134710-t9-gpt54-memory-sync](edits/2026-05-12/134710-t9-gpt54-memory-sync.md)
-- [2026-05-14/075241-auto-approve-toggle](edits/2026-05-14/075241-auto-approve-toggle.md)
-- [2026-05-14/075241-pending-ui-search-tool](edits/2026-05-14/075241-pending-ui-search-tool.md)
-- [2026-05-14/091900-t13-complete](edits/2026-05-14/091900-t13-complete.md)
-- [2026-05-15/064500-t14-tailscale-progress](edits/2026-05-15/064500-t14-tailscale-progress.md)
-- [2026-05-15/20250515-095700-t15-t16-task-creation](edits/2026-05-15/20250515-095700-t15-t16-task-creation.md)
-- [2026-05-15/20250515-101500-t13-tool-result-fixes](edits/2026-05-15/20250515-101500-t13-tool-result-fixes.md)
-- [2026-05-15/20250515-103000-t17-advanced-vault-tools](edits/2026-05-15/20250515-103000-t17-advanced-vault-tools.md)
-- [2026-05-15/20250515-121000-auto-name-fixes](edits/2026-05-15/20250515-121000-auto-name-fixes.md)
-- [2026-05-15/20250515-124500-auto-name-v2-smart-titles-icon-bar](edits/2026-05-15/20250515-124500-auto-name-v2-smart-titles-icon-bar.md)
-- [2026-05-15/20250515-125500-auto-name-v3-toggle-reactivity-context-naming](edits/2026-05-15/20250515-125500-auto-name-v3-toggle-reactivity-context-naming.md)
-- [2026-05-16/090000-t16-mvp](edits/2026-05-16/090000-t16-mvp.md)
-- [2026-05-16/091500-t16-unified](edits/2026-05-16/091500-t16-unified.md)
-- [2026-05-16/092000-t16-fix-main](edits/2026-05-16/092000-t16-fix-main.md)
-- [2026-05-16/093000-t16-fix-deps](edits/2026-05-16/093000-t16-fix-deps.md)
-- [2026-05-16/104500-t16-tools](edits/2026-05-16/104500-t16-tools.md)
-- [2026-05-16/124800-t16-mobile-zen](edits/2026-05-16/124800-t16-mobile-zen.md)
-- [2026-05-16/125900-t16-dropdown](edits/2026-05-16/125900-t16-dropdown.md)
-- [2026-05-16/131200-t16-actionbar-move](edits/2026-05-16/131200-t16-actionbar-move.md)
-- [2026-05-16/132600-t16-hide-groupchat](edits/2026-05-16/132600-t16-hide-groupchat.md)
-- [2026-05-16/133100-t16-debate-mode](edits/2026-05-16/133100-t16-debate-mode.md)
-- [2026-05-16/151300-t16-debate-toggle-fix](edits/2026-05-16/151300-t16-debate-toggle-fix.md)
-- [2026-05-16/152200-t16-debate-prompt](edits/2026-05-16/152200-t16-debate-prompt.md)
-- [2026-05-16/154000-t16-persist-participants](edits/2026-05-16/154000-t16-persist-participants.md)
-- [2026-05-16/154800-t16-session-sync](edits/2026-05-16/154800-t16-session-sync.md)
-- [2026-05-16/155300-t16-session-switch-fix](edits/2026-05-16/155300-t16-session-switch-fix.md)
-- [2026-05-16/20260516-075600-t15-ui-naming](edits/2026-05-16/20260516-075600-t15-ui-naming.md)
-- [2026-05-17/110100-t18-tavily-exa](edits/2026-05-17/110100-t18-tavily-exa.md)
-- [2026-05-17/111200-t16-message-metadata](edits/2026-05-17/111200-t16-message-metadata.md)
-- [2026-05-17/112500-t16-profile-dropdown-switch](edits/2026-05-17/112500-t16-profile-dropdown-switch.md)
-- [2026-05-17/113600-t16-settingsTick-fix](edits/2026-05-17/113600-t16-settingsTick-fix.md)
-- [2026-05-17/121600-t16-retry-profile-fix](edits/2026-05-17/121600-t16-retry-profile-fix.md)
-- [2026-05-23/235400-t13-context-fixes](edits/2026-05-23/235400-t13-context-fixes.md)
-- [2026-05-24/170500-t16-fixes](edits/2026-05-24/170500-t16-fixes.md)
-- [2026-05-25/1301-T16-model-fetching](edits/2026-05-25/1301-T16-model-fetching.md)
-- [2026-05-25/2045-META-1-format-normalization](edits/2026-05-25/2045-META-1-format-normalization.md)
-- [2026-05-25/2244-T19-implementation](edits/2026-05-25/2244-T19-implementation.md)
-- [2026-05-28/2230-thinking-toggle-model-picker-fix](edits/2026-05-28/2230-thinking-toggle-model-picker-fix.md)
-- [2026-05-28/2345-T22-phase0-phase1](edits/2026-05-28/2345-T22-phase0-phase1.md)
-- [2026-05-29/100000-t23-completion](edits/2026-05-29/100000-t23-completion.md)
-- [implementation-details/refactored-architecture.md](implementation-details/refactored-architecture.md)
+---
+
+## 1145-T21-e2e-test-suite.md
+
+# T21 E2E Test Suite Implementation
+
+*Session: 2026-05-29 11:15–11:46 IST*
+*Task: T21 — CLI Test Harness for AI Features (evolved into E2E test suite)*
+*Commit: `ddc25e0` — feat(e2e): add comprehensive LLM end-to-end test suite*
+
+## What Changed
+
+Instead of standalone CLI scripts, built a **Vitest-based E2E test suite** that runs via `pnpm test:e2e`. This integrates with existing test infrastructure and is CI-ready.
+
+## Files Created
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `vitest.e2e.config.ts` | 15 | E2E test config (Node env, 60s timeout) |
+| `e2e/setup.ts` | 115 | Mock App, provider profile builder from env vars, conditional test helpers |
+| `e2e/connection.e2e.test.ts` | 94 | API connection tests for 6 providers |
+| `e2e/streaming.e2e.test.ts` | 230 | Streaming chat + tool calling (calculator tool) |
+| `e2e/model-discovery.e2e.test.ts` | 98 | Model fetching tests for all providers |
+| `e2e/multimodal.e2e.test.ts` | 117 | Image vision tests (Gemini, OpenAI, Anthropic) |
+| `e2e/thinking.e2e.test.ts` | 60 | Reasoning mode tests (DeepSeek, Claude 3.7) |
+| `.env.example` | 39 | Documents all required API keys |
+
+## Files Modified
+
+| File | Change |
+|------|--------|
+| `package.json` | Added `test:e2e` and `test:e2e:watch` scripts |
+| `pnpm-lock.yaml` | Added `dotenv` dev dependency |
+| `__mocks__/obsidian.ts` | Expanded with PluginSettingTab, Setting, Plugin, Vault, Workspace, MetadataCache, etc. |
+| `memory-bank/tasks.md` | T21 marked ✅ COMPLETE |
+| `memory-bank/tasks/T21.md` | Updated with full completion details |
+| `memory-bank/activeContext.md` | Updated current focus and active tasks |
+
+## Test Coverage
+
+- **Connection**: `testApiConnection()` for all 6 providers with keys
+- **Streaming**: `streamChat()` with simple prompts
+- **Tool Calling**: `streamChatWithTools()` with calculator tool (zod schema)
+- **Model Discovery**: `fetchModels()` for all providers
+- **Multimodal**: Image vision with base64 1x1 PNG
+- **Thinking**: Reasoning mode with `thinkingEnabled` flag
+
+## Key Design Decisions
+
+1. **Vitest over standalone scripts**: Integrates with existing test workflow, supports watch mode, coverage, CI.
+2. **Conditional tests**: `describeIfProvider()` / `itIfProvider()` skip tests when API keys are missing.
+3. **`.env` for keys**: `dotenv` loads `.env` file. Already gitignored. Never commit keys.
+4. **Mock App**: Minimal `createMockApp()` provides enough Obsidian interface for `ChatApiManager` to work without real Obsidian runtime.
+5. **Test timeout**: 60 seconds per test — LLM APIs can be slow.
+
+## How to Run
+
+```bash
+cp .env.example .env
+# Edit .env with your API keys
+
+pnpm test:e2e      # run once
+pnpm test:e2e:watch # watch mode
+```
+
+## Next Steps
+
+- User needs to copy `.env.example` → `.env` and fill in API keys to actually run the tests.
+- PDF tests require a real PDF file at `e2e/fixtures/test.pdf` — currently skipped.
+- Web search tool tests could be added next (requires Brave/Tavily/Exa API keys).
+
+---
+
+## 100000-t23-completion.md
+
+# Edit Chunk — 2026-05-29 10:00 IST
+
+## Session
+- **Start**: 2026-05-29 09:20 IST
+- **End**: 2026-05-29 10:05 IST
+- **Trigger**: User request
+- **Duration**: ~45 minutes
+
+## Actions
+
+### 1. Fixed CI Build Failure (pre-existing)
+- **Problem**: CI failed on `pnpm install --frozen-lockfile` due to outdated lockfile after commit `1d7a5e8` added testing library deps without updating `pnpm-lock.yaml`
+- **Fix**: Ran `pnpm install` (with corecore pnpm v11.4.0) to regenerate lockfile
+- **Commit**: `a0b113c` — "fix: regenerate pnpm-lock.yaml after test deps update"
+- **Status**: CI now passes
+
+### 2. T23 — Settings.ts Decomposition (COMPLETE)
+- **Task**: Break down 1,187-line `settings.ts` into pure config + focused UI section files
+- **Phase 1**: Extract `ObsidianAISettingsTab` to `src/settings-sections/SettingsTab.ts` (87 lines)
+- **Phase 2**: Decompose into 8 section files:
+  - `src/settings-sections/hero.ts` (45 lines) — hero banner with active profile info
+  - `src/settings-sections/providerProfiles.ts` (35 lines) — React ProfileList mount
+  - `src/settings-sections/chatDefaults.ts` (91 lines) — context, auto-name, limits
+  - `src/settings-sections/agentTools.ts` (59 lines) — tools toggle, auto-apply, max steps
+  - `src/settings-sections/webSearch.ts` (104 lines) — provider dropdown, API keys
+  - `src/settings-sections/advanced.ts` (64 lines) — prompts, message history
+  - `src/settings-sections/customCommands.ts` (81 lines) — slash command CRUD
+  - `src/settings-sections/diagnostics.ts` (189 lines) — metrics, debug level, clear history
+- **Phase 3**: Extract shared helpers to `src/settings-sections/helpers.ts` (46 lines) — `createSection`, `getProviderLabel`
+- **Phase 4**: Keep `settings.ts` as pure config (341 lines, -846, -71%)
+- **Phase 5**: Update `main.ts` import path; add backward compatibility re-export in `settings.ts`
+- **Phase 6**: Removed dead code — `renderModelPicker` (unused private method, ~120 lines)
+- **Verification**: `pnpm run build` ✅, `pnpm run test` ✅ (52 tests)
+- **Commit**: `dbed5a5` — "refactor(T23): decompose settings.ts into section files"
+- **Push**: `origin/main` updated
+
+### 3. Memory Bank Update
+- Updated `tasks.md`: T23 marked ✅ COMPLETE, added T22 to completed tasks
+- Updated `tasks/T23.md`: Full completion details, decisions, verification criteria
+- Updated `tasks.md` summary: Active 7, Paused 1, Completed 13
+- **Commit**: `8f8dddc` — "docs(memory-bank): record T22 completion and T23 completion"
+
+## Decisions
+- Section functions receive `(containerEl, plugin, saveSettings, ...)` rather than class instance — keeps sections decoupled and testable
+- `settings.ts` re-exports `ObsidianAISettingsTab` for backward compatibility; `main.ts` imports directly from canonical location
+- `renderModelPicker` was dead code (private method, never called in `display()`) — removed entirely
+
+## Git Commits
+- `a0b113c` — fix: regenerate pnpm-lock.yaml after test deps update
+- `dbed5a5` — refactor(T23): decompose settings.ts into section files
+- `8f8dddc` — docs(memory-bank): record T22 completion and T23 completion
+
+## Next Steps
+- No more files over 1,000 lines in `src/`. Largest remaining: `ToolExecutor.ts` (865), `ProfileCard.tsx` (698), `api.ts` (689)
+- T22 Phase 4 still pending: extract session/settings/export handlers from ChatApp.tsx
+
