@@ -1,5 +1,58 @@
 ---
 
+## 1430-T21-e2e-real-keys.md
+
+# T21 E2E Tests with Real API Keys
+
+*Session: 2026-05-29 14:00–14:35 IST*
+*Task: T21 — Validate E2E tests with actual API keys*
+*Commit: `33e8e9d` — feat(e2e): add OpenRouter multimodal test + fix Kimi default model*
+
+## What Changed
+
+Ran E2E tests with real API keys provided by user. Discovered and fixed two integration issues.
+
+## Test Results
+
+| Provider | Tests | Status | Notes |
+|----------|-------|--------|-------|
+| DeepSeek | 4 | ✅ Pass | Fast, reliable |
+| OpenRouter | 3 | ✅ Pass | Image vision works |
+| Kimi | 3 | ✅ Fixed | Model changed from `moonshot-v1-8k` to `kimi-k2.5` |
+| Gemini | 1 | ⚠️ Discovery only | Quota exceeded for generation |
+| OpenAI | 4 | ⏭️ Skipped | No key |
+| Anthropic | 4 | ⏭️ Skipped | No key |
+
+## Fixes Applied
+
+### 1. Kimi Model Fix
+- **Problem**: `moonshot-v1-8k` returns `engine_overloaded_error`
+- **Fix**: Changed `getDefaultTestModel()` in `e2e/setup.ts` to use `kimi-k2.5`
+- **Verification**: Streaming chat works (28.3s)
+
+### 2. Gemini Model Update
+- **Problem**: `gemini-1.5-flash-latest` was removed from API
+- **Fix**: Changed to `gemini-2.0-flash`
+- **Note**: Still fails due to quota exceeded (free tier limit reached)
+
+### 3. OpenRouter Multimodal Test
+- **Added**: Image vision test via OpenRouter (`google/gemini-2.0-flash-001`)
+- **Result**: Passes in 1.6s — correctly describes 1×1 red PNG
+- **Note**: OpenRouter model IDs require `-001` suffix for Gemini
+
+## Files Changed
+
+- `e2e/setup.ts` — Updated `getDefaultTestModel()` for Kimi and Gemini
+- `e2e/multimodal.e2e.test.ts` — Added OpenRouter image vision test
+
+## Next Steps
+
+- Fix Gemini quota (user needs to upgrade billing)
+- Add PDF test fixture (`e2e/fixtures/test.pdf`)
+- Test with OpenAI/Anthropic keys when provided
+
+---
+
 ## 1145-T21-e2e-test-suite.md
 
 # T21 E2E Test Suite Implementation

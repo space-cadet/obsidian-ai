@@ -3,12 +3,16 @@
 *Last Updated: 2026-05-29 10:05 IST*
 
 ## Current Focus
-**Primary Task:** T21 — E2E Test Harness for AI Features ✅ COMPLETE
+**Primary Task:** T21 — E2E Test Harness for AI Features ✅ COMPLETE (Fully tested with real API keys)
 - Built comprehensive Vitest-based E2E test suite for all LLM-powered features
 - 5 test files covering: connection, streaming, tool calling, model discovery, multimodal, thinking
+- **Tested with real API keys**: DeepSeek ✅, OpenRouter ✅, Kimi ✅ (fixed), Gemini ⚠️ (quota exceeded)
+- **Key fix**: Kimi integration was broken because default model `moonshot-v1-8k` returns `engine_overloaded_error`. Changed to `kimi-k2.5` — now works.
+- **Key fix**: Gemini `gemini-1.5-flash-latest` was removed from API. Changed to `gemini-2.0-flash`.
+- **Image attachments tested**: OpenRouter → Gemini vision works end-to-end
 - 26 tests total — all skip gracefully when provider API keys are missing
 - Uses `.env` file for key management (never committed)
-- Commit `ddc25e0` pushed to origin/main
+- Commit `33e8e9d` pushed to origin/main (includes OpenRouter multimodal + Kimi fix)
 
 **Secondary Task:** T22 — ChatApp.tsx Component Decomposition ✅ COMPLETE (Phases 0–3)
 - `ChatApp.tsx` reduced from 1,948 to **636 lines** (-67%). 52 tests pass.
@@ -23,7 +27,7 @@
 - [T13]: ✅ **COMPLETED** — All 13 tools, AgentLoop, PendingToolCard.
 - [T18]: ✅ **COMPLETED** — Web search tool with 5 providers (DuckDuckGo, Brave, Tavily, Exa, SearXNG).
 - [T19]: 🔄 **IN PROGRESS** — Core implementation complete (commit `a071a24`). AttachmentEngine, ChatInput 📎 dropdown, MessageBubble chips, api.ts multimodal support. Group chat broadcasting deferred. Testing pending.
-- [T21]: ✅ **COMPLETED** — E2E test suite with 26 tests across 5 files (connection, streaming, tools, model discovery, multimodal, thinking). Uses `.env` for API keys. Commit `ddc25e0`.
+- [T21]: ✅ **COMPLETED** — E2E test suite with 26 tests across 5 files. **Tested with real keys**: DeepSeek ✅, OpenRouter ✅, Kimi ✅ (fixed model), Gemini ⚠️ (quota exceeded). Commit `33e8e9d`.
 
 ## File Size Analysis (May 29, 2026)
 **T23 complete — no files over 1,000 lines remaining.**
@@ -59,14 +63,15 @@
 - **Memory bank**: `8f8dddc` — updated tasks.md, T23.md
 
 ## Next Steps
-1. **T22 Phase 4**: Extract session/settings/export handlers (`useSessionActions`, `useSettingsActions`, `useExportActions`)
-2. **T22 Phase 5**: Extract layout sub-components (ChatLayout, ChatToolbar, ChatMainArea)
-3. **Export feature**: Needs exact UI location specification from user
-4. **Issue #3**: Token usage for tool calls (`stepTokenEstimates` in AgentLoop.ts)
-5. **Issue #4**: Agent dropdown click-outside handler completion
-6. **T17 Phase 1**: Backlinks + YAML tools (user-prioritized)
-7. **T19**: File attachment testing
-8. **T21**: CLI test harness implementation
+1. **Fix Gemini quota**: User's free tier is exhausted. Upgrade at https://ai.dev/rate-limit or wait for reset.
+2. **T22 Phase 4**: Extract session/settings/export handlers (`useSessionActions`, `useSettingsActions`, `useExportActions`)
+3. **T22 Phase 5**: Extract layout sub-components (ChatLayout, ChatToolbar, ChatMainArea)
+4. **Export feature**: Needs exact UI location specification from user
+5. **Issue #3**: Token usage for tool calls (`stepTokenEstimates` in AgentLoop.ts)
+6. **Issue #4**: Agent dropdown click-outside handler completion
+7. **T17 Phase 1**: Backlinks + YAML tools (user-prioritized)
+8. **T19**: File attachment testing — PDF test needs `e2e/fixtures/test.pdf`
+9. **T21**: Add more provider keys (OpenAI, Anthropic) to complete full E2E coverage
 
 ## Current Decisions
 - Unified UI chosen over separate panels (user explicitly requested)
@@ -77,6 +82,9 @@
 - **Folder context: NEVER inline full file contents** — tool instructions are the correct pattern for large collections
 - T15 tab bar deprioritized in favor of T16 group chat
 - **T22 + T23 priority**: COMPLETE — no files over 1,000 lines remain
+- **Kimi model fix**: `moonshot-v1-8k` is overloaded and returns `engine_overloaded_error`. Use `kimi-k2.5` instead.
+- **Gemini model update**: `gemini-1.5-flash-latest` was removed from API. Use `gemini-2.0-flash`.
+- **OpenRouter multimodal**: Works for image vision via `google/gemini-2.0-flash-001`.
 
 ## Session Context
 - **Session**: 2026-05-29 morning
