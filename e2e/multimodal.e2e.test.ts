@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { ChatApiManager } from "../src/api";
 import type { SdkMessage } from "../src/api";
 import {
@@ -107,9 +109,26 @@ describe("E2E: Multimodal (Image)", () => {
   });
 });
 
-// PDF tests require a real PDF file on disk. Place a test PDF at:
-// e2e/fixtures/test.pdf
-// Then uncomment and run the tests below.
-describe("E2E: Multimodal (PDF) — SKIPPED", () => {
-  it.skip("requires a real PDF file at e2e/fixtures/test.pdf", () => {});
+// PDF tests — requires a real PDF file at e2e/fixtures/test.pdf
+// NOTE: PDF support is currently only available for Gemini native provider.
+// The Vercel AI SDK does not support `file` content parts natively.
+// OpenRouter and other providers do not support PDF file content parts.
+describe("E2E: Multimodal (PDF)", () => {
+  const pdfPath = join(__dirname, "fixtures", "test.pdf");
+  let pdfExists = false;
+
+  try {
+    readFileSync(pdfPath);
+    pdfExists = true;
+  } catch {
+    // PDF file does not exist
+  }
+
+  const describeIfPdf = pdfExists ? describe : describe.skip;
+
+  describeIfPdf("E2E: Multimodal (PDF)", () => {
+    describeIfProvider("gemini", "Gemini", () => {
+      it.skip("PDF support requires Vercel AI SDK file content part support (currently unsupported)", () => {});
+    });
+  });
 });
