@@ -3,6 +3,12 @@
 *Last Updated: 2026-05-29 10:05 IST*
 
 ## Current Focus
+**T19 — File Attachments: Three major improvements completed (May 29, 2026)**
+- Token counting for images/PDFs now accurate
+- PDF support expanded to OpenAI, Anthropic, OpenRouter (not just Gemini)
+- External file attachments (drag-and-drop + file picker) now supported
+- Commit `eab64d3` pushed to origin/main
+
 **Primary Task:** T21 — E2E Test Harness for AI Features ✅ COMPLETE (Fully tested with real API keys)
 - Built comprehensive Vitest-based E2E test suite for all LLM-powered features
 - 5 test files covering: connection, streaming, tool calling, model discovery, multimodal, thinking

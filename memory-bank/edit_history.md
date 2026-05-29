@@ -1,5 +1,53 @@
 ---
 
+## 1740-T19-attachment-fixes.md
+
+# T19 Attachment Improvements — Token Counting, PDFs, External Files
+
+*Session: 2026-05-29 17:07–17:43 IST*
+*Task: T19 — File Attachments for Chat Messages*
+*Commit: `eab64d3` — feat(T19): attachment improvements — token counting, PDF support, external files*
+
+## What Changed
+
+Three major improvements to the attachment feature:
+
+### 1. Token Counting for Images/PDFs
+- Added `estimateContentPartTokens()` and `estimateContentPartsTokens()` to `tokenEstimator.ts`
+- Image estimate: ~255 tokens (OpenAI convention)
+- PDF estimate: based on base64 byte size
+- Moved attachment resolution BEFORE token computation in `useMessageActions.ts`
+- Removed duplicate `resolveAttachments()` call
+
+### 2. PDF Support for All Providers
+- Expanded from Gemini-only to: OpenAI, Anthropic, OpenRouter, Gemini
+- Vercel AI SDK v6 natively supports `FilePart` for these providers
+- DeepSeek/Kimi still get placeholder text (SDK limitation)
+
+### 3. External File Attachments
+- Added `data?: string` and `mimeType?: string` to `Attachment` interface
+- Added `createExternalAttachment()` to read File objects via FileReader API
+- Added "📁 Browse External File" option in dropdown
+- Added drag-and-drop support with visual feedback (`drag-over` CSS class)
+- Supports images, PDFs, text files from OS filesystem
+
+## Files Changed
+- `src/context/tokenEstimator.ts`
+- `src/hooks/useMessageActions.ts`
+- `src/context/AttachmentEngine.ts`
+- `src/types.ts`
+- `src/components/ChatInput.tsx`
+- `styles.css`
+
+## Verification
+- Build: ✅ tsc + esbuild pass
+- Tests: ✅ 52 tests pass
+- Push: ✅ origin/main updated
+
+---
+
+---
+
 ## 1430-T21-e2e-real-keys.md
 
 # T21 E2E Tests with Real API Keys
