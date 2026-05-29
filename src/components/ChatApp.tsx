@@ -597,14 +597,11 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				isEditing={ui.isEditing}
 				onCancel={actions.handleCancelEdit}
 				editMessage={ui.editMessageText}
-				onToggleActiveNote={handleToggleActiveNote}
-				hasActiveNote={contextItems.some((item) => item.type === "active-note")}
 				thinkingEnabled={thinkingEnabled}
 				onToggleThinking={() => setThinkingEnabled((t) => !t)}
 				attachments={ui.messageAttachments}
 				onAttachmentsChange={ui.setMessageAttachments}
-				contextItems={contextItems}
-				onRemoveContextItem={handleRemoveContextItem}
+				pressEnterToSend={plugin.settings.pressEnterToSend}
 			/>
 			{ui.showSessionPicker && (
 				<SessionPickerModal

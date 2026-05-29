@@ -14,6 +14,20 @@ export function renderChatDefaultsSection(
 	);
 
 	new Setting(sectionEl)
+		.setName("Press Enter to send")
+		.setDesc(
+			"When enabled, pressing Enter sends the message and Shift+Enter inserts a new line. When disabled, Enter inserts a new line and you must click the send button.",
+		)
+		.addToggle((toggle) => {
+			toggle
+				.setValue(plugin.settings.pressEnterToSend)
+				.onChange(async (value) => {
+					plugin.settings.pressEnterToSend = value;
+					await saveSettings();
+				});
+		});
+
+	new Setting(sectionEl)
 		.setName("Include active note")
 		.setDesc(
 			"Automatically include the active note when chat context is implemented.",

@@ -61,6 +61,7 @@ export interface ObsidianAISettings {
 	enableAgentTools: boolean;
 	autoApply: boolean;
 	maxAgentSteps: number;
+	pressEnterToSend: boolean;
 	// Web Search settings
 	webSearchProvider: WebSearchProvider;
 	braveApiKey: string;
@@ -239,6 +240,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	enableAgentTools: true,
 	autoApply: false,
 	maxAgentSteps: 5,
+	pressEnterToSend: true,
 	webSearchProvider: "duckduckgo",
 	braveApiKey: "",
 	searxngUrl: "",
@@ -291,6 +293,7 @@ export const normalizeSettings = (
 		enableAgentTools: Boolean(merged.enableAgentTools ?? true),
 		autoApply: Boolean(merged.autoApply ?? false),
 		maxAgentSteps: merged.maxAgentSteps ?? 5,
+		pressEnterToSend: Boolean(merged.pressEnterToSend ?? true),
 		webSearchProvider: (merged.webSearchProvider as WebSearchProvider) ?? "duckduckgo",
 		braveApiKey: merged.braveApiKey ?? "",
 		searxngUrl: merged.searxngUrl ?? "",

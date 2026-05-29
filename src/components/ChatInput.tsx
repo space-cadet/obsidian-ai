@@ -12,8 +12,6 @@ interface ChatInputProps {
 	isEditing?: boolean;
 	onCancel?: () => void;
 	editMessage?: string;
-	onToggleActiveNote?: () => void;
-	hasActiveNote?: boolean;
 	/** Whether thinking mode is enabled for LLM */
 	thinkingEnabled?: boolean;
 	/** Toggle thinking mode */
@@ -22,10 +20,8 @@ interface ChatInputProps {
 	attachments?: import("../types").Attachment[];
 	/** Callback when attachments change */
 	onAttachmentsChange?: (attachments: import("../types").Attachment[]) => void;
-	/** Current context items (for rendering chips) */
-	contextItems?: ContextItem[];
-	/** Callback when a context item is removed */
-	onRemoveContextItem?: (id: string) => void;
+	/** Whether pressing Enter sends the message (Shift+Enter for newline) */
+	pressEnterToSend?: boolean;
 }
 
 type AutoType = "mention" | "slash" | "wikilink";
@@ -97,14 +93,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	isEditing,
 	onCancel,
 	editMessage,
-	onToggleActiveNote,
-	hasActiveNote,
 	thinkingEnabled,
 	onToggleThinking,
 	attachments = [],
 	onAttachmentsChange,
-	contextItems = [],
-	onRemoveContextItem,
+	pressEnterToSend = true,
 }) => {
 	const [value, setValue] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -129,15 +122,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		return () => document.removeEventListener("mousedown", handleClick);
 	}, [showAttachDropdown]);
 
-	// Parse wiki-link references from textarea value for visual display
-	const wikiLinks = useMemo(() => {
-		const matches = value.match(/\[\[(.*?)\]\]/g) || [];
-		return matches.map((m) => m.slice(2, -2));
-	}, [value]);
-
 	const handleAttachFile = useCallback((type: "note" | "image" | "pdf") => {
 		setShowAttachDropdown(false);
-		// Use Obsidian's suggester modal for file picking
 		const files = app.vault.getAllLoadedFiles().filter((f) => {
 			if (!(f instanceof TFile)) return false;
 			if (type === "note") return f.extension === "md";
@@ -151,7 +137,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			return;
 		}
 
-		// Simple picker: show dropdown with file list
 		const modal = document.createElement("div");
 		modal.className = "chat-attach-modal";
 		modal.innerHTML = `
@@ -182,7 +167,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		onAttachmentsChange?.(attachments.filter((a) => a.id !== id));
 	}, [attachments, onAttachmentsChange]);
 
-	// Handle external files from file input or drag-and-drop
 	const handleFiles = useCallback(async (files: FileList | null) => {
 		if (!files || files.length === 0) return;
 		const newAttachments: import("../types").Attachment[] = [];
@@ -202,7 +186,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
 	const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
 		handleFiles(e.target.files);
-		// Reset input so same file can be selected again
 		if (fileInputRef.current) {
 			fileInputRef.current.value = "";
 		}
@@ -217,9 +200,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	useEffect(() => {
 		const textarea = textareaRef.current;
 		if (!textarea) return;
-		// Reset to auto to shrink when deleting
 		textarea.style.height = "auto";
-		// Grow up to max 4 lines (~96px) then scroll
 		const maxHeight = 96;
 		const newHeight = Math.min(textarea.scrollHeight, maxHeight);
 		textarea.style.height = newHeight + "px";
@@ -241,7 +222,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
 		const candidates: AutoCandidate[] = [];
 
-		// Notes (for both mention and wikilink)
 		for (const file of app.vault.getMarkdownFiles().sort(
 			(a, b) => b.stat.mtime - a.stat.mtime,
 		)) {
@@ -256,7 +236,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			});
 		}
 
-		// Folders and tags only for mentions
 		if (auto.type === "mention") {
 			for (const folder of app.vault
 				.getAllLoadedFiles()
@@ -321,7 +300,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			if (!auto) return;
 
 			if (auto.type === "mention") {
-				// Replace @query with the candidate name in the input
 				const before = value.slice(0, auto.start);
 				const after = value.slice(
 					textareaRef.current?.selectionStart ?? value.length,
@@ -329,7 +307,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 				setValue(before + candidate.label + after);
 				setAuto(null);
 
-				// Create ContextItem
 				let item: ContextItem;
 				if (candidate.contextType === "note") {
 					item = {
@@ -368,7 +345,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 				setAuto(null);
 				setTimeout(() => {
 					textareaRef.current?.focus();
-					// Place cursor after the inserted command + space
 					const pos = auto.start + replacement.length;
 					textareaRef.current?.setSelectionRange(pos, pos);
 				}, 0);
@@ -441,14 +417,17 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			}
 
 			if (e.key === "Enter" && !e.shiftKey) {
-				e.preventDefault();
-				const trimmed = value.trim();
-				if ((trimmed || attachments.length > 0) && !isStreaming) {
-					onSend(trimmed, attachments.length > 0 ? attachments : undefined);
-					setValue("");
-					setAuto(null);
-					onAttachmentsChange?.([]);
+				if (pressEnterToSend) {
+					e.preventDefault();
+					const trimmed = value.trim();
+					if ((trimmed || attachments.length > 0) && !isStreaming) {
+						onSend(trimmed, attachments.length > 0 ? attachments : undefined);
+						setValue("");
+						setAuto(null);
+						onAttachmentsChange?.([]);
+					}
 				}
+				// if !pressEnterToSend, Enter inserts newline (default textarea behavior)
 			}
 		},
 		[
@@ -460,6 +439,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			onSend,
 			attachments,
 			onAttachmentsChange,
+			pressEnterToSend,
 		],
 	);
 
@@ -483,6 +463,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		setIsDragOver(false);
 		handleFiles(e.dataTransfer.files);
 	}, [handleFiles]);
+
+	const placeholder = pressEnterToSend
+		? "Ask anything... (Shift+Enter for new line)"
+		: "Ask anything... (Enter for new line, Ctrl+Enter to send)";
 
 	return (
 		<div
@@ -518,17 +502,90 @@ const ChatInput: React.FC<ChatInputProps> = ({
 				</div>
 			)}
 			<div className={`chat-input-wrapper${isDragOver ? " drag-over" : ""}`}>
-				{/* Row 1: Reference chips (attachments + context items + wiki-links) */}
-				{(attachments.length > 0 || contextItems.length > 0 || wikiLinks.length > 0) && (
-					<div className="chat-reference-chips">
+				{/* Row 1: Textarea + send button */}
+				<div className="chat-input-row">
+					<textarea
+						ref={textareaRef}
+						className="chat-textarea"
+						rows={1}
+						placeholder={placeholder}
+						value={value}
+						onChange={handleInputChange}
+						onKeyDown={handleKeyDown}
+						disabled={isStreaming}
+					/>
+					{/* Right: send/stop/edit actions */}
+					<div className="chat-input-right">
+						{isStreaming ? (
+							<button
+								className="chat-btn chat-stop-btn chat-send-icon"
+								onClick={onStop}
+								title="Stop"
+							>
+								⏹
+							</button>
+						) : isEditing ? (
+							<div className="chat-input-actions">
+								<button
+									className="chat-btn chat-send-btn chat-send-icon"
+									onClick={() => {
+										const trimmed = value.trim();
+										if ((trimmed || attachments.length > 0) && !isStreaming) {
+											onSend(trimmed, attachments.length > 0 ? attachments : undefined);
+											setValue("");
+											setAuto(null);
+											onAttachmentsChange?.([]);
+										}
+									}}
+									disabled={!value.trim() && attachments.length === 0}
+									title="Resubmit"
+								>
+									▶
+								</button>
+								<button
+									className="chat-btn chat-send-icon"
+									onClick={() => {
+										setValue("");
+										setAuto(null);
+										onCancel?.();
+									}}
+									title="Cancel"
+								>
+									✕
+								</button>
+							</div>
+						) : (
+							<button
+								className="chat-btn chat-send-btn chat-send-icon"
+								onClick={() => {
+									const trimmed = value.trim();
+									if ((trimmed || attachments.length > 0) && !isStreaming) {
+										onSend(trimmed, attachments.length > 0 ? attachments : undefined);
+										setValue("");
+										setAuto(null);
+										onAttachmentsChange?.([]);
+									}
+								}}
+								disabled={!value.trim() && attachments.length === 0}
+								title="Send"
+							>
+								▶
+							</button>
+						)}
+					</div>
+				</div>
+				{/* Row 2: Attachment chips + action buttons below textarea */}
+				<div className="chat-input-toolbar">
+					{/* Left: attachment chips + attach button */}
+					<div className="chat-input-toolbar-left">
 						{attachments.map((att) => (
-							<div key={att.id} className="chat-reference-chip chat-attachment-chip">
-								<span className="chat-reference-icon">
+							<div key={att.id} className="chat-attachment-chip">
+								<span className="chat-attachment-icon">
 									{att.type === "image" ? "🖼️" : att.type === "pdf" ? "📑" : "📄"}
 								</span>
-								<span className="chat-reference-name">{att.name}</span>
+								<span className="chat-attachment-name">{att.name}</span>
 								<button
-									className="chat-reference-remove"
+									className="chat-attachment-remove"
 									onClick={() => handleRemoveAttachment(att.id)}
 									title="Remove attachment"
 									type="button"
@@ -537,39 +594,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 								</button>
 							</div>
 						))}
-						{contextItems.map((item) => {
-							const label = item.type === "tag" ? item.tag : item.type === "active-note" ? "Active note" : item.name ?? item.path;
-							return (
-								<div key={item.id} className="chat-reference-chip chat-context-chip">
-									<span className="chat-reference-icon">
-										{item.type === "note" ? "📄" : item.type === "folder" ? "📁" : item.type === "tag" ? "#" : "📌"}
-									</span>
-									<span className="chat-reference-name">{label}</span>
-									{onRemoveContextItem && (
-										<button
-											className="chat-reference-remove"
-											onClick={() => onRemoveContextItem(item.id)}
-											title="Remove context"
-											type="button"
-										>
-											×
-										</button>
-									)}
-								</div>
-							);
-						})}
-						{wikiLinks.map((link, i) => (
-							<div key={`wiki-${link}-${i}`} className="chat-reference-chip chat-wikilink-chip">
-								<span className="chat-reference-icon">🔗</span>
-								<span className="chat-reference-name">{link}</span>
-							</div>
-						))}
-					</div>
-				)}
-				{/* Row 2: Buttons + textarea + send */}
-				<div className="chat-input-row">
-					{/* Left: attach, pin, thinking */}
-					<div className="chat-input-left">
 						<div style={{ position: "relative" }} ref={attachDropdownRef}>
 							<button
 								className="chat-input-attach"
@@ -625,16 +649,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 								</div>
 							)}
 						</div>
-						{onToggleActiveNote && (
-							<button
-								className={`chat-input-attach${hasActiveNote ? " is-active" : ""}`}
-								onClick={onToggleActiveNote}
-								title={hasActiveNote ? "Remove active note from context" : "Include active note as context"}
-								type="button"
-							>
-								📌
-							</button>
-						)}
 						{onToggleThinking && (
 							<button
 								className={`chat-input-thinking${thinkingEnabled ? " is-active" : ""}`}
@@ -644,78 +658,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 							>
 								{thinkingEnabled ? "🧠" : "💤"}
 							</button>
-						)}
-					</div>
-					{/* Center: textarea */}
-					<textarea
-						ref={textareaRef}
-						className="chat-textarea"
-						rows={1}
-						placeholder="Ask anything... (Shift+Enter for new line)"
-						value={value}
-						onChange={handleInputChange}
-						onKeyDown={handleKeyDown}
-						disabled={isStreaming}
-					/>
-					{/* Right: send/stop/edit actions */}
-					<div className="chat-input-right">
-						{isStreaming ? (
-							<button
-								className="chat-btn chat-stop-btn chat-send-icon"
-								onClick={onStop}
-								title="Stop"
-							>
-								⏹
-							</button>
-						) : isEditing ? (
-							<div className="chat-input-actions">
-								<button
-									className="chat-btn chat-send-btn chat-send-icon"
-									onClick={() => {
-										const trimmed = value.trim();
-										if ((trimmed || attachments.length > 0) && !isStreaming) {
-											onSend(trimmed, attachments.length > 0 ? attachments : undefined);
-											setValue("");
-											setAuto(null);
-											onAttachmentsChange?.([]);
-										}
-									}}
-									disabled={!value.trim() && attachments.length === 0}
-									title="Resubmit"
-								>
-									▶
-								</button>
-								<button
-									className="chat-btn chat-send-icon"
-									onClick={() => {
-										setValue("");
-										setAuto(null);
-										onCancel?.();
-									}}
-									title="Cancel"
-								>
-									✕
-								</button>
-							</div>
-						) : (
-							<>
-								<button
-									className="chat-btn chat-send-btn chat-send-icon"
-									onClick={() => {
-										const trimmed = value.trim();
-										if ((trimmed || attachments.length > 0) && !isStreaming) {
-											onSend(trimmed, attachments.length > 0 ? attachments : undefined);
-											setValue("");
-											setAuto(null);
-											onAttachmentsChange?.([]);
-										}
-									}}
-									disabled={!value.trim() && attachments.length === 0}
-									title="Send"
-								>
-									▶
-								</button>
-							</>
 						)}
 					</div>
 				</div>

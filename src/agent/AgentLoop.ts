@@ -234,14 +234,13 @@ export class AgentLoop {
 			);
 			this.opts.onToolResult?.(pendingCall, result);
 
-			// Build assistant message (reasoning + text + tool call)
+			// Build assistant message (text + tool call only — reasoning is NOT included
+			// because the Vercel AI SDK's OpenAI provider strips reasoning parts when
+			// converting to the API format, causing "reasoning_content missing" errors)
 			const assistantParts: Array<{
 				type: string;
 				[key: string]: unknown;
 			}> = [];
-			if (stepReasoning) {
-				assistantParts.push({ type: "reasoning", text: stepReasoning });
-			}
 			if (stepText) {
 				assistantParts.push({ type: "text", text: stepText });
 			}

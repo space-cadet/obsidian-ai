@@ -2466,18 +2466,28 @@
 	width: 100%;
 }
 
-.chat-input-left {
+.chat-input-right {
 	display: flex;
 	align-items: center;
 	gap: 6px;
 	flex-shrink: 0;
 }
 
-.chat-input-right {
+/* Toolbar below textarea */
+.chat-input-toolbar {
 	display: flex;
 	align-items: center;
 	gap: 6px;
-	flex-shrink: 0;
+	width: 100%;
+	padding-top: 4px;
+}
+
+.chat-input-toolbar-left {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	flex: 1;
 }
 
 /* Textarea sizing */
