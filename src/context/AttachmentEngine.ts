@@ -109,16 +109,54 @@ async function readMarkdownFile(app: App, path: string): Promise<string> {
 	return app.vault.read(file);
 }
 
+/** Convert a File (from file input or drag-and-drop) to an Attachment with inline data. */
+export async function createExternalAttachment(file: File): Promise<Attachment> {
+	const arrayBuffer = await file.arrayBuffer();
+	const base64 = arrayBufferToBase64(arrayBuffer);
+	const name = file.name;
+	const ext = name.split(".").pop()?.toLowerCase() ?? "";
+	let type: Attachment["type"] = "file";
+	let mimeType = file.type || "application/octet-stream";
+
+	if (ext in IMAGE_MIME_TYPES) {
+		type = "image";
+		mimeType = IMAGE_MIME_TYPES[ext];
+	} else if (ext === "pdf") {
+		type = "pdf";
+		mimeType = "application/pdf";
+	} else if (ext === "md" || ext === "txt") {
+		type = "markdown";
+		mimeType = "text/plain";
+	}
+
+	return {
+		id: crypto.randomUUID(),
+		type,
+		path: name, // original filename as path
+		name,
+		data: base64,
+		mimeType,
+	};
+}
+
+/** Convert ArrayBuffer to base64 string (no data URL prefix). */
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+	const bytes = new Uint8Array(buffer);
+	let binary = "";
+	for (let i = 0; i < bytes.byteLength; i++) {
+		binary += String.fromCharCode(bytes[i]);
+	}
+	return btoa(binary);
+}
+
 /**
  * Resolve an attachment to AI SDK content parts.
  *
  * Returns an array of content parts compatible with Vercel AI SDK v6:
  * - Markdown → text parts
  * - Image → image parts (base64)
- * - PDF → file parts (Gemini) or text parts (extracted/summary for others)
- *
- * For non-Gemini providers with PDFs, we return a text placeholder since
- * PDF text extraction requires external libraries (deferred to future).
+ * - PDF → file parts (supported providers) or text placeholder
+ * - External files → use inline data if present, else read from vault
  */
 export async function resolveAttachment(
 	attachment: Attachment,
@@ -131,16 +169,40 @@ export async function resolveAttachment(
 		| { type: "file"; data: string; mimeType: string }
 	>
 > {
-	const { path, name, type } = attachment;
+	const { path, name, type, data } = attachment;
 
-	// ─── Markdown ───
+	// ─── External file with inline data ───
+	if (data) {
+		// Image with inline data
+		if (type === "image") {
+			return [{ type: "image", image: data }];
+		}
+		// PDF with inline data
+		if (type === "pdf") {
+			if (provider === "gemini" || provider === "openai" || provider === "anthropic" || provider === "openrouter") {
+				return [{ type: "file", data, mimeType: "application/pdf" }];
+			}
+			return [{ type: "text", text: `[PDF attached: ${name}]\n\nNote: PDF content extraction is not yet supported for ${provider}.` }];
+		}
+		// Markdown/text with inline data
+		if (type === "markdown" || type === "file") {
+			try {
+				const text = atob(data);
+				return [{ type: "text", text: `---\nFile: ${name}\n---\n\n${text}` }];
+			} catch {
+				return [{ type: "text", text: `[Attached file: ${name}]\n\nNote: Could not decode file content.` }];
+			}
+		}
+	}
+
+	// ─── Markdown (vault file) ───
 	if (type === "markdown" || isMarkdownFile(path)) {
 		const content = await readMarkdownFile(app, path);
 		const header = `---\nFile: ${name}\nPath: ${path}\n---\n\n`;
 		return [{ type: "text", text: header + content }];
 	}
 
-	// ─── Image ───
+	// ─── Image (vault file) ───
 	if (type === "image" || isImageFile(path)) {
 		const ext = path.split(".").pop()?.toLowerCase() ?? "png";
 		const mimeType = IMAGE_MIME_TYPES[ext] ?? "image/png";
@@ -158,13 +220,13 @@ export async function resolveAttachment(
 		return [{ type: "image", image: base64 }];
 	}
 
-	// ─── PDF ───
+	// ─── PDF (vault file) ───
 	if (type === "pdf" || isPdfFile(path)) {
 		const buffer = await readFileAsArrayBuffer(app, path);
 		const base64 = arrayBufferToDataUrl(buffer, "application/pdf").split(",")[1] ?? "";
 
-		// Gemini supports native FilePart
-		if (provider === "gemini") {
+		// Providers with native FilePart support
+		if (provider === "gemini" || provider === "openai" || provider === "anthropic" || provider === "openrouter") {
 			return [
 				{
 					type: "file",
@@ -174,7 +236,7 @@ export async function resolveAttachment(
 			];
 		}
 
-		// Other providers: return placeholder text (extraction deferred)
+		// Other providers: return placeholder text
 		return [
 			{
 				type: "text",

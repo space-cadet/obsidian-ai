@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { App, Notice, TFile, TFolder } from "obsidian";
 import { ContextItem } from "../types";
+import { createExternalAttachment } from "../context/AttachmentEngine";
 
 interface ChatInputProps {
 	app: App;
@@ -104,6 +105,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	const [auto, setAuto] = useState<AutoState | null>(null);
 	const [showAttachDropdown, setShowAttachDropdown] = useState(false);
 	const attachDropdownRef = useRef<HTMLDivElement>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	// Close attachment dropdown when clicking outside
 	useEffect(() => {
@@ -167,6 +169,37 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	const handleRemoveAttachment = useCallback((id: string) => {
 		onAttachmentsChange?.(attachments.filter((a) => a.id !== id));
 	}, [attachments, onAttachmentsChange]);
+
+	// Handle external files from file input or drag-and-drop
+	const handleFiles = useCallback(async (files: FileList | null) => {
+		if (!files || files.length === 0) return;
+		const newAttachments: import("../types").Attachment[] = [];
+		for (const file of Array.from(files)) {
+			try {
+				const att = await createExternalAttachment(file);
+				newAttachments.push(att);
+			} catch (e) {
+				new Notice(`Failed to attach file: ${file.name}`);
+				console.error("[ChatInput] Failed to attach external file:", e);
+			}
+		}
+		if (newAttachments.length > 0) {
+			onAttachmentsChange?.([...attachments, ...newAttachments]);
+		}
+	}, [attachments, onAttachmentsChange]);
+
+	const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+		handleFiles(e.target.files);
+		// Reset input so same file can be selected again
+		if (fileInputRef.current) {
+			fileInputRef.current.value = "";
+		}
+	}, [handleFiles]);
+
+	const handleAttachExternal = useCallback(() => {
+		setShowAttachDropdown(false);
+		fileInputRef.current?.click();
+	}, []);
 
 	// Auto-resize textarea based on content
 	useEffect(() => {
@@ -418,8 +451,34 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		],
 	);
 
+	const [isDragOver, setIsDragOver] = useState(false);
+
+	const handleDragOver = useCallback((e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragOver(true);
+	}, []);
+
+	const handleDragLeave = useCallback((e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragOver(false);
+	}, []);
+
+	const handleDrop = useCallback((e: React.DragEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragOver(false);
+		handleFiles(e.dataTransfer.files);
+	}, [handleFiles]);
+
 	return (
-		<div style={{ position: "relative" }}>
+		<div
+			style={{ position: "relative" }}
+			onDragOver={handleDragOver}
+			onDragLeave={handleDragLeave}
+			onDrop={handleDrop}
+		>
 			{auto && filteredCandidates.length > 0 && (
 				<div className="chat-mention-dropdown">
 					{filteredCandidates.map((candidate, i) => (
@@ -446,7 +505,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 					))}
 				</div>
 			)}
-			<div className="chat-input-wrapper">
+			<div className={`chat-input-wrapper${isDragOver ? " drag-over" : ""}`}>
 				{/* Row 1: Attachment chips */}
 				{attachments.length > 0 && (
 					<div className="chat-attachment-chips">
@@ -512,6 +571,17 @@ const ChatInput: React.FC<ChatInputProps> = ({
 									>
 										<span>📑</span>
 										<span>Attach PDF</span>
+									</div>
+									<div className="chat-attach-dropdown-divider" />
+									<div
+										className="chat-attach-dropdown-item"
+										onMouseDown={(e) => {
+											e.preventDefault();
+											handleAttachExternal();
+										}}
+									>
+										<span>📁</span>
+										<span>Browse External File</span>
 									</div>
 								</div>
 							)}
@@ -609,6 +679,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
 					</div>
 				</div>
 			</div>
+			{/* Hidden file input for external file picker */}
+			<input
+				ref={fileInputRef}
+				type="file"
+				style={{ display: "none" }}
+				accept="image/*,.pdf,.txt,.md"
+				onChange={handleFileInputChange}
+				multiple
+			/>
 		</div>
 	);
 };

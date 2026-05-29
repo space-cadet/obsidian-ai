@@ -1,11 +1,17 @@
 import type { ToolCall, ToolResult } from "./agent/types";
 
-/** Attachment to a chat message — vault file the LLM should consume */
+/** Attachment to a chat message — vault file or external file the LLM should consume */
 export interface Attachment {
 	id: string;
-	type: "markdown" | "image" | "pdf";
+	/** For vault files: "markdown" | "image" | "pdf". For external files: "image" | "pdf" | "file". */
+	type: "markdown" | "image" | "pdf" | "file";
+	/** Vault path (for vault files) or original filename (for external files) */
 	path: string;
 	name: string;
+	/** Optional inline base64 data for external files (bypasses vault read) */
+	data?: string;
+	/** Optional MIME type for external files */
+	mimeType?: string;
 }
 
 /** A segment of message content — either text or an inline tool call */

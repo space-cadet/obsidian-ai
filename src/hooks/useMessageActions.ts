@@ -17,7 +17,7 @@ import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
 import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
 import { resolveContextItems } from "../context/ContextEngine";
 import { resolveAttachments } from "../context/AttachmentEngine";
-import { estimateTokens } from "../context/tokenEstimator";
+import { estimateTokens, estimateContentPartsTokens } from "../context/tokenEstimator";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { parseSlashCommand } from "../lib/slashCommand";
 import { makeId } from "../lib/sessionUtils";
@@ -282,11 +282,39 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			setWasTruncated(resolved.wasTruncated);
 			setContextTokenCount(resolved.stats.estimatedTokens);
 
-			const userTokenEstimate = estimateTokens(
+			const selectedIds = Array.from(ui.selectedProfileIds);
+			const activeProfile: ProviderProfile =
+				selectedIds.length === 1
+					? (plugin.settings.providerProfiles.find(
+							(p) => p.id === selectedIds[0],
+						) ?? resolvedProfile)
+					: resolvedProfile;
+
+			// Resolve attachments before computing token estimate
+			let resolvedAttachmentParts: import("../api").MessageContentPart[] = [];
+			if (attachments && attachments.length > 0) {
+				resolvedAttachmentParts = await resolveAttachments(
+					attachments,
+					plugin.app,
+					activeProfile.provider,
+				);
+			}
+
+			// Compute token estimate: context text + message text + attachments
+			let userTokenEstimate = estimateTokens(
 				(resolved.contextString
 					? resolved.contextString + "\n\n"
 					: "") + sendText,
 			);
+			if (resolvedAttachmentParts.length > 0) {
+				userTokenEstimate += estimateContentPartsTokens(
+					resolvedAttachmentParts as Array<
+						| { type: "text"; text: string }
+						| { type: "image"; image: string }
+						| { type: "file"; data: string; mimeType: string }
+					>,
+				);
+			}
 
 			const userMsg: ChatMessage = {
 				id: makeId(),
@@ -334,13 +362,6 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				userContent = `${resolved.contextString}\n\n${sendText}`;
 			}
 
-			const selectedIds = Array.from(ui.selectedProfileIds);
-			const activeProfile: ProviderProfile =
-				selectedIds.length === 1
-					? (plugin.settings.providerProfiles.find(
-							(p) => p.id === selectedIds[0],
-						) ?? resolvedProfile)
-					: resolvedProfile;
 			const isAgentProvider = activeProfile.provider === "agent";
 			const useTools =
 				plugin.settings.enableAgentTools || isAgentProvider;
@@ -350,18 +371,11 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			let userMessageContent:
 				| string
 				| import("../api").MessageContentPart[] = userContent;
-			if (attachments && attachments.length > 0) {
-				const resolvedParts = await resolveAttachments(
-					attachments,
-					plugin.app,
-					activeProfile.provider,
-				);
-				if (resolvedParts.length > 0) {
-					userMessageContent = [
-						{ type: "text", text: userContent },
-						...resolvedParts,
-					];
-				}
+			if (resolvedAttachmentParts.length > 0) {
+				userMessageContent = [
+					{ type: "text", text: userContent },
+					...resolvedAttachmentParts,
+				];
 			}
 
 			const chatMessages = [
