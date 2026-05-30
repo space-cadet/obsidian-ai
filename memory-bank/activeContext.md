@@ -1,13 +1,14 @@
 # Active Context
 
-*Last Updated: 2026-05-30 03:41 IST*
+*Last Updated: 2026-05-30 10:17 IST*
 
 ## Current Focus
 **T19 — File Attachments: COMPLETED (May 30, 2026)**
 - Edit mode now restores `msg.attachments` and `msg.contextItems`
 - ChatInput layout refactored: buttons moved below textarea, pin button removed
 - `pressEnterToSend` setting added (default: true)
-- Reasoning content bug with Kimi-k2.6 partially fixed (still happening in some cases — needs deeper investigation)
+- Reasoning content bug with Kimi-k2.6 partially fixed (still happening in some cases — deferred to next session)
+- User testing at 10:17 IST: approved "much better than before" — ChatInput layout confirmed good
 - Commits: `baf7b39`, `653d84b`, `8f6b94a` pushed to origin/main
 
 ## Active Tasks
@@ -49,8 +50,8 @@
 - **Attachment restoration**: Edit mode now preserves both `attachments` and `contextItems` from original message.
 
 ## Session Context
-- **Session**: 2026-05-30 early morning
-- **Duration**: ~1 hour
+- **Session**: 2026-05-30 (ended 10:17 IST)
+- **Duration**: ~8 hours (with break)
 - **Commits**: `baf7b39`, `653d84b`, `8f6b94a`
 - **Build status**: ✅ tsc + esbuild pass
 - **Pushed to**: origin/main
