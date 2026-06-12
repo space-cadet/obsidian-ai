@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from "react";
 import { App, TFile, TFolder } from "obsidian";
 import { ContextItem } from "../types";
+import { ChatPluginLike } from "../views/ObsidianAIChatView";
 
 type TabType = "notes" | "folders" | "tags";
 
 interface ContextPickerModalProps {
 	app: App;
+	plugin: ChatPluginLike;
 	onAdd: (items: ContextItem[]) => void;
 	onClose: () => void;
 }
@@ -16,6 +18,7 @@ function makeId(): string {
 
 const ContextPickerModal: React.FC<ContextPickerModalProps> = ({
 	app,
+	plugin,
 	onAdd,
 	onClose,
 }) => {
@@ -47,9 +50,39 @@ const ContextPickerModal: React.FC<ContextPickerModalProps> = ({
 		const q = searchQuery.toLowerCase();
 		if (!q) return allNotes;
 		return allNotes.filter((f) =>
-			f.basename.toLowerCase().includes(q),
+			f.basename.toLowerCase().includes(q) ||
+			f.path.toLowerCase().includes(q),
 		);
 	}, [allNotes, searchQuery]);
+
+	// Get the setting for how to display paths in the picker
+	const pathDisplay = plugin.settings.contextPickerPathDisplay;
+
+	// Helper: get parent folder path for a file (e.g., "Learning Chinese/.memory")
+	const getParentFolder = (filePath: string): string => {
+		const lastSlash = filePath.lastIndexOf("/");
+		if (lastSlash <= 0) return "";
+		return filePath.slice(0, lastSlash);
+	};
+
+	// Determine if we should show parent folder for a given file
+	const shouldShowPath = (file: TFile): boolean => {
+		if (pathDisplay === "always") return true;
+		if (pathDisplay === "never") return false;
+		// "duplicates"
+		return duplicateBasenames.has(file.basename);
+	};
+	const duplicateBasenames = useMemo(() => {
+		const counts = new Map<string, number>();
+		for (const f of filteredNotes) {
+			counts.set(f.basename, (counts.get(f.basename) || 0) + 1);
+		}
+		const dupes = new Set<string>();
+		for (const [name, count] of counts) {
+			if (count > 1) dupes.add(name);
+		}
+		return dupes;
+	}, [filteredNotes]);
 
 	const filteredFolders = useMemo(() => {
 		const q = searchQuery.toLowerCase();
@@ -184,7 +217,7 @@ const ContextPickerModal: React.FC<ContextPickerModalProps> = ({
 									return (
 										<label
 											key={key}
-											className={`chat-picker-item${checked ? " chat-picker-item-selected" : ""}`}
+											className={`chat-picker-item${checked ? " chat-picker-item-selected" : ""}`} title={file.path}
 										>
 											<input
 												type="checkbox"
@@ -195,6 +228,11 @@ const ContextPickerModal: React.FC<ContextPickerModalProps> = ({
 											/>
 											<span className="chat-picker-item-name">
 												{file.basename}
+	{shouldShowPath(file) && (
+		<span className="chat-picker-item-folder">
+			{getParentFolder(file.path)}
+		</span>
+	)}
 											</span>
 											<span className="chat-picker-item-meta">
 												{file.extension}

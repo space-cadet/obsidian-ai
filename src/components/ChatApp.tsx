@@ -623,6 +623,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			)}
 			{ui.showContextPicker && (
 				<ContextPickerModal
+					plugin={plugin}
 					app={plugin.app}
 					onAdd={handleAddContextItems}
 					onClose={() => ui.setShowContextPicker(false)}

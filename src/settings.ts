@@ -62,6 +62,8 @@ export interface ObsidianAISettings {
 	autoApply: boolean;
 	maxAgentSteps: number;
 	pressEnterToSend: boolean;
+	/** How to show file paths in the context picker */
+	contextPickerPathDisplay: "never" | "always" | "duplicates";
 	// Web Search settings
 	webSearchProvider: WebSearchProvider;
 	braveApiKey: string;
@@ -241,6 +243,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	autoApply: false,
 	maxAgentSteps: 5,
 	pressEnterToSend: true,
+	contextPickerPathDisplay: "duplicates",
 	webSearchProvider: "duckduckgo",
 	braveApiKey: "",
 	searxngUrl: "",
@@ -294,6 +297,7 @@ export const normalizeSettings = (
 		autoApply: Boolean(merged.autoApply ?? false),
 		maxAgentSteps: merged.maxAgentSteps ?? 5,
 		pressEnterToSend: Boolean(merged.pressEnterToSend ?? true),
+		contextPickerPathDisplay: (merged.contextPickerPathDisplay as "never" | "always" | "duplicates") ?? "duplicates",
 		webSearchProvider: (merged.webSearchProvider as WebSearchProvider) ?? "duckduckgo",
 		braveApiKey: merged.braveApiKey ?? "",
 		searxngUrl: merged.searxngUrl ?? "",

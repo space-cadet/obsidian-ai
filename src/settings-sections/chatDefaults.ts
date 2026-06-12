@@ -14,6 +14,23 @@ export function renderChatDefaultsSection(
 	);
 
 	new Setting(sectionEl)
+		.setName("Context picker path display")
+		.setDesc(
+			"How to show file paths in the context picker. 'Never' shows filenames only. 'Always' shows the parent folder for every file. 'When duplicates' shows the parent folder only when multiple files share the same name.",
+		)
+		.addDropdown((dropdown) => {
+			dropdown
+				.addOption("never", "Never")
+				.addOption("always", "Always")
+				.addOption("duplicates", "When duplicates")
+				.setValue(plugin.settings.contextPickerPathDisplay)
+				.onChange(async (value) => {
+					plugin.settings.contextPickerPathDisplay = value as "never" | "always" | "duplicates";
+					await saveSettings();
+				});
+		});
+
+	new Setting(sectionEl)
 		.setName("Press Enter to send")
 		.setDesc(
 			"When enabled, pressing Enter sends the message and Shift+Enter inserts a new line. When disabled, Enter inserts a new line and you must click the send button.",
