@@ -1,7 +1,7 @@
 {
   "sessionStart": "2026-06-13 07:09 IST",
-  "sessionEnd": "2026-06-13 07:35 IST",
-  "lastUpdate": "2026-06-13 07:35 IST",
+  "sessionEnd": "2026-06-13 09:53 IST",
+  "lastUpdate": "2026-06-13 09:53 IST",
   "contextTokenEstimate": "N/A",
   "activeTasks": [
     {
@@ -13,8 +13,9 @@
     }
   ],
   "recentDecisions": [
-    "@-mention dropdown: balanced mix (7 notes + 5 folders + 5 tags) when no query typed — fixes folder regression",
-    "Token usage totals: getSessionTotalTokens() helper + display in SessionPickerModal + running total below ChatInput",
+    "@-mention dropdown: removed 10-item limit, flat list ordered by match quality, full folder paths shown",
+    "Mention pills: styled highlights in message bubbles + real-time overlay while typing",
+    "Token total: moved inline next to attachment/thinking toggles via ChatInput tokenTotal prop",
     "Mobile background execution: documented OS limitation in README — webview suspends, streams/tool calls stop, state persists via local storage"
   ],
   "filesInFlight": [],

@@ -1,11 +1,12 @@
 # Active Context
 
-*Last Updated: 2026-06-13 07:35 IST*
+*Last Updated: 2026-06-13 09:53 IST*
 
 ## Current Focus
 **Ad-hoc session fixes (June 13, 2026)**
-- @-mention folder visibility fixed (balanced candidate mix when no query)
-- Token usage totals added (session picker + running total below input)
+- @-mention dropdown: removed 10-item limit, flat list ordered by match quality, full folder paths shown
+- Mention pills: styled highlights in message bubbles + real-time overlay while typing
+- Token total: moved inline next to attachment/thinking toggles (no extra line)
 - Mobile background execution documented in README
 
 ## Active Tasks
@@ -23,9 +24,15 @@
 - **[T23]**: ✅ **COMPLETED**
 
 ## New Decisions (This Session)
-- **@-mention dropdown**: When no query typed, shows balanced mix (7 notes + 5 folders + 5 tags) instead of just first 10 notes
-- **Token usage totals**: `getSessionTotalTokens()` helper; displayed in SessionPickerModal and below ChatInput in both ChatApp and GroupChatApp
-- **Mobile background**: Documented OS limitation — webview suspends when app backgrounded, streams and tool calls cannot continue
+- **@-mention dropdown**: No 10-item limit; flat list ordered by match quality score; full folder paths shown
+- **Mention pills**: DOM-highlighted context item names in message bubbles + real-time textarea overlay
+- **Token total**: Inline display next to 📎/💤 toggles via ChatInput `tokenTotal` prop
+- **Mobile background**: Documented OS limitation — webview suspends when app backgrounded
+
+## Commits (This Session)
+- `3e7fc9a` — fix: show full folder path in @-mention dropdown
+- `af5b3cd` — feat: flat mention dropdown, mention pills, inline token total
+- `9349456` — feat: mention pills in textarea while typing
 
 ## Next Steps
 1. **T22 Phase 4**: Extract session/settings/export handlers
@@ -35,8 +42,7 @@
 5. **Dot folder access**: Return to `.memory` folder investigation when user is ready
 
 ## Session Context
-- **Session**: 2026-06-13 (ended 07:35 IST)
-- **Duration**: ~25 minutes
-- **Commits**: `44c1dc9` pushed to origin/main
-- **Build status**: ✅ tsc + esbuild pass
+- **Session**: 2026-06-13 (ended 09:53 IST)
+- **Duration**: ~2.75 hours
+- **Build status**: ✅ tsc + esbuild pass (all three commits)
 - **User context**: User at hospital, father unwell. Working on mobile.
