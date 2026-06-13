@@ -12,9 +12,11 @@ export class FileLogger {
 	private flushTimer: number | null = null;
 	private memoryTimer: number | null = null;
 	private logPath: string;
-	private readonly maxSize: number;
+	private maxSize: number;
 	private readonly app: App;
 	private initialized = false;
+	private bytesWrittenSinceCheck = 0;
+	private static readonly CHECK_INTERVAL = 100 * 1024; // 100KB
 
 	constructor(app: App, pluginId: string, maxSizeBytes = 5 * 1024 * 1024) {
 		this.app = app;
@@ -36,6 +38,9 @@ export class FileLogger {
 		this.writeDirect("info", `User agent: ${navigator.userAgent}`);
 		this.writeDirect("info", `Obsidian version: ${(window as any).app?.version || "unknown"}`);
 
+		// Enforce size limit on startup in case file already grew large
+		await this.truncateIfNeeded();
+
 		// Log initial memory snapshot and start periodic logging
 		this.logMemorySnapshot();
 		this.memoryTimer = window.setInterval(() => {
@@ -43,6 +48,12 @@ export class FileLogger {
 		}, 10000);
 	}
 
+	/**
+	 * Update the max size limit dynamically (e.g. after settings load).
+	 */
+	setMaxSize(bytes: number) {
+		this.maxSize = bytes;
+	}
 	/**
 	 * Log a message. Buffers by default; errors are flushed immediately.
 	 */
@@ -194,17 +205,47 @@ export class FileLogger {
 		}, 250);
 	}
 
+	private async truncateIfNeeded() {
+		this.bytesWrittenSinceCheck = 0;
+		try {
+			const adapter = this.app.vault.adapter as any;
+			let existing = "";
+			try {
+				existing = await adapter.read(this.logPath);
+			} catch {
+				return; // file may not exist yet
+			}
+
+			if (existing.length > this.maxSize) {
+				const half = Math.floor(this.maxSize / 2);
+				const truncated = existing.slice(-half);
+				await adapter.write(
+					this.logPath,
+					`...[truncated at ${new Date().toISOString()}]...\n${truncated}`,
+				);
+			}
+		} catch (e) {
+			ORIGINAL.error("[FileLogger] truncate failed:", e);
+		}
+	}
+
 	private async flush() {
 		if (this.buffer.length === 0) return;
 
 		const content = this.buffer.join("");
 		this.buffer = [];
+		this.bytesWrittenSinceCheck += content.length;
 
 		try {
 			const adapter = this.app.vault.adapter as any;
 
 			if (typeof adapter.append === "function") {
 				await adapter.append(this.logPath, content);
+
+				// Periodically check if file exceeded max size
+				if (this.bytesWrittenSinceCheck > FileLogger.CHECK_INTERVAL) {
+					await this.truncateIfNeeded();
+				}
 			} else {
 				let existing = "";
 				try {

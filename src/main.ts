@@ -47,6 +47,7 @@ export default class ObsidianAIPlugin extends Plugin {
 		await this.logger.init();
 
 		await this.loadSettings();
+		this.logger.setMaxSize(this.settings.debugLogMaxSizeMB * 1024 * 1024);
 		this.chatapi = new ChatApiManager(this.settings, this.app);
 
 		this.registerView(
@@ -233,6 +234,7 @@ export default class ObsidianAIPlugin extends Plugin {
 			`loadSettings: _settingsLoadedFromFile=${this._settingsLoadedFromFile}, raw=${raw ? "exists" : "null"}`,
 		);
 		this.settings = normalizeSettings(raw);
+		this.logger?.setMaxSize(this.settings.debugLogMaxSizeMB * 1024 * 1024);
 	}
 
 	async saveSettings() {

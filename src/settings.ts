@@ -58,6 +58,7 @@ export interface ObsidianAISettings {
 	autoNameSessions: boolean;
 	debugLogLevel: "off" | "error" | "info" | "debug";
 	debugLogRetention: number;
+	debugLogMaxSizeMB: number;
 	enableAgentTools: boolean;
 	autoApply: boolean;
 	maxAgentSteps: number;
@@ -239,6 +240,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	autoNameSessions: false,
 	debugLogLevel: "error",
 	debugLogRetention: 200,
+	debugLogMaxSizeMB: 5,
 	enableAgentTools: true,
 	autoApply: false,
 	maxAgentSteps: 5,
@@ -293,6 +295,7 @@ export const normalizeSettings = (
 		autoNameSessions: Boolean(merged.autoNameSessions),
 		debugLogLevel: merged.debugLogLevel ?? "error",
 		debugLogRetention: merged.debugLogRetention ?? 200,
+		debugLogMaxSizeMB: merged.debugLogMaxSizeMB ?? 5,
 		enableAgentTools: Boolean(merged.enableAgentTools ?? true),
 		autoApply: Boolean(merged.autoApply ?? false),
 		maxAgentSteps: merged.maxAgentSteps ?? 5,

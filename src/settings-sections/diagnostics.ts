@@ -35,6 +35,20 @@ export function renderDiagnosticsSection(
 		);
 
 	new Setting(sectionEl)
+		.setName("Debug log max size (MB)")
+		.setDesc("Maximum size for the debug log file. When exceeded, the file is truncated to keep the most recent entries.")
+		.addText((text) => {
+			text.setPlaceholder("5")
+				.setValue(String(plugin.settings.debugLogMaxSizeMB))
+				.inputEl.addEventListener("blur", async () => {
+					const value = Number.parseFloat(text.getValue());
+					plugin.settings.debugLogMaxSizeMB =
+						Number.isFinite(value) && value > 0 ? value : 5;
+					await saveSettings();
+				});
+		});
+
+	new Setting(sectionEl)
 		.setName("Debug log retention")
 		.setDesc("Approximate number of log lines to retain before rotation.")
 		.addText((text) => {
