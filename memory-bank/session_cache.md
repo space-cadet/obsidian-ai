@@ -1,36 +1,39 @@
 {
-  "sessionStart": "2026-05-30 02:25 IST",
-  "sessionEnd": "2026-05-30 10:17 IST",
-  "lastUpdate": "2026-05-30 10:17 IST",
+  "sessionStart": "2026-06-13 05:02 IST",
+  "sessionEnd": "2026-06-13 06:25 IST",
+  "lastUpdate": "2026-06-13 06:25 IST",
   "contextTokenEstimate": "N/A",
   "activeTasks": [
     {
-      "id": "T19",
-      "title": "File Attachments — edit mode restoration, ChatInput layout",
-      "status": "completed",
-      "nextAction": "User to test with real files",
+      "id": "T11",
+      "title": "Debug Logging — log size limit, startup crash fix, CI/CD archive fix",
+      "status": "in_progress",
+      "nextAction": "User to verify no crash on startup after deleting old debug.log",
       "blocker": null
     },
     {
-      "id": "T22",
-      "title": "ChatApp.tsx Component Decomposition",
-      "status": "in_progress",
-      "nextAction": "Phase 4: extract handler hooks",
+      "id": "T3",
+      "title": "Context & Mentions — @-mention path display",
+      "status": "completed",
+      "nextAction": "User confirmed working on mobile",
       "blocker": null
     }
   ],
   "recentDecisions": [
-    "Pin current button removed — redundant with @mention",
-    "Reference chips reverted — user prefers inline formatting",
-    "pressEnterToSend setting added (default true) — Settings → Chat Defaults",
-    "Reasoning content excluded from message history loop to avoid SDK stripping bug",
-    "Attachment and contextItem restoration in edit mode implemented",
-    "ChatInput layout: Row 1 = textarea + send; Row 2 = attach + thinking buttons"
+    "contextPickerPathDisplay setting: always/never/duplicates (default duplicates) — applies to both Attach File modal and @-mention dropdown",
+    "Parent folder path shown inline in muted style (CSS .chat-mention-folder / .chat-picker-item-folder)",
+    "Search in both UIs matches full path as well as basename",
+    "debugLogMaxSizeMB setting added (default 5MB, range 1–50) — enforces size limit even with adapter.append",
+    "truncateIfNeeded deferred to setTimeout(5000) on startup and fire-and-forget in flush() to prevent UI blocking",
+    "2-second timeout guard in truncateIfNeeded: if reading huge file hangs, abort and clear file",
+    "CI/CD pre-release workflow: force-update latest-dev tag before release so GitHub source archives regenerate"
   ],
   "filesInFlight": [],
   "memoryToUpdate": [
-    "Session log created in sessions/2026-05-30.md",
+    "memory/2026-06-13.md updated with session log",
+    "activeContext.md updated with T11 and T3 changes",
+    "tasks/T11.md updated with completion criteria",
     "session_cache.md updated with end time"
   ],
-  "noteToNextSession": "T19 complete. ChatInput UX much improved. Thinking error with Kimi-k2.6 still occurring in some cases — needs deeper investigation into Vercel AI SDK's OpenAI provider reasoning handling."
+  "noteToNextSession": "T11 partially complete. Log size limit and startup crash fixed. User needs to verify by deleting old debug.log and installing new main.js. CI/CD archive fix pushed — verify on next push. T3 @-mention path display confirmed working. Open: dot folder .memory access investigation, T22 Phase 4, T17 Phase 1."
 }
