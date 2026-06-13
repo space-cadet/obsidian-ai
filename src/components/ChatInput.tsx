@@ -519,6 +519,44 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		handleFiles(e.dataTransfer.files);
 	}, [handleFiles]);
 
+	/** Parse text and wrap @mentions and [[wikilinks]] in pill spans for the overlay */
+	const renderMentionOverlay = (text: string): React.ReactNode[] => {
+		if (!text) return [];
+		const parts: React.ReactNode[] = [];
+		let lastIndex = 0;
+
+		// Find all @mentions and [[wikilinks]] in the text
+		const mentionRegex = /@([^\s]+)/g;
+		const wikilinkRegex = /\[\[([^\]]+)\]\]/g;
+		const matches: { start: number; end: number; text: string; type: "mention" | "wikilink" }[] = [];
+
+		let m;
+		while ((m = mentionRegex.exec(text)) !== null) {
+			matches.push({ start: m.index, end: m.index + m[0].length, text: m[0], type: "mention" });
+		}
+		while ((m = wikilinkRegex.exec(text)) !== null) {
+			matches.push({ start: m.index, end: m.index + m[0].length, text: m[0], type: "wikilink" });
+		}
+
+		matches.sort((a, b) => a.start - b.start);
+
+		for (const match of matches) {
+			if (match.start > lastIndex) {
+				parts.push(text.slice(lastIndex, match.start));
+			}
+			parts.push(
+				<span key={match.start} className="chat-mention-pill">
+					{match.text}
+				</span>,
+			);
+			lastIndex = match.end;
+		}
+		if (lastIndex < text.length) {
+			parts.push(text.slice(lastIndex));
+		}
+		return parts;
+	};
+
 	const placeholder = pressEnterToSend
 		? "Ask anything... (Shift+Enter for new line)"
 		: "Ask anything... (Enter for new line, Ctrl+Enter to send)";
@@ -563,10 +601,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			)}
 			<div className={`chat-input-wrapper${isDragOver ? " drag-over" : ""}`}>
 				{/* Row 1: Textarea + send button */}
-				<div className="chat-input-row">
+				<div className="chat-input-row" style={{ position: "relative" }}>
+					<div className="chat-textarea-overlay" aria-hidden="true">
+						{renderMentionOverlay(value)}
+					</div>
 					<textarea
 						ref={textareaRef}
-						className="chat-textarea"
+						className="chat-textarea chat-textarea-with-overlay"
 						rows={1}
 						placeholder={placeholder}
 						value={value}
