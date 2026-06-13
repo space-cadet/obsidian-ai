@@ -38,8 +38,11 @@ export class FileLogger {
 		this.writeDirect("info", `User agent: ${navigator.userAgent}`);
 		this.writeDirect("info", `Obsidian version: ${(window as any).app?.version || "unknown"}`);
 
-		// Enforce size limit on startup in case file already grew large
-		await this.truncateIfNeeded();
+		// Defer size enforcement so it does not block plugin startup.
+		// If the file is already huge, reading it all could hang the UI.
+		setTimeout(() => {
+			this.truncateIfNeeded().catch(() => {});
+		}, 5000);
 
 		// Log initial memory snapshot and start periodic logging
 		this.logMemorySnapshot();
@@ -208,24 +211,40 @@ export class FileLogger {
 	private async truncateIfNeeded() {
 		this.bytesWrittenSinceCheck = 0;
 		try {
-			const adapter = this.app.vault.adapter as any;
-			let existing = "";
-			try {
-				existing = await adapter.read(this.logPath);
-			} catch {
-				return; // file may not exist yet
-			}
-
-			if (existing.length > this.maxSize) {
-				const half = Math.floor(this.maxSize / 2);
-				const truncated = existing.slice(-half);
-				await adapter.write(
-					this.logPath,
-					`...[truncated at ${new Date().toISOString()}]...\n${truncated}`,
-				);
-			}
+			// Race against a timeout so reading a huge file never hangs the plugin.
+			await Promise.race([
+				this._truncateIfNeededCore(),
+				new Promise((_, reject) =>
+					setTimeout(() => reject(new Error("truncate timeout")), 2000),
+				),
+			]);
 		} catch (e) {
-			ORIGINAL.error("[FileLogger] truncate failed:", e);
+			// Reading the file failed or timed out — likely because it's too large.
+			// Just clear it to prevent future hangs.
+			try {
+				await (this.app.vault.adapter as any).write(this.logPath, "");
+			} catch {
+				/* ignore */
+			}
+		}
+	}
+
+	private async _truncateIfNeededCore() {
+		const adapter = this.app.vault.adapter as any;
+		let existing = "";
+		try {
+			existing = await adapter.read(this.logPath);
+		} catch {
+			return; // file may not exist yet
+		}
+
+		if (existing.length > this.maxSize) {
+			const half = Math.floor(this.maxSize / 2);
+			const truncated = existing.slice(-half);
+			await adapter.write(
+				this.logPath,
+				`...[truncated at ${new Date().toISOString()}]...\n${truncated}`,
+			);
 		}
 	}
 
@@ -244,7 +263,7 @@ export class FileLogger {
 
 				// Periodically check if file exceeded max size
 				if (this.bytesWrittenSinceCheck > FileLogger.CHECK_INTERVAL) {
-					await this.truncateIfNeeded();
+					this.truncateIfNeeded().catch(() => {});
 				}
 			} else {
 				let existing = "";
