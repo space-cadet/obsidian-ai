@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { ChatSession } from "../types";
+import { getSessionTotalTokens } from "../lib/sessionUtils";
+
 
 interface SessionPickerModalProps {
 	sessions: ChatSession[];
@@ -132,6 +134,11 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 											<div className="chat-session-meta">
 												{session.messages.length} messages ·{" "}
 												{formatRelativeTime(session.updatedAt)}
+												{getSessionTotalTokens(session) > 0 && (
+													<span className="chat-session-tokens">
+														 · ~{getSessionTotalTokens(session).toLocaleString()} tokens
+													</span>
+												)}
 											</div>
 											<div className="chat-session-preview">
 												{preview}

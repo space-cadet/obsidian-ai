@@ -1025,6 +1025,11 @@
 	margin-top: 2px;
 }
 
+.chat-session-tokens {
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+}
+
 .chat-session-preview {
 	font-size: var(--font-ui-smaller);
 	color: var(--text-muted);
@@ -3103,4 +3108,14 @@
 	outline: 2px dashed var(--interactive-accent);
 	outline-offset: -2px;
 	background-color: var(--background-modifier-hover);
+}
+
+/* Session token total — below input */
+.chat-session-token-total {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	text-align: right;
+	padding: 2px 8px 4px;
+	border-top: 1px solid var(--background-modifier-border);
+	margin-top: 2px;
 }

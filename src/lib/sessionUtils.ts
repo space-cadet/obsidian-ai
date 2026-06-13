@@ -17,3 +17,7 @@ export function pruneSessions(
 	if (activeId) removeIds.delete(activeId);
 	return sessions.filter((s) => !removeIds.has(s.id));
 }
+
+export function getSessionTotalTokens(session: ChatSession): number {
+	return session.messages.reduce((sum, m) => sum + (m.estimatedTokens || 0), 0);
+}

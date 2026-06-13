@@ -22,7 +22,7 @@ import { parseMentions } from "../agent/MentionParser";
 import { getAgentColor, getAgentIcon } from "../lib/agentVisuals";
 import { contextItemKey, sameContextItems } from "../lib/contextUtils";
 import { parseSlashCommand, SlashCommand } from "../lib/slashCommand";
-import { makeId } from "../lib/sessionUtils";
+import { makeId, getSessionTotalTokens } from "../lib/sessionUtils";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { useChatSession } from "../hooks/useChatSession";
 import { useChatUI } from "../hooks/useChatUI";
@@ -604,6 +604,12 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				onAttachmentsChange={ui.setMessageAttachments}
 				pressEnterToSend={plugin.settings.pressEnterToSend}
 			/>
+			{activeSessionId && sessions.find((s) => s.id === activeSessionId) && getSessionTotalTokens(sessions.find((s) => s.id === activeSessionId)!) > 0 && (
+				<div className="chat-session-token-total">
+					~{getSessionTotalTokens(sessions.find((s) => s.id === activeSessionId)!).toLocaleString()} tokens across{" "}
+					{sessions.find((s) => s.id === activeSessionId)!.messages.length} messages
+				</div>
+			)}
 			{ui.showSessionPicker && (
 				<SessionPickerModal
 					sessions={sessions}

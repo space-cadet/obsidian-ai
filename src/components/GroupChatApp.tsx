@@ -14,6 +14,7 @@ import { ProviderProfile } from "../settings";
 import MessageBubble from "./MessageBubble";
 import ChatInput from "./ChatInput";
 import ObsidianIcon from "./ObsidianIcon";
+import { getSessionTotalTokens } from "../lib/sessionUtils";
 
 interface GroupChatAppProps {
 	plugin: ChatPluginLike;
@@ -322,6 +323,12 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin }) => {
 				onAddMention={handleAddMention}
 				isStreaming={isStreaming}
 			/>
+			{session.messages.length > 0 && getSessionTotalTokens(session) > 0 && (
+				<div className="chat-session-token-total">
+					~{getSessionTotalTokens(session).toLocaleString()} tokens across{" "}
+					{session.messages.length} messages
+				</div>
+			)}
 		</div>
 	);
 };

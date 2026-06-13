@@ -300,7 +300,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	const filteredCandidates = useMemo(() => {
 		if (!auto) return [];
 		const q = auto.query.toLowerCase();
-		if (!q) return allCandidates.slice(0, 10);
+		if (!q) {
+			// Balanced mix so folders/tags aren't buried behind notes
+			const notes = allCandidates.filter((c) => c.contextType === "note").slice(0, 7);
+			const folders = allCandidates.filter((c) => c.contextType === "folder").slice(0, 5);
+			const tags = allCandidates.filter((c) => c.contextType === "tag").slice(0, 5);
+			return [...notes, ...folders, ...tags];
+		}
 		return allCandidates
 			.filter((c) => c.label.toLowerCase().includes(q) || (c.path && c.path.toLowerCase().includes(q)))
 			.slice(0, 10);

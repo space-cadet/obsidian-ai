@@ -208,6 +208,33 @@ Open **Settings** → **Web Search**. Choose a provider (DuckDuckGo works withou
 
 ---
 
+## 📱 Mobile Notes
+
+Obsidian AI works on mobile (iOS/Android), but there are platform-specific behaviors to be aware of:
+
+### Background Execution
+
+When the Obsidian app is moved to the background, the operating system suspends its webview to preserve battery. This means:
+
+- **LLM streams pause** — Any in-progress response stops streaming and may fail
+- **Tool calls abort** — Pending vault operations (create, edit, move) will not complete
+- **Network requests cancel** — Any API calls in flight will be interrupted
+- **Timers freeze** — JavaScript intervals and timeouts stop
+
+**What persists:** Your chat history, session state, and context items are saved to local storage aggressively. When you return to the app, the conversation resumes exactly where you left it.
+
+**Recommendation:** For long-running operations (large document analysis, multi-step tool workflows), keep the Obsidian app in the foreground. Use the **Abort** button if you need to pause mid-stream.
+
+### Mobile-Responsive UI
+
+The chat interface adapts to smaller screens:
+- **Horizontal scrolling** for the action bar on narrow viewports
+- **Auto-expanding textarea** for the input field
+- **Compact icon buttons** to maximize message space
+- **Zen mode** (hide all chrome) via the header toggle
+
+---
+
 ## 🛠️ Development
 
 ```bash
