@@ -1246,6 +1246,27 @@
 }
 
 /* Mention dropdown */
+/* Mention pill styling in message bubbles */
+.chat-mention-pill {
+	display: inline;
+	background: var(--background-modifier-accent);
+	color: var(--text-accent);
+	padding: 1px 6px;
+	border-radius: 4px;
+	font-size: 0.92em;
+	font-weight: 500;
+	border: 1px solid var(--background-modifier-border-hover);
+}
+
+/* Inline token total next to toggles */
+.chat-input-token-total {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	margin-left: auto;
+	padding-left: 8px;
+	white-space: nowrap;
+}
+
 .chat-mention-dropdown {
 	position: absolute;
 	bottom: calc(100% + 4px);

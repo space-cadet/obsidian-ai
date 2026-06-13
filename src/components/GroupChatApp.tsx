@@ -322,13 +322,8 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin }) => {
 				onStop={handleStop}
 				onAddMention={handleAddMention}
 				isStreaming={isStreaming}
+				tokenTotal={session.messages.length > 0 && getSessionTotalTokens(session) > 0 ? `~${getSessionTotalTokens(session).toLocaleString()} tokens` : undefined}
 			/>
-			{session.messages.length > 0 && getSessionTotalTokens(session) > 0 && (
-				<div className="chat-session-token-total">
-					~{getSessionTotalTokens(session).toLocaleString()} tokens across{" "}
-					{session.messages.length} messages
-				</div>
-			)}
 		</div>
 	);
 };

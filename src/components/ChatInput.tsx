@@ -24,6 +24,8 @@ interface ChatInputProps {
 	onAttachmentsChange?: (attachments: import("../types").Attachment[]) => void;
 	/** Whether pressing Enter sends the message (Shift+Enter for newline) */
 	pressEnterToSend?: boolean;
+	/** Optional token total string to display next to toggles */
+	tokenTotal?: string;
 }
 
 type AutoType = "mention" | "slash" | "wikilink";
@@ -103,6 +105,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	attachments = [],
 	onAttachmentsChange,
 	pressEnterToSend = true,
+	tokenTotal,
 }) => {
 	const [value, setValue] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -301,15 +304,34 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
 	const filteredCandidates = useMemo(() => {
 		if (!auto) return [];
-		const q = auto.query.toLowerCase();
-		if (!q) {
-			// No query: show all candidates (no artificial limit)
-			// Notes first (recently modified), then folders, then tags
-			return allCandidates;
-		}
-		return allCandidates.filter((c) =>
-			c.label.toLowerCase().includes(q) || (c.path && c.path.toLowerCase().includes(q))
-		);
+		const q = auto.query.toLowerCase().trim();
+		if (!q) return allCandidates;
+
+		// Score each candidate by match quality
+		const scored = allCandidates.map((c) => {
+			const label = c.label.toLowerCase();
+			const path = (c.path || "").toLowerCase();
+			let score = 0;
+
+			if (label === q || path === q) score = 100;
+			else if (label.startsWith(q)) score = 80;
+			else if (path.startsWith(q)) score = 70;
+			else if (label.includes(q)) score = 60;
+			else if (path.includes(q)) score = 50;
+			else {
+				// Check if all query words appear in label or path
+				const words = q.split(/\s+/).filter(Boolean);
+				const allInLabel = words.every((w) => label.includes(w));
+				const allInPath = words.every((w) => path.includes(w));
+				if (allInLabel) score = 40;
+				else if (allInPath) score = 30;
+			}
+
+			return { candidate: c, score };
+		}).filter((s) => s.score > 0);
+
+		scored.sort((a, b) => b.score - a.score);
+		return scored.map((s) => s.candidate);
 	}, [allCandidates, auto]);
 
 	const handleInputChange = useCallback(
@@ -510,52 +532,33 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		>
 			{auto && filteredCandidates.length > 0 && (
 				<div className="chat-mention-dropdown">
-					{(() => {
-						const sections: { title: string; items: typeof filteredCandidates }[] = [];
-						const notes = filteredCandidates.filter((c) => c.contextType === "note");
-						const folders = filteredCandidates.filter((c) => c.contextType === "folder");
-						const tags = filteredCandidates.filter((c) => c.contextType === "tag");
-						if (notes.length > 0) sections.push({ title: `Notes (${notes.length})`, items: notes });
-						if (folders.length > 0) sections.push({ title: `Folders (${folders.length})`, items: folders });
-						if (tags.length > 0) sections.push({ title: `Tags (${tags.length})`, items: tags });
-						
-						let globalIndex = 0;
-						return sections.map((section) => (
-							<React.Fragment key={section.title}>
-								<div className="chat-mention-section-header">{section.title}</div>
-								{section.items.map((candidate) => {
-									const i = globalIndex++;
-									return (
-										<div
-											key={candidate.key}
-											className={`chat-mention-item${i === auto.index ? " chat-mention-item-active" : ""}`}
-											onMouseDown={(e) => {
-												e.preventDefault();
-												insertCandidate(candidate);
-											}}
-											onMouseEnter={() =>
-												setAuto((prev) =>
-													prev ? { ...prev, index: i } : prev,
-												)
-											}
-										>
-											<span className="chat-mention-icon">
-												{candidate.icon}
-											</span>
-											<span className="chat-mention-label">
-												{candidate.label}
-												{candidate.folderPath && (
-													<span className="chat-mention-folder">
-														{candidate.folderPath}
-													</span>
-												)}
-											</span>
-										</div>
-									);
-								})}
-							</React.Fragment>
-						));
-					})()}
+					{filteredCandidates.map((candidate, i) => (
+						<div
+							key={candidate.key}
+							className={`chat-mention-item${i === auto.index ? " chat-mention-item-active" : ""}`}
+							onMouseDown={(e) => {
+								e.preventDefault();
+								insertCandidate(candidate);
+							}}
+							onMouseEnter={() =>
+								setAuto((prev) =>
+									prev ? { ...prev, index: i } : prev,
+								)
+							}
+						>
+							<span className="chat-mention-icon">
+								{candidate.icon}
+							</span>
+							<span className="chat-mention-label">
+								{candidate.label}
+								{candidate.folderPath && (
+									<span className="chat-mention-folder">
+										{candidate.folderPath}
+									</span>
+								)}
+							</span>
+						</div>
+					))}
 				</div>
 			)}
 			<div className={`chat-input-wrapper${isDragOver ? " drag-over" : ""}`}>
@@ -715,6 +718,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
 							>
 								{thinkingEnabled ? "🧠" : "💤"}
 							</button>
+						)}
+						{tokenTotal && (
+							<span className="chat-input-token-total">{tokenTotal}</span>
 						)}
 					</div>
 				</div>

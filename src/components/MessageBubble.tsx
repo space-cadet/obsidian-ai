@@ -4,6 +4,54 @@ import { ChatMessage, ContextItem, ContentPart } from "../types";
 import MessageActions from "./MessageActions";
 import ToolCallNotification from "./ToolCallNotification";
 
+/** Highlight context item names in rendered DOM */
+function highlightMentions(container: HTMLElement, items: ContextItem[]): void {
+	if (!items || items.length === 0) return;
+	const names = items.map((item) => {
+		switch (item.type) {
+			case "note": return item.name;
+			case "folder": return item.name;
+			case "tag": return item.tag;
+			case "active-note": return "Active note";
+		}
+	}).filter(Boolean);
+	if (names.length === 0) return;
+	// Sort by length descending to prefer longer matches
+	names.sort((a, b) => b.length - a.length);
+	// Walk text nodes and replace
+	const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+	const nodes: Text[] = [];
+	let node: Node | null;
+	while ((node = walker.nextNode())) {
+		nodes.push(node as Text);
+	}
+	for (const textNode of nodes) {
+		const text = textNode.textContent || "";
+		let matchIndex = -1;
+		let matchName = "";
+		for (const name of names) {
+			const idx = text.indexOf(name);
+			if (idx !== -1 && (matchIndex === -1 || idx < matchIndex)) {
+				matchIndex = idx;
+				matchName = name;
+			}
+		}
+		if (matchIndex === -1) continue;
+		const before = text.slice(0, matchIndex);
+		const after = text.slice(matchIndex + matchName.length);
+		const span = document.createElement("span");
+		span.className = "chat-mention-pill";
+		span.textContent = matchName;
+		const parent = textNode.parentNode;
+		if (!parent) continue;
+		if (before) parent.insertBefore(document.createTextNode(before), textNode);
+		parent.insertBefore(span, textNode);
+		if (after) parent.insertBefore(document.createTextNode(after), textNode);
+		parent.removeChild(textNode);
+	}
+}
+
+
 interface MessageBubbleProps {
 	message: ChatMessage;
 	app: App;
@@ -51,10 +99,12 @@ function TextSegment({
 	content,
 	app,
 	showThinking,
+	contextItems,
 }: {
 	content: string;
 	app: App;
 	showThinking?: boolean;
+	contextItems?: ContextItem[];
 }): React.ReactElement {
 	const ref = useRef<HTMLDivElement>(null);
 	const cleanContent = showThinking ? content : stripThinkingTags(content);
@@ -74,12 +124,16 @@ function TextSegment({
 					cls: "chat-plaintext-fallback",
 				});
 			},
-		);
+		).then(() => {
+			if (!unmounted && ref.current && contextItems) {
+				highlightMentions(ref.current, contextItems);
+			}
+		});
 
 		return () => {
 			unmounted = true;
 		};
-	}, [cleanContent, app]);
+	}, [cleanContent, app, contextItems]);
 
 	return <div ref={ref} className="chat-bubble-content-segment" />;
 }
@@ -174,12 +228,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
 			{/* Content: inline parts or legacy single block */}
 			{useLegacyRender ? (
-				<LegacyContent content={message.content} app={app} messageId={message.id} />
+				<LegacyContent content={message.content} app={app} messageId={message.id} contextItems={message.contextItems} />
 			) : (
 				<div className="chat-bubble-content-inline">
 					{renderParts!.map((part, i) =>
 						part.type === "text" ? (
-							<TextSegment key={i} content={part.content} app={app} showThinking={showThinking} />
+							<TextSegment key={i} content={part.content} app={app} showThinking={showThinking} contextItems={message.contextItems} />
 						) : (
 							<ToolCallNotification
 								key={i}
@@ -267,10 +321,12 @@ function LegacyContent({
 	content,
 	app,
 	messageId,
+	contextItems,
 }: {
 	content: string;
 	app: App;
 	messageId: string;
+	contextItems?: ContextItem[];
 }): React.ReactElement {
 	const contentRef = useRef<HTMLDivElement>(null);
 	const [displayContent, setDisplayContent] = useState(content);
@@ -300,6 +356,10 @@ function LegacyContent({
 					text: displayContent,
 					cls: "chat-plaintext-fallback",
 				});
+			}).then(() => {
+				if (!unmounted && contentRef.current && contextItems) {
+					highlightMentions(contentRef.current, contextItems);
+				}
 			});
 		} catch (err: any) {
 			if (!contentRef.current) return;
