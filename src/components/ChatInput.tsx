@@ -301,15 +301,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		if (!auto) return [];
 		const q = auto.query.toLowerCase();
 		if (!q) {
-			// Balanced mix so folders/tags aren't buried behind notes
-			const notes = allCandidates.filter((c) => c.contextType === "note").slice(0, 7);
-			const folders = allCandidates.filter((c) => c.contextType === "folder").slice(0, 5);
-			const tags = allCandidates.filter((c) => c.contextType === "tag").slice(0, 5);
-			return [...notes, ...folders, ...tags];
+			// No query: show all candidates (no artificial limit)
+			// Notes first (recently modified), then folders, then tags
+			return allCandidates;
 		}
-		return allCandidates
-			.filter((c) => c.label.toLowerCase().includes(q) || (c.path && c.path.toLowerCase().includes(q)))
-			.slice(0, 10);
+		return allCandidates.filter((c) =>
+			c.label.toLowerCase().includes(q) || (c.path && c.path.toLowerCase().includes(q))
+		);
 	}, [allCandidates, auto]);
 
 	const handleInputChange = useCallback(
@@ -510,33 +508,52 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		>
 			{auto && filteredCandidates.length > 0 && (
 				<div className="chat-mention-dropdown">
-					{filteredCandidates.map((candidate, i) => (
-						<div
-							key={candidate.key}
-							className={`chat-mention-item${i === auto.index ? " chat-mention-item-active" : ""}`}
-							onMouseDown={(e) => {
-								e.preventDefault();
-								insertCandidate(candidate);
-							}}
-							onMouseEnter={() =>
-								setAuto((prev) =>
-									prev ? { ...prev, index: i } : prev,
-								)
-							}
-						>
-							<span className="chat-mention-icon">
-								{candidate.icon}
-							</span>
-							<span className="chat-mention-label">
-								{candidate.label}
-								{candidate.folderPath && (
-									<span className="chat-mention-folder">
-										{candidate.folderPath}
-									</span>
-								)}
-							</span>
-						</div>
-					))}
+					{(() => {
+						const sections: { title: string; items: typeof filteredCandidates }[] = [];
+						const notes = filteredCandidates.filter((c) => c.contextType === "note");
+						const folders = filteredCandidates.filter((c) => c.contextType === "folder");
+						const tags = filteredCandidates.filter((c) => c.contextType === "tag");
+						if (notes.length > 0) sections.push({ title: `Notes (${notes.length})`, items: notes });
+						if (folders.length > 0) sections.push({ title: `Folders (${folders.length})`, items: folders });
+						if (tags.length > 0) sections.push({ title: `Tags (${tags.length})`, items: tags });
+						
+						let globalIndex = 0;
+						return sections.map((section) => (
+							<React.Fragment key={section.title}>
+								<div className="chat-mention-section-header">{section.title}</div>
+								{section.items.map((candidate) => {
+									const i = globalIndex++;
+									return (
+										<div
+											key={candidate.key}
+											className={`chat-mention-item${i === auto.index ? " chat-mention-item-active" : ""}`}
+											onMouseDown={(e) => {
+												e.preventDefault();
+												insertCandidate(candidate);
+											}}
+											onMouseEnter={() =>
+												setAuto((prev) =>
+													prev ? { ...prev, index: i } : prev,
+												)
+											}
+										>
+											<span className="chat-mention-icon">
+												{candidate.icon}
+											</span>
+											<span className="chat-mention-label">
+												{candidate.label}
+												{candidate.folderPath && (
+													<span className="chat-mention-folder">
+														{candidate.folderPath}
+													</span>
+												)}
+											</span>
+										</div>
+									);
+								})}
+							</React.Fragment>
+						));
+					})()}
 				</div>
 			)}
 			<div className={`chat-input-wrapper${isDragOver ? " drag-over" : ""}`}>

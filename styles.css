@@ -1302,7 +1302,28 @@
 	max-width: 50%;
 }
 
-/* ── Message Actions ────────────────────────────────────────────────────── */
+/* Mention dropdown section headers */
+.chat-mention-section-header {
+	font-size: var(--font-ui-smaller);
+	font-weight: 600;
+	color: var(--text-muted);
+	padding: 4px 10px 2px;
+	background: var(--background-secondary);
+	border-bottom: 1px solid var(--background-modifier-border);
+	position: sticky;
+	top: 0;
+	z-index: 1;
+}
+
+.chat-mention-section-header:first-child {
+	border-top-left-radius: 6px;
+	border-top-right-radius: 6px;
+}
+
+/* Increase dropdown max-height for longer lists */
+.chat-mention-dropdown {
+	max-height: 320px;
+}
 
 .message-actions-wrapper {
 	margin-top: 6px;
