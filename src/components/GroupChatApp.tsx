@@ -316,6 +316,7 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin }) => {
 
 			<ChatInput
 				app={plugin.app}
+				plugin={plugin}
 				onSend={handleSend}
 				onStop={handleStop}
 				onAddMention={handleAddMention}

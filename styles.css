@@ -1287,6 +1287,16 @@
 	white-space: nowrap;
 }
 
+.chat-mention-folder {
+	color: var(--text-faint);
+	font-size: 0.85em;
+	margin-left: 0.4em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 50%;
+}
+
 /* ── Message Actions ────────────────────────────────────────────────────── */
 
 .message-actions-wrapper {

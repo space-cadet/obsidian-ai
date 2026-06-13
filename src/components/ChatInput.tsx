@@ -2,9 +2,11 @@ import React, { useState, useRef, useCallback, useEffect, useMemo } from "react"
 import { App, Notice, TFile, TFolder } from "obsidian";
 import { ContextItem } from "../types";
 import { createExternalAttachment } from "../context/AttachmentEngine";
+import { ChatPluginLike } from "../views/ObsidianAIChatView";
 
 interface ChatInputProps {
 	app: App;
+	plugin: ChatPluginLike;
 	onSend: (text: string, attachments?: import("../types").Attachment[]) => void;
 	onStop: () => void;
 	onAddMention: (item: ContextItem) => void;
@@ -36,6 +38,8 @@ interface AutoCandidate {
 	path?: string;
 	name?: string;
 	tag?: string;
+	/** Parent folder path for display disambiguation */
+	folderPath?: string;
 }
 
 interface AutoState {
@@ -86,6 +90,7 @@ const SLASH_COMMANDS: AutoCandidate[] = [
 
 const ChatInput: React.FC<ChatInputProps> = ({
 	app,
+	plugin,
 	onSend,
 	onStop,
 	onAddMention,
@@ -236,6 +241,28 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			});
 		}
 
+		// Detect duplicate basenames for path display
+		const pathDisplay = plugin.settings.contextPickerPathDisplay;
+		const basenameCounts = new Map<string, number>();
+		for (const c of candidates) {
+			if (c.contextType === "note") {
+				basenameCounts.set(c.label, (basenameCounts.get(c.label) || 0) + 1);
+			}
+		}
+		const getParentFolder = (filePath: string): string => {
+			const lastSlash = filePath.lastIndexOf("/");
+			if (lastSlash <= 0) return "";
+			return filePath.slice(0, lastSlash);
+		};
+		for (const c of candidates) {
+			if (c.contextType !== "note" || !c.path) continue;
+			if (pathDisplay === "always") {
+				c.folderPath = getParentFolder(c.path);
+			} else if (pathDisplay === "duplicates" && basenameCounts.get(c.label)! > 1) {
+				c.folderPath = getParentFolder(c.path);
+			}
+		}
+
 		if (auto.type === "mention") {
 			for (const folder of app.vault
 				.getAllLoadedFiles()
@@ -268,14 +295,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		}
 
 		return candidates;
-	}, [app, auto?.type]);
+	}, [app, auto?.type, plugin]);
 
 	const filteredCandidates = useMemo(() => {
 		if (!auto) return [];
 		const q = auto.query.toLowerCase();
 		if (!q) return allCandidates.slice(0, 10);
 		return allCandidates
-			.filter((c) => c.label.toLowerCase().includes(q))
+			.filter((c) => c.label.toLowerCase().includes(q) || (c.path && c.path.toLowerCase().includes(q)))
 			.slice(0, 10);
 	}, [allCandidates, auto]);
 
@@ -496,6 +523,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
 							</span>
 							<span className="chat-mention-label">
 								{candidate.label}
+								{candidate.folderPath && (
+									<span className="chat-mention-folder">
+										{candidate.folderPath}
+									</span>
+								)}
 							</span>
 						</div>
 					))}

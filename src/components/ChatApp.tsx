@@ -590,6 +590,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 
 			<ChatInput
 				app={plugin.app}
+				plugin={plugin}
 				onSend={actions.handleSend}
 				onStop={actions.handleStop}
 				onAddMention={handleAddMention}
