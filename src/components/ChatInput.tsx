@@ -268,14 +268,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
 				.getAllLoadedFiles()
 				.filter((f): f is TFolder => f instanceof TFolder)
 				.sort((a, b) => a.path.localeCompare(b.path))) {
+				const isRoot = folder.path === "";
 				candidates.push({
 					key: `folder:${folder.path}`,
-					label: folder.path === "" ? "(vault root)" : folder.name,
+					label: isRoot ? "(vault root)" : folder.name,
 					icon: "📁",
 					type: "mention",
 					contextType: "folder",
 					path: folder.path,
-					name: folder.path === "" ? "(vault root)" : folder.name,
+					name: isRoot ? "(vault root)" : folder.name,
+					folderPath: isRoot ? "" : folder.path,
 				});
 			}
 			const tagMap = (app.metadataCache as any).getTags() as Record<
