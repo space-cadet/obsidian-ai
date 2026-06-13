@@ -44,6 +44,13 @@ jobs:
                   cp main.js manifest.json styles.css $PLUGIN_NAME
                   zip -r ${PLUGIN_NAME}.zip $PLUGIN_NAME
 
+            - name: Update latest-dev tag to current commit
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+                  git tag -f latest-dev
+                  git push -f origin latest-dev
+
             - name: Create or Update Pre-Release
               uses: ncipollo/release-action@v1
               with:
