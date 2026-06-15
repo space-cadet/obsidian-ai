@@ -16,11 +16,11 @@
 #### Current Work
 - 🔄 Keep memory bank current as T13/T16/T19 work continues
 
-### T24: SessionStorage — JSONL Chat Persistence
+### T24: SessionStorage — JSONL Chat Persistence + Search
 **Status:** ✅ COMPLETED
 **Priority:** HIGH
 **Started:** 2026-06-14
-**Completed:** 2026-06-14
+**Completed:** 2026-06-15
 
 #### Completed Steps
 - ✅ SessionStorage core (`src/storage/session-storage.ts`): loadSession, appendMessage, createSession
@@ -30,11 +30,31 @@
 - ✅ Plugin integration (`main.ts`): sessionStorage property, onload init
 - ✅ Fix: added missing `contextPickerPathDisplay` to `ObsidianAISettings` interface
 - ✅ Build passes (`npm run build`)
-- ✅ Committed and pushed: `fdc8b58`
+- ✅ **Search feature (87z-a/b/c)**:
+  - `src/search/index.ts` — SearchIndex class, inverted index from JSONL sessions
+  - `src/search/fuzzy-search.ts` — FuzzySearcher with score threshold 0.4, highlighted snippets
+  - `src/components/SearchInput.tsx` — debounced input (300ms), clear button
+  - `src/components/search-results.tsx` — results list with title badge, highlighted snippets
+  - Manually wired into ChatApp.tsx with FuzzySearcher ref
+- ✅ **Search UI polish**:
+  - CSS fix for garbled results display (overlap/overflow)
+  - Click result → open full session + scroll to specific message + highlight animation
+  - Search bar hidden by default — toggle button in ActionBar toolbar
+  - Search results only render when query is non-empty
+- ✅ Committed and pushed: `fdc8b58` → `503d8a7` (7 commits)
 
 #### Files Changed
 - 4 new files in `src/storage/` and `src/modals/`
 - 9 modified files (main.ts, ChatApp.tsx, tokenEstimator, useMessageActions, settings, agent loops)
+- 4 new files in `src/search/` and `src/components/SearchInput.tsx`, `src/components/search-results.tsx`
+- `src/components/ChatMessages.tsx` — wrapped MessageBubble in div with data-message-id
+- `src/components/ActionBar.tsx` — added search button toggle
+- `styles.css` — search-related styles + highlight animation
+
+#### Notes
+- User confirmed migration works on **both desktop and mobile** via Syncthing
+- Pre-existing vitest failure in `useMessageActions` (obsidian import resolution) — unrelated
+- Remaining open task: workspace-c2v (P2 — Show plugin disk usage in Settings metrics)
 
 ---
 
