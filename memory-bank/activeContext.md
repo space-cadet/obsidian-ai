@@ -1,13 +1,13 @@
 # Active Context
 
-*Last Updated: 2026-06-13 09:53 IST*
+*Last Updated: 2026-06-15 00:17 IST*
 
 ## Current Focus
-**Ad-hoc session fixes (June 13, 2026)**
-- @-mention dropdown: removed 10-item limit, flat list ordered by match quality, full folder paths shown
-- Mention pills: styled highlights in message bubbles + real-time overlay while typing
-- Token total: moved inline next to attachment/thinking toggles (no extra line)
-- Mobile background execution documented in README
+**SessionStorage implementation (June 14, 2026)**
+- JSONL-based chat persistence: SessionStorage core, ChatStorage wrapper, migration utilities
+- Plugin integration: sessionStorage property in ObsidianAIPlugin, initialized in onload()
+- Settings fix: added missing contextPickerPathDisplay to ObsidianAISettings interface
+- Committed and pushed: `fdc8b58`
 
 ## Active Tasks
 - **[T11]**: 🔄 **IN PROGRESS** — Log size limit, startup crash fix, CI/CD archive fix. User to verify startup fix.
@@ -21,6 +21,7 @@
 - **[T18]**: ✅ **COMPLETED**
 - **[T19]**: ✅ **COMPLETED**
 - **[T21]**: ✅ **COMPLETED**
+- **[T24]**: ✅ **COMPLETED** — SessionStorage with JSONL persistence. Core + wrapper + plugin integration. 17 files, 1138 insertions.
 - **[T23]**: ✅ **COMPLETED**
 
 ## New Decisions (This Session)
@@ -30,6 +31,7 @@
 - **Mobile background**: Documented OS limitation — webview suspends when app backgrounded
 
 ## Commits (This Session)
+- `fdc8b58` — feat: SessionStorage with JSONL persistence + plugin integration
 - `3e7fc9a` — fix: show full folder path in @-mention dropdown
 - `af5b3cd` — feat: flat mention dropdown, mention pills, inline token total
 - `9349456` — feat: mention pills in textarea while typing
@@ -39,7 +41,8 @@
 2. **T22 Phase 5**: Extract layout sub-components
 3. **T17 Phase 1**: Backlinks + YAML tools (user-prioritized)
 4. **T11 follow-up**: User verification of startup fix
-5. **Dot folder access**: Return to `.memory` folder investigation when user is ready
+5. **T14 Phase 3**: OpenResponses integration test
+6. **Dot folder access**: Return to `.memory` folder investigation when user is ready
 
 ## Session Context
 - **Session**: 2026-06-13 (ended 09:53 IST)

@@ -1,5 +1,5 @@
 # Implementation Progress
-*Last Updated: 2026-05-25 23:03 IST*
+*Last Updated: 2026-06-15 00:17 IST*
 
 ## Active Tasks
 
@@ -15,6 +15,28 @@
 
 #### Current Work
 - 🔄 Keep memory bank current as T13/T16/T19 work continues
+
+### T24: SessionStorage — JSONL Chat Persistence
+**Status:** ✅ COMPLETED
+**Priority:** HIGH
+**Started:** 2026-06-14
+**Completed:** 2026-06-14
+
+#### Completed Steps
+- ✅ SessionStorage core (`src/storage/session-storage.ts`): loadSession, appendMessage, createSession
+- ✅ ChatStorage wrapper (`src/storage/ChatStorage.ts`): async API for save/load/list/delete
+- ✅ Migration utility (`src/storage/Migration.ts`): old format → JSONL
+- ✅ MigrationPromptModal (`src/modals/MigrationPromptModal.ts`): UI for migration prompt
+- ✅ Plugin integration (`main.ts`): sessionStorage property, onload init
+- ✅ Fix: added missing `contextPickerPathDisplay` to `ObsidianAISettings` interface
+- ✅ Build passes (`npm run build`)
+- ✅ Committed and pushed: `fdc8b58`
+
+#### Files Changed
+- 4 new files in `src/storage/` and `src/modals/`
+- 9 modified files (main.ts, ChatApp.tsx, tokenEstimator, useMessageActions, settings, agent loops)
+
+---
 
 ### T13: Agentic Tool Calling for Note Editing
 **Status:** ✅ COMPLETED (with ongoing refinements)

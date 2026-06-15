@@ -1,9 +1,9 @@
 # Task Registry
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-30 03:41 IST*
+*Last Updated: 2026-06-15 00:19 IST*
 
 ## Summary
-- Active: **7** | Paused: 1 | Completed: 13 | Cancelled: 0
+- Active: **7** | Paused: 1 | Completed: **14** | Cancelled: 0
 
 ## Task Registry Table
 
@@ -31,7 +31,8 @@
 | T19 | File Attachments for Chat Messages | ✅ | HIGH | 2026-05-25 | T13, T4, T9 | [Details](tasks/T19.md) |
 | T21 | CLI Test Harness for AI Features | ✅ | MEDIUM | 2026-05-25 | T19, T4, T13 | [Details](tasks/T21.md) |
 | **T22** | **ChatApp.tsx Component Decomposition** | 🔄 | **HIGH** | **2026-05-28** | — | **[Details](tasks/T22.md)** |
-| **T23** | **Settings.ts Decomposition** | ✅ | **HIGH** | **2026-05-28** | — | **[Details](tasks/T23.md)** |
+| T23 | Settings.ts Decomposition | ✅ | HIGH | 2026-05-28 | — | [Details](tasks/T23.md) |
+| **T24** | **SessionStorage — JSONL Chat Persistence** | ✅ | **HIGH** | **2026-06-14** | — | **[Details](tasks/T24.md)** |
 
 ## Active Tasks
 
@@ -85,8 +86,10 @@ Networked thought tools (backlinks, outlinks, unlinked mentions), YAML frontmatt
 | T21 | CLI Test Harness for AI Features | 2026-05-29 | T19, T4, T13 | [Details](tasks/T21.md) |
 | T22 | ChatApp.tsx Component Decomposition | 2026-05-29 | — | [Details](tasks/T22.md) |
 | T23 | Settings.ts Decomposition | 2026-05-29 | — | [Details](tasks/T23.md) |
+| T24 | SessionStorage — JSONL Chat Persistence | 2026-06-14 | — | [Details](tasks/T24.md) |
 
-### T22 — ChatApp.tsx Component Decomposition *(no dependencies)*
+### T24 — SessionStorage — JSONL Chat Persistence *(no dependencies)*
+Persistent chat session storage using JSONL format. Core SessionStorage class, ChatStorage async wrapper, migration utilities, and plugin integration. 17 files changed, 1138 insertions. Build passes. See `tasks/T24.md`.
 Break down the 1,948-line `ChatApp.tsx` into focused hooks and sub-components. **Complete**: Phases 0–3 done. Extracted 6 utility modules, `useChatSession`, `useChatUI`, and `useMessageActions` with 52 passing tests. ChatApp.tsx reduced from 1,948 → 636 lines (-67%). See `tasks/T22.md`.
 
 ### T21 — CLI Test Harness *(requires T19, T4, T13)*
