@@ -37,6 +37,9 @@ import ExportModal from "./ExportModal";
 import PendingToolCard from "./PendingToolCard";
 import ObsidianIcon from "./ObsidianIcon";
 import SearchInput from "./SearchInput";
+import SearchResults from "./search-results";
+import { FuzzySearcher } from "../search/fuzzy-search";
+
 import { ChatApiManager } from "../api";
 import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
 import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
@@ -287,6 +290,29 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 
 	const [autoApprove, setAutoApprove] = useState(plugin.settings.autoApply);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [searchResults, setSearchResults] = useState<any[]>([]);
+	const [searchLoading, setSearchLoading] = useState(false);
+	const fuzzySearcherRef = useRef(new FuzzySearcher());
+
+	// Run fuzzy search when query changes
+	useEffect(() => {
+		if (!searchQuery.trim()) {
+			setSearchResults([]);
+			return;
+		}
+		setSearchLoading(true);
+		fuzzySearcherRef.current.setSessions(sessions);
+		const results = fuzzySearcherRef.current.search(searchQuery);
+		setSearchResults(results);
+		setSearchLoading(false);
+	}, [searchQuery, sessions]);
+
+	/** Handle selecting a session from search results */
+	const handleSelectSearchResult = useCallback((sessionId: string) => {
+		setActiveSessionId(sessionId);
+		setSearchQuery("");
+		setSearchResults([]);
+	}, [setActiveSessionId]);
 
 	const handleToggleActiveNote = useCallback(() => {
 		console.log(`[handleToggleActiveNote] fired — current items=${JSON.stringify(contextItemsRef.current.map(contextItemKey))}`);
@@ -555,10 +581,18 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 
 			{/* Search input */}
 			{!ui.zenMode && (
-				<SearchInput
-					onSearch={setSearchQuery}
-					placeholder="Search chats…"
-				/>
+				<>
+					<SearchInput
+						onSearch={setSearchQuery}
+						placeholder="Search chats…"
+					/>
+					<SearchResults
+						results={searchResults}
+						loading={searchLoading}
+						query={searchQuery}
+						onSelectSession={handleSelectSearchResult}
+					/>
+				</>
 			)}
 
 			{/* Zen mode exit button (floating) */}
