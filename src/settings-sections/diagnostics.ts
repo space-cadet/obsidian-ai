@@ -2,6 +2,82 @@ import { App, Modal, Notice, Setting } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection } from "./helpers";
 
+interface DiskUsageBreakdown {
+	total: number;
+	chats: number;
+	attachments: number;
+	settings: number;
+	other: number;
+}
+
+/** Calculate disk usage of the plugin directory using Node fs APIs (Electron environment). */
+async function calculatePluginDiskUsage(
+	pluginDir: string,
+): Promise<DiskUsageBreakdown | null> {
+	try {
+		// Dynamic require for Node fs — safe in Electron, graceful fallback if unavailable
+		const fs = require("fs") as typeof import("fs");
+		const path = require("path") as typeof import("path");
+
+		if (!fs || !path) return null;
+
+		const walk = async (dir: string): Promise<{ size: number; files: Map<string, number> }> => {
+			let total = 0;
+			const files = new Map<string, number>();
+			const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+			for (const entry of entries) {
+				const fullPath = path.join(dir, entry.name);
+				if (entry.isDirectory()) {
+					const sub = await walk(fullPath);
+					total += sub.size;
+					for (const [p, s] of sub.files) files.set(p, s);
+				} else {
+					const stat = await fs.promises.stat(fullPath);
+					total += stat.size;
+					files.set(fullPath, stat.size);
+				}
+			}
+			return { size: total, files };
+		};
+
+		const { size: total, files } = await walk(pluginDir);
+
+		let chats = 0;
+		let attachments = 0;
+		let settings = 0;
+		let other = 0;
+
+		for (const [filePath, size] of files) {
+			const basename = path.basename(filePath);
+			const relative = path.relative(pluginDir, filePath);
+
+			if (relative.startsWith("sessions" + path.sep)) {
+				chats += size;
+			} else if (basename === "data.json" || basename.endsWith(".json")) {
+				settings += size;
+			} else if (
+				/\.(png|jpe?g|gif|webp|bmp|svg|mp4|webm|mp3|wav|ogg|pdf|docx?|zip)$/i.test(basename)
+			) {
+				attachments += size;
+			} else {
+				other += size;
+			}
+		}
+
+		return { total, chats, attachments, settings, other };
+	} catch {
+		return null;
+	}
+}
+
+function formatBytes(bytes: number): string {
+	if (bytes === 0) return "0 B";
+	const units = ["B", "KB", "MB", "GB"];
+	const i = Math.min(Math.floor(Math.log10(bytes) / 3), units.length - 1);
+	const value = bytes / Math.pow(1024, i);
+	return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
 export function renderDiagnosticsSection(
 	containerEl: HTMLElement,
 	plugin: ObsidianAIPlugin,
@@ -85,6 +161,8 @@ export function renderDiagnosticsSection(
 	const domNodesEl = createMetric("DOM Nodes", "—");
 	const sessionsEl = createMetric("Chat Sessions", "—");
 	const messagesEl = createMetric("Total Messages", "—");
+	const diskTotalEl = createMetric("Plugin Storage", "—");
+	const diskBreakdownEl = createMetric("Storage Breakdown", "—");
 
 	const refreshMetrics = async () => {
 		const mem = (performance as any).memory;
@@ -114,6 +192,27 @@ export function renderDiagnosticsSection(
 		} catch {
 			sessionsEl.textContent = "?";
 			messagesEl.textContent = "?";
+		}
+
+		// Disk usage
+		try {
+			const pluginDir = `${plugin.app.vault.configDir}/plugins/${plugin.manifest.id}`;
+			const usage = await calculatePluginDiskUsage(pluginDir);
+			if (usage) {
+				diskTotalEl.textContent = formatBytes(usage.total);
+				const parts: string[] = [];
+				if (usage.chats > 0) parts.push(`${formatBytes(usage.chats)} chats`);
+				if (usage.attachments > 0) parts.push(`${formatBytes(usage.attachments)} attachments`);
+				if (usage.settings > 0) parts.push(`${formatBytes(usage.settings)} settings`);
+				if (usage.other > 0) parts.push(`${formatBytes(usage.other)} other`);
+				diskBreakdownEl.textContent = parts.join(", ") || "Empty";
+			} else {
+				diskTotalEl.textContent = "N/A";
+				diskBreakdownEl.textContent = "File system unavailable";
+			}
+		} catch {
+			diskTotalEl.textContent = "Error";
+			diskBreakdownEl.textContent = "Could not read storage";
 		}
 	};
 
