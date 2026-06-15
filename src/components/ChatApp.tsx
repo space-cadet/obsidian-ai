@@ -590,19 +590,21 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				</div>
 			)}
 
-			{/* Search input */}
+			{/* Search input + results */}
 			{!ui.zenMode && (
 				<>
 					<SearchInput
 						onSearch={setSearchQuery}
 						placeholder="Search chats…"
 					/>
-					<SearchResults
-						results={searchResults}
-						loading={searchLoading}
-						query={searchQuery}
-						onSelectSession={handleSelectSearchResult}
-					/>
+					{searchQuery.trim() && (
+						<SearchResults
+							results={searchResults}
+							loading={searchLoading}
+							query={searchQuery}
+							onSelectSession={handleSelectSearchResult}
+						/>
+					)}
 				</>
 			)}
 
