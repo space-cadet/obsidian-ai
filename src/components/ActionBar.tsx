@@ -23,6 +23,8 @@ interface ActionBarProps {
 	onToggleParticipantDropdown?: () => void;
 	debateMode?: boolean;
 	onToggleDebateMode?: () => void;
+	searchVisible?: boolean;
+	onToggleSearch?: () => void;
 }
 
 const ActionBar: React.FC<ActionBarProps> = ({
@@ -44,6 +46,8 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	onToggleParticipantDropdown,
 	debateMode,
 	onToggleDebateMode,
+	searchVisible,
+	onToggleSearch,
 }) => {
 	// Debug: log participant count
 	console.log("[ActionBar] participantCount:", participantCount, "debateMode:", debateMode);
@@ -116,6 +120,15 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				>
 					<ObsidianIcon icon="wand-2" size={15} />
 				</button>
+				{onToggleSearch && (
+					<button
+						className={`chat-btn chat-icon-btn ${searchVisible ? "is-active" : ""}`}
+						onClick={onToggleSearch}
+						title={searchVisible ? "Hide search" : "Search chats"}
+					>
+						<ObsidianIcon icon="search" size={15} />
+					</button>
+				)}
 				<button
 					className="chat-btn chat-icon-btn"
 					onClick={openSettings}

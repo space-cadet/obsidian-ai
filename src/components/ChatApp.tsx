@@ -292,11 +292,12 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [searchResults, setSearchResults] = useState<any[]>([]);
 	const [searchLoading, setSearchLoading] = useState(false);
+	const [searchVisible, setSearchVisible] = useState(false);
 	const fuzzySearcherRef = useRef(new FuzzySearcher());
 
 	// Run fuzzy search when query changes
 	useEffect(() => {
-		if (!searchQuery.trim()) {
+		if (!searchVisible || !searchQuery.trim()) {
 			setSearchResults([]);
 			return;
 		}
@@ -305,13 +306,21 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		const results = fuzzySearcherRef.current.search(searchQuery);
 		setSearchResults(results);
 		setSearchLoading(false);
-	}, [searchQuery, sessions]);
+	}, [searchQuery, sessions, searchVisible]);
 
-	/** Handle selecting a session from search results */
+	/** Toggle search visibility */
+	const toggleSearch = useCallback(() => {
+		setSearchVisible(v => !v);
+		if (searchVisible) {
+			setSearchQuery("");
+			setSearchResults([]);
+		}
+	}, [searchVisible]);
 	const handleSelectSearchResult = useCallback((sessionId: string, messageId: string | null) => {
 		setActiveSessionId(sessionId);
 		setSearchQuery("");
 		setSearchResults([]);
+		setSearchVisible(false);
 		if (messageId) {
 			// Defer scroll until messages render
 			setTimeout(() => {
@@ -559,6 +568,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 						onToggleParticipantDropdown={ui.toggleParticipantDropdown}
 						debateMode={ui.debateMode}
 						onToggleDebateMode={ui.toggleDebateMode}
+						searchVisible={searchVisible}
+						onToggleSearch={toggleSearch}
 					/>
 					{ui.showParticipantDropdown && (
 						<div ref={ui.participantDropdownRef} className="chat-participant-dropdown">
@@ -591,7 +602,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			)}
 
 			{/* Search input + results */}
-			{!ui.zenMode && (
+			{!ui.zenMode && searchVisible && (
 				<>
 					<SearchInput
 						onSearch={setSearchQuery}
