@@ -79,6 +79,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	const [targetNoteName, setTargetNoteName] = useState<string | null>(null);
 	const [thinkingEnabled, setThinkingEnabled] = useState(false);
 	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(null);
+	const [runningTokenTotal, setRunningTokenTotal] = useState(0);
 	const pendingToolCallRef = useRef<ToolCall | null>(null);
 	useEffect(() => {
 		pendingToolCallRef.current = pendingToolCall;
@@ -603,7 +604,13 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				attachments={ui.messageAttachments}
 				onAttachmentsChange={ui.setMessageAttachments}
 				pressEnterToSend={plugin.settings.pressEnterToSend}
-				tokenTotal={activeSessionId && sessions.find((s) => s.id === activeSessionId) && getSessionTotalTokens(sessions.find((s) => s.id === activeSessionId)!) > 0 ? `~${getSessionTotalTokens(sessions.find((s) => s.id === activeSessionId)!).toLocaleString()} tokens` : undefined}
+				tokenTotal={
+					isStreaming && runningTokenTotal > 0
+						? `~${runningTokenTotal.toLocaleString()} tokens`
+						: activeSessionId && sessions.find((s) => s.id === activeSessionId) && getSessionTotalTokens(sessions.find((s) => s.id === activeSessionId)!) > 0
+							? `~${getSessionTotalTokens(sessions.find((s) => s.id === activeSessionId)!).toLocaleString()} tokens`
+							: undefined
+				}
 			/>
 			{ui.showSessionPicker && (
 				<SessionPickerModal

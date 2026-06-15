@@ -19,6 +19,8 @@ export interface AgentLoopOptions {
 	onToolCall: (call: ToolCall) => void;
 	/** Called when a tool result is available (after execution/approval). */
 	onToolResult?: (call: ToolCall, result: ToolResult) => void;
+	/** Called with the running total token count after each step (tool call + result). */
+	onTokenUpdate?: (runningTotal: number) => void;
 	/** Called to request user approval. Return result to approve, null to reject. */
 	requestApproval: (call: ToolCall) => Promise<ToolResult | null>;
 }
@@ -161,6 +163,8 @@ export class AgentLoop {
 		let currentMessages = messages;
 		const stepTokenEstimates: number[] = [];
 
+		let runningTotal = 0;
+
 		for (let step = 0; step < maxSteps; step++) {
 			let stepText = "";
 			let stepReasoning = "";
@@ -202,6 +206,9 @@ export class AgentLoop {
 
 			if (signal.aborted) {
 				console.log("[AgentLoop] aborted during step", step);
+				// Count partial text from this step
+				runningTotal += estimateTokens(stepText);
+				this.opts.onTokenUpdate?.(runningTotal);
 				break;
 			}
 
@@ -209,6 +216,9 @@ export class AgentLoop {
 				console.log(
 					`[AgentLoop] done — no tool call at step ${step}, ${fullText.length} chars`,
 				);
+				// Count final reply text
+				runningTotal += estimateTokens(stepText);
+				this.opts.onTokenUpdate?.(runningTotal);
 				break;
 			}
 
@@ -217,6 +227,11 @@ export class AgentLoop {
 				pendingCall.args,
 			);
 			this.opts.onToolCall(pendingCall);
+
+			// Count tokens for tool call initiation (text + args)
+			const toolCallTokens = estimateTokens(stepText) + estimateTokens(JSON.stringify(pendingCall.args));
+			runningTotal += toolCallTokens;
+			this.opts.onTokenUpdate?.(runningTotal);
 
 			let result: ToolResult;
 			if (autoApprove) {
@@ -281,13 +296,21 @@ export class AgentLoop {
 				assistantMsg,
 				toolMsg,
 			];
-			
-			// Track tokens for this step
-			const stepTokens = estimateTokens(stepText) + estimateTokens(JSON.stringify(pendingCall.args)) + estimateTokens(formattedResult);
-			stepTokenEstimates.push(stepTokens);
+
+			// Count tokens for tool result
+			const resultTokens = estimateTokens(formattedResult);
+			runningTotal += resultTokens;
+			this.opts.onTokenUpdate?.(runningTotal);
+
+			// Track tokens for this step (text + tool call args + tool result)
+			stepTokenEstimates.push(toolCallTokens + resultTokens);
 		}
 
-		const totalTokens = estimateTokens(fullText) + stepTokenEstimates.reduce((a, b) => a + b, 0);
+		// No more tool calls — compute final total.
+		const totalTokens = runningTotal > 0 ? runningTotal : estimateTokens(fullText);
+
+		// Report final total
+		this.opts.onTokenUpdate?.(totalTokens);
 
 		return {
 			text: fullText,

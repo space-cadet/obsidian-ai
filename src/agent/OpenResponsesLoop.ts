@@ -5,6 +5,7 @@ import { AgentApiManager } from "../api/AgentApiManager";
 import type { OpenResponsesEvent } from "../api/OpenResponsesParser";
 import type { ToolExecutor } from "./ToolExecutor";
 import type { ToolCall, ToolResult } from "./types";
+import { estimateTokens } from "../context/tokenEstimator";
 import type { OpenResponsesTool } from "../api/AgentApiManager";
 
 interface OpenResponsesLoopOptions {
@@ -16,6 +17,7 @@ interface OpenResponsesLoopOptions {
 	onToolCall?: (call: ToolCall) => void;
 	requestApproval?: (call: ToolCall) => Promise<ToolResult | null>;
 	onToolResult?: (call: ToolCall, result: ToolResult) => void;
+	onTokenUpdate?: (runningTotal: number) => void;
 }
 
 export class OpenResponsesLoop {
@@ -27,6 +29,7 @@ export class OpenResponsesLoop {
 	private onToolCall?: (call: ToolCall) => void;
 	private requestApproval?: (call: ToolCall) => Promise<ToolResult | null>;
 	private onToolResult?: (call: ToolCall, result: ToolResult) => void;
+	private onTokenUpdate?: (runningTotal: number) => void;
 
 	private accumulatedText = "";
 	private pendingFunctionCalls: Map<
@@ -43,6 +46,7 @@ export class OpenResponsesLoop {
 		this.onToolCall = options.onToolCall;
 		this.requestApproval = options.requestApproval;
 		this.onToolResult = options.onToolResult;
+		this.onTokenUpdate = options.onTokenUpdate;
 	}
 
 	/**
@@ -62,12 +66,15 @@ export class OpenResponsesLoop {
 		let step = 0;
 		let finalText = "";
 		let lastResponseId = "";
+		const stepTokenEstimates: number[] = [];
 
 		// Convert messages to OpenResponses input format
 		const input = messages.map((m) => ({
 			role: m.role,
 			content: m.content,
 		}));
+
+		let runningTotal = 0;
 
 		while (step < this.maxSteps) {
 			step++;
@@ -126,8 +133,18 @@ export class OpenResponsesLoop {
 			if (this.pendingFunctionCalls.size === 0) {
 				// No tool calls — conversation is complete
 				console.log("[OpenResponsesLoop] No function calls — done");
+				// Count final reply text
+				runningTotal += estimateTokens(finalText);
+				this.onTokenUpdate?.(runningTotal);
 				break;
 			}
+
+			// Tool call detected — count text + args
+			const stepTextTokens = estimateTokens(this.accumulatedText);
+			const stepArgsTokens = Array.from(this.pendingFunctionCalls.values())
+				.reduce((sum, fc) => sum + estimateTokens(fc.arguments || ""), 0);
+			runningTotal += stepTextTokens + stepArgsTokens;
+			this.onTokenUpdate?.(runningTotal);
 
 			// Execute pending function calls
 			const functionCallOutputs: Array<{ call_id: string; output: string }> =
@@ -185,7 +202,14 @@ export class OpenResponsesLoop {
 				`[OpenResponsesLoop] Sending ${functionCallOutputs.length} tool results for step ${step + 1}`,
 			);
 
+			// Count tool results
+			const stepResultTokens = functionCallOutputs
+				.reduce((sum, output) => sum + estimateTokens(output.output), 0);
+			runningTotal += stepResultTokens;
+			this.onTokenUpdate?.(runningTotal);
+
 			// Continue streaming with tool results
+			const textBeforeContinue = this.accumulatedText;
 			for await (const event of this.agentApi.continueWithToolResult(
 				lastResponseId,
 				functionCallOutputs,
@@ -207,6 +231,12 @@ export class OpenResponsesLoop {
 			}
 
 			finalText = this.accumulatedText;
+			const followUpTextTokens = estimateTokens(this.accumulatedText.slice(textBeforeContinue.length));
+			runningTotal += followUpTextTokens;
+			this.onTokenUpdate?.(runningTotal);
+
+			// Track tokens for this step: text + tool args + tool results + follow-up text
+			stepTokenEstimates.push(stepTextTokens + stepArgsTokens + stepResultTokens + followUpTextTokens);
 		}
 
 		if (step >= this.maxSteps) {
@@ -214,6 +244,9 @@ export class OpenResponsesLoop {
 				`[OpenResponsesLoop] Max steps (${this.maxSteps}) reached`,
 			);
 		}
+
+		const totalTokens = runningTotal > 0 ? runningTotal : estimateTokens(finalText);
+		this.onTokenUpdate?.(totalTokens);
 
 		return finalText;
 	}

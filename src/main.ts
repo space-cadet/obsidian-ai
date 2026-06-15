@@ -25,21 +25,29 @@ import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/ObsidianAIChatView";
 // import { GroupChatView, GROUP_CHAT_VIEWTYPE } from "./views/GroupChatView";
 import { StoredChatData, ChatSession } from "./types";
 import { createFileLogger, FileLogger } from "./logger";
+import { createStorage, ChatStorage, StorageDeps } from "./storage/ChatStorage";
+import { ChatStorageMigration } from "./storage/Migration";
+import { MigrationPromptModal } from "./modals/MigrationPromptModal";
 
 
 import { AgentApiManager } from "./api/AgentApiManager";
+
+import { SessionStorage } from "./storage/session-storage";
 
 export default class ObsidianAIPlugin extends Plugin {
 	settings: ObsidianAISettings = DEFAULT_SETTINGS;
 	chatapi!: ChatApiManager;
 	agentapi: AgentApiManager | null = null;
 	logger!: FileLogger;
+	sessionStorage: SessionStorage | null = null;
 
 	// Data integrity guards
 	private _backupCreated = false;
 	private _settingsLoadedFromFile = false;
 	private _saveInProgress = false;
 	private _pendingChatData: StoredChatData | null = null;
+	private _chatStorage: ChatStorage | null = null;
+	private _migrationPromptShown = false;
 
 	async onload() {
 		// Initialize file logger FIRST so any crash during load is captured.
@@ -49,6 +57,41 @@ export default class ObsidianAIPlugin extends Plugin {
 		await this.loadSettings();
 		this.logger.setMaxSize(this.settings.debugLogMaxSizeMB * 1024 * 1024);
 		this.chatapi = new ChatApiManager(this.settings, this.app);
+
+		// Initialize low-level session storage
+		this.sessionStorage = new SessionStorage({
+			app: this.app,
+			manifest: this.manifest,
+			logger: this.logger,
+		});
+
+		// Initialize chat storage layer
+		this._chatStorage = createStorage(this._storageDeps(), this.settings.chatStorageFormat);
+
+		// Detect legacy format and prompt for migration (non-blocking, once per session)
+		if (this.settings.chatStorageFormat === "legacy") {
+			const hasLegacy = await this._chatStorage.detectLegacyFormat();
+			if (hasLegacy && !this._migrationPromptShown) {
+				this._migrationPromptShown = true;
+				const migration = new ChatStorageMigration(this._storageDeps());
+				new MigrationPromptModal(
+					this.app,
+					migration,
+					async () => {
+						// On migrate: switch to jsonl format and reinitialize storage
+						this.settings.chatStorageFormat = "jsonl";
+						this._chatStorage = createStorage(this._storageDeps(), "jsonl");
+						await this.saveSettings();
+					},
+					() => {
+						// On keep legacy: do nothing, user can migrate later
+					},
+					() => {
+						// On remind later: do nothing, will prompt again next session
+					},
+				).open();
+			}
+		}
 
 		this.registerView(
 			CHAT_VIEWTYPE,
@@ -221,6 +264,18 @@ export default class ObsidianAIPlugin extends Plugin {
 		// this.app.workspace.detachLeavesOfType(GROUP_CHAT_VIEWTYPE);
 	}
 
+	/** Build the storage dependency bag */
+	private _storageDeps(): StorageDeps {
+		return {
+			app: this.app,
+			manifest: this.manifest,
+			settings: this.settings,
+			loadData: () => this.loadData(),
+			saveData: (data) => this.saveData(data),
+			logger: this.logger,
+		};
+	}
+
 	// ─────────────────────────────────────────────────────────────
 	// Safe data persistence layer
 	// ─────────────────────────────────────────────────────────────
@@ -253,7 +308,14 @@ export default class ObsidianAIPlugin extends Plugin {
 		}
 
 		const existing = (await this.loadData()) ?? {};
-		const payload = { ...existing, ...this.settings };
+		let payload: Record<string, any> = { ...existing, ...this.settings };
+
+		// When using JSONL storage, strip legacy chat data keys from data.json
+		// to avoid accidentally re-introducing legacy format after migration
+		if (this.settings.chatStorageFormat === "jsonl") {
+			delete payload.chatData;
+			delete payload.chatMessages;
+		}
 
 		// Skip write if nothing changed
 		if (JSON.stringify(payload) === JSON.stringify(existing)) {
@@ -262,48 +324,23 @@ export default class ObsidianAIPlugin extends Plugin {
 		}
 
 		this.logger?.log("info", "saveSettings: writing data.json to disk");
-		await this._ensureBackup(existing);
+		await this._ensureRollingBackup(existing);
 		await this.saveData(payload);
 		this.logger?.log("info", "saveSettings: data.json written successfully");
 	}
 
 	async loadChatData(): Promise<StoredChatData> {
-		this.logger?.log("info", "loadChatData: reading data.json");
-		const data = await this.loadData();
-
-		// New format — ensure contextItems exists on every session
-		if (data?.chatData && Array.isArray(data.chatData.sessions)) {
-			const chatData = data.chatData as StoredChatData;
-			for (const session of chatData.sessions) {
-				if (!Array.isArray(session.contextItems)) {
-					session.contextItems = [];
-				}
-			}
-			return chatData;
+		this.logger?.log("info", "loadChatData: delegating to storage layer");
+		if (!this._chatStorage) {
+			this._chatStorage = createStorage(this._storageDeps(), this.settings.chatStorageFormat);
 		}
-
-		// Migration from old flat chatMessages array
-		if (Array.isArray(data?.chatMessages) && data.chatMessages.length > 0) {
-			const migrated: StoredChatData = {
-				sessions: [
-					{
-						id: crypto.randomUUID(),
-						title: "Previous Chat",
-						createdAt: Date.now(),
-						updatedAt: Date.now(),
-						messages: data.chatMessages,
-						contextItems: [],
-					},
-				],
-				activeSessionId: null,
-			};
-			return migrated;
-		}
-
-		return { sessions: [], activeSessionId: null };
+		return this._chatStorage.loadChatData();
 	}
 
 	async saveChatData(chatData: StoredChatData): Promise<void> {
+		if (!this._chatStorage) {
+			this._chatStorage = createStorage(this._storageDeps(), this.settings.chatStorageFormat);
+		}
 		if (this._saveInProgress) {
 			this._pendingChatData = chatData;
 			this.logger?.log(
@@ -318,15 +355,11 @@ export default class ObsidianAIPlugin extends Plugin {
 			let nextChatData: StoredChatData | null = chatData;
 			while (nextChatData) {
 				this._pendingChatData = null;
-				this.logger?.log("info", "saveChatData: writing data.json to disk");
-				const data = (await this.loadData()) ?? {};
-				const payload = { ...data, chatData: nextChatData };
-
-				await this._ensureBackup(data);
-				await this.saveData(payload);
+				this.logger?.log("info", "saveChatData: writing via storage layer");
+				await this._chatStorage.saveChatData(nextChatData);
 				this.logger?.log(
 					"info",
-					"saveChatData: data.json written successfully",
+					"saveChatData: storage layer wrote successfully",
 				);
 
 				nextChatData = this._pendingChatData;
@@ -342,23 +375,33 @@ export default class ObsidianAIPlugin extends Plugin {
 		}
 	}
 
-	/** Create a .bak copy of data.json before the first write each session */
-	private async _ensureBackup(currentData: unknown): Promise<void> {
-		if (this._backupCreated) return;
-		this._backupCreated = true;
+	/** Create rolling backups of data.json before writes */
+	private async _ensureRollingBackup(currentData: unknown): Promise<void> {
 		try {
 			const adapter = this.app.vault.adapter;
 			const pluginDir = `${this.app.vault.configDir}/plugins/${this.manifest.id}`;
 			const dataPath = `${pluginDir}/data.json`;
-			const backupPath = `${pluginDir}/data.json.bak`;
+			const backupCount = this.settings.sessionBackupCount ?? 3;
+
 			const exists = await adapter.exists(dataPath);
-			if (exists) {
-				const content = await adapter.read(dataPath);
-				await adapter.write(backupPath, content);
-				this.logger?.log("info", `Backup created: ${backupPath}`);
+			if (!exists) return;
+
+			const content = await adapter.read(dataPath);
+
+			// Rotate existing backups: .bak.2 -> .bak.3, .bak.1 -> .bak.2, .bak -> .bak.1
+			for (let i = backupCount - 1; i >= 1; i--) {
+				const src = i === 1 ? `${dataPath}.bak` : `${dataPath}.bak.${i - 1}`;
+				const dst = `${dataPath}.bak.${i}`;
+				if (await adapter.exists(src)) {
+					await adapter.write(dst, await adapter.read(src));
+				}
 			}
+
+			// Write the new .bak
+			await adapter.write(`${dataPath}.bak`, content);
+			this.logger?.log("info", `Rolling backup created for data.json (keeping ${backupCount} copies)`);
 		} catch (e) {
-			this.logger?.log("warn", `Failed to create backup: ${e}`);
+			this.logger?.log("warn", `Failed to create rolling backup: ${e}`);
 		}
 	}
 }

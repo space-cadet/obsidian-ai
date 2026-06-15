@@ -17,7 +17,7 @@ import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
 import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
 import { resolveContextItems } from "../context/ContextEngine";
 import { resolveAttachments } from "../context/AttachmentEngine";
-import { estimateTokens, estimateContentPartsTokens } from "../context/tokenEstimator";
+import { estimateTokens, estimateContentPartsTokens, estimateAttachmentTokens } from "../context/tokenEstimator";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { parseSlashCommand } from "../lib/slashCommand";
 import { makeId } from "../lib/sessionUtils";
@@ -48,6 +48,7 @@ export interface UseMessageActionsDeps {
 	setWasTruncated: React.Dispatch<React.SetStateAction<boolean>>;
 	setContextTokenCount: React.Dispatch<React.SetStateAction<number>>;
 	setContextItems: React.Dispatch<React.SetStateAction<ContextItem[]>>;
+	setRunningTokenTotal?: React.Dispatch<React.SetStateAction<number>>;
 
 	// Refs
 	controllerRef: React.MutableRefObject<AbortController | null>;
@@ -81,6 +82,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 		setWasTruncated,
 		setContextTokenCount,
 		setContextItems,
+		setRunningTokenTotal,
 		controllerRef,
 		resolveToolRef,
 		messagesRef,
@@ -107,6 +109,12 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 
 			// ─── GROUP CHAT PATH ───
 			if (isGroupChat && orchestrator) {
+				const userTokenEstimate =
+					estimateTokens(text) +
+					(ui.messageAttachments?.reduce(
+						(sum, att) => sum + estimateAttachmentTokens(att),
+						0,
+					) ?? 0);
 				const userMsg: ChatMessage = {
 					id: makeId(),
 					role: "user",
@@ -117,6 +125,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						ui.messageAttachments.length > 0
 							? ui.messageAttachments
 							: undefined,
+					estimatedTokens: userTokenEstimate,
 				};
 				const currentActiveId = activeSessionIdRef.current;
 				setSessions((prev) =>
@@ -225,6 +234,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					setIsStreaming(false);
 					ui.setTypingAgents(new Set());
 					controllerRef.current = null;
+					setRunningTokenTotal?.(0);
 				}
 				return;
 			}
@@ -517,6 +527,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 								}
 							}
 						},
+						onTokenUpdate: (total) => {
+							setRunningTokenTotal?.(userTokenEstimate + total);
+						},
 					});
 					const orTools = noteToolsToOpenResponses(noteTools);
 					const resultText = await openResponsesLoop.run(
@@ -620,6 +633,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 								}
 							}
 						},
+						onTokenUpdate: (total) => {
+							setRunningTokenTotal?.(userTokenEstimate + total);
+						},
 					});
 
 					const result = await agent.run(
@@ -631,6 +647,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					assistantTokenEstimate = result.tokenEstimate;
 				} else {
 					// … standard streamChat path
+					let streamTokenTotal = userTokenEstimate;
 					for await (const chunk of plugin.chatapi.streamChat(
 						chatMessages,
 						controllerRef.current.signal,
@@ -643,6 +660,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 								stripThinkingTags(fullText),
 							);
 						}
+						// Update running token total incrementally for standard stream
+						streamTokenTotal = userTokenEstimate + estimateTokens(fullText);
+						setRunningTokenTotal?.(streamTokenTotal);
 					}
 					assistantContent = fullText;
 					assistantTokenEstimate = estimateTokens(fullText);
@@ -848,6 +868,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				ui.setEditMessageText("");
 				ui.setMessageAttachments([]);
 				setContextItems([]);
+				setRunningTokenTotal?.(0);
 			}
 		},
 		// eslint-disable-next-line react-hooks/exhaustive-deps

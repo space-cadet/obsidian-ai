@@ -63,7 +63,13 @@ export interface ObsidianAISettings {
 	autoApply: boolean;
 	maxAgentSteps: number;
 	pressEnterToSend: boolean;
-	/** How to show file paths in the context picker */
+	/** Chat storage format: 'legacy' = single data.json, 'jsonl' = split sessions */
+	chatStorageFormat: "legacy" | "jsonl";
+	/** Max sessions shown in sidebar before pagination */
+	maxSessionsInSidebar: number;
+	/** Number of rolling backups to keep of data.json */
+	sessionBackupCount: number;
+	/** How to display file paths in the context picker */
 	contextPickerPathDisplay: "never" | "always" | "duplicates";
 	// Web Search settings
 	webSearchProvider: WebSearchProvider;
@@ -238,6 +244,9 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	maxContextMessages: 10,
 	maxSavedConversations: 20,
 	autoNameSessions: false,
+	chatStorageFormat: "legacy",
+	maxSessionsInSidebar: 50,
+	sessionBackupCount: 3,
 	debugLogLevel: "error",
 	debugLogRetention: 200,
 	debugLogMaxSizeMB: 5,
@@ -293,6 +302,9 @@ export const normalizeSettings = (
 		maxContextMessages: merged.maxContextMessages ?? 10,
 		maxSavedConversations: merged.maxSavedConversations ?? 20,
 		autoNameSessions: Boolean(merged.autoNameSessions),
+		chatStorageFormat: (merged.chatStorageFormat as "legacy" | "jsonl") ?? "legacy",
+		maxSessionsInSidebar: merged.maxSessionsInSidebar ?? 50,
+		sessionBackupCount: merged.sessionBackupCount ?? 3,
 		debugLogLevel: merged.debugLogLevel ?? "error",
 		debugLogRetention: merged.debugLogRetention ?? 200,
 		debugLogMaxSizeMB: merged.debugLogMaxSizeMB ?? 5,
