@@ -308,10 +308,21 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	}, [searchQuery, sessions]);
 
 	/** Handle selecting a session from search results */
-	const handleSelectSearchResult = useCallback((sessionId: string) => {
+	const handleSelectSearchResult = useCallback((sessionId: string, messageId: string | null) => {
 		setActiveSessionId(sessionId);
 		setSearchQuery("");
 		setSearchResults([]);
+		if (messageId) {
+			// Defer scroll until messages render
+			setTimeout(() => {
+				const el = document.querySelector(`[data-message-id="${messageId}"]`);
+				if (el) {
+					el.scrollIntoView({ behavior: "smooth", block: "center" });
+					el.classList.add("chat-message-highlight");
+					setTimeout(() => el.classList.remove("chat-message-highlight"), 2000);
+				}
+			}, 100);
+		}
 	}, [setActiveSessionId]);
 
 	const handleToggleActiveNote = useCallback(() => {

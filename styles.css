@@ -538,6 +538,15 @@
 	padding: 0 1px;
 }
 
+.chat-message-highlight {
+	animation: chat-message-highlight-pulse 2s ease;
+}
+
+@keyframes chat-message-highlight-pulse {
+	0% { background-color: var(--text-highlight-bg); }
+	100% { background-color: transparent; }
+}
+
 
 .chat-action-bar {
 	display: flex;

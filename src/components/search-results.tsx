@@ -6,7 +6,7 @@ interface SearchResultsProps {
 	results: FuzzySearchResult[];
 	loading: boolean;
 	query: string;
-	onSelectSession: (sessionId: string) => void;
+	onSelectSession: (sessionId: string, messageId: string | null) => void;
 }
 
 const SearchResults: React.FC<SearchResultsProps> = ({
@@ -16,8 +16,8 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 	onSelectSession,
 }) => {
 	const handleClick = useCallback(
-		(sessionId: string) => {
-			onSelectSession(sessionId);
+		(sessionId: string, messageId: string | null) => {
+			onSelectSession(sessionId, messageId);
 		},
 		[onSelectSession],
 	);
@@ -60,7 +60,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 				<button
 					key={`${result.sessionId}-${result.messageId ?? "title"}`}
 					className="chat-search-result-item"
-					onClick={() => handleClick(result.sessionId)}
+					onClick={() => handleClick(result.sessionId, result.messageId)}
 					title={result.isTitleMatch ? "Session title" : "Message match"}
 				>
 					<div className="chat-search-result-title">

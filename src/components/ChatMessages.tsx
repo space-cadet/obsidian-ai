@@ -237,20 +237,21 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 					</div>
 				)}
 				{messages.map((msg) => (
-					<MessageBubble
-						key={msg.id}
-						message={msg}
-						app={app}
-						showThinking={showThinking}
-						onAppend={onAppend}
-						onInsertAtCursor={onInsertAtCursor}
-						onApply={onApply}
-						onRetry={() => onRetry(msg.id)}
-						onEdit={() => onEdit(msg.id)}
-						onApplyToTarget={onApplyToTarget}
-						onCreateNote={onCreateNote}
-						onAppendToTarget={onAppendToTarget}
-					/>
+					<div key={msg.id} data-message-id={msg.id}>
+						<MessageBubble
+							message={msg}
+							app={app}
+							showThinking={showThinking}
+							onAppend={onAppend}
+							onInsertAtCursor={onInsertAtCursor}
+							onApply={onApply}
+							onRetry={() => onRetry(msg.id)}
+							onEdit={() => onEdit(msg.id)}
+							onApplyToTarget={onApplyToTarget}
+							onCreateNote={onCreateNote}
+							onAppendToTarget={onAppendToTarget}
+						/>
+					</div>
 				))}
 				{isStreaming && currentAiMessage && (
 					<StreamingBubble content={currentAiMessage} contentParts={currentContentParts} app={app} />
