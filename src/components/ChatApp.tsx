@@ -36,7 +36,7 @@ import ContextPickerModal from "./ContextPickerModal";
 import ExportModal from "./ExportModal";
 import PendingToolCard from "./PendingToolCard";
 import ObsidianIcon from "./ObsidianIcon";
-import { AgentApiManager } from "../api/AgentApiManager";
+import SearchInput from "./SearchInput";
 import { ChatApiManager } from "../api";
 import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
 import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
@@ -286,6 +286,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	}, [ui.selectedProfileIds, activeSessionId, plugin.settings.providerProfiles]);
 
 	const [autoApprove, setAutoApprove] = useState(plugin.settings.autoApply);
+	const [searchQuery, setSearchQuery] = useState("");
 
 	const handleToggleActiveNote = useCallback(() => {
 		console.log(`[handleToggleActiveNote] fired — current items=${JSON.stringify(contextItemsRef.current.map(contextItemKey))}`);
@@ -550,6 +551,14 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 						</div>
 					)}
 				</div>
+			)}
+
+			{/* Search input */}
+			{!ui.zenMode && (
+				<SearchInput
+					onSearch={setSearchQuery}
+					placeholder="Search chats…"
+				/>
 			)}
 
 			{/* Zen mode exit button (floating) */}
