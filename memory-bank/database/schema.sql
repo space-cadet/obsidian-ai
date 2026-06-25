@@ -49,7 +49,7 @@ CREATE TABLE task_items (
   status TEXT NOT NULL,                  -- in_progress, completed, paused, blocked
   priority TEXT NOT NULL,                -- HIGH, MEDIUM, LOW
   started TEXT NOT NULL,                 -- YYYY-MM-DD
-  updated TIMESTAMP,                     -- Last update timestamp
+  last_updated TIMESTAMP,                     -- Last update timestamp
   details TEXT,                          -- Description and context
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -61,10 +61,10 @@ CREATE INDEX idx_task_items_priority ON task_items(priority);
 CREATE TABLE task_subtasks (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   task_id TEXT NOT NULL,
-  section TEXT,
-  position INTEGER NOT NULL,
-  text TEXT NOT NULL,
-  checked INTEGER DEFAULT 0,
+  section TEXT,                          -- Section name (e.g., "Completion Criteria")
+  position INTEGER NOT NULL,             -- Order within task
+  text TEXT NOT NULL,                    -- Subtask description
+  checked INTEGER DEFAULT 0,             -- 0 = unchecked, 1 = checked
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (task_id) REFERENCES task_items(id) ON DELETE CASCADE
 );
@@ -90,8 +90,6 @@ CREATE TABLE sessions (
   period TEXT,                           -- morning, afternoon, evening, night
   status TEXT,                           -- active, completed
   focus TEXT,                            -- Task ID being focused on
-  start_time TEXT,                       -- ISO timestamp when session started
-  end_time TEXT,                         -- ISO timestamp when session ended
   active_count INTEGER,                  -- Active task count
   paused_count INTEGER,                  -- Paused task count
   completed_count INTEGER,               -- Completed task count
