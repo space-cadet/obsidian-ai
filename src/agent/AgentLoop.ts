@@ -184,6 +184,9 @@ export class AgentLoop {
 						stepText += event.text;
 						fullText += event.text;
 						onTextDelta(fullText);
+						// Incremental token counting during streaming
+						runningTotal += estimateTokens(event.text);
+						this.opts.onTokenUpdate?.(runningTotal);
 						break;
 					case "reasoning-delta":
 						stepReasoning += event.text;
@@ -206,8 +209,7 @@ export class AgentLoop {
 
 			if (signal.aborted) {
 				console.log("[AgentLoop] aborted during step", step);
-				// Count partial text from this step
-				runningTotal += estimateTokens(stepText);
+				// Text already counted incrementally during streaming
 				this.opts.onTokenUpdate?.(runningTotal);
 				break;
 			}
@@ -216,8 +218,7 @@ export class AgentLoop {
 				console.log(
 					`[AgentLoop] done — no tool call at step ${step}, ${fullText.length} chars`,
 				);
-				// Count final reply text
-				runningTotal += estimateTokens(stepText);
+				// Text already counted incrementally during streaming
 				this.opts.onTokenUpdate?.(runningTotal);
 				break;
 			}
@@ -228,8 +229,8 @@ export class AgentLoop {
 			);
 			this.opts.onToolCall(pendingCall);
 
-			// Count tokens for tool call initiation (text + args)
-			const toolCallTokens = estimateTokens(stepText) + estimateTokens(JSON.stringify(pendingCall.args));
+			// Count tokens for tool call args only (text already counted incrementally)
+			const toolCallTokens = estimateTokens(JSON.stringify(pendingCall.args));
 			runningTotal += toolCallTokens;
 			this.opts.onTokenUpdate?.(runningTotal);
 
@@ -302,7 +303,7 @@ export class AgentLoop {
 			runningTotal += resultTokens;
 			this.opts.onTokenUpdate?.(runningTotal);
 
-			// Track tokens for this step (text + tool call args + tool result)
+			// Track tokens for this step: tool call args + tool result (text counted incrementally)
 			stepTokenEstimates.push(toolCallTokens + resultTokens);
 		}
 

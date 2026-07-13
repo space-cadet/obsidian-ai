@@ -3,6 +3,18 @@
 
 ## Active Tasks
 
+### Streaming Fixes (2026-07-14)
+**Status:** ✅ **FIXED**
+**Priority:** HIGH
+
+Three bugs fixed in a single session:
+1. **Tool call cards not rendering during OpenResponses streaming** (`OpenResponsesLoop.ts`) — `accumulatedText` reset per step → added `totalAccumulatedText`
+2. **Token count frozen during AgentLoop streaming** (`AgentLoop.ts`) — only counted at step boundaries → added incremental counting during `text-delta`
+3. **StreamingBubble remaining-text + memory leaks** (`ChatMessages.tsx`) — `lastIndexOf` could return -1; `createRoot` uncleaned → fallback + root cleanup
+
+**Build:** ✅ Passes
+**Commit:** Pending user approval
+
 ### META-1: Memory Bank Setup and Maintenance
 **Status:** 🔄 IN PROGRESS
 **Priority:** HIGH
@@ -80,9 +92,9 @@
 - 🔄 Export feature investigation (T16-related)
 
 #### Up Next
-- ⬜ Issue #3: Token usage for tool calls (stepTokenEstimates)
+- ✅ **Issue #2: Tool-call streaming ContentPart cleanup** — FIXED 2026-07-14 (see Streaming Fixes above)
+- ⬜ Issue #3: Token usage for tool calls (stepTokenEstimates) — partially fixed by incremental counting in AgentLoop
 - ⬜ Issue #4: Agent dropdown click-outside handler
-- ⬜ Issue #2: Tool-call streaming ContentPart cleanup
 
 ### T16: Group Chat (Multi-Agent Conversation)
 **Status:** 🔄 IN PROGRESS
@@ -159,6 +171,23 @@
 ### T12: Chat Onboarding, Tips & Empty States
 **Status:** ⏸️ PAUSED
 **Priority:** MEDIUM
+
+### T25: Unit Test Infrastructure for Streaming & Token Estimation
+**Status:** ⏸️ PENDING
+**Priority:** MEDIUM
+**Created:** 2026-07-14
+
+#### Description
+Unit test coverage for streaming state accumulation, token estimation, and message rendering. Extract pure functions from `AgentLoop.ts`, `OpenResponsesLoop.ts`, `useMessageActions.ts`, and `ChatMessages.tsx`. Create mock-based tests for streaming loops.
+
+#### Phases
+1. Extract pure functions (low risk)
+2. Unit tests for `tokenEstimator.ts`, `accumulateContentParts()`, `getRemainingText()`
+3. Mock-based tests for `AgentLoop` and `OpenResponsesLoop`
+4. E2E regression tests (future)
+
+#### Deferred Until
+After next release cycle. Fixes verified by build + manual QA.
 
 ## Completed Tasks
 

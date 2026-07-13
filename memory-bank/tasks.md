@@ -33,6 +33,7 @@
 | **T22** | **ChatApp.tsx Component Decomposition** | 🔄 | **HIGH** | **2026-05-28** | — | **[Details](tasks/T22.md)** |
 | T23 | Settings.ts Decomposition | ✅ | HIGH | 2026-05-28 | — | [Details](tasks/T23.md) |
 | **T24** | **SessionStorage — JSONL Chat Persistence** | ✅ | **HIGH** | **2026-06-14** | — | **[Details](tasks/T24.md)** |
+| **T25** | **Unit Test Infrastructure for Streaming & Token Estimation** | ⏸️ | **MEDIUM** | **—** | **T21, T4, T6** | **[Details](tasks/T25.md)** |
 
 ## Active Tasks
 
@@ -67,6 +68,9 @@ Empty states, setup warnings, contextual tips, first-run guidance. See `tasks/T1
 
 ### T17 — Advanced Vault Tools — Backlinks, YAML, Bulk Ops *(requires T13)*
 Networked thought tools (backlinks, outlinks, unlinked mentions), YAML frontmatter management, tag operations, bulk reorganization, templating, and vault maintenance (broken links, orphans). User-prioritized: backlinks + YAML first. See `tasks/T17.md`.
+
+### T25 — Unit Test Infrastructure for Streaming & Token Estimation *(requires T21, T4, T6)*
+Unit test coverage for streaming state accumulation, token estimation, and message rendering. Extract pure functions from `AgentLoop.ts`, `OpenResponsesLoop.ts`, `useMessageActions.ts`, and `ChatMessages.tsx`. Create mock-based tests for streaming loops. Deferred until after release cycle. See `tasks/T25.md`.
 
 ## Completed Tasks
 

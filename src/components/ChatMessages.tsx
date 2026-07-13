@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { App, Component, MarkdownRenderer } from "obsidian";
 import { ChatMessage, ContentPart } from "../types";
+import { createRoot } from "react-dom/client";
 import MessageBubble from "./MessageBubble";
-import PendingToolCard from "./PendingToolCard";
+import ToolCallNotification from "./ToolCallNotification";
 
 const StreamingBubble: React.FC<{
 	content: string;
@@ -15,6 +16,7 @@ const StreamingBubble: React.FC<{
 		if (!contentRef.current) return;
 		const logger = (window as any).__obsidianAiLogger;
 		let unmounted = false;
+		const toolRoots: ReturnType<typeof createRoot>[] = [];
 
 		logger?.writeDirect?.(
 			"debug",
@@ -37,21 +39,25 @@ const StreamingBubble: React.FC<{
 						MarkdownRenderer.render(app, part.content, textDiv, "", comp);
 					} else if (part.type === "tool_call") {
 						const toolDiv = contentRef.current.createDiv({ cls: "chat-bubble-tool" });
-						if (part.result) {
-							// Render completed tool result
-							const resultDiv = toolDiv.createDiv();
-							resultDiv.innerHTML = `<div class="tool-result-inline">✓ ${part.call.toolName}</div>`;
-						} else {
-							// Render pending tool call
-							const pendingDiv = toolDiv.createDiv();
-							pendingDiv.innerHTML = `<div class="tool-pending-inline">⏳ ${part.call.toolName}...</div>`;
-						}
+						const root = createRoot(toolDiv);
+						toolRoots.push(root);
+						root.render(
+							<ToolCallNotification
+								toolCall={part.call}
+								result={part.result}
+								isPending={!part.result}
+							/>
+						);
 					}
 				}
 				// Render any remaining text after last checkpoint
 				const lastTextPart = contentParts.filter(p => p.type === "text").pop();
 				if (lastTextPart && lastTextPart.type === "text") {
-					const remainingText = content.slice(content.lastIndexOf(lastTextPart.content) + lastTextPart.content.length);
+					const idx = content.lastIndexOf(lastTextPart.content);
+					// If text part not found in current content (e.g. step boundary), show all remaining content
+					const remainingText = idx >= 0
+						? content.slice(idx + lastTextPart.content.length)
+						: content;
 					if (remainingText.trim()) {
 						const remainDiv = contentRef.current.createDiv({ cls: "chat-bubble-text" });
 						const comp = new Component();
@@ -115,6 +121,8 @@ const StreamingBubble: React.FC<{
 
 		return () => {
 			unmounted = true;
+			// Unmount any React roots created for tool call notifications to prevent memory leaks
+			toolRoots.forEach((root) => root.unmount());
 		};
 	}, [content, contentParts, app]);
 

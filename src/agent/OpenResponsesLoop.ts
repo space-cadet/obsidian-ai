@@ -75,12 +75,13 @@ export class OpenResponsesLoop {
 		}));
 
 		let runningTotal = 0;
+		let totalAccumulatedText = ""; // Track text across all steps for UI
 
 		while (step < this.maxSteps) {
 			step++;
 			console.log(`[OpenResponsesLoop] Step ${step}/${this.maxSteps}`);
 
-			// Reset accumulated text for this turn
+			// Reset accumulated text for this turn (but keep totalAccumulatedText for UI)
 			this.accumulatedText = "";
 			this.pendingFunctionCalls.clear();
 
@@ -98,7 +99,11 @@ export class OpenResponsesLoop {
 				switch (event.type) {
 					case "text-delta":
 						this.accumulatedText += event.delta;
-						this.onTextDelta?.(this.accumulatedText);
+						totalAccumulatedText += event.delta;
+						this.onTextDelta?.(totalAccumulatedText);
+						// Incremental token counting during streaming
+						runningTotal += estimateTokens(event.delta);
+						this.onTokenUpdate?.(runningTotal);
 						break;
 
 					case "function_call":
@@ -133,17 +138,15 @@ export class OpenResponsesLoop {
 			if (this.pendingFunctionCalls.size === 0) {
 				// No tool calls — conversation is complete
 				console.log("[OpenResponsesLoop] No function calls — done");
-				// Count final reply text
-				runningTotal += estimateTokens(finalText);
+				// Text already counted incrementally during streaming
 				this.onTokenUpdate?.(runningTotal);
 				break;
 			}
 
-			// Tool call detected — count text + args
-			const stepTextTokens = estimateTokens(this.accumulatedText);
+			// Tool call detected — count args only (text already counted incrementally)
 			const stepArgsTokens = Array.from(this.pendingFunctionCalls.values())
 				.reduce((sum, fc) => sum + estimateTokens(fc.arguments || ""), 0);
-			runningTotal += stepTextTokens + stepArgsTokens;
+			runningTotal += stepArgsTokens;
 			this.onTokenUpdate?.(runningTotal);
 
 			// Execute pending function calls
@@ -209,7 +212,6 @@ export class OpenResponsesLoop {
 			this.onTokenUpdate?.(runningTotal);
 
 			// Continue streaming with tool results
-			const textBeforeContinue = this.accumulatedText;
 			for await (const event of this.agentApi.continueWithToolResult(
 				lastResponseId,
 				functionCallOutputs,
@@ -220,7 +222,11 @@ export class OpenResponsesLoop {
 				switch (event.type) {
 					case "text-delta":
 						this.accumulatedText += event.delta;
-						this.onTextDelta?.(this.accumulatedText);
+						totalAccumulatedText += event.delta;
+						this.onTextDelta?.(totalAccumulatedText);
+						// Incremental token counting during streaming
+						runningTotal += estimateTokens(event.delta);
+						this.onTokenUpdate?.(runningTotal);
 						break;
 					case "finish":
 						lastResponseId = event.response_id;
@@ -231,12 +237,11 @@ export class OpenResponsesLoop {
 			}
 
 			finalText = this.accumulatedText;
-			const followUpTextTokens = estimateTokens(this.accumulatedText.slice(textBeforeContinue.length));
-			runningTotal += followUpTextTokens;
+			// Text already counted incrementally during streaming; no need to re-count
 			this.onTokenUpdate?.(runningTotal);
 
-			// Track tokens for this step: text + tool args + tool results + follow-up text
-			stepTokenEstimates.push(stepTextTokens + stepArgsTokens + stepResultTokens + followUpTextTokens);
+			// Track tokens for this step: args + tool results (text counted incrementally)
+			stepTokenEstimates.push(stepArgsTokens + stepResultTokens);
 		}
 
 		if (step >= this.maxSteps) {

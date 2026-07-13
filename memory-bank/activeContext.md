@@ -1,15 +1,25 @@
 # Active Context
 
-*Last Updated: 2026-06-15 02:35 IST*
+*Last Updated: 2026-07-14 02:50 IST*
 
 ## Current Focus
-**Search feature implementation (June 15, 2026)** — COMPLETED
-- Fuzzy search across all session JSONL files with inverted index
-- Search input UI with debounce (300ms), clear button
-- Results display with title badge, highlighted snippets, empty/no-results states
-- Click result → open full session + scroll to specific message + highlight animation
-- Search toggle button in ActionBar toolbar (hidden by default)
-- 7 commits from `fdc8b58` → `503d8a7`
+**Streaming fixes (July 14, 2026)** — Three bugs fixed, build passes, pending commit.
+
+### Fix 1: Tool call cards during OpenResponses streaming ✅
+- **File:** `src/agent/OpenResponsesLoop.ts`
+- **Bug:** `accumulatedText` reset per step → `contentParts` accumulation broke → tool calls rendered as plain text
+- **Fix:** `totalAccumulatedText` persists across steps; both `streamAgentResponse` and `continueWithToolResult` use it
+
+### Fix 2: Token count frozen during AgentLoop streaming ✅
+- **File:** `src/agent/AgentLoop.ts`
+- **Bug:** Token counting only happened at step boundaries; during text streaming, count was frozen
+- **Fix:** Incremental `runningTotal += estimateTokens(event.text)` inside `text-delta` handler; removed redundant end-of-step recounts to prevent double-counting
+
+### Fix 3: StreamingBubble remaining-text + memory leaks ✅
+- **File:** `src/components/ChatMessages.tsx`
+- **Bug 1:** `content.lastIndexOf(lastTextPart.content)` returned `-1` when text spanned step boundaries → missing remaining text
+- **Bug 2:** `createRoot` inside loop had no cleanup → orphaned React roots
+- **Fix:** Fallback to full `content` when `lastIndexOf` returns `-1`; collect roots in `toolRoots[]` and unmount in cleanup
 
 ## Active Tasks
 - **[T11]**: 🔄 **IN PROGRESS** — Log size limit, startup crash fix, CI/CD archive fix. User to verify startup fix.
@@ -19,46 +29,45 @@
 - **[T15]**: 🔄 **IN PROGRESS** — Phase 1–2 complete. Phase 3 (TabBar UI) paused.
 - **[T17]**: ⏸️ **PENDING** — Advanced vault tools. Backlinks + YAML first.
 - **[T8]**: 🔄 **IN PROGRESS** — Open source release prep.
+- **[T25]**: ⏸️ **PENDING** — Unit test infrastructure for streaming & token estimation. Deferred until after release cycle.
 - **[T13]**: ✅ **COMPLETED**
 - **[T18]**: ✅ **COMPLETED**
 - **[T19]**: ✅ **COMPLETED**
 - **[T21]**: ✅ **COMPLETED**
-- **[T24]**: ✅ **COMPLETED** — SessionStorage with JSONL persistence + Search feature. 17 files, 1138 insertions (storage) + 7 new files (search).
+- **[T24]**: ✅ **COMPLETED**
 - **[T23]**: ✅ **COMPLETED**
 
 ## New Decisions (This Session)
-- **Search visibility**: Hidden by default, toggle via ActionBar button (not always visible)
-- **Search results**: Only render when query is non-empty (prevents chat area compression)
-- **Click behavior**: Open full session + scroll to message + 2s highlight animation
-- **Mobile sync**: User confirmed JSONL migration works on mobile via Syncthing
-- **Executor pattern**: Atomic files created, but manual wiring still needed in ChatApp.tsx
-- **@-mention dropdown**: No 10-item limit; flat list ordered by match quality score; full folder paths shown
-- **Mention pills**: DOM-highlighted context item names in message bubbles + real-time textarea overlay
-- **Token total**: Inline display next to 📎/💤 toggles via ChatInput `tokenTotal` prop
-- **Mobile background**: Documented OS limitation — webview suspends when app backgrounded
+- **Image token estimation**: Flat 255 tokens is a known limitation. Provider-specific dimension-aware estimation deferred as future work (requires image header parsing + provider profile awareness).
+- **Unit tests**: Project currently has zero project-level unit tests. New task T25 created with phased approach: pure functions → mock-based streaming → E2E regression.
+- **Build verification**: All fixes compile cleanly (`tsc -noEmit` + `esbuild` pass).
 
-## Commits (This Session)
-- `fdc8b58` — feat: SessionStorage with JSONL persistence + plugin integration
-- `3e7fc9a` — fix: show full folder path in @-mention dropdown
-- `af5b3cd` — feat: flat mention dropdown, mention pills, inline token total
-- `9349456` — feat: mention pills in textarea while typing
-- `ef89888` — feat: wired search feature (manual ChatApp integration)
-- `6b90eb7` — fix: CSS search results overlap
-- `d60c5cd` — fix: search results open full session + scroll to message
-- `f620472` — fix: search results only show when query exists
-- `503d8a7` — feat: search toggle button in toolbar
+## Commits (Pending)
+- `src/agent/OpenResponsesLoop.ts` — fix: accumulate text across steps for tool call rendering
+- `src/agent/AgentLoop.ts` — fix: incremental token counting during streaming
+- `src/components/ChatMessages.tsx` — fix: StreamingBubble remaining-text fallback + root cleanup
+
+## Related Tasks for This Session's Work
+| Task | Relevance |
+|------|-----------|
+| **T4** (Streaming) | Original streaming implementation; fixes address gaps in T4's coverage |
+| **T6** (Token Management) | Token estimator exists but untested; T25 will add coverage |
+| **T13** (Agentic Tool Calling) | Tool call rendering pipeline; fixes affect tool-call streaming path |
+| **T14** (OpenResponses) | OpenResponsesLoop.ts is the core of T14; Fix 1 is critical for T14 usability |
+| **T21** (E2E Tests) | Existing E2E harness; T25 will extend with regression tests |
+| **T22** (ChatApp Decomposition) | ChatMessages.tsx was refactored in T22 Phase 3; Fix 3 builds on that work |
 
 ## Next Steps
-1. **T22 Phase 4**: Extract session/settings/export handlers
-2. **T22 Phase 5**: Extract layout sub-components
-3. **T17 Phase 1**: Backlinks + YAML tools (user-prioritized)
-4. **T11 follow-up**: User verification of startup fix
-5. **T14 Phase 3**: OpenResponses integration test
-6. **Dot folder access**: Return to `.memory` folder investigation when user is ready
-7. **workspace-c2v**: P2 task — Show plugin disk usage in Settings metrics (only open beads task)
+1. **Commit the three fixes** (user approval needed)
+2. **T22 Phase 4**: Extract session/settings/export handlers
+3. **T22 Phase 5**: Extract layout sub-components
+4. **T17 Phase 1**: Backlinks + YAML tools (user-prioritized)
+5. **T11 follow-up**: User verification of startup fix
+6. **T14 Phase 3**: OpenResponses integration test
+7. **T25**: Unit test infrastructure (deferred)
 
 ## Session Context
-- **Session**: 2026-06-15 (02:35 IST)
-- **Duration**: ~2.5 hours
-- **Build status**: ✅ tsc + esbuild pass (all commits)
-- **User context**: Working late, mobile + desktop. Search feature fully functional.
+- **Session**: 2026-07-14 (02:17–02:50 IST)
+- **Duration**: ~33 minutes
+- **Build status**: ✅ tsc + esbuild pass
+- **User context**: Late night session; fixes are ready to commit
