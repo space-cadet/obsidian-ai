@@ -11,28 +11,28 @@ const StreamingBubble: React.FC<{
 	app: App;
 }> = ({ content, contentParts, app }) => {
 	const contentRef = useRef<HTMLDivElement>(null);
+	const renderedCountRef = useRef(0);
+	const lastTextRef = useRef("");
+	const toolRootsRef = useRef<ReturnType<typeof createRoot>[]>([]);
 
 	useEffect(() => {
 		if (!contentRef.current) return;
 		const logger = (window as any).__obsidianAiLogger;
 		let unmounted = false;
-		const toolRoots: ReturnType<typeof createRoot>[] = [];
 
 		logger?.writeDirect?.(
 			"debug",
-			`[StreamingBubble] Step 1: entering useEffect — ${content.length} chars, ${contentParts?.length ?? 0} parts`,
+			`[StreamingBubble] entering useEffect — ${content.length} chars, ${contentParts?.length ?? 0} parts`,
 		);
 
 		try {
-			logger?.writeDirect?.(
-				"debug",
-				`[StreamingBubble] Step 2: clearing innerHTML`,
-			);
-			contentRef.current.innerHTML = "";
-
-			// If we have contentParts with tool calls, render them as structured UI
+			// If we have contentParts with tool calls, use incremental rendering to avoid flicker
 			if (contentParts && contentParts.length > 0) {
-				for (const part of contentParts) {
+				const currentCount = renderedCountRef.current;
+				const newParts = contentParts.slice(currentCount);
+
+				// Render only new parts (append mode)
+				for (const part of newParts) {
 					if (part.type === "text") {
 						const textDiv = contentRef.current.createDiv({ cls: "chat-bubble-text" });
 						const comp = new Component();
@@ -40,7 +40,7 @@ const StreamingBubble: React.FC<{
 					} else if (part.type === "tool_call") {
 						const toolDiv = contentRef.current.createDiv({ cls: "chat-bubble-tool" });
 						const root = createRoot(toolDiv);
-						toolRoots.push(root);
+						toolRootsRef.current.push(root);
 						root.render(
 							<ToolCallNotification
 								toolCall={part.call}
@@ -50,59 +50,65 @@ const StreamingBubble: React.FC<{
 						);
 					}
 				}
-				// Render any remaining text after last checkpoint
+				renderedCountRef.current = contentParts.length;
+
+				// Update remaining text after last checkpoint (always re-render to keep in sync)
 				const lastTextPart = contentParts.filter(p => p.type === "text").pop();
 				if (lastTextPart && lastTextPart.type === "text") {
 					const idx = content.lastIndexOf(lastTextPart.content);
-					// If text part not found in current content (e.g. step boundary), show all remaining content
 					const remainingText = idx >= 0
 						? content.slice(idx + lastTextPart.content.length)
 						: content;
 					if (remainingText.trim()) {
-						const remainDiv = contentRef.current.createDiv({ cls: "chat-bubble-text" });
+						// Check if we already have a remaining-text div
+						let remainDiv = contentRef.current.querySelector(".chat-bubble-remain") as HTMLDivElement | null;
+						if (!remainDiv) {
+							remainDiv = contentRef.current.createDiv({ cls: "chat-bubble-remain" });
+						} else {
+							remainDiv.empty();
+						}
 						const comp = new Component();
 						MarkdownRenderer.render(app, remainingText, remainDiv, "", comp);
 					}
 				}
 			} else {
-				// Simple text-only streaming (no tool calls)
-				logger?.writeDirect?.(
-					"debug",
-					`[StreamingBubble] Step 3: creating Component`,
-				);
-				const comp = new Component();
-
-				logger?.writeDirect?.(
-					"debug",
-					`[StreamingBubble] Step 4: calling MarkdownRenderer.render`,
-				);
-				MarkdownRenderer.render(
-					app,
-					content,
-					contentRef.current,
-					"",
-					comp,
-				).then(() => {
-					if (unmounted) return;
+				// Simple text-only streaming (no tool calls) — only re-render if text changed
+				if (content !== lastTextRef.current) {
+					lastTextRef.current = content;
+					contentRef.current.empty();
 					logger?.writeDirect?.(
 						"debug",
-						`[StreamingBubble] Step 5: MarkdownRenderer.render resolved`,
+						`[StreamingBubble] text changed, re-rendering`,
 					);
-				}).catch((err: any) => {
-					if (unmounted) return;
-					logger?.writeDirect?.(
-						"error",
-						`[StreamingBubble] MarkdownRenderer.render rejected:`,
-						err,
-					);
-					if (contentRef.current) {
-						contentRef.current.innerHTML = "";
-						contentRef.current.createEl("pre", {
-							text: content,
-							cls: "chat-plaintext-fallback",
-						});
-					}
-				});
+					const comp = new Component();
+					MarkdownRenderer.render(
+						app,
+						content,
+						contentRef.current,
+						"",
+						comp,
+					).then(() => {
+						if (unmounted) return;
+						logger?.writeDirect?.(
+							"debug",
+							`[StreamingBubble] MarkdownRenderer.render resolved`,
+						);
+					}).catch((err: any) => {
+						if (unmounted) return;
+						logger?.writeDirect?.(
+							"error",
+							`[StreamingBubble] MarkdownRenderer.render rejected:`,
+							err,
+						);
+						if (contentRef.current) {
+							contentRef.current.empty();
+							contentRef.current.createEl("pre", {
+								text: content,
+								cls: "chat-plaintext-fallback",
+							});
+						}
+					});
+				}
 			}
 		} catch (err: any) {
 			logger?.writeDirect?.(
@@ -111,7 +117,7 @@ const StreamingBubble: React.FC<{
 				err,
 			);
 			if (contentRef.current) {
-				contentRef.current.innerHTML = "";
+				contentRef.current.empty();
 				contentRef.current.createEl("pre", {
 					text: content,
 					cls: "chat-plaintext-fallback",
@@ -121,10 +127,16 @@ const StreamingBubble: React.FC<{
 
 		return () => {
 			unmounted = true;
-			// Unmount any React roots created for tool call notifications to prevent memory leaks
-			toolRoots.forEach((root) => root.unmount());
 		};
 	}, [content, contentParts, app]);
+
+	// Cleanup tool roots on unmount
+	useEffect(() => {
+		return () => {
+			toolRootsRef.current.forEach((root) => root.unmount());
+			toolRootsRef.current = [];
+		};
+	}, []);
 
 	return (
 		<div className="chat-bubble chat-bubble-assistant chat-bubble-streaming">

@@ -778,59 +778,61 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					),
 				);
 			} catch (e: any) {
-				if (e.name === "AbortError") {
-					if (fullText) {
-						let abortedParts: ContentPart[] = [];
-						if (useTools && !slashCmd) {
-							abortedParts = [...contentParts];
-							const remainingText = stripThinkingTags(
-								fullText.slice(textCheckpoint),
-							);
-							if (remainingText) {
-								abortedParts.push({
-									type: "text",
-									content: remainingText + " [stopped]",
-								});
-							}
-						} else {
-							abortedParts = [
-								{
-									type: "text",
-									content:
-										stripThinkingTags(fullText) +
-										" [stopped]",
-								},
-							];
-						}
-						const stoppedMsg: ChatMessage = {
-							id: makeId(),
-							role: "assistant",
-							content:
-								stripThinkingTags(fullText) + " [stopped]",
-							timestamp: Date.now(),
-							command: commandMeta,
-							estimatedTokens: estimateTokens(fullText),
-							modelName: activeProfile.model,
-							responseTimeMs: Date.now() - streamStartTime,
-							contentParts: abortedParts,
-						};
-						setSessions((prev) =>
-							prev.map((s) =>
-								s.id === currentActiveId
-									? {
-											...s,
-											messages: [
-												...s.messages,
-												stoppedMsg,
-											],
-											updatedAt: Date.now(),
-											contextItems: sendContextItems,
-										}
-									: s,
-							),
+				// Preserve partial content for ALL interruptions (AbortError, TypeError, network errors, etc.)
+				// The user should see what was received, not lose it.
+				if (fullText) {
+					let interruptedParts: ContentPart[] = [];
+					if (useTools && !slashCmd) {
+						interruptedParts = [...contentParts];
+						const remainingText = stripThinkingTags(
+							fullText.slice(textCheckpoint),
 						);
+						if (remainingText) {
+							interruptedParts.push({
+								type: "text",
+								content: remainingText + " [interrupted]",
+							});
+						}
+					} else {
+						interruptedParts = [
+							{
+								type: "text",
+								content:
+									stripThinkingTags(fullText) +
+									" [interrupted]",
+							},
+						];
 					}
-				} else {
+					const interruptedMsg: ChatMessage = {
+						id: makeId(),
+						role: "assistant",
+						content:
+							stripThinkingTags(fullText) + " [interrupted]",
+						timestamp: Date.now(),
+						command: commandMeta,
+						estimatedTokens: estimateTokens(fullText),
+						modelName: activeProfile.model,
+						responseTimeMs: Date.now() - streamStartTime,
+						contentParts: interruptedParts,
+						isError: e.name !== "AbortError",
+					};
+					setSessions((prev) =>
+						prev.map((s) =>
+							s.id === currentActiveId
+								? {
+										...s,
+										messages: [
+											...s.messages,
+											interruptedMsg,
+										],
+										updatedAt: Date.now(),
+										contextItems: sendContextItems,
+									}
+								: s,
+						),
+					);
+				} else if (e.name !== "AbortError") {
+					// No partial content received and it's a real error — show error message
 					const errorMsg: ChatMessage = {
 						id: makeId(),
 						role: "assistant",
@@ -934,7 +936,15 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				),
 			);
 
-			handleSend(userMsg.content);
+			// Restore attachments and context items before resending
+			if (userMsg.attachments && userMsg.attachments.length > 0) {
+				ui.setMessageAttachments(userMsg.attachments);
+			}
+			if (userMsg.contextItems && userMsg.contextItems.length > 0) {
+				setContextItems(userMsg.contextItems);
+			}
+
+			handleSend(userMsg.content, userMsg.attachments);
 		},
 		[handleSend],
 	);

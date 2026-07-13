@@ -402,6 +402,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 		setWasTruncated,
 		setContextTokenCount,
 		setContextItems,
+		setRunningTokenTotal,
 		controllerRef,
 		resolveToolRef,
 		messagesRef,
