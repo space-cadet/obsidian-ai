@@ -1,17 +1,17 @@
 # Session Cache
 
-*Created: 2026-07-13 22:39:17 IST*
-*Last Updated: 2026-07-13 22:39:17 IST*
+*Created: 2026-07-13 22:41:55 IST*
+*Last Updated: 2026-07-13 22:41:55 IST*
 
-**Started**: 2026-07-13 22:38:33 IST
-**Focus Task**: T15: Tabbed Chat Interface with Multi-Profile
-**Session File**: `sessions/2026-07-13-night.md`
+**Started**: 2026-07-13 22:41:49 IST
+**Focus Task**: T8: Open Source Release with Branding
+**Session File**: `sessions/2026-07-14-night.md`
 **Status**: 🔄 Active: 6, Paused: 0, Completed: 14
 
 ## Overview
 
 - Active: 6 | Paused: 0 | Completed: 14
-- Last Session: 2026-07-13
+- Last Session: 2026-07-14
 - Current Period: night
 
 ## Active Tasks
@@ -59,6 +59,7 @@ Fix token counter accumulation, remove green streaming border, add live tool res
 **Context**: [Details](tasks/T8.md)
 **Progress**:
 [Details](tasks/T8.md)
+Promote release from pre-release to proper v1.2.4. GitHub release created with build assets.
 
 ## Completed Tasks
 
