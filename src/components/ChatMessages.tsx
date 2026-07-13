@@ -13,7 +13,7 @@ const StreamingBubble: React.FC<{
 	const contentRef = useRef<HTMLDivElement>(null);
 	const renderedCountRef = useRef(0);
 	const lastTextRef = useRef("");
-	const toolRootsRef = useRef<ReturnType<typeof createRoot>[]>([]);
+	const toolRootsRef = useRef<Map<number, ReturnType<typeof createRoot>>>(new Map());
 
 	useEffect(() => {
 		if (!contentRef.current) return;
@@ -31,8 +31,27 @@ const StreamingBubble: React.FC<{
 				const currentCount = renderedCountRef.current;
 				const newParts = contentParts.slice(currentCount);
 
+				// Update already-rendered tool calls when their results arrive (hourglass → checkmark)
+				for (let i = 0; i < Math.min(currentCount, contentParts.length); i++) {
+					const part = contentParts[i];
+					if (part.type === "tool_call") {
+						const root = toolRootsRef.current.get(i);
+						if (root) {
+							root.render(
+								<ToolCallNotification
+									toolCall={part.call}
+									result={part.result}
+									isPending={!part.result}
+								/>
+							);
+						}
+					}
+				}
+
 				// Render only new parts (append mode)
-				for (const part of newParts) {
+				for (let i = 0; i < newParts.length; i++) {
+					const part = newParts[i];
+					const partIndex = currentCount + i;
 					if (part.type === "text") {
 						const textDiv = contentRef.current.createDiv({ cls: "chat-bubble-text" });
 						const comp = new Component();
@@ -40,7 +59,7 @@ const StreamingBubble: React.FC<{
 					} else if (part.type === "tool_call") {
 						const toolDiv = contentRef.current.createDiv({ cls: "chat-bubble-tool" });
 						const root = createRoot(toolDiv);
-						toolRootsRef.current.push(root);
+						toolRootsRef.current.set(partIndex, root);
 						root.render(
 							<ToolCallNotification
 								toolCall={part.call}
@@ -134,7 +153,7 @@ const StreamingBubble: React.FC<{
 	useEffect(() => {
 		return () => {
 			toolRootsRef.current.forEach((root) => root.unmount());
-			toolRootsRef.current = [];
+			toolRootsRef.current.clear();
 		};
 	}, []);
 

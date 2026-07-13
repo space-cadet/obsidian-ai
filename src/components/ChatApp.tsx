@@ -672,13 +672,21 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				attachments={ui.messageAttachments}
 				onAttachmentsChange={ui.setMessageAttachments}
 				pressEnterToSend={plugin.settings.pressEnterToSend}
-				tokenTotal={
-					isStreaming && runningTokenTotal > 0
-						? `~${runningTokenTotal.toLocaleString()} tokens`
-						: activeSessionId && sessions.find((s) => s.id === activeSessionId) && getSessionTotalTokens(sessions.find((s) => s.id === activeSessionId)!) > 0
-							? `~${getSessionTotalTokens(sessions.find((s) => s.id === activeSessionId)!).toLocaleString()} tokens`
-							: undefined
-				}
+				tokenTotal={(() => {
+					const session = activeSessionId
+						? sessions.find((s) => s.id === activeSessionId)
+						: null;
+					const sessionTotal = session
+						? getSessionTotalTokens(session)
+						: 0;
+					if (isStreaming && runningTokenTotal > 0) {
+						return `~${(sessionTotal + runningTokenTotal).toLocaleString()} tokens`;
+					}
+					if (sessionTotal > 0) {
+						return `~${sessionTotal.toLocaleString()} tokens`;
+					}
+					return undefined;
+				})()}
 			/>
 			{ui.showSessionPicker && (
 				<SessionPickerModal

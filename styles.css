@@ -926,7 +926,7 @@
 
 /* Chat bubble: streaming state */
 .chat-bubble-streaming {
-	border-left: 3px solid #0d9488;
+	/* No border — was causing green outline flicker on Android */
 }
 
 .chat-bubble-streaming .chat-bubble-header {
