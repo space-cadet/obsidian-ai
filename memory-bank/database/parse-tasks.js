@@ -10,13 +10,39 @@ const __dirname = dirname(__filename);
 
 // Initialize tasks schema
 async function initSchema() {
-  // Schema already initialized by schema.sql + init-schema.js
-  // Just verify tables exist
-  const tables = sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='task_items'").get();
-  if (!tables) {
-    throw new Error('task_items table not found. Run init-schema.js first.');
-  }
-  console.log('✓ Database schema verified\n');
+  await sqlite.exec(`
+    PRAGMA foreign_keys = OFF;
+    
+    CREATE TABLE IF NOT EXISTS task_items (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('pending','in_progress','completed','paused')),
+      priority TEXT NOT NULL CHECK(priority IN ('low','medium','high')),
+      started TEXT NOT NULL,
+      last_updated TEXT,
+      details TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS task_subtasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      task_id TEXT NOT NULL,
+      section TEXT,
+      position INTEGER NOT NULL,
+      text TEXT NOT NULL,
+      checked INTEGER NOT NULL CHECK(checked IN (0, 1)),
+      FOREIGN KEY(task_id) REFERENCES task_items(id) ON DELETE CASCADE
+    );
+    
+    CREATE TABLE IF NOT EXISTS task_dependencies (
+      task_id TEXT NOT NULL,
+      depends_on TEXT NOT NULL,
+      FOREIGN KEY(task_id) REFERENCES task_items(id) ON DELETE CASCADE,
+      FOREIGN KEY(depends_on) REFERENCES task_items(id) ON DELETE CASCADE,
+      PRIMARY KEY(task_id, depends_on)
+    );
+    
+    PRAGMA foreign_keys = ON;
+  `);
 }
 
 function normalizeStatus(statusCell) {
@@ -287,9 +313,9 @@ async function main() {
     const dbPath = join(__dirname, 'memory_bank.db');
     await sqlite.openDb(dbPath);
     
-    await sqlite.exec('DELETE FROM task_dependencies;');
-    await sqlite.exec('DELETE FROM task_subtasks;');
-    await sqlite.exec('DELETE FROM task_items;');
+    await sqlite.exec('DELETE FROM task_dependencies');
+    await sqlite.exec('DELETE FROM task_subtasks');
+    await sqlite.exec('DELETE FROM task_items');
     
     await initSchema();
     console.log('✓ Database schema initialized\n');

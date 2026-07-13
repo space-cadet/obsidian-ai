@@ -49,7 +49,7 @@ CREATE TABLE task_items (
   status TEXT NOT NULL,                  -- in_progress, completed, paused, blocked
   priority TEXT NOT NULL,                -- HIGH, MEDIUM, LOW
   started TEXT NOT NULL,                 -- YYYY-MM-DD
-  last_updated TIMESTAMP,                     -- Last update timestamp
+  last_updated TIMESTAMP,                -- Last update timestamp
   details TEXT,                          -- Description and context
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -90,6 +90,8 @@ CREATE TABLE sessions (
   period TEXT,                           -- morning, afternoon, evening, night
   status TEXT,                           -- active, completed
   focus TEXT,                            -- Task ID being focused on
+  start_time TEXT,                       -- ISO timestamp when session started
+  end_time TEXT,                         -- ISO timestamp when session ended
   active_count INTEGER,                  -- Active task count
   paused_count INTEGER,                  -- Paused task count
   completed_count INTEGER,               -- Completed task count

@@ -20,10 +20,10 @@ async function initSchema() {
   await sqlite.exec(`
     CREATE TABLE IF NOT EXISTS sessions (
       id TEXT PRIMARY KEY,         -- Filename (e.g., 2025-11-22-evening.md)
-      date TEXT NOT NULL,          -- YYYY-MM-DD
-      period TEXT,                 -- morning, afternoon, evening, night
+      date TEXT NOT NULL,  -- YYYY-MM-DD (canonical: date)
+      period TEXT,         -- morning, afternoon, evening, night (canonical: period)
       status TEXT,                 -- In Progress, Complete, etc.
-      focus TEXT,                  -- Main focus of the session
+      focus TEXT,             -- Main focus of the session (canonical: focus)
       active_count INTEGER,        -- From "Active: X"
       paused_count INTEGER,        -- From "Paused: X"
       completed_count INTEGER,     -- From "Completed: X"
@@ -117,7 +117,7 @@ async function main() {
     await sqlite.openDb(dbPath);
     
     // Recreate table to ensure clean slate
-    await sqlite.exec('DELETE FROM sessions;');
+    await sqlite.exec('DELETE FROM sessions');
     await initSchema();
 
     // Get all .md files
