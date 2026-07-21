@@ -1,7 +1,28 @@
 # Implementation Progress
-*Last Updated: 2026-06-15 00:17 IST*
+*Last Updated: 2026-07-21 21:50 IST*
 
 ## Active Tasks
+
+### T26: AI Intelligence Layer — Persistent Identity, Memory & Context
+**Status:** 🔄 **IN PROGRESS**
+**Priority:** HIGH
+**Started:** 2026-07-21
+
+Design complete. Five-phase implementation plan:
+1. **P1 — Persistent Identity & Memory:** Auto-load persona + memory into system prompt
+2. **P2 — Session Memory Creation:** `create_memory` tool + auto-summarization
+3. **P3 — Cross-Session Retrieval:** AI searches its own chat history
+4. **P4 — Plugin Bridges:** Dataview, Tasks, Templater integration
+5. **P5 — Proactive Suggestions:** Limited proactivity while Obsidian is open
+
+**Key decisions:**
+- All memory files live in plugin directory (`.obsidian/plugins/obsidian-ai/intelligence/`), NOT the vault
+- Memory format: markdown for human readability + optional SQLite for structured queries
+- Feedback loop: AI reads memory at session start, writes memory during/after sessions
+
+**Files created:**
+- `memory-bank/tasks/T26.md`
+- `memory-bank/implementation-details/ai-intelligence-layer.md`
 
 ### Streaming Fixes (2026-07-14)
 **Status:** ✅ **FIXED**

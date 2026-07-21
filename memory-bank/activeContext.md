@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-07-14 02:50 IST*
+*Last Updated: 2026-07-21 21:50 IST*
 
 ## Current Focus
 **Streaming fixes (July 14, 2026)** — Three bugs fixed, build passes, pending commit.
@@ -28,6 +28,7 @@
 - **[T14]**: 🔄 **IN PROGRESS** — Phase 3 integration test.
 - **[T15]**: 🔄 **IN PROGRESS** — Phase 1–2 complete. Phase 3 (TabBar UI) paused.
 - **[T17]**: ⏸️ **PENDING** — Advanced vault tools. Backlinks + YAML first.
+- **[T26]**: 🔄 **IN PROGRESS** — AI Intelligence Layer. Phase 1 (PersonaLoader + system prompt injection) active. See [T26 details](tasks/T26.md).
 - **[T8]**: 🔄 **IN PROGRESS** — Open source release prep.
 - **[T25]**: ⏸️ **PENDING** — Unit test infrastructure for streaming & token estimation. Deferred until after release cycle.
 - **[T13]**: ✅ **COMPLETED**
