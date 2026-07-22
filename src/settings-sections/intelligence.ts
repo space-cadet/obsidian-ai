@@ -24,6 +24,9 @@ export function renderIntelligenceSection(
 				.setValue(plugin.settings.intelligence.enableIntelligence)
 				.onChange(async (value) => {
 					plugin.settings.intelligence.enableIntelligence = value;
+					if (value && plugin.personaLoader) {
+						await plugin.personaLoader.ensureDefaults();
+					}
 					await saveSettings({ refresh: true });
 				});
 		});
