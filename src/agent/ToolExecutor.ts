@@ -2,12 +2,14 @@ import { App, Notice, TFile } from "obsidian";
 import type { ToolCall, ToolResult } from "./types";
 import type { ObsidianAISettings, WebSearchProvider } from "../settings";
 import type { PersonaLoader } from "../intelligence/PersonaLoader";
+import { SearchIndex } from "../search/index";
 
 export class ToolExecutor {
 	constructor(
 		private app: App,
 		private settings?: ObsidianAISettings,
 		private personaLoader?: PersonaLoader,
+		private searchIndex?: SearchIndex,
 	) {}
 
 	async execute(call: ToolCall): Promise<ToolResult> {
@@ -71,6 +73,10 @@ export class ToolExecutor {
 				case "create_memory":
 					return await this.createMemory(
 						call.args as { category: string; content: string; tags?: string[] },
+					);
+				case "search_past_sessions":
+					return await this.searchPastSessions(
+						call.args as { query: string; limit?: number },
 					);
 				case "create_folder":
 					return await this.createFolder(
@@ -893,5 +899,44 @@ export class ToolExecutor {
 
 		await this.personaLoader.appendMemory(entry);
 		return { success: true, entry };
+	}
+
+	private async searchPastSessions(args: {
+		query: string;
+		limit?: number;
+	}): Promise<ToolResult> {
+		if (!this.searchIndex) {
+			return {
+				error:
+					"Session search is not available. The search index has not been initialized.",
+			};
+		}
+
+		try {
+			const results = await this.searchIndex.search(args.query);
+			const limit = Math.min(args.limit ?? 5, 20);
+			const limited = results.slice(0, limit);
+
+			if (limited.length === 0) {
+				return {
+					success: true,
+					content: "No past sessions found matching your query.",
+				};
+			}
+
+			const formatted = limited
+				.map((r, i) => {
+					const date = new Date(r.timestamp).toLocaleDateString();
+					return `${i + 1}. **Session ${r.sessionId}** (${date}): ${r.snippet.slice(0, 150)}...`;
+				})
+				.join("\n");
+
+			return {
+				success: true,
+				content: `Found ${limited.length} result(s):\n\n${formatted}`,
+			};
+		} catch (e: any) {
+			return { error: `Search failed: ${e.message || String(e)}` };
+		}
 	}
 }

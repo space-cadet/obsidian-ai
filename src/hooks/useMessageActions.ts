@@ -445,6 +445,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							plugin.app,
 							plugin.settings,
 							plugin.personaLoader ?? undefined,
+							plugin.searchIndex ?? undefined,
 						),
 						maxSteps:
 							activeProfile.maxSteps ?? maxAgentSteps,
@@ -552,6 +553,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							plugin.app,
 							plugin.settings,
 							plugin.personaLoader ?? undefined,
+							plugin.searchIndex ?? undefined,
 						),
 						maxSteps: maxAgentSteps,
 						autoApprove,
@@ -1136,6 +1138,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				plugin.app,
 				plugin.settings,
 				plugin.personaLoader ?? undefined,
+				plugin.searchIndex ?? undefined,
 			);
 			const result = await toolExecutor.execute(pendingToolCall);
 			resolveToolRef.current?.(result);

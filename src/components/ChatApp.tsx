@@ -160,7 +160,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 			enableTools: plugin.settings.enableAgentTools,
 			autoApprove: plugin.settings.autoApply,
 			maxSteps: plugin.settings.maxAgentSteps,
-			toolExecutor: new ToolExecutor(plugin.app, plugin.settings, plugin.personaLoader ?? undefined),
+			toolExecutor: new ToolExecutor(plugin.app, plugin.settings, plugin.personaLoader ?? undefined, plugin.searchIndex ?? undefined),
 		});
 		// Override engine profiles
 		orch.engines = resolved.map((e) => ({

@@ -34,6 +34,7 @@ import { AgentApiManager } from "./api/AgentApiManager";
 
 import { SessionStorage } from "./storage/session-storage";
 import { PersonaLoader } from "./intelligence/PersonaLoader";
+import { SearchIndex } from "./search/index";
 
 export default class ObsidianAIPlugin extends Plugin {
 	settings: ObsidianAISettings = DEFAULT_SETTINGS;
@@ -42,6 +43,7 @@ export default class ObsidianAIPlugin extends Plugin {
 	logger!: FileLogger;
 	sessionStorage: SessionStorage | null = null;
 	personaLoader: PersonaLoader | null = null;
+	searchIndex: SearchIndex | null = null;
 
 	// Data integrity guards
 	private _backupCreated = false;
@@ -73,6 +75,7 @@ export default class ObsidianAIPlugin extends Plugin {
 			manifest: this.manifest,
 			logger: this.logger,
 		});
+		this.searchIndex = new SearchIndex(this.app, this.manifest.id);
 		if (this.settings.intelligence?.enableIntelligence) {
 			await this.personaLoader.ensureDefaults();
 		}

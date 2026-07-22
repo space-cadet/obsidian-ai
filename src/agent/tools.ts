@@ -264,6 +264,21 @@ export const createMemoryTool = t({
 	}),
 });
 
+export const searchPastSessionsTool = t({
+	description:
+		"Search past chat sessions by topic, keyword, or content. " +
+		"Use when the user references something from a previous conversation, " +
+		"asks 'what did we discuss about X', or when you need historical context.",
+	inputSchema: z.object({
+		query: z.string().describe("Search query — keywords or topic to find in past sessions"),
+		limit: z
+			.number()
+			.optional()
+			.default(5)
+			.describe("Maximum number of results to return (default 5)"),
+	}),
+});
+
 export const noteTools = {
 	read_note: readNoteTool,
 	edit_note: editNoteTool,
@@ -281,4 +296,5 @@ export const noteTools = {
 	list_folders: listFoldersTool,
 	search_web: searchWebTool,
 	create_memory: createMemoryTool,
+	search_past_sessions: searchPastSessionsTool,
 };
