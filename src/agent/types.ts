@@ -11,6 +11,7 @@ export interface ToolResult {
 	warning?: string;
 	path?: string;
 	oldPath?: string;
+	entry?: string;
 	matches?: Array<{ path: string; basename: string; modified?: number; created?: number; size?: number }>;
 	count?: number;
 	totalCount?: number;

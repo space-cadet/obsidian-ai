@@ -391,8 +391,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			const chatMessages = [
 				{
 					role: "system" as const,
-					content: buildSystemPrompt(
+					content: await buildSystemPrompt(
 						sendContextItems,
+						plugin.personaLoader,
 						slashCmd ?? undefined,
 						useTools && !slashCmd,
 					),
@@ -443,6 +444,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						toolExecutor: new ToolExecutor(
 							plugin.app,
 							plugin.settings,
+							plugin.personaLoader ?? undefined,
 						),
 						maxSteps:
 							activeProfile.maxSteps ?? maxAgentSteps,
@@ -549,6 +551,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						toolExecutor: new ToolExecutor(
 							plugin.app,
 							plugin.settings,
+							plugin.personaLoader ?? undefined,
 						),
 						maxSteps: maxAgentSteps,
 						autoApprove,
@@ -1132,6 +1135,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			const toolExecutor = new ToolExecutor(
 				plugin.app,
 				plugin.settings,
+				plugin.personaLoader ?? undefined,
 			);
 			const result = await toolExecutor.execute(pendingToolCall);
 			resolveToolRef.current?.(result);

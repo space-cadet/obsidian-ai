@@ -1,6 +1,13 @@
 import { cursorPrompt, selectionPrompt } from "./default_prompts";
 import { SlashCommand } from "./modules/commands/source";
 
+export interface IntelligenceSettings {
+	enableIntelligence: boolean;
+	personaPath: string;
+	memoryPath: string;
+	identityContextBudget: number;
+}
+
 export type ProviderType =
 	| "openai"
 	| "ollama"
@@ -77,6 +84,9 @@ export interface ObsidianAISettings {
 	searxngUrl: string;
 	tavilyApiKey: string;
 	exaApiKey: string;
+
+	// Intelligence Layer settings (T26)
+	intelligence: IntelligenceSettings;
 }
 
 type LegacySettings = Partial<ObsidianAISettings> & {
@@ -260,6 +270,12 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	searxngUrl: "",
 	tavilyApiKey: "",
 	exaApiKey: "",
+	intelligence: {
+		enableIntelligence: false,
+		personaPath: "intelligence/persona.md",
+		memoryPath: "intelligence/memory.md",
+		identityContextBudget: 2000,
+	},
 };
 
 export const normalizeSettings = (
@@ -318,6 +334,12 @@ export const normalizeSettings = (
 		searxngUrl: merged.searxngUrl ?? "",
 		tavilyApiKey: merged.tavilyApiKey ?? "",
 		exaApiKey: merged.exaApiKey ?? "",
+		intelligence: {
+			enableIntelligence: Boolean(merged.intelligence?.enableIntelligence ?? false),
+			personaPath: merged.intelligence?.personaPath ?? "intelligence/persona.md",
+			memoryPath: merged.intelligence?.memoryPath ?? "intelligence/memory.md",
+			identityContextBudget: merged.intelligence?.identityContextBudget ?? 2000,
+		},
 	};
 };
 

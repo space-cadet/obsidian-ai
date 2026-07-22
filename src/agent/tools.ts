@@ -236,6 +236,34 @@ export const searchWebTool = t({
 	}),
 });
 
+export const createMemoryTool = t({
+	description:
+		"Create a persistent memory about the user, their preferences, " +
+		"projects, or insights from the conversation. " +
+		"Use when the user shares something worth remembering for future sessions. " +
+		"Examples: 'I prefer Julia over Python', 'My QHE paper is due next month', " +
+		"'I have two children', 'I work on loop quantum gravity'. " +
+		"Be specific and concise. Include dates when relevant.",
+	inputSchema: z.object({
+		category: z
+			.enum(["user_fact", "project", "preference", "insight", "reference"])
+			.describe(
+				"user_fact = personal info about user; " +
+				"project = ongoing work/project; " +
+				"preference = likes/dislikes/work style; " +
+				"insight = interesting realization; " +
+				"reference = paper/book/link worth remembering",
+			),
+		content: z
+			.string()
+			.describe("The memory content — specific, concise, future-readable"),
+		tags: z
+			.array(z.string())
+			.optional()
+			.describe("Tags for filtering, e.g. ['physics', 'qhe', 'family']"),
+	}),
+});
+
 export const noteTools = {
 	read_note: readNoteTool,
 	edit_note: editNoteTool,
@@ -252,4 +280,5 @@ export const noteTools = {
 	delete_note: deleteNoteTool,
 	list_folders: listFoldersTool,
 	search_web: searchWebTool,
+	create_memory: createMemoryTool,
 };

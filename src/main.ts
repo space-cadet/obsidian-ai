@@ -33,6 +33,7 @@ import { MigrationPromptModal } from "./modals/MigrationPromptModal";
 import { AgentApiManager } from "./api/AgentApiManager";
 
 import { SessionStorage } from "./storage/session-storage";
+import { PersonaLoader } from "./intelligence/PersonaLoader";
 
 export default class ObsidianAIPlugin extends Plugin {
 	settings: ObsidianAISettings = DEFAULT_SETTINGS;
@@ -40,6 +41,7 @@ export default class ObsidianAIPlugin extends Plugin {
 	agentapi: AgentApiManager | null = null;
 	logger!: FileLogger;
 	sessionStorage: SessionStorage | null = null;
+	personaLoader: PersonaLoader | null = null;
 
 	// Data integrity guards
 	private _backupCreated = false;
@@ -64,6 +66,16 @@ export default class ObsidianAIPlugin extends Plugin {
 			manifest: this.manifest,
 			logger: this.logger,
 		});
+
+		// Initialize intelligence layer (T26)
+		this.personaLoader = new PersonaLoader({
+			app: this.app,
+			manifest: this.manifest,
+			logger: this.logger,
+		});
+		if (this.settings.intelligence?.enableIntelligence) {
+			await this.personaLoader.ensureDefaults();
+		}
 
 		// Initialize chat storage layer
 		this._chatStorage = createStorage(this._storageDeps(), this.settings.chatStorageFormat);

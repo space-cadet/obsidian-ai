@@ -9,6 +9,7 @@ import { renderCustomCommandsSection } from "./customCommands";
 import { renderDiagnosticsSection } from "./diagnostics";
 import { renderHeroSection } from "./hero";
 import { renderProviderProfilesSection } from "./providerProfiles";
+import { renderIntelligenceSection } from "./intelligence";
 import { renderWebSearchSection } from "./webSearch";
 
 function debounce(fn: () => void, ms: number): () => void {
@@ -72,6 +73,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			renderProviderProfilesSection(containerEl, this.plugin);
 			renderChatDefaultsSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderAgentToolsSection(containerEl, this.plugin, this.saveSettings.bind(this));
+			renderIntelligenceSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderWebSearchSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderAdvancedSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderCustomCommandsSection(containerEl, this.plugin, this.saveSettings.bind(this));

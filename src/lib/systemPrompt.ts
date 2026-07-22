@@ -1,13 +1,27 @@
 import { ContextItem } from "../types";
 import { SlashCommand } from "./slashCommand";
+import { PersonaLoader } from "../intelligence/PersonaLoader";
 
-export function buildSystemPrompt(
+export async function buildSystemPrompt(
 	contextItems: ContextItem[],
+	personaLoader: PersonaLoader | null,
 	slashCmd?: SlashCommand,
 	toolsEnabled = false,
-): string {
-	let prompt =
-		"You are a helpful assistant integrated into an Obsidian note-taking app.";
+): Promise<string> {
+	let identityContext = "";
+	if (personaLoader) {
+		try {
+			identityContext = await personaLoader.loadFullContext();
+		} catch {
+			// Graceful fallback if persona loading fails
+		}
+	}
+
+	let prompt = "";
+	if (identityContext) {
+		prompt = identityContext + "\n\n";
+	}
+	prompt += "You are a helpful assistant integrated into an Obsidian note-taking app.";
 	const hasActiveNote = contextItems.some((i) => i.type === "active-note");
 
 	if (toolsEnabled) {

@@ -1,11 +1,13 @@
 import { App, Notice, TFile } from "obsidian";
 import type { ToolCall, ToolResult } from "./types";
 import type { ObsidianAISettings, WebSearchProvider } from "../settings";
+import type { PersonaLoader } from "../intelligence/PersonaLoader";
 
 export class ToolExecutor {
 	constructor(
 		private app: App,
 		private settings?: ObsidianAISettings,
+		private personaLoader?: PersonaLoader,
 	) {}
 
 	async execute(call: ToolCall): Promise<ToolResult> {
@@ -65,6 +67,10 @@ export class ToolExecutor {
 				case "search_web":
 					return await this.searchWeb(
 						call.args as { query: string; limit?: number },
+					);
+				case "create_memory":
+					return await this.createMemory(
+						call.args as { category: string; content: string; tags?: string[] },
 					);
 				case "create_folder":
 					return await this.createFolder(
@@ -861,5 +867,31 @@ export class ToolExecutor {
 			.replace(/&#39;/g, "'")
 			.replace(/&nbsp;/g, " ")
 			.trim();
+	}
+
+	/* ───────────────────────────────────────────────────────────
+	 * Memory (T26 Intelligence Layer)
+	 * ─────────────────────────────────────────────────────────── */
+
+	private async createMemory(args: {
+		category: string;
+		content: string;
+		tags?: string[];
+	}): Promise<ToolResult> {
+		if (!this.personaLoader) {
+			return {
+				error:
+					"Memory creation is disabled. Enable the intelligence layer in Settings → AI Intelligence Layer.",
+			};
+		}
+
+		const timestamp = new Date().toISOString().split("T")[0];
+		const tagStr = args.tags?.length
+			? " " + args.tags.map((t) => `#${t}`).join(" ")
+			: "";
+		const entry = `- [${timestamp}] **${args.category}**: ${args.content}${tagStr}`;
+
+		await this.personaLoader.appendMemory(entry);
+		return { success: true, entry };
 	}
 }

@@ -15,6 +15,7 @@ export interface ChatPluginLike {
 	chatapi: ChatApiManager;
 	manifest: { id: string };
 	settings: ObsidianAISettings;
+	personaLoader: import("../intelligence/PersonaLoader").PersonaLoader | null;
 	loadChatData(): Promise<StoredChatData>;
 	saveChatData(data: StoredChatData): Promise<void>;
 	saveSettings(): Promise<void>;
