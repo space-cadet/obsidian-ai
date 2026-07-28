@@ -1,18 +1,26 @@
 # Session Cache
 
 *Created: 2026-07-13 22:41:55 IST*
-*Last Updated: 2026-07-13 22:41:55 IST*
+*Last Updated: 2026-07-28 15:05 IST*
 
-**Started**: 2026-07-13 22:41:49 IST
-**Focus Task**: T8: Open Source Release with Branding
-**Session File**: `sessions/2026-07-14-night.md`
-**Status**: 🔄 Active: 6, Paused: 0, Completed: 14
+**Started**: 2026-07-28 15:05 IST
+**Focus Task**: Repository Migration — Break Fork Relationship
+**Session File**: `memory-bank/edits/2026-07-28/0921-repo-migration-break-fork.md`
+**Status**: ✅ COMPLETED
 
 ## Overview
 
-- Active: 6 | Paused: 0 | Completed: 14
-- Last Session: 2026-07-14
-- Current Period: night
+- Active: 6 | Paused: 0 | Completed: 15
+- Last Session: 2026-07-28
+- Current Period: afternoon
+
+## Session Summary
+
+Completed repository migration to break fork relationship with upstream:
+1. Archived old repo (`obsidian-ai` → `obsidian-ai-archive`)
+2. Created fresh non-fork repo (`obsidian-ai`)
+3. Pushed all 324 commits to new repo
+4. Updated local remotes (removed upstream)
 
 ## Active Tasks
 
@@ -135,9 +143,10 @@ Promote release from pre-release to proper v1.2.4. GitHub release created with b
 
 ## Next Session Focus
 
-1. META-1: Memory Bank Setup and Maintenance
-1. T11: Debug Logging & Diagnostics
-1. T14: Remote Agent Connectivity (OpenResponses)
+1. Resume T26: AI Intelligence Layer (Phase 1 in progress)
+2. T22: ChatApp Decomposition (Phases 4–5)
+3. T11: Debug Logging follow-up
+4. T14: OpenResponses integration test
 
 ## System Status
 

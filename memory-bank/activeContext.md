@@ -1,11 +1,21 @@
 # Active Context
 
-*Last Updated: 2026-07-21 21:50 IST*
+*Last Updated: 2026-07-28 15:05 IST*
 
 ## Current Focus
-**Streaming fixes (July 14, 2026)** — Three bugs fixed, build passes, pending commit.
+**Repository migration complete** — Fork relationship broken, clean repo established.
 
-### Fix 1: Tool call cards during OpenResponses streaming ✅
+### Repo Migration (2026-07-28)
+**Status:** ✅ COMPLETED
+
+- Archived `space-cadet/obsidian-ai` → `space-cadet/obsidian-ai-archive`
+- Created fresh `space-cadet/obsidian-ai` (not a fork)
+- Pushed all 324 commits (197 Deepak + 127 FBarrca base)
+- Updated local remotes, removed upstream
+- Verified: `isFork: false`
+
+### Streaming Fixes (2026-07-14)
+**Status:** ✅ FIXED (Pending commit)
 - **File:** `src/agent/OpenResponsesLoop.ts`
 - **Bug:** `accumulatedText` reset per step → `contentParts` accumulation broke → tool calls rendered as plain text
 - **Fix:** `totalAccumulatedText` persists across steps; both `streamAgentResponse` and `continueWithToolResult` use it
@@ -68,7 +78,7 @@
 7. **T25**: Unit test infrastructure (deferred)
 
 ## Session Context
-- **Session**: 2026-07-14 (02:17–02:50 IST)
-- **Duration**: ~33 minutes
-- **Build status**: ✅ tsc + esbuild pass
-- **User context**: Late night session; fixes are ready to commit
+- **Session**: 2026-07-28 (15:05–15:27 IST)
+- **Duration**: ~22 minutes
+- **Work**: Repository migration — broke fork relationship, established clean repo
+- **Previous Session**: 2026-07-14 (streaming fixes)

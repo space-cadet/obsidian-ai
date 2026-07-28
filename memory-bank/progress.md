@@ -24,6 +24,26 @@ Design complete. Five-phase implementation plan:
 - `memory-bank/tasks/T26.md`
 - `memory-bank/implementation-details/ai-intelligence-layer.md`
 
+### Repo Migration: Break Fork Relationship (2026-07-28)
+**Status:** ✅ COMPLETED
+**Priority:** HIGH
+
+Clean separation from upstream fork. Project is now fully independent.
+
+**Actions:**
+- Renamed old repo → `obsidian-ai-archive` (preserves all history, issues, PRs)
+- Created fresh `space-cadet/obsidian-ai` (not a fork on GitHub)
+- Pushed all 324 commits (197 Deepak commits + 127 FBarrca base commits)
+- Updated local origin remote, removed upstream remote
+
+**Verification:**
+- `isFork: false` confirmed via GitHub API
+- 324 commits on origin match local
+- No upstream remote remains
+- GitHub auto-redirects from old name to archive
+
+---
+
 ### Streaming Fixes (2026-07-14)
 **Status:** ✅ **FIXED**
 **Priority:** HIGH
