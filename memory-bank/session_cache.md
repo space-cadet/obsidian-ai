@@ -1,13 +1,13 @@
 # Session Cache
 
 *Created: 2026-07-13 22:41:55 IST*
-*Last Updated: 2026-07-28 15:05 IST*
+*Last Updated: 2026-07-28 17:35 IST*
 
 **Started**: 2026-07-28 15:05 IST
-**Ended**: 2026-07-28 16:54 IST
+**Ended**: 2026-07-28 17:35 IST
 **Focus Task**: Bug Fixes — T27, T28, T29, T30
 **Session File**: `memory-bank/edits/2026-07-28/1621-bug-fixes-t27-t28-t29-t30.md`
-**Status**: 🔄 IN PROGRESS (3/4 completed)
+**Status**: ✅ COMPLETED (T27, T28, T30) | ⏸️ DEFERRED (T29)
 
 ## Overview
 
@@ -31,9 +31,10 @@ Completed three bug fixes and created task files for four issues:
 - File: `src/lib/systemPrompt.ts`
 - Fix: `[System Context]` block with date, time, timezone, platform, locale
 
-**T29: Android Background Processing** 🔄
+**T29: Android Background Processing** ⏸️ DEFERRED
 - File: `src/components/ChatApp.tsx`
-- Status: Added visibility tracking refs, implementation incomplete
+- Status: Investigation complete (2026-07-28). AI Tagger Universe has no special background handling — it simply doesn't stream. Obsidian API provides no mobile lifecycle hooks. Decision: accept mobile limitation.
+- **Session update**: `memory-bank/edits/2026-07-28/1735-t29-deferred.md`
 
 ## Active Tasks
 

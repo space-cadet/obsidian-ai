@@ -66,10 +66,17 @@ Clean separation from upstream fork. Project is now fully independent.
 **Rationale:** Agent needs date/time awareness for context-aware responses (e.g., "what notes did I create today?").  
 **Implementation doc:** `memory-bank/implementation-details/system-context-prompt.md`
 
-#### T29: Android Background Processing 🔄
+#### T29: Android Background Processing ⏸️ DEFERRED
 **File:** `src/components/ChatApp.tsx`  
-**Status:** Added visibility tracking refs for detecting background state while streaming. Implementation incomplete — needs visibility change listener and resume logic.  
-**Root cause:** Android WebView pauses JavaScript execution when app is backgrounded, dropping HTTP streams.  
+**Status:** Investigation complete (2026-07-28). Marked as DEFERRED per user decision.
+
+**Investigation Results:**
+- Cloned and examined AI Tagger Universe source code — it has NO special background handling
+- Obsidian API provides no mobile lifecycle hooks (`onResume`, `onPause`, etc.)
+- Android WebView pausing JavaScript execution is platform behavior, not a plugin bug
+- AI Tagger Universe "works" because it doesn't stream (single request/response, completes in 2-10s)
+
+**Decision:** Accept mobile limitation. Desktop = full streaming. Mobile = pauses on background.
 **Task file:** `memory-bank/tasks/T29.md`
 
 ---

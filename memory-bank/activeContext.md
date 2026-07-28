@@ -19,10 +19,10 @@
 - **Root cause:** `MarkdownRenderer.render()` produces links that crash when clicked outside a MarkdownView
 - **Solution:** Route internal links through `app.workspace.openLinkText()`, external links through `window.open()`
 
-**T29: Android Background Processing** 🔄 IN PROGRESS
+**T29: Android Background Processing** ⏸️ DEFERRED
 - **File:** `src/components/ChatApp.tsx`
-- **Status:** Added visibility tracking refs (`wasHiddenRef`, `streamingWhenHiddenRef`)
-- **Pending:** Implement visibility change listener and resume logic
+- **Status:** Investigation complete (2026-07-28). AI Tagger Universe has no special background handling — it simply doesn't stream (single request/response). Obsidian API provides no mobile lifecycle hooks. Decision: accept mobile limitation, don't implement complicated solutions.
+- **Pending:** None — deferred indefinitely
 
 **T30: System Information Context** ✅ COMPLETED
 - **File:** `src/lib/systemPrompt.ts`
