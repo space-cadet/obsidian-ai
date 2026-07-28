@@ -22,6 +22,20 @@ export async function buildSystemPrompt(
 		prompt = identityContext + "\n\n";
 	}
 	prompt += "You are a helpful assistant integrated into an Obsidian note-taking app.";
+
+	// ── System Context (date, time, platform) ──
+	const now = new Date();
+	const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+	const platformInfo = typeof navigator !== "undefined" 
+		? `Platform: ${navigator.platform || "unknown"}` 
+		: "";
+	
+	prompt += `\n\n[System Context]`;
+	prompt += `\n- Current date: ${now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+	prompt += `\n- Current time: ${now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+	prompt += `\n- Timezone: ${tz}`;
+	if (platformInfo) prompt += `\n- ${platformInfo}`;
+	prompt += `\n- Locale: ${typeof navigator !== "undefined" ? navigator.language : "unknown"}`;
 	const hasActiveNote = contextItems.some((i) => i.type === "active-note");
 
 	if (toolsEnabled) {

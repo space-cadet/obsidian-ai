@@ -459,12 +459,20 @@ export class ChatApiManager {
 		profile?: ProviderProfile,
 		thinkingEnabled?: boolean,
 	): AsyncIterable<StreamEvent> {
-		const model = createLanguageModel(
-			profile ?? getActiveProviderProfile(this.settings),
-		);
+		const activeProfile = profile ?? getActiveProviderProfile(this.settings);
+		const model = createLanguageModel(activeProfile);
 		if (!model) {
 			throw new Error("Chat client is not initialized.");
 		}
+
+		// ── Gemini-specific: disable structured outputs to avoid thought_signature errors ──
+		const providerOptions = {
+			...getThinkingProviderOptions(activeProfile, thinkingEnabled),
+			// Gemini requires special handling for tool calls
+			...(activeProfile.provider === "gemini" ? {
+				google: { structuredOutputs: false },
+			} : {}),
+		};
 
 		const result = streamText({
 			model,
@@ -472,7 +480,7 @@ export class ChatApiManager {
 			tools,
 			stopWhen: stepCountIs(1),
 			abortSignal: signal,
-			providerOptions: getThinkingProviderOptions(profile ?? getActiveProviderProfile(this.settings), thinkingEnabled),
+			providerOptions,
 		});
 
 		for await (const part of result.fullStream) {

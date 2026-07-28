@@ -44,7 +44,35 @@ Clean separation from upstream fork. Project is now fully independent.
 
 ---
 
-### Streaming Fixes (2026-07-14)
+### Bug Fixes Batch (2026-07-28)
+**Status:** 🔄 IN PROGRESS (3/4 completed)
+**Priority:** HIGH
+
+#### T27: Gemini Tool Calling — thought_signature Error ✅
+**File:** `src/api.ts`  
+**Fix:** Added Gemini-specific provider option `google: { structuredOutputs: false }` in `streamChatWithTools()` to disable structured tool outputs that cause the thought_signature error.  
+**Root cause:** Gemini's API requires thought signatures in function call responses when using structured outputs.  
+**Implementation doc:** `memory-bank/implementation-details/gemini-tool-calling-fix.md`
+
+#### T28: Obsidian Note Link Click Crash ✅
+**File:** `src/components/MessageBubble.tsx`  
+**Fix:** Added `setupLinkInterception()` function that intercepts click events on all `<a>` tags in rendered messages, routes internal links through `app.workspace.openLinkText()`, opens external URLs in browser, and catches errors to prevent crashes.  
+**Root cause:** `MarkdownRenderer.render()` converts wiki-links to HTML `<a>` tags that crash when clicked outside a MarkdownView context.  
+**Implementation doc:** `memory-bank/implementation-details/note-link-interception.md`
+
+#### T30: System Information Tool ✅
+**File:** `src/lib/systemPrompt.ts`  
+**Fix:** Injected `[System Context]` block into `buildSystemPrompt()` providing current date, time, timezone, platform, and locale.  
+**Rationale:** Agent needs date/time awareness for context-aware responses (e.g., "what notes did I create today?").  
+**Implementation doc:** `memory-bank/implementation-details/system-context-prompt.md`
+
+#### T29: Android Background Processing 🔄
+**File:** `src/components/ChatApp.tsx`  
+**Status:** Added visibility tracking refs for detecting background state while streaming. Implementation incomplete — needs visibility change listener and resume logic.  
+**Root cause:** Android WebView pauses JavaScript execution when app is backgrounded, dropping HTTP streams.  
+**Task file:** `memory-bank/tasks/T29.md`
+
+---
 **Status:** ✅ **FIXED**
 **Priority:** HIGH
 

@@ -51,6 +51,66 @@ function highlightMentions(container: HTMLElement, items: ContextItem[]): void {
 	}
 }
 
+/**
+ * Wire up internal Obsidian links so they open notes instead of crashing.
+ * Also opens external links in the system browser.
+ */
+function setupLinkInterception(container: HTMLElement, app: App): void {
+	const links = container.querySelectorAll("a");
+	for (const link of links) {
+		// Remove any existing listener to avoid duplicates
+		const newLink = link.cloneNode(true) as HTMLElement;
+		link.parentNode?.replaceChild(newLink, link);
+
+		newLink.addEventListener("click", (e: Event) => {
+			e.preventDefault();
+			e.stopPropagation();
+
+			const anchor = e.currentTarget as HTMLAnchorElement;
+			const href = anchor.getAttribute("href") || "";
+
+			// Internal Obsidian wiki-link or file link
+			if (
+				href.startsWith("[[") ||
+				href.endsWith(".md") ||
+				anchor.classList.contains("internal-link")
+			) {
+				try {
+					// Remove [[ ]] wrappers if present
+					const cleanHref = href.replace(/^\[\[/, "").replace(/\]\]$/, "");
+					app.workspace.openLinkText(cleanHref, "", false);
+				} catch (err) {
+					console.error("[obsidian-ai] Failed to open internal link:", err);
+				}
+				return;
+			}
+
+			// obsidian:// protocol
+			if (href.startsWith("obsidian://")) {
+				try {
+					window.open(href, "_blank");
+				} catch (err) {
+					console.error("[obsidian-ai] Failed to open obsidian:// link:", err);
+				}
+				return;
+			}
+
+			// External link — open in browser
+			if (href.startsWith("http://") || href.startsWith("https://")) {
+				window.open(href, "_blank");
+				return;
+			}
+
+			// Fallback — treat as internal link
+			try {
+				app.workspace.openLinkText(href, "", false);
+			} catch (err) {
+				console.error("[obsidian-ai] Failed to open link:", err);
+			}
+		});
+	}
+}
+
 
 interface MessageBubbleProps {
 	message: ChatMessage;
@@ -125,8 +185,11 @@ function TextSegment({
 				});
 			},
 		).then(() => {
-			if (!unmounted && ref.current && contextItems) {
-				highlightMentions(ref.current, contextItems);
+			if (!unmounted && ref.current) {
+				if (contextItems) {
+					highlightMentions(ref.current, contextItems);
+				}
+				setupLinkInterception(ref.current, app);
 			}
 		});
 
@@ -357,8 +420,11 @@ function LegacyContent({
 					cls: "chat-plaintext-fallback",
 				});
 			}).then(() => {
-				if (!unmounted && contentRef.current && contextItems) {
-					highlightMentions(contentRef.current, contextItems);
+				if (!unmounted && contentRef.current) {
+					if (contextItems) {
+						highlightMentions(contentRef.current, contextItems);
+					}
+					setupLinkInterception(contentRef.current, app);
 				}
 			});
 		} catch (err: any) {

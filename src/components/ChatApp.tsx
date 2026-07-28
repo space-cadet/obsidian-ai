@@ -95,6 +95,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	contextItemsRef.current = contextItems;
 	// Tracks the last focused markdown leaf
 	const lastMarkdownLeafRef = useRef<WorkspaceLeaf | null>(null);
+	// Track if the app was hidden while streaming (for mobile background handling)
+	const wasHiddenRef = useRef(false);
+	const streamingWhenHiddenRef = useRef(false);
 
 	// Force re-render when user returns to chat tab (settings may have changed)
 	const [settingsTick, setSettingsTick] = useState(0);

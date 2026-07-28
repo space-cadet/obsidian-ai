@@ -4,23 +4,36 @@
 *Last Updated: 2026-07-28 15:05 IST*
 
 **Started**: 2026-07-28 15:05 IST
-**Focus Task**: Repository Migration — Break Fork Relationship
-**Session File**: `memory-bank/edits/2026-07-28/0921-repo-migration-break-fork.md`
-**Status**: ✅ COMPLETED
+**Ended**: 2026-07-28 16:54 IST
+**Focus Task**: Bug Fixes — T27, T28, T29, T30
+**Session File**: `memory-bank/edits/2026-07-28/1621-bug-fixes-t27-t28-t29-t30.md`
+**Status**: 🔄 IN PROGRESS (3/4 completed)
 
 ## Overview
 
-- Active: 6 | Paused: 0 | Completed: 15
+- Active: 6 | Paused: 0 | Completed: 19
 - Last Session: 2026-07-28
 - Current Period: afternoon
 
 ## Session Summary
 
-Completed repository migration to break fork relationship with upstream:
-1. Archived old repo (`obsidian-ai` → `obsidian-ai-archive`)
-2. Created fresh non-fork repo (`obsidian-ai`)
-3. Pushed all 324 commits to new repo
-4. Updated local remotes (removed upstream)
+Completed three bug fixes and created task files for four issues:
+
+**T27: Gemini thought_signature Error** ✅
+- File: `src/api.ts`
+- Fix: `google: { structuredOutputs: false }` provider option for Gemini tool calling
+
+**T28: Obsidian Note Link Click Crash** ✅
+- File: `src/components/MessageBubble.tsx`
+- Fix: `setupLinkInterception()` intercepts link clicks, routes through Obsidian API
+
+**T30: System Information Context** ✅
+- File: `src/lib/systemPrompt.ts`
+- Fix: `[System Context]` block with date, time, timezone, platform, locale
+
+**T29: Android Background Processing** 🔄
+- File: `src/components/ChatApp.tsx`
+- Status: Added visibility tracking refs, implementation incomplete
 
 ## Active Tasks
 

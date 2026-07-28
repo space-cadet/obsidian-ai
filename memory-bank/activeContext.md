@@ -1,9 +1,33 @@
 # Active Context
 
-*Last Updated: 2026-07-28 15:05 IST*
+*Last Updated: 2026-07-28 16:54 IST*
 
 ## Current Focus
-**Repository migration complete** — Fork relationship broken, clean repo established.
+**Bug fixes batch** — T27, T28, T30 completed. T29 pending implementation.
+
+### Bug Fixes (2026-07-28)
+**Status:** 🔄 IN PROGRESS (3/4 completed)
+
+**T27: Gemini thought_signature Error** ✅ COMPLETED
+- **File:** `src/api.ts`
+- **Fix:** Added `google: { structuredOutputs: false }` provider option for Gemini in `streamChatWithTools()`
+- **Root cause:** Gemini requires thought signatures in structured tool outputs; disabling structured outputs avoids the error
+
+**T28: Obsidian Note Link Click Crash** ✅ COMPLETED
+- **File:** `src/components/MessageBubble.tsx`
+- **Fix:** Added `setupLinkInterception()` to intercept all `<a>` clicks in rendered messages
+- **Root cause:** `MarkdownRenderer.render()` produces links that crash when clicked outside a MarkdownView
+- **Solution:** Route internal links through `app.workspace.openLinkText()`, external links through `window.open()`
+
+**T29: Android Background Processing** 🔄 IN PROGRESS
+- **File:** `src/components/ChatApp.tsx`
+- **Status:** Added visibility tracking refs (`wasHiddenRef`, `streamingWhenHiddenRef`)
+- **Pending:** Implement visibility change listener and resume logic
+
+**T30: System Information Context** ✅ COMPLETED
+- **File:** `src/lib/systemPrompt.ts`
+- **Fix:** Injected `[System Context]` block into every system prompt
+- **Provides:** Current date, time, timezone, platform, locale
 
 ### Repo Migration (2026-07-28)
 **Status:** ✅ COMPLETED
