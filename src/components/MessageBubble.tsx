@@ -57,7 +57,7 @@ function highlightMentions(container: HTMLElement, items: ContextItem[]): void {
  */
 function setupLinkInterception(container: HTMLElement, app: App): void {
 	const links = container.querySelectorAll("a");
-	for (const link of links) {
+	Array.from(links).forEach((link) => {
 		// Remove any existing listener to avoid duplicates
 		const newLink = link.cloneNode(true) as HTMLElement;
 		link.parentNode?.replaceChild(newLink, link);
@@ -108,7 +108,7 @@ function setupLinkInterception(container: HTMLElement, app: App): void {
 				console.error("[obsidian-ai] Failed to open link:", err);
 			}
 		});
-	}
+	});
 }
 
 

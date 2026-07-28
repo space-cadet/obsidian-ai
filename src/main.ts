@@ -377,6 +377,9 @@ export default class ObsidianAIPlugin extends Plugin {
 					"saveChatData: storage layer wrote successfully",
 				);
 
+				// Invalidate search index so next search picks up new messages
+				this.searchIndex?.invalidate();
+
 				nextChatData = this._pendingChatData;
 				if (nextChatData) {
 					this.logger?.log(

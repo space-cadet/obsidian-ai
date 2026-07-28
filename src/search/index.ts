@@ -37,66 +37,63 @@ export class SearchIndex {
 		this.manifestId = manifestId;
 	}
 
-	/** Build the inverted index from all session JSONL files. */
+	/** Build the inverted index from all session JSONL files or legacy data.json. */
 	async buildIndex(): Promise<void> {
 		const adapter = this.app.vault.adapter;
-		const sessionsDir = `${this.app.vault.configDir}/plugins/${this.manifestId}/sessions`;
+		const pluginDir = `${this.app.vault.configDir}/plugins/${this.manifestId}`;
+		const sessionsDir = `${pluginDir}/sessions`;
 		const newIndex = new Map<string, IndexEntry[]>();
+		let foundAny = false;
 
-		if (!(await adapter.exists(sessionsDir))) {
-			this.index = newIndex;
-			this.lastBuildTime = Date.now();
-			return;
-		}
+		// ── JSONL format ──
+		if (await adapter.exists(sessionsDir)) {
+			const entries = await adapter.list(sessionsDir);
+			const jsonlFiles = entries.files.filter((f) => f.endsWith(".jsonl"));
 
-		const entries = await adapter.list(sessionsDir);
-		const jsonlFiles = entries.files.filter((f) => f.endsWith(".jsonl"));
+			for (const fileName of jsonlFiles) {
+				const sessionId = fileName.replace(/\.jsonl$/, "");
+				if (!sessionId) continue;
 
-		for (const fileName of jsonlFiles) {
-			const sessionId = fileName.replace(/\.jsonl$/, "");
-			if (!sessionId) continue;
-
-			const path = `${sessionsDir}/${fileName}`;
-			let raw = "";
-			try {
-				raw = await adapter.read(path);
-			} catch {
-				continue;
-			}
-
-			if (!raw.trim()) continue;
-			const lines = raw.split("\n").filter((l) => l.trim());
-
-			for (const line of lines) {
-				let message: ChatMessage;
+				const path = `${sessionsDir}/${fileName}`;
+				let raw = "";
 				try {
-					message = JSON.parse(line) as ChatMessage;
+					raw = await adapter.read(path);
 				} catch {
 					continue;
 				}
 
-				const content = message.content ?? "";
-				const snippet = content.slice(0, 200);
-				const words = this.tokenize(content);
-				const seen = new Set<string>();
+				if (!raw.trim()) continue;
+				const lines = raw.split("\n").filter((l) => l.trim());
 
-				for (const word of words) {
-					if (seen.has(word)) continue;
-					seen.add(word);
-
-					const entry: IndexEntry = {
-						sessionId,
-						messageId: message.id,
-						timestamp: message.timestamp ?? 0,
-						snippet,
-					};
-
-					const list = newIndex.get(word);
-					if (list) {
-						list.push(entry);
-					} else {
-						newIndex.set(word, [entry]);
+				for (const line of lines) {
+					let message: ChatMessage;
+					try {
+						message = JSON.parse(line) as ChatMessage;
+					} catch {
+						continue;
 					}
+					this._indexMessage(newIndex, sessionId, message);
+					foundAny = true;
+				}
+			}
+		}
+
+		// ── Legacy format fallback ──
+		if (!foundAny) {
+			const dataPath = `${pluginDir}/data.json`;
+			if (await adapter.exists(dataPath)) {
+				try {
+					const raw = await adapter.read(dataPath);
+					const data = JSON.parse(raw);
+					const sessions = data.chatData?.sessions ?? [];
+					for (const session of sessions) {
+						if (!Array.isArray(session.messages)) continue;
+						for (const message of session.messages) {
+							this._indexMessage(newIndex, session.id, message as ChatMessage);
+						}
+					}
+				} catch {
+					// ignore parse errors
 				}
 			}
 		}
@@ -105,9 +102,9 @@ export class SearchIndex {
 		this.lastBuildTime = Date.now();
 	}
 
-	/** Search for messages matching all query words. */
-	async search(query: string): Promise<SearchResult[]> {
-		if (!this.index || this.index.size === 0) {
+	/** Rebuild the index if it is older than maxAgeMs (default 5 min). */
+	async search(query: string, maxAgeMs = 5 * 60 * 1000): Promise<SearchResult[]> {
+		if (!this.index || this.index.size === 0 || Date.now() - this.lastBuildTime > maxAgeMs) {
 			await this.buildIndex();
 		}
 
@@ -165,7 +162,38 @@ export class SearchIndex {
 
 	private tokenize(text: string): string[] {
 		const normalized = text.toLowerCase();
-		const words = normalized.match(/\b[a-z0-9]+\b/g) ?? [];
+		// Include underscore and hyphen as separators so "self-improvement" → ["self","improvement"]
+		const words = normalized.match(/\b[a-z0-9]+(?:[\-_][a-z0-9]+)*\b/g) ?? [];
 		return words.filter((w) => w.length > 1 && !STOP_WORDS.has(w));
+	}
+
+	private _indexMessage(
+		newIndex: Map<string, IndexEntry[]>,
+		sessionId: string,
+		message: ChatMessage,
+	): void {
+		const content = message.content ?? "";
+		const snippet = content.slice(0, 200);
+		const words = this.tokenize(content);
+		const seen = new Set<string>();
+
+		for (const word of words) {
+			if (seen.has(word)) continue;
+			seen.add(word);
+
+			const entry: IndexEntry = {
+				sessionId,
+				messageId: message.id,
+				timestamp: message.timestamp ?? 0,
+				snippet,
+			};
+
+			const list = newIndex.get(word);
+			if (list) {
+				list.push(entry);
+			} else {
+				newIndex.set(word, [entry]);
+			}
+		}
 	}
 }

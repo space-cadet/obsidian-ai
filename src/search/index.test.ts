@@ -97,6 +97,78 @@ describe("SearchIndex", () => {
 		expect(results).toEqual([]);
 	});
 
+	it("falls back to legacy data.json when no JSONL files exist", async () => {
+		const files: Record<string, string> = {
+			".obsidian/plugins/test-plugin/data.json": JSON.stringify({
+				chatData: {
+					sessions: [
+						{
+							id: "legacy-session-1",
+							title: "Test Session",
+							createdAt: 1000,
+							updatedAt: 2000,
+							messages: [
+								{
+									id: "msg-1",
+									role: "user",
+									content: "Hello from legacy storage",
+									timestamp: 1000,
+								},
+							],
+							contextItems: [],
+						},
+					],
+					activeSessionId: "legacy-session-1",
+				},
+			}),
+		};
+
+		const app = createMockApp(files);
+		const search = new SearchIndex(app, "test-plugin");
+		const results = await search.search("legacy");
+		expect(results.length).toBe(1);
+		expect(results[0].sessionId).toBe("legacy-session-1");
+	});
+
+	it("prefers JSONL over legacy data.json when both exist", async () => {
+		const files: Record<string, string> = {
+			".obsidian/plugins/test-plugin/sessions/session-a.jsonl": JSON.stringify({
+				id: "msg-jsonl",
+				role: "user",
+				content: "Hello from JSONL",
+				timestamp: 1000,
+			}) + "\n",
+			".obsidian/plugins/test-plugin/data.json": JSON.stringify({
+				chatData: {
+					sessions: [
+						{
+							id: "legacy-session-1",
+							title: "Legacy",
+							createdAt: 1000,
+							updatedAt: 2000,
+							messages: [
+								{
+									id: "msg-legacy",
+									role: "user",
+									content: "Hello from legacy",
+									timestamp: 1000,
+								},
+							],
+							contextItems: [],
+						},
+					],
+					activeSessionId: "legacy-session-1",
+				},
+			}),
+		};
+
+		const app = createMockApp(files);
+		const search = new SearchIndex(app, "test-plugin");
+		const results = await search.search("JSONL");
+		expect(results.length).toBe(1);
+		expect(results[0].messageId).toBe("msg-jsonl");
+	});
+
 	it("returns snippets up to 200 chars", async () => {
 		const longContent = "research ".repeat(100); // 900 chars, non-stop word
 		const files: Record<string, string> = {
