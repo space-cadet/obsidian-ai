@@ -90,6 +90,8 @@ export interface ChatSession {
 	selectedProfileIds?: string[];
 	/** Whether thinking/reasoning is enabled for this session */
 	thinkingEnabled?: boolean;
+	/** Unsent composer text saved for recovery across restarts and tab switches */
+	draft?: string;
 }
 
 export interface StoredChatData {

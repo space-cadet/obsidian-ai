@@ -225,6 +225,21 @@ async saveChatData(chatData: StoredChatData) {
 
 Persist chat state after meaningful settled transitions, but coalesce bursty React updates so storage writes reflect the latest stable snapshot instead of every intermediate render-state mutation.
 
-## 2026-07-29: Searchable Saved Sessions
+## 2026-07-29: Chat Input Draft Auto-Save
+
+Composer text that has not yet been sent is stored in `ChatSession.draft` so it survives app restarts and tab switches.
+
+**Design:**
+- `draft?: string` added to `ChatSession`.
+- `ChatInput` receives `draft` as an initial value and calls `onDraftChange(text)` on every keystroke.
+- `ChatApp` debounces the callback (500 ms) and updates the session via `setSessions`, so the existing JSONL persistence path picks it up automatically.
+- Draft is cleared when the user successfully sends the message.
+- Attachments are **not** auto-saved; only the text draft is persisted.
+
+**Why session-scoped:** Each open tab in the shared tab bar has its own session, so drafts naturally travel with their conversation and do not leak across tabs.
+
+See [T31: Chat Input Draft Auto-Save](../tasks/T31.md) for implementation details.
+
+---
 
 The persisted JSONL sessions are also the source for cross-session retrieval. `SearchIndex` reads the JSONL files, supports both vault-relative and basename adapter responses, and falls back to legacy `data.json` when JSONL data is absent. See [Past-Session Search and Shared Tabs](past-session-search-and-tabs.md) for indexing, navigation, and rendering details.

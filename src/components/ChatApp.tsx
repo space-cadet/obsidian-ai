@@ -82,6 +82,32 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	const [contextItems, setContextItems] = useState<ContextItem[]>([]);
 	const [wasTruncated, setWasTruncated] = useState(false);
 	const [contextTokenCount, setContextTokenCount] = useState(0);
+
+	// ─── Draft auto-save (debounced) ───
+	const draftTimerRef = useRef<number | null>(null);
+	const handleDraftChange = useCallback((text: string) => {
+		const currentActiveId = activeSessionIdRef.current;
+		if (!currentActiveId) return;
+		if (draftTimerRef.current) {
+			window.clearTimeout(draftTimerRef.current);
+		}
+		draftTimerRef.current = window.setTimeout(() => {
+			setSessions((prev) =>
+				prev.map((s) =>
+					s.id === currentActiveId ? { ...s, draft: text } : s,
+				),
+			);
+			draftTimerRef.current = null;
+		}, 500);
+	}, [setSessions]);
+	useEffect(() => {
+		return () => {
+			if (draftTimerRef.current) {
+				window.clearTimeout(draftTimerRef.current);
+			}
+		};
+	}, []);
+
 	const [targetNoteName, setTargetNoteName] = useState<string | null>(null);
 	const [thinkingEnabled, setThinkingEnabled] = useState(false);
 	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(null);
@@ -742,6 +768,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 					}
 					return undefined;
 				})()}
+				draft={sessions.find((s) => s.id === activeSessionId)?.draft}
+				onDraftChange={handleDraftChange}
 			/>
 			{ui.showSessionPicker && (
 				<SessionPickerModal

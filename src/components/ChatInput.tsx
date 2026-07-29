@@ -26,6 +26,10 @@ interface ChatInputProps {
 	pressEnterToSend?: boolean;
 	/** Optional token total string to display next to toggles */
 	tokenTotal?: string;
+	/** Optional draft text to restore on mount */
+	draft?: string;
+	/** Called when the composer text changes (debounced by parent) */
+	onDraftChange?: (text: string) => void;
 }
 
 type AutoType = "mention" | "slash" | "wikilink";
@@ -106,6 +110,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	onAttachmentsChange,
 	pressEnterToSend = true,
 	tokenTotal,
+	draft,
+	onDraftChange,
 }) => {
 	const [value, setValue] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -218,8 +224,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		if (editMessage !== undefined) {
 			setValue(editMessage);
 			setTimeout(() => textareaRef.current?.focus(), 50);
+		} else if (draft) {
+			setValue(draft);
 		}
-	}, [editMessage]);
+	}, [editMessage, draft]);
 
 	const allCandidates = useMemo(() => {
 		if (!auto) return [];
@@ -339,6 +347,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			const text = e.target.value;
 			const cursorPos = e.target.selectionStart;
 			setValue(text);
+			onDraftChange?.(text);
 
 			const detected = detectAutocomplete(text, cursorPos);
 			if (detected) {
@@ -347,7 +356,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 				setAuto(null);
 			}
 		},
-		[],
+		[onDraftChange],
 	);
 
 	const insertCandidate = useCallback(
@@ -481,6 +490,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 					if ((trimmed || attachments.length > 0) && !isStreaming) {
 						onSend(trimmed, attachments.length > 0 ? attachments : undefined);
 						setValue("");
+						onDraftChange?.("");
 						setAuto(null);
 						onAttachmentsChange?.([]);
 					}
@@ -638,6 +648,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 											onSend(trimmed, attachments.length > 0 ? attachments : undefined);
 											setValue("");
 											setAuto(null);
+											onDraftChange?.("");
 											onAttachmentsChange?.([]);
 										}
 									}}
@@ -651,6 +662,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 									onClick={() => {
 										setValue("");
 										setAuto(null);
+										onDraftChange?.("");
 										onCancel?.();
 									}}
 									title="Cancel"
@@ -667,6 +679,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 										onSend(trimmed, attachments.length > 0 ? attachments : undefined);
 										setValue("");
 										setAuto(null);
+										onDraftChange?.("");
 										onAttachmentsChange?.([]);
 									}
 								}}
