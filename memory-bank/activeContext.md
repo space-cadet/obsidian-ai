@@ -38,7 +38,13 @@
 - Updated local remotes, removed upstream
 - Verified: `isFork: false`
 
-### Streaming Fixes (2026-07-14)
+#**T31: Chat Input Draft Auto-Save** ✅ COMPLETED (2026-07-29)
+- **Files:** `src/types.ts`, `src/components/ChatInput.tsx`, `src/components/ChatApp.tsx`
+- **Feature:** Persist unsent composer text across app restarts and tab switches
+- **Implementation:** `draft?: string` on `ChatSession`; debounced save (500ms) via existing `setSessions` pipeline; cleared on send
+- **Out of scope:** Attachments (remain ephemeral)
+
+## Streaming Fixes (2026-07-14)
 **Status:** ✅ FIXED (Pending commit)
 - **File:** `src/agent/OpenResponsesLoop.ts`
 - **Bug:** `accumulatedText` reset per step → `contentParts` accumulation broke → tool calls rendered as plain text

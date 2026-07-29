@@ -276,6 +276,10 @@ Unit test coverage for streaming state accumulation, token estimation, and messa
 #### Deferred Until
 After next release cycle. Fixes verified by build + manual QA.
 
+### T31: Chat Input Draft Auto-Save
+**Completed:** 2026-07-29
+**Summary:** Persist unsent composer text across app restarts and tab switches via `ChatSession.draft`. Debounced 500ms save through existing session persistence pipeline.
+
 ## Completed Tasks
 
 ### T1: Chat Panel - ItemView + React UI
