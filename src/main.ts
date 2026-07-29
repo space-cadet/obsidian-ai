@@ -263,7 +263,9 @@ export default class ObsidianAIPlugin extends Plugin {
 	}
 
 	async openSessionInNewTab(sessionId: string, messageId: string): Promise<void> {
-		const leaf = this.app.workspace.getLeaf("tab");
+		// getLeaf("tab") follows the active main-pane tab group. Session results
+		// belong beside the existing chat, so create the leaf in the right sidebar.
+		const leaf = this.app.workspace.getRightLeaf(true) ?? this.app.workspace.getLeaf("tab");
 		await leaf.setViewState({
 			type: CHAT_VIEWTYPE,
 			active: true,
