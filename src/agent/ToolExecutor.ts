@@ -10,6 +10,7 @@ export class ToolExecutor {
 		private settings?: ObsidianAISettings,
 		private personaLoader?: PersonaLoader,
 		private searchIndex?: SearchIndex,
+		private getActiveSessionId?: () => string | null,
 	) {}
 
 	async execute(call: ToolCall): Promise<ToolResult> {
@@ -913,7 +914,9 @@ export class ToolExecutor {
 		}
 
 		try {
-			const results = await this.searchIndex.search(args.query);
+			const activeSessionId = this.getActiveSessionId?.();
+			const results = (await this.searchIndex.search(args.query))
+				.filter((result) => result.sessionId !== activeSessionId);
 			const limit = Math.min(args.limit ?? 5, 20);
 			const limited = results.slice(0, limit);
 

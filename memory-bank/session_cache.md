@@ -1,13 +1,13 @@
 # Session Cache
 
 *Created: 2026-07-13 22:41:55 IST*
-*Last Updated: 2026-07-28 17:35 IST*
+*Last Updated: 2026-07-29 13:38 IST*
 
-**Started**: 2026-07-28 15:05 IST
-**Ended**: 2026-07-28 17:35 IST
-**Focus Task**: Bug Fixes — T27, T28, T29, T30
-**Session File**: `memory-bank/edits/2026-07-28/1621-bug-fixes-t27-t28-t29-t30.md`
-**Status**: ✅ COMPLETED (T27, T28, T30) | ⏸️ DEFERRED (T29)
+**Started**: 2026-07-29 12:00 IST
+**Ended**: -
+**Focus Task**: T15 — Past-session search and internal tabbed chat UI
+**Session File**: `memory-bank/sessions/2026-07-29-afternoon.md`
+**Status**: 🔄 ACTIVE
 
 ## Overview
 
@@ -65,6 +65,8 @@ Completed three bug fixes and created task files for four issues:
 **Context**: [Details](tasks/T15.md)
 **Progress**:
 [Details](tasks/T15.md)
+
+**2026-07-29 attribution:** All work in this session was performed by **GPT 5.6 Terra Low**.
 Fix 4 critical streaming/chat UI bugs: Android flicker, interrupted message loss, retry attachment loss, live token counting
 Fix token counter accumulation, remove green streaming border, add live tool result updates without re-rendering entire bubble
 

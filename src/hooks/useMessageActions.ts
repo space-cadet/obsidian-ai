@@ -26,16 +26,27 @@ import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
 import { getActiveProviderProfile } from "../settings";
 import { stripThinkingTags } from "../components/MessageBubble";
 
-function formatPastSessionLinks(toolCalls: Array<{ call: ToolCall; result?: ToolResult }>): string {
+function formatPastSessionLinks(
+	toolCalls: Array<{ call: ToolCall; result?: ToolResult }>,
+	sessions: ChatSession[],
+): string {
 	const results = toolCalls
 		.filter((entry) => entry.call.toolName === "search_past_sessions")
-		.flatMap((entry) => entry.result?.sessionResults ?? []);
+		.flatMap((entry) => entry.result?.sessionResults ?? [])
+		.filter((result, index, all) =>
+			all.findIndex((candidate) =>
+				candidate.sessionId === result.sessionId && candidate.messageId === result.messageId,
+			) === index,
+		);
 	if (results.length === 0) return "";
 
 	const links = results.map((session) => {
-		const date = new Date(session.timestamp).toLocaleDateString();
+		const title = sessions.find((candidate) => candidate.id === session.sessionId)?.title
+			|| `Session from ${new Date(session.timestamp).toLocaleDateString()}`;
 		const params = new URLSearchParams({ sessionId: session.sessionId, messageId: session.messageId });
-		return `- [${date} — ${session.snippet.slice(0, 120)}](obsidian-ai://open-session?${params.toString()})`;
+		const safeTitle = title.replace(/[\\[\]]/g, "\\$&");
+		const snippet = session.snippet.replace(/\s+/g, " ").trim().slice(0, 180);
+		return `- **[${safeTitle}](obsidian-ai://open-session?${params.toString()})**  \n  ${snippet}${session.snippet.length > 180 ? "…" : ""}`;
 	});
 	return `\n\n### Past sessions\n${links.join("\n")}`;
 }
@@ -460,6 +471,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							plugin.settings,
 							plugin.personaLoader ?? undefined,
 							plugin.searchIndex ?? undefined,
+							() => activeSessionIdRef.current,
 						),
 						maxSteps:
 							activeProfile.maxSteps ?? maxAgentSteps,
@@ -557,7 +569,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						orTools,
 						controllerRef.current.signal,
 					);
-					const sessionLinks = formatPastSessionLinks(toolCallsLog);
+					const sessionLinks = formatPastSessionLinks(toolCallsLog, sessionsRef.current);
 					assistantContent = resultText + sessionLinks;
 					if (sessionLinks) {
 						contentParts.push({ type: "text", content: sessionLinks });
@@ -572,6 +584,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							plugin.settings,
 							plugin.personaLoader ?? undefined,
 							plugin.searchIndex ?? undefined,
+							() => activeSessionIdRef.current,
 						),
 						maxSteps: maxAgentSteps,
 						autoApprove,
@@ -667,7 +680,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						controllerRef.current.signal,
 					);
 					assistantContent = result.text;
-					const sessionLinks = formatPastSessionLinks(toolCallsLog);
+					const sessionLinks = formatPastSessionLinks(toolCallsLog, sessionsRef.current);
 					if (sessionLinks) {
 						assistantContent += sessionLinks;
 						contentParts.push({ type: "text", content: sessionLinks });
@@ -1162,6 +1175,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				plugin.settings,
 				plugin.personaLoader ?? undefined,
 				plugin.searchIndex ?? undefined,
+				() => activeSessionIdRef.current,
 			);
 			const result = await toolExecutor.execute(pendingToolCall);
 			resolveToolRef.current?.(result);

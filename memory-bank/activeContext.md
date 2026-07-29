@@ -60,7 +60,7 @@
 - **[T22]**: 🔄 **IN PROGRESS** — Phases 0–3 complete. ChatApp.tsx: 1,948 → 636 lines.
 - **[T16]**: 🔄 **IN PROGRESS** — Phases 1–17 implemented. Debate mode working.
 - **[T14]**: 🔄 **IN PROGRESS** — Phase 3 integration test.
-- **[T15]**: 🔄 **IN PROGRESS** — Phase 1–2 complete. Phase 3 (TabBar UI) paused.
+- **[T15]**: 🔄 **IN PROGRESS** — Internal shared session tabs implemented; follow-up work is improving tab scrolling, compact titles, and past-session result presentation. All 2026-07-29 session work was performed by GPT 5.6 Terra Low.
 - **[T17]**: ⏸️ **PENDING** — Advanced vault tools. Backlinks + YAML first.
 - **[T26]**: 🔄 **IN PROGRESS** — AI Intelligence Layer. Phase 1 (PersonaLoader + system prompt injection) active. See [T26 details](tasks/T26.md).
 - **[T8]**: 🔄 **IN PROGRESS** — Open source release prep.
