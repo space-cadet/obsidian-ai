@@ -25,6 +25,20 @@ import { noteTools } from "../agent/tools";
 import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
 import { getActiveProviderProfile } from "../settings";
 import { stripThinkingTags } from "../components/MessageBubble";
+
+function formatPastSessionLinks(toolCalls: Array<{ call: ToolCall; result?: ToolResult }>): string {
+	const results = toolCalls
+		.filter((entry) => entry.call.toolName === "search_past_sessions")
+		.flatMap((entry) => entry.result?.sessionResults ?? []);
+	if (results.length === 0) return "";
+
+	const links = results.map((session) => {
+		const date = new Date(session.timestamp).toLocaleDateString();
+		const params = new URLSearchParams({ sessionId: session.sessionId, messageId: session.messageId });
+		return `- [${date} — ${session.snippet.slice(0, 120)}](obsidian-ai://open-session?${params.toString()})`;
+	});
+	return `\n\n### Past sessions\n${links.join("\n")}`;
+}
 import type { UseChatUIResult } from "./useChatUI";
 
 export interface UseMessageActionsDeps {
@@ -543,8 +557,12 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						orTools,
 						controllerRef.current.signal,
 					);
-					assistantContent = resultText;
-					assistantTokenEstimate = estimateTokens(resultText);
+					const sessionLinks = formatPastSessionLinks(toolCallsLog);
+					assistantContent = resultText + sessionLinks;
+					if (sessionLinks) {
+						contentParts.push({ type: "text", content: sessionLinks });
+					}
+					assistantTokenEstimate = estimateTokens(assistantContent);
 				} else if (useTools && !slashCmd) {
 					// … AgentLoop path
 					const agent = new AgentLoop({
@@ -649,6 +667,11 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						controllerRef.current.signal,
 					);
 					assistantContent = result.text;
+					const sessionLinks = formatPastSessionLinks(toolCallsLog);
+					if (sessionLinks) {
+						assistantContent += sessionLinks;
+						contentParts.push({ type: "text", content: sessionLinks });
+					}
 					assistantTokenEstimate = result.tokenEstimate;
 				} else {
 					// … standard streamChat path

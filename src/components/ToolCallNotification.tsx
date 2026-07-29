@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import type { ToolCall, ToolResult } from "../agent/types";
 
 interface ToolCallNotificationProps {
@@ -106,25 +106,6 @@ function ToolCallDetail({ toolCall, result, onOpenPastSession }: { toolCall: Too
 		);
 	}
 
-	if (toolName === "search_past_sessions" && result.sessionResults) {
-		return (
-			<div className="tool-call-detail-content">
-				<div className="tool-call-result-table">
-					{result.sessionResults.map((session) => (
-						<button
-							key={`${session.sessionId}:${session.messageId}`}
-							className="tool-call-result-row tool-call-session-link"
-							onClick={() => onOpenPastSession?.(session.sessionId, session.messageId)}
-						>
-							<span className="tool-call-result-name">Open matching past session</span>
-							<span className="tool-call-result-meta">{new Date(session.timestamp).toLocaleDateString()} · {session.snippet.slice(0, 120)}</span>
-						</button>
-					))}
-				</div>
-			</div>
-		);
-	}
-
 	if (toolName === "list_notes" && result.notes) {
 		return (
 			<div className="tool-call-detail-content">
@@ -181,12 +162,6 @@ const ToolCallNotification: React.FC<ToolCallNotificationProps> = ({
 	onOpenPastSession,
 }) => {
 	const [expanded, setExpanded] = useState(false);
-
-	useEffect(() => {
-		if (toolCall.toolName === "search_past_sessions" && result?.sessionResults?.length) {
-			setExpanded(true);
-		}
-	}, [toolCall.toolName, result?.sessionResults]);
 
 	return (
 		<div className={`tool-call-notification${isPending ? " tool-call-pending" : ""}${result?.error ? " tool-call-error" : ""}`}>

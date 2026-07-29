@@ -68,6 +68,17 @@ function setupLinkInterception(container: HTMLElement, app: App): void {
 
 			const anchor = e.currentTarget as HTMLAnchorElement;
 			const href = anchor.getAttribute("href") || "";
+			if (href.startsWith("obsidian-ai://open-session")) {
+				const url = new URL(href);
+				const sessionId = url.searchParams.get("sessionId");
+				const messageId = url.searchParams.get("messageId");
+				if (sessionId && messageId) {
+					window.dispatchEvent(new CustomEvent("obsidian-ai:open-session", {
+						detail: { sessionId, messageId },
+					}));
+				}
+				return;
+			}
 
 			// Internal Obsidian wiki-link or file link
 			if (

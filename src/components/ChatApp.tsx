@@ -87,6 +87,14 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	const [runningTokenTotal, setRunningTokenTotal] = useState(0);
 	const [scrollToMessageId, setScrollToMessageId] = useState<string | undefined>(initialMessageId);
 	useEffect(() => {
+		const openSession = (event: Event) => {
+			const { sessionId, messageId } = (event as CustomEvent<{ sessionId: string; messageId: string }>).detail;
+			void plugin.openSessionInNewTab(sessionId, messageId);
+		};
+		window.addEventListener("obsidian-ai:open-session", openSession);
+		return () => window.removeEventListener("obsidian-ai:open-session", openSession);
+	}, [plugin]);
+	useEffect(() => {
 		if (!chatDataLoaded || !initialSessionId) return;
 		if (sessions.some((session) => session.id === initialSessionId)) {
 			setActiveSessionId(initialSessionId);
