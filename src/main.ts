@@ -262,6 +262,16 @@ export default class ObsidianAIPlugin extends Plugin {
 		workspace.revealLeaf(leaf);
 	}
 
+	async openSessionInNewTab(sessionId: string, messageId: string): Promise<void> {
+		const leaf = this.app.workspace.getLeaf("tab");
+		await leaf.setViewState({
+			type: CHAT_VIEWTYPE,
+			active: true,
+			state: { sessionId, messageId },
+		});
+		this.app.workspace.revealLeaf(leaf);
+	}
+
 	// async activateGroupChatView() {
 	// 	const { workspace } = this.app;
 	// 	let leaf = workspace.getLeavesOfType(GROUP_CHAT_VIEWTYPE)[0];

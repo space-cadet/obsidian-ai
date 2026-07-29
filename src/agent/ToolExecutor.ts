@@ -933,6 +933,7 @@ export class ToolExecutor {
 
 			return {
 				success: true,
+				sessionResults: limited,
 				content: `Found ${limited.length} result(s):\n\n${formatted}`,
 			};
 		} catch (e: any) {

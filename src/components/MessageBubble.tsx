@@ -125,6 +125,7 @@ interface MessageBubbleProps {
 	onApplyToTarget: (content: string, target: string) => void;
 	onCreateNote: (content: string, target: string) => void;
 	onAppendToTarget: (content: string, target: string) => void;
+	onOpenPastSession?: (sessionId: string, messageId: string) => void;
 }
 
 function formatContextItems(items: ContextItem[]): string {
@@ -214,6 +215,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	onApplyToTarget,
 	onCreateNote,
 	onAppendToTarget,
+	onOpenPastSession,
 }) => {
 	const [isActive, setIsActive] = useState(false);
 	const bubbleRef = useRef<HTMLDivElement>(null);
@@ -303,6 +305,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 								toolCall={part.call}
 								result={part.result}
 								isPending={!part.result}
+								onOpenPastSession={onOpenPastSession}
 							/>
 						),
 					)}

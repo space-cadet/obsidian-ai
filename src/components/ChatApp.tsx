@@ -53,9 +53,11 @@ interface ChatAppProps {
 	plugin: ChatPluginLike;
 	/** Optional profile ID to use for this chat panel. Falls back to active profile. */
 	profileId?: string;
+	initialSessionId?: string;
+	initialMessageId?: string;
 }
 
-const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
+const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, initialMessageId }) => {
 	const {
 		sessions,
 		setSessions,
@@ -83,6 +85,14 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 	const [thinkingEnabled, setThinkingEnabled] = useState(false);
 	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(null);
 	const [runningTokenTotal, setRunningTokenTotal] = useState(0);
+	const [scrollToMessageId, setScrollToMessageId] = useState<string | undefined>(initialMessageId);
+	useEffect(() => {
+		if (!chatDataLoaded || !initialSessionId) return;
+		if (sessions.some((session) => session.id === initialSessionId)) {
+			setActiveSessionId(initialSessionId);
+			setScrollToMessageId(initialMessageId);
+		}
+	}, [chatDataLoaded, initialSessionId, initialMessageId, sessions, setActiveSessionId]);
 	const pendingToolCallRef = useRef<ToolCall | null>(null);
 	useEffect(() => {
 		pendingToolCallRef.current = pendingToolCall;
@@ -650,6 +660,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId }) => {
 				onApplyToTarget={actions.handleApplyToTarget}
 				onCreateNote={actions.handleCreateNote}
 				onAppendToTarget={actions.handleAppendToTarget}
+				onOpenPastSession={(sessionId, messageId) => void plugin.openSessionInNewTab(sessionId, messageId)}
+				scrollToMessageId={scrollToMessageId}
 			/>
 
 			{pendingToolCall && (

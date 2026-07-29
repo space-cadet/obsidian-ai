@@ -30,6 +30,12 @@ export interface ToolResult {
 	created?: number;
 	modified?: number;
 	size?: number;
+	sessionResults?: Array<{
+		sessionId: string;
+		messageId: string;
+		timestamp: number;
+		snippet: string;
+	}>;
 }
 
 export type StreamEvent =

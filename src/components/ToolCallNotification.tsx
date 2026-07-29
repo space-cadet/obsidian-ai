@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { ToolCall, ToolResult } from "../agent/types";
 
 interface ToolCallNotificationProps {
@@ -7,6 +7,7 @@ interface ToolCallNotificationProps {
 	isPending?: boolean;
 	onApprove?: () => void;
 	onReject?: () => void;
+	onOpenPastSession?: (sessionId: string, messageId: string) => void;
 }
 
 /** Summarizes a tool call for inline display in the message area */
@@ -69,7 +70,7 @@ function ToolCallSummary({ toolCall, result }: { toolCall: ToolCall; result?: To
 }
 
 /** Expandable detail view for a tool call result */
-function ToolCallDetail({ toolCall, result }: { toolCall: ToolCall; result?: ToolResult }): React.ReactElement | null {
+function ToolCallDetail({ toolCall, result, onOpenPastSession }: { toolCall: ToolCall; result?: ToolResult; onOpenPastSession?: (sessionId: string, messageId: string) => void }): React.ReactElement | null {
 	if (!result) return null;
 
 	const { toolName } = toolCall;
@@ -99,6 +100,25 @@ function ToolCallDetail({ toolCall, result }: { toolCall: ToolCall; result?: Too
 							<span className="tool-call-result-name">[[{m.basename}]]</span>
 							<span className="tool-call-result-meta">{m.size ? `${m.size} bytes` : ""}</span>
 						</div>
+					))}
+				</div>
+			</div>
+		);
+	}
+
+	if (toolName === "search_past_sessions" && result.sessionResults) {
+		return (
+			<div className="tool-call-detail-content">
+				<div className="tool-call-result-table">
+					{result.sessionResults.map((session) => (
+						<button
+							key={`${session.sessionId}:${session.messageId}`}
+							className="tool-call-result-row tool-call-session-link"
+							onClick={() => onOpenPastSession?.(session.sessionId, session.messageId)}
+						>
+							<span className="tool-call-result-name">Open matching past session</span>
+							<span className="tool-call-result-meta">{new Date(session.timestamp).toLocaleDateString()} · {session.snippet.slice(0, 120)}</span>
+						</button>
 					))}
 				</div>
 			</div>
@@ -158,8 +178,15 @@ const ToolCallNotification: React.FC<ToolCallNotificationProps> = ({
 	isPending = false,
 	onApprove,
 	onReject,
+	onOpenPastSession,
 }) => {
 	const [expanded, setExpanded] = useState(false);
+
+	useEffect(() => {
+		if (toolCall.toolName === "search_past_sessions" && result?.sessionResults?.length) {
+			setExpanded(true);
+		}
+	}, [toolCall.toolName, result?.sessionResults]);
 
 	return (
 		<div className={`tool-call-notification${isPending ? " tool-call-pending" : ""}${result?.error ? " tool-call-error" : ""}`}>
@@ -174,7 +201,7 @@ const ToolCallNotification: React.FC<ToolCallNotificationProps> = ({
 
 			{expanded && (
 				<div className="tool-call-body">
-					<ToolCallDetail toolCall={toolCall} result={result} />
+					<ToolCallDetail toolCall={toolCall} result={result} onOpenPastSession={onOpenPastSession} />
 				</div>
 			)}
 

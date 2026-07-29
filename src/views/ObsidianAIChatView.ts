@@ -17,6 +17,7 @@ export interface ChatPluginLike {
 	settings: ObsidianAISettings;
 	personaLoader: import("../intelligence/PersonaLoader").PersonaLoader | null;
 	searchIndex: import("../search/index").SearchIndex | null;
+	openSessionInNewTab(sessionId: string, messageId: string): Promise<void>;
 	loadChatData(): Promise<StoredChatData>;
 	saveChatData(data: StoredChatData): Promise<void>;
 	saveSettings(): Promise<void>;
@@ -25,6 +26,8 @@ export interface ChatPluginLike {
 export interface ObsidianAIChatViewOptions {
 	/** Optional profile ID to bind this chat panel to. */
 	profileId?: string;
+	sessionId?: string;
+	messageId?: string;
 }
 
 export class ObsidianAIChatView extends ItemView {
@@ -55,7 +58,23 @@ export class ObsidianAIChatView extends ItemView {
 	}
 
 	async onOpen(): Promise<void> {
-		this.root = createRoot(this.contentEl);
+		this.render();
+	}
+
+	getState(): Record<string, unknown> {
+		return { ...this.options };
+	}
+
+	async setState(state: Record<string, unknown>, result: unknown): Promise<void> {
+		this.options = { ...this.options, ...(state as ObsidianAIChatViewOptions) };
+		await super.setState(state, result as never);
+		this.render();
+	}
+
+	private render(): void {
+		if (!this.root) {
+			this.root = createRoot(this.contentEl);
+		}
 		this.root.render(
 			createElement(
 				ChatErrorBoundary,
@@ -63,6 +82,8 @@ export class ObsidianAIChatView extends ItemView {
 				createElement(ChatApp, {
 					plugin: this.plugin,
 					profileId: this.options.profileId,
+					initialSessionId: this.options.sessionId,
+					initialMessageId: this.options.messageId,
 				}),
 			),
 		);

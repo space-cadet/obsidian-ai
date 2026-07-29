@@ -9,7 +9,8 @@ const StreamingBubble: React.FC<{
 	content: string;
 	contentParts?: ContentPart[];
 	app: App;
-}> = ({ content, contentParts, app }) => {
+	onOpenPastSession?: (sessionId: string, messageId: string) => void;
+}> = ({ content, contentParts, app, onOpenPastSession }) => {
 	const contentRef = useRef<HTMLDivElement>(null);
 	const renderedCountRef = useRef(0);
 	const lastTextRef = useRef("");
@@ -42,6 +43,7 @@ const StreamingBubble: React.FC<{
 									toolCall={part.call}
 									result={part.result}
 									isPending={!part.result}
+									onOpenPastSession={onOpenPastSession}
 								/>
 							);
 						}
@@ -62,9 +64,10 @@ const StreamingBubble: React.FC<{
 						toolRootsRef.current.set(partIndex, root);
 						root.render(
 							<ToolCallNotification
-								toolCall={part.call}
-								result={part.result}
-								isPending={!part.result}
+							toolCall={part.call}
+							result={part.result}
+							isPending={!part.result}
+							onOpenPastSession={onOpenPastSession}
 							/>
 						);
 					}
@@ -147,7 +150,7 @@ const StreamingBubble: React.FC<{
 		return () => {
 			unmounted = true;
 		};
-	}, [content, contentParts, app]);
+	}, [content, contentParts, app, onOpenPastSession]);
 
 	// Cleanup tool roots on unmount
 	useEffect(() => {
@@ -187,6 +190,8 @@ interface ChatMessagesProps {
 	onCreateNote: (content: string, target: string) => void;
 	onAppendToTarget: (content: string, target: string) => void;
 	showThinking?: boolean;
+	onOpenPastSession?: (sessionId: string, messageId: string) => void;
+	scrollToMessageId?: string;
 }
 
 const ChatMessages: React.FC<ChatMessagesProps> = ({
@@ -205,6 +210,8 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	onCreateNote,
 	onAppendToTarget,
 	showThinking,
+	onOpenPastSession,
+	scrollToMessageId,
 }) => {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
@@ -257,6 +264,26 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
+	useEffect(() => {
+		if (!scrollToMessageId) return;
+		const target = scrollRef.current?.querySelector<HTMLElement>(`[data-message-id="${scrollToMessageId}"]`);
+		if (!target) return;
+		target.scrollIntoView({ behavior: "smooth", block: "center" });
+		target.classList.add("chat-message-highlight");
+		const timer = window.setTimeout(() => target.classList.remove("chat-message-highlight"), 2000);
+		return () => window.clearTimeout(timer);
+	}, [scrollToMessageId, messages]);
+
+	useEffect(() => {
+		if (!scrollToMessageId) return;
+		const target = scrollRef.current?.querySelector<HTMLElement>(`[data-message-id="${scrollToMessageId}"]`);
+		if (!target) return;
+		target.scrollIntoView({ behavior: "smooth", block: "center" });
+		target.classList.add("chat-message-highlight");
+		const timer = window.setTimeout(() => target.classList.remove("chat-message-highlight"), 2000);
+		return () => window.clearTimeout(timer);
+	}, [scrollToMessageId, messages]);
+
 	const scrollToTop = useCallback(() => {
 		scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
 	}, []);
@@ -281,6 +308,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 							message={msg}
 							app={app}
 							showThinking={showThinking}
+							onOpenPastSession={onOpenPastSession}
 							onAppend={onAppend}
 							onInsertAtCursor={onInsertAtCursor}
 							onApply={onApply}
@@ -293,7 +321,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 					</div>
 				))}
 				{isStreaming && currentAiMessage && (
-					<StreamingBubble content={currentAiMessage} contentParts={currentContentParts} app={app} />
+					<StreamingBubble content={currentAiMessage} contentParts={currentContentParts} app={app} onOpenPastSession={onOpenPastSession} />
 				)}
 				{isStreaming && !currentAiMessage && (
 					<div className="chat-typing-indicator">

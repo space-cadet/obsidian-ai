@@ -471,8 +471,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
 				}
 			}
 
-			if (e.key === "Enter" && !e.shiftKey) {
-				if (pressEnterToSend) {
+			if (e.key === "Enter") {
+				const shouldSend = pressEnterToSend
+					? !e.shiftKey
+					: e.shiftKey || e.metaKey || e.ctrlKey;
+				if (shouldSend) {
 					e.preventDefault();
 					const trimmed = value.trim();
 					if ((trimmed || attachments.length > 0) && !isStreaming) {
@@ -482,7 +485,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 						onAttachmentsChange?.([]);
 					}
 				}
-				// if !pressEnterToSend, Enter inserts newline (default textarea behavior)
+				// Plain Enter inserts a newline when pressEnterToSend is disabled.
 			}
 		},
 		[
@@ -559,7 +562,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
 	const placeholder = pressEnterToSend
 		? "Ask anything... (Shift+Enter for new line)"
-		: "Ask anything... (Enter for new line, Ctrl+Enter to send)";
+		: "Ask anything... (Enter for new line, Shift+Enter or Cmd/Ctrl+Enter to send)";
 
 	return (
 		<div
