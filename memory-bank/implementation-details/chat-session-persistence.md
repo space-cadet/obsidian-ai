@@ -1,6 +1,6 @@
 # Chat Session Persistence Design
 *Created: 2026-05-03 00:18:43 IST*
-*Last Updated: 2026-05-12 11:13:59 IST*
+*Last Updated: 2026-07-29 13:47:51 IST*
 
 ## Overview
 
@@ -224,3 +224,7 @@ async saveChatData(chatData: StoredChatData) {
 ### Current Persistence Rule
 
 Persist chat state after meaningful settled transitions, but coalesce bursty React updates so storage writes reflect the latest stable snapshot instead of every intermediate render-state mutation.
+
+## 2026-07-29: Searchable Saved Sessions
+
+The persisted JSONL sessions are also the source for cross-session retrieval. `SearchIndex` reads the JSONL files, supports both vault-relative and basename adapter responses, and falls back to legacy `data.json` when JSONL data is absent. See [Past-Session Search and Shared Tabs](past-session-search-and-tabs.md) for indexing, navigation, and rendering details.

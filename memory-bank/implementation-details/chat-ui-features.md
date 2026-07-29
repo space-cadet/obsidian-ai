@@ -47,6 +47,14 @@ setSelectedProfileIds(new Set([fallbackId]));
 
 ---
 
+## Past-Session Links and Shared Tabs (2026-07-29)
+
+Past-session result links open inside an internal tab strip in the existing chat panel. The toolbar and composer are shared across sessions; closing a tab does not delete its conversation. The active target message scrolls into view and is highlighted. Tabs use compact labels with horizontal scrolling; additional visual title polish is deferred.
+
+When Enter is configured for a new line, Shift+Enter and Cmd/Ctrl+Enter still send the message. The detailed search, link, and tab design is documented in [Past-Session Search and Shared Tabs](past-session-search-and-tabs.md).
+
+---
+
 ---
 
 ## File Attachments (📎)
@@ -84,4 +92,4 @@ setSelectedProfileIds(new Set([fallbackId]));
 
 ---
 
-*Last Updated: 2026-05-25 23:03 IST*
+*Last Updated: 2026-07-29 13:47:51 IST*

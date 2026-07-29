@@ -1,6 +1,6 @@
 # Agentic Tool Calling Implementation
 *Created: 2026-05-03 02:40:00 IST*
-*Last Updated: 2026-05-15 13:15:00 IST*
+*Last Updated: 2026-07-29 13:47:51 IST*
 
 ## Overview
 
@@ -77,6 +77,10 @@ Implementation: `formatToolResult()` in `src/agent/AgentLoop.ts` (lines 38-108).
 ---
 
 ## Tool Registry
+
+### Saved Conversation Retrieval (2026-07-29)
+
+`search_past_sessions` is a read-only tool for saved chat history. It is explicitly described in system prompts so agents distinguish it from vault-note search. `ToolExecutor` removes the active session from results before limiting them, preventing an agent from citing the conversation it is currently answering in. The response renderer appends de-duplicated titled links and excerpts to the assistant reply. Full behavior: [Past-Session Search and Shared Tabs](past-session-search-and-tabs.md).
 
 ### Tool Definitions (`src/agent/tools.ts`)
 

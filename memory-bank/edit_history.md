@@ -1,10 +1,20 @@
 # Edit History
 
-*Last Updated: 2026-07-13 22:41:55 IST*
+*Last Updated: 2026-07-29 13:47:51 IST*
 
 ---
 
 ## 2026-07-29
+
+#### 13:47:51 IST - T15: Document past-session search and shared tab implementation
+- Created `memory-bank/implementation-details/past-session-search-and-tabs.md` - Documented indexing, current-session exclusion, agent prompts, inline links, internal tabs, scrolling, composer shortcuts, verification, and attribution.
+- Modified `memory-bank/tasks/T15.md` - Added the implemented feature set, documentation link, deferred tab-heading polish, and GPT 5.6 Terra Low attribution.
+- Modified `memory-bank/sessions/2026-07-29-afternoon.md` - Closed the session with the final committed state and deferred follow-up.
+- Modified `memory-bank/session_cache.md` - Marked the T15 session complete.
+- Modified `memory-bank/implementation-details/chat-session-persistence.md` - Linked persistence storage to saved-session retrieval behavior.
+- Modified `memory-bank/implementation-details/agentic-tool-calling.md` - Documented the read-only saved-session search tool and active-session exclusion.
+- Modified `memory-bank/implementation-details/chat-ui-features.md` - Documented shared tabs, link navigation, shortcut behavior, and deferred tab-heading polish.
+- Modified `memory-bank/progress.md` and `memory-bank/activeContext.md` - Synchronized completed feature status, deferred follow-up, and model attribution.
 
 #### 13:38:56 IST - T15: Record past-session search and internal tab UI work
 - Created `memory-bank/sessions/2026-07-29-afternoon.md` - Logged scope, modified files, current verification state, and GPT 5.6 Terra Low attribution for all work in the session.

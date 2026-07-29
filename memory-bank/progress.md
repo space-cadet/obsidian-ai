@@ -1,7 +1,18 @@
 # Implementation Progress
-*Last Updated: 2026-07-21 21:50 IST*
+*Last Updated: 2026-07-29 13:47 IST*
 
 ## Active Tasks
+
+### T15: Past-Session Search and Shared Tabs (2026-07-29)
+**Status:** ✅ IMPLEMENTED; tab-heading visual polish deferred
+
+- Saved-session search works for JSONL and legacy storage and excludes the active conversation.
+- Agents are prompted to use `search_past_sessions`; replies include titled links and matching excerpts.
+- Links open the matched message in a shared internal tab, retaining one toolbar and composer.
+- Compact tab labels horizontally scroll; closing a tab preserves the saved session.
+- Implementation doc: `memory-bank/implementation-details/past-session-search-and-tabs.md`.
+
+**Attribution:** GPT 5.6 Terra Low performed all implementation work in this session.
 
 ### T26: AI Intelligence Layer — Persistent Identity, Memory & Context
 **Status:** 🔄 **IN PROGRESS**
