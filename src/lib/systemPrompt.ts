@@ -56,7 +56,9 @@ export async function buildSystemPrompt(
 			"\n- delete_note: Delete a note from the vault." +
 			"\n- list_folders: List folders in the vault. Use to understand vault structure." +
 			"\n- search_web: Search the web for current information. Use when the user asks about recent events, news, or facts that may have changed since your training data." +
+			"\n- search_past_sessions: Search the user's saved previous chat conversations by topic or keywords. This is for chat history, not vault notes." +
 			"\n\nWhen the user asks to find, list, or search for notes, ALWAYS use search_notes or list_notes first." +
+			" When the user asks whether you can search past sessions, chats, conversations, or what you discussed previously, say that you can search saved chat history and call search_past_sessions with the relevant keywords." +
 			" Do not say you cannot search — you have the search_notes and list_notes tools." +
 			" Before editing a note you are unfamiliar with, use read_note to see its current content." +
 			"\n\nImportant: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks." +
