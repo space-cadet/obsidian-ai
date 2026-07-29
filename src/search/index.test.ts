@@ -185,4 +185,26 @@ describe("SearchIndex", () => {
 		const results = await search.search("research");
 		expect(results[0].snippet.length).toBe(200);
 	});
+
+	it("reads JSONL files when the adapter lists full vault-relative paths", async () => {
+		const files: Record<string, string> = {
+			".obsidian/plugins/test-plugin/sessions/session-a.jsonl": JSON.stringify({
+				id: "msg-1",
+				role: "user",
+				content: "Find this saved conversation",
+				timestamp: 1000,
+			}) + "\n",
+		};
+		const app = createMockApp(files);
+		app.vault.adapter.list = async (path: string) => ({
+			files: Object.keys(files).filter((f) => f.startsWith(path + "/")),
+			folders: [],
+		});
+
+		const search = new SearchIndex(app, "test-plugin");
+		const results = await search.search("saved conversation");
+
+		expect(results).toHaveLength(1);
+		expect(results[0].sessionId).toBe("session-a");
+	});
 });

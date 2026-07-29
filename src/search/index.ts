@@ -51,10 +51,13 @@ export class SearchIndex {
 			const jsonlFiles = entries.files.filter((f) => f.endsWith(".jsonl"));
 
 			for (const fileName of jsonlFiles) {
-				const sessionId = fileName.replace(/\.jsonl$/, "");
+				// Obsidian returns vault-relative paths here, while tests and some
+				// adapters return basenames. Accept either form.
+				const path = fileName.startsWith(`${sessionsDir}/`)
+					? fileName
+					: `${sessionsDir}/${fileName}`;
+				const sessionId = path.split("/").pop()?.replace(/\.jsonl$/, "") ?? "";
 				if (!sessionId) continue;
-
-				const path = `${sessionsDir}/${fileName}`;
 				let raw = "";
 				try {
 					raw = await adapter.read(path);
