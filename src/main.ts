@@ -263,15 +263,11 @@ export default class ObsidianAIPlugin extends Plugin {
 	}
 
 	async openSessionInNewTab(sessionId: string, messageId: string): Promise<void> {
-		// getLeaf("tab") follows the active main-pane tab group. Session results
-		// belong beside the existing chat, so create the leaf in the right sidebar.
-		const leaf = this.app.workspace.getRightLeaf(true) ?? this.app.workspace.getLeaf("tab");
-		await leaf.setViewState({
-			type: CHAT_VIEWTYPE,
-			active: true,
-			state: { sessionId, messageId },
-		});
-		this.app.workspace.revealLeaf(leaf);
+		// Session tabs are managed inside the existing chat view so the toolbar and
+		// composer stay shared rather than creating stacked sidebar leaves.
+		window.dispatchEvent(new CustomEvent("obsidian-ai:open-session", {
+			detail: { sessionId, messageId },
+		}));
 	}
 
 	// async activateGroupChatView() {

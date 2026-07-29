@@ -3374,3 +3374,57 @@
 	border-top: 1px solid var(--background-modifier-border);
 	margin-top: 2px;
 }
+
+/* Session tabs live inside one chat view, below the shared toolbar. */
+.chat-session-tabs {
+	display: flex;
+	overflow-x: auto;
+	gap: 2px;
+	padding: 6px 8px 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+}
+
+.chat-session-tab {
+	display: flex;
+	align-items: center;
+	min-width: 0;
+	max-width: 190px;
+	border: 1px solid transparent;
+	border-bottom: 0;
+	border-radius: 6px 6px 0 0;
+	color: var(--text-muted);
+}
+
+.chat-session-tab.is-active {
+	background: var(--background-primary);
+	border-color: var(--background-modifier-border);
+	color: var(--text-normal);
+}
+
+.chat-session-tab-select,
+.chat-session-tab-close {
+	border: 0;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+}
+
+.chat-session-tab-select {
+	overflow: hidden;
+	padding: 7px 5px 7px 10px;
+	text-align: left;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.chat-session-tab-close {
+	display: grid;
+	place-items: center;
+	padding: 4px 7px;
+	border-radius: 4px;
+}
+
+.chat-session-tab-close:hover {
+	background: var(--background-modifier-hover);
+}

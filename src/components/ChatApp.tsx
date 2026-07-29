@@ -28,6 +28,7 @@ import { useChatSession } from "../hooks/useChatSession";
 import { useChatUI } from "../hooks/useChatUI";
 import { useMessageActions } from "../hooks/useMessageActions";
 import ActionBar from "./ActionBar";
+import ChatTabBar from "./ChatTabBar";
 import ChatMessages from "./ChatMessages";
 import ContextBar from "./ContextBar";
 import ChatInput from "./ChatInput";
@@ -86,14 +87,28 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(null);
 	const [runningTokenTotal, setRunningTokenTotal] = useState(0);
 	const [scrollToMessageId, setScrollToMessageId] = useState<string | undefined>(initialMessageId);
+	const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
+	const openSessionInTab = useCallback((sessionId: string, messageId?: string) => {
+		setOpenSessionIds((current) => current.includes(sessionId) ? current : [...current, sessionId]);
+		setActiveSessionId(sessionId);
+		setScrollToMessageId(messageId);
+	}, [setActiveSessionId]);
 	useEffect(() => {
 		const openSession = (event: Event) => {
 			const { sessionId, messageId } = (event as CustomEvent<{ sessionId: string; messageId: string }>).detail;
-			void plugin.openSessionInNewTab(sessionId, messageId);
+			openSessionInTab(sessionId, messageId);
 		};
 		window.addEventListener("obsidian-ai:open-session", openSession);
 		return () => window.removeEventListener("obsidian-ai:open-session", openSession);
-	}, [plugin]);
+	}, [openSessionInTab]);
+	useEffect(() => {
+		if (!activeSessionId || !sessions.some((session) => session.id === activeSessionId)) return;
+		setOpenSessionIds((current) => current.includes(activeSessionId) ? current : [...current, activeSessionId]);
+	}, [activeSessionId, sessions]);
+	useEffect(() => {
+		const knownIds = new Set(sessions.map((session) => session.id));
+		setOpenSessionIds((current) => current.filter((id) => knownIds.has(id)));
+	}, [sessions]);
 	useEffect(() => {
 		if (!chatDataLoaded || !initialSessionId) return;
 		if (sessions.some((session) => session.id === initialSessionId)) {
@@ -338,22 +353,11 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		}
 	}, [searchVisible]);
 	const handleSelectSearchResult = useCallback((sessionId: string, messageId: string | null) => {
-		setActiveSessionId(sessionId);
+		openSessionInTab(sessionId, messageId ?? undefined);
 		setSearchQuery("");
 		setSearchResults([]);
 		setSearchVisible(false);
-		if (messageId) {
-			// Defer scroll until messages render
-			setTimeout(() => {
-				const el = document.querySelector(`[data-message-id="${messageId}"]`);
-				if (el) {
-					el.scrollIntoView({ behavior: "smooth", block: "center" });
-					el.classList.add("chat-message-highlight");
-					setTimeout(() => el.classList.remove("chat-message-highlight"), 2000);
-				}
-			}, 100);
-		}
-	}, [setActiveSessionId]);
+	}, [openSessionInTab]);
 
 	const handleToggleActiveNote = useCallback(() => {
 		console.log(`[handleToggleActiveNote] fired — current items=${JSON.stringify(contextItemsRef.current.map(contextItemKey))}`);
@@ -466,8 +470,21 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 			ui.setSelectedProfileIds(new Set());
 		}
 		ui.setDebateMode(false);
-		setActiveSessionId(sessionId);
-	}, []);
+		openSessionInTab(sessionId);
+	}, [openSessionInTab]);
+
+	const handleCloseTab = useCallback((sessionId: string) => {
+		setOpenSessionIds((current) => {
+			if (current.length <= 1) return current;
+			const index = current.indexOf(sessionId);
+			const remaining = current.filter((id) => id !== sessionId);
+			if (sessionId === activeSessionId) {
+				setActiveSessionId(remaining[Math.max(0, index - 1)]);
+				setScrollToMessageId(undefined);
+			}
+			return remaining;
+		});
+	}, [activeSessionId, setActiveSessionId]);
 
 	const handleDeleteSession = useCallback((sessionId: string) => {
 		setSessions((prev) => {
@@ -622,6 +639,15 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 					)}
 				</div>
 			)}
+			{!ui.zenMode && (
+				<ChatTabBar
+					sessions={sessions}
+					openSessionIds={openSessionIds}
+					activeSessionId={activeSessionId}
+					onSelect={(sessionId) => openSessionInTab(sessionId)}
+					onClose={handleCloseTab}
+				/>
+			)}
 
 			{/* Search input + results */}
 			{!ui.zenMode && searchVisible && (
@@ -668,7 +694,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				onApplyToTarget={actions.handleApplyToTarget}
 				onCreateNote={actions.handleCreateNote}
 				onAppendToTarget={actions.handleAppendToTarget}
-				onOpenPastSession={(sessionId, messageId) => void plugin.openSessionInNewTab(sessionId, messageId)}
+				onOpenPastSession={openSessionInTab}
 				scrollToMessageId={scrollToMessageId}
 			/>
 
