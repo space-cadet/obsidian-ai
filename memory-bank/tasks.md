@@ -16,7 +16,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T14 | Remote Agent Connectivity (OpenResponses) | 🔄 | HIGH | 2026-05-07 | T1, T13, T5, T9 | [Details](tasks/T14.md) |
 | T15 | Tabbed Chat Interface with Multi-Profile | 🔄 | HIGH | 2026-05-15 | T13, T14, T9 | [Details](tasks/T15.md) |
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
-| T26 | AI Intelligence Layer — Identity, Memory & Context | 🔄 | HIGH | 2026-07-21 | T24, T13 | [Details](tasks/T26.md) |
+| T26 | AI Intelligence Layer — Identity, Memory & Context | 🔄 | HIGH | 2026-07-21 | T24, T13 | [Details](tasks/T26.md) | Phase 2 complete (SessionSummarizer), Phases 3-5 pending |
 | T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
 
 ## Completed Tasks
@@ -28,6 +28,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T13 | Agentic Tool Calling for Note Editing | ✅ | HIGH | 2026-05-06 | 2026-05-06 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
 | T18 | Web Search Tool for Chat | ✅ | MEDIUM | 2026-05-16 | 2026-05-16 | T13, T9 | [Details](tasks/T18.md) |
 | T19 | File Attachments for Chat Messages | ✅ | HIGH | 2026-05-25 | 2026-05-25 | T13, T4, T9 | [Details](tasks/T19.md) |
+| T25 | Unit Test Infrastructure | ✅ | HIGH | 2026-07-29 | 2026-07-30 | — | [Details](tasks/T25.md) | 125 tests, 7 files, 0 failures |
 | T2 | Conversation Chain & Memory | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T1 | [Details](tasks/T2.md) |
 | T21 | CLI Test Harness for AI Features | ✅ | MEDIUM | 2026-05-25 | 2026-05-25 | T13, T19, T4 | [Details](tasks/T21.md) |
 | T23 | Settings.ts Decomposition | ✅ | HIGH | 2026-05-28 | 2026-05-28 | — | [Details](tasks/T23.md) |
