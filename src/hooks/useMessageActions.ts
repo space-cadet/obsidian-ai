@@ -18,6 +18,7 @@ import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
 import { resolveContextItems } from "../context/ContextEngine";
 import { resolveAttachments } from "../context/AttachmentEngine";
 import { estimateTokens, estimateContentPartsTokens, estimateAttachmentTokens } from "../context/tokenEstimator";
+import { appendPendingText, finalizeContentParts } from "../lib/streamingUtils";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { parseSlashCommand } from "../lib/slashCommand";
 import { makeId } from "../lib/sessionUtils";

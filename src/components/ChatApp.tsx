@@ -5,7 +5,7 @@ import React, {
 	useEffect,
 	useMemo,
 } from "react";
-import { Notice, TFile, WorkspaceLeaf } from "obsidian";
+import { Notice, TFile, WorkspaceLeaf, MarkdownView } from "obsidian";
 
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
 import { ChatMessage, ChatSession, ContextItem, ContentPart } from "../types";
@@ -255,6 +255,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		contextItems,
 		setContextItems,
 		targetNoteName,
+		setTargetNoteName,
 		handleToggleActiveNote,
 		handleRemoveContextItem,
 		handleAddMention,

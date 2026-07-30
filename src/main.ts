@@ -293,7 +293,7 @@ export default class ObsidianAIPlugin extends Plugin {
 		}
 
 		const activeProfile = this.settings.providerProfiles.find(
-			(p) => p.id === (session.profileId || this.settings.activeProviderProfile),
+			(p) => p.id === (session.profileId || this.settings.activeProviderProfileId),
 		) || this.settings.providerProfiles[0];
 
 		if (!activeProfile) return;

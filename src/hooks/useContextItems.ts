@@ -9,6 +9,7 @@ export interface UseContextItemsResult {
 	contextItems: ContextItem[];
 	setContextItems: React.Dispatch<React.SetStateAction<ContextItem[]>>;
 	targetNoteName: string | null;
+	setTargetNoteName: React.Dispatch<React.SetStateAction<string | null>>;
 	handleToggleActiveNote: () => void;
 	handleRemoveContextItem: (id: string) => void;
 	handleAddMention: (item: ContextItem) => void;
@@ -143,6 +144,7 @@ export function useContextItems(
 		contextItems,
 		setContextItems,
 		targetNoteName,
+		setTargetNoteName,
 		handleToggleActiveNote,
 		handleRemoveContextItem,
 		handleAddMention,
