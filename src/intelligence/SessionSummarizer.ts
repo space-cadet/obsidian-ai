@@ -1,209 +1,223 @@
-import type { ChatMessage } from "../types";
-import type { PersonaLoader } from "./PersonaLoader";
-import type { ChatApiManager } from "../api";
-import type { ProviderProfile } from "../settings";
+import { ChatMessage } from "../types";
+import { ProviderProfile } from "../settings";
+import { ChatApiManager } from "../api";
+import { PersonaLoader } from "./PersonaLoader";
+
+export interface SummarizeOptions {
+	/** Minimum number of messages before summarizing */
+	minMessages?: number;
+	/** Maximum tokens for the summarization prompt context */
+	maxContextTokens?: number;
+}
 
 export interface MemoryEntry {
-	timestamp: string;
+	date: string;
 	category: "user_fact" | "project" | "preference" | "insight" | "reference";
 	content: string;
 	tags?: string[];
 }
 
-interface SummarizeSessionOptions {
-	/** Minimum number of messages before summarization triggers */
-	minMessages?: number;
-	/** Max messages to include in the summary context (from the end) */
-	maxMessages?: number;
-}
-
-const SUMMARIZATION_PROMPT = `You are a session summarizer. Your job is to extract key information from a conversation that would be useful to remember for future sessions.
-
-Read the conversation below and produce a concise summary with 3-5 bullet points. Each bullet should capture:
-- A specific fact about the user (preferences, projects, goals)
-- A decision or conclusion reached
-- A topic that was discussed in depth
-- Any personal information the user shared
-
-Format each bullet as:
-- **[CATEGORY]**: Content #tag1 #tag2
-
-Categories: user_fact, project, preference, insight, reference
-
-Keep bullets under 120 characters. Be specific and actionable. Do not include generic pleasantries.
-
-CONVERSATION:
-`;
-
 /**
- * Automatically summarizes chat sessions and persists key memories.
+ * Automatically summarizes chat sessions into persistent memory entries.
  *
- * Called at session boundaries (e.g. when user starts a new session) or
- * on demand (e.g. user clicks "Save Memory"). Uses a cheap/fast model
- * call to extract salient points and appends them to memory.md.
+ * Triggered when a session ends (user starts a new session). Uses a cheap
+ * LLM call to extract 3–5 bullet points worth remembering, then appends
+ * them to memory.md via PersonaLoader.
  */
 export class SessionSummarizer {
-	constructor(
-		private personaLoader: PersonaLoader,
-		private chatApi: ChatApiManager,
-	) {}
+	private personaLoader: PersonaLoader;
+	private chatapi: ChatApiManager;
+
+	constructor(personaLoader: PersonaLoader, chatapi: ChatApiManager) {
+		this.personaLoader = personaLoader;
+		this.chatapi = chatapi;
+	}
 
 	/**
-	 * Summarize a session's messages and append key points to memory.
-	 *
-	 * @param sessionId - Unique session identifier
-	 * @param messages - Full message array for the session
-	 * @param profile - Provider profile to use for the summarization API call
-	 * @param opts - Options controlling summarization behavior
-	 * @returns The generated memory entries, or empty array if skipped
+	 * Check if a session has enough content to be worth summarizing.
 	 */
-	async summarizeSession(
-		sessionId: string,
+	shouldSummarize(
 		messages: ChatMessage[],
-		profile: ProviderProfile,
-		opts: SummarizeSessionOptions = {},
-	): Promise<MemoryEntry[]> {
-		const minMessages = opts.minMessages ?? 4;
-		const maxMessages = opts.maxMessages ?? 30;
+		minMessages: number = 4,
+	): boolean {
+		if (!messages || messages.length < minMessages) return false;
 
-		// Filter to user + assistant messages only, skip system/tool
-		const chatMessages = messages.filter(
-			(m) => m.role === "user" || m.role === "assistant",
-		);
-
-		if (chatMessages.length < minMessages) {
-			return [];
-		}
-
-		// Take the last N messages to stay within context limits
-		const recentMessages = chatMessages.slice(-maxMessages);
-		const conversationText = recentMessages
-			.map((m) => {
-				const role = m.role === "user" ? "User" : "Assistant";
-				const text =
-					typeof m.content === "string"
-						? m.content
-						: JSON.stringify(m.content);
-				return `${role}: ${text.slice(0, 500)}`;
-			})
-			.join("\n\n");
-
-		const prompt = SUMMARIZATION_PROMPT + conversationText;
-
-		try {
-			const summary = await this.callSummarizer(prompt, profile);
-			const entries = this.parseSummary(summary, sessionId);
-
-			// Persist each entry to memory.md
-			for (const entry of entries) {
-				const tagStr = entry.tags?.length
-					? " " + entry.tags.map((t) => `#${t}`).join(" ")
-					: "";
-				const line = `- [${entry.timestamp}] **${entry.category}**: ${entry.content}${tagStr}`;
-				await this.personaLoader.appendMemory(line);
-			}
-
-			return entries;
-		} catch (e) {
-			console.error("[SessionSummarizer] summarization failed:", e);
-			return [];
-		}
-	}
-
-	/**
-	 * Extract memories from a session without making an API call.
-	 * Useful for manual "Save Memory" actions where the user
-	 * provides the summary text directly.
-	 */
-	async saveManualMemory(entry: MemoryEntry): Promise<void> {
-		const tagStr = entry.tags?.length
-			? " " + entry.tags.map((t) => `#${t}`).join(" ")
-			: "";
-		const line = `- [${entry.timestamp}] **${entry.category}**: ${entry.content}${tagStr}`;
-		await this.personaLoader.appendMemory(line);
-	}
-
-	/**
-	 * Check whether a session has enough content to be worth summarizing.
-	 */
-	shouldSummarize(messages: ChatMessage[], minMessages = 4): boolean {
+		// Count non-system messages
 		const chatMessages = messages.filter(
 			(m) => m.role === "user" || m.role === "assistant",
 		);
 		return chatMessages.length >= minMessages;
 	}
 
-	/* ─── Private ─── */
-
-	private async callSummarizer(
-		prompt: string,
+	/**
+	 * Summarize a session's messages into memory entries and persist them.
+	 *
+	 * @returns Array of memory entries that were saved (may be empty)
+	 */
+	async summarizeSession(
+		sessionId: string,
+		messages: ChatMessage[],
 		profile: ProviderProfile,
-	): Promise<string> {
-		// Use the chat API with a simple single-turn completion
-		const messages = [
-			{ role: "system" as const, content: "You are a concise session summarizer." },
-			{ role: "user" as const, content: prompt },
-		];
+		options?: SummarizeOptions,
+	): Promise<MemoryEntry[]> {
+		const { minMessages = 4, maxContextTokens = 2000 } = options ?? {};
 
-		// Stream not needed — just grab the text
-		let result = "";
-		for await (const event of this.chatApi.streamChat(
-			messages,
-			new AbortController().signal,
-			profile,
-			false, // thinking disabled for cheap summarization
-		)) {
-			if (event.type === "text-delta") {
-				result += event.text;
+		if (!this.shouldSummarize(messages, minMessages)) {
+			return [];
+		}
+
+		// Build a condensed context from the session
+		const context = this._buildContext(messages, maxContextTokens);
+
+		const system =
+			"You are a memory extraction assistant. Your job is to read a conversation " +
+			"and extract 0–5 concise bullet points of things worth remembering for future sessions. " +
+			"Focus on: user preferences, project updates, decisions made, facts shared, " +
+			"or recurring topics. Skip trivialities like greetings. " +
+			"Output ONLY valid JSON in this exact format:\n" +
+			'[{"category": "user_fact|project|preference|insight|reference", "content": "...", "tags": ["tag1"]}]\n' +
+			"If nothing is worth remembering, output: []";
+
+		const prompt = `Conversation context:\n${context}\n\nExtract memories as JSON:`;
+
+		let raw: string;
+		try {
+			raw = await this.chatapi.callApi(system, prompt, profile);
+		} catch (e) {
+			console.error("[SessionSummarizer] LLM call failed:", e);
+			return [];
+		}
+
+		const entries = this._parseJsonEntries(raw);
+		if (entries.length === 0) return [];
+
+		// Persist each entry to memory.md
+		const saved: MemoryEntry[] = [];
+		for (const entry of entries) {
+			const formatted = this._formatEntry(entry);
+			try {
+				await this.personaLoader.appendMemory(formatted);
+				saved.push(entry);
+			} catch (e) {
+				console.error("[SessionSummarizer] Failed to append memory:", e);
 			}
+		}
+
+		return saved;
+	}
+
+	/**
+	 * Build a condensed text context from messages, respecting token budget.
+	 */
+	private _buildContext(
+		messages: ChatMessage[],
+		maxTokens: number,
+	): string {
+		// Filter to user + assistant only, skip system/tool
+		const chatMessages = messages.filter(
+			(m) => m.role === "user" || m.role === "assistant",
+		);
+
+		// Rough heuristic: 4 chars ≈ 1 token
+		const maxChars = maxTokens * 4;
+		let result = "";
+
+		// Include most recent messages first (they're most relevant)
+		for (let i = chatMessages.length - 1; i >= 0; i--) {
+			const m = chatMessages[i];
+			let content = m.content.slice(0, 500); // cap individual messages
+			// Strip heavy artifacts
+			content = content.replace(/```[\s\S]*?```/g, "[code block]");
+			content = content.replace(/<context>[\s\S]*?<\/context>/g, "");
+			const line = `${m.role}: ${content}\n`;
+
+			if (result.length + line.length > maxChars) {
+				// If we've already included some messages, prepend "..."
+				if (result) {
+					result = "...\n" + result;
+				}
+				break;
+			}
+			result = line + result;
 		}
 
 		return result.trim();
 	}
 
-	private parseSummary(summary: string, sessionId: string): MemoryEntry[] {
-		const lines = summary.split("\n").filter((l) => l.trim().startsWith("- "));
-		const entries: MemoryEntry[] = [];
-		const timestamp = new Date().toISOString().split("T")[0];
+	/**
+	 * Parse JSON array from LLM response, with lenient fallback.
+	 */
+	private _parseJsonEntries(raw: string): MemoryEntry[] {
+		// Try to extract JSON array from the response
+		let jsonStr = raw.trim();
 
-		for (const line of lines) {
-			// Parse: - **[CATEGORY]**: Content #tag1 #tag2
-			const match = line.match(
-				/^-\s*\*?\*?\[?\*?\*?\s*(\w+)\s*\*?\*?\]?\*?\*?\s*:\s*(.+)$/,
-			);
-			if (!match) continue;
-
-			const rawCategory = match[1].toLowerCase();
-			const rest = match[2].trim();
-
-			// Validate category
-			const validCategories: MemoryEntry["category"][] = [
-				"user_fact",
-				"project",
-				"preference",
-				"insight",
-				"reference",
-			];
-			const category = validCategories.includes(rawCategory as any)
-				? (rawCategory as MemoryEntry["category"])
-				: "insight";
-
-			// Extract trailing hashtags as tags
-			const tagRegex = /#(\w+)/g;
-			const tags: string[] = [];
-			let tagMatch;
-			while ((tagMatch = tagRegex.exec(rest)) !== null) {
-				tags.push(tagMatch[1]);
-			}
-
-			// Strip tags from content
-			const content = rest.replace(/#\w+/g, "").replace(/\s+/g, " ").trim();
-
-			if (content.length > 10) {
-				entries.push({ timestamp, category, content, tags });
-			}
+		// Sometimes models wrap in markdown code blocks
+		const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+		if (codeBlockMatch) {
+			jsonStr = codeBlockMatch[1].trim();
 		}
 
-		return entries;
+		// Try parsing as JSON array
+		try {
+			const parsed = JSON.parse(jsonStr);
+			if (Array.isArray(parsed)) {
+				return parsed
+					.filter(
+						(e: any) =>
+							e &&
+							typeof e.content === "string" &&
+							e.content.trim().length > 0,
+					)
+					.map((e: any) => ({
+						date: new Date().toISOString().split("T")[0],
+						category: this._normalizeCategory(e.category),
+						content: e.content.trim(),
+						tags: Array.isArray(e.tags)
+							? e.tags.filter((t: any) => typeof t === "string")
+							: [],
+					}));
+			}
+		} catch {
+			// Not valid JSON — try line-by-line heuristic
+		}
+
+		// Fallback: try to parse as bullet points
+		const lines = jsonStr
+			.split("\n")
+			.map((l) => l.trim())
+			.filter((l) => l.length > 5 && (l.startsWith("-") || l.startsWith("*")));
+
+		if (lines.length > 0) {
+			return lines.map((line) => ({
+				date: new Date().toISOString().split("T")[0],
+				category: "insight" as const,
+				content: line.replace(/^[-*]\s*/, "").trim(),
+				tags: [],
+			}));
+		}
+
+		return [];
+	}
+
+	private _normalizeCategory(
+		cat: string,
+	): MemoryEntry["category"] {
+		const valid = new Set([
+			"user_fact",
+			"project",
+			"preference",
+			"insight",
+			"reference",
+		]);
+		if (valid.has(cat)) return cat as MemoryEntry["category"];
+		return "insight";
+	}
+
+	/**
+	 * Format a memory entry as a markdown bullet for memory.md.
+	 */
+	private _formatEntry(entry: MemoryEntry): string {
+		const tagStr = entry.tags?.length ? " " + entry.tags.map((t) => `#${t}`).join(" ") : "";
+		return `- [${entry.date}] **${entry.category}**: ${entry.content}${tagStr}`;
 	}
 }

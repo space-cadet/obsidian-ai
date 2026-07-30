@@ -217,6 +217,13 @@ export function useChatSession({
 							}
 							: s,
 				);
+
+				// Trigger auto-summarization for the ending session (fire-and-forget)
+				const endingSession = prev.find((s) => s.id === currentActiveId);
+				if (endingSession && plugin.onSessionEnd) {
+					void plugin.onSessionEnd(endingSession);
+				}
+
 				const withNew = [...updated, newSession];
 				const max = plugin.settings.maxSavedConversations || 20;
 				return pruneSessions(withNew, max, newSession.id);

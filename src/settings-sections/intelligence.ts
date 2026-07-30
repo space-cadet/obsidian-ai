@@ -123,12 +123,18 @@ export function renderIntelligenceSection(
 					});
 			});
 	}
+
+	// Button to open intelligence folder
+	const openDirBtn = sectionEl.createEl("button", {
+		text: "Open Intelligence Folder",
+		cls: "mod-cta",
+	});
 	openDirBtn.style.margin = "8px 16px 12px";
 	openDirBtn.addEventListener("click", () => {
 		const dir = `${plugin.app.vault.configDir}/plugins/${plugin.manifest.id}/intelligence`;
 		// Copy path to clipboard and notify user
 		navigator.clipboard.writeText(dir).catch(() => {});
-		new (require("obsidian").Notice)(
+		new Notice(
 			`Intelligence folder path copied to clipboard:\n${dir}`,
 			8000,
 		);
