@@ -35,6 +35,7 @@ import { AgentApiManager } from "./api/AgentApiManager";
 import { SessionStorage } from "./storage/session-storage";
 import { PersonaLoader } from "./intelligence/PersonaLoader";
 import { SearchIndex } from "./search/index";
+import { SessionSummarizer } from "./intelligence/SessionSummarizer";
 
 export default class ObsidianAIPlugin extends Plugin {
 	settings: ObsidianAISettings = DEFAULT_SETTINGS;
@@ -44,6 +45,7 @@ export default class ObsidianAIPlugin extends Plugin {
 	sessionStorage: SessionStorage | null = null;
 	personaLoader: PersonaLoader | null = null;
 	searchIndex: SearchIndex | null = null;
+	sessionSummarizer: SessionSummarizer | null = null;
 
 	// Data integrity guards
 	private _backupCreated = false;
@@ -79,6 +81,12 @@ export default class ObsidianAIPlugin extends Plugin {
 		if (this.settings.intelligence?.enableIntelligence) {
 			await this.personaLoader.ensureDefaults();
 		}
+
+		// Initialize session summarizer (T26 Phase 2)
+		this.sessionSummarizer = new SessionSummarizer(
+			this.personaLoader,
+			this.chatapi,
+		);
 
 		// Initialize chat storage layer
 		this._chatStorage = createStorage(this._storageDeps(), this.settings.chatStorageFormat);
@@ -268,6 +276,40 @@ export default class ObsidianAIPlugin extends Plugin {
 		window.dispatchEvent(new CustomEvent("obsidian-ai:open-session", {
 			detail: { sessionId, messageId },
 		}));
+	}
+
+	/**
+	 * Called when a chat session ends (e.g. user creates a new session).
+	 * If auto-summarize is enabled, extracts key points and saves to memory.
+	 */
+	async onSessionEnd(session: ChatSession): Promise<void> {
+		if (!this.settings.intelligence?.autoSummarize) return;
+		if (!this.sessionSummarizer) return;
+		if (!this.settings.intelligence?.enableIntelligence) return;
+
+		const minMessages = this.settings.intelligence.autoSummarizeMinMessages ?? 4;
+		if (!this.sessionSummarizer.shouldSummarize(session.messages, minMessages)) {
+			return;
+		}
+
+		const activeProfile = this.settings.providerProfiles.find(
+			(p) => p.id === (session.profileId || this.settings.activeProviderProfile),
+		) || this.settings.providerProfiles[0];
+
+		if (!activeProfile) return;
+
+		this.logger?.log("info", `[onSessionEnd] Summarizing session ${session.id}`);
+		try {
+			const entries = await this.sessionSummarizer.summarizeSession(
+				session.id,
+				session.messages,
+				activeProfile,
+				{ minMessages },
+			);
+			this.logger?.log("info", `[onSessionEnd] Saved ${entries.length} memory entries`);
+		} catch (e) {
+			this.logger?.log("warn", `[onSessionEnd] Summarization failed: ${e}`);
+		}
 	}
 
 	// async activateGroupChatView() {

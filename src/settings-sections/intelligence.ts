@@ -90,10 +90,39 @@ export function renderIntelligenceSection(
 				});
 		});
 
-	const openDirBtn = sectionEl.createEl("button", {
-		text: "Open intelligence folder",
-		cls: "mod-cta",
-	});
+	new Setting(sectionEl)
+		.setName("Auto-summarize sessions")
+		.setDesc(
+			"When enabled, the AI automatically summarizes ended sessions and saves key points to memory. " +
+			"Triggered when you start a new chat session.",
+		)
+		.addToggle((toggle) => {
+			toggle
+				.setValue(plugin.settings.intelligence.autoSummarize)
+				.onChange(async (value) => {
+					plugin.settings.intelligence.autoSummarize = value;
+					await saveSettings({ refresh: true });
+				});
+		});
+
+	if (plugin.settings.intelligence.autoSummarize) {
+		new Setting(sectionEl)
+			.setName("Min messages before summarizing")
+			.setDesc(
+				"Sessions with fewer messages than this will be skipped. " +
+				"Prevents summarizing trivial conversations.",
+			)
+			.addSlider((slider) => {
+				slider
+					.setLimits(2, 20, 1)
+					.setValue(plugin.settings.intelligence.autoSummarizeMinMessages)
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						plugin.settings.intelligence.autoSummarizeMinMessages = value;
+						await saveSettings();
+					});
+			});
+	}
 	openDirBtn.style.margin = "8px 16px 12px";
 	openDirBtn.addEventListener("click", () => {
 		const dir = `${plugin.app.vault.configDir}/plugins/${plugin.manifest.id}/intelligence`;

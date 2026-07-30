@@ -472,6 +472,18 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 
 	const handleNewChat = useCallback(() => {
 		if (isStreaming) controllerRef.current?.abort();
+
+		// T26 Phase 2: Auto-summarize the ending session before starting a new one
+		const endingSessionId = activeSessionIdRef.current;
+		if (endingSessionId) {
+			const endingSession = sessionsRef.current.find(
+				(s) => s.id === endingSessionId,
+			);
+			if (endingSession) {
+				void plugin.onSessionEnd(endingSession);
+			}
+		}
+
 		createNewSession({
 			includeActiveNote: plugin.settings.includeActiveNote,
 			selectedProfileIds: plugin.settings.selectedProfileIds,

@@ -6,6 +6,10 @@ export interface IntelligenceSettings {
 	personaPath: string;
 	memoryPath: string;
 	identityContextBudget: number;
+	/** Auto-summarize sessions when they end (e.g. user starts new session) */
+	autoSummarize: boolean;
+	/** Min messages before auto-summarization triggers */
+	autoSummarizeMinMessages: number;
 }
 
 export type ProviderType =
@@ -275,6 +279,8 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 		personaPath: "intelligence/persona.md",
 		memoryPath: "intelligence/memory.md",
 		identityContextBudget: 2000,
+		autoSummarize: false,
+		autoSummarizeMinMessages: 4,
 	},
 };
 
@@ -339,6 +345,8 @@ export const normalizeSettings = (
 			personaPath: merged.intelligence?.personaPath ?? "intelligence/persona.md",
 			memoryPath: merged.intelligence?.memoryPath ?? "intelligence/memory.md",
 			identityContextBudget: merged.intelligence?.identityContextBudget ?? 2000,
+			autoSummarize: Boolean(merged.intelligence?.autoSummarize ?? false),
+			autoSummarizeMinMessages: merged.intelligence?.autoSummarizeMinMessages ?? 4,
 		},
 	};
 };
