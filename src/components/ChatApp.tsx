@@ -5,11 +5,10 @@ import React, {
 	useEffect,
 	useMemo,
 } from "react";
-import { MarkdownView, Notice, TFile, WorkspaceLeaf } from "obsidian";
+import { Notice, TFile, WorkspaceLeaf } from "obsidian";
 
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
-import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
-import { ChatMessage, ChatSession, ContextItem, GroupChatParticipant, ContentPart } from "../types";
+import { ChatMessage, ChatSession, ContextItem, ContentPart } from "../types";
 import { resolveContextItems } from "../context/ContextEngine";
 import { resolveAttachments } from "../context/AttachmentEngine";
 import { estimateTokens } from "../context/tokenEstimator";
@@ -27,6 +26,11 @@ import { buildSystemPrompt } from "../lib/systemPrompt";
 import { useChatSession } from "../hooks/useChatSession";
 import { useChatUI } from "../hooks/useChatUI";
 import { useMessageActions } from "../hooks/useMessageActions";
+import { useSessionActions } from "../hooks/useSessionActions";
+import { useSettingsActions } from "../hooks/useSettingsActions";
+import { useExportActions } from "../hooks/useExportActions";
+import { useSearch } from "../hooks/useSearch";
+import { useContextItems } from "../hooks/useContextItems";
 import ActionBar from "./ActionBar";
 import ChatTabBar from "./ChatTabBar";
 import ChatMessages from "./ChatMessages";
@@ -39,7 +43,6 @@ import PendingToolCard from "./PendingToolCard";
 import ObsidianIcon from "./ObsidianIcon";
 import SearchInput from "./SearchInput";
 import SearchResults from "./search-results";
-import { FuzzySearcher } from "../search/fuzzy-search";
 
 import { ChatApiManager } from "../api";
 import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
@@ -79,81 +82,21 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	const [isStreaming, setIsStreaming] = useState(false);
 	const [currentAiMessage, setCurrentAiMessage] = useState("");
 	const [currentContentParts, setCurrentContentParts] = useState<ContentPart[]>([]);
-	const [contextItems, setContextItems] = useState<ContextItem[]>([]);
 	const [wasTruncated, setWasTruncated] = useState(false);
 	const [contextTokenCount, setContextTokenCount] = useState(0);
-
-	// ─── Draft auto-save (debounced) ───
-	const draftTimerRef = useRef<number | null>(null);
-	const handleDraftChange = useCallback((text: string) => {
-		const currentActiveId = activeSessionIdRef.current;
-		if (!currentActiveId) return;
-		if (draftTimerRef.current) {
-			window.clearTimeout(draftTimerRef.current);
-		}
-		draftTimerRef.current = window.setTimeout(() => {
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === currentActiveId ? { ...s, draft: text } : s,
-				),
-			);
-			draftTimerRef.current = null;
-		}, 500);
-	}, [setSessions]);
-	useEffect(() => {
-		return () => {
-			if (draftTimerRef.current) {
-				window.clearTimeout(draftTimerRef.current);
-			}
-		};
-	}, []);
-
-	const [targetNoteName, setTargetNoteName] = useState<string | null>(null);
-	const [thinkingEnabled, setThinkingEnabled] = useState(false);
-	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(null);
 	const [runningTokenTotal, setRunningTokenTotal] = useState(0);
 	const [scrollToMessageId, setScrollToMessageId] = useState<string | undefined>(initialMessageId);
-	const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
-	const openSessionInTab = useCallback((sessionId: string, messageId?: string) => {
-		setOpenSessionIds((current) => current.includes(sessionId) ? current : [...current, sessionId]);
-		setActiveSessionId(sessionId);
-		setScrollToMessageId(messageId);
-	}, [setActiveSessionId]);
-	useEffect(() => {
-		const openSession = (event: Event) => {
-			const { sessionId, messageId } = (event as CustomEvent<{ sessionId: string; messageId: string }>).detail;
-			openSessionInTab(sessionId, messageId);
-		};
-		window.addEventListener("obsidian-ai:open-session", openSession);
-		return () => window.removeEventListener("obsidian-ai:open-session", openSession);
-	}, [openSessionInTab]);
-	useEffect(() => {
-		if (!activeSessionId || !sessions.some((session) => session.id === activeSessionId)) return;
-		setOpenSessionIds((current) => current.includes(activeSessionId) ? current : [...current, activeSessionId]);
-	}, [activeSessionId, sessions]);
-	useEffect(() => {
-		const knownIds = new Set(sessions.map((session) => session.id));
-		setOpenSessionIds((current) => current.filter((id) => knownIds.has(id)));
-	}, [sessions]);
-	useEffect(() => {
-		if (!chatDataLoaded || !initialSessionId) return;
-		if (sessions.some((session) => session.id === initialSessionId)) {
-			setActiveSessionId(initialSessionId);
-			setScrollToMessageId(initialMessageId);
-		}
-	}, [chatDataLoaded, initialSessionId, initialMessageId, sessions, setActiveSessionId]);
+	const [thinkingEnabled, setThinkingEnabled] = useState(false);
+	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(null);
+
+	const controllerRef = useRef<AbortController | null>(null);
+	const resolveToolRef = useRef<((result: ToolResult | null) => void) | null>(null);
+	const messagesRef = useRef<ChatMessage[]>([]);
 	const pendingToolCallRef = useRef<ToolCall | null>(null);
 	useEffect(() => {
 		pendingToolCallRef.current = pendingToolCall;
 	}, [pendingToolCall]);
-	const controllerRef = useRef<AbortController | null>(null);
-	const resolveToolRef = useRef<((result: ToolResult | null) => void) | null>(null);
-	// Refs so callbacks always see latest values without stale closures
-	const messagesRef = useRef<ChatMessage[]>([]);
-	const contextItemsRef = useRef<ContextItem[]>([]);
-	contextItemsRef.current = contextItems;
-	// Tracks the last focused markdown leaf
-	const lastMarkdownLeafRef = useRef<WorkspaceLeaf | null>(null);
+
 	// Track if the app was hidden while streaming (for mobile background handling)
 	const wasHiddenRef = useRef(false);
 	const streamingWhenHiddenRef = useRef(false);
@@ -168,13 +111,12 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 
 	const ui = useChatUI();
 
-	/** Resolve the profile for this chat panel: explicit profileId → session's stored profile → active profile */
+	/** Resolve the profile for this chat panel */
 	const resolvedProfile: ProviderProfile = useMemo(() => {
 		if (profileId) {
 			const p = plugin.settings.providerProfiles.find((pr) => pr.id === profileId);
 			if (p) return p;
 		}
-		// If a session is active and has a stored profileId, use it
 		const activeSession = sessions.find((s) => s.id === activeSessionId);
 		if (activeSession?.profileId) {
 			const p = plugin.settings.providerProfiles.find((pr) => pr.id === activeSession.profileId);
@@ -183,7 +125,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		return getActiveProviderProfile(plugin.settings);
 	}, [profileId, activeSessionId, plugin.settings.providerProfiles, sessions, settingsTick]);
 
-	// ─── Derive participants from selectedProfileIds (auto group chat when 2+ selected) ───
+	// ─── Derive participants from selectedProfileIds ───
 	const participants = useMemo(() => {
 		const ids = Array.from(ui.selectedProfileIds);
 		if (ids.length < 2) return [];
@@ -230,7 +172,6 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				() => activeSessionIdRef.current,
 			),
 		});
-		// Override engine profiles
 		orch.engines = resolved.map((e) => ({
 			id: e.id,
 			name: e.name,
@@ -247,85 +188,113 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		return orch;
 	}, [isGroupChat, participants, plugin.chatapi, plugin.settings, plugin.app]);
 
-	// ─── Multi-select Toolbar Handlers ───
-
-
 	const messages = useMemo(() => {
 		const s = sessions.find((s) => s.id === activeSessionId);
 		return s?.messages ?? [];
 	}, [sessions, activeSessionId]);
 	messagesRef.current = messages;
 
-	// Sync contextItems when active session changes (NOT when sessions data mutates)
-	const prevActiveSessionIdRef = useRef<string | null>(null);
-	useEffect(() => {
-		console.log(`[Effect1] fired — activeSessionId=${activeSessionId}, prev=${prevActiveSessionIdRef.current}`);
-		if (activeSessionId === prevActiveSessionIdRef.current) {
-			console.log(`[Effect1] SKIPPED — activeSessionId unchanged`);
-			return; // activeSessionId didn't change — don't sync from session
-		}
-		prevActiveSessionIdRef.current = activeSessionId;
-		const s = sessionsRef.current.find((s) => s.id === activeSessionId);
-		const sessionItems = s?.contextItems ?? [];
-		const needsUpdate = !sameContextItems(contextItemsRef.current, sessionItems);
-		console.log(`[Effect1] activeSessionId CHANGED — sessionItems=${JSON.stringify(sessionItems.map(contextItemKey))}, current=${JSON.stringify(contextItemsRef.current.map(contextItemKey))}, needsUpdate=${needsUpdate}`);
-		if (needsUpdate) {
-			console.log(`[Effect1] calling setContextItems`);
-			setContextItems(sessionItems);
-		}
-		setWasTruncated(false);
-	}, [activeSessionId]);
+	// ─── Session Actions ───
+	const {
+		openSessionIds,
+		setOpenSessionIds,
+		openSessionInTab,
+		handleNewChat,
+		handleLoadSession,
+		handleCloseTab,
+		handleDeleteSession,
+		handleRenameSession,
+	} = useSessionActions({
+		plugin,
+		profileId,
+		sessionsRef,
+		activeSessionIdRef,
+		setSessions,
+		setActiveSessionId,
+		setScrollToMessageId,
+		createNewSession,
+		setSelectedProfileIds: ui.setSelectedProfileIds,
+		setDebateMode: ui.setDebateMode,
+		setWasTruncated,
+		isStreaming,
+		controllerRef,
+	});
 
-	// Persist contextItems to the current session whenever they change
-	useEffect(() => {
-		const currentActiveId = activeSessionIdRef.current;
-		console.log(`[Effect2] fired — contextItems changed, activeId=${currentActiveId}, items=${JSON.stringify(contextItems.map(contextItemKey))}`);
-		if (!currentActiveId) {
-			console.log(`[Effect2] SKIPPED — no active session`);
-			return;
-		}
-		setSessions((prev) => {
-			const s = prev.find((s) => s.id === currentActiveId);
-			const same = s ? sameContextItems(s.contextItems, contextItems) : false;
-			console.log(`[Effect2] setSessions updater — sameContextItems=${same}, sessionItems=${JSON.stringify(s?.contextItems.map(contextItemKey))}`);
-			if (same) {
-				console.log(`[Effect2] returning same session (no change)`);
-				return prev;
-			}
-			const updated = prev.map((s) => {
-				if (s.id !== currentActiveId) return s;
-				return { ...s, contextItems };
-			});
-			console.log(`[Effect2] returning updated sessions`);
-			return updated;
-		});
-		setWasTruncated(false);
-	}, [contextItems]);
+	// ─── Settings Actions ───
+	const {
+		autoApprove,
+		handleToggleAutoApprove,
+		handleToggleAutoName,
+		handleManualRename,
+	} = useSettingsActions({
+		plugin,
+		autoNameSessions,
+		setAutoNameSessions,
+		sessionsRef,
+		activeSessionIdRef,
+		manualRenameActiveSession,
+		resolvedProfile,
+	});
 
-	// Initialise leaf tracking and register workspace listener
-	useEffect(() => {
-		const initLeaf =
-			plugin.app.workspace.getLeavesOfType("markdown")[0] ?? null;
-		if (initLeaf?.view instanceof MarkdownView) {
-			lastMarkdownLeafRef.current = initLeaf;
-			setTargetNoteName(
-				(initLeaf.view as MarkdownView).file?.basename ?? null,
-			);
-		}
+	// ─── Export Actions ───
+	const { handleExportChat } = useExportActions(ui.setShowExportModal);
 
-		const onLeafChange = (leaf: WorkspaceLeaf | null) => {
-			if (leaf?.view instanceof MarkdownView) {
-				lastMarkdownLeafRef.current = leaf;
-				setTargetNoteName(
-					(leaf.view as MarkdownView).file?.basename ?? null,
-				);
-			}
-		};
+	// ─── Search ───
+	const {
+		searchQuery,
+		setSearchQuery,
+		searchResults,
+		searchLoading,
+		searchVisible,
+		toggleSearch,
+		handleSelectSearchResult,
+	} = useSearch(sessions, openSessionInTab);
 
-		plugin.app.workspace.on("active-leaf-change", onLeafChange as any);
-		return () =>
-			plugin.app.workspace.off("active-leaf-change", onLeafChange as any);
-	}, [plugin]);
+	// ─── Context Items ───
+	const {
+		contextItems,
+		setContextItems,
+		targetNoteName,
+		handleToggleActiveNote,
+		handleRemoveContextItem,
+		handleAddMention,
+		handleAddContextItems,
+	} = useContextItems(
+		plugin,
+		sessionsRef,
+		activeSessionIdRef,
+		setSessions,
+		setWasTruncated,
+		() => ui.setShowContextPicker(false),
+	);
+
+	// ─── Message Actions ───
+	const actions = useMessageActions({
+		plugin,
+		orchestrator,
+		resolvedProfile,
+		isGroupChat,
+		participants,
+		thinkingEnabled,
+		sessionsRef,
+		activeSessionIdRef,
+		setSessions,
+		setIsStreaming,
+		setCurrentAiMessage,
+		setCurrentContentParts,
+		setPendingToolCall,
+		setWasTruncated,
+		setContextTokenCount,
+		setContextItems,
+		setRunningTokenTotal,
+		controllerRef,
+		resolveToolRef,
+		messagesRef,
+		contextItemsRef: { current: contextItems } as React.MutableRefObject<ContextItem[]>,
+		lastMarkdownLeafRef: useRef<WorkspaceLeaf | null>(null),
+		pendingToolCallRef,
+		ui,
+	});
 
 	// Sync selectedProfileIds into the active session whenever they change
 	useEffect(() => {
@@ -356,277 +325,43 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		);
 	}, [ui.selectedProfileIds, activeSessionId, plugin.settings.providerProfiles]);
 
-	const [autoApprove, setAutoApprove] = useState(plugin.settings.autoApply);
-	const [searchQuery, setSearchQuery] = useState("");
-	const [searchResults, setSearchResults] = useState<any[]>([]);
-	const [searchLoading, setSearchLoading] = useState(false);
-	const [searchVisible, setSearchVisible] = useState(false);
-	const fuzzySearcherRef = useRef(new FuzzySearcher());
-
-	// Run fuzzy search when query changes
-	useEffect(() => {
-		if (!searchVisible || !searchQuery.trim()) {
-			setSearchResults([]);
-			return;
-		}
-		setSearchLoading(true);
-		fuzzySearcherRef.current.setSessions(sessions);
-		const results = fuzzySearcherRef.current.search(searchQuery);
-		setSearchResults(results);
-		setSearchLoading(false);
-	}, [searchQuery, sessions, searchVisible]);
-
-	/** Toggle search visibility */
-	const toggleSearch = useCallback(() => {
-		setSearchVisible(v => !v);
-		if (searchVisible) {
-			setSearchQuery("");
-			setSearchResults([]);
-		}
-	}, [searchVisible]);
-	const handleSelectSearchResult = useCallback((sessionId: string, messageId: string | null) => {
-		openSessionInTab(sessionId, messageId ?? undefined);
-		setSearchQuery("");
-		setSearchResults([]);
-		setSearchVisible(false);
-	}, [openSessionInTab]);
-
-	const handleToggleActiveNote = useCallback(() => {
-		console.log(`[handleToggleActiveNote] fired — current items=${JSON.stringify(contextItemsRef.current.map(contextItemKey))}`);
-		setContextItems((prev) => {
-			const hasActive = prev.some((i) => i.type === "active-note");
-			console.log(`[handleToggleActiveNote] hasActive=${hasActive}, prevItems=${JSON.stringify(prev.map(contextItemKey))}`);
-			if (hasActive) {
-				return prev.filter((i) => i.type !== "active-note");
-			}
-			return [...prev, { type: "active-note", id: makeId() }];
-		});
-	}, []);
-
-	const handleRemoveContextItem = useCallback((id: string) => {
-		setContextItems((prev) => prev.filter((i) => i.id !== id));
-	}, []);
-
-	const handleAddMention = useCallback((item: ContextItem) => {
-		handleAddContextItems([item]);
-	}, []);
-
-	const handleAddContextItems = useCallback((items: ContextItem[]) => {
-		setContextItems((prev) => {
-			const existing = new Set(
-				prev.map((i) => {
-					if (i.type === "note") return `note:${i.path}`;
-					if (i.type === "folder") return `folder:${i.path}`;
-					if (i.type === "tag") return `tag:${i.tag}`;
-					return `active:${i.id}`;
-				}),
-			);
-			const merged = [...prev];
-			for (const item of items) {
-				const key =
-					item.type === "note"
-						? `note:${item.path}`
-						: item.type === "folder"
-							? `folder:${item.path}`
-							: item.type === "tag"
-								? `tag:${item.tag}`
-								: `active:${item.id}`;
-				if (!existing.has(key)) {
-					existing.add(key);
-					merged.push(item);
-				}
-			}
-			return merged;
-		});
-		ui.setShowContextPicker(false);
-	}, []);
-	const hasHistory = sessions.some((s) => s.messages.length > 0);
-
-	const actions = useMessageActions({
-		plugin,
-		orchestrator,
-		resolvedProfile,
-		isGroupChat,
-		participants,
-		thinkingEnabled,
-		sessionsRef,
-		activeSessionIdRef,
-		setSessions,
-		setIsStreaming,
-		setCurrentAiMessage,
-		setCurrentContentParts,
-		setPendingToolCall,
-		setWasTruncated,
-		setContextTokenCount,
-		setContextItems,
-		setRunningTokenTotal,
-		controllerRef,
-		resolveToolRef,
-		messagesRef,
-		contextItemsRef,
-		lastMarkdownLeafRef,
-		pendingToolCallRef,
-		ui,
-	});
-
-
-	const handleNewChat = useCallback(() => {
-		if (isStreaming) controllerRef.current?.abort();
-
-		// T26 Phase 2: Auto-summarize the ending session before starting a new one
-		const endingSessionId = activeSessionIdRef.current;
-		if (endingSessionId) {
-			const endingSession = sessionsRef.current.find(
-				(s) => s.id === endingSessionId,
-			);
-			if (endingSession) {
-				void plugin.onSessionEnd(endingSession);
-			}
-		}
-
-		createNewSession({
-			includeActiveNote: plugin.settings.includeActiveNote,
-			selectedProfileIds: plugin.settings.selectedProfileIds,
-			autoNameSessions: plugin.settings.autoNameSessions,
-		});
-		// Select the default profile(s) from settings for the new chat
-		if (plugin.settings.selectedProfileIds.length > 0) {
-			ui.setSelectedProfileIds(new Set(plugin.settings.selectedProfileIds));
-		} else {
-			// Fall back to the active provider profile so the dropdown is never empty
-			const activeProfile = getActiveProviderProfile(plugin.settings);
-			ui.setSelectedProfileIds(new Set([activeProfile.id]));
-		}
-		ui.setDebateMode(false);
-		setWasTruncated(false);
-	}, [isStreaming, plugin, createNewSession]);
-
-	const handleLoadSession = useCallback((sessionId: string) => {
-		ui.setShowSessionPicker(false);
-		// Restore selectedProfileIds for the loaded session BEFORE changing activeSessionId
-		const session = sessionsRef.current.find((s) => s.id === sessionId);
-		if (session?.selectedProfileIds && session.selectedProfileIds.length > 0) {
-			ui.setSelectedProfileIds(new Set(session.selectedProfileIds));
-		} else if (session?.participants && session.participants.length > 0) {
-			// Backward compat: derive from legacy participants
-			ui.setSelectedProfileIds(new Set(session.participants.map((p) => p.id)));
-		} else {
-			ui.setSelectedProfileIds(new Set());
-		}
-		ui.setDebateMode(false);
-		openSessionInTab(sessionId);
-	}, [openSessionInTab]);
-
-	const handleCloseTab = useCallback((sessionId: string) => {
-		setOpenSessionIds((current) => {
-			if (current.length <= 1) return current;
-			const index = current.indexOf(sessionId);
-			const remaining = current.filter((id) => id !== sessionId);
-			if (sessionId === activeSessionId) {
-				setActiveSessionId(remaining[Math.max(0, index - 1)]);
-				setScrollToMessageId(undefined);
-			}
-			return remaining;
-		});
-	}, [activeSessionId, setActiveSessionId]);
-
-	const handleDeleteSession = useCallback((sessionId: string) => {
-		setSessions((prev) => {
-			const filtered = prev.filter((s) => s.id !== sessionId);
-			// If deleting the active session, activate the most recent remaining
-			if (activeSessionIdRef.current === sessionId) {
-				const mostRecent = filtered.sort(
-					(a, b) => b.updatedAt - a.updatedAt,
-				)[0];
-				if (mostRecent) {
-					// Restore selectedProfileIds BEFORE changing active session
-					if (mostRecent.selectedProfileIds && mostRecent.selectedProfileIds.length > 0) {
-						ui.setSelectedProfileIds(new Set(mostRecent.selectedProfileIds));
-					} else if (mostRecent.participants && mostRecent.participants.length > 0) {
-						ui.setSelectedProfileIds(new Set(mostRecent.participants.map((p) => p.id)));
-					} else {
-						ui.setSelectedProfileIds(new Set());
-					}
-					ui.setDebateMode(false);
-					setActiveSessionId(mostRecent.id);
-				} else {
-					// No sessions left — create a new empty one
-					const empty: ChatSession = {
-						id: makeId(),
-						title: "",
-						createdAt: Date.now(),
-						updatedAt: Date.now(),
-						messages: [],
-						contextItems: plugin.settings.includeActiveNote
-							? [{ type: "active-note", id: makeId() }]
-							: [],
-						profileId: profileId || undefined,
-					};
-					filtered.push(empty);
-					setActiveSessionId(empty.id);
-					ui.setSelectedProfileIds(new Set());
-				}
-			}
-			return filtered;
-		});
-	}, []);
-
-	const handleRenameSession = useCallback(
-		(sessionId: string, newTitle: string) => {
-			renameSession(sessionId, newTitle);
-		},
-		[renameSession],
-	);
-
-	const handleToggleAutoApprove = useCallback(() => {
-		const newValue = !autoApprove;
-		setAutoApprove(newValue);
-		plugin.settings.autoApply = newValue;
-		void plugin.saveSettings();
-		new Notice(
-			newValue
-				? "🤖 Auto-approve ON — tool calls will run automatically"
-				: "🔒 Manual mode — each tool call will ask for approval",
-			2500,
-		);
-	}, [plugin, autoApprove]);
-
-	const handleToggleAutoName = useCallback(() => {
-		const newValue = !autoNameSessions;
-		setAutoNameSessions(newValue);
-		plugin.settings.autoNameSessions = newValue;
-		void plugin.saveSettings();
-		new Notice(
-			newValue
-				? "✨ Auto-name ON — sessions will be named automatically"
-				: "✨ Auto-name OFF — sessions will not be named automatically",
-			2500,
-		);
-	}, [plugin, autoNameSessions, setAutoNameSessions]);
-
-	const handleManualRename = useCallback(async () => {
+	// ─── Draft auto-save (debounced) ───
+	const draftTimerRef = useRef<number | null>(null);
+	const handleDraftChange = useCallback((text: string) => {
 		const currentActiveId = activeSessionIdRef.current;
 		if (!currentActiveId) return;
-		const session = sessionsRef.current.find(
-			(s) => s.id === currentActiveId,
-		);
-		if (!session || session.messages.length === 0) {
-			new Notice("No messages to generate a title from", 2000);
-			return;
+		if (draftTimerRef.current) {
+			window.clearTimeout(draftTimerRef.current);
 		}
-		new Notice("🪄 Asking model for a title…", 1500);
-		const title = await manualRenameActiveSession(
-			resolvedProfile,
-			plugin.chatapi,
-		);
-		if (title) {
-			new Notice(`Session renamed to: "${title}"`, 2500);
-		}
-	}, [resolvedProfile, plugin.chatapi, manualRenameActiveSession]);
-
-	const handleExportChat = useCallback(() => {
-		ui.setShowExportModal(true);
+		draftTimerRef.current = window.setTimeout(() => {
+			setSessions((prev) =>
+				prev.map((s) =>
+					s.id === currentActiveId ? { ...s, draft: text } : s,
+				),
+			);
+			draftTimerRef.current = null;
+		}, 500);
+	}, [setSessions]);
+	useEffect(() => {
+		return () => {
+			if (draftTimerRef.current) {
+				window.clearTimeout(draftTimerRef.current);
+			}
+		};
 	}, []);
+
+	// Initialise leaf tracking and register workspace listener
+	useEffect(() => {
+		const initLeaf =
+			plugin.app.workspace.getLeavesOfType("markdown")[0] ?? null;
+		if (initLeaf?.view instanceof MarkdownView) {
+			setTargetNoteName(
+				(initLeaf.view as MarkdownView).file?.basename ?? null,
+			);
+		}
+	}, [plugin]);
+
+	const hasHistory = sessions.some((s) => s.messages.length > 0);
 
 	return (
 		<div className={`chat-panel${ui.zenMode ? ' is-zen' : ''}`}>
