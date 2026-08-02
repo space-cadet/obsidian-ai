@@ -17,7 +17,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T15 | Tabbed Chat Interface with Multi-Profile | 🔄 | HIGH | 2026-05-15 | T13, T14, T9 | [Details](tasks/T15.md) |
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
 | T26 | AI Intelligence Layer — Identity, Memory & Context | 🔄 | HIGH | 2026-07-21 | T24, T13 | [Details](tasks/T26.md) | Phase 2 complete (SessionSummarizer), Phases 3-5 pending |
-| T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
+| T32 | Security Hardening — Path Traversal, XSS, SSRF, ReDoS | ✅ | **CRITICAL** | 2026-08-02 | 2026-08-02 | T13, T14 | [Details](tasks/T32.md) |
 
 ## Completed Tasks
 

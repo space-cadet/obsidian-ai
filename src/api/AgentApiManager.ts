@@ -80,6 +80,13 @@ export class AgentApiManager {
 	): AsyncIterable<OpenResponsesEvent> {
 		const url = this.profile.endpointUrl;
 
+		// SSRF validation
+		const urlCheck = validateAgentUrl(url);
+		if (!urlCheck.ok) {
+			yield { type: "error", message: `SSRF blocked: ${urlCheck.error}` };
+			return;
+		}
+
 		const body: Record<string, unknown> = {
 			model: options.model || this.profile.model || "openclaw",
 			input: options.input,
@@ -291,4 +298,64 @@ export function validateAgentProfile(profile: AgentProviderProfile): string | nu
 		return "Agent ID is required (e.g. 'main').";
 	}
 	return null;
+}
+
+/* ── SSRF Protection ── */
+
+/** Blocked URL patterns for agent endpoints */
+const SSRF_BLOCK_PATTERNS = [
+	/^file:/i,
+	/^ftp:/i,
+	/^data:/i,
+	/^javascript:/i,
+	/^blob:/i,
+];
+
+/** Private IP ranges that should not be accessible */
+const PRIVATE_IP_RANGES = [
+	/^127\./,                       // loopback
+	/^10\./,                        // private A
+	/^172\.(1[6-9]|2\d|3[01])\./,  // private B
+	/^192\.168\./,                  // private C
+	/^169\.254\./,                  // link-local
+	/^0\./,                         // current network
+	/^::1$/,                        // IPv6 loopback
+	/^fc00:/i,                      // IPv6 unique local
+	/^fe80:/i,                      // IPv6 link-local
+];
+
+/**
+ * Validates an agent endpoint URL to prevent SSRF attacks.
+ * Blocks: non-HTTP(S) schemes, private IPs, localhost, file URLs.
+ */
+export function validateAgentUrl(urlStr: string): { ok: boolean; error?: string } {
+	let url: URL;
+	try {
+		url = new URL(urlStr);
+	} catch {
+		return { ok: false, error: "Invalid URL format." };
+	}
+
+	// Scheme check
+	if (url.protocol !== "http:" && url.protocol !== "https:") {
+		return { ok: false, error: `Unsupported scheme: ${url.protocol}. Only http:// and https:// are allowed.` };
+	}
+
+	// Blocked patterns
+	if (SSRF_BLOCK_PATTERNS.some((re) => re.test(urlStr))) {
+		return { ok: false, error: "URL scheme is not allowed." };
+	}
+
+	// Hostname checks
+	const hostname = url.hostname.toLowerCase();
+
+	if (hostname === "localhost" || hostname === "[::1]") {
+		return { ok: false, error: "localhost is not allowed as an agent endpoint." };
+	}
+
+	if (PRIVATE_IP_RANGES.some((re) => re.test(hostname))) {
+		return { ok: false, error: "Private IP addresses are not allowed as agent endpoints." };
+	}
+
+	return { ok: true };
 }

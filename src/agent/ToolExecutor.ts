@@ -1,9 +1,28 @@
-import { App, Notice, TFile } from "obsidian";
+import { App, Notice, TFile, normalizePath } from "obsidian";
 import type { ToolCall, ToolResult } from "./types";
 import type { ObsidianAISettings, WebSearchProvider } from "../settings";
 import type { PersonaLoader } from "../intelligence/PersonaLoader";
 import { SearchIndex } from "../search/index";
 
+/* ── Security: forbidden path patterns ── */
+const FORBIDDEN_PATH_PATTERNS = [
+	/^\.obsidian\b/,           // plugin config / data
+	/^\.trash\b/,              // Obsidian trash
+	/^\.git\b/,                // git internals
+	/^\.+\//,                  // leading ../ or ./
+	/\.\.\//,                   // any ../ anywhere
+];
+
+function isPathAllowed(path: string): boolean {
+	const normalized = normalizePath(path);
+	return !FORBIDDEN_PATH_PATTERNS.some((re) => re.test(normalized));
+}
+
+function denyPath(path: string): ToolResult {
+	return {
+		error: `Access denied: "${path}" is outside the allowed vault area.`,
+	};
+}
 export class ToolExecutor {
 	constructor(
 		private app: App,
@@ -294,8 +313,12 @@ export class ToolExecutor {
 	 * Resolves a note path the same way Obsidian wiki-links do.
 	 * Accepts basename ("Vocabulary Log"), full path ("Notes/Vocabulary Log.md"),
 	 * or path without extension ("Notes/Vocabulary Log").
+	 *
+	 * Security: blocks access to .obsidian/, .trash/, .git/, and any path
+	 * containing "../".
 	 */
 	private resolveNote(path: string): TFile | null {
+		if (!isPathAllowed(path)) return null;
 		// 1. Exact path match
 		let file = this.app.vault.getAbstractFileByPath(path);
 		if (file instanceof TFile) return file;
@@ -338,6 +361,7 @@ export class ToolExecutor {
 	}
 
 	private async readNote(args: { path: string }): Promise<ToolResult> {
+		if (!isPathAllowed(args.path)) return denyPath(args.path);
 		const file = this.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
 		const content = await this.app.vault.read(file);
@@ -358,6 +382,7 @@ export class ToolExecutor {
 		path: string;
 		content: string;
 	}): Promise<ToolResult> {
+		if (!isPathAllowed(args.path)) return denyPath(args.path);
 		const file = this.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
 		await this.app.vault.modify(file, args.content);
@@ -369,6 +394,7 @@ export class ToolExecutor {
 		path: string;
 		content: string;
 	}): Promise<ToolResult> {
+		if (!isPathAllowed(args.path)) return denyPath(args.path);
 		const file = this.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
 		const existing = await this.app.vault.read(file);
@@ -381,6 +407,7 @@ export class ToolExecutor {
 		path: string;
 		content: string;
 	}): Promise<ToolResult> {
+		if (!isPathAllowed(args.path)) return denyPath(args.path);
 		// Normalize: ensure .md extension
 		const fileName = args.path.endsWith(".md")
 			? args.path
@@ -401,6 +428,7 @@ export class ToolExecutor {
 		replace: string;
 		replace_all?: boolean;
 	}): Promise<ToolResult> {
+		if (!isPathAllowed(args.path)) return denyPath(args.path);
 		const file = this.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
 
@@ -430,6 +458,7 @@ export class ToolExecutor {
 		section_heading: string;
 		new_content: string;
 	}): Promise<ToolResult> {
+		if (!isPathAllowed(args.path)) return denyPath(args.path);
 		const file = this.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
 
@@ -486,6 +515,7 @@ export class ToolExecutor {
 	}
 
 	private async createFolder(args: { path: string }): Promise<ToolResult> {
+		if (!isPathAllowed(args.path)) return denyPath(args.path);
 		// Normalize path
 		const folderPath = args.path.replace(/\/+/g, "/").replace(/\/$/, "");
 		if (!folderPath) {
@@ -504,6 +534,9 @@ export class ToolExecutor {
 	}
 
 	private async moveNote(args: { path: string; new_path: string }): Promise<ToolResult> {
+		if (!isPathAllowed(args.path) || !isPathAllowed(args.new_path)) {
+			return denyPath(!isPathAllowed(args.path) ? args.path : args.new_path);
+		}
 		const file = this.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
 
@@ -534,6 +567,7 @@ export class ToolExecutor {
 	}
 
 	private async deleteNote(args: { path: string }): Promise<ToolResult> {
+		if (!isPathAllowed(args.path)) return denyPath(args.path);
 		const file = this.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
 
@@ -691,19 +725,29 @@ export class ToolExecutor {
 		}
 
 		const html = await res.text();
-		const results: Array<{ title: string; url: string; snippet: string }> =
-			[];
+		const results: Array<{ title: string; url: string; snippet: string }> = [];
 
-		// Parse DuckDuckGo HTML results
-		// Each result is in a .result div
-		const resultRegex =
-			/<div class="result[^"]*"[^>]*>.*?<a[^>]+href="([^"]*)"[^>]*class="result__a"[^>]*>(.*?)<\/a>.*?<a[^>]+class="result__snippet"[^>]*>(.*?)<\/a>.*?<\/div>/gs;
+		// Parse using DOMParser instead of regex to avoid ReDoS
+		const parser = new DOMParser();
+		const doc = parser.parseFromString(html, "text/html");
 
-		let match;
-		while ((match = resultRegex.exec(html)) !== null && results.length < limit) {
-			const rawUrl = match[1];
-			const title = this.stripHtml(match[2]);
-			const snippet = this.stripHtml(match[3]);
+		// Find all result containers
+		const resultDivs = doc.querySelectorAll(".result, .result__a, .result__snippet");
+
+		// Collect links and snippets
+		const linkElements = doc.querySelectorAll("a.result__a");
+		const snippetElements = doc.querySelectorAll("a.result__snippet");
+
+		for (let i = 0; i < linkElements.length && results.length < limit; i++) {
+			const linkEl = linkElements[i];
+			const rawUrl = linkEl.getAttribute("href") ?? "";
+			const title = this.stripHtml(linkEl.textContent ?? "");
+
+			// Try to find matching snippet
+			let snippet = "";
+			if (snippetElements[i]) {
+				snippet = this.stripHtml(snippetElements[i].textContent ?? "");
+			}
 
 			// DuckDuckGo redirects through their own URL — try to extract real URL
 			let url = rawUrl;
@@ -718,31 +762,6 @@ export class ToolExecutor {
 
 			if (title && url) {
 				results.push({ title, url, snippet });
-			}
-		}
-
-		// Fallback: if regex didn't match, try simpler parsing
-		if (results.length === 0) {
-			const linkRegex =
-				/<a[^>]+class="result__a"[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gs;
-			while (
-				(match = linkRegex.exec(html)) !== null &&
-				results.length < limit
-			) {
-				const rawUrl = match[1];
-				const title = this.stripHtml(match[2]);
-				let url = rawUrl;
-				if (rawUrl.startsWith("//duckduckgo.com/l/")) {
-					try {
-						const u = new URL("https:" + rawUrl);
-						url = u.searchParams.get("uddg") ?? rawUrl;
-					} catch {
-						// keep rawUrl
-					}
-				}
-				if (title && url) {
-					results.push({ title, url, snippet: "" });
-				}
 			}
 		}
 

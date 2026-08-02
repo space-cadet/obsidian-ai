@@ -1,8 +1,23 @@
 # Edit History
 
-*Last Updated: 2026-07-29 13:47:51 IST*
+*Last Updated: 2026-08-02 18:57:00 IST*
 
 ---
+
+## 2026-08-02
+
+#### 18:55:00 IST - T32: Security Hardening — Path Traversal, XSS, SSRF, ReDoS
+- Modified `src/agent/ToolExecutor.ts` - Added `isPathAllowed()` and `denyPath()` helpers; applied path checks to all file operation tools
+- Created `src/lib/sanitizeHtml.ts` - `sanitizeHtmlForRenderer()` strips `<script>`, `javascript:`, `on*` handlers, `data:text/html`, `<iframe>`
+- Modified `src/components/MessageBubble.tsx` - Applied `sanitizeHtmlForRenderer()` before all `MarkdownRenderer.render()` calls
+- Modified `src/components/ChatMessages.tsx` - Applied `sanitizeHtmlForRenderer()` to streaming text parts
+- Modified `src/api/AgentApiManager.ts` - Added `validateAgentUrl()` helper blocking localhost, private IPs, non-HTTP(S) schemes
+- Modified `src/agent/ToolExecutor.ts` - Replaced regex-based DuckDuckGo HTML scraping with `DOMParser`
+- Modified `src/storage/ChatStorage.ts` - Added per-line try/catch + schema validation in `_loadMessages()`
+- Created `src/agent/__tests__/security.test.ts` - 15 tests covering XSS sanitization and SSRF validation
+- Created `memory-bank/tasks/T32.md` - Security hardening task documentation
+- Modified `memory-bank/tasks.md` - Added T32 to completed tasks
+- Created `memory-bank/edits/2026-08-02/1855-T32-security-hardening.md` - Edit chunk for canonical record
 
 ## 2026-07-29
 

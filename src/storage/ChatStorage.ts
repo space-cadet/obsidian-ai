@@ -229,7 +229,27 @@ class JsonlStorage implements ChatStorage {
 		const raw = await adapter.read(path);
 		if (!raw.trim()) return [];
 		const lines = raw.split("\n").filter((l) => l.trim());
-		return lines.map((line) => JSON.parse(line));
+		const messages: ChatMessage[] = [];
+		for (const line of lines) {
+			try {
+				const parsed = JSON.parse(line);
+				// Basic schema validation
+				if (
+					parsed &&
+					typeof parsed === "object" &&
+					typeof parsed.id === "string" &&
+					typeof parsed.role === "string" &&
+					["user", "assistant", "system"].includes(parsed.role)
+				) {
+					messages.push(parsed as ChatMessage);
+				} else {
+					this.deps.logger?.log("warn", `ChatStorage: skipping malformed message line in ${path}`);
+				}
+			} catch {
+				this.deps.logger?.log("warn", `ChatStorage: failed to parse message line in ${path}`);
+			}
+		}
+		return messages;
 	}
 
 	private async _writeMessages(

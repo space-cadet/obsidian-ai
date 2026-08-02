@@ -4,6 +4,7 @@ import { ChatMessage, ContentPart } from "../types";
 import { createRoot } from "react-dom/client";
 import MessageBubble from "./MessageBubble";
 import ToolCallNotification from "./ToolCallNotification";
+import { sanitizeHtmlForRenderer } from "../lib/sanitizeHtml";
 
 const StreamingBubble: React.FC<{
 	content: string;
@@ -14,6 +15,7 @@ const StreamingBubble: React.FC<{
 	const contentRef = useRef<HTMLDivElement>(null);
 	const renderedCountRef = useRef(0);
 	const lastTextRef = useRef("");
+	const wasPartsModeRef = useRef(false);
 	const toolRootsRef = useRef<Map<number, ReturnType<typeof createRoot>>>(new Map());
 
 	useEffect(() => {
@@ -27,8 +29,24 @@ const StreamingBubble: React.FC<{
 		);
 
 		try {
+			const isPartsMode = contentParts && contentParts.length > 0;
+
+			// If we just switched from text-only to parts mode, clear the DOM to avoid
+			// duplication — the text-only path may have already rendered content directly
+			// into contentRef.current, and the parts path appends without clearing.
+			if (isPartsMode && !wasPartsModeRef.current && contentRef.current) {
+				contentRef.current.empty();
+				renderedCountRef.current = 0;
+				lastTextRef.current = "";
+				logger?.writeDirect?.(
+					"debug",
+					`[StreamingBubble] cleared DOM on text→parts transition`,
+				);
+			}
+			wasPartsModeRef.current = isPartsMode;
+
 			// If we have contentParts with tool calls, use incremental rendering to avoid flicker
-			if (contentParts && contentParts.length > 0) {
+			if (isPartsMode) {
 				const currentCount = renderedCountRef.current;
 				const newParts = contentParts.slice(currentCount);
 
@@ -57,7 +75,7 @@ const StreamingBubble: React.FC<{
 					if (part.type === "text") {
 						const textDiv = contentRef.current.createDiv({ cls: "chat-bubble-text" });
 						const comp = new Component();
-						MarkdownRenderer.render(app, part.content, textDiv, "", comp);
+						MarkdownRenderer.render(app, sanitizeHtmlForRenderer(part.content), textDiv, "", comp);
 					} else if (part.type === "tool_call") {
 						const toolDiv = contentRef.current.createDiv({ cls: "chat-bubble-tool" });
 						const root = createRoot(toolDiv);
@@ -90,7 +108,7 @@ const StreamingBubble: React.FC<{
 							remainDiv.empty();
 						}
 						const comp = new Component();
-						MarkdownRenderer.render(app, remainingText, remainDiv, "", comp);
+						MarkdownRenderer.render(app, sanitizeHtmlForRenderer(remainingText), remainDiv, "", comp);
 					}
 				}
 			} else {
@@ -105,7 +123,7 @@ const StreamingBubble: React.FC<{
 					const comp = new Component();
 					MarkdownRenderer.render(
 						app,
-						content,
+						sanitizeHtmlForRenderer(content),
 						contentRef.current,
 						"",
 						comp,

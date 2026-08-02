@@ -3,6 +3,7 @@ import { App, MarkdownRenderer, Component } from "obsidian";
 import { ChatMessage, ContextItem, ContentPart } from "../types";
 import MessageActions from "./MessageActions";
 import ToolCallNotification from "./ToolCallNotification";
+import { sanitizeHtmlForRenderer } from "../lib/sanitizeHtml";
 
 /** Highlight context item names in rendered DOM */
 function highlightMentions(container: HTMLElement, items: ContextItem[]): void {
@@ -187,7 +188,7 @@ function TextSegment({
 		const comp = new Component();
 		ref.current.innerHTML = "";
 
-		MarkdownRenderer.render(app, cleanContent, ref.current, "", comp).catch(
+		MarkdownRenderer.render(app, sanitizeHtmlForRenderer(cleanContent), ref.current, "", comp).catch(
 			(err: any) => {
 				if (unmounted || !ref.current) return;
 				ref.current.innerHTML = "";
@@ -422,7 +423,7 @@ function LegacyContent({
 			const comp = new Component();
 			MarkdownRenderer.render(
 				app,
-				displayContent,
+				sanitizeHtmlForRenderer(displayContent),
 				contentRef.current,
 				"",
 				comp,
