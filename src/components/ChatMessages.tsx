@@ -29,7 +29,7 @@ const StreamingBubble: React.FC<{
 		);
 
 		try {
-			const isPartsMode = contentParts && contentParts.length > 0;
+			const isPartsMode = Boolean(contentParts && contentParts.length > 0);
 
 			// If we just switched from text-only to parts mode, clear the DOM to avoid
 			// duplication — the text-only path may have already rendered content directly
@@ -46,7 +46,7 @@ const StreamingBubble: React.FC<{
 			wasPartsModeRef.current = isPartsMode;
 
 			// If we have contentParts with tool calls, use incremental rendering to avoid flicker
-			if (isPartsMode) {
+			if (contentParts && contentParts.length > 0) {
 				const currentCount = renderedCountRef.current;
 				const newParts = contentParts.slice(currentCount);
 
