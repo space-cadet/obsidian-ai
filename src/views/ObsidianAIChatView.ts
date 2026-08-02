@@ -35,6 +35,7 @@ export class ObsidianAIChatView extends ItemView {
 	private root: Root | null = null;
 	private plugin: ChatPluginLike;
 	private options: ObsidianAIChatViewOptions;
+	private renderPending = false;
 
 	constructor(
 		leaf: WorkspaceLeaf,
@@ -59,6 +60,10 @@ export class ObsidianAIChatView extends ItemView {
 	}
 
 	async onOpen(): Promise<void> {
+		// Defensive: ensure clean container before first render.
+		// On desktop Obsidian may call onOpen + setState in quick succession,
+		// and contentEl can contain stale DOM from a previous mount.
+		this.contentEl.empty();
 		this.render();
 	}
 
@@ -73,9 +78,14 @@ export class ObsidianAIChatView extends ItemView {
 	}
 
 	private render(): void {
+		// Prevent concurrent renders that can duplicate content on desktop
+		if (this.renderPending) return;
+		this.renderPending = true;
+
 		if (!this.root) {
 			this.root = createRoot(this.contentEl);
 		}
+
 		this.root.render(
 			createElement(
 				ChatErrorBoundary,
@@ -88,10 +98,16 @@ export class ObsidianAIChatView extends ItemView {
 				}),
 			),
 		);
+
+		// Clear the guard after React has processed the render
+		queueMicrotask(() => {
+			this.renderPending = false;
+		});
 	}
 
 	async onClose(): Promise<void> {
 		this.root?.unmount();
 		this.root = null;
+		this.renderPending = false;
 	}
 }
