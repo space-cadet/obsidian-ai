@@ -264,6 +264,13 @@ export default class ObsidianAIPlugin extends Plugin {
 		const { workspace } = this.app;
 		let leaf = workspace.getLeavesOfType(CHAT_VIEWTYPE)[0];
 		if (!leaf) {
+			// Defensive: workspace restoration may still be in progress,
+			// so the restored leaf might not yet appear in getLeavesOfType.
+			// Wait one animation frame before falling back to creating a new leaf.
+			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+			leaf = workspace.getLeavesOfType(CHAT_VIEWTYPE)[0];
+		}
+		if (!leaf) {
 			leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf(true);
 			await leaf.setViewState({ type: CHAT_VIEWTYPE, active: true });
 		}
