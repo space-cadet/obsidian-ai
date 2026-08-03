@@ -1,13 +1,14 @@
 # Edit Chunk: T32 Regression — Mobile Input Erased
 
 **Task:** T32 (obsidian-ai Security Hardening — but this is a regression from prior streaming fix work)
-**Period:** 2026-08-03 22:36–22:42 IST (UTC+5:30)
+**Period:** 2026-08-03 22:36–22:49 IST (UTC+5:30)
 **Agent:** kimi/k3
 
 ## Changes
 
 ### Modified
-- `src/components/ChatInput.tsx` — Fixed mobile input echo-loop
+- `src/components/ChatInput.tsx` — Disabled draft feature to fix mobile input erasure
+- `src/components/ChatApp.tsx` — Pass undefined for draft/onDraftChange props
 
 ## Summary
 
@@ -18,10 +19,20 @@
 3. `useEffect` runs → `setValue(draft)` overwrites user's typing
 4. On mobile keyboard, this causes every keystroke to be erased
 
-**Fix:** Added `valueRef` to track live input value. useEffect now only updates from draft when `draft !== valueRef.current`, breaking the echo loop while preserving session-switch draft loading.
+**Attempted fix (09aae62):** Added `valueRef` to track live input value. useEffect only updates from draft when `draft !== valueRef.current`.
+**Result:** Did NOT work — user reported input still being erased.
+
+**Final fix (6feb505):** Completely disabled draft feature:
+- `ChatApp.tsx`: Passes `undefined` for `draft` and `onDraftChange` props
+- `ChatInput.tsx`: Removed `draft` from useEffect deps, commented out `onDraftChange` call
+- This eliminates the echo loop entirely
+
+**Note:** Drafts can be re-enabled later with proper debounce isolation (e.g., only update from draft on session switch, not on every prop change).
 
 ## Files
 - `src/components/ChatInput.tsx`
+- `src/components/ChatApp.tsx`
 
-## Git Commit
-- `09aae62` — fix(mobile): Prevent message input from being erased on mobile
+## Git Commits
+- `09aae62` — fix(mobile): Prevent message input from being erased on mobile (attempted, did not work)
+- `6feb505` — fix(mobile): Disable draft feature to prevent input erasure (final fix)
