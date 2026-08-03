@@ -516,8 +516,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 					}
 					return undefined;
 				})()}
-				draft={sessions.find((s) => s.id === activeSessionId)?.draft}
-				onDraftChange={handleDraftChange}
+				draft={undefined}
+				onDraftChange={undefined}
 			/>
 			{ui.showSessionPicker && (
 				<SessionPickerModal

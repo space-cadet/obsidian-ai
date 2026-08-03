@@ -220,24 +220,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		textarea.style.height = newHeight + "px";
 	}, [value]);
 
-	const valueRef = useRef(value);
-
-	// Keep ref in sync with current value to prevent echo-loop from onDraftChange
-	useEffect(() => {
-		valueRef.current = value;
-	});
-
 	useEffect(() => {
 		if (editMessage !== undefined) {
 			setValue(editMessage);
 			setTimeout(() => textareaRef.current?.focus(), 50);
-		} else if (draft !== undefined && draft !== valueRef.current) {
-			// Only update from draft when it differs from current input value.
-			// Prevents mobile echo-loop where onDraftChange → parent re-render
-			// → draft prop → useEffect overwrites user's typing.
-			setValue(draft);
 		}
-	}, [editMessage, draft]);
+		// Draft feature disabled — was causing mobile input erasure
+		// See: T82 regression fix, 2026-08-03
+	}, [editMessage]);
 
 	const allCandidates = useMemo(() => {
 		if (!auto) return [];
@@ -357,7 +347,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			const text = e.target.value;
 			const cursorPos = e.target.selectionStart;
 			setValue(text);
-			onDraftChange?.(text);
+			// Draft auto-save disabled — was causing mobile input erasure
+			// onDraftChange?.(text);
 
 			const detected = detectAutocomplete(text, cursorPos);
 			if (detected) {
