@@ -3393,9 +3393,8 @@
 	display: flex;
 	align-items: center;
 	/* Share available space before scrolling so a short tab set never begins clipped. */
-	flex: 1 1 0;
-	min-width: 0;
-	max-width: 360px;
+	flex: 0 0 240px;
+	min-width: 240px;
 	border: 1px solid transparent;
 	border-bottom: 0;
 	border-radius: 6px 6px 0 0;
@@ -3458,6 +3457,8 @@
 .chat-session-tab-close:hover {
 	background: var(--background-modifier-hover);
 }
+
+.obsidian-ai-settings-toc{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}.obsidian-ai-settings-toc a{padding:5px 9px;border-radius:999px;background:var(--background-secondary);font-size:var(--font-ui-smaller)}.obsidian-ai-usage-chart{display:grid;gap:8px;margin:4px 0 16px}.obsidian-ai-usage-chart-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(80px,2fr) auto;gap:8px;align-items:center}.obsidian-ai-usage-chart-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.obsidian-ai-usage-chart-track{height:9px;overflow:hidden;border-radius:999px;background:var(--background-modifier-border)}.obsidian-ai-usage-chart-bar{height:100%;background:#0d9488}.obsidian-ai-usage-chart-value{font-family:var(--font-monospace);font-size:var(--font-ui-smaller)}
 
 .chat-session-delete-confirm {
 	position: absolute;

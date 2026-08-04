@@ -166,6 +166,7 @@ export function renderDiagnosticsSection(
 	const usageSplitEl = createMetric("Estimated input / output", "—");
 	const responseStatsEl = createMetric("Completed responses", "—");
 	const modelUsageEl = createMetric("Estimated usage by model", "—");
+	const usageChartEl = sectionEl.createDiv({ cls: "obsidian-ai-usage-chart" });
 	const diskTotalEl = createMetric("Plugin Storage", "—");
 	const diskBreakdownEl = createMetric("Storage Breakdown", "—");
 
@@ -205,6 +206,8 @@ export function renderDiagnosticsSection(
 				: usage.modelEstimatedTokens
 					.map(({ model, tokens }) => `${model}: ~${tokens.toLocaleString()}`)
 					.join(" · ");
+			usageChartEl.empty(); const top = usage.modelEstimatedTokens.slice(0, 6); const max = top[0]?.tokens || 1;
+			for (const { model, tokens } of top) { const row = usageChartEl.createDiv({ cls: "obsidian-ai-usage-chart-row" }); row.createEl("span", { text: model, cls: "obsidian-ai-usage-chart-label", attr: { title: model } }); const track = row.createDiv({ cls: "obsidian-ai-usage-chart-track" }); track.createDiv({ cls: "obsidian-ai-usage-chart-bar", attr: { style: `width:${tokens / max * 100}%` } }); row.createEl("span", { text: `~${tokens.toLocaleString()}`, cls: "obsidian-ai-usage-chart-value" }); }
 		} catch {
 			sessionsEl.textContent = "?";
 			messagesEl.textContent = "?";

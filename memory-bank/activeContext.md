@@ -3,6 +3,7 @@
 *Last Updated: 2026-08-02 18:56 IST*
 
 ## Current Focus
+**Settings navigation and LLM usage dashboard** — implemented 2026-08-05; adds section links, per-model usage bars, and fixed-width scrolling tabs.
 **T33: Desktop Chat View Singleton Repair** ✅ COMPLETED (2026-08-04)
 
 ### Desktop Sidebar Duplicate Repair (2026-08-04)

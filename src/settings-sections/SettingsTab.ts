@@ -70,6 +70,8 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			containerEl.addClass("obsidian-ai-settings");
 
 			renderHeroSection(containerEl, this.plugin);
+			const nav = containerEl.createEl("nav", { cls: "obsidian-ai-settings-toc" });
+			["Provider Profiles", "Chat Defaults", "Agent Tools", "Intelligence", "Web Search", "Advanced", "Custom Commands", "Diagnostics"].forEach((title) => nav.createEl("a", { text: title, href: `#obsidian-ai-settings-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` }));
 			renderProviderProfilesSection(containerEl, this.plugin);
 			renderChatDefaultsSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderAgentToolsSection(containerEl, this.plugin, this.saveSettings.bind(this));

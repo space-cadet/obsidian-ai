@@ -4,6 +4,10 @@
 
 ---
 
+## 2026-08-05
+
+- Improved settings navigation, estimated LLM usage visualization, and stable-width chat tabs.
+
 ## 2026-08-04
 
 #### T33: Desktop Chat View Singleton Repair

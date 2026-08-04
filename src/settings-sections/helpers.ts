@@ -9,6 +9,7 @@ export function createSection(
 	const sectionEl = containerEl.createDiv({
 		cls: "obsidian-ai-settings-section",
 	});
+	sectionEl.id = `obsidian-ai-settings-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`;
 	sectionEl.createEl("h3", { text: title });
 	if (description) {
 		sectionEl.createEl("p", {
