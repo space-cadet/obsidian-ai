@@ -3,6 +3,14 @@
 
 ## Active Tasks
 
+### T33: Desktop Chat View Singleton Repair (2026-08-04)
+**Status:** ✅ COMPLETED
+
+- Removed duplicate restored `obsidian-ai-chat-view` leaves after workspace layout restoration.
+- Serialized chat activation and reused one canonical sidebar leaf.
+- Internal chat tabs remain within one React `ChatApp`; saved sessions are unaffected.
+- Validation: `pnpm run build` and `git diff --check` passed.
+
 ### T15: Past-Session Search and Shared Tabs (2026-07-29)
 **Status:** ✅ IMPLEMENTED; tab-heading visual polish deferred
 

@@ -1,8 +1,16 @@
 # Edit History
 
-*Last Updated: 2026-08-02 18:57:00 IST*
+*Last Updated: 2026-08-04*
 
 ---
+
+## 2026-08-04
+
+#### T33: Desktop Chat View Singleton Repair
+- Modified `src/main.ts` — reconciled restored duplicate chat leaves and serialized concurrent chat activation.
+- Created `memory-bank/tasks/T33.md` and `memory-bank/implementation-details/chat-view-singleton.md` — documented the workspace lifecycle and persistence boundary.
+- Created `memory-bank/sessions/2026-08-04-night.md` and `memory-bank/edits/2026-08-04/2330-T33-desktop-chat-singleton.md` — recorded scope and validation.
+- Modified active context, session cache, task index, and progress — synchronized completion state.
 
 ## 2026-08-02
 

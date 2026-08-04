@@ -1,5 +1,5 @@
 // main.ts
-import { Plugin, MarkdownView, App, Notice } from "obsidian";
+import { Plugin, MarkdownView, App, Notice, WorkspaceLeaf } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import {
 	ObsidianAISettings,
@@ -54,6 +54,7 @@ export default class ObsidianAIPlugin extends Plugin {
 	private _pendingChatData: StoredChatData | null = null;
 	private _chatStorage: ChatStorage | null = null;
 	private _migrationPromptShown = false;
+	private _chatViewActivation: Promise<void> | null = null;
 
 	async onload() {
 		// Initialize file logger FIRST so any crash during load is captured.
@@ -120,6 +121,12 @@ export default class ObsidianAIPlugin extends Plugin {
 			CHAT_VIEWTYPE,
 			(leaf) => new ObsidianAIChatView(leaf, this, {}),
 		);
+
+		// A previous desktop race could have persisted more than one chat leaf in
+		// the workspace. Reconcile restored layouts once they are fully available.
+		this.app.workspace.onLayoutReady(() => {
+			this.removeDuplicateChatLeaves();
+		});
 
 		// GROUP_CHAT_VIEW hidden — code preserved in GroupChatView.ts
 		// this.registerView(
@@ -261,20 +268,57 @@ export default class ObsidianAIPlugin extends Plugin {
 	}
 
 	async activateChatView() {
+		if (this._chatViewActivation) {
+			return this._chatViewActivation;
+		}
+
+		const activation = this.activateChatViewOnce();
+		this._chatViewActivation = activation;
+
+		try {
+			await activation;
+		} finally {
+			if (this._chatViewActivation === activation) {
+				this._chatViewActivation = null;
+			}
+		}
+	}
+
+	private async activateChatViewOnce(): Promise<void> {
 		const { workspace } = this.app;
-		let leaf = workspace.getLeavesOfType(CHAT_VIEWTYPE)[0];
+		let leaf = this.removeDuplicateChatLeaves();
 		if (!leaf) {
 			// Defensive: workspace restoration may still be in progress,
 			// so the restored leaf might not yet appear in getLeavesOfType.
 			// Wait one animation frame before falling back to creating a new leaf.
 			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-			leaf = workspace.getLeavesOfType(CHAT_VIEWTYPE)[0];
+			leaf = this.removeDuplicateChatLeaves();
 		}
 		if (!leaf) {
 			leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf(true);
 			await leaf.setViewState({ type: CHAT_VIEWTYPE, active: true });
 		}
 		workspace.revealLeaf(leaf);
+	}
+
+	/** Keep the focused chat leaf when possible and remove stale duplicate leaves. */
+	private removeDuplicateChatLeaves(): WorkspaceLeaf | undefined {
+		const { workspace } = this.app;
+		const leaves = workspace.getLeavesOfType(CHAT_VIEWTYPE);
+		if (leaves.length === 0) return undefined;
+
+		const activeLeaf = workspace.activeLeaf;
+		const canonicalLeaf = activeLeaf && leaves.includes(activeLeaf)
+			? activeLeaf
+			: leaves[0];
+
+		for (const leaf of leaves) {
+			if (leaf !== canonicalLeaf) {
+				leaf.detach();
+			}
+		}
+
+		return canonicalLeaf;
 	}
 
 	async openSessionInNewTab(sessionId: string, messageId: string): Promise<void> {

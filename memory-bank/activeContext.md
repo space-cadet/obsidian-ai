@@ -3,6 +3,16 @@
 *Last Updated: 2026-08-02 18:56 IST*
 
 ## Current Focus
+**T33: Desktop Chat View Singleton Repair** ✅ COMPLETED (2026-08-04)
+
+### Desktop Sidebar Duplicate Repair (2026-08-04)
+**Status:** ✅ COMPLETED
+
+- The persistent copy was a second restored `obsidian-ai-chat-view` leaf, not a duplicate internal tab.
+- `main.ts` reconciles restored duplicate leaves at layout readiness and preserves the focused chat leaf when possible.
+- Concurrent chat-open calls share one activation promise, preventing another leaf from being created during workspace restoration.
+- Validation: `pnpm run build` and `git diff --check` passed.
+
 **T32: Security Hardening** ✅ COMPLETED (2026-08-02)
 
 ### Security Fixes (2026-08-02)

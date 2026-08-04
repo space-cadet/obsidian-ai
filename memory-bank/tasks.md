@@ -18,6 +18,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
 | T26 | AI Intelligence Layer — Identity, Memory & Context | 🔄 | HIGH | 2026-07-21 | T24, T13 | [Details](tasks/T26.md) | Phase 2 complete (SessionSummarizer), Phases 3-5 pending |
 | T32 | Security Hardening — Path Traversal, XSS, SSRF, ReDoS | ✅ | **CRITICAL** | 2026-08-02 | 2026-08-02 | T13, T14 | [Details](tasks/T32.md) |
+| T33 | Desktop Chat View Singleton Repair | ✅ | HIGH | 2026-08-04 | 2026-08-04 | T1, T15 | [Details](tasks/T33.md) |
 
 ## Completed Tasks
 
@@ -102,6 +103,6 @@ T9: Settings & Provider Profiles
 ## Status Summary
 
 - **Active**: 6
-- **Completed**: 14
+- **Completed**: 15
 - **Paused**: 0
-- **Total**: 20
+- **Total**: 21
