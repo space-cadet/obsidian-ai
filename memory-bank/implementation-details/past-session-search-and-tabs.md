@@ -32,6 +32,64 @@ Repeated matches for the same message are de-duplicated. `MessageBubble` interce
 
 Tabs use a compact fixed-width label, ellipsis, and horizontal overflow. This preserves usable titles while allowing an arbitrary number of open sessions. Further visual polish of tab labels remains deferred by user choice.
 
+## Draft Tab Contract (2026-08-05)
+
+The tab strip and the saved Chat Session History have different lifecycles. A tab is an active workspace item; a history entry is a conversation with at least one sent message. This prevents abandoned blank conversations from accumulating in history while keeping the `+` button predictable.
+
+```
+Chat view (initial state)
+
+┌──────────────────────────────────────────────────────┐
+│ [+ New chat]  [Load chat]  [shared toolbar controls] │
+├──────────────────────────────────────────────────────┤
+│ No tab strip yet                                      │
+│                                                      │
+│                 Blank composer                        │
+└──────────────────────────────────────────────────────┘
+
+After loading a past chat, then pressing +
+
+┌──────────────────────────────────────────────────────┐
+│ [Project notes ×] [New chat ×] [+]                   │
+├──────────────────────────────────────────────────────┤
+│                 Blank composer                        │
+└──────────────────────────────────────────────────────┘
+```
+
+```
+                         press +
+                            │
+                            ▼
+                 create and activate a draft tab
+                            │
+                 ┌──────────┴──────────┐
+                 │                     │
+             tab is closed         first message sent
+                 │                     │
+                 ▼                     ▼
+           discard draft        persist as a session
+           no history row       add to Chat Session History
+```
+
+### Behaviour rules
+
+1. The plugin begins with an internal blank draft and no visible tab strip.
+2. Loading a saved conversation opens and selects exactly one saved tab.
+3. Every press of `+` creates and selects a distinct `New chat` draft tab.
+4. Draft tabs are held only in the live chat view. They are not written to either legacy storage or the JSONL session index.
+5. The first user message promotes that draft to a persisted session; subsequent edits and responses follow the existing session persistence flow.
+6. Closing an unsent draft discards it. Closing the final visible tab returns to the initial no-tab view with a fresh internal draft.
+7. Existing zero-message saved sessions are filtered out on the next normal autosave, so historical clutter is removed without a destructive migration command.
+
+### Implementation plan and affected code
+
+- `useChatSession` keeps drafts in the live `sessions` state so the existing message, context, and streaming code can use the same `ChatSession` shape. Its persistence boundary filters out sessions with no messages and never writes a dangling active draft ID.
+- `useSessionActions` appends every newly created draft to `openSessionIds`; the previous handler created a session but did not add its ID to the tab strip. It also restores the no-tab state after closing the final tab.
+- `ChatTabBar` continues to render `openSessionIds`, so its visual contract needs no separate draft component.
+- The Settings **Intelligence** shortcut must target the section's actual `AI Intelligence Layer` anchor rather than the shorter `Intelligence` slug.
+
+**Status:** Implemented on 2026-08-05. The draft/session persistence boundary, repeated `+` tab creation, draft disposal, final-tab no-tab fallback, and corrected Intelligence anchor are covered by the production build and test suite.
+
 ## Composer Shortcut
 
 When the setting disables Enter-to-send, Enter inserts a line break. Shift+Enter and Cmd/Ctrl+Enter remain send shortcuts, as stated in the input placeholder and handled by `ChatInput` key processing.

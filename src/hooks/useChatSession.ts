@@ -20,7 +20,7 @@ export interface UseChatSessionResult {
 	chatDataLoaded: boolean;
 	sessionsRef: React.MutableRefObject<ChatSession[]>;
 	activeSessionIdRef: React.MutableRefObject<string | null>;
-	/** Create a new session, prune old ones, and activate it. */
+	/** Create and activate a new draft session. Drafts persist after their first message. */
 	createNewSession: (opts?: {
 		includeActiveNote?: boolean;
 		selectedProfileIds?: string[];
@@ -66,10 +66,14 @@ export function useChatSession({
 		let cancelled = false;
 		plugin.loadChatData().then((data) => {
 			if (cancelled) return;
-			if (data.sessions.length > 0 || data.activeSessionId) {
+			if (data.sessions.length > 0) {
 				skipNextAutosaveRef.current = true;
 				setSessions(data.sessions);
-				setActiveSessionId(data.activeSessionId);
+				setActiveSessionId(
+					data.sessions.some((session) => session.id === data.activeSessionId)
+						? data.activeSessionId
+						: data.sessions[0].id,
+				);
 			} else {
 				// No saved data — create an empty session
 				const activeProfile = getActiveProviderProfile(plugin.settings);
@@ -113,7 +117,18 @@ export function useChatSession({
 				window.clearTimeout(saveTimerRef.current);
 			}
 			saveTimerRef.current = window.setTimeout(() => {
-				void plugin.saveChatData({ sessions, activeSessionId });
+				const persistedSessions = sessions.filter(
+					(session) => session.messages.length > 0,
+				);
+				const persistedActiveSessionId = persistedSessions.some(
+					(session) => session.id === activeSessionId,
+				)
+					? activeSessionId
+					: persistedSessions[0]?.id ?? null;
+				void plugin.saveChatData({
+					sessions: persistedSessions,
+					activeSessionId: persistedActiveSessionId,
+				});
 				saveTimerRef.current = null;
 			}, 150);
 		}
@@ -182,14 +197,6 @@ export function useChatSession({
 			force?: boolean;
 		}): ChatSession => {
 			const currentActiveId = activeSessionIdRef.current;
-			const currentSession = sessionsRef.current.find(
-				(s) => s.id === currentActiveId,
-			);
-			if (!opts?.force && currentSession && currentSession.messages.length === 0) {
-				setActiveSessionId(currentSession.id);
-				return currentSession;
-			}
-
 			const newSession: ChatSession = {
 				id: makeId(),
 				title: "",
@@ -200,7 +207,11 @@ export function useChatSession({
 					opts?.includeActiveNote ?? plugin.settings.includeActiveNote
 						? [{ type: "active-note", id: makeId() }]
 						: [],
-				profileId: profileId || undefined,
+				profileId: profileId || getActiveProviderProfile(plugin.settings).id,
+				selectedProfileIds:
+					opts?.selectedProfileIds?.length
+						? opts.selectedProfileIds
+						: [getActiveProviderProfile(plugin.settings).id],
 			};
 
 			setSessions((prev) => {
@@ -225,7 +236,12 @@ export function useChatSession({
 
 				const withNew = [...updated, newSession];
 				const max = plugin.settings.maxSavedConversations || 20;
-				return pruneSessions(withNew, max, newSession.id);
+				const savedSessions = withNew.filter((session) => session.messages.length > 0);
+				const draftSessions = withNew.filter((session) => session.messages.length === 0);
+				return [
+					...pruneSessions(savedSessions, max, currentActiveId),
+					...draftSessions,
+				];
 			});
 			setActiveSessionId(newSession.id);
 			return newSession;

@@ -100,11 +100,12 @@ export function useSessionActions({
 			}
 		}
 
-		createNewSession({
+		const newSession = createNewSession({
 			includeActiveNote: plugin.settings.includeActiveNote,
 			selectedProfileIds: plugin.settings.selectedProfileIds,
 			autoNameSessions: plugin.settings.autoNameSessions,
 		});
+		setOpenSessionIds((current) => [...current, newSession.id]);
 		if (plugin.settings.selectedProfileIds.length > 0) {
 			setSelectedProfileIds(new Set(plugin.settings.selectedProfileIds));
 		} else {
@@ -133,18 +134,21 @@ export function useSessionActions({
 
 	const handleCloseTab = useCallback(
 		(sessionId: string) => {
+			const isDraft = sessionsRef.current.find((session) => session.id === sessionId)
+				?.messages.length === 0;
+			if (isDraft) {
+				setSessions((current) => current.filter((session) => session.id !== sessionId));
+			}
 			setOpenSessionIds((current) => {
 				if (current.length <= 1) {
-					// A chat panel always needs an active session. Closing its final tab
-					// preserves the saved conversation and opens a fresh chat in its place.
-					const newSession = createNewSession({
+					// Return to the initial no-tab state with a fresh, unsaved draft.
+					createNewSession({
 						includeActiveNote: plugin.settings.includeActiveNote,
 						selectedProfileIds: plugin.settings.selectedProfileIds,
 						autoNameSessions: plugin.settings.autoNameSessions,
-						force: true,
 					});
 					setScrollToMessageId(undefined);
-					return [newSession.id];
+					return [];
 				}
 				const index = current.indexOf(sessionId);
 				const remaining = current.filter((id) => id !== sessionId);
@@ -155,7 +159,7 @@ export function useSessionActions({
 				return remaining;
 			});
 		},
-		[createNewSession, plugin.settings, setActiveSessionId, setScrollToMessageId, activeSessionIdRef],
+		[createNewSession, plugin.settings, setSessions, setActiveSessionId, setScrollToMessageId, activeSessionIdRef, sessionsRef],
 	);
 
 	const handleCloseOtherTabs = useCallback(

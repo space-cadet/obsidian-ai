@@ -86,9 +86,18 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 
 			renderHeroSection(containerEl, this.plugin);
 			const nav = containerEl.createEl("nav", { cls: "obsidian-ai-settings-toc", attr: { "aria-label": "Settings sections" } });
-			["Provider Profiles", "Chat Defaults", "Agent Tools", "Intelligence", "Web Search", "Advanced", "Custom Commands", "Diagnostics"].forEach((title) => {
-				const id = `obsidian-ai-settings-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-				const button = nav.createEl("button", { text: title, attr: { type: "button" } });
+			[
+				["Provider Profiles", "Provider Profiles"],
+				["Chat Defaults", "Chat Defaults"],
+				["Agent Tools", "Agent Tools"],
+				["Intelligence", "AI Intelligence Layer"],
+				["Web Search", "Web Search"],
+				["Advanced", "Advanced"],
+				["Custom Commands", "Custom Commands"],
+				["Diagnostics", "Diagnostics"],
+			].forEach(([label, sectionTitle]) => {
+				const id = `obsidian-ai-settings-${sectionTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+				const button = nav.createEl("button", { text: label, attr: { type: "button" } });
 				button.addEventListener("click", (event) => {
 					event.preventDefault();
 					const section = containerEl.querySelector<HTMLElement>(`#${id}`);
