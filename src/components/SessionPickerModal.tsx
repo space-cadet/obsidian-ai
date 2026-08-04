@@ -39,7 +39,9 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 	const [deleteCandidate, setDeleteCandidate] = useState<ChatSession | null>(null);
 
 	// Sort by updatedAt descending (newest first)
-	const sorted = [...sessions].sort((a, b) => b.updatedAt - a.updatedAt);
+	const sorted = sessions
+		.filter((session) => session.messages.length > 0)
+		.sort((a, b) => b.updatedAt - a.updatedAt);
 
 	const startRename = (session: ChatSession) => {
 		setEditingId(session.id);

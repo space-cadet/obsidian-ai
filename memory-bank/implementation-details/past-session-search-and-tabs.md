@@ -83,9 +83,10 @@ After loading a past chat, then pressing +
 
 ### Implementation plan and affected code
 
-- `useChatSession` keeps drafts in the live `sessions` state so the existing message, context, and streaming code can use the same `ChatSession` shape. Its persistence boundary filters out sessions with no messages and never writes a dangling active draft ID.
+- `useChatSession` keeps drafts in the live `sessions` state so the existing message, context, and streaming code can use the same `ChatSession` shape. Its persistence boundary filters out sessions with no messages and never writes a dangling active draft ID. It also removes pre-existing zero-message legacy entries on load.
 - `useSessionActions` appends every newly created draft to `openSessionIds`; the previous handler created a session but did not add its ID to the tab strip. It also restores the no-tab state after closing the final tab.
 - `ChatTabBar` continues to render `openSessionIds`, so its visual contract needs no separate draft component.
+- `ChatApp` passes only non-empty sessions to `SessionPickerModal` and export. `SessionPickerModal` repeats that filter as a defensive UI boundary, so drafts cannot appear in Chat Session History.
 - The Settings **Intelligence** shortcut must target the section's actual `AI Intelligence Layer` anchor rather than the shorter `Intelligence` slug.
 
 **Status:** Implemented on 2026-08-05. The draft/session persistence boundary, repeated `+` tab creation, draft disposal, final-tab no-tab fallback, and corrected Intelligence anchor are covered by the production build and test suite.

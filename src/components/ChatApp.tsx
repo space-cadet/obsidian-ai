@@ -88,6 +88,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	const [scrollToMessageId, setScrollToMessageId] = useState<string | undefined>(initialMessageId);
 	const [thinkingEnabled, setThinkingEnabled] = useState(false);
 	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(null);
+	const savedSessions = useMemo(
+		() => sessions.filter((session) => session.messages.length > 0),
+		[sessions],
+	);
 
 	const controllerRef = useRef<AbortController | null>(null);
 	const resolveToolRef = useRef<((result: ToolResult | null) => void) | null>(null);
@@ -364,7 +368,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		}
 	}, [plugin]);
 
-	const hasHistory = sessions.some((s) => s.messages.length > 0);
+	const hasHistory = savedSessions.length > 0;
 
 	return (
 		<div className={`chat-panel${ui.zenMode ? ' is-zen' : ''}`}>
@@ -527,7 +531,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 			/>
 			{ui.showSessionPicker && (
 				<SessionPickerModal
-					sessions={sessions}
+					sessions={savedSessions}
 					activeSessionId={activeSessionId}
 					onLoad={handleLoadSession}
 					onDelete={handleDeleteSession}
@@ -537,7 +541,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 			)}
 			{ui.showExportModal && (
 				<ExportModal
-					sessions={sessions}
+					sessions={savedSessions}
 					activeSessionId={activeSessionId}
 					plugin={plugin}
 					onClose={() => ui.setShowExportModal(false)}

@@ -66,13 +66,18 @@ export function useChatSession({
 		let cancelled = false;
 		plugin.loadChatData().then((data) => {
 			if (cancelled) return;
-			if (data.sessions.length > 0) {
-				skipNextAutosaveRef.current = true;
-				setSessions(data.sessions);
+			const savedSessions = data.sessions.filter(
+				(session) => session.messages.length > 0,
+			);
+			if (savedSessions.length > 0) {
+				// Preserve the loaded storage untouched unless this also removes legacy
+				// zero-message entries; those should be cleaned up on the next autosave.
+				skipNextAutosaveRef.current = savedSessions.length === data.sessions.length;
+				setSessions(savedSessions);
 				setActiveSessionId(
-					data.sessions.some((session) => session.id === data.activeSessionId)
+					savedSessions.some((session) => session.id === data.activeSessionId)
 						? data.activeSessionId
-						: data.sessions[0].id,
+						: savedSessions[0].id,
 				);
 			} else {
 				// No saved data — create an empty session
