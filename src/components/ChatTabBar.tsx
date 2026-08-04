@@ -12,6 +12,7 @@ interface ChatTabBarProps {
 	onCloseOthers: (sessionId: string) => void;
 	onCloseToRight: (sessionId: string) => void;
 	onRename: (sessionId: string, title: string) => void;
+	tabTitleWidth?: number;
 }
 
 /** A lightweight tab strip for sessions within one shared chat view. */
@@ -24,6 +25,7 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 	onCloseOthers,
 	onCloseToRight,
 	onRename,
+	tabTitleWidth = 160,
 }) => {
 	const tabListRef = useRef<HTMLDivElement>(null);
 	const openSessions = openSessionIds
@@ -39,7 +41,12 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 	if (openSessions.length === 0) return null;
 
 	return (
-		<div ref={tabListRef} className="chat-session-tabs" role="tablist">
+		<div
+			ref={tabListRef}
+			className="chat-session-tabs"
+			role="tablist"
+			style={{ "--chat-tab-title-width": `${tabTitleWidth}px` } as React.CSSProperties}
+		>
 			{openSessions.map((session) => {
 				const active = session.id === activeSessionId;
 				const title = session.title || "New chat";

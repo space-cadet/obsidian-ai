@@ -165,8 +165,8 @@ export function renderDiagnosticsSection(
 	const usageTotalEl = createMetric("LLM Usage (estimated)", "—");
 	const usageSplitEl = createMetric("Estimated input / output", "—");
 	const responseStatsEl = createMetric("Completed responses", "—");
-	const modelUsageEl = createMetric("Estimated usage by model", "—");
-	const usageChartEl = sectionEl.createDiv({ cls: "obsidian-ai-usage-chart" });
+	const modelUsageEl = sectionEl.createDiv({ cls: "obsidian-ai-model-usage" });
+	modelUsageEl.createEl("h4", { text: "Estimated usage by model" });
 	const diskTotalEl = createMetric("Plugin Storage", "—");
 	const diskBreakdownEl = createMetric("Storage Breakdown", "—");
 
@@ -201,20 +201,30 @@ export function renderDiagnosticsSection(
 			responseStatsEl.textContent = usage.averageResponseTimeMs === null
 				? String(usage.completedResponses)
 				: `${usage.completedResponses} · ${(usage.averageResponseTimeMs / 1000).toFixed(1)}s avg`;
-			modelUsageEl.textContent = usage.modelEstimatedTokens.length === 0
-				? "No saved estimates"
-				: usage.modelEstimatedTokens
-					.map(({ model, tokens }) => `${model}: ~${tokens.toLocaleString()}`)
-					.join(" · ");
-			usageChartEl.empty(); const top = usage.modelEstimatedTokens.slice(0, 6); const max = top[0]?.tokens || 1;
-			for (const { model, tokens } of top) { const row = usageChartEl.createDiv({ cls: "obsidian-ai-usage-chart-row" }); row.createEl("span", { text: model, cls: "obsidian-ai-usage-chart-label", attr: { title: model } }); const track = row.createDiv({ cls: "obsidian-ai-usage-chart-track" }); track.createDiv({ cls: "obsidian-ai-usage-chart-bar", attr: { style: `width:${tokens / max * 100}%` } }); row.createEl("span", { text: `~${tokens.toLocaleString()}`, cls: "obsidian-ai-usage-chart-value" }); }
+			modelUsageEl.querySelector(".obsidian-ai-model-usage-content")?.remove();
+			const modelUsageContent = modelUsageEl.createDiv({ cls: "obsidian-ai-model-usage-content" });
+			if (usage.modelEstimatedTokens.length === 0) {
+				modelUsageContent.createEl("p", { text: "No saved estimates yet.", cls: "setting-item-description" });
+			} else {
+				const table = modelUsageContent.createEl("table", { cls: "obsidian-ai-model-usage-table" });
+				const header = table.createEl("thead").createEl("tr");
+				header.createEl("th", { text: "Model" });
+				header.createEl("th", { text: "Estimated tokens" });
+				const body = table.createEl("tbody");
+				for (const { model, tokens } of usage.modelEstimatedTokens) {
+					const row = body.createEl("tr");
+					row.createEl("td", { text: model, attr: { title: model } });
+					row.createEl("td", { text: `~${tokens.toLocaleString()}` });
+				}
+			}
 		} catch {
 			sessionsEl.textContent = "?";
 			messagesEl.textContent = "?";
 			usageTotalEl.textContent = "?";
 			usageSplitEl.textContent = "?";
 			responseStatsEl.textContent = "?";
-			modelUsageEl.textContent = "?";
+			modelUsageEl.querySelector(".obsidian-ai-model-usage-content")?.remove();
+			modelUsageEl.createEl("p", { text: "Usage data unavailable.", cls: "obsidian-ai-model-usage-content setting-item-description" });
 		}
 
 		// Disk usage

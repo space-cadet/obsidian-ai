@@ -426,6 +426,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 					sessions={sessions}
 					openSessionIds={openSessionIds}
 					activeSessionId={activeSessionId}
+					tabTitleWidth={plugin.settings.chatTabTitleWidth}
 					onSelect={(sessionId) => openSessionInTab(sessionId)}
 					onClose={handleCloseTab}
 					onCloseOthers={handleCloseOtherTabs}

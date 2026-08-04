@@ -3393,8 +3393,8 @@
 	display: flex;
 	align-items: center;
 	/* Share available space before scrolling so a short tab set never begins clipped. */
-	flex: 0 0 240px;
-	min-width: 240px;
+	flex: 0 0 var(--chat-tab-title-width, 160px);
+	min-width: var(--chat-tab-title-width, 160px);
 	border: 1px solid transparent;
 	border-bottom: 0;
 	border-radius: 6px 6px 0 0;
@@ -3439,13 +3439,6 @@
 	unicode-bidi: plaintext;
 }
 
-@media (max-width: 520px) {
-	.chat-session-tab {
-		flex-basis: 150px;
-		min-width: 150px;
-	}
-}
-
 .chat-session-tab-close {
 	flex: 0 0 auto;
 	display: grid;
@@ -3458,7 +3451,69 @@
 	background: var(--background-modifier-hover);
 }
 
-.obsidian-ai-settings-toc{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}.obsidian-ai-settings-toc a{padding:5px 9px;border-radius:999px;background:var(--background-secondary);font-size:var(--font-ui-smaller)}.obsidian-ai-usage-chart{display:grid;gap:8px;margin:4px 0 16px}.obsidian-ai-usage-chart-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(80px,2fr) auto;gap:8px;align-items:center}.obsidian-ai-usage-chart-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.obsidian-ai-usage-chart-track{height:9px;overflow:hidden;border-radius:999px;background:var(--background-modifier-border)}.obsidian-ai-usage-chart-bar{height:100%;background:#0d9488}.obsidian-ai-usage-chart-value{font-family:var(--font-monospace);font-size:var(--font-ui-smaller)}
+.obsidian-ai-settings-toc {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 0 0 16px;
+}
+
+.obsidian-ai-settings-toc button {
+	padding: 5px 9px;
+	border: 0;
+	border-radius: 999px;
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	cursor: pointer;
+}
+
+.obsidian-ai-settings-toc button:hover,
+.obsidian-ai-settings-toc button:focus-visible {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.obsidian-ai-model-usage {
+	margin: 4px 0 16px;
+}
+
+.obsidian-ai-model-usage h4 {
+	margin: 0 0 8px;
+	font-size: var(--font-ui-small);
+}
+
+.obsidian-ai-model-usage-table {
+	width: 100%;
+	border-collapse: collapse;
+	table-layout: fixed;
+	font-size: var(--font-ui-smaller);
+}
+
+.obsidian-ai-model-usage-table th,
+.obsidian-ai-model-usage-table td {
+	padding: 6px 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	text-align: left;
+}
+
+.obsidian-ai-model-usage-table th {
+	color: var(--text-muted);
+	font-weight: var(--font-semibold);
+}
+
+.obsidian-ai-model-usage-table td:first-child {
+	max-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.obsidian-ai-model-usage-table td:last-child {
+	width: 1%;
+	font-family: var(--font-monospace);
+	white-space: nowrap;
+}
 
 .chat-session-delete-confirm {
 	position: absolute;
