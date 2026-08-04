@@ -6,6 +6,10 @@ export class Notice {
 	constructor(public message: string) {}
 }
 
+export function setIcon(element: HTMLElement, icon: string): void {
+	element.dataset.icon = icon;
+}
+
 export class Menu {
 	addItem(callback: (item: MenuItem) => unknown): this {
 		callback(new MenuItem());

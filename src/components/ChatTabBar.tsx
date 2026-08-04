@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Menu } from "obsidian";
 import { ChatSession } from "../types";
 import ObsidianIcon from "./ObsidianIcon";
@@ -19,14 +19,21 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 	onSelect,
 	onClose,
 }) => {
+	const tabListRef = useRef<HTMLDivElement>(null);
 	const openSessions = openSessionIds
 		.map((id) => sessions.find((session) => session.id === id))
 		.filter((session): session is ChatSession => Boolean(session));
 
+	// A restored desktop workspace can retain a prior horizontal scroll offset.
+	// Begin every newly mounted tab strip at its first tab so no title starts offscreen.
+	useEffect(() => {
+		tabListRef.current?.scrollTo?.({ left: 0 });
+	}, []);
+
 	if (openSessions.length === 0) return null;
 
 	return (
-		<div className="chat-session-tabs" role="tablist" aria-label="Chat sessions">
+		<div ref={tabListRef} className="chat-session-tabs" role="tablist">
 			{openSessions.map((session) => {
 				const active = session.id === activeSessionId;
 				const title = session.title || "New chat";
@@ -34,11 +41,13 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 					<div
 						key={session.id}
 						className={`chat-session-tab${active ? " is-active" : ""}`}
-						role="tab"
-						aria-selected={active}
+						role="presentation"
 					>
 						<button
 							className="chat-session-tab-select"
+							role="tab"
+							aria-selected={active}
+							aria-label={title}
 							onClick={() => onSelect(session.id)}
 							title={title}
 							onContextMenu={(event) => {

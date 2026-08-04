@@ -3391,8 +3391,10 @@
 .chat-session-tab {
 	display: flex;
 	align-items: center;
-	flex: 0 0 clamp(150px, 28vw, 220px);
+	/* Share available space before scrolling so a short tab set never begins clipped. */
+	flex: 1 1 0;
 	min-width: 0;
+	max-width: 360px;
 	border: 1px solid transparent;
 	border-bottom: 0;
 	border-radius: 6px 6px 0 0;
@@ -3422,6 +3424,13 @@
 	text-align: left;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+	.chat-session-tab {
+		flex-basis: 150px;
+		min-width: 150px;
+	}
 }
 
 .chat-session-tab-close {
