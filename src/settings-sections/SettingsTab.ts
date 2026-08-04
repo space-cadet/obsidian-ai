@@ -22,6 +22,21 @@ function debounce(fn: () => void, ms: number): () => void {
 	};
 }
 
+function getScrollableAncestor(element: HTMLElement): HTMLElement | null {
+	let ancestor = element.parentElement;
+	while (ancestor) {
+		const overflowY = window.getComputedStyle(ancestor).overflowY;
+		if (
+			(overflowY === "auto" || overflowY === "scroll") &&
+			ancestor.scrollHeight > ancestor.clientHeight
+		) {
+			return ancestor;
+		}
+		ancestor = ancestor.parentElement;
+	}
+	return null;
+}
+
 export class ObsidianAISettingsTab extends PluginSettingTab {
 	plugin: ObsidianAIPlugin;
 	private isDisplaying = false;
@@ -76,7 +91,18 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				const button = nav.createEl("button", { text: title, attr: { type: "button" } });
 				button.addEventListener("click", (event) => {
 					event.preventDefault();
-					document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+					const section = containerEl.querySelector<HTMLElement>(`#${id}`);
+					if (!section) return;
+					const scrollContainer = getScrollableAncestor(containerEl);
+					if (scrollContainer) {
+						const top = section.getBoundingClientRect().top
+							- scrollContainer.getBoundingClientRect().top
+							+ scrollContainer.scrollTop
+							- 12;
+						scrollContainer.scrollTo({ top, behavior: "smooth" });
+					} else {
+						section.scrollIntoView({ behavior: "smooth", block: "start" });
+					}
 				});
 			});
 			renderProviderProfilesSection(containerEl, this.plugin);

@@ -75,7 +75,7 @@ export function renderChatDefaultsSection(
 	new Setting(sectionEl)
 		.setName("Chat tab title width")
 		.setDesc(
-			"Width of each chat tab title before the tab strip scrolls. Use 120–360 px.",
+			"Allowed range: 120–360 px. Default: 160 px. Wider tabs show more of each title before the tab strip scrolls.",
 		)
 		.addText((text) => {
 			text.setPlaceholder("160")
