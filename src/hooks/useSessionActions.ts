@@ -17,6 +17,7 @@ interface UseSessionActionsOptions {
 		includeActiveNote?: boolean;
 		selectedProfileIds?: string[];
 		autoNameSessions?: boolean;
+		force?: boolean;
 	}) => ChatSession;
 	setSelectedProfileIds: (ids: Set<string>) => void;
 	setDebateMode: (v: boolean) => void;
@@ -131,7 +132,18 @@ export function useSessionActions({
 	const handleCloseTab = useCallback(
 		(sessionId: string) => {
 			setOpenSessionIds((current) => {
-				if (current.length <= 1) return current;
+				if (current.length <= 1) {
+					// A chat panel always needs an active session. Closing its final tab
+					// preserves the saved conversation and opens a fresh chat in its place.
+					const newSession = createNewSession({
+						includeActiveNote: plugin.settings.includeActiveNote,
+						selectedProfileIds: plugin.settings.selectedProfileIds,
+						autoNameSessions: plugin.settings.autoNameSessions,
+						force: true,
+					});
+					setScrollToMessageId(undefined);
+					return [newSession.id];
+				}
 				const index = current.indexOf(sessionId);
 				const remaining = current.filter((id) => id !== sessionId);
 				if (sessionId === activeSessionIdRef.current) {
@@ -141,7 +153,7 @@ export function useSessionActions({
 				return remaining;
 			});
 		},
-		[setActiveSessionId, setScrollToMessageId, activeSessionIdRef],
+		[createNewSession, plugin.settings, setActiveSessionId, setScrollToMessageId, activeSessionIdRef],
 	);
 
 	const handleDeleteSession = useCallback(

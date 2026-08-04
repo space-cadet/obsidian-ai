@@ -6,6 +6,31 @@ export class Notice {
 	constructor(public message: string) {}
 }
 
+export class Menu {
+	addItem(callback: (item: MenuItem) => unknown): this {
+		callback(new MenuItem());
+		return this;
+	}
+
+	showAtMouseEvent(_event: MouseEvent): this {
+		return this;
+	}
+}
+
+export class MenuItem {
+	setTitle(_title: string): this {
+		return this;
+	}
+
+	setIcon(_icon: string): this {
+		return this;
+	}
+
+	onClick(_callback: () => unknown): this {
+		return this;
+	}
+}
+
 export class TFile {
 	basename = "";
 	path = "";

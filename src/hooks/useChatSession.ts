@@ -25,6 +25,7 @@ export interface UseChatSessionResult {
 		includeActiveNote?: boolean;
 		selectedProfileIds?: string[];
 		autoNameSessions?: boolean;
+		force?: boolean;
 	}) => ChatSession;
 	/** Delete a session. If active, switches to the most recent remaining. */
 	deleteSession: (sessionId: string) => void;
@@ -178,8 +179,17 @@ export function useChatSession({
 			includeActiveNote?: boolean;
 			selectedProfileIds?: string[];
 			autoNameSessions?: boolean;
+			force?: boolean;
 		}): ChatSession => {
 			const currentActiveId = activeSessionIdRef.current;
+			const currentSession = sessionsRef.current.find(
+				(s) => s.id === currentActiveId,
+			);
+			if (!opts?.force && currentSession && currentSession.messages.length === 0) {
+				setActiveSessionId(currentSession.id);
+				return currentSession;
+			}
+
 			const newSession: ChatSession = {
 				id: makeId(),
 				title: "",
@@ -194,17 +204,6 @@ export function useChatSession({
 			};
 
 			setSessions((prev) => {
-				const currentSession = prev.find(
-					(s) => s.id === currentActiveId,
-				);
-				// If current session is empty, keep it instead of creating another
-				if (currentSession && currentSession.messages.length === 0) {
-					return prev.map((s) =>
-						s.id === currentActiveId
-							? { ...s, updatedAt: Date.now() }
-							: s,
-					);
-				}
 				const updated = prev.map((s) =>
 					s.id === currentActiveId
 						? {

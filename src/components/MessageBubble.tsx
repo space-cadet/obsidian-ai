@@ -4,6 +4,10 @@ import { ChatMessage, ContextItem, ContentPart } from "../types";
 import MessageActions from "./MessageActions";
 import ToolCallNotification from "./ToolCallNotification";
 import { sanitizeHtmlForRenderer } from "../lib/sanitizeHtml";
+import {
+	formatMessageTimestamp,
+	formatMessageTimestampTitle,
+} from "../lib/messageTimestamp";
 
 /** Highlight context item names in rendered DOM */
 function highlightMentions(container: HTMLElement, items: ContextItem[]): void {
@@ -248,10 +252,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 		navigator.clipboard.writeText(message.content);
 	};
 
-	const time = new Date(message.timestamp).toLocaleTimeString([], {
-		hour: "2-digit",
-		minute: "2-digit",
-	});
+	const time = formatMessageTimestamp(message.timestamp);
+	const timeTitle = formatMessageTimestampTitle(message.timestamp);
+	const timeDateTime = Number.isNaN(new Date(message.timestamp).getTime())
+		? undefined
+		: new Date(message.timestamp).toISOString();
 
 	// Determine what to render: contentParts (inline) or legacy fallback
 	const hasInlineParts =
@@ -300,7 +305,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 						title={message.agentName}
 					/>
 				)}
-				<span className="chat-bubble-time">{time}</span>
+				<time
+					className="chat-bubble-time"
+					dateTime={timeDateTime}
+					title={timeTitle}
+				>
+					{time}
+				</time>
 			</div>
 
 			{/* Content: inline parts or legacy single block */}

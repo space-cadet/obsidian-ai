@@ -1,4 +1,5 @@
 import React from "react";
+import { Menu } from "obsidian";
 import { ChatSession } from "../types";
 import ObsidianIcon from "./ObsidianIcon";
 
@@ -40,19 +41,28 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 							className="chat-session-tab-select"
 							onClick={() => onSelect(session.id)}
 							title={title}
+							onContextMenu={(event) => {
+								event.preventDefault();
+								const menu = new Menu();
+								menu.addItem((item) =>
+									item
+										.setTitle("Close tab")
+										.setIcon("x")
+										.onClick(() => onClose(session.id)),
+								);
+								menu.showAtMouseEvent(event.nativeEvent);
+							}}
 						>
 							{title}
 						</button>
-						{openSessions.length > 1 && (
-							<button
-								className="chat-session-tab-close"
-								onClick={() => onClose(session.id)}
-								aria-label={`Close ${title}`}
-								title="Close tab"
-							>
-								<ObsidianIcon icon="x" size={13} />
-							</button>
-						)}
+						<button
+							className="chat-session-tab-close"
+							onClick={() => onClose(session.id)}
+							aria-label={`Close ${title}`}
+							title="Close tab"
+						>
+							<ObsidianIcon icon="x" size={13} />
+						</button>
 					</div>
 				);
 			})}

@@ -3391,8 +3391,8 @@
 .chat-session-tab {
 	display: flex;
 	align-items: center;
-	flex: 0 0 auto;
-	max-width: 145px;
+	flex: 0 0 clamp(150px, 28vw, 220px);
+	min-width: 0;
 	border: 1px solid transparent;
 	border-bottom: 0;
 	border-radius: 6px 6px 0 0;
@@ -3414,7 +3414,9 @@
 }
 
 .chat-session-tab-select {
-	width: 108px;
+	flex: 1 1 auto;
+	min-width: 0;
+	width: auto;
 	overflow: hidden;
 	padding: 7px 5px 7px 10px;
 	text-align: left;
@@ -3423,6 +3425,7 @@
 }
 
 .chat-session-tab-close {
+	flex: 0 0 auto;
 	display: grid;
 	place-items: center;
 	padding: 4px 7px;
