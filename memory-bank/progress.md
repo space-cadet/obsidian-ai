@@ -1,5 +1,5 @@
 # Implementation Progress
-*Last Updated: 2026-07-29 13:47 IST*
+*Last Updated: 2026-08-05 01:53 IST*
 
 ## Active Tasks
 
@@ -21,6 +21,15 @@
 - Implementation doc: `memory-bank/implementation-details/past-session-search-and-tabs.md`.
 
 **Attribution:** GPT 5.6 Terra Low performed all implementation work in this session.
+
+### T15: Settings Navigation and Draft Tabs (2026-08-05)
+**Status:** ✅ IMPLEMENTED; cosmetic draft-title follow-up remains
+
+- Settings shortcuts scroll within the settings container; the Intelligence shortcut targets AI Intelligence Layer correctly.
+- Diagnostics usage data is a table and metrics use a compact responsive grid.
+- Tab width defaults to 160 px and is configurable from 120–360 px.
+- Every `+` creates a live draft tab; drafts are promoted only on the first message and cannot appear in saved history, export, or storage.
+- Implementation doc: `memory-bank/implementation-details/past-session-search-and-tabs.md`.
 
 ### T26: AI Intelligence Layer — Persistent Identity, Memory & Context
 **Status:** 🔄 **IN PROGRESS**

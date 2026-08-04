@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased - 2026-08-05
+
+### Changed
+- Settings section shortcuts now scroll within the settings panel; Diagnostics is more compact and model usage is tabular — T15
+- Chat tab title width defaults to 160 px and is configurable from 120–360 px — T15
+- Empty chat tabs are live drafts, rather than saved history entries — T15
+
+### Fixed
+- The Intelligence shortcut now targets the AI Intelligence Layer section — T15
+- The session picker and export omit unsent draft tabs and legacy zero-message sessions — T15
+
 ## Unreleased - 2026-05-09
 
 ### Added

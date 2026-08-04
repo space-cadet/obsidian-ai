@@ -6,6 +6,21 @@
 
 ## 2026-08-05
 
+#### 01:53:30 IST - T15: Settings Navigation and Draft Tab Lifecycle
+- Modified `src/settings-sections/SettingsTab.ts` - Repaired in-panel shortcut scrolling and the AI Intelligence Layer target.
+- Modified `src/settings-sections/chatDefaults.ts` - Documented the tab-title width range and default.
+- Modified `src/settings-sections/diagnostics.ts` - Rendered model usage as a structured table.
+- Modified `src/settings.ts` - Added persisted tab-title width normalization.
+- Modified `src/components/ChatApp.tsx` - Restricted history and export inputs to saved sessions.
+- Modified `src/components/ChatTabBar.tsx` - Applied configurable tab-title width.
+- Modified `src/components/SessionPickerModal.tsx` - Excluded zero-message drafts from the history modal.
+- Modified `src/hooks/useChatSession.ts` - Introduced the draft/session persistence boundary and legacy empty-session cleanup.
+- Modified `src/hooks/useSessionActions.ts` - Opened each new draft in a tab and discarded unsent tabs on close.
+- Created `src/hooks/__tests__/useSessionActions.test.ts` - Covered repeated new-draft tab creation.
+- Created `src/components/__tests__/SessionPickerModal.test.tsx` - Covered draft exclusion from history.
+- Modified `styles.css` - Added compact diagnostics and Settings navigation styling.
+- Modified `memory-bank/implementation-details/past-session-search-and-tabs.md` - Recorded the draft-tab contract and diagrams.
+
 - Improved settings navigation, estimated LLM usage visualization, and stable-width chat tabs.
 
 ## 2026-08-04
