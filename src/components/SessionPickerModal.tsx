@@ -36,6 +36,7 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 }) => {
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editValue, setEditValue] = useState("");
+	const [deleteCandidate, setDeleteCandidate] = useState<ChatSession | null>(null);
 
 	// Sort by updatedAt descending (newest first)
 	const sorted = [...sessions].sort((a, b) => b.updatedAt - a.updatedAt);
@@ -161,7 +162,7 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 											</button>
 											<button
 												className="chat-btn-small chat-btn-danger"
-												onClick={() => onDelete(session.id)}
+							onClick={() => setDeleteCandidate(session)}
 												title="Delete session"
 											>
 												×
@@ -170,10 +171,27 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 									</div>
 								);
 								})}
-							</div>
-						)}
 					</div>
+				)}
 				</div>
+				{deleteCandidate && (
+					<div className="chat-session-delete-confirm" role="alertdialog" aria-modal="true" aria-labelledby="chat-delete-session-title">
+						<div className="chat-session-delete-confirm-card">
+							<h4 id="chat-delete-session-title">Delete this chat session?</h4>
+							<p>This permanently deletes “{deleteCandidate.title || "Untitled chat"}” and its messages. This cannot be undone.</p>
+							<div className="chat-session-delete-confirm-actions">
+								<button onClick={() => setDeleteCandidate(null)}>Cancel</button>
+								<button className="mod-warning" onClick={() => {
+									onDelete(deleteCandidate.id);
+									setDeleteCandidate(null);
+								}}>
+									Delete session
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
+			</div>
 			</div>
 		);
 	};

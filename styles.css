@@ -1124,6 +1124,7 @@
 }
 
 .chat-modal {
+	position: relative;
 	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 8px;
@@ -3416,14 +3417,27 @@
 }
 
 .chat-session-tab-select {
+	display: block;
 	flex: 1 1 auto;
 	min-width: 0;
 	width: auto;
 	overflow: hidden;
 	padding: 7px 5px 7px 10px;
-	text-align: left;
+	text-align: left !important;
+	direction: ltr !important;
+	text-indent: 0 !important;
+	transform: none !important;
+}
+
+.chat-session-tab-label {
+	display: block;
+	min-width: 0;
+	overflow: hidden;
+	text-align: left !important;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	direction: ltr !important;
+	unicode-bidi: plaintext;
 }
 
 @media (max-width: 520px) {
@@ -3443,4 +3457,35 @@
 
 .chat-session-tab-close:hover {
 	background: var(--background-modifier-hover);
+}
+
+.chat-session-delete-confirm {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	display: grid;
+	place-items: center;
+	padding: 16px;
+	background: color-mix(in srgb, var(--background-primary) 48%, transparent);
+}
+
+.chat-session-delete-confirm-card {
+	max-width: 420px;
+	padding: 18px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 10px;
+	background: var(--background-primary);
+	box-shadow: var(--shadow-s);
+}
+
+.chat-session-delete-confirm-card h4,
+.chat-session-delete-confirm-card p {
+	margin-top: 0;
+}
+
+.chat-session-delete-confirm-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 14px;
 }

@@ -33,6 +33,8 @@ export interface UseSessionActionsResult {
 	handleNewChat: () => void;
 	handleLoadSession: (sessionId: string) => void;
 	handleCloseTab: (sessionId: string) => void;
+	handleCloseOtherTabs: (sessionId: string) => void;
+	handleCloseTabsToRight: (sessionId: string) => void;
 	handleDeleteSession: (sessionId: string) => void;
 	handleRenameSession: (sessionId: string, newTitle: string) => void;
 }
@@ -156,6 +158,35 @@ export function useSessionActions({
 		[createNewSession, plugin.settings, setActiveSessionId, setScrollToMessageId, activeSessionIdRef],
 	);
 
+	const handleCloseOtherTabs = useCallback(
+		(sessionId: string) => {
+			setOpenSessionIds((current) => {
+				if (activeSessionIdRef.current !== sessionId) {
+					setActiveSessionId(sessionId);
+					setScrollToMessageId(undefined);
+				}
+				return [sessionId];
+			});
+		},
+		[setActiveSessionId, setScrollToMessageId, activeSessionIdRef],
+	);
+
+	const handleCloseTabsToRight = useCallback(
+		(sessionId: string) => {
+			setOpenSessionIds((current) => {
+				const index = current.indexOf(sessionId);
+				if (index === -1) return current;
+				const remaining = current.slice(0, index + 1);
+				if (!remaining.includes(activeSessionIdRef.current ?? "")) {
+					setActiveSessionId(sessionId);
+					setScrollToMessageId(undefined);
+				}
+				return remaining;
+			});
+		},
+		[setActiveSessionId, setScrollToMessageId, activeSessionIdRef],
+	);
+
 	const handleDeleteSession = useCallback(
 		(sessionId: string) => {
 			setSessions((prev) => {
@@ -215,6 +246,8 @@ export function useSessionActions({
 		handleNewChat,
 		handleLoadSession,
 		handleCloseTab,
+		handleCloseOtherTabs,
+		handleCloseTabsToRight,
 		handleDeleteSession,
 		handleRenameSession,
 	};

@@ -202,6 +202,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		handleNewChat,
 		handleLoadSession,
 		handleCloseTab,
+		handleCloseOtherTabs,
+		handleCloseTabsToRight,
 		handleDeleteSession,
 		handleRenameSession,
 	} = useSessionActions({
@@ -426,6 +428,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 					activeSessionId={activeSessionId}
 					onSelect={(sessionId) => openSessionInTab(sessionId)}
 					onClose={handleCloseTab}
+					onCloseOthers={handleCloseOtherTabs}
+					onCloseToRight={handleCloseTabsToRight}
+					onRename={handleRenameSession}
 				/>
 			)}
 

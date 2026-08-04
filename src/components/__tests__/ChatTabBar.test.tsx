@@ -26,6 +26,9 @@ describe("ChatTabBar", () => {
 				activeSessionId="one"
 				onSelect={vi.fn()}
 				onClose={vi.fn()}
+				onCloseOthers={vi.fn()}
+				onCloseToRight={vi.fn()}
+				onRename={vi.fn()}
 			/>,
 		);
 
@@ -43,6 +46,9 @@ describe("ChatTabBar", () => {
 				activeSessionId="one"
 				onSelect={vi.fn()}
 				onClose={onClose}
+				onCloseOthers={vi.fn()}
+				onCloseToRight={vi.fn()}
+				onRename={vi.fn()}
 			/>,
 		);
 

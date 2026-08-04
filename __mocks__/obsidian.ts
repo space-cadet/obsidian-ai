@@ -16,6 +16,10 @@ export class Menu {
 		return this;
 	}
 
+	addSeparator(): this {
+		return this;
+	}
+
 	showAtMouseEvent(_event: MouseEvent): this {
 		return this;
 	}

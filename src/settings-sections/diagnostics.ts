@@ -1,6 +1,7 @@
 import { App, Modal, Notice, Setting } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection } from "./helpers";
+import { summarizeLlmUsage } from "../lib/usageStats";
 
 interface DiskUsageBreakdown {
 	total: number;
@@ -161,6 +162,10 @@ export function renderDiagnosticsSection(
 	const domNodesEl = createMetric("DOM Nodes", "—");
 	const sessionsEl = createMetric("Chat Sessions", "—");
 	const messagesEl = createMetric("Total Messages", "—");
+	const usageTotalEl = createMetric("LLM Usage (estimated)", "—");
+	const usageSplitEl = createMetric("Estimated input / output", "—");
+	const responseStatsEl = createMetric("Completed responses", "—");
+	const modelUsageEl = createMetric("Estimated usage by model", "—");
 	const diskTotalEl = createMetric("Plugin Storage", "—");
 	const diskBreakdownEl = createMetric("Storage Breakdown", "—");
 
@@ -189,9 +194,24 @@ export function renderDiagnosticsSection(
 			);
 			sessionsEl.textContent = String(sessionCount);
 			messagesEl.textContent = String(msgCount);
+			const usage = summarizeLlmUsage(chatData.sessions);
+			usageTotalEl.textContent = `~${usage.totalEstimatedTokens.toLocaleString()} tokens`;
+			usageSplitEl.textContent = `~${usage.inputEstimatedTokens.toLocaleString()} / ~${usage.outputEstimatedTokens.toLocaleString()} tokens`;
+			responseStatsEl.textContent = usage.averageResponseTimeMs === null
+				? String(usage.completedResponses)
+				: `${usage.completedResponses} · ${(usage.averageResponseTimeMs / 1000).toFixed(1)}s avg`;
+			modelUsageEl.textContent = usage.modelEstimatedTokens.length === 0
+				? "No saved estimates"
+				: usage.modelEstimatedTokens
+					.map(({ model, tokens }) => `${model}: ~${tokens.toLocaleString()}`)
+					.join(" · ");
 		} catch {
 			sessionsEl.textContent = "?";
 			messagesEl.textContent = "?";
+			usageTotalEl.textContent = "?";
+			usageSplitEl.textContent = "?";
+			responseStatsEl.textContent = "?";
+			modelUsageEl.textContent = "?";
 		}
 
 		// Disk usage

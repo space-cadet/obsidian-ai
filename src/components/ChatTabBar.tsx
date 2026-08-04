@@ -9,6 +9,9 @@ interface ChatTabBarProps {
 	activeSessionId: string | null;
 	onSelect: (sessionId: string) => void;
 	onClose: (sessionId: string) => void;
+	onCloseOthers: (sessionId: string) => void;
+	onCloseToRight: (sessionId: string) => void;
+	onRename: (sessionId: string, title: string) => void;
 }
 
 /** A lightweight tab strip for sessions within one shared chat view. */
@@ -18,6 +21,9 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 	activeSessionId,
 	onSelect,
 	onClose,
+	onCloseOthers,
+	onCloseToRight,
+	onRename,
 }) => {
 	const tabListRef = useRef<HTMLDivElement>(null);
 	const openSessions = openSessionIds
@@ -56,13 +62,38 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 								menu.addItem((item) =>
 									item
 										.setTitle("Close tab")
-										.setIcon("x")
-										.onClick(() => onClose(session.id)),
+									.setIcon("x")
+									.onClick(() => onClose(session.id)),
+								);
+								menu.addSeparator();
+								menu.addItem((item) =>
+									item
+										.setTitle("Close other tabs")
+										.setIcon("panel-right-close")
+										.onClick(() => onCloseOthers(session.id)),
+								);
+								menu.addItem((item) =>
+									item
+										.setTitle("Close tabs to the right")
+										.setIcon("chevrons-right")
+										.onClick(() => onCloseToRight(session.id)),
+								);
+								menu.addSeparator();
+								menu.addItem((item) =>
+									item
+										.setTitle("Rename session")
+										.setIcon("pencil")
+										.onClick(() => {
+											const renamed = window.prompt("Session title", title);
+											if (renamed?.trim()) onRename(session.id, renamed);
+										}),
 								);
 								menu.showAtMouseEvent(event.nativeEvent);
 							}}
 						>
-							{title}
+							<span className="chat-session-tab-label" dir="ltr">
+								{title}
+							</span>
 						</button>
 						<button
 							className="chat-session-tab-close"
