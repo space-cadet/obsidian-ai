@@ -177,8 +177,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				plugin.app,
 				plugin.settings,
 				plugin.personaLoader ?? undefined,
-				plugin.searchIndex ?? undefined,
-				() => activeSessionIdRef.current,
+			plugin.searchIndex ?? undefined,
+			() => activeSessionIdRef.current,
+			plugin.integrationRegistry,
 			),
 		});
 		orch.engines = resolved.map((e) => ({
@@ -550,6 +551,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 					toolCall={activeRuntime.pendingToolCall}
 					onApprove={actions.handleApproveTool}
 					onReject={actions.handleRejectTool}
+					providerDisplay={plugin.integrationRegistry?.getCapabilityDisplay(activeRuntime.pendingToolCall.toolName)}
 				/>
 			)}
 

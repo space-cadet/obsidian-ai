@@ -36,6 +36,7 @@ import { SessionStorage } from "./storage/session-storage";
 import { PersonaLoader } from "./intelligence/PersonaLoader";
 import { SearchIndex } from "./search/index";
 import { SessionSummarizer } from "./intelligence/SessionSummarizer";
+import { ProviderRegistry } from "./integrations/ProviderRegistry";
 
 export default class ObsidianAIPlugin extends Plugin {
 	settings: ObsidianAISettings = DEFAULT_SETTINGS;
@@ -46,6 +47,7 @@ export default class ObsidianAIPlugin extends Plugin {
 	personaLoader: PersonaLoader | null = null;
 	searchIndex: SearchIndex | null = null;
 	sessionSummarizer: SessionSummarizer | null = null;
+	integrationRegistry!: ProviderRegistry;
 
 	// Data integrity guards
 	private _backupCreated = false;
@@ -62,6 +64,8 @@ export default class ObsidianAIPlugin extends Plugin {
 		await this.logger.init();
 
 		await this.loadSettings();
+		this.integrationRegistry = new ProviderRegistry(this.app, this.settings);
+		this.integrationRegistry.discover();
 		this.logger.setMaxSize(this.settings.debugLogMaxSizeMB * 1024 * 1024);
 		this.chatapi = new ChatApiManager(this.settings, this.app);
 
@@ -125,6 +129,7 @@ export default class ObsidianAIPlugin extends Plugin {
 		// A previous desktop race could have persisted more than one chat leaf in
 		// the workspace. Reconcile restored layouts once they are fully available.
 		this.app.workspace.onLayoutReady(() => {
+			this.integrationRegistry.discover();
 			this.removeDuplicateChatLeaves();
 		});
 

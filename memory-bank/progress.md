@@ -1,10 +1,10 @@
 # Implementation Progress
-*Last Updated: 2026-08-05 17:39 IST*
+*Last Updated: 2026-08-05 17:48 IST*
 
 ## Active Tasks
 
 ### T39: Integration Provider API for External Obsidian Plugins (2026-08-05)
-**Status:** ⏸️ PAUSED — architecture approved; implementation deferred
+**Status:** 🔄 IN PROGRESS — read-only host slice implemented
 
 - Establish a versioned, optional peer-plugin provider contract instead of
   hard-coding private Dataview/Tasks/Templater access into the agent.
@@ -17,6 +17,10 @@
 - UI plan: an Integrations settings list for availability/enablement, generic
   pending-operation and inline progress/result cards, plus the later T38
   active-policy indicator. Obsidian AI will not duplicate the Git sidebar.
+- Implemented provider discovery/version validation, opt-in settings, normal
+  chat read-only tool composition, ToolExecutor dispatch, and registry tests.
+- Deferred: Git provider, mutations, audit/policy UI, detailed progress, and
+  OpenResponses provider-tool conversion.
 - Tracking: `memory-bank/tasks/T39.md` and
   `memory-bank/implementation-details/integration-provider-api.md`.
 

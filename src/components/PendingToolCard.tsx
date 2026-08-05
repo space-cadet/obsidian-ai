@@ -5,10 +5,11 @@ interface PendingToolCardProps {
 	toolCall: ToolCall;
 	onApprove: () => void;
 	onReject: () => void;
+	providerDisplay?: { providerName: string; title: string; risk: string } | null;
 }
 
 /** Summarizes a pending tool call for the approval UI — never dumps full content */
-function PendingToolCallPreview({ toolCall }: { toolCall: ToolCall }): React.ReactElement {
+function PendingToolCallPreview({ toolCall, providerDisplay }: Pick<PendingToolCardProps, "toolCall" | "providerDisplay">): React.ReactElement {
 	const { toolName, args } = toolCall;
 	const path = (args as any).path ?? (args as any).noteName ?? "—";
 
@@ -18,6 +19,15 @@ function PendingToolCallPreview({ toolCall }: { toolCall: ToolCall }): React.Rea
 		const preview = text.length > maxLen ? text.slice(0, maxLen) + "…" : text;
 		return { lines, preview };
 	};
+
+	if (providerDisplay) {
+		return (
+			<div className="pending-tool-summary">
+				<div className="pending-tool-title">{providerDisplay.providerName} · {providerDisplay.title}</div>
+				<div className="pending-tool-meta">{providerDisplay.risk === "read" ? "Read-only operation" : `${providerDisplay.risk} operation`}</div>
+			</div>
+		);
+	}
 
 	if (toolName === "read_note") {
 		return (
@@ -149,10 +159,11 @@ const PendingToolCard: React.FC<PendingToolCardProps> = ({
 	toolCall,
 	onApprove,
 	onReject,
+	providerDisplay,
 }) => {
 	return (
 		<div className="pending-tool-call">
-			<PendingToolCallPreview toolCall={toolCall} />
+			<PendingToolCallPreview toolCall={toolCall} providerDisplay={providerDisplay} />
 			<div className="pending-tool-actions">
 				<button className="mod-cta" onClick={onApprove}>
 					Approve

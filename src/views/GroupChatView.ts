@@ -17,6 +17,7 @@ export interface ChatPluginLike {
 	settings: ObsidianAISettings;
 	personaLoader: import("../intelligence/PersonaLoader").PersonaLoader | null;
 	searchIndex: import("../search/index").SearchIndex | null;
+	integrationRegistry?: import("../integrations/ProviderRegistry").ProviderRegistry;
 	openSessionInNewTab(sessionId: string, messageId: string): Promise<void>;
 	loadChatData(): Promise<StoredChatData>;
 	saveChatData(data: StoredChatData): Promise<void>;

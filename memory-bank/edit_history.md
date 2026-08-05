@@ -6,6 +6,12 @@
 
 ## 2026-08-05
 
+#### 17:48:15 IST - T39a: Read-only provider host implementation
+- Created `src/integrations/types.ts`, `src/integrations/ProviderRegistry.ts`, and `src/integrations/__tests__/ProviderRegistry.test.ts` - Added the public v1 provider contract, discovery/validation, opt-in read-only execution, and focused tests.
+- Created `src/settings-sections/integrations.ts` - Added provider availability and opt-in settings without credential display.
+- Modified `src/main.ts`, settings, tool execution, chat wiring, and tool cards - Composed enabled read-only provider tools into normal chat and rendered generic provider labels.
+- Modified `memory-bank/tasks/T39.md`, `memory-bank/tasks/T39a.md`, `memory-bank/implementation-details/integration-provider-api.md`, context, progress, cache, and session records - Recorded the implemented host slice and deferred boundaries.
+
 #### 17:39:15 IST - T39: Provider integration UI plan
 - Modified `memory-bank/implementation-details/integration-provider-api.md` - Added the settings, pending-operation, inline result/progress, and active-policy UI contracts with ASCII wireframes.
 - Modified `memory-bank/tasks/T39.md` and `memory-bank/tasks/T39a.md` - Added provider-generic UI acceptance criteria, boundaries, and delivery detail.

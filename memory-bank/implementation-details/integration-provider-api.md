@@ -1,7 +1,7 @@
 # Integration Provider API
 
 *Created: 2026-08-05 17:28:52 IST*
-*Last Updated: 2026-08-05 17:39:15 IST*
+*Last Updated: 2026-08-05 17:48:15 IST*
 *Task: [T39](../tasks/T39.md)*
 
 ## Purpose
@@ -192,6 +192,22 @@ lands.
 No separate Git sidebar is added to Obsidian AI. Obsidian Git retains its own
 configuration and manual Git interface; the provider UI is only the AI consent
 and observability layer.
+
+## Implemented Host Slice (2026-08-05)
+
+The first executable T39a increment is read-only and provider-generic.
+`src/integrations/types.ts` defines the public v1 contract and
+`ProviderRegistry` discovers `plugin.api.integrationProvider`, validates its
+version/capabilities, persists opt-in enablement, and merges enabled read-only
+tools into normal AI SDK chat. `ToolExecutor` dispatches approved calls back to
+the provider and adds safe provider metadata for generic cards.
+
+Integrations settings lists discovered providers without revealing credentials
+or provider configuration. Discovery runs at plugin load and layout readiness.
+Tests cover disabled-by-default discovery, opt-in execution, incompatible
+versions, and mutation exclusion. This increment does not implement a Git
+provider, mutations, shell access, remote operations, or OpenResponses schema
+conversion.
 
 ## Tool Safety, Privacy, and Audit
 

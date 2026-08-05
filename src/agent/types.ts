@@ -44,6 +44,11 @@ export interface ToolResult {
 	}>;
 	createdPaths?: string[];
 	skippedPaths?: string[];
+	/** Public provider metadata for a redacted tool-result card. */
+	providerId?: string;
+	providerName?: string;
+	capabilityTitle?: string;
+	risk?: "read" | "write" | "remote-write" | "destructive";
 }
 
 export type StreamEvent =

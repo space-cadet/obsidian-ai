@@ -3,6 +3,7 @@ import type { ToolCall, ToolResult } from "./types";
 import type { ObsidianAISettings, WebSearchProvider } from "../settings";
 import type { PersonaLoader } from "../intelligence/PersonaLoader";
 import { SearchIndex } from "../search/index";
+import type { ProviderRegistry } from "../integrations/ProviderRegistry";
 
 /* ── Security: forbidden path patterns ── */
 const FORBIDDEN_PATH_PATTERNS = [
@@ -30,10 +31,13 @@ export class ToolExecutor {
 		private personaLoader?: PersonaLoader,
 		private searchIndex?: SearchIndex,
 		private getActiveSessionId?: () => string | null,
+		private integrationRegistry?: ProviderRegistry,
 	) {}
 
 	async execute(call: ToolCall): Promise<ToolResult> {
 		try {
+			const providerResult = await this.integrationRegistry?.execute(call);
+			if (providerResult) return providerResult;
 			switch (call.toolName) {
 				case "read_note":
 					return await this.readNote(call.args as { path: string });

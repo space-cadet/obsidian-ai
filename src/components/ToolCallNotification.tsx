@@ -22,6 +22,7 @@ function ToolCallSummary({ toolCall, result }: { toolCall: ToolCall; result?: To
 	};
 
 	const getActionLabel = () => {
+		if (result?.capabilityTitle) return result.capabilityTitle;
 		switch (toolName) {
 			case "read_note": return "Read note";
 			case "edit_note": return "Edited note";
@@ -37,11 +38,12 @@ function ToolCallSummary({ toolCall, result }: { toolCall: ToolCall; result?: To
 			case "move_note": return "Moved note";
 			case "delete_note": return "Deleted note";
 			case "list_folders": return "Listed folders";
-			default: return toolName.replace(/_/g, " ");
+			default: return toolName.replace(/[_.]/g, " ");
 		}
 	};
 
 	const getDetailText = () => {
+		if (result?.providerName) return result.providerName;
 		if (toolName === "search_notes") {
 			const query = (args as any).query ?? "";
 			return `Query: "${query}"`;

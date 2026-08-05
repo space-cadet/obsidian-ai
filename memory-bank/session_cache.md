@@ -1,7 +1,7 @@
 # Session Cache
 
 *Created: 2026-07-13 22:41:55 IST*
-*Last Updated: 2026-08-05 17:39:15 IST*
+*Last Updated: 2026-08-05 17:48:15 IST*
 
 ## Current Session
 **Started**: 2026-08-05
@@ -28,8 +28,8 @@
 - T34: Per-Tab Chat Process Isolation — ✅ COMPLETED and manually verified (2026-08-05)
 - T37: Idempotent Bulk Note Creation and Batch Scope Decision — ✅ COMPLETED (2026-08-05)
 - T38: Tool Approval Policies, Batch Plans, and Operation Audit Log — ⏸️ PAUSED (2026-08-05)
-- T39: Integration Provider API for External Obsidian Plugins — ⏸️ PAUSED (2026-08-05)
-- T39a: Provider API Host, Lifecycle, and Tool-Policy Boundary — ⏸️ PAUSED (2026-08-05)
+- T39: Integration Provider API for External Obsidian Plugins — 🔄 IN PROGRESS (2026-08-05)
+- T39a: Provider API Host, Lifecycle, and Tool-Policy Boundary — 🔄 IN PROGRESS (2026-08-05)
 - T39b: Obsidian Git as the First AI Tool Provider — ⏸️ PAUSED (2026-08-05)
 
 ## Active Tasks
@@ -62,9 +62,9 @@
 **Files**: `src/intelligence/PersonaLoader.ts`, `src/intelligence/SessionSummarizer.ts`
 
 ### T39: Integration Provider API for External Obsidian Plugins
-**Status:** ⏸️ **PAUSED**
+**Status:** 🔄 **IN PROGRESS**
 **Priority:** HIGH
-**Started:** Not started
+**Started:** 2026-08-05 17:48 IST
 **Context**: Versioned peer-plugin provider platform. The host owns AI tool
 schemas, approval, audit, and rendering; providers own domain logic,
 credentials, settings, and manual UI.
@@ -73,6 +73,8 @@ credentials, settings, and manual UI.
 **UI contract**: Integrations availability/enablement settings; generic
 descriptor-driven approval and inline result/progress cards; later compact
 tool-policy indicator. Provider configuration remains in its own plugin.
+**Implemented slice**: discovery/version validation, opt-in read-only normal
+chat tools, ToolExecutor dispatch, settings UI, generic labels, and tests.
 
 ## Session History (Last 5)
 1. `sessions/2026-08-05-night.md` — T15 Settings navigation and T34 per-tab process isolation, including manual verification

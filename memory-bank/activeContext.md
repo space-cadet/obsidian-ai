@@ -1,9 +1,9 @@
 # Active Context
 
-*Last Updated: 2026-08-05 17:39:15 IST*
+*Last Updated: 2026-08-05 17:48:15 IST*
 
 ## Current Focus
-**T39 Integration Provider API for External Obsidian Plugins** — paused design recorded 2026-08-05. Obsidian AI will host versioned, optional peer-plugin providers; it owns schemas, approval, audit, and rendering, while providers own their domains, settings, credentials, and manual UI. T39a defines the host contract; T39b scopes Obsidian Git as the first provider. The UI contract is an Integrations settings list and generic consent/progress cards, not a second Git sidebar.
+**T39 Integration Provider API for External Obsidian Plugins** — host read-only slice implemented 2026-08-05. ProviderRegistry discovers validated peer providers, persists opt-in enablement, adds enabled read-only tools to normal chat, and dispatches through ToolExecutor; Integrations settings and generic provider labels are present. Mutations, Git provider code, and OpenResponses conversion remain deferred.
 **T37 Idempotent Bulk Note Creation and Batch Scope Decision** — completed 2026-08-05; `create_notes` skips existing files and reports its created/skipped result, while mutation batching remains deliberately operation-specific.
 **T38 Tool Approval Policies, Batch Plans, and Operation Audit Log** — paused by user request for a later session; the agreed design is a graduated approval policy, previewed batch plans, and a bounded privacy-aware audit log.
 **T36 Stable Per-Tab Model Selection and Restored Chat View State** — completed 2026-08-05; model switching has no session-feedback loop, and saved tabs, active tab, and scroll positions restore by default.

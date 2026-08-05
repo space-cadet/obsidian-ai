@@ -72,6 +72,8 @@ export interface ObsidianAISettings {
 	debugLogMaxSizeMB: number;
 	enableAgentTools: boolean;
 	autoApply: boolean;
+	/** IDs of peer-plugin providers allowed to offer tools to Obsidian AI. */
+	enabledIntegrationProviderIds: string[];
 	maxAgentSteps: number;
 	pressEnterToSend: boolean;
 	/** Preferred fixed width for each title in the shared chat tab strip. */
@@ -270,6 +272,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	debugLogMaxSizeMB: 5,
 	enableAgentTools: true,
 	autoApply: false,
+	enabledIntegrationProviderIds: [],
 	maxAgentSteps: 5,
 	pressEnterToSend: true,
 	chatTabTitleWidth: 160,
@@ -338,6 +341,9 @@ export const normalizeSettings = (
 		debugLogMaxSizeMB: merged.debugLogMaxSizeMB ?? 5,
 		enableAgentTools: Boolean(merged.enableAgentTools ?? true),
 		autoApply: Boolean(merged.autoApply ?? false),
+		enabledIntegrationProviderIds: Array.isArray(merged.enabledIntegrationProviderIds)
+			? merged.enabledIntegrationProviderIds.filter((id): id is string => typeof id === "string")
+			: [],
 		maxAgentSteps: merged.maxAgentSteps ?? 5,
 		pressEnterToSend: Boolean(merged.pressEnterToSend ?? true),
 		chatTabTitleWidth: Math.min(

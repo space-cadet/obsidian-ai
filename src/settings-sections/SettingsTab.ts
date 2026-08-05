@@ -10,6 +10,7 @@ import { renderDiagnosticsSection } from "./diagnostics";
 import { renderHeroSection } from "./hero";
 import { renderProviderProfilesSection } from "./providerProfiles";
 import { renderIntelligenceSection } from "./intelligence";
+import { renderIntegrationsSection } from "./integrations";
 import { renderWebSearchSection } from "./webSearch";
 
 function debounce(fn: () => void, ms: number): () => void {
@@ -90,6 +91,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Provider Profiles", "Provider Profiles"],
 				["Chat Defaults", "Chat Defaults"],
 				["Agent Tools", "Agent Tools"],
+				["Integrations", "Integrations"],
 				["Intelligence", "AI Intelligence Layer"],
 				["Web Search", "Web Search"],
 				["Advanced", "Advanced"],
@@ -117,6 +119,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			renderProviderProfilesSection(containerEl, this.plugin);
 			renderChatDefaultsSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderAgentToolsSection(containerEl, this.plugin, this.saveSettings.bind(this));
+			renderIntegrationsSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderIntelligenceSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderWebSearchSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderAdvancedSection(containerEl, this.plugin, this.saveSettings.bind(this));

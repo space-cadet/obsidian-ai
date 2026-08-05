@@ -413,6 +413,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			const isAgentProvider = activeProfile.provider === "agent";
 			const useTools =
 				plugin.settings.enableAgentTools || isAgentProvider;
+			const toolRegistry = plugin.integrationRegistry?.getToolRegistry(noteTools) ?? noteTools;
 			const autoApprove = plugin.settings.autoApply;
 			const maxAgentSteps = plugin.settings.maxAgentSteps;
 
@@ -485,6 +486,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							plugin.personaLoader ?? undefined,
 							plugin.searchIndex ?? undefined,
 							() => currentActiveId,
+							plugin.integrationRegistry,
 						),
 						maxSteps:
 							activeProfile.maxSteps ?? maxAgentSteps,
@@ -612,6 +614,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							plugin.personaLoader ?? undefined,
 							plugin.searchIndex ?? undefined,
 							() => currentActiveId,
+							plugin.integrationRegistry,
 						),
 						maxSteps: maxAgentSteps,
 						autoApprove,
@@ -717,7 +720,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 
 					const result = await agent.run(
 						chatMessages as Array<any>,
-						noteTools,
+						toolRegistry,
 						controller.signal,
 					);
 					assistantContent = result.text;
@@ -1227,6 +1230,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				plugin.personaLoader ?? undefined,
 				plugin.searchIndex ?? undefined,
 				() => currentActiveId,
+				plugin.integrationRegistry,
 			);
 			const result = await toolExecutor.execute(pendingToolCall);
 			runtime.resolveTool?.(result);
