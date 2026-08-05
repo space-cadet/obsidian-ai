@@ -1,18 +1,18 @@
 # Session Cache
 
 *Created: 2026-07-13 22:41:55 IST*
-*Last Updated: 2026-08-05 13:23:15 IST*
+*Last Updated: 2026-08-05 17:28:52 IST*
 
 ## Current Session
 **Started**: 2026-08-05
 **Ended**: 2026-08-05
-**Focus Task**: T38 — Tool Approval Policies, Batch Plans, and Operation Audit Log
+**Focus Task**: T39 — Integration Provider API for External Obsidian Plugins
 **Session File**: `memory-bank/sessions/2026-08-05-night.md`
 **Status**: ✅ COMPLETED
 
 ## Overview
 
-- Active: 6 | Paused: 1 | Completed: 22
+- Active: 6 | Paused: 4 | Completed: 22
 - Last Session: 2026-08-05-night
 - Current Period: night
 
@@ -28,6 +28,9 @@
 - T34: Per-Tab Chat Process Isolation — ✅ COMPLETED and manually verified (2026-08-05)
 - T37: Idempotent Bulk Note Creation and Batch Scope Decision — ✅ COMPLETED (2026-08-05)
 - T38: Tool Approval Policies, Batch Plans, and Operation Audit Log — ⏸️ PAUSED (2026-08-05)
+- T39: Integration Provider API for External Obsidian Plugins — ⏸️ PAUSED (2026-08-05)
+- T39a: Provider API Host, Lifecycle, and Tool-Policy Boundary — ⏸️ PAUSED (2026-08-05)
+- T39b: Obsidian Git as the First AI Tool Provider — ⏸️ PAUSED (2026-08-05)
 
 ## Active Tasks
 
@@ -57,6 +60,16 @@
 **Started:** 2026-07-21
 **Context**: Phase 2 complete (SessionSummarizer). Phases 3–5 pending.
 **Files**: `src/intelligence/PersonaLoader.ts`, `src/intelligence/SessionSummarizer.ts`
+
+### T39: Integration Provider API for External Obsidian Plugins
+**Status:** ⏸️ **PAUSED**
+**Priority:** HIGH
+**Started:** Not started
+**Context**: Versioned peer-plugin provider platform. The host owns AI tool
+schemas, approval, audit, and rendering; providers own domain logic,
+credentials, settings, and manual UI.
+**Files**: `memory-bank/tasks/T39.md`, `memory-bank/tasks/T39a.md`,
+`memory-bank/tasks/T39b.md`, `memory-bank/implementation-details/integration-provider-api.md`
 
 ## Session History (Last 5)
 1. `sessions/2026-08-05-night.md` — T15 Settings navigation and T34 per-tab process isolation, including manual verification

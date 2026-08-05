@@ -961,4 +961,15 @@ This prevents the LLM from being misled by large recursive counts when asking ab
 
 ---
 
-*Last Updated: 2026-05-23 23:54 IST*
+## Planned External Tool Providers (2026-08-05)
+
+External Obsidian-plugin capabilities will not be registered by directly
+calling private plugin fields from this tool layer. [T39](../tasks/T39.md)
+defines a versioned Integration Provider API: an installed peer provider owns
+its domain operations and credentials, while this agent layer owns model tool
+registration, approval, policy, result rendering, and audit logging. Obsidian
+Git is the first planned provider; its public Git operations will be adapted as
+bounded namespaced tools such as `git.status`, not as arbitrary shell commands.
+See [Integration Provider API](integration-provider-api.md).
+
+*Last Updated: 2026-08-05 17:28 IST*

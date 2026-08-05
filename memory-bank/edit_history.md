@@ -6,6 +6,17 @@
 
 ## 2026-08-05
 
+#### 17:31:59 IST - T39: Integration Provider API planning
+- Created `memory-bank/tasks/T39.md` - Defined the paused provider-platform umbrella task, dependencies, acceptance criteria, and safety boundary.
+- Created `memory-bank/tasks/T39a.md` - Scoped host registration, lifecycle, policy, availability, and test work as the first subtask.
+- Created `memory-bank/tasks/T39b.md` - Scoped Obsidian Git as the first bounded provider without authorizing changes to its separate checkout.
+- Created `memory-bank/implementation-details/integration-provider-api.md` - Documented the versioned contract, ownership model, lifecycle, Git capabilities, safety policy, and delivery sequence.
+- Modified `memory-bank/tasks/T26.md` - Redirected planned one-off plugin bridges to the T39 provider contract.
+- Modified `memory-bank/tasks/T38.md` - Recorded approval and audit dependencies for provider mutations.
+- Modified `memory-bank/implementation-details/agentic-tool-calling.md` and `memory-bank/implementation-details/ai-intelligence-layer.md` - Cross-linked the provider API and superseded direct private-plugin access as the implementation target.
+- Modified `memory-bank/tasks.md`, `memory-bank/activeContext.md`, `memory-bank/progress.md`, `memory-bank/session_cache.md`, and `memory-bank/sessions/2026-08-05-night.md` - Synchronized the new paused plan and session context.
+- Modified `memory-bank/edit_history.md` - Added the generated-view entry sourced by this edit chunk.
+
 #### 13:23:15 IST - T38: Tool approval and operation audit plan
 - Created `memory-bank/tasks/T38.md` - Recorded the deferred approval-policy, batch-plan, and audit-log design.
 - Created `memory-bank/implementation-details/tool-approval-batch-audit-plan.md` - Defined the settings, execution, logging, privacy, and phased-delivery contracts.

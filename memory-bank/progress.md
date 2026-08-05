@@ -1,7 +1,21 @@
 # Implementation Progress
-*Last Updated: 2026-08-05 13:23 IST*
+*Last Updated: 2026-08-05 17:28 IST*
 
 ## Active Tasks
+
+### T39: Integration Provider API for External Obsidian Plugins (2026-08-05)
+**Status:** ⏸️ PAUSED — architecture approved; implementation deferred
+
+- Establish a versioned, optional peer-plugin provider contract instead of
+  hard-coding private Dataview/Tasks/Templater access into the agent.
+- T39a will deliver host discovery, lifecycle, namespaces, schema/risk
+  validation, availability state, approval/audit routing, and tests.
+- T39b will make Obsidian Git the first provider through narrow GitManager
+  operations, preserving its credentials and mobile-safe transport.
+- Read-only Git status/history/change tools are the first candidate slice;
+  stage/commit require a plan and pull/push require separate confirmation.
+- Tracking: `memory-bank/tasks/T39.md` and
+  `memory-bank/implementation-details/integration-provider-api.md`.
 
 ### T38: Tool Approval Policies, Batch Plans, and Operation Audit Log (2026-08-05)
 **Status:** ⏸️ PAUSED — deferred by user for a later implementation session

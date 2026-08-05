@@ -1,8 +1,9 @@
 # Active Context
 
-*Last Updated: 2026-08-05 13:23:15 IST*
+*Last Updated: 2026-08-05 17:28:52 IST*
 
 ## Current Focus
+**T39 Integration Provider API for External Obsidian Plugins** — paused design recorded 2026-08-05. Obsidian AI will host versioned, optional peer-plugin providers; it owns schemas, approval, audit, and rendering, while providers own their domains, settings, credentials, and manual UI. T39a defines the host contract; T39b scopes Obsidian Git as the first provider.
 **T37 Idempotent Bulk Note Creation and Batch Scope Decision** — completed 2026-08-05; `create_notes` skips existing files and reports its created/skipped result, while mutation batching remains deliberately operation-specific.
 **T38 Tool Approval Policies, Batch Plans, and Operation Audit Log** — paused by user request for a later session; the agreed design is a graduated approval policy, previewed batch plans, and a bounded privacy-aware audit log.
 **T36 Stable Per-Tab Model Selection and Restored Chat View State** — completed 2026-08-05; model switching has no session-feedback loop, and saved tabs, active tab, and scroll positions restore by default.
@@ -98,6 +99,9 @@
 - **[T15]**: 🔄 **IN PROGRESS** — Past-session search and shared internal tabs complete. Tab-heading polish deferred.
 - **[T17]**: ⏸️ **PENDING** — Advanced vault tools. Backlinks + YAML first.
 - **[T26]**: 🔄 **IN PROGRESS** — AI Intelligence Layer. Phase 2 complete (SessionSummarizer). Phases 3–5 pending.
+- **[T39]**: ⏸️ **PAUSED** — Integration Provider API. Versioned host/provider architecture planned; implementation deferred.
+- **[T39a]**: ⏸️ **PAUSED** — Host registry, lifecycle, policy boundary, and provider tests.
+- **[T39b]**: ⏸️ **PAUSED** — Obsidian Git as first bounded provider; no Git-checkout changes authorized.
 - **[T8]**: 🔄 **IN PROGRESS** — Open source release prep.
 - **[T34]**: ✅ **COMPLETED** — Per-tab chat process isolation for streaming, stop, token, and tool approval state.
 - **[T32]**: ✅ **COMPLETED** — Security Hardening (Path Traversal, XSS, SSRF, ReDoS)

@@ -1,7 +1,7 @@
 # AI Intelligence Layer — Implementation Details
 
 *Created: 2026-07-21 21:50 IST*  
-*Last Updated: 2026-07-21 21:50 IST*  
+*Last Updated: 2026-08-05 17:31 IST*
 *Task: [T26](../tasks/T26.md)*
 
 ---
@@ -393,6 +393,14 @@ case "search_past_sessions": {
 ---
 
 ## Phase 4: Plugin Bridges
+
+**Architecture update (2026-08-05):** This section is retained as historical
+bridge exploration. The implementation target is now the versioned
+[Integration Provider API](integration-provider-api.md) in T39, rather than
+Obsidian AI directly accessing private fields of each third-party plugin. T39a
+will provide host discovery, availability, policy, and audit routing; T39b
+defines Obsidian Git as the first provider. Future Dataview, Tasks, and
+Templater integrations must adopt that contract.
 
 ### Bridge Pattern
 
