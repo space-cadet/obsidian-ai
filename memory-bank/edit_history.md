@@ -6,6 +6,12 @@
 
 ## 2026-08-05
 
+#### 13:10 IST - T37: Idempotent Bulk Note Creation and Batch Scope Decision
+- Modified `src/agent/ToolExecutor.ts`, tool types, and `AgentLoop.ts` - Treated existing batch targets as safe skips and returned created/skipped partial-result details to the agent.
+- Modified batch tool/prompt and tool-result UI files - Made the no-overwrite skip behavior visible before and after approval.
+- Created `src/agent/__tests__/ToolExecutor.test.ts` - Covered a mixed batch containing an existing note and a new note.
+- Created `memory-bank/tasks/T37.md` and synchronized the task, context, progress, cache, session, implementation, and edit-history records.
+
 #### 12:45 IST - T36: Stable Per-Tab Model Selection and Restored Chat View State
 - Modified `src/components/ChatApp.tsx` and `src/hooks/useSessionActions.ts` - Broke the tab-profile synchronization feedback loop by separating one-time restoration from user-initiated persistence.
 - Modified `src/components/ActionBar.tsx` - Removed the participant-count debug console output.

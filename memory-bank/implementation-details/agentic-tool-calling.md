@@ -89,9 +89,9 @@ single-note tool.
 Safety and approval boundary:
 
 - The normal pending-tool approval applies to the entire batch when auto-apply is off.
-- Every target path is checked before the first write: allowed vault location, unique inside the batch, and absent from the vault.
-- The operation never overwrites an existing note. A preflight failure writes no notes. An unexpected vault error returns the list of notes already created.
-- The approval card shows the count, an explicit no-overwrite statement, and a compact preview of the first paths.
+- Every target path is checked before the first write for an allowed vault location and uniqueness inside the batch. Those invalid plans fail without writing a note.
+- The operation never overwrites an existing note. An existing target is an idempotent skip, so it does not prevent the other requested notes from being created. A path that appears during execution is treated as the same safe skip; an unexpected vault error returns the created and skipped paths from the partial operation.
+- The approval card shows the count, an explicit no-overwrite/existing-notes-skip statement, and a compact preview of the first paths.
 
 `create_note` remains available for a single document. `create_notes` is also
 registered through the OpenResponses conversion because that conversion reads

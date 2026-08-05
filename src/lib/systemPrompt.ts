@@ -45,7 +45,7 @@ export async function buildSystemPrompt(
 			"\n- edit_note: Overwrite the entire content of a note. Provide COMPLETE new content." +
 			"\n- append_to_note: Add content to the end of a note without changing existing content." +
 			"\n- create_note: Create a new note in the vault." +
-			"\n- create_notes: Create 2–100 new notes in one approved operation; never overwrites existing notes. Use this for large sets instead of repeatedly calling create_note." +
+			"\n- create_notes: Create 2–100 new notes in one approved operation; never overwrites existing notes and skips paths that already exist. Use this for large sets instead of repeatedly calling create_note." +
 			"\n- patch_note: Find and replace text inside a note (small precise edits)." +
 			"\n- edit_section: Rewrite content under a specific heading." +
 			"\n- search_notes: Search for notes by filename or path. Use sort_by=name|modified|created, limit, folder, and search_content params." +
@@ -64,7 +64,7 @@ export async function buildSystemPrompt(
 			" Before editing a note you are unfamiliar with, use read_note to see its current content." +
 			"\n\nImportant: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks." +
 			"\n\nFor moving notes: use move_note(path, new_path). Parent folders are created automatically if needed." +
-			"\nFor multiple new notes: use one create_notes call with all note paths and contents. Do not claim to batch or parallelize work with create_note; it only creates one note." +
+			"\nFor multiple new notes: use one create_notes call with all note paths and contents. Existing paths are expected to be safely skipped; do not omit the rest of the batch. Do not claim to batch or parallelize work with create_note; it only creates one note." +
 			"\nFor creating folders: use create_folder(path). Then use move_note to place notes inside.";
 	}
 

@@ -54,7 +54,7 @@ export const createNoteTool = t({
 export const createNotesTool = t({
 	description:
 		"Create multiple new notes in one approved operation. Use this instead of repeated create_note calls when the user asks for several notes or a large set of files. " +
-		"Every path must be new; this tool never overwrites existing notes. Maximum 100 notes per call.",
+		"This tool never overwrites existing notes: paths that already exist are skipped and reported while other requested notes are created. Maximum 100 notes per call.",
 	inputSchema: z.object({
 		notes: z
 			.array(

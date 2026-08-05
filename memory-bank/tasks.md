@@ -42,6 +42,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T34 | Per-Tab Chat Process Isolation | ✅ | HIGH | 2026-08-05 | 2026-08-05 | T4, T13, T15 | [Details](tasks/T34.md) | Session-keyed streaming/tool runtime state |
 | T35 | Gemini Tool Continuity, Bulk Note Creation, and Per-Tab Model Selection | ✅ | **CRITICAL** | 2026-08-05 | 2026-08-05 | T13, T15 | [Details](tasks/T35.md) | Preserved Gemini signatures, actual bulk creation, tab-owned models |
 | T36 | Stable Per-Tab Model Selection and Restored Chat View State | ✅ | HIGH | 2026-08-05 | 2026-08-05 | T15, T35 | [Details](tasks/T36.md) | Stops model loop and restores saved tabs/scroll positions |
+| T37 | Idempotent Bulk Note Creation and Batch Scope Decision | ✅ | HIGH | 2026-08-05 | 2026-08-05 | T13, T35 | [Details](tasks/T37.md) | Existing targets skip safely; no generic mutation batching |
 
 ## Task Relationships
 
@@ -81,6 +82,9 @@ T35: Gemini Tool Continuity, Bulk Note Creation, and Per-Tab Model Selection
 T36: Stable Per-Tab Model Selection and Restored Chat View State
   └── T15
   └── T35
+T37: Idempotent Bulk Note Creation and Batch Scope Decision
+  └── T13
+  └── T35
 T18: Web Search Tool for Chat
   └── T13
   └── T9
@@ -116,6 +120,6 @@ T9: Settings & Provider Profiles
 ## Status Summary
 
 - **Active**: 6
-- **Completed**: 18
+- **Completed**: 19
 - **Paused**: 0
-- **Total**: 22
+- **Total**: 23

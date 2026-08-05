@@ -442,24 +442,43 @@ export class ToolExecutor {
 			if (!note.path || !isPathAllowed(note.path)) return denyPath(note.path);
 			if (paths.has(note.path)) return { error: `Duplicate note path in batch: ${note.path}` };
 			paths.add(note.path);
-			if (this.resolveNote(note.path)) return { error: `Note already exists: ${note.path}. No notes were created.` };
 		}
 
 		const created: string[] = [];
-		try {
-			for (const note of normalizedNotes) {
+		const skippedPaths: string[] = [];
+		for (const note of normalizedNotes) {
+			// Batch creation is intentionally idempotent: a rerun creates only the
+			// missing notes and does not let an already-created path stop the batch.
+			if (this.resolveNote(note.path)) {
+				skippedPaths.push(note.path);
+				continue;
+			}
+			try {
 				await this.app.vault.create(note.path, note.content);
 				created.push(note.path);
+			} catch (error: any) {
+				// A competing operation may have created this file after the check.
+				// Treat that race exactly like a pre-existing path and continue.
+				if (this.resolveNote(note.path)) {
+					skippedPaths.push(note.path);
+					continue;
+				}
+				return {
+					error: `Batch creation stopped after ${created.length} new note${created.length === 1 ? "" : "s"}: ${error.message || String(error)}`,
+					createdPaths: created,
+					skippedPaths,
+				};
 			}
-		} catch (error: any) {
-			return {
-				error: `Batch creation stopped after ${created.length} note${created.length === 1 ? "" : "s"}: ${error.message || String(error)}`,
-				createdPaths: created,
-			};
 		}
 
-		new Notice(`✓ Created ${created.length} notes`);
-		return { success: true, count: created.length, createdPaths: created };
+		const summary = `✓ Created ${created.length} new note${created.length === 1 ? "" : "s"}${skippedPaths.length ? `; skipped ${skippedPaths.length} existing` : ""}`;
+		new Notice(summary);
+		return {
+			success: true,
+			count: created.length,
+			createdPaths: created,
+			skippedPaths,
+		};
 	}
 
 	private async patchNote(args: {

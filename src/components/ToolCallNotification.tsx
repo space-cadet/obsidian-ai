@@ -56,8 +56,12 @@ function ToolCallSummary({ toolCall, result }: { toolCall: ToolCall; result?: To
 			return `${path} — "${heading}"`;
 		}
 		if (toolName === "create_notes") {
-			const notes = Array.isArray((args as any).notes) ? (args as any).notes : [];
-			return `${notes.length} new notes`;
+			const requested = Array.isArray((args as any).notes) ? (args as any).notes.length : 0;
+			const created = result?.createdPaths?.length ?? result?.count;
+			const skipped = result?.skippedPaths?.length ?? 0;
+			return created === undefined
+				? `${requested} requested notes`
+				: `${created} created${skipped ? ` · ${skipped} already existed` : ""}`;
 		}
 		return path;
 	};
@@ -147,6 +151,17 @@ function ToolCallDetail({ toolCall, result, onOpenPastSession }: { toolCall: Too
 					<div>Created: {result.created ? new Date(result.created).toLocaleString() : "—"}</div>
 					<div>Modified: {result.modified ? new Date(result.modified).toLocaleString() : "—"}</div>
 				</div>
+			</div>
+		);
+	}
+
+	if (toolName === "create_notes") {
+		const created = result.createdPaths ?? [];
+		const skipped = result.skippedPaths ?? [];
+		return (
+			<div className="tool-call-detail-content">
+				<div className="tool-call-success">Created {created.length} new note{created.length === 1 ? "" : "s"}.</div>
+				{skipped.length > 0 && <div className="tool-call-result-list">Skipped {skipped.length} already-existing note{skipped.length === 1 ? "" : "s"}: {skipped.join(", ")}</div>}
 			</div>
 		);
 	}

@@ -43,7 +43,7 @@ export interface ToolResult {
 		snippet: string;
 	}>;
 	createdPaths?: string[];
-	skipped?: string[];
+	skippedPaths?: string[];
 }
 
 export type StreamEvent =

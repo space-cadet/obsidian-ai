@@ -3,6 +3,15 @@
 
 ## Active Tasks
 
+### T37: Idempotent Bulk Note Creation and Batch Scope Decision (2026-08-05)
+**Status:** ✅ COMPLETED
+
+- Changed `create_notes` so an existing file is reported as a safe skip while the rest of the approved batch proceeds; forbidden and duplicate paths remain no-write validation failures.
+- Added the execution/result contract to report created and skipped paths in the UI and to the agent, including an existing-file race during vault writes.
+- Decided against a generic batch wrapper for edit, append, move, or delete operations. Future mutation batching needs an operation-specific preview, collision/expected-content checks, one approval, and an explicit partial-result contract.
+- Validation: 154 tests across 15 files, production build, and `git diff --check` passed.
+- Tracking task: `memory-bank/tasks/T37.md`.
+
 ### T36: Stable Per-Tab Model Selection and Restored Chat View State (2026-08-05)
 **Status:** ✅ COMPLETED
 
@@ -15,7 +24,7 @@
 **Status:** ✅ COMPLETED
 
 - Preserved the AI SDK provider metadata, including Gemini's opaque thought signature, through manual agent tool-result continuations.
-- Added `create_notes` for 2–100 genuinely batched new notes, with one approval card and preflight rejection of existing, duplicate, and forbidden paths.
+- Added `create_notes` for 2–100 genuinely batched new notes, with one approval card and no-overwrite handling for existing, duplicate, and forbidden paths. T37 refined existing-path behavior to safe skips.
 - Made the shared model picker restore and persist profile selection per chat tab; new tabs inherit the active tab's model.
 - Validation: 153 tests across 14 files, production build, and `git diff --check` passed.
 - Tracking task: `memory-bank/tasks/T35.md`.

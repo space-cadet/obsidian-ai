@@ -106,8 +106,14 @@ function formatToolResult(toolName: string, result: ToolResult): string {
 			return output;
 		}
 
+		case "create_notes": {
+			const created = result.createdPaths?.length ?? result.count ?? 0;
+			const skipped = result.skippedPaths?.length ?? 0;
+			return result.success
+				? `✓ create_notes completed: created ${created} new note${created === 1 ? "" : "s"}${skipped ? `; skipped ${skipped} already-existing note${skipped === 1 ? "" : "s"}` : ""}.`
+				: `✗ create_notes failed: ${result.error ?? "unknown error"}`;
+		}
 		case "create_note":
-		case "create_notes":
 		case "edit_note":
 		case "append_to_note":
 		case "patch_note":

@@ -1,8 +1,9 @@
 # Active Context
 
-*Last Updated: 2026-08-05 11:27:43 IST*
+*Last Updated: 2026-08-05 13:10 IST*
 
 ## Current Focus
+**T37 Idempotent Bulk Note Creation and Batch Scope Decision** — completed 2026-08-05; `create_notes` skips existing files and reports its created/skipped result, while mutation batching remains deliberately operation-specific.
 **T36 Stable Per-Tab Model Selection and Restored Chat View State** — completed 2026-08-05; model switching has no session-feedback loop, and saved tabs, active tab, and scroll positions restore by default.
 **T35 Gemini Tool Continuity, Bulk Note Creation, and Per-Tab Model Selection** — completed 2026-08-05; Gemini tool signatures are preserved, `create_notes` provides an honest 2–100-note batch operation, and tabs restore their own selected model.
 **T34 Per-Tab Chat Process Isolation** — completed 2026-08-05; live streaming/tool runtime state is now keyed by originating chat session.

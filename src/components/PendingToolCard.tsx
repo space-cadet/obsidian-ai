@@ -47,7 +47,7 @@ function PendingToolCallPreview({ toolCall }: { toolCall: ToolCall }): React.Rea
 		return (
 			<div className="pending-tool-summary">
 				<div className="pending-tool-title">➕ Create <strong>{notes.length} new notes</strong></div>
-				<div className="pending-tool-meta">No existing note will be overwritten.</div>
+				<div className="pending-tool-meta">Existing notes are skipped; no note is overwritten.</div>
 				{names.length > 0 && <pre className="pending-tool-preview">{names.join("\n")}{notes.length > names.length ? `\n… and ${notes.length - names.length} more` : ""}</pre>}
 			</div>
 		);
