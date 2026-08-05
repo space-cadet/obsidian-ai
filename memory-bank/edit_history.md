@@ -6,6 +6,12 @@
 
 ## 2026-08-05
 
+#### 11:27:43 IST - T34: Per-Tab Chat Process Isolation Manual Verification
+- Modified `memory-bank/tasks/T34.md` - Recorded the user's confirmation that replies remain isolated to their originating tabs.
+- Modified `memory-bank/implementation-details/per-tab-chat-process-isolation.md` - Added manual validation evidence to the implementation record.
+- Modified `memory-bank/activeContext.md`, `memory-bank/progress.md`, `memory-bank/session_cache.md`, and `memory-bank/sessions/2026-08-05-night.md` - Synchronized the completed and manually verified T34 status.
+- Created `memory-bank/edits/2026-08-05/112743-T34-manual-verification.md` - Added the closeout edit chunk.
+
 #### 10:55:22 IST - T34: Per-Tab Chat Process Isolation Planning
 - Created `memory-bank/tasks/T34.md` - Added a high-priority corrective task for tab-scoped generation process state.
 - Created `memory-bank/implementation-details/per-tab-chat-process-isolation.md` - Documented the root cause, runtime-state contract, phased fix plan, and regression coverage.

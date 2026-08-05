@@ -1,5 +1,5 @@
 # Implementation Progress
-*Last Updated: 2026-08-05 11:11 IST*
+*Last Updated: 2026-08-05 11:27 IST*
 
 ## Active Tasks
 
@@ -12,6 +12,7 @@
 - Added tab close/delete cleanup for affected session runtimes.
 - Added regression coverage for cross-tab stream routing and tool session identity.
 - Validation: focused hook tests, full `pnpm test`, `pnpm run build`, and `git diff --check` pass.
+- Manual validation: user confirmed independent tab behavior after the repair.
 - Implementation doc: `memory-bank/implementation-details/per-tab-chat-process-isolation.md`.
 - Tracking task: `memory-bank/tasks/T34.md`.
 

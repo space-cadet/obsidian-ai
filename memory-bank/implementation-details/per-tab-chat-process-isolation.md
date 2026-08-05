@@ -1,6 +1,6 @@
 # Per-Tab Chat Process Isolation
 *Created: 2026-08-05 10:55:22 IST*
-*Last Updated: 2026-08-05 11:11:04 IST*
+*Last Updated: 2026-08-05 11:27:43 IST*
 
 ## Purpose
 
@@ -150,6 +150,10 @@ Verification:
 - `pnpm test`
 - `pnpm run build`
 - `git diff --check`
+
+Manual validation:
+
+- The user confirmed the repaired tabbed-chat workflow behaves correctly: a reply in one tab no longer appears in another tab.
 
 ## Related Work
 

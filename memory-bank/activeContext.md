@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-08-05 11:11:04 IST*
+*Last Updated: 2026-08-05 11:27:43 IST*
 
 ## Current Focus
 **T34 Per-Tab Chat Process Isolation** — completed 2026-08-05; live streaming/tool runtime state is now keyed by originating chat session.
@@ -16,6 +16,7 @@
 - Plan: introduce session-keyed runtime state, route all stream/tool updates by captured origin session ID, and test cross-tab streaming, stop, and tool approval behavior.
 - Implemented: `useChatRuntimeState` owns per-session runtime entries; `useMessageActions` routes single-chat, group-chat, OpenResponses, tool approval, stop, retry, and edit paths by session; tab close/delete paths abort and clear affected runtimes.
 - Validation: focused hook tests, full `pnpm test`, production `pnpm run build`, and `git diff --check` pass.
+- Manual validation: user confirmed that responses now remain in their originating tabs.
 - Documentation: `memory-bank/tasks/T34.md` and `memory-bank/implementation-details/per-tab-chat-process-isolation.md`.
 
 ### Desktop Sidebar Duplicate Repair (2026-08-04)

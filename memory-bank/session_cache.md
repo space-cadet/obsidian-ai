@@ -1,12 +1,12 @@
 # Session Cache
 
 *Created: 2026-07-13 22:41:55 IST*
-*Last Updated: 2026-08-05 01:53:30 IST*
+*Last Updated: 2026-08-05 11:27:43 IST*
 
 ## Current Session
 **Started**: 2026-08-05
 **Ended**: 2026-08-05
-**Focus Task**: T15 — Settings Navigation and Draft Tab Lifecycle
+**Focus Task**: T34 — Per-Tab Chat Process Isolation
 **Session File**: `memory-bank/sessions/2026-08-05-night.md`
 **Status**: ✅ COMPLETED
 
@@ -25,6 +25,7 @@
 - T26: AI Intelligence Layer — 🔄
 - T32: Security Hardening — ✅ COMPLETED (2026-08-02)
 - T33: Desktop Chat View Singleton Repair — ✅ COMPLETED (2026-08-04)
+- T34: Per-Tab Chat Process Isolation — ✅ COMPLETED and manually verified (2026-08-05)
 
 ## Active Tasks
 
@@ -56,7 +57,7 @@
 **Files**: `src/intelligence/PersonaLoader.ts`, `src/intelligence/SessionSummarizer.ts`
 
 ## Session History (Last 5)
-1. `sessions/2026-08-05-night.md` — T15 Settings navigation, diagnostics, draft tabs, and history boundary
+1. `sessions/2026-08-05-night.md` — T15 Settings navigation and T34 per-tab process isolation, including manual verification
 2. `sessions/2026-08-04-night.md` — T33 Desktop Chat View Singleton Repair
 3. `sessions/2026-08-02-evening.md` — T32 Security Hardening
 4. `sessions/2026-07-29-afternoon.md` — T15 Past-session search + T27-31 bug fixes
