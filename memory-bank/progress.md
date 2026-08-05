@@ -3,6 +3,14 @@
 
 ## Active Tasks
 
+### T36: Stable Per-Tab Model Selection and Restored Chat View State (2026-08-05)
+**Status:** ✅ COMPLETED
+
+- Broke the shared picker/session profile feedback loop and removed its ActionBar console logging.
+- Added default-on restoration of saved internal tabs, active tab, and each tab's scroll position after plugin or app reload.
+- Added the Chat Defaults toggle; unsent drafts remain outside persistent storage by design.
+- Validation: 153 tests across 14 files, production build, and `git diff --check` passed.
+
 ### T35: Gemini Tool Continuity, Bulk Note Creation, and Per-Tab Model Selection (2026-08-05)
 **Status:** ✅ COMPLETED
 

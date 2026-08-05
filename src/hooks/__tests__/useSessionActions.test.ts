@@ -1,5 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { useState } from "react";
 import { useSessionActions } from "../useSessionActions";
 
 vi.mock("obsidian", () => ({
@@ -34,8 +35,9 @@ describe("useSessionActions", () => {
 		const sessionsRef = { current: [] as any[] };
 		const activeSessionIdRef = { current: null as string | null };
 
-		const { result } = renderHook(() =>
-			useSessionActions({
+		const { result } = renderHook(() => {
+			const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
+			return useSessionActions({
 				plugin,
 				sessionsRef,
 				activeSessionIdRef,
@@ -50,8 +52,10 @@ describe("useSessionActions", () => {
 				isStreaming: false,
 				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
-			}),
-		);
+				openSessionIds,
+				setOpenSessionIds,
+			});
+		});
 
 		act(() => result.current.handleNewChat());
 		act(() => result.current.handleNewChat());
@@ -69,7 +73,9 @@ describe("useSessionActions", () => {
 		} as any;
 		const sessionsRef = { current: [] as any[] };
 		const activeSessionIdRef = { current: null as string | null };
-		const { result } = renderHook(() => useSessionActions({
+		const { result } = renderHook(() => {
+			const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
+			return useSessionActions({
 			plugin,
 			sessionsRef,
 			activeSessionIdRef,
@@ -77,7 +83,9 @@ describe("useSessionActions", () => {
 			createNewSession, setSelectedProfileIds: vi.fn(), getSelectedProfileIds: () => ["gemini-tab"],
 			setDebateMode: vi.fn(), setWasTruncated: vi.fn(), isStreaming: false,
 			abortActiveRuntime: vi.fn(), clearSessionRuntime: vi.fn(),
-		}));
+			openSessionIds, setOpenSessionIds,
+			});
+		});
 
 		act(() => result.current.handleNewChat());
 		expect(createNewSession).toHaveBeenCalledWith(expect.objectContaining({ selectedProfileIds: ["gemini-tab"] }));

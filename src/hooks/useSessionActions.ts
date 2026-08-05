@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import { Notice } from "obsidian";
 import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 import type { ChatSession, ContextItem } from "../types";
@@ -26,6 +26,8 @@ interface UseSessionActionsOptions {
 	isStreaming: boolean;
 	abortActiveRuntime: () => void;
 	clearSessionRuntime: (sessionId: string) => void;
+	openSessionIds: string[];
+	setOpenSessionIds: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 export interface UseSessionActionsResult {
@@ -57,8 +59,9 @@ export function useSessionActions({
 	isStreaming,
 	abortActiveRuntime,
 	clearSessionRuntime,
+	openSessionIds,
+	setOpenSessionIds,
 }: UseSessionActionsOptions): UseSessionActionsResult {
-	const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
 
 	const openSessionInTab = useCallback(
 		(sessionId: string, messageId?: string) => {

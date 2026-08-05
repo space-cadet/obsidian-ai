@@ -6,6 +6,14 @@
 
 ## 2026-08-05
 
+#### 12:45 IST - T36: Stable Per-Tab Model Selection and Restored Chat View State
+- Modified `src/components/ChatApp.tsx` and `src/hooks/useSessionActions.ts` - Broke the tab-profile synchronization feedback loop by separating one-time restoration from user-initiated persistence.
+- Modified `src/components/ActionBar.tsx` - Removed the participant-count debug console output.
+- Modified `src/types.ts`, `src/hooks/useChatSession.ts`, `src/components/ChatMessages.tsx`, and `src/storage/ChatStorage.ts` - Persisted and restored saved open tabs, active tab, and each session's message-list scroll position for both legacy and JSONL storage.
+- Modified Settings - Added default-on Restore chat tabs after reload in Chat Defaults.
+- Modified `memory-bank/implementation-details/past-session-search-and-tabs.md` - Recorded the profile ownership boundary and the persisted tab-view-state contract.
+- Created `memory-bank/tasks/T36.md` and synchronized the task, context, progress, cache, session, and edit-history records.
+
 #### 12:25 IST - T35: Gemini Tool Continuity, Bulk Note Creation, and Per-Tab Model Selection
 - Modified `src/api.ts` and `src/agent/AgentLoop.ts` - Preserved provider-owned metadata from a streamed function call onto the reconstructed next-step assistant part, retaining Gemini thought signatures.
 - Modified `src/agent/tools.ts`, `src/agent/ToolExecutor.ts`, prompt and tool-card UI files - Added the honest, approval-gated `create_notes` tool for 2–100 new notes with preflight safety checks and compact batch feedback.

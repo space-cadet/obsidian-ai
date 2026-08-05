@@ -20,6 +20,8 @@ export interface UseChatSessionResult {
 	chatDataLoaded: boolean;
 	sessionsRef: React.MutableRefObject<ChatSession[]>;
 	activeSessionIdRef: React.MutableRefObject<string | null>;
+	openSessionIds: string[];
+	setOpenSessionIds: React.Dispatch<React.SetStateAction<string[]>>;
 	/** Create and activate a new draft session. Drafts persist after their first message. */
 	createNewSession: (opts?: {
 		includeActiveNote?: boolean;
@@ -51,6 +53,7 @@ export function useChatSession({
 	const [sessions, setSessions] = useState<ChatSession[]>([]);
 	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 	const [chatDataLoaded, setChatDataLoaded] = useState(false);
+	const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
 
 	const sessionsRef = useRef<ChatSession[]>([]);
 	const activeSessionIdRef = useRef<string | null>(null);
@@ -74,10 +77,21 @@ export function useChatSession({
 				// zero-message entries; those should be cleaned up on the next autosave.
 				skipNextAutosaveRef.current = savedSessions.length === data.sessions.length;
 				setSessions(savedSessions);
-				setActiveSessionId(
+				const restoredActiveId =
 					savedSessions.some((session) => session.id === data.activeSessionId)
 						? data.activeSessionId
-						: savedSessions[0].id,
+						: savedSessions[0].id;
+				setActiveSessionId(restoredActiveId);
+				const knownIds = new Set(savedSessions.map((session) => session.id));
+				const restoredOpenIds = plugin.settings.restoreChatTabs
+					? (data.openSessionIds ?? []).filter((id) => knownIds.has(id))
+					: [];
+				setOpenSessionIds(
+					restoredOpenIds.length > 0
+						? restoredOpenIds
+						: restoredActiveId
+							? [restoredActiveId]
+							: [],
 				);
 			} else {
 				// No saved data — create an empty session
@@ -101,6 +115,7 @@ export function useChatSession({
 				};
 				setSessions([newSession]);
 				setActiveSessionId(newSession.id);
+				setOpenSessionIds([newSession.id]);
 			}
 			setChatDataLoaded(true);
 		});
@@ -133,6 +148,11 @@ export function useChatSession({
 				void plugin.saveChatData({
 					sessions: persistedSessions,
 					activeSessionId: persistedActiveSessionId,
+					openSessionIds: plugin.settings.restoreChatTabs
+						? openSessionIds.filter((id) =>
+							persistedSessions.some((session) => session.id === id),
+						)
+						: [],
 				});
 				saveTimerRef.current = null;
 			}, 150);
@@ -143,7 +163,7 @@ export function useChatSession({
 				saveTimerRef.current = null;
 			}
 		};
-	}, [sessions, activeSessionId, plugin, chatDataLoaded]);
+	}, [sessions, activeSessionId, openSessionIds, plugin, chatDataLoaded]);
 
 	// ─── Auto-title session after it has a few messages ───
 	const [autoNameSessions, setAutoNameSessions] = useState(
@@ -378,6 +398,8 @@ export function useChatSession({
 		chatDataLoaded,
 		sessionsRef,
 		activeSessionIdRef,
+		openSessionIds,
+		setOpenSessionIds,
 		createNewSession,
 		deleteSession,
 		renameSession,

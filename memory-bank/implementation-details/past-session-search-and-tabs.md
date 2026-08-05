@@ -91,6 +91,30 @@ After loading a past chat, then pressing +
 
 **Status:** Implemented on 2026-08-05. The draft/session persistence boundary, repeated `+` tab creation, draft disposal, final-tab no-tab fallback, and corrected Intelligence anchor are covered by the production build and test suite.
 
+## Restored Tab View State and Profile Ownership (2026-08-05)
+
+The shared toolbar is presentation only. The selected provider profile belongs to
+the active `ChatSession`; tab activation restores that session's selection once.
+The restoration update is suppressed from the session write-back effect, which
+prevents an oscillation between old persisted IDs and an in-progress picker
+change. A direct user selection then persists normally. `ActionBar` has no
+runtime participant-count logging.
+
+Saved view state is stored only for conversations with messages:
+
+- `StoredChatData.openSessionIds` preserves the ordered saved-tab strip.
+- `activeSessionId` remains the selected tab.
+- `ChatSession.scrollPosition` records the vertical message-list offset.
+- Legacy `data.json` includes these fields directly; JSONL storage places the
+  tab list and active ID in `sessions/index.json` and each scroll position in
+  the corresponding index entry.
+
+**Restore chat tabs after reload** is a default-on Chat Defaults setting. If
+enabled, the plugin restores the valid saved tab IDs, chooses the stored active
+tab, then restores its individual message-list position whenever the tab is
+selected. Disabled mode opens only the active saved conversation. Draft tabs
+remain excluded in either mode.
+
 ## Composer Shortcut
 
 When the setting disables Enter-to-send, Enter inserts a line break. Shift+Enter and Cmd/Ctrl+Enter remain send shortcuts, as stated in the input placeholder and handled by `ChatInput` key processing.

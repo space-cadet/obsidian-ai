@@ -97,6 +97,20 @@ export function renderChatDefaultsSection(
 		});
 
 	new Setting(sectionEl)
+		.setName("Restore chat tabs after reload")
+		.setDesc(
+			"Reopen saved chat tabs, the active tab, and each tab's scroll position after Obsidian or this plugin reloads. Draft tabs are not restored.",
+		)
+		.addToggle((toggle) => {
+			toggle
+				.setValue(plugin.settings.restoreChatTabs)
+				.onChange(async (value) => {
+					plugin.settings.restoreChatTabs = value;
+					await saveSettings();
+				});
+		});
+
+	new Setting(sectionEl)
 		.setName("Max saved conversations")
 		.setDesc(
 			"Maximum number of chat sessions to keep before older ones are trimmed.",

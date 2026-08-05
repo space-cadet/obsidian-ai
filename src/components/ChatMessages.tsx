@@ -193,6 +193,9 @@ const StreamingBubble: React.FC<{
 };
 
 interface ChatMessagesProps {
+	sessionId: string | null;
+	restoreScrollTop?: number;
+	onScrollPositionChange?: (sessionId: string, scrollTop: number) => void;
 	messages: ChatMessage[];
 	currentAiMessage: string;
 	currentContentParts?: ContentPart[];
@@ -213,6 +216,9 @@ interface ChatMessagesProps {
 }
 
 const ChatMessages: React.FC<ChatMessagesProps> = ({
+	sessionId,
+	restoreScrollTop,
+	onScrollPositionChange,
 	messages,
 	currentAiMessage,
 	currentContentParts,
@@ -255,11 +261,25 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	useEffect(() => {
 		const container = scrollRef.current;
 		if (!container) return;
-		const onScroll = () => checkScrollPosition();
+		const onScroll = () => {
+			checkScrollPosition();
+			if (sessionId) onScrollPositionChange?.(sessionId, container.scrollTop);
+		};
 		container.addEventListener("scroll", onScroll, { passive: true });
 		checkScrollPosition();
 		return () => container.removeEventListener("scroll", onScroll);
-	}, [checkScrollPosition]);
+	}, [checkScrollPosition, onScrollPositionChange, sessionId]);
+
+	/** Restore the active tab's saved position after its message DOM has rendered. */
+	useEffect(() => {
+		const container = scrollRef.current;
+		if (!container || !sessionId) return;
+		const frame = requestAnimationFrame(() => {
+			container.scrollTop = Math.max(0, restoreScrollTop ?? 0);
+			checkScrollPosition();
+		});
+		return () => cancelAnimationFrame(frame);
+	}, [sessionId, restoreScrollTop, messages.length, checkScrollPosition]);
 
 	/** Auto-scroll to bottom on new messages or streaming content — but ONLY if user is already near bottom */
 	useEffect(() => {

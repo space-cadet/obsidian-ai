@@ -49,9 +49,6 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	searchVisible,
 	onToggleSearch,
 }) => {
-	// Debug: log participant count
-	console.log("[ActionBar] participantCount:", participantCount, "debateMode:", debateMode);
-
 	const openSettings = () => {
 		(plugin.app as any).setting.open();
 		(plugin.app as any).setting.openTabById(plugin.manifest.id);

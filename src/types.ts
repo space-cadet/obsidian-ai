@@ -92,9 +92,13 @@ export interface ChatSession {
 	thinkingEnabled?: boolean;
 	/** Unsent composer text saved for recovery across restarts and tab switches */
 	draft?: string;
+	/** Vertical message-list offset captured for restoring this tab after reload. */
+	scrollPosition?: number;
 }
 
 export interface StoredChatData {
 	sessions: ChatSession[];
 	activeSessionId: string | null;
+	/** Ordered internal tabs to restore. Drafts are deliberately excluded. */
+	openSessionIds?: string[];
 }

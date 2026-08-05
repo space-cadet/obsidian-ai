@@ -96,12 +96,14 @@ interface SessionIndexEntry {
 	selectedProfileIds?: string[];
 	thinkingEnabled?: boolean;
 	contextItems?: ContextItem[];
+	scrollPosition?: number;
 }
 
 interface SessionIndex {
 	version: number;
 	sessions: SessionIndexEntry[];
 	activeSessionId: string | null;
+	openSessionIds?: string[];
 }
 
 const INDEX_VERSION = 1;
@@ -155,6 +157,7 @@ class JsonlStorage implements ChatStorage {
 					participants: entry.participants,
 					selectedProfileIds: entry.selectedProfileIds,
 					thinkingEnabled: entry.thinkingEnabled,
+					scrollPosition: entry.scrollPosition,
 				};
 			}),
 		);
@@ -166,7 +169,11 @@ class JsonlStorage implements ChatStorage {
 			activeSessionId: index.activeSessionId,
 		};
 
-		return { sessions, activeSessionId: index.activeSessionId };
+		return {
+			sessions,
+			activeSessionId: index.activeSessionId,
+			openSessionIds: index.openSessionIds,
+		};
 	}
 
 	async saveChatData(data: StoredChatData): Promise<void> {
@@ -201,6 +208,7 @@ class JsonlStorage implements ChatStorage {
 				participants: session.participants,
 				selectedProfileIds: session.selectedProfileIds,
 				thinkingEnabled: session.thinkingEnabled,
+				scrollPosition: session.scrollPosition,
 				contextItems: session.contextItems,
 			});
 		}
@@ -209,6 +217,7 @@ class JsonlStorage implements ChatStorage {
 			version: INDEX_VERSION,
 			sessions: indexEntries,
 			activeSessionId: data.activeSessionId,
+			openSessionIds: data.openSessionIds,
 		};
 
 		await adapter.write(`${sessionsDir}/index.json`, JSON.stringify(index, null, 2));

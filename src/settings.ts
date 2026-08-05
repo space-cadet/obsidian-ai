@@ -76,6 +76,8 @@ export interface ObsidianAISettings {
 	pressEnterToSend: boolean;
 	/** Preferred fixed width for each title in the shared chat tab strip. */
 	chatTabTitleWidth: number;
+	/** Restore saved internal chat tabs and their positions after a plugin reload. */
+	restoreChatTabs: boolean;
 	/** Chat storage format: 'legacy' = single data.json, 'jsonl' = split sessions */
 	chatStorageFormat: "legacy" | "jsonl";
 	/** Max sessions shown in sidebar before pagination */
@@ -271,6 +273,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	maxAgentSteps: 5,
 	pressEnterToSend: true,
 	chatTabTitleWidth: 160,
+	restoreChatTabs: true,
 	contextPickerPathDisplay: "duplicates",
 	webSearchProvider: "duckduckgo",
 	braveApiKey: "",
@@ -341,6 +344,7 @@ export const normalizeSettings = (
 			360,
 			Math.max(120, Number.isFinite(merged.chatTabTitleWidth) ? merged.chatTabTitleWidth : 160),
 		),
+		restoreChatTabs: Boolean(merged.restoreChatTabs ?? true),
 		contextPickerPathDisplay: (merged.contextPickerPathDisplay as "never" | "always" | "duplicates") ?? "duplicates",
 		webSearchProvider: (merged.webSearchProvider as WebSearchProvider) ?? "duckduckgo",
 		braveApiKey: merged.braveApiKey ?? "",

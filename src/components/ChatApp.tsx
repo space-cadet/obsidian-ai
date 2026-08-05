@@ -71,6 +71,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		chatDataLoaded,
 		sessionsRef,
 		activeSessionIdRef,
+		openSessionIds: persistedOpenSessionIds,
+		setOpenSessionIds: setPersistedOpenSessionIds,
 		createNewSession,
 		renameSession,
 		updateSessionMessages,
@@ -111,6 +113,12 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	}, []);
 
 	const ui = useChatUI();
+	const suppressProfilePersistenceRef = useRef(false);
+	const scrollSaveTimersRef = useRef<Map<string, number>>(new Map());
+	const getSelectedProfileIds = useCallback(
+		() => Array.from(ui.selectedProfileIds),
+		[ui.selectedProfileIds],
+	);
 
 	/** Resolve the profile for this chat panel */
 	const resolvedProfile: ProviderProfile = useMemo(() => {
@@ -217,7 +225,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		setScrollToMessageId,
 		createNewSession,
 		setSelectedProfileIds: ui.setSelectedProfileIds,
-		getSelectedProfileIds: () => Array.from(ui.selectedProfileIds),
+		getSelectedProfileIds,
 		setDebateMode: ui.setDebateMode,
 		setWasTruncated,
 		isStreaming: activeRuntime.isStreaming,
@@ -226,10 +234,13 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 			abortRuntime(sessionId);
 			clearRuntime(sessionId);
 		},
+		openSessionIds: persistedOpenSessionIds,
+		setOpenSessionIds: setPersistedOpenSessionIds,
 	});
 
 	// The toolbar is shared visually, but profile selection belongs to the
-	// active chat session. Restore it whenever a different tab is selected.
+	// newly active session. This is deliberately one-way: writing picker changes
+	// back into the session happens in the separate effect below.
 	useEffect(() => {
 		const activeSession = sessions.find((session) => session.id === activeSessionId);
 		if (!activeSession) return;
@@ -240,9 +251,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				: [getActiveProviderProfile(plugin.settings).id];
 		const currentIds = Array.from(ui.selectedProfileIds);
 		if (ids.length !== currentIds.length || ids.some((id) => !ui.selectedProfileIds.has(id))) {
+			suppressProfilePersistenceRef.current = true;
 			ui.setSelectedProfileIds(new Set(ids));
 		}
-	}, [activeSessionId, sessions, plugin.settings, ui]);
+	}, [activeSessionId, chatDataLoaded]);
 
 	// ─── Settings Actions ───
 	const {
@@ -319,32 +331,58 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	// Sync selectedProfileIds into the active session whenever they change
 	useEffect(() => {
 		if (!activeSessionId) return;
+		if (suppressProfilePersistenceRef.current) {
+			suppressProfilePersistenceRef.current = false;
+			return;
+		}
 		const ids = Array.from(ui.selectedProfileIds);
 		setSessions((prev) =>
-			prev.map((s) =>
-				s.id === activeSessionId
-					? {
+			prev.map((s) => {
+				if (s.id !== activeSessionId) return s;
+				const nextParticipants = ids.length >= 2
+					? ids.map((id) => {
+						const profile = plugin.settings.providerProfiles.find((p) => p.id === id);
+						return {
+							id,
+							name: profile?.name ?? "Unknown",
+							profileId: id,
+							color: getAgentColor(profile?.provider ?? "custom"),
+							icon: getAgentIcon(profile?.provider ?? "custom"),
+						};
+					})
+					: [];
+				const alreadyMatches =
+					s.profileId === (ids.length === 1 ? ids[0] : undefined) &&
+					JSON.stringify(s.selectedProfileIds ?? []) === JSON.stringify(ids) &&
+					s.isGroupChat === (ids.length >= 2);
+				return alreadyMatches
+					? s
+					: {
 						...s,
 						profileId: ids.length === 1 ? ids[0] : undefined,
 						selectedProfileIds: ids,
 						isGroupChat: ids.length >= 2,
-						participants: ids.length >= 2
-							? ids.map((id) => {
-									const profile = plugin.settings.providerProfiles.find((p) => p.id === id);
-									return {
-										id,
-										name: profile?.name ?? "Unknown",
-										profileId: id,
-										color: getAgentColor(profile?.provider ?? "custom"),
-										icon: getAgentIcon(profile?.provider ?? "custom"),
-									};
-								})
-							: [],
-					}
-					: s,
-			),
+						participants: nextParticipants,
+					};
+			}),
 		);
 	}, [ui.selectedProfileIds, activeSessionId, plugin.settings.providerProfiles]);
+
+	const handleScrollPositionChange = useCallback((sessionId: string, scrollTop: number) => {
+		const existingTimer = scrollSaveTimersRef.current.get(sessionId);
+		if (existingTimer) window.clearTimeout(existingTimer);
+		scrollSaveTimersRef.current.set(sessionId, window.setTimeout(() => {
+			setSessions((current) => current.map((session) =>
+				session.id === sessionId && session.scrollPosition !== scrollTop
+					? { ...session, scrollPosition: scrollTop }
+					: session,
+			));
+			scrollSaveTimersRef.current.delete(sessionId);
+		}, 200));
+	}, [setSessions]);
+	useEffect(() => () => {
+		scrollSaveTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+	}, []);
 
 	// ─── Draft auto-save (debounced) ───
 	const draftTimerRef = useRef<number | null>(null);
@@ -483,6 +521,11 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 			)}
 
 			<ChatMessages
+				sessionId={activeSessionId}
+				restoreScrollTop={plugin.settings.restoreChatTabs
+					? sessions.find((session) => session.id === activeSessionId)?.scrollPosition
+					: undefined}
+				onScrollPositionChange={handleScrollPositionChange}
 				messages={messages}
 				currentAiMessage={activeRuntime.currentAiMessage}
 				currentContentParts={activeRuntime.currentContentParts}
