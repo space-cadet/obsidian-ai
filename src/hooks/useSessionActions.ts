@@ -20,6 +20,7 @@ interface UseSessionActionsOptions {
 		force?: boolean;
 	}) => ChatSession;
 	setSelectedProfileIds: (ids: Set<string>) => void;
+	getSelectedProfileIds: () => string[];
 	setDebateMode: (v: boolean) => void;
 	setWasTruncated: (v: boolean) => void;
 	isStreaming: boolean;
@@ -50,6 +51,7 @@ export function useSessionActions({
 	setScrollToMessageId,
 	createNewSession,
 	setSelectedProfileIds,
+	getSelectedProfileIds,
 	setDebateMode,
 	setWasTruncated,
 	isStreaming,
@@ -104,19 +106,22 @@ export function useSessionActions({
 
 		const newSession = createNewSession({
 			includeActiveNote: plugin.settings.includeActiveNote,
-			selectedProfileIds: plugin.settings.selectedProfileIds,
+			// A new tab inherits the currently visible tab's model, not the global
+			// default. This preserves the user's model choice across tab workflows.
+			selectedProfileIds: getSelectedProfileIds(),
 			autoNameSessions: plugin.settings.autoNameSessions,
 		});
 		setOpenSessionIds((current) => [...current, newSession.id]);
-		if (plugin.settings.selectedProfileIds.length > 0) {
-			setSelectedProfileIds(new Set(plugin.settings.selectedProfileIds));
+		const selectedProfileIds = getSelectedProfileIds();
+		if (selectedProfileIds.length > 0) {
+			setSelectedProfileIds(new Set(selectedProfileIds));
 		} else {
 			const activeProfile = getActiveProviderProfile(plugin.settings);
 			setSelectedProfileIds(new Set([activeProfile.id]));
 		}
 		setDebateMode(false);
 		setWasTruncated(false);
-	}, [isStreaming, plugin, createNewSession, setSelectedProfileIds, setDebateMode, setWasTruncated, abortActiveRuntime, activeSessionIdRef, sessionsRef]);
+	}, [isStreaming, plugin, createNewSession, setSelectedProfileIds, getSelectedProfileIds, setDebateMode, setWasTruncated, abortActiveRuntime, activeSessionIdRef, sessionsRef]);
 
 	const handleLoadSession = useCallback(
 		(sessionId: string) => {

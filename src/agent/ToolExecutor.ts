@@ -49,6 +49,10 @@ export class ToolExecutor {
 					return await this.createNote(
 						call.args as { path: string; content: string },
 					);
+				case "create_notes":
+					return await this.createNotes(
+						call.args as { notes: Array<{ path: string; content: string }> },
+					);
 				case "patch_note":
 					return await this.patchNote(
 						call.args as {
@@ -420,6 +424,42 @@ export class ToolExecutor {
 		await this.app.vault.create(fileName, args.content);
 		new Notice(`✓ Created ${fileName}`);
 		return { success: true, path: fileName };
+	}
+
+	private async createNotes(args: {
+		notes: Array<{ path: string; content: string }>;
+	}): Promise<ToolResult> {
+		if (!Array.isArray(args.notes) || args.notes.length < 2 || args.notes.length > 100) {
+			return { error: "create_notes requires between 2 and 100 notes." };
+		}
+
+		const normalizedNotes = args.notes.map((note) => ({
+			...note,
+			path: note.path.endsWith(".md") ? note.path : `${note.path}.md`,
+		}));
+		const paths = new Set<string>();
+		for (const note of normalizedNotes) {
+			if (!note.path || !isPathAllowed(note.path)) return denyPath(note.path);
+			if (paths.has(note.path)) return { error: `Duplicate note path in batch: ${note.path}` };
+			paths.add(note.path);
+			if (this.resolveNote(note.path)) return { error: `Note already exists: ${note.path}. No notes were created.` };
+		}
+
+		const created: string[] = [];
+		try {
+			for (const note of normalizedNotes) {
+				await this.app.vault.create(note.path, note.content);
+				created.push(note.path);
+			}
+		} catch (error: any) {
+			return {
+				error: `Batch creation stopped after ${created.length} note${created.length === 1 ? "" : "s"}: ${error.message || String(error)}`,
+				createdPaths: created,
+			};
+		}
+
+		new Notice(`✓ Created ${created.length} notes`);
+		return { success: true, count: created.length, createdPaths: created };
 	}
 
 	private async patchNote(args: {

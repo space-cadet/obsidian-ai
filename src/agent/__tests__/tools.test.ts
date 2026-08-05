@@ -7,6 +7,7 @@ const EXPECTED_TOOLS = [
 	"edit_note",
 	"append_to_note",
 	"create_note",
+	"create_notes",
 	"patch_note",
 	"edit_section",
 	"search_notes",
@@ -72,6 +73,27 @@ describe("edit_note schema", () => {
 
 	it("rejects missing content", () => {
 		expect(() => schema.parse({ path: "My Note" })).toThrow();
+	});
+});
+
+describe("create_notes schema", () => {
+	const schema = noteTools.create_notes.inputSchema as z.ZodSchema;
+
+	it("accepts a bounded batch of new notes", () => {
+		const result = schema.parse({
+			notes: [
+				{ path: "Chinese/Verbs/ai", content: "# ai" },
+				{ path: "Chinese/Verbs/ba", content: "# ba" },
+			],
+		}) as { notes: Array<{ path: string }> };
+		expect(result.notes).toHaveLength(2);
+	});
+
+	it("rejects a singleton or more than 100 notes", () => {
+		expect(() => schema.parse({ notes: [{ path: "Only", content: "x" }] })).toThrow();
+		expect(() => schema.parse({
+			notes: Array.from({ length: 101 }, (_, i) => ({ path: `N${i}`, content: "x" })),
+		})).toThrow();
 	});
 });
 

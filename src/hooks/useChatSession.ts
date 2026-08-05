@@ -212,7 +212,11 @@ export function useChatSession({
 					opts?.includeActiveNote ?? plugin.settings.includeActiveNote
 						? [{ type: "active-note", id: makeId() }]
 						: [],
-				profileId: profileId || getActiveProviderProfile(plugin.settings).id,
+				profileId:
+					profileId ||
+					(opts?.selectedProfileIds?.length === 1
+						? opts.selectedProfileIds[0]
+						: getActiveProviderProfile(plugin.settings).id),
 				selectedProfileIds:
 					opts?.selectedProfileIds?.length
 						? opts.selectedProfileIds

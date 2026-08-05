@@ -498,6 +498,8 @@ export class ChatApiManager {
 							toolCallId: part.toolCallId,
 							toolName: part.toolName,
 							args: part.input as Record<string, unknown>,
+							providerMetadata:
+								part.providerMetadata as Record<string, unknown> | undefined,
 						},
 					};
 					break;

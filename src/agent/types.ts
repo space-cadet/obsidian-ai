@@ -2,6 +2,12 @@ export interface ToolCall {
 	toolCallId: string;
 	toolName: string;
 	args: Record<string, unknown>;
+	/**
+	 * Provider-owned data associated with this exact call. Gemini stores its
+	 * required thought signature here, so an agent loop must return it unchanged
+	 * with the matching function call on the next step.
+	 */
+	providerMetadata?: Record<string, unknown>;
 }
 
 export interface ToolResult {
@@ -36,6 +42,8 @@ export interface ToolResult {
 		timestamp: number;
 		snippet: string;
 	}>;
+	createdPaths?: string[];
+	skipped?: string[];
 }
 
 export type StreamEvent =

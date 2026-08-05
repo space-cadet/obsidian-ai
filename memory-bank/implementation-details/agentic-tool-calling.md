@@ -6,7 +6,7 @@
 
 The LLM acts as an agent that can read, edit, create, move, delete, and organize Obsidian notes via native function calling. The Vercel AI SDK provides the tool calling primitives. This document describes the complete implementation.
 
-**Status**: ✅ All 13 tools implemented. AgentLoop extracted. PendingToolCard created. Tool result formatting active.
+**Status**: ✅ Tool layer implemented. AgentLoop extracted. PendingToolCard created. Tool result formatting active.
 
 ## Design Philosophy
 
@@ -77,6 +77,25 @@ Implementation: `formatToolResult()` in `src/agent/AgentLoop.ts` (lines 38-108).
 ---
 
 ## Tool Registry
+
+### Bulk Note Creation (2026-08-05)
+
+`create_notes` is the bulk counterpart to `create_note`. It accepts 2–100
+`{ path, content }` entries and is intended for genuinely large, explicit file
+creation requests such as Dataview-generated note sets. The system prompt tells
+the model to use it instead of claiming it can "batch" or "parallelize" the
+single-note tool.
+
+Safety and approval boundary:
+
+- The normal pending-tool approval applies to the entire batch when auto-apply is off.
+- Every target path is checked before the first write: allowed vault location, unique inside the batch, and absent from the vault.
+- The operation never overwrites an existing note. A preflight failure writes no notes. An unexpected vault error returns the list of notes already created.
+- The approval card shows the count, an explicit no-overwrite statement, and a compact preview of the first paths.
+
+`create_note` remains available for a single document. `create_notes` is also
+registered through the OpenResponses conversion because that conversion reads
+the shared `noteTools` registry.
 
 ### Saved Conversation Retrieval (2026-07-29)
 

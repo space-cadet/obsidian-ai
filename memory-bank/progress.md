@@ -3,6 +3,15 @@
 
 ## Active Tasks
 
+### T35: Gemini Tool Continuity, Bulk Note Creation, and Per-Tab Model Selection (2026-08-05)
+**Status:** ✅ COMPLETED
+
+- Preserved the AI SDK provider metadata, including Gemini's opaque thought signature, through manual agent tool-result continuations.
+- Added `create_notes` for 2–100 genuinely batched new notes, with one approval card and preflight rejection of existing, duplicate, and forbidden paths.
+- Made the shared model picker restore and persist profile selection per chat tab; new tabs inherit the active tab's model.
+- Validation: 153 tests across 14 files, production build, and `git diff --check` passed.
+- Tracking task: `memory-bank/tasks/T35.md`.
+
 ### T34: Per-Tab Chat Process Isolation (2026-08-05)
 **Status:** ✅ COMPLETED
 

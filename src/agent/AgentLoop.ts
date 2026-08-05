@@ -107,6 +107,7 @@ function formatToolResult(toolName: string, result: ToolResult): string {
 		}
 
 		case "create_note":
+		case "create_notes":
 		case "edit_note":
 		case "append_to_note":
 		case "patch_note":
@@ -265,6 +266,9 @@ export class AgentLoop {
 				toolCallId: pendingCall.toolCallId,
 				toolName: pendingCall.toolName,
 				input: pendingCall.args,
+				// Gemini function calls include a thought signature in provider metadata.
+				// Preserve it on the original call part for the next agent step.
+				providerMetadata: pendingCall.providerMetadata,
 			});
 
 			const assistantMsg: any = {

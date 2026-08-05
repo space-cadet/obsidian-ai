@@ -3,6 +3,7 @@
 *Last Updated: 2026-08-05 11:27:43 IST*
 
 ## Current Focus
+**T35 Gemini Tool Continuity, Bulk Note Creation, and Per-Tab Model Selection** — completed 2026-08-05; Gemini tool signatures are preserved, `create_notes` provides an honest 2–100-note batch operation, and tabs restore their own selected model.
 **T34 Per-Tab Chat Process Isolation** — completed 2026-08-05; live streaming/tool runtime state is now keyed by originating chat session.
 **T15 Settings navigation and draft-tab lifecycle** — completed 2026-08-05; Settings links stay in-panel, diagnostics are compact, and unsent tabs are excluded from history.
 **T33: Desktop Chat View Singleton Repair** ✅ COMPLETED (2026-08-04)

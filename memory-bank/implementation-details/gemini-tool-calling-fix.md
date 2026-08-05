@@ -1,8 +1,8 @@
 # Fix: Gemini Tool Calling thought_signature Error (T27)
 
 **Status:** ✅ COMPLETED  
-**Date:** 2026-07-28  
-**Related Tasks:** T27  
+**Date:** 2026-07-28; corrected follow-up 2026-08-05
+**Related Tasks:** T27, T35
 
 ## Problem
 
@@ -61,3 +61,21 @@ The chosen approach is minimal and preserves existing architecture.
 ## Files Modified
 
 - `src/api.ts`
+
+## 2026-08-05 Corrective Follow-Up
+
+The reported failure recurred because the agent loop rebuilt the assistant
+function-call history itself after executing a tool. The rebuilt part kept the
+tool ID, name, and arguments but discarded the AI SDK's `providerMetadata`.
+For Gemini, that metadata contains the opaque `google.thoughtSignature` that
+must be returned on the exact original function-call part.
+
+`ChatApiManager.streamChatWithTools()` now carries `part.providerMetadata` into
+the plugin's `ToolCall`. `AgentLoop` copies that value into the reconstructed
+assistant `tool-call` content part before sending the tool response to the next
+step. No signature is generated, inspected, merged, or persisted by the plugin;
+the provider-owned metadata is passed through unchanged.
+
+Regression test: `src/agent/__tests__/AgentLoop.test.ts` asserts that an opaque
+Gemini signature received in step one is present on the matching tool call sent
+to step two.

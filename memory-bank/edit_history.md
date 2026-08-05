@@ -6,6 +6,13 @@
 
 ## 2026-08-05
 
+#### 12:25 IST - T35: Gemini Tool Continuity, Bulk Note Creation, and Per-Tab Model Selection
+- Modified `src/api.ts` and `src/agent/AgentLoop.ts` - Preserved provider-owned metadata from a streamed function call onto the reconstructed next-step assistant part, retaining Gemini thought signatures.
+- Modified `src/agent/tools.ts`, `src/agent/ToolExecutor.ts`, prompt and tool-card UI files - Added the honest, approval-gated `create_notes` tool for 2–100 new notes with preflight safety checks and compact batch feedback.
+- Modified `src/components/ChatApp.tsx`, `src/hooks/useChatSession.ts`, and `src/hooks/useSessionActions.ts` - Made profile selection session-owned, restored on tab switch, and inherited by a new tab.
+- Created `src/agent/__tests__/AgentLoop.test.ts` and extended tool/session tests - Covered signature preservation, batch schema limits, and model inheritance.
+- Created `memory-bank/tasks/T35.md` and updated Gemini, agent-tool, T15, task-index, context, progress, cache, and session records.
+
 #### 11:27:43 IST - T34: Per-Tab Chat Process Isolation Manual Verification
 - Modified `memory-bank/tasks/T34.md` - Recorded the user's confirmation that replies remain isolated to their originating tabs.
 - Modified `memory-bank/implementation-details/per-tab-chat-process-isolation.md` - Added manual validation evidence to the implementation record.

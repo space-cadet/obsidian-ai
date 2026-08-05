@@ -26,6 +26,7 @@ function ToolCallSummary({ toolCall, result }: { toolCall: ToolCall; result?: To
 			case "read_note": return "Read note";
 			case "edit_note": return "Edited note";
 			case "create_note": return "Created note";
+			case "create_notes": return "Created notes";
 			case "append_to_note": return "Appended to note";
 			case "patch_note": return "Patched note";
 			case "edit_section": return "Edited section";
@@ -53,6 +54,10 @@ function ToolCallSummary({ toolCall, result }: { toolCall: ToolCall; result?: To
 		if (toolName === "edit_section") {
 			const heading = (args as any).section_heading ?? "";
 			return `${path} — "${heading}"`;
+		}
+		if (toolName === "create_notes") {
+			const notes = Array.isArray((args as any).notes) ? (args as any).notes : [];
+			return `${notes.length} new notes`;
 		}
 		return path;
 	};

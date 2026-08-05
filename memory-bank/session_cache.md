@@ -6,7 +6,7 @@
 ## Current Session
 **Started**: 2026-08-05
 **Ended**: 2026-08-05
-**Focus Task**: T34 — Per-Tab Chat Process Isolation
+**Focus Task**: T35 — Gemini Tool Continuity, Bulk Note Creation, and Per-Tab Model Selection
 **Session File**: `memory-bank/sessions/2026-08-05-night.md`
 **Status**: ✅ COMPLETED
 

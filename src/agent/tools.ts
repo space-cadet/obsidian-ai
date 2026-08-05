@@ -51,6 +51,24 @@ export const createNoteTool = t({
 	}),
 });
 
+export const createNotesTool = t({
+	description:
+		"Create multiple new notes in one approved operation. Use this instead of repeated create_note calls when the user asks for several notes or a large set of files. " +
+		"Every path must be new; this tool never overwrites existing notes. Maximum 100 notes per call.",
+	inputSchema: z.object({
+		notes: z
+			.array(
+				z.object({
+					path: z.string().describe('New note path, e.g. "Chinese/Verbs/ai.md"'),
+					content: z.string().describe("Initial content for this note"),
+				}),
+			)
+			.min(2)
+			.max(100)
+			.describe("The new notes to create"),
+	}),
+});
+
 export const patchNoteTool = t({
 	description:
 		"Find and replace text inside an existing note. " +
@@ -284,6 +302,7 @@ export const noteTools = {
 	edit_note: editNoteTool,
 	append_to_note: appendToNoteTool,
 	create_note: createNoteTool,
+	create_notes: createNotesTool,
 	patch_note: patchNoteTool,
 	edit_section: editSectionTool,
 	search_notes: searchNotesTool,

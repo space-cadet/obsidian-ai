@@ -41,6 +41,18 @@ function PendingToolCallPreview({ toolCall }: { toolCall: ToolCall }): React.Rea
 		);
 	}
 
+	if (toolName === "create_notes") {
+		const notes = Array.isArray((args as any).notes) ? (args as any).notes : [];
+		const names = notes.slice(0, 5).map((note: { path?: string }) => note.path || "(unnamed)");
+		return (
+			<div className="pending-tool-summary">
+				<div className="pending-tool-title">➕ Create <strong>{notes.length} new notes</strong></div>
+				<div className="pending-tool-meta">No existing note will be overwritten.</div>
+				{names.length > 0 && <pre className="pending-tool-preview">{names.join("\n")}{notes.length > names.length ? `\n… and ${notes.length - names.length} more` : ""}</pre>}
+			</div>
+		);
+	}
+
 	if (toolName === "patch_note") {
 		const search = (args as any).search ?? "";
 		const replace = (args as any).replace ?? "";

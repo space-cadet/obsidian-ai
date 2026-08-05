@@ -217,6 +217,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		setScrollToMessageId,
 		createNewSession,
 		setSelectedProfileIds: ui.setSelectedProfileIds,
+		getSelectedProfileIds: () => Array.from(ui.selectedProfileIds),
 		setDebateMode: ui.setDebateMode,
 		setWasTruncated,
 		isStreaming: activeRuntime.isStreaming,
@@ -226,6 +227,22 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 			clearRuntime(sessionId);
 		},
 	});
+
+	// The toolbar is shared visually, but profile selection belongs to the
+	// active chat session. Restore it whenever a different tab is selected.
+	useEffect(() => {
+		const activeSession = sessions.find((session) => session.id === activeSessionId);
+		if (!activeSession) return;
+		const ids = activeSession.selectedProfileIds?.length
+			? activeSession.selectedProfileIds
+			: activeSession.profileId
+				? [activeSession.profileId]
+				: [getActiveProviderProfile(plugin.settings).id];
+		const currentIds = Array.from(ui.selectedProfileIds);
+		if (ids.length !== currentIds.length || ids.some((id) => !ui.selectedProfileIds.has(id))) {
+			ui.setSelectedProfileIds(new Set(ids));
+		}
+	}, [activeSessionId, sessions, plugin.settings, ui]);
 
 	// ─── Settings Actions ───
 	const {
@@ -308,6 +325,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				s.id === activeSessionId
 					? {
 						...s,
+						profileId: ids.length === 1 ? ids[0] : undefined,
 						selectedProfileIds: ids,
 						isGroupChat: ids.length >= 2,
 						participants: ids.length >= 2
