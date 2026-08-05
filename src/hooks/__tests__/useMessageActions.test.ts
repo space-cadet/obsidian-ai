@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useMessageActions, UseMessageActionsDeps } from "../useMessageActions";
+import { emptyChatRuntime, ChatRuntimeState } from "../useChatRuntimeState";
 
 // ── Mocks ─────────────────────────────────────────────────────────
+const mockToolExecutorConstructor = vi.hoisted(() => vi.fn());
 const mockNotice = vi.fn();
 const mockCreate = vi.fn();
 const mockGetAbstractFileByPath = vi.fn();
@@ -79,10 +81,13 @@ vi.mock("../lib/sessionUtils", () => ({
 	makeId: vi.fn(() => "mock-id"),
 }));
 
-vi.mock("../agent/ToolExecutor", () => ({
-	ToolExecutor: vi.fn().mockImplementation(() => ({
-		execute: vi.fn().mockResolvedValue({ success: true }),
-	})),
+vi.mock("../../agent/ToolExecutor", () => ({
+	ToolExecutor: vi.fn().mockImplementation(function (...args) {
+		mockToolExecutorConstructor(...args);
+		return {
+			execute: vi.fn().mockResolvedValue({ success: true }),
+		};
+	}),
 }));
 
 vi.mock("../agent/AgentLoop", () => ({
@@ -115,20 +120,29 @@ function makeDeps(
 ): UseMessageActionsDeps {
 	const sessionsRef = { current: [] as any[] };
 	const activeSessionIdRef = { current: "session-1" };
-	const controllerRef = { current: null };
-	const resolveToolRef = { current: null };
 	const messagesRef = { current: [] as any[] };
 	const contextItemsRef = { current: [] as any[] };
 	const lastMarkdownLeafRef = { current: null };
-	const pendingToolCallRef = { current: null };
 	const setSessions = vi.fn();
-	const setIsStreaming = vi.fn();
-	const setCurrentAiMessage = vi.fn();
-	const setCurrentContentParts = vi.fn();
-	const setPendingToolCall = vi.fn();
 	const setWasTruncated = vi.fn();
 	const setContextTokenCount = vi.fn();
 	const setContextItems = vi.fn();
+	const runtimeStore: Record<string, ChatRuntimeState> = {};
+	const getRuntime = vi.fn((sessionId: string | null | undefined) => {
+		if (!sessionId) return emptyChatRuntime;
+		return runtimeStore[sessionId] ?? emptyChatRuntime;
+	});
+	const patchRuntime = vi.fn((sessionId, patch) => {
+		if (!sessionId) return;
+		const previous = runtimeStore[sessionId] ?? emptyChatRuntime;
+		const nextPatch =
+			typeof patch === "function" ? patch(previous) : patch;
+		runtimeStore[sessionId] = { ...previous, ...nextPatch };
+	});
+	const clearRuntime = vi.fn((sessionId) => {
+		if (!sessionId) return;
+		delete runtimeStore[sessionId];
+	});
 	const ui = {
 		selectedProfileIds: new Set<string>(),
 		setSelectedProfileIds: vi.fn(),
@@ -174,19 +188,15 @@ function makeDeps(
 		sessionsRef,
 		activeSessionIdRef,
 		setSessions,
-		setIsStreaming,
-		setCurrentAiMessage,
-		setCurrentContentParts,
-		setPendingToolCall,
+		getRuntime,
+		patchRuntime,
+		clearRuntime,
 		setWasTruncated,
 		setContextTokenCount,
 		setContextItems,
-		controllerRef,
-		resolveToolRef,
 		messagesRef,
 		contextItemsRef,
 		lastMarkdownLeafRef,
-		pendingToolCallRef,
 		ui: ui as any,
 		...overrides,
 	};
@@ -202,7 +212,10 @@ describe("useMessageActions", () => {
 		it("aborts the current controller", () => {
 			const abortFn = vi.fn();
 			const deps = makeDeps({
-				controllerRef: { current: { abort: abortFn } as any },
+				getRuntime: vi.fn(() => ({
+					...emptyChatRuntime,
+					controller: { abort: abortFn } as any,
+				})),
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			act(() => {
@@ -213,7 +226,7 @@ describe("useMessageActions", () => {
 
 		it("does nothing if controller is null", () => {
 			const deps = makeDeps({
-				controllerRef: { current: null },
+				getRuntime: vi.fn(() => emptyChatRuntime),
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			expect(() =>
@@ -283,7 +296,10 @@ describe("useMessageActions", () => {
 			const setSessions = vi.fn();
 			const ui = makeDeps().ui;
 			const deps = makeDeps({
-				controllerRef: { current: {} as any },
+				getRuntime: vi.fn(() => ({
+					...emptyChatRuntime,
+					controller: {} as any,
+				})),
 				setSessions,
 				ui,
 			});
@@ -390,7 +406,10 @@ describe("useMessageActions", () => {
 		it("does nothing if controller is active", async () => {
 			const setSessions = vi.fn();
 			const deps = makeDeps({
-				controllerRef: { current: {} as any },
+				getRuntime: vi.fn(() => ({
+					...emptyChatRuntime,
+					controller: {} as any,
+				})),
 				setSessions,
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
@@ -405,27 +424,35 @@ describe("useMessageActions", () => {
 		it("executes pending tool and resolves", async () => {
 			const resolve = vi.fn();
 			const deps = makeDeps({
-				resolveToolRef: { current: resolve },
-				pendingToolCallRef: {
-					current: {
+				getRuntime: vi.fn(() => ({
+					...emptyChatRuntime,
+					pendingToolCall: {
 						toolCallId: "tc1",
 						toolName: "read_note",
 						args: { path: "test.md" },
 					},
-				},
+					resolveTool: resolve,
+				})),
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			await act(async () => {
 				await result.current.handleApproveTool();
 			});
 			expect(resolve).toHaveBeenCalled();
+			const currentSessionResult = mockToolExecutorConstructor.mock.calls
+				.flat()
+				.filter((arg) => typeof arg === "function")
+				.map((arg) => (arg as () => string | null)());
+			expect(currentSessionResult).toContain("session-1");
 		});
 
 		it("does nothing if no pending tool call", async () => {
 			const resolve = vi.fn();
 			const deps = makeDeps({
-				resolveToolRef: { current: resolve },
-				pendingToolCallRef: { current: null },
+				getRuntime: vi.fn(() => ({
+					...emptyChatRuntime,
+					resolveTool: resolve,
+				})),
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			await act(async () => {
@@ -439,7 +466,10 @@ describe("useMessageActions", () => {
 		it("resolves with null", () => {
 			const resolve = vi.fn();
 			const deps = makeDeps({
-				resolveToolRef: { current: resolve },
+				getRuntime: vi.fn(() => ({
+					...emptyChatRuntime,
+					resolveTool: resolve,
+				})),
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			act(() => {
@@ -497,7 +527,7 @@ describe("useMessageActions", () => {
 	describe("handleSend — group chat path", () => {
 		it("dispatches to orchestrator and adds user + assistant messages", async () => {
 			const setSessions = vi.fn();
-			const setIsStreaming = vi.fn();
+			const patchRuntime = vi.fn();
 			const ui = makeDeps().ui;
 			const mockStream = async function* () {
 				yield {
@@ -530,7 +560,7 @@ describe("useMessageActions", () => {
 				activeSessionIdRef: { current: "session-1" },
 				sessionsRef: { current: [session] },
 				setSessions,
-				setIsStreaming,
+				patchRuntime,
 				ui,
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
@@ -541,8 +571,14 @@ describe("useMessageActions", () => {
 				"hello",
 				[],
 			);
-			expect(setIsStreaming).toHaveBeenCalledWith(true);
-			expect(setIsStreaming).toHaveBeenCalledWith(false);
+			expect(patchRuntime).toHaveBeenCalledWith(
+				"session-1",
+				expect.objectContaining({ isStreaming: true }),
+			);
+			expect(patchRuntime).toHaveBeenCalledWith(
+				"session-1",
+				expect.objectContaining({ isStreaming: false }),
+			);
 			expect(setSessions).toHaveBeenCalled();
 		});
 
@@ -557,7 +593,10 @@ describe("useMessageActions", () => {
 
 		it("does nothing if controller is already active", async () => {
 			const deps = makeDeps({
-				controllerRef: { current: { abort: vi.fn() } as any },
+				getRuntime: vi.fn(() => ({
+					...emptyChatRuntime,
+					controller: { abort: vi.fn() } as any,
+				})),
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			await act(async () => {
@@ -568,24 +607,77 @@ describe("useMessageActions", () => {
 	});
 
 	describe("handleSend — single chat guardrails", () => {
+		it("routes stream deltas to the originating session after a tab switch", async () => {
+			const activeSessionIdRef = { current: "session-1" as string | null };
+			const patchRuntime = vi.fn();
+			const streamChat = vi.fn(async function* () {
+				activeSessionIdRef.current = "session-2";
+				yield "hello";
+			});
+			const sessions = [
+				{
+					id: "session-1",
+					messages: [],
+					title: "One",
+					createdAt: 1,
+					updatedAt: 1,
+					contextItems: [],
+				},
+				{
+					id: "session-2",
+					messages: [],
+					title: "Two",
+					createdAt: 1,
+					updatedAt: 1,
+					contextItems: [],
+				},
+			] as any[];
+			const deps = makeDeps({
+				plugin: {
+					...mockPlugin,
+					chatapi: { streamChat },
+				} as any,
+				activeSessionIdRef,
+				sessionsRef: { current: sessions },
+				patchRuntime,
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+
+			await act(async () => {
+				await result.current.handleSend("hello");
+			});
+
+			expect(patchRuntime).toHaveBeenCalledWith(
+				"session-1",
+				expect.objectContaining({ currentAiMessage: "hello" }),
+			);
+			expect(patchRuntime).not.toHaveBeenCalledWith(
+				"session-2",
+				expect.objectContaining({ currentAiMessage: "hello" }),
+			);
+		});
+
 		it("does nothing on empty input with no attachments", async () => {
 			const deps = makeDeps();
 			const { result } = renderHook(() => useMessageActions(deps));
 			await act(async () => {
 				await result.current.handleSend("   ");
 			});
-			expect(deps.setIsStreaming).not.toHaveBeenCalled();
+			expect(deps.patchRuntime).not.toHaveBeenCalled();
 		});
 
 		it("does nothing when controller is active", async () => {
 			const deps = makeDeps({
-				controllerRef: { current: { signal: {} } as any },
+				getRuntime: vi.fn(() => ({
+					...emptyChatRuntime,
+					controller: { signal: {} } as any,
+				})),
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			await act(async () => {
 				await result.current.handleSend("hello");
 			});
-			expect(deps.setIsStreaming).not.toHaveBeenCalled();
+			expect(deps.patchRuntime).not.toHaveBeenCalled();
 		});
 	});
 });

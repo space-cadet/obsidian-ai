@@ -39,6 +39,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T6 | Token & Context Management | ✅ | MEDIUM | 2026-05-02 | 2026-05-02 | T1, T2 | [Details](tasks/T6.md) |
 | T7 | Release System & CI/CD | ✅ | HIGH | 2026-05-02 | 2026-05-02 | — | [Details](tasks/T7.md) |
 | T9 | Settings & Provider Profiles | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T1 | [Details](tasks/T9.md) |
+| T34 | Per-Tab Chat Process Isolation | ✅ | HIGH | 2026-08-05 | 2026-08-05 | T4, T13, T15 | [Details](tasks/T34.md) | Session-keyed streaming/tool runtime state |
 
 ## Task Relationships
 
@@ -67,6 +68,10 @@ T15: Tabbed Chat Interface with Multi-Profile
   └── T14
   └── T9
 T16: Group Chat (Multi-Agent Conversation)
+  └── T15
+T34: Per-Tab Chat Process Isolation
+  └── T4
+  └── T13
   └── T15
 T18: Web Search Tool for Chat
   └── T13
@@ -103,6 +108,6 @@ T9: Settings & Provider Profiles
 ## Status Summary
 
 - **Active**: 6
-- **Completed**: 15
+- **Completed**: 16
 - **Paused**: 0
-- **Total**: 21
+- **Total**: 22

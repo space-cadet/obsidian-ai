@@ -1,10 +1,22 @@
 # Active Context
 
-*Last Updated: 2026-08-05 01:53:30 IST*
+*Last Updated: 2026-08-05 11:11:04 IST*
 
 ## Current Focus
+**T34 Per-Tab Chat Process Isolation** — completed 2026-08-05; live streaming/tool runtime state is now keyed by originating chat session.
 **T15 Settings navigation and draft-tab lifecycle** — completed 2026-08-05; Settings links stay in-panel, diagnostics are compact, and unsent tabs are excluded from history.
 **T33: Desktop Chat View Singleton Repair** ✅ COMPLETED (2026-08-04)
+
+### Per-Tab Process Isolation (2026-08-05)
+**Status:** ✅ COMPLETED
+
+- Root cause: `ChatApp` stores streaming text, content parts, pending tool calls, abort controller, resolver, and running token count once per panel instead of once per `sessionId`.
+- Visible symptom: tab B renders tab A's active streaming bubble because `ChatMessages` receives active-session messages plus global stream state.
+- Tool hazard: tool executors can read `activeSessionIdRef.current` after a tab switch, so active-session exclusion and context can drift away from the originating tab.
+- Plan: introduce session-keyed runtime state, route all stream/tool updates by captured origin session ID, and test cross-tab streaming, stop, and tool approval behavior.
+- Implemented: `useChatRuntimeState` owns per-session runtime entries; `useMessageActions` routes single-chat, group-chat, OpenResponses, tool approval, stop, retry, and edit paths by session; tab close/delete paths abort and clear affected runtimes.
+- Validation: focused hook tests, full `pnpm test`, production `pnpm run build`, and `git diff --check` pass.
+- Documentation: `memory-bank/tasks/T34.md` and `memory-bank/implementation-details/per-tab-chat-process-isolation.md`.
 
 ### Desktop Sidebar Duplicate Repair (2026-08-04)
 **Status:** ✅ COMPLETED
@@ -82,6 +94,7 @@
 - **[T17]**: ⏸️ **PENDING** — Advanced vault tools. Backlinks + YAML first.
 - **[T26]**: 🔄 **IN PROGRESS** — AI Intelligence Layer. Phase 2 complete (SessionSummarizer). Phases 3–5 pending.
 - **[T8]**: 🔄 **IN PROGRESS** — Open source release prep.
+- **[T34]**: ✅ **COMPLETED** — Per-tab chat process isolation for streaming, stop, token, and tool approval state.
 - **[T32]**: ✅ **COMPLETED** — Security Hardening (Path Traversal, XSS, SSRF, ReDoS)
 - **[T13]**: ✅ **COMPLETED**
 - **[T18]**: ✅ **COMPLETED**

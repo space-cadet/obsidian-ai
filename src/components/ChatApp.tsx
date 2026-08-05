@@ -31,6 +31,7 @@ import { useSettingsActions } from "../hooks/useSettingsActions";
 import { useExportActions } from "../hooks/useExportActions";
 import { useSearch } from "../hooks/useSearch";
 import { useContextItems } from "../hooks/useContextItems";
+import { useChatRuntimeState } from "../hooks/useChatRuntimeState";
 import ActionBar from "./ActionBar";
 import ChatTabBar from "./ChatTabBar";
 import ChatMessages from "./ChatMessages";
@@ -79,27 +80,23 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		setAutoNameSessions,
 	} = useChatSession({ plugin, profileId });
 
-	const [isStreaming, setIsStreaming] = useState(false);
-	const [currentAiMessage, setCurrentAiMessage] = useState("");
-	const [currentContentParts, setCurrentContentParts] = useState<ContentPart[]>([]);
 	const [wasTruncated, setWasTruncated] = useState(false);
 	const [contextTokenCount, setContextTokenCount] = useState(0);
-	const [runningTokenTotal, setRunningTokenTotal] = useState(0);
 	const [scrollToMessageId, setScrollToMessageId] = useState<string | undefined>(initialMessageId);
 	const [thinkingEnabled, setThinkingEnabled] = useState(false);
-	const [pendingToolCall, setPendingToolCall] = useState<ToolCall | null>(null);
 	const savedSessions = useMemo(
 		() => sessions.filter((session) => session.messages.length > 0),
 		[sessions],
 	);
 
-	const controllerRef = useRef<AbortController | null>(null);
-	const resolveToolRef = useRef<((result: ToolResult | null) => void) | null>(null);
+	const {
+		activeRuntime,
+		getRuntime,
+		patchRuntime,
+		clearRuntime,
+		abortRuntime,
+	} = useChatRuntimeState(activeSessionId);
 	const messagesRef = useRef<ChatMessage[]>([]);
-	const pendingToolCallRef = useRef<ToolCall | null>(null);
-	useEffect(() => {
-		pendingToolCallRef.current = pendingToolCall;
-	}, [pendingToolCall]);
 
 	// Track if the app was hidden while streaming (for mobile background handling)
 	const wasHiddenRef = useRef(false);
@@ -222,8 +219,12 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		setSelectedProfileIds: ui.setSelectedProfileIds,
 		setDebateMode: ui.setDebateMode,
 		setWasTruncated,
-		isStreaming,
-		controllerRef,
+		isStreaming: activeRuntime.isStreaming,
+		abortActiveRuntime: () => abortRuntime(activeSessionIdRef.current),
+		clearSessionRuntime: (sessionId) => {
+			abortRuntime(sessionId);
+			clearRuntime(sessionId);
+		},
 	});
 
 	// ─── Settings Actions ───
@@ -286,20 +287,15 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		sessionsRef,
 		activeSessionIdRef,
 		setSessions,
-		setIsStreaming,
-		setCurrentAiMessage,
-		setCurrentContentParts,
-		setPendingToolCall,
 		setWasTruncated,
 		setContextTokenCount,
 		setContextItems,
-		setRunningTokenTotal,
-		controllerRef,
-		resolveToolRef,
 		messagesRef,
 		contextItemsRef: { current: contextItems } as React.MutableRefObject<ContextItem[]>,
 		lastMarkdownLeafRef: useRef<WorkspaceLeaf | null>(null),
-		pendingToolCallRef,
+		getRuntime,
+		patchRuntime,
+		clearRuntime,
 		ui,
 	});
 
@@ -470,9 +466,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 
 			<ChatMessages
 				messages={messages}
-				currentAiMessage={currentAiMessage}
-				currentContentParts={currentContentParts}
-				isStreaming={isStreaming}
+				currentAiMessage={activeRuntime.currentAiMessage}
+				currentContentParts={activeRuntime.currentContentParts}
+				isStreaming={activeRuntime.isStreaming}
 				isEditing={ui.isEditing}
 				app={plugin.app}
 				showThinking={thinkingEnabled}
@@ -488,9 +484,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				scrollToMessageId={scrollToMessageId}
 			/>
 
-			{pendingToolCall && (
+			{activeRuntime.pendingToolCall && (
 				<PendingToolCard
-					toolCall={pendingToolCall}
+					toolCall={activeRuntime.pendingToolCall}
 					onApprove={actions.handleApproveTool}
 					onReject={actions.handleRejectTool}
 				/>
@@ -502,7 +498,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				onSend={actions.handleSend}
 				onStop={actions.handleStop}
 				onAddMention={handleAddMention}
-				isStreaming={isStreaming}
+				isStreaming={activeRuntime.isStreaming}
 				isEditing={ui.isEditing}
 				onCancel={actions.handleCancelEdit}
 				editMessage={ui.editMessageText}
@@ -518,8 +514,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 					const sessionTotal = session
 						? getSessionTotalTokens(session)
 						: 0;
-					if (isStreaming && runningTokenTotal > 0) {
-						return `~${(sessionTotal + runningTokenTotal).toLocaleString()} tokens`;
+					if (activeRuntime.isStreaming && activeRuntime.runningTokenTotal > 0) {
+						return `~${(sessionTotal + activeRuntime.runningTokenTotal).toLocaleString()} tokens`;
 					}
 					if (sessionTotal > 0) {
 						return `~${sessionTotal.toLocaleString()} tokens`;

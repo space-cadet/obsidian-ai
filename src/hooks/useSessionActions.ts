@@ -23,7 +23,8 @@ interface UseSessionActionsOptions {
 	setDebateMode: (v: boolean) => void;
 	setWasTruncated: (v: boolean) => void;
 	isStreaming: boolean;
-	controllerRef: React.MutableRefObject<AbortController | null>;
+	abortActiveRuntime: () => void;
+	clearSessionRuntime: (sessionId: string) => void;
 }
 
 export interface UseSessionActionsResult {
@@ -52,7 +53,8 @@ export function useSessionActions({
 	setDebateMode,
 	setWasTruncated,
 	isStreaming,
-	controllerRef,
+	abortActiveRuntime,
+	clearSessionRuntime,
 }: UseSessionActionsOptions): UseSessionActionsResult {
 	const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
 
@@ -87,7 +89,7 @@ export function useSessionActions({
 	}, [sessionsRef]);
 
 	const handleNewChat = useCallback(() => {
-		if (isStreaming) controllerRef.current?.abort();
+		if (isStreaming) abortActiveRuntime();
 
 		// T26 Phase 2: Auto-summarize the ending session before starting a new one
 		const endingSessionId = activeSessionIdRef.current;
@@ -114,7 +116,7 @@ export function useSessionActions({
 		}
 		setDebateMode(false);
 		setWasTruncated(false);
-	}, [isStreaming, plugin, createNewSession, setSelectedProfileIds, setDebateMode, setWasTruncated, controllerRef, activeSessionIdRef, sessionsRef]);
+	}, [isStreaming, plugin, createNewSession, setSelectedProfileIds, setDebateMode, setWasTruncated, abortActiveRuntime, activeSessionIdRef, sessionsRef]);
 
 	const handleLoadSession = useCallback(
 		(sessionId: string) => {
@@ -134,6 +136,7 @@ export function useSessionActions({
 
 	const handleCloseTab = useCallback(
 		(sessionId: string) => {
+			clearSessionRuntime(sessionId);
 			const isDraft = sessionsRef.current.find((session) => session.id === sessionId)
 				?.messages.length === 0;
 			if (isDraft) {
@@ -159,12 +162,15 @@ export function useSessionActions({
 				return remaining;
 			});
 		},
-		[createNewSession, plugin.settings, setSessions, setActiveSessionId, setScrollToMessageId, activeSessionIdRef, sessionsRef],
+		[createNewSession, plugin.settings, setSessions, setActiveSessionId, setScrollToMessageId, activeSessionIdRef, sessionsRef, clearSessionRuntime],
 	);
 
 	const handleCloseOtherTabs = useCallback(
 		(sessionId: string) => {
 			setOpenSessionIds((current) => {
+				current
+					.filter((id) => id !== sessionId)
+					.forEach(clearSessionRuntime);
 				if (activeSessionIdRef.current !== sessionId) {
 					setActiveSessionId(sessionId);
 					setScrollToMessageId(undefined);
@@ -172,7 +178,7 @@ export function useSessionActions({
 				return [sessionId];
 			});
 		},
-		[setActiveSessionId, setScrollToMessageId, activeSessionIdRef],
+		[setActiveSessionId, setScrollToMessageId, activeSessionIdRef, clearSessionRuntime],
 	);
 
 	const handleCloseTabsToRight = useCallback(
@@ -181,6 +187,7 @@ export function useSessionActions({
 				const index = current.indexOf(sessionId);
 				if (index === -1) return current;
 				const remaining = current.slice(0, index + 1);
+				current.slice(index + 1).forEach(clearSessionRuntime);
 				if (!remaining.includes(activeSessionIdRef.current ?? "")) {
 					setActiveSessionId(sessionId);
 					setScrollToMessageId(undefined);
@@ -188,11 +195,12 @@ export function useSessionActions({
 				return remaining;
 			});
 		},
-		[setActiveSessionId, setScrollToMessageId, activeSessionIdRef],
+		[setActiveSessionId, setScrollToMessageId, activeSessionIdRef, clearSessionRuntime],
 	);
 
 	const handleDeleteSession = useCallback(
 		(sessionId: string) => {
+			clearSessionRuntime(sessionId);
 			setSessions((prev) => {
 				const filtered = prev.filter((s) => s.id !== sessionId);
 				if (activeSessionIdRef.current === sessionId) {
@@ -229,7 +237,7 @@ export function useSessionActions({
 				return filtered;
 			});
 		},
-		[setSessions, setActiveSessionId, setSelectedProfileIds, setDebateMode, activeSessionIdRef, plugin.settings.includeActiveNote, profileId],
+		[setSessions, setActiveSessionId, setSelectedProfileIds, setDebateMode, activeSessionIdRef, plugin.settings.includeActiveNote, profileId, clearSessionRuntime],
 	);
 
 	const handleRenameSession = useCallback(

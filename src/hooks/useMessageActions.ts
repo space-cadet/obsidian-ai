@@ -26,6 +26,7 @@ import { noteTools } from "../agent/tools";
 import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
 import { getActiveProviderProfile } from "../settings";
 import { stripThinkingTags } from "../components/MessageBubble";
+import type { ChatRuntimeState, ChatRuntimePatch } from "./useChatRuntimeState";
 
 function formatPastSessionLinks(
 	toolCalls: Array<{ call: ToolCall; result?: ToolResult }>,
@@ -66,25 +67,23 @@ export interface UseMessageActionsDeps {
 	activeSessionIdRef: React.MutableRefObject<string | null>;
 	setSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>;
 
-	// Streaming display state
-	setIsStreaming: React.Dispatch<React.SetStateAction<boolean>>;
-	setCurrentAiMessage: React.Dispatch<React.SetStateAction<string>>;
-	setCurrentContentParts: React.Dispatch<React.SetStateAction<ContentPart[]>>;
-	setPendingToolCall: React.Dispatch<React.SetStateAction<ToolCall | null>>;
+	// Session-keyed streaming display state
+	getRuntime: (sessionId: string | null | undefined) => ChatRuntimeState;
+	patchRuntime: (
+		sessionId: string | null | undefined,
+		patch:
+			| ChatRuntimePatch
+			| ((current: ChatRuntimeState) => ChatRuntimePatch),
+	) => void;
+	clearRuntime: (sessionId: string | null | undefined) => void;
 	setWasTruncated: React.Dispatch<React.SetStateAction<boolean>>;
 	setContextTokenCount: React.Dispatch<React.SetStateAction<number>>;
 	setContextItems: React.Dispatch<React.SetStateAction<ContextItem[]>>;
-	setRunningTokenTotal?: React.Dispatch<React.SetStateAction<number>>;
 
 	// Refs
-	controllerRef: React.MutableRefObject<AbortController | null>;
-	resolveToolRef: React.MutableRefObject<
-		((result: ToolResult | null) => void) | null
-	>;
 	messagesRef: React.MutableRefObject<ChatMessage[]>;
 	contextItemsRef: React.MutableRefObject<ContextItem[]>;
 	lastMarkdownLeafRef: React.MutableRefObject<WorkspaceLeaf | null>;
-	pendingToolCallRef: React.MutableRefObject<ToolCall | null>;
 
 	// UI hook result
 	ui: UseChatUIResult;
@@ -101,20 +100,15 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 		sessionsRef,
 		activeSessionIdRef,
 		setSessions,
-		setIsStreaming,
-		setCurrentAiMessage,
-		setCurrentContentParts,
-		setPendingToolCall,
+		getRuntime,
+		patchRuntime,
+		clearRuntime,
 		setWasTruncated,
 		setContextTokenCount,
 		setContextItems,
-		setRunningTokenTotal,
-		controllerRef,
-		resolveToolRef,
 		messagesRef,
 		contextItemsRef,
 		lastMarkdownLeafRef,
-		pendingToolCallRef,
 		ui,
 	} = deps;
 
@@ -129,7 +123,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			if (
 				(!text.trim() &&
 					(!attachments || attachments.length === 0)) ||
-				controllerRef.current
+				getRuntime(activeSessionIdRef.current).controller
 			)
 				return;
 
@@ -154,6 +148,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					estimatedTokens: userTokenEstimate,
 				};
 				const currentActiveId = activeSessionIdRef.current;
+				if (!currentActiveId) return;
 				setSessions((prev) =>
 					prev.map((s) =>
 						s.id === currentActiveId
@@ -165,8 +160,16 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 								: s,
 					),
 				);
-				setIsStreaming(true);
-				controllerRef.current = new AbortController();
+				const controller = new AbortController();
+				patchRuntime(currentActiveId, {
+					isStreaming: true,
+					controller,
+					currentAiMessage: "",
+					currentContentParts: [],
+					pendingToolCall: null,
+					resolveTool: null,
+					runningTokenTotal: 0,
+				});
 
 				const { targets } = orchestrator.parseAndRoute(
 					text,
@@ -183,7 +186,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 								sessionsRef.current.find(
 									(s) => s.id === currentActiveId,
 								)?.messages ?? [],
-								controllerRef.current?.signal,
+								controller.signal,
 								2,
 							)
 						: orchestrator.dispatch(
@@ -191,7 +194,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 								sessionsRef.current.find(
 									(s) => s.id === currentActiveId,
 								)?.messages ?? [],
-								controllerRef.current?.signal,
+								controller.signal,
 							);
 
 					for await (const response of stream) {
@@ -257,10 +260,12 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						),
 					);
 				} finally {
-					setIsStreaming(false);
+					patchRuntime(currentActiveId, {
+						isStreaming: false,
+						controller: null,
+						runningTokenTotal: 0,
+					});
 					ui.setTypingAgents(new Set());
-					controllerRef.current = null;
-					setRunningTokenTotal?.(0);
 				}
 				return;
 			}
@@ -366,6 +371,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			};
 
 			const currentActiveId = activeSessionIdRef.current;
+			if (!currentActiveId) return;
 			setSessions((prev) =>
 				prev.map((s) =>
 					s.id === currentActiveId
@@ -378,10 +384,16 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							: s,
 				),
 			);
-			setIsStreaming(true);
-			setCurrentAiMessage("");
-			setCurrentContentParts([]);
-			controllerRef.current = new AbortController();
+			const controller = new AbortController();
+			patchRuntime(currentActiveId, {
+				isStreaming: true,
+				currentAiMessage: "",
+				currentContentParts: [],
+				pendingToolCall: null,
+				controller,
+				resolveTool: null,
+				runningTokenTotal: 0,
+			});
 			const streamStartTime = Date.now();
 
 			const maxContextMessages =
@@ -472,7 +484,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							plugin.settings,
 							plugin.personaLoader ?? undefined,
 							plugin.searchIndex ?? undefined,
-							() => activeSessionIdRef.current,
+							() => currentActiveId,
 						),
 						maxSteps:
 							activeProfile.maxSteps ?? maxAgentSteps,
@@ -480,7 +492,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							activeProfile.autoApprove ?? autoApprove,
 						onTextDelta: (text) => {
 							fullText = text;
-							setCurrentAiMessage(stripThinkingTags(text));
+							patchRuntime(currentActiveId, {
+								currentAiMessage: stripThinkingTags(text),
+							});
 						},
 						onToolCall: (call) => {
 							const pendingText = stripThinkingTags(
@@ -497,17 +511,24 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 								type: "tool_call",
 								call,
 							});
-							setCurrentContentParts([...contentParts]);
+							patchRuntime(currentActiveId, {
+								currentContentParts: [...contentParts],
+							});
 							textCheckpoint = fullText.length;
 						},
 						requestApproval: async (call) => {
-							setPendingToolCall(call);
 							const resolved = await new Promise<
 								ToolResult | null
 							>((resolve) => {
-								resolveToolRef.current = resolve;
+								patchRuntime(currentActiveId, {
+									pendingToolCall: call,
+									resolveTool: resolve,
+								});
 							});
-							setPendingToolCall(null);
+							patchRuntime(currentActiveId, {
+								pendingToolCall: null,
+								resolveTool: null,
+							});
 							const lastIdx = toolCallsLog.length - 1;
 							if (lastIdx >= 0) {
 								toolCallsLog[lastIdx] = {
@@ -554,11 +575,16 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 										...part,
 										result,
 									};
+									patchRuntime(currentActiveId, {
+										currentContentParts: [...contentParts],
+									});
 								}
 							}
 						},
 						onTokenUpdate: (total) => {
-							setRunningTokenTotal?.(userTokenEstimate + total);
+							patchRuntime(currentActiveId, {
+								runningTokenTotal: userTokenEstimate + total,
+							});
 						},
 					});
 					const orTools = noteToolsToOpenResponses(noteTools);
@@ -568,7 +594,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							content: string;
 						}>,
 						orTools,
-						controllerRef.current.signal,
+						controller.signal,
 					);
 					const sessionLinks = formatPastSessionLinks(toolCallsLog, sessionsRef.current);
 					assistantContent = resultText + sessionLinks;
@@ -585,7 +611,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							plugin.settings,
 							plugin.personaLoader ?? undefined,
 							plugin.searchIndex ?? undefined,
-							() => activeSessionIdRef.current,
+							() => currentActiveId,
 						),
 						maxSteps: maxAgentSteps,
 						autoApprove,
@@ -593,7 +619,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						thinkingEnabled,
 						onTextDelta: (text) => {
 							fullText = text;
-							setCurrentAiMessage(stripThinkingTags(text));
+							patchRuntime(currentActiveId, {
+								currentAiMessage: stripThinkingTags(text),
+							});
 						},
 						onToolCall: (call) => {
 							const pendingText = stripThinkingTags(
@@ -610,17 +638,24 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 								type: "tool_call",
 								call,
 							});
-							setCurrentContentParts([...contentParts]);
+							patchRuntime(currentActiveId, {
+								currentContentParts: [...contentParts],
+							});
 							textCheckpoint = fullText.length;
 						},
 						requestApproval: async (call) => {
-							setPendingToolCall(call);
 							const resolved = await new Promise<
 								ToolResult | null
 							>((resolve) => {
-								resolveToolRef.current = resolve;
+								patchRuntime(currentActiveId, {
+									pendingToolCall: call,
+									resolveTool: resolve,
+								});
 							});
-							setPendingToolCall(null);
+							patchRuntime(currentActiveId, {
+								pendingToolCall: null,
+								resolveTool: null,
+							});
 							const lastIdx = toolCallsLog.length - 1;
 							if (lastIdx >= 0) {
 								toolCallsLog[lastIdx] = {
@@ -667,18 +702,23 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 										...part,
 										result,
 									};
+									patchRuntime(currentActiveId, {
+										currentContentParts: [...contentParts],
+									});
 								}
 							}
 						},
 						onTokenUpdate: (total) => {
-							setRunningTokenTotal?.(userTokenEstimate + total);
+							patchRuntime(currentActiveId, {
+								runningTokenTotal: userTokenEstimate + total,
+							});
 						},
 					});
 
 					const result = await agent.run(
 						chatMessages as Array<any>,
 						noteTools,
-						controllerRef.current.signal,
+						controller.signal,
 					);
 					assistantContent = result.text;
 					const sessionLinks = formatPastSessionLinks(toolCallsLog, sessionsRef.current);
@@ -692,19 +732,21 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					let streamTokenTotal = userTokenEstimate;
 					for await (const chunk of plugin.chatapi.streamChat(
 						chatMessages,
-						controllerRef.current.signal,
+						controller.signal,
 						activeProfile,
 						thinkingEnabled,
 					)) {
 						fullText += chunk;
 						if (!slashCmd) {
-							setCurrentAiMessage(
-								stripThinkingTags(fullText),
-							);
+							patchRuntime(currentActiveId, {
+								currentAiMessage: stripThinkingTags(fullText),
+							});
 						}
 						// Update running token total incrementally for standard stream
 						streamTokenTotal = userTokenEstimate + estimateTokens(fullText);
-						setRunningTokenTotal?.(streamTokenTotal);
+						patchRuntime(currentActiveId, {
+							runningTokenTotal: streamTokenTotal,
+						});
 					}
 					assistantContent = fullText;
 					assistantTokenEstimate = estimateTokens(fullText);
@@ -903,16 +945,20 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					);
 				}
 			} finally {
-				setIsStreaming(false);
-				setCurrentAiMessage("");
-				setCurrentContentParts([]);
-				controllerRef.current = null;
+				patchRuntime(currentActiveId, {
+					isStreaming: false,
+					currentAiMessage: "",
+					currentContentParts: [],
+					pendingToolCall: null,
+					controller: null,
+					resolveTool: null,
+					runningTokenTotal: 0,
+				});
 				ui.setIsEditing(false);
 				ui.setOriginalMessages([]);
 				ui.setEditMessageText("");
 				ui.setMessageAttachments([]);
 				setContextItems([]);
-				setRunningTokenTotal?.(0);
 			}
 		},
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -931,17 +977,18 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 	// STOP
 	// ═══════════════════════════════════════════════════════
 	const handleStop = useCallback(() => {
-		controllerRef.current?.abort();
-	}, [controllerRef]);
+		const currentActiveId = activeSessionIdRef.current;
+		getRuntime(currentActiveId).controller?.abort();
+	}, [activeSessionIdRef, getRuntime]);
 
 	// ═══════════════════════════════════════════════════════
 	// RETRY
 	// ═══════════════════════════════════════════════════════
 	const handleRetry = useCallback(
 		(messageId: string) => {
-			if (controllerRef.current) return;
 			const currentActiveId = activeSessionIdRef.current;
 			if (!currentActiveId) return;
+			if (getRuntime(currentActiveId).controller) return;
 
 			const session = sessionsRef.current.find(
 				(s) => s.id === currentActiveId,
@@ -996,9 +1043,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 	// ═══════════════════════════════════════════════════════
 	const handleEditMessage = useCallback(
 		(messageId: string) => {
-			if (controllerRef.current) return;
 			const currentActiveId = activeSessionIdRef.current;
 			if (!currentActiveId) return;
+			if (getRuntime(currentActiveId).controller) return;
 
 			const session = sessionsRef.current.find(
 				(s) => s.id === currentActiveId,
@@ -1036,7 +1083,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			ui.setEditMessageText(msg.content);
 		},
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[controllerRef, activeSessionIdRef, sessionsRef, setSessions, ui],
+		[activeSessionIdRef, sessionsRef, setSessions, ui, getRuntime],
 	);
 
 	const handleCancelEdit = useCallback(() => {
@@ -1169,26 +1216,32 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 	// ═══════════════════════════════════════════════════════
 	const handleApproveTool = useCallback(
 		async () => {
-			const pendingToolCall = pendingToolCallRef.current;
+			const currentActiveId = activeSessionIdRef.current;
+			if (!currentActiveId) return;
+			const runtime = getRuntime(currentActiveId);
+			const pendingToolCall = runtime.pendingToolCall;
 			if (!pendingToolCall) return;
 			const toolExecutor = new ToolExecutor(
 				plugin.app,
 				plugin.settings,
 				plugin.personaLoader ?? undefined,
 				plugin.searchIndex ?? undefined,
-				() => activeSessionIdRef.current,
+				() => currentActiveId,
 			);
 			const result = await toolExecutor.execute(pendingToolCall);
-			resolveToolRef.current?.(result);
-			resolveToolRef.current = null;
+			runtime.resolveTool?.(result);
+			patchRuntime(currentActiveId, { resolveTool: null });
 		},
-		[plugin, resolveToolRef, pendingToolCallRef],
+		[plugin, activeSessionIdRef, getRuntime, patchRuntime],
 	);
 
 	const handleRejectTool = useCallback(() => {
-		resolveToolRef.current?.(null);
-		resolveToolRef.current = null;
-	}, [resolveToolRef]);
+		const currentActiveId = activeSessionIdRef.current;
+		if (!currentActiveId) return;
+		const runtime = getRuntime(currentActiveId);
+		runtime.resolveTool?.(null);
+		patchRuntime(currentActiveId, { resolveTool: null });
+	}, [activeSessionIdRef, getRuntime, patchRuntime]);
 
 	return {
 		handleSend,

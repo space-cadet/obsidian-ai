@@ -33,7 +33,6 @@ describe("useSessionActions", () => {
 		} as any;
 		const sessionsRef = { current: [] as any[] };
 		const activeSessionIdRef = { current: null as string | null };
-		const controllerRef = { current: null as AbortController | null };
 
 		const { result } = renderHook(() =>
 			useSessionActions({
@@ -48,7 +47,8 @@ describe("useSessionActions", () => {
 				setDebateMode: vi.fn(),
 				setWasTruncated: vi.fn(),
 				isStreaming: false,
-				controllerRef,
+				abortActiveRuntime: vi.fn(),
+				clearSessionRuntime: vi.fn(),
 			}),
 		);
 

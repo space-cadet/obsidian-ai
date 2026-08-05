@@ -1,7 +1,19 @@
 # Implementation Progress
-*Last Updated: 2026-08-05 01:53 IST*
+*Last Updated: 2026-08-05 11:11 IST*
 
 ## Active Tasks
+
+### T34: Per-Tab Chat Process Isolation (2026-08-05)
+**Status:** ✅ COMPLETED
+
+- Confirmed the tabbed chat bug: live generation state is shared across the `ChatApp` panel while saved messages are selected per active session.
+- Added session-keyed runtime state for streaming text, content parts, pending tools, abort controllers, resolvers, and running token totals.
+- Routed stream deltas, stop, retry/edit guards, tool approval, and tool executors through the originating session ID captured at send time.
+- Added tab close/delete cleanup for affected session runtimes.
+- Added regression coverage for cross-tab stream routing and tool session identity.
+- Validation: focused hook tests, full `pnpm test`, `pnpm run build`, and `git diff --check` pass.
+- Implementation doc: `memory-bank/implementation-details/per-tab-chat-process-isolation.md`.
+- Tracking task: `memory-bank/tasks/T34.md`.
 
 ### T33: Desktop Chat View Singleton Repair (2026-08-04)
 **Status:** ✅ COMPLETED

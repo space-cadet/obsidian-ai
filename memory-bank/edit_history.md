@@ -1,10 +1,26 @@
 # Edit History
 
-*Last Updated: 2026-08-04*
+*Last Updated: 2026-08-05*
 
 ---
 
 ## 2026-08-05
+
+#### 10:55:22 IST - T34: Per-Tab Chat Process Isolation Planning
+- Created `memory-bank/tasks/T34.md` - Added a high-priority corrective task for tab-scoped generation process state.
+- Created `memory-bank/implementation-details/per-tab-chat-process-isolation.md` - Documented the root cause, runtime-state contract, phased fix plan, and regression coverage.
+- Created `memory-bank/edits/2026-08-05/105522-T34-per-tab-process-isolation.md` - Added the edit chunk for this planning update.
+- Modified `memory-bank/tasks.md` - Added T34 to active tasks and relationships.
+- Modified `memory-bank/tasks/T15.md` - Linked T34 as the tabbed-chat runtime isolation follow-up.
+- Modified `memory-bank/activeContext.md`, `memory-bank/progress.md`, and `memory-bank/sessions/2026-08-05-night.md` - Synchronized current focus and planning status.
+
+#### 11:11:04 IST - T34: Per-Tab Chat Process Isolation Implementation
+- Created `src/hooks/useChatRuntimeState.ts` - Added session-keyed runtime state for live streaming, tool approval, controllers, resolvers, and token totals.
+- Modified `src/components/ChatApp.tsx` - Derived visible streaming UI, pending tool card, stop state, and token display from the active session runtime.
+- Modified `src/hooks/useMessageActions.ts` - Routed send, stream deltas, OpenResponses, AgentLoop tools, standard streaming, stop, retry/edit guards, and tool approvals by originating session ID.
+- Modified `src/hooks/useSessionActions.ts` - Aborted and cleared runtime state when tabs or sessions are closed.
+- Modified hook tests - Added cross-tab stream routing and tool-session identity coverage.
+- Updated T34 Memory Bank records - Marked implementation complete and recorded validation.
 
 #### 01:53:30 IST - T15: Settings Navigation and Draft Tab Lifecycle
 - Modified `src/settings-sections/SettingsTab.ts` - Repaired in-panel shortcut scrolling and the AI Intelligence Layer target.
