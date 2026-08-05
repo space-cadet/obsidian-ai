@@ -1,5 +1,5 @@
 # Implementation Progress
-*Last Updated: 2026-08-05 17:28 IST*
+*Last Updated: 2026-08-05 17:39 IST*
 
 ## Active Tasks
 
@@ -14,6 +14,9 @@
   operations, preserving its credentials and mobile-safe transport.
 - Read-only Git status/history/change tools are the first candidate slice;
   stage/commit require a plan and pull/push require separate confirmation.
+- UI plan: an Integrations settings list for availability/enablement, generic
+  pending-operation and inline progress/result cards, plus the later T38
+  active-policy indicator. Obsidian AI will not duplicate the Git sidebar.
 - Tracking: `memory-bank/tasks/T39.md` and
   `memory-bank/implementation-details/integration-provider-api.md`.
 

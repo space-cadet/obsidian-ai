@@ -1,7 +1,7 @@
 # Session Cache
 
 *Created: 2026-07-13 22:41:55 IST*
-*Last Updated: 2026-08-05 17:28:52 IST*
+*Last Updated: 2026-08-05 17:39:15 IST*
 
 ## Current Session
 **Started**: 2026-08-05
@@ -70,6 +70,9 @@ schemas, approval, audit, and rendering; providers own domain logic,
 credentials, settings, and manual UI.
 **Files**: `memory-bank/tasks/T39.md`, `memory-bank/tasks/T39a.md`,
 `memory-bank/tasks/T39b.md`, `memory-bank/implementation-details/integration-provider-api.md`
+**UI contract**: Integrations availability/enablement settings; generic
+descriptor-driven approval and inline result/progress cards; later compact
+tool-policy indicator. Provider configuration remains in its own plugin.
 
 ## Session History (Last 5)
 1. `sessions/2026-08-05-night.md` — T15 Settings navigation and T34 per-tab process isolation, including manual verification

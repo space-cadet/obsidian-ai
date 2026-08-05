@@ -1,7 +1,7 @@
 # Integration Provider API
 
 *Created: 2026-08-05 17:28:52 IST*
-*Last Updated: 2026-08-05 17:28:52 IST*
+*Last Updated: 2026-08-05 17:39:15 IST*
 *Task: [T39](../tasks/T39.md)*
 
 ## Purpose
@@ -84,6 +84,115 @@ Load order must not be assumed. The first implementation should use a
 documented public peer-plugin API plus a refreshable registry, not untyped
 access to private implementation fields.
 
+## Host UI Contract
+
+The provider API is not functional from a user's perspective until the host
+can show provider availability, obtain consent, and explain results. The first
+UI increment remains provider-generic: it must work with a fake read-only
+provider before Git-specific write operations are enabled.
+
+### Settings: Integrations
+
+Add an **Integrations** subsection directly after **Agent Tools**. It lists
+discovered providers and their host-validated status. Provider configuration
+continues to live in the provider's own settings; this view controls only
+whether that provider may offer tools to Obsidian AI.
+
+```text
+Agent Tools
+├─ Enable agent tools                              [ on ]
+├─ Tool safety & approval                          [ Read-only v ]
+├─ Max agent steps                                 [ 5 ]
+└─ Integrations
+   ├─ Obsidian Git                    Available · API v1
+   │  Read tools: Status, changes, history          [ on ]
+   │  Git configuration is managed by Obsidian Git  [ Open settings ]
+   ├─ Tasks                          Not installed
+   │  Install and enable the Tasks plugin to use it
+   └─ Example Provider               Incompatible
+      Requires provider API v1; found v2             [ Details ]
+```
+
+Allowed status labels are **Available**, **Disabled**, **Not installed**,
+**Needs provider setup**, and **Incompatible**. The settings view never shows
+access tokens, remote URLs, raw provider configuration, or provider-internal
+errors. A refresh action may re-run provider discovery, but the UI must also
+refresh when providers load or unload.
+
+### Chat: Pending Provider Operation
+
+Replace the current built-in-tool-name branching in `PendingToolCard` with a
+descriptor-driven card. The card displays provider identity, operation title,
+risk, a redacted structured preview, and only the approval actions allowed by
+the host policy. It must not render raw argument JSON by default.
+
+```text
+┌────────────────────────────────────────────────────────────┐
+│ Obsidian Git                                      REMOTE WRITE│
+│ Push branch `main` to `origin`                               │
+│                                                            │
+│ Repository: Research Vault                                 │
+│ Branch: main · commits to send: 2 · changed files: 5       │
+│ Credentials are managed by Obsidian Git                     │
+│                                                            │
+│                 [ Push to origin ]  [ Reject ]              │
+└────────────────────────────────────────────────────────────┘
+```
+
+Read-only operations use the same component with a compact preview. Write
+operations show a typed plan, such as explicit staged paths and a proposed
+commit message. Remote writes always use prominent confirmation in the first
+release. Destructive and configuration capabilities remain unavailable.
+
+### Chat: Inline Progress and Result
+
+Extend `ToolCallNotification` into a generic expandable provider-result card.
+It appears inline at the tool-call boundary, updates from pending to progress
+to final state, and renders a provider-supplied safe summary with a generic
+fallback. Result details must be compact and redacted.
+
+```text
+✓ Obsidian Git · Push to origin                         12.4 s
+  main → origin/main · 2 commits · 5 files
+  [ Show details ▸ ]
+
+  Details
+  ├─ Authentication: managed by provider
+  ├─ Progress: objects uploaded and remote updated
+  └─ No raw token, full diff, or provider configuration shown
+```
+
+If a provider becomes unavailable while a call is pending, resolve it as a
+clear host result, for example: `Obsidian Git was disabled before this action
+ran. Re-enable it in Settings → Agent Tools → Integrations.` New model calls
+must not include unavailable capabilities.
+
+### Persistent Safety Indicator
+
+The chat header or action bar should show a compact current tool-policy label,
+such as `Tools: ask`, `Tools: read-only`, or `Tools: off`. This makes the
+approval state visible without duplicating settings controls in every card.
+It is part of T38's graduated-policy implementation; the first read-only
+provider increment may retain the current manual approval behavior until T38
+lands.
+
+### UI File Boundaries
+
+| File | Planned responsibility |
+| --- | --- |
+| `src/settings-sections/integrations.ts` | Provider list, enablement, compatibility, and deep link to provider settings |
+| `src/settings-sections/SettingsTab.ts` | Render the Integrations section and navigation item |
+| `src/settings.ts` | Persist enabled provider IDs and future tool-policy setting |
+| `src/components/PendingToolCard.tsx` | Descriptor-driven approval and typed preview card |
+| `src/components/ToolCallNotification.tsx` | Inline provider progress, success, error, and expandable safe result details |
+| `src/components/ActionBar.tsx` | Compact active tool-policy indicator |
+| `src/hooks/useMessageActions.ts` | Preserve tab-scoped approval/resolution while routing provider calls through the host |
+| `styles.css` | Responsive provider status, risk, preview, and progress styles |
+
+No separate Git sidebar is added to Obsidian AI. Obsidian Git retains its own
+configuration and manual Git interface; the provider UI is only the AI consent
+and observability layer.
+
 ## Tool Safety, Privacy, and Audit
 
 The host is the final policy authority. Provider risk labels guide the UI but
@@ -123,8 +232,9 @@ sidebar and configuration experience.
 
 ## Delivery Plan
 
-1. **T39a — Host contract:** Define types, registry, discovery, availability,
-   validation, and provider settings. Keep all tools read-only in the first
+1. **T39a — Host contract and UI:** Define types, registry, discovery,
+   availability, validation, provider settings, descriptor-driven tool cards,
+   and inline result/progress rendering. Keep all tools read-only in the first
    executable increment.
 2. **T38 dependency:** Deliver shared approval policy and privacy-aware audit
    infrastructure before provider writes.

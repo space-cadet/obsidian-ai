@@ -6,6 +6,12 @@
 
 ## 2026-08-05
 
+#### 17:39:15 IST - T39: Provider integration UI plan
+- Modified `memory-bank/implementation-details/integration-provider-api.md` - Added the settings, pending-operation, inline result/progress, and active-policy UI contracts with ASCII wireframes.
+- Modified `memory-bank/tasks/T39.md` and `memory-bank/tasks/T39a.md` - Added provider-generic UI acceptance criteria, boundaries, and delivery detail.
+- Modified `memory-bank/activeContext.md`, `memory-bank/progress.md`, `memory-bank/session_cache.md`, and `memory-bank/sessions/2026-08-05-night.md` - Synchronized the planned UI surfaces and preserved the no-duplicate-Git-sidebar decision.
+- Modified `memory-bank/edit_history.md` - Added the generated-view entry sourced by this edit chunk.
+
 #### 17:31:59 IST - T39: Integration Provider API planning
 - Created `memory-bank/tasks/T39.md` - Defined the paused provider-platform umbrella task, dependencies, acceptance criteria, and safety boundary.
 - Created `memory-bank/tasks/T39a.md` - Scoped host registration, lifecycle, policy, availability, and test work as the first subtask.
