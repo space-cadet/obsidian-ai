@@ -1,7 +1,20 @@
 # Implementation Progress
-*Last Updated: 2026-08-05 11:27 IST*
+*Last Updated: 2026-08-05 13:23 IST*
 
 ## Active Tasks
+
+### T38: Tool Approval Policies, Batch Plans, and Operation Audit Log (2026-08-05)
+**Status:** ⏸️ PAUSED — deferred by user for a later implementation session
+
+- Plan a Tool Safety & Approval settings section that replaces the binary
+  `autoApply` switch with graduated approval modes, ending in an explicitly
+  confirmed YOLO mode.
+- Plan a shared preview → approve → apply contract for additional batch
+  mutations, with preflight validation, per-file previews, expected-content
+  guards, and applied/skipped/failed results.
+- Plan a privacy-aware JSONL tool-operation audit log with rotation, total-size
+  limits, export/clear controls, and no raw note content or secrets by default.
+- Tracking task: `memory-bank/tasks/T38.md`.
 
 ### T37: Idempotent Bulk Note Creation and Batch Scope Decision (2026-08-05)
 **Status:** ✅ COMPLETED

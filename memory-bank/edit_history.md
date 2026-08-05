@@ -6,6 +6,13 @@
 
 ## 2026-08-05
 
+#### 13:23:15 IST - T38: Tool approval and operation audit plan
+- Created `memory-bank/tasks/T38.md` - Recorded the deferred approval-policy, batch-plan, and audit-log design.
+- Created `memory-bank/implementation-details/tool-approval-batch-audit-plan.md` - Defined the settings, execution, logging, privacy, and phased-delivery contracts.
+- Modified `memory-bank/tasks.md` - Registered T38 as a paused task with its dependencies.
+- Modified `memory-bank/tasks/T11.md` - Linked the dedicated audit-log follow-up.
+- Modified `memory-bank/activeContext.md`, `memory-bank/progress.md`, `memory-bank/session_cache.md`, and `memory-bank/sessions/2026-08-05-night.md` - Synchronized the deferred plan state.
+
 #### 13:10 IST - T37: Idempotent Bulk Note Creation and Batch Scope Decision
 - Modified `src/agent/ToolExecutor.ts`, tool types, and `AgentLoop.ts` - Treated existing batch targets as safe skips and returned created/skipped partial-result details to the agent.
 - Modified batch tool/prompt and tool-result UI files - Made the no-overwrite skip behavior visible before and after approval.

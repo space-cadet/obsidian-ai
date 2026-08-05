@@ -17,6 +17,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T15 | Tabbed Chat Interface with Multi-Profile | 🔄 | HIGH | 2026-05-15 | T13, T14, T9 | [Details](tasks/T15.md) |
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
 | T26 | AI Intelligence Layer — Identity, Memory & Context | 🔄 | HIGH | 2026-07-21 | T24, T13 | [Details](tasks/T26.md) | Phase 2 complete (SessionSummarizer), Phases 3-5 pending |
+| T38 | Tool Approval Policies, Batch Plans, and Operation Audit Log | ⏸️ | HIGH | 2026-08-05 | T11, T13, T37 | [Details](tasks/T38.md) | Deferred design for previewed batch mutations, YOLO mode, and bounded audit logs |
 | T32 | Security Hardening — Path Traversal, XSS, SSRF, ReDoS | ✅ | **CRITICAL** | 2026-08-02 | 2026-08-02 | T13, T14 | [Details](tasks/T32.md) |
 | T33 | Desktop Chat View Singleton Repair | ✅ | HIGH | 2026-08-04 | 2026-08-04 | T1, T15 | [Details](tasks/T33.md) |
 
@@ -85,6 +86,10 @@ T36: Stable Per-Tab Model Selection and Restored Chat View State
 T37: Idempotent Bulk Note Creation and Batch Scope Decision
   └── T13
   └── T35
+T38: Tool Approval Policies, Batch Plans, and Operation Audit Log
+  └── T11
+  └── T13
+  └── T37
 T18: Web Search Tool for Chat
   └── T13
   └── T9
@@ -121,5 +126,5 @@ T9: Settings & Provider Profiles
 
 - **Active**: 6
 - **Completed**: 19
-- **Paused**: 0
-- **Total**: 23
+- **Paused**: 1
+- **Total**: 24
