@@ -587,4 +587,98 @@ interface IntelligenceSettings {
 - [T26 Task File](../tasks/T26.md)
 - [T24 SessionStorage](T24.md) — JSONL persistence foundation
 - [T13 Agentic Tool Calling](T13.md) — tool framework
+
+---
+
+## Appendix: Phase 2 Implementation Details (2026-08-07)
+
+### MemoryStore
+
+**File:** `src/intelligence/MemoryStore.ts`
+
+The MemoryStore provides structured CRUD operations for the AI's long-term memory:
+
+```typescript
+export interface MemoryEntry {
+  id: string;           // Random 8-char ID
+  timestamp: string;    // YYYY-MM-DD
+  category: MemoryCategory;  // user_fact | project | preference | insight | reference
+  content: string;
+  tags: string[];
+}
+```
+
+**Storage layout:**
+```
+intelligence/
+├── memory.json          ← canonical source (structured JSON)
+├── memory.md            ← human-readable mirror (auto-generated)
+└── memory-audit.jsonl   ← append-only operation log
+```
+
+**CRUD Operations:**
+- `create(category, content, tags?)` → assigns ID + timestamp, appends to array, regenerates markdown
+- `read(id)` → finds by ID
+- `update(id, partial)` → modifies fields, preserves ID/timestamp
+- `delete(id)` → filters array
+- `list({category?, tag?, limit?})` → filtered query (default: all)
+- `search(query)` → keyword search across content/tags/category
+
+**Audit Log:**
+- Every create/update/delete appends a JSON line to `memory-audit.jsonl`
+- `readAudit(limit?)` returns newest-first array
+- Viewable in Settings UI under collapsible "Memory Audit Log" section
+
+**Design decisions:**
+- `memory.json` is the single source of truth; `memory.md` is regenerated on every write
+- Tags are normalized to lowercase; content is trimmed
+- Legacy markdown entries auto-migrated on first load (idempotent)
+
+### Memory Tools (5 tools)
+
+**create_memory, update_memory, delete_memory, list_memories, search_memories**
+- All delegate to MemoryStore methods
+- Return formatted results for agent consumption
+
+**read_memory_audit**
+- Disabled by default (controlled by `enableMemoryAuditTool` setting)
+- When disabled, returns error telling user to enable in Settings
+- Returns formatted entries with timestamps, operation icons, and content previews
+
+### PersonaLoader Integration
+
+**File:** `src/intelligence/PersonaLoader.ts`
+
+- `memoryStore` property initialized in constructor
+- `loadMemory()` builds markdown from structured entries (not raw file read)
+- `appendMemory()` delegates to `MemoryStore.create()`
+- Auto-migration runs on init if `memory.json` doesn't exist but `memory.md` does
+
+### SessionSummarizer Integration
+
+**File:** `src/intelligence/SessionSummarizer.ts`
+
+- Updated to use `MemoryStore.create()` instead of `PersonaLoader.appendMemory()`
+- Benefits: structured storage, audit logging, tag support
+
+### Settings UI
+
+**File:** `src/settings-sections/intelligence.ts`
+
+- Memory statistics: entry count, file size (JSON + MD), category breakdown
+- Export buttons: JSON and Markdown download
+- Audit log viewer: collapsible panel with operation history
+- Enable/disable toggle for `read_memory_audit` tool
+
+### Tests
+
+**File:** `src/intelligence/__tests__/MemoryStore.test.ts`
+
+26 tests covering:
+- CRUD operations (create, read, update, delete)
+- List filtering (category, tag, limit)
+- Search (content, tag, category)
+- Audit log (create/update/delete operations)
+- Markdown generation
+- Legacy migration
 - [OpenClaw MEMORY.md](../../../../MEMORY.md) — inspiration for feedback loop design

@@ -1,5 +1,5 @@
 # Implementation Progress
-*Last Updated: 2026-08-05 17:48 IST*
+*Last Updated: 2026-08-07 18:40 IST*
 
 ## Active Tasks
 
@@ -440,3 +440,36 @@ After next release cycle. Fixes verified by build + manual QA.
 - ⬜ Create `scripts/test-tool-calling.ts`
 - ⬜ Create `scripts/test-multimodal.ts`
 - ⬜ Create `scripts/lib/mockApp.ts` and `loadSettings.ts`
+
+---
+
+## Completed Today (2026-08-07)
+
+### Memory CRUD System (T26 Phase 2)
+**Status:** ✅ COMPLETED
+
+- **MemoryStore** (`src/intelligence/MemoryStore.ts`): JSON-backed structured storage
+- **5 memory tools**: create_memory, update_memory, delete_memory, list_memories, search_memories
+- **Legacy migration**: auto-migrates old `memory.md` format to `memory.json`
+- **Audit log**: append-only `memory-audit.jsonl` tracking all operations
+- **Settings UI**: memory stats (entry count, size, category breakdown), export to JSON/Markdown, collapsible audit log viewer
+- **read_memory_audit tool**: AI-accessible audit log, disabled by default via `enableMemoryAuditTool` setting
+- **26 unit tests** in `src/intelligence/__tests__/MemoryStore.test.ts`
+- **All 184 tests pass** (158 original + 26 new + updated tool count test)
+
+### SDK 7.x Migration & Bug Fixes
+**Status:** ✅ COMPLETED
+
+- Updated `@ai-sdk/google` 3.0.79 → 4.0.37, `ai` 6.0.174 → 7.0.56, all providers to 4.x
+- **Fixed system message handling**: SDK 7.x requires system messages as separate `system` parameter, not in messages array
+- **Fixed deprecated APIs**: `stepCountIs` → `isStepCount`, `fullStream` → `stream`
+- **Fixed StreamingBubble text duplication**: replaced `lastIndexOf` with prefix matching for remaining text
+
+### Commits
+- `4988b31` — Fix Gemini SDK + streaming duplication + memory CRUD
+- `46da068` — Fix system message handling for SDK 7.x
+- `e587ffa` — Fix SDK 7.x deprecated API usages
+- `0cd16bb` — Add memory export and statistics to Settings UI
+- `8987b86` — Add memory audit log
+- `12f66cc` — Add comprehensive tests for MemoryStore
+- `9350623` — Add read_memory_audit tool with settings toggle
