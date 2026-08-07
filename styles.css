@@ -127,17 +127,18 @@
 }
 
 .obsidian-ai-settings {
+	--obsidian-ai-accent: var(--interactive-accent, #0d9488);
 	padding-bottom: 24px;
 }
 
 /* Override native Obsidian CTA buttons in our settings tab */
 .obsidian-ai-settings button.mod-cta {
-	background-color: #0d9488;
-	color: #ffffff;
+	background-color: var(--obsidian-ai-accent);
+	color: var(--text-on-accent);
 }
 
 .obsidian-ai-settings button.mod-cta:hover {
-	background-color: #0f766e;
+	background-color: color-mix(in srgb, var(--obsidian-ai-accent) 85%, black);
 }
 
 .obsidian-ai-settings-hero {
@@ -2130,14 +2131,14 @@
 }
 
 .obsidian-ai-profile-row:hover {
-	border-color: #0d9488;
+	border-color: var(--obsidian-ai-accent);
 	background: var(--background-primary);
 }
 
 .obsidian-ai-profile-row.is-active {
-	border-color: #0d9488;
-	background: var(--background-primary);
-	box-shadow: inset 3px 0 0 #0d9488;
+	border-color: var(--obsidian-ai-accent);
+	background: color-mix(in srgb, var(--obsidian-ai-accent) 6%, var(--background-primary));
+	box-shadow: inset 3px 0 0 var(--obsidian-ai-accent);
 }
 
 .obsidian-ai-profile-row.is-editing {
@@ -2243,8 +2244,8 @@
 	font-size: 0.6em;
 	padding: 1px 4px;
 	border-radius: 3px;
-	background: #0d9488;
-	color: #ffffff;
+	background: var(--obsidian-ai-accent);
+	color: var(--text-on-accent);
 	font-weight: 500;
 	white-space: nowrap;
 	flex-shrink: 0;
@@ -3556,4 +3557,163 @@
 	justify-content: flex-end;
 	gap: 8px;
 	margin-top: 14px;
+}
+
+/* ─── Settings Improvements ─────────────────────────────────────────── */
+
+/* Usage bars for model diagnostics */
+.obsidian-ai-usage-bar-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 5px 0;
+}
+
+.obsidian-ai-usage-bar-label {
+	width: 140px;
+	font-size: var(--font-ui-smaller);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	flex-shrink: 0;
+	color: var(--text-normal);
+}
+
+.obsidian-ai-usage-bar-track {
+	flex: 1;
+	height: 8px;
+	background: var(--background-modifier-border);
+	border-radius: 4px;
+	overflow: hidden;
+	min-width: 40px;
+}
+
+.obsidian-ai-usage-bar-fill {
+	height: 100%;
+	background: var(--interactive-accent);
+	border-radius: 4px;
+	transition: width 0.3s ease;
+}
+
+.obsidian-ai-usage-bar-value {
+	width: 80px;
+	text-align: right;
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	flex-shrink: 0;
+}
+
+/* Memory stats card */
+.obsidian-ai-memory-stats {
+	padding: 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 10px;
+	background: var(--background-primary);
+	margin-top: 8px;
+}
+
+.obsidian-ai-memory-stats-header {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 10px;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.obsidian-ai-memory-stats-header strong {
+	color: var(--text-normal);
+}
+
+.obsidian-ai-memory-categories {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.obsidian-ai-memory-chip {
+	padding: 3px 8px;
+	border-radius: 4px;
+	background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+	color: var(--interactive-accent);
+	font-size: var(--font-ui-smaller);
+	font-weight: 500;
+}
+
+/* Audit log details */
+.obsidian-ai-settings-details {
+	margin-top: 8px;
+	border-top: 1px solid var(--background-modifier-border);
+	padding-top: 12px;
+}
+
+.obsidian-ai-settings-details summary {
+	font-weight: 600;
+	cursor: pointer;
+	user-select: none;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--text-normal);
+	list-style: none;
+}
+
+.obsidian-ai-settings-details summary::before {
+	content: "▸";
+	color: var(--text-muted);
+	font-size: 10px;
+	transition: transform 0.15s ease;
+	display: inline-block;
+}
+
+.obsidian-ai-settings-details[open] summary::before {
+	transform: rotate(90deg);
+}
+
+.obsidian-ai-settings-details .details-content {
+	margin-top: 8px;
+	padding: 10px;
+	background: var(--background-primary);
+	border-radius: 8px;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	line-height: 1.6;
+	max-height: 300px;
+	overflow: auto;
+}
+
+.obsidian-ai-audit-entry {
+	margin-bottom: 4px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.obsidian-ai-audit-entry:last-child {
+	margin-bottom: 0;
+}
+
+/* Larger textareas for prompts */
+.wide-text-settings {
+	width: 100%;
+	min-width: 25em;
+	min-height: 12em;
+	resize: vertical;
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
+}
+
+/* Profile actions hover reveal */
+.obsidian-ai-profile-col-actions {
+	display: flex;
+	gap: 1px;
+	flex-shrink: 0;
+	opacity: 0.6;
+	transition: opacity 0.15s ease;
+}
+
+.obsidian-ai-profile-row:hover .obsidian-ai-profile-col-actions {
+	opacity: 1;
 }

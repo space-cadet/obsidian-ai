@@ -82,6 +82,13 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 		this.isDisplaying = true;
 		try {
 			const { containerEl } = this;
+
+			// Cleanup existing React roots before re-rendering
+			containerEl.querySelectorAll('.obsidian-ai-settings-react-profiles').forEach((el) => {
+				const root = (el as any).__reactRoot;
+				if (root) root.unmount();
+			});
+
 			containerEl.empty();
 			containerEl.addClass("obsidian-ai-settings");
 

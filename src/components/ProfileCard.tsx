@@ -664,8 +664,7 @@ export function ProfileList({ plugin }: ProfileListProps) {
 	return (
 		<div className="obsidian-ai-profile-list">
 			<div className="obsidian-ai-profile-list-header">
-				<h3>Provider Profiles</h3>
-				<button className="mod-cta" onClick={handleAdd} type="button">
+      <button className="mod-cta" onClick={handleAdd} type="button">
 					+ New Profile
 				</button>
 			</div>
