@@ -431,9 +431,26 @@ export class ChatApiManager {
 			throw new Error("Chat client is not initialized.");
 		}
 
+		// Extract system messages — SDK 7.x requires them as a separate parameter
+		const systemParts: string[] = [];
+		const chatMessages: SdkMessage[] = [];
+		for (const m of messages) {
+			if (m.role === "system") {
+				systemParts.push(
+					typeof m.content === "string"
+						? m.content
+						: m.content.map((c) => ("text" in c ? c.text : "")).join(""),
+				);
+			} else {
+				chatMessages.push(m);
+			}
+		}
+		const system = systemParts.length > 0 ? systemParts.join("\n\n") : undefined;
+
 		const result = streamText({
 			model,
-			messages: messages as any,
+			system,
+			messages: chatMessages as any,
 			abortSignal: signal,
 			providerOptions: getThinkingProviderOptions(profile ?? getActiveProviderProfile(this.settings), thinkingEnabled),
 		});
@@ -465,6 +482,22 @@ export class ChatApiManager {
 			throw new Error("Chat client is not initialized.");
 		}
 
+		// Extract system messages — SDK 7.x requires them as a separate parameter
+		const systemParts: string[] = [];
+		const chatMessages: SdkMessage[] = [];
+		for (const m of messages) {
+			if (m.role === "system") {
+				systemParts.push(
+					typeof m.content === "string"
+						? m.content
+						: m.content.map((c) => ("text" in c ? c.text : "")).join(""),
+				);
+			} else {
+				chatMessages.push(m);
+			}
+		}
+		const system = systemParts.length > 0 ? systemParts.join("\n\n") : undefined;
+
 		// ── Gemini-specific: disable structured outputs to avoid thought_signature errors ──
 		const providerOptions = {
 			...getThinkingProviderOptions(activeProfile, thinkingEnabled),
@@ -476,7 +509,8 @@ export class ChatApiManager {
 
 		const result = streamText({
 			model,
-			messages: messages as any,
+			system,
+			messages: chatMessages as any,
 			tools,
 			stopWhen: stepCountIs(1),
 			abortSignal: signal,

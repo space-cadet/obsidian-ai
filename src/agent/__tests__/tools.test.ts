@@ -20,6 +20,10 @@ const EXPECTED_TOOLS = [
 	"list_folders",
 	"search_web",
 	"create_memory",
+	"update_memory",
+	"delete_memory",
+	"list_memories",
+	"search_memories",
 	"search_past_sessions",
 ];
 
