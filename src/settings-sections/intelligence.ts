@@ -256,6 +256,57 @@ ${catLines || "  No categorized entries yet."}
 	const refreshBtn = exportRow.createEl("button", { text: "Refresh Stats" });
 	refreshBtn.addEventListener("click", () => void refreshStats());
 
+	// ── Audit Log ──
+	const auditEl = sectionEl.createEl("details", { cls: "setting-item" });
+	auditEl.style.padding = "12px 16px";
+	auditEl.style.borderTop = "1px solid var(--background-modifier-border)";
+	auditEl.style.marginTop = "8px";
+
+	const auditSummary = auditEl.createEl("summary", { text: "Memory Audit Log" });
+	auditSummary.style.fontWeight = "600";
+	auditSummary.style.cursor = "pointer";
+	auditSummary.style.userSelect = "none";
+
+	const auditContent = auditEl.createEl("div", { cls: "setting-item-description" });
+	auditContent.style.fontSize = "0.85em";
+	auditContent.style.lineHeight = "1.6";
+	auditContent.style.marginTop = "8px";
+	auditContent.style.maxHeight = "300px";
+	auditContent.style.overflow = "auto";
+
+	async function refreshAudit() {
+		if (!plugin.personaLoader) {
+			auditContent.textContent = "Intelligence layer not initialized.";
+			return;
+		}
+		try {
+			const entries = await plugin.personaLoader.memoryStore.readAudit(20);
+			if (entries.length === 0) {
+				auditContent.textContent = "No audit entries yet. Memory operations will be logged here.";
+				return;
+			}
+			const lines = entries.map((e) => {
+				const time = new Date(e.timestamp).toLocaleString();
+				const icon = e.operation === "create" ? "+" : e.operation === "update" ? "✎" : "−";
+				const preview = e.content ? `"${e.content.slice(0, 60)}${e.content.length > 60 ? "…" : ""}"` : "";
+				return `<span style="color:var(--text-muted)">${time}</span> <strong>${icon} ${e.operation}</strong> [${e.entryId}] ${preview}`;
+			});
+			auditContent.innerHTML = lines.join("<br/>");
+		} catch (e) {
+			auditContent.textContent = "Unable to read audit log.";
+		}
+	}
+
+	// Refresh audit when expanded
+	auditEl.addEventListener("toggle", () => {
+		if (auditEl.open) void refreshAudit();
+	});
+
+	const auditRefreshBtn = auditEl.createEl("button", { text: "Refresh Audit" });
+	auditRefreshBtn.style.marginTop = "8px";
+	auditRefreshBtn.style.fontSize = "0.85em";
+	auditRefreshBtn.addEventListener("click", () => void refreshAudit());
+
 	// Button to open intelligence folder
 	const openDirBtn = sectionEl.createEl("button", {
 		text: "Open Intelligence Folder",

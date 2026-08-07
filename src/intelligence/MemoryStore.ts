@@ -16,6 +16,15 @@ export interface MemoryEntry {
 	tags: string[];
 }
 
+export interface MemoryAuditEntry {
+	timestamp: string; // ISO-8601
+	operation: "create" | "update" | "delete";
+	entryId: string;
+	category?: string;
+	content?: string;
+	tags?: string[];
+}
+
 export interface MemoryStoreDeps {
 	app: App;
 	intelligenceDir: string;
@@ -34,11 +43,13 @@ export class MemoryStore {
 	private deps: MemoryStoreDeps;
 	private readonly jsonPath: string;
 	private readonly mdPath: string;
+	private readonly auditPath: string;
 
 	constructor(deps: MemoryStoreDeps) {
 		this.deps = deps;
 		this.jsonPath = `${deps.intelligenceDir}/memory.json`;
 		this.mdPath = `${deps.intelligenceDir}/memory.md`;
+		this.auditPath = `${deps.intelligenceDir}/memory-audit.jsonl`;
 	}
 
 	/** Ensure the JSON store exists; return current entries. */
@@ -81,6 +92,14 @@ export class MemoryStore {
 		};
 		entries.push(entry);
 		await this._save(entries);
+		await this._audit({
+			timestamp: new Date().toISOString(),
+			operation: "create",
+			entryId: entry.id,
+			category: entry.category,
+			content: entry.content,
+			tags: entry.tags,
+		});
 		this.deps.logger?.log("info", `Created memory ${entry.id}: ${category}`);
 		return entry;
 	}
@@ -106,6 +125,14 @@ export class MemoryStore {
 			entries[idx].tags = updates.tags.map((t) => t.toLowerCase().trim());
 		}
 		await this._save(entries);
+		await this._audit({
+			timestamp: new Date().toISOString(),
+			operation: "update",
+			entryId: id,
+			category: entries[idx].category,
+			content: entries[idx].content,
+			tags: entries[idx].tags,
+		});
 		this.deps.logger?.log("info", `Updated memory ${id}`);
 		return entries[idx];
 	}
@@ -117,6 +144,11 @@ export class MemoryStore {
 		const filtered = entries.filter((e) => e.id !== id);
 		if (filtered.length === beforeLen) return false;
 		await this._save(filtered);
+		await this._audit({
+			timestamp: new Date().toISOString(),
+			operation: "delete",
+			entryId: id,
+		});
 		this.deps.logger?.log("info", `Deleted memory ${id}`);
 		return true;
 	}
@@ -154,7 +186,41 @@ export class MemoryStore {
 		);
 	}
 
-	/** Regenerate memory.md from entries for human readability. */
+	/** Append an audit log entry. */
+	private async _audit(entry: MemoryAuditEntry): Promise<void> {
+		const line = JSON.stringify(entry) + "\n";
+		const adapter = this.deps.app.vault.adapter;
+		try {
+			if (await adapter.exists(this.auditPath)) {
+				const existing = await adapter.read(this.auditPath);
+				await adapter.write(this.auditPath, existing + line);
+			} else {
+				await adapter.write(this.auditPath, line);
+			}
+		} catch (e) {
+			this.deps.logger?.log("warn", `Failed to write audit log: ${e}`);
+		}
+	}
+
+	/** Read recent audit entries (newest first). */
+	async readAudit(limit: number = 50): Promise<MemoryAuditEntry[]> {
+		const adapter = this.deps.app.vault.adapter;
+		if (!(await adapter.exists(this.auditPath))) return [];
+		try {
+			const raw = await adapter.read(this.auditPath);
+			const lines = raw.trim().split("\n").filter(Boolean);
+			const entries: MemoryAuditEntry[] = [];
+			for (const line of lines.slice(-limit)) {
+				try {
+					entries.push(JSON.parse(line));
+				} catch { /* skip malformed */ }
+			}
+			return entries.reverse();
+		} catch (e) {
+			this.deps.logger?.log("warn", `Failed to read audit log: ${e}`);
+			return [];
+		}
+	}
 	private async _regenerateMarkdown(entries: MemoryEntry[]): Promise<void> {
 		const lines: string[] = [
 			"# AI Memory",
