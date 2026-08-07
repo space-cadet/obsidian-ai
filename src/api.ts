@@ -1,5 +1,5 @@
 // api.ts
-import { generateText, streamText, stepCountIs } from "ai";
+import { generateText, streamText, isStepCount } from "ai";
 import type { LanguageModelV4 } from "@ai-sdk/provider";
 
 import type { StreamEvent } from "./agent/types";
@@ -463,7 +463,7 @@ export class ChatApiManager {
 	/**
 	 * Streams a chat conversation with tool calling support.
 	 * Yields structured StreamEvent types for progressive display and tool interaction.
-	 * Each call performs a single step (stopWhen: stepCountIs(1)).
+	 * Each call performs a single step (stopWhen: isStepCount(1)).
 	 * The caller is responsible for executing tools and calling again for subsequent steps.
 	 * @param messages - Array of conversation messages (including tool messages).
 	 * @param tools - Record of tool definitions.
@@ -512,12 +512,12 @@ export class ChatApiManager {
 			system,
 			messages: chatMessages as any,
 			tools,
-			stopWhen: stepCountIs(1),
+			stopWhen: isStepCount(1),
 			abortSignal: signal,
 			providerOptions,
 		});
 
-		for await (const part of result.fullStream) {
+		for await (const part of result.stream) {
 			switch (part.type) {
 				case "reasoning-delta":
 					yield { type: "reasoning-delta", text: part.text };
