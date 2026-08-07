@@ -3654,21 +3654,28 @@
 	user-select: none;
 	display: flex;
 	align-items: center;
-	gap: 6px;
+	gap: 8px;
 	color: var(--text-normal);
 	list-style: none;
+	padding: 4px 0;
 }
 
 .obsidian-ai-settings-details summary::before {
 	content: "▸";
 	color: var(--text-muted);
-	font-size: 10px;
+	font-size: 14px;
 	transition: transform 0.15s ease;
 	display: inline-block;
+	width: 16px;
+	text-align: center;
 }
 
 .obsidian-ai-settings-details[open] summary::before {
 	transform: rotate(90deg);
+}
+
+.obsidian-ai-settings-details summary:hover::before {
+	color: var(--text-normal);
 }
 
 .obsidian-ai-settings-details .details-content {
