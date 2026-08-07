@@ -124,6 +124,138 @@ export function renderIntelligenceSection(
 			});
 	}
 
+	// ── Memory Stats & Export ──
+	const statsEl = sectionEl.createEl("div", { cls: "setting-item" });
+	statsEl.style.padding = "12px 16px";
+	statsEl.style.borderTop = "1px solid var(--background-modifier-border)";
+	statsEl.style.marginTop = "8px";
+
+	const statsLabel = statsEl.createEl("div", { text: "Memory Statistics", cls: "setting-item-name" });
+	statsLabel.style.fontWeight = "600";
+	statsLabel.style.marginBottom = "8px";
+
+	const statsContent = statsEl.createEl("div", { cls: "setting-item-description" });
+	statsContent.style.fontSize = "0.9em";
+	statsContent.style.lineHeight = "1.6";
+
+	async function refreshStats() {
+		if (!plugin.personaLoader) {
+			statsContent.textContent = "Intelligence layer not initialized.";
+			return;
+		}
+		try {
+			const entries = await plugin.personaLoader.memoryStore.list();
+			const jsonPath = `${plugin.app.vault.configDir}/plugins/${plugin.manifest.id}/intelligence/memory.json`;
+			const mdPath = `${plugin.app.vault.configDir}/plugins/${plugin.manifest.id}/intelligence/memory.md`;
+			const adapter = plugin.app.vault.adapter;
+
+			let jsonSize = 0;
+			let mdSize = 0;
+			try {
+				if (await adapter.exists(jsonPath)) {
+					const stat = await adapter.stat(jsonPath);
+					jsonSize = stat?.size ?? 0;
+				}
+			} catch { /* ignore */ }
+			try {
+				if (await adapter.exists(mdPath)) {
+					const stat = await adapter.stat(mdPath);
+					mdSize = stat?.size ?? 0;
+				}
+			} catch { /* ignore */ }
+
+			const totalSize = jsonSize + mdSize;
+			const sizeStr = totalSize < 1024
+				? `${totalSize} B`
+				: totalSize < 1024 * 1024
+					? `${(totalSize / 1024).toFixed(1)} KB`
+					: `${(totalSize / (1024 * 1024)).toFixed(1)} MB`;
+
+			const categories: Record<string, number> = {};
+			for (const e of entries) {
+				categories[e.category] = (categories[e.category] || 0) + 1;
+			}
+			const catLines = Object.entries(categories)
+				.map(([cat, count]) => `  • ${cat}: ${count}`)
+				.join("\n");
+
+			statsContent.innerHTML = `
+<strong>${entries.length}</strong> entries | <strong>${sizeStr}</strong> total<br/>
+${catLines || "  No categorized entries yet."}
+			`.trim();
+		} catch (e) {
+			statsContent.textContent = "Unable to read memory statistics.";
+		}
+	}
+	void refreshStats();
+
+	// Export buttons row
+	const exportRow = statsEl.createEl("div");
+	exportRow.style.display = "flex";
+	exportRow.style.gap = "8px";
+	exportRow.style.marginTop = "10px";
+	exportRow.style.flexWrap = "wrap";
+
+	const exportJsonBtn = exportRow.createEl("button", { text: "Export JSON" });
+	exportJsonBtn.addClass("mod-cta");
+	exportJsonBtn.addEventListener("click", async () => {
+		if (!plugin.personaLoader) {
+			new Notice("Intelligence layer not initialized.");
+			return;
+		}
+		try {
+			const entries = await plugin.personaLoader.memoryStore.list();
+			const blob = new Blob([JSON.stringify(entries, null, 2)], { type: "application/json" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `obsidian-ai-memory-${new Date().toISOString().split("T")[0]}.json`;
+			a.click();
+			URL.revokeObjectURL(url);
+			new Notice(`Exported ${entries.length} memories to JSON.`);
+		} catch (e: any) {
+			new Notice(`Export failed: ${e.message}`);
+		}
+	});
+
+	const exportMdBtn = exportRow.createEl("button", { text: "Export Markdown" });
+	exportMdBtn.addEventListener("click", async () => {
+		if (!plugin.personaLoader) {
+			new Notice("Intelligence layer not initialized.");
+			return;
+		}
+		try {
+			const entries = await plugin.personaLoader.memoryStore.list();
+			const lines = [
+				"# AI Memory Export",
+				"",
+				`Generated: ${new Date().toISOString()}`,
+				`Total entries: ${entries.length}`,
+				"",
+				"## Entries",
+				"",
+			];
+			for (const e of entries) {
+				const tagStr = e.tags.length ? " " + e.tags.map((t) => `#${t}`).join(" ") : "";
+				lines.push(`- [${e.timestamp}] **${e.category}**: ${e.content}${tagStr} [id:${e.id}]`);
+			}
+			lines.push("");
+			const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `obsidian-ai-memory-${new Date().toISOString().split("T")[0]}.md`;
+			a.click();
+			URL.revokeObjectURL(url);
+			new Notice(`Exported ${entries.length} memories to Markdown.`);
+		} catch (e: any) {
+			new Notice(`Export failed: ${e.message}`);
+		}
+	});
+
+	const refreshBtn = exportRow.createEl("button", { text: "Refresh Stats" });
+	refreshBtn.addEventListener("click", () => void refreshStats());
+
 	// Button to open intelligence folder
 	const openDirBtn = sectionEl.createEl("button", {
 		text: "Open Intelligence Folder",
