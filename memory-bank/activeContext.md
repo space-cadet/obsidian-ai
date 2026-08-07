@@ -69,6 +69,29 @@
 ## Previous Work (2026-07-29)
 **T15 follow-up complete** — Past-session search, inline result links, and shared internal tabs are implemented. Tab-heading visual polish is deferred.
 
+### Bug: Desktop Chat View Duplication (2026-08-02)
+**Status:** 🔄 **IN PROGRESS**
+
+Two separate issues caused duplicate chat views on desktop:
+
+**Issue 1: React-level duplication (fixed in `8d541c1`)**
+- **File:** `src/views/ObsidianAIChatView.ts`
+- **Root cause:** `onOpen()` + `setState()` both called `render()` during view initialization; race condition could duplicate React content in same container
+- **Fix:** `this.contentEl.empty()` on open + `renderPending` guard with `queueMicrotask` clear
+
+**Issue 2: Workspace-level race (fixed in `5f74700`)**
+- **File:** `src/main.ts`
+- **Root cause:** `activateChatView()` checked `getLeavesOfType(CHAT_VIEWTYPE)` immediately during plugin startup. Workspace restoration happens asynchronously — restored leaf exists but hasn't registered yet, so check returns empty and a second leaf is created
+- **Fix:** Added `requestAnimationFrame` delay before `getRightLeaf()` fallback, giving workspace one frame to register the restored leaf
+
+**Cleanup required:** User currently has stuck duplicate leaf. Fix:
+```js
+app.workspace.getLeavesOfType("obsidian-ai-chat-view").forEach(l => l.detach())
+```
+Then reopen chat once. New code prevents recurrence.
+
+---
+
 ### Bug Fixes (2026-07-28)
 **Status:** ✅ COMPLETED (4/4)
 

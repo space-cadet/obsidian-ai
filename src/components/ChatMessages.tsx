@@ -50,6 +50,11 @@ const StreamingBubble: React.FC<{
 				const currentCount = renderedCountRef.current;
 				const newParts = contentParts.slice(currentCount);
 
+				// Remove old remaining-text div before rendering new parts to avoid
+				// duplication when prior remaining text becomes a formal text part.
+				const oldRemainDiv = contentRef.current.querySelector(".chat-bubble-remain");
+				if (oldRemainDiv) oldRemainDiv.remove();
+
 				// Update already-rendered tool calls when their results arrive (hourglass → checkmark)
 				for (let i = 0; i < Math.min(currentCount, contentParts.length); i++) {
 					const part = contentParts[i];
@@ -92,24 +97,38 @@ const StreamingBubble: React.FC<{
 				}
 				renderedCountRef.current = contentParts.length;
 
-				// Update remaining text after last checkpoint (always re-render to keep in sync)
-				const lastTextPart = contentParts.filter(p => p.type === "text").pop();
-				if (lastTextPart && lastTextPart.type === "text") {
-					const idx = content.lastIndexOf(lastTextPart.content);
-					const remainingText = idx >= 0
-						? content.slice(idx + lastTextPart.content.length)
-						: content;
-					if (remainingText.trim()) {
-						// Check if we already have a remaining-text div
-						let remainDiv = contentRef.current.querySelector(".chat-bubble-remain") as HTMLDivElement | null;
-						if (!remainDiv) {
-							remainDiv = contentRef.current.createDiv({ cls: "chat-bubble-remain" });
-						} else {
-							remainDiv.empty();
-						}
-						const comp = new Component();
-						MarkdownRenderer.render(app, sanitizeHtmlForRenderer(remainingText), remainDiv, "", comp);
+				// Compute remaining text after all committed text parts.
+				// Use prefix match instead of lastIndexOf to avoid wrong offsets when
+				// the model repeats phrases.
+				const committedTexts = contentParts
+					.filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")
+					.map((p) => p.content);
+				const committedConcat = committedTexts.join("");
+				let remainingText = "";
+				if (content.startsWith(committedConcat)) {
+					remainingText = content.slice(committedConcat.length);
+				} else {
+					// Fallback: committed text doesn't match prefix (can happen if
+					// stripThinkingTags behaves differently on slices). Use first
+					// occurrence of last text part.
+					const lastTextPart = contentParts.filter((p) => p.type === "text").pop();
+					if (lastTextPart && lastTextPart.type === "text") {
+						const idx = content.indexOf(lastTextPart.content);
+						remainingText = idx >= 0 ? content.slice(idx + lastTextPart.content.length) : content;
 					}
+				}
+				if (remainingText.trim()) {
+					let remainDiv = contentRef.current.querySelector(".chat-bubble-remain") as HTMLDivElement | null;
+					if (!remainDiv) {
+						remainDiv = contentRef.current.createDiv({ cls: "chat-bubble-remain" });
+					} else {
+						remainDiv.empty();
+					}
+					const comp = new Component();
+					MarkdownRenderer.render(app, sanitizeHtmlForRenderer(remainingText), remainDiv, "", comp);
+				} else {
+					const remainDiv = contentRef.current.querySelector(".chat-bubble-remain");
+					if (remainDiv) remainDiv.remove();
 				}
 			} else {
 				// Simple text-only streaming (no tool calls) — only re-render if text changed

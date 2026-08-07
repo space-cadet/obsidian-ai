@@ -1,5 +1,6 @@
 import { App } from "obsidian";
 import { FileLogger } from "../logger";
+import { MemoryStore } from "./MemoryStore";
 
 export interface PersonaLoaderDeps {
 	app: App;
@@ -40,10 +41,16 @@ Feel free to edit or delete anything — it's your memory.
 export class PersonaLoader {
 	private deps: PersonaLoaderDeps;
 	private readonly intelligenceDir: string;
+	readonly memoryStore: MemoryStore;
 
 	constructor(deps: PersonaLoaderDeps) {
 		this.deps = deps;
 		this.intelligenceDir = `${deps.app.vault.configDir}/plugins/${deps.manifest.id}/intelligence`;
+		this.memoryStore = new MemoryStore({
+			app: deps.app,
+			intelligenceDir: this.intelligenceDir,
+			logger: deps.logger,
+		});
 	}
 
 	/** Ensure intelligence/ directory and default files exist. */
@@ -64,12 +71,9 @@ export class PersonaLoader {
 			this.deps.logger?.log("info", `Created default persona at ${personaPath}`);
 		}
 
-		// Create default memory.md if missing
-		const memoryPath = `${this.intelligenceDir}/memory.md`;
-		if (!(await adapter.exists(memoryPath))) {
-			await adapter.write(memoryPath, DEFAULT_MEMORY);
-			this.deps.logger?.log("info", `Created default memory at ${memoryPath}`);
-		}
+		// Migrate legacy markdown memory if needed
+		await this.memoryStore.migrateFromMarkdown();
+		this.deps.logger?.log("info", `MemoryStore initialized at ${this.intelligenceDir}`);
 	}
 
 	/** Read persona.md — returns content or empty string if disabled/missing. */
@@ -78,24 +82,41 @@ export class PersonaLoader {
 		return this._readFile(path);
 	}
 
-	/** Read memory.md — returns content or empty string. Optionally truncates. */
+	/** Read memory entries as markdown (truncated if needed). */
 	async loadMemory(options?: { maxTokens?: number }): Promise<string> {
-		const path = `${this.intelligenceDir}/memory.md`;
-		const content = await this._readFile(path);
-		if (!content || !options?.maxTokens) return content;
+		const entries = await this.memoryStore.list();
+		if (entries.length === 0) return "";
 
-		// Simple truncation: keep last N characters (roughly 4 chars per token)
+		// Build markdown from entries
+		const lines = entries.map(
+			(e) =>
+				`- [${e.timestamp}] **${e.category}**: ${e.content}${e.tags.length ? " " + e.tags.map((t) => `#${t}`).join(" ") : ""}`,
+		);
+		const md = lines.join("\n");
+
+		if (!options?.maxTokens) return md;
+
 		const maxChars = options.maxTokens * 4;
-		if (content.length <= maxChars) return content;
+		if (md.length <= maxChars) return md;
 
-		// Find a good break point — keep from the latest "## Entries" section
-		const entriesIdx = content.lastIndexOf("## Entries");
-		if (entriesIdx >= 0 && content.length - entriesIdx <= maxChars) {
-			return content.slice(entriesIdx);
+		// Truncate from the top (keep newest)
+		const truncated = md.slice(-maxChars + 3);
+		const firstNewline = truncated.indexOf("\n");
+		return "..." + (firstNewline > 0 ? truncated.slice(firstNewline + 1) : truncated);
+	}
+
+	/** Append a memory entry (delegates to MemoryStore). */
+	async appendMemory(category: string, content: string, tags?: string[]): Promise<string> {
+		const validCategories = ["user_fact", "project", "preference", "insight", "reference"] as const;
+		if (!validCategories.includes(category as any)) {
+			throw new Error(`Invalid memory category: ${category}`);
 		}
-
-		// Fallback: just trim from the top
-		return "..." + content.slice(-maxChars + 3);
+		const entry = await this.memoryStore.create(
+			category as any,
+			content,
+			tags,
+		);
+		return entry.id;
 	}
 
 	/**
@@ -117,18 +138,7 @@ export class PersonaLoader {
 		return parts.join("\n\n---\n\n");
 	}
 
-	/** Append a memory entry to memory.md. */
-	async appendMemory(entry: string): Promise<void> {
-		const path = `${this.intelligenceDir}/memory.md`;
-		const adapter = this.deps.app.vault.adapter;
-		const exists = await adapter.exists(path);
-		if (!exists) {
-			await adapter.write(path, DEFAULT_MEMORY + entry + "\n");
-		} else {
-			await adapter.write(path, await adapter.read(path) + entry + "\n");
-		}
-		this.deps.logger?.log("info", `Appended memory entry to ${path}`);
-	}
+
 
 	private async _readFile(path: string): Promise<string> {
 		try {

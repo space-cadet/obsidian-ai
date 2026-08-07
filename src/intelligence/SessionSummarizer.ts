@@ -91,15 +91,18 @@ export class SessionSummarizer {
 		const entries = this._parseJsonEntries(raw);
 		if (entries.length === 0) return [];
 
-		// Persist each entry to memory.md
+		// Persist each entry to memory store
 		const saved: MemoryEntry[] = [];
 		for (const entry of entries) {
-			const formatted = this._formatEntry(entry);
 			try {
-				await this.personaLoader.appendMemory(formatted);
+				await this.personaLoader.memoryStore.create(
+					entry.category,
+					entry.content,
+					entry.tags,
+				);
 				saved.push(entry);
 			} catch (e) {
-				console.error("[SessionSummarizer] Failed to append memory:", e);
+				console.error("[SessionSummarizer] Failed to save memory:", e);
 			}
 		}
 

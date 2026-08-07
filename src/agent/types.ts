@@ -44,6 +44,8 @@ export interface ToolResult {
 	}>;
 	createdPaths?: string[];
 	skippedPaths?: string[];
+	/** Memory entry ID returned by memory CRUD operations. */
+	id?: string;
 	/** Public provider metadata for a redacted tool-result card. */
 	providerId?: string;
 	providerName?: string;

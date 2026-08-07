@@ -1,6 +1,6 @@
 // api.ts
 import { generateText, streamText, stepCountIs } from "ai";
-import type { LanguageModelV3 } from "@ai-sdk/provider";
+import type { LanguageModelV4 } from "@ai-sdk/provider";
 
 import type { StreamEvent } from "./agent/types";
 import { createOpenAI } from "@ai-sdk/openai";
@@ -103,7 +103,7 @@ function getThinkingProviderOptions(profile: ProviderProfile, thinkingEnabled?: 
 	}
 }
 
-function createLanguageModel(profile: ProviderProfile): LanguageModelV3 | null {
+function createLanguageModel(profile: ProviderProfile): LanguageModelV4 | null {
 	const error = validateProfile(profile);
 	if (error) {
 		new Notice(`⚠️ ${error} Please check your settings.`);

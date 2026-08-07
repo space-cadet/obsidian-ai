@@ -282,6 +282,69 @@ export const createMemoryTool = t({
 	}),
 });
 
+export const updateMemoryTool = t({
+	description:
+		"Update an existing memory entry by its ID. " +
+		"Use when the user wants to correct, expand, or reclassify a memory. " +
+		"Only the fields you provide will be changed.",
+	inputSchema: z.object({
+		id: z.string().describe("The memory entry ID, e.g. 'a1b2c3d4'"),
+		category: z
+			.enum(["user_fact", "project", "preference", "insight", "reference"])
+			.optional()
+			.describe("New category, if changing"),
+		content: z
+			.string()
+			.optional()
+			.describe("New content, if changing"),
+		tags: z
+			.array(z.string())
+			.optional()
+			.describe("New tags, if changing (replaces existing tags)"),
+	}),
+});
+
+export const deleteMemoryTool = t({
+	description:
+		"Delete a memory entry by its ID. " +
+		"Use when the user wants to forget something or remove an incorrect memory.",
+	inputSchema: z.object({
+		id: z.string().describe("The memory entry ID to delete"),
+	}),
+});
+
+export const listMemoriesTool = t({
+	description:
+		"List stored memories, optionally filtered by category or tag. " +
+		"Use when the user asks 'what do you remember about me' or wants to review memories.",
+	inputSchema: z.object({
+		category: z
+			.enum(["user_fact", "project", "preference", "insight", "reference"])
+			.optional()
+			.describe("Filter by category"),
+		tag: z.string().optional().describe("Filter by tag (e.g. 'physics')"),
+		limit: z
+			.number()
+			.optional()
+			.default(20)
+			.describe("Maximum entries to return (default 20)"),
+	}),
+});
+
+export const searchMemoriesTool = t({
+	description:
+		"Search memories by keyword across content and tags. " +
+		"Use when the user asks about something specific they may have told you before.",
+	inputSchema: z.object({
+		query: z.string().describe("Search query — keywords to find in memories"),
+		limit: z
+			.number()
+			.optional()
+			.default(10)
+			.describe("Maximum results (default 10)"),
+	}),
+});
+
 export const searchPastSessionsTool = t({
 	description:
 		"Search past chat sessions by topic, keyword, or content. " +
@@ -315,5 +378,9 @@ export const noteTools = {
 	list_folders: listFoldersTool,
 	search_web: searchWebTool,
 	create_memory: createMemoryTool,
+	update_memory: updateMemoryTool,
+	delete_memory: deleteMemoryTool,
+	list_memories: listMemoriesTool,
+	search_memories: searchMemoriesTool,
 	search_past_sessions: searchPastSessionsTool,
 };

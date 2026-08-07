@@ -102,6 +102,22 @@ export class ToolExecutor {
 					return await this.createMemory(
 						call.args as { category: string; content: string; tags?: string[] },
 					);
+				case "update_memory":
+					return await this.updateMemory(
+						call.args as { id: string; category?: string; content?: string; tags?: string[] },
+					);
+				case "delete_memory":
+					return await this.deleteMemory(
+						call.args as { id: string },
+					);
+				case "list_memories":
+					return await this.listMemories(
+						call.args as { category?: string; tag?: string; limit?: number },
+					);
+				case "search_memories":
+					return await this.searchMemories(
+						call.args as { query: string; limit?: number },
+					);
 				case "search_past_sessions":
 					return await this.searchPastSessions(
 						call.args as { query: string; limit?: number },
@@ -962,6 +978,10 @@ export class ToolExecutor {
 	 * Memory (T26 Intelligence Layer)
 	 * ─────────────────────────────────────────────────────────── */
 
+	/* ───────────────────────────────────────────────────────────
+	 * Memory CRUD (T26 Intelligence Layer)
+	 * ─────────────────────────────────────────────────────────── */
+
 	private async createMemory(args: {
 		category: string;
 		content: string;
@@ -974,14 +994,140 @@ export class ToolExecutor {
 			};
 		}
 
-		const timestamp = new Date().toISOString().split("T")[0];
-		const tagStr = args.tags?.length
-			? " " + args.tags.map((t) => `#${t}`).join(" ")
-			: "";
-		const entry = `- [${timestamp}] **${args.category}**: ${args.content}${tagStr}`;
+		try {
+			const entry = await this.personaLoader.memoryStore.create(
+				args.category as any,
+				args.content,
+				args.tags,
+			);
+			return {
+				success: true,
+				entry: `[${entry.timestamp}] **${entry.category}**: ${entry.content}${entry.tags.length ? " " + entry.tags.map((t) => `#${t}`).join(" ") : ""}`,
+				id: entry.id,
+			};
+		} catch (e: any) {
+			return { error: `Failed to create memory: ${e.message}` };
+		}
+	}
 
-		await this.personaLoader.appendMemory(entry);
-		return { success: true, entry };
+	private async updateMemory(args: {
+		id: string;
+		category?: string;
+		content?: string;
+		tags?: string[];
+	}): Promise<ToolResult> {
+		if (!this.personaLoader) {
+			return {
+				error:
+					"Memory update is disabled. Enable the intelligence layer in Settings.",
+			};
+		}
+
+		try {
+			const entry = await this.personaLoader.memoryStore.update(args.id, {
+				category: args.category as any,
+				content: args.content,
+				tags: args.tags,
+			});
+			if (!entry) {
+				return { error: `Memory not found: ${args.id}` };
+			}
+			return {
+				success: true,
+				entry: `[${entry.timestamp}] **${entry.category}**: ${entry.content}${entry.tags.length ? " " + entry.tags.map((t) => `#${t}`).join(" ") : ""}`,
+				id: entry.id,
+			};
+		} catch (e: any) {
+			return { error: `Failed to update memory: ${e.message}` };
+		}
+	}
+
+	private async deleteMemory(args: { id: string }): Promise<ToolResult> {
+		if (!this.personaLoader) {
+			return {
+				error:
+					"Memory deletion is disabled. Enable the intelligence layer in Settings.",
+			};
+		}
+
+		try {
+			const deleted = await this.personaLoader.memoryStore.delete(args.id);
+			if (!deleted) {
+				return { error: `Memory not found: ${args.id}` };
+			}
+			return { success: true, id: args.id };
+		} catch (e: any) {
+			return { error: `Failed to delete memory: ${e.message}` };
+		}
+	}
+
+	private async listMemories(args: {
+		category?: string;
+		tag?: string;
+		limit?: number;
+	}): Promise<ToolResult> {
+		if (!this.personaLoader) {
+			return {
+				error:
+					"Memory listing is disabled. Enable the intelligence layer in Settings.",
+			};
+		}
+
+		try {
+			const entries = await this.personaLoader.memoryStore.list({
+				category: args.category as any,
+				tag: args.tag,
+				limit: args.limit,
+			});
+			if (entries.length === 0) {
+				return { success: true, content: "No memories found." };
+			}
+			const lines = entries.map(
+				(e) =>
+					`- [${e.timestamp}] **${e.category}**: ${e.content}${e.tags.length ? " " + e.tags.map((t) => `#${t}`).join(" ") : ""} [id:${e.id}]`,
+			);
+			return {
+				success: true,
+				content: lines.join("\n"),
+				count: entries.length,
+			};
+		} catch (e: any) {
+			return { error: `Failed to list memories: ${e.message}` };
+		}
+	}
+
+	private async searchMemories(args: {
+		query: string;
+		limit?: number;
+	}): Promise<ToolResult> {
+		if (!this.personaLoader) {
+			return {
+				error:
+					"Memory search is disabled. Enable the intelligence layer in Settings.",
+			};
+		}
+
+		try {
+			const entries = await this.personaLoader.memoryStore.search(args.query);
+			const limit = Math.min(args.limit ?? 10, 50);
+			const limited = entries.slice(0, limit);
+
+			if (limited.length === 0) {
+				return { success: true, content: "No memories match your query." };
+			}
+
+			const lines = limited.map(
+				(e) =>
+					`- [${e.timestamp}] **${e.category}**: ${e.content}${e.tags.length ? " " + e.tags.map((t) => `#${t}`).join(" ") : ""} [id:${e.id}]`,
+			);
+			return {
+				success: true,
+				content: lines.join("\n"),
+				count: limited.length,
+			};
+		} catch (e: any) {
+			return { error: `Failed to search memories: ${e.message}` };
+		}
 	}
 
 	private async searchPastSessions(args: {

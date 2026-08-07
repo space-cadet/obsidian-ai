@@ -1,20 +1,20 @@
 # Session Cache
 
 *Created: 2026-07-13 22:41:55 IST*
-*Last Updated: 2026-08-05 17:48:15 IST*
+*Last Updated: 2026-08-02 20:18 IST*
 
 ## Current Session
-**Started**: 2026-08-05
-**Ended**: 2026-08-05
-**Focus Task**: T39 — Integration Provider API for External Obsidian Plugins
-**Session File**: `memory-bank/sessions/2026-08-05-night.md`
+**Started**: 2026-08-02 18:22 IST
+**Ended**: 2026-08-02 20:18 IST
+**Focus Task**: T32 — Security Hardening + Desktop Duplication Bug
+**Session File**: `memory-bank/sessions/2026-08-02-evening.md`
 **Status**: ✅ COMPLETED
 
 ## Overview
 
-- Active: 6 | Paused: 4 | Completed: 22
-- Last Session: 2026-08-05-night
-- Current Period: night
+- Active: 6 | Paused: 0 | Completed: 20
+- Last Session: 2026-07-29-afternoon
+- Current Period: evening
 
 ## Task Registry
 - T11: Debug Logging & Diagnostics — 🔄
@@ -24,13 +24,7 @@
 - T22: ChatApp Decomposition — 🔄
 - T26: AI Intelligence Layer — 🔄
 - T32: Security Hardening — ✅ COMPLETED (2026-08-02)
-- T33: Desktop Chat View Singleton Repair — ✅ COMPLETED (2026-08-04)
-- T34: Per-Tab Chat Process Isolation — ✅ COMPLETED and manually verified (2026-08-05)
-- T37: Idempotent Bulk Note Creation and Batch Scope Decision — ✅ COMPLETED (2026-08-05)
-- T38: Tool Approval Policies, Batch Plans, and Operation Audit Log — ⏸️ PAUSED (2026-08-05)
-- T39: Integration Provider API for External Obsidian Plugins — 🔄 IN PROGRESS (2026-08-05)
-- T39a: Provider API Host, Lifecycle, and Tool-Policy Boundary — 🔄 IN PROGRESS (2026-08-05)
-- T39b: Obsidian Git as the First AI Tool Provider — ⏸️ PAUSED (2026-08-05)
+- T33: Desktop Chat View Duplication — ✅ COMPLETED (2026-08-02)
 
 ## Active Tasks
 
@@ -61,24 +55,9 @@
 **Context**: Phase 2 complete (SessionSummarizer). Phases 3–5 pending.
 **Files**: `src/intelligence/PersonaLoader.ts`, `src/intelligence/SessionSummarizer.ts`
 
-### T39: Integration Provider API for External Obsidian Plugins
-**Status:** 🔄 **IN PROGRESS**
-**Priority:** HIGH
-**Started:** 2026-08-05 17:48 IST
-**Context**: Versioned peer-plugin provider platform. The host owns AI tool
-schemas, approval, audit, and rendering; providers own domain logic,
-credentials, settings, and manual UI.
-**Files**: `memory-bank/tasks/T39.md`, `memory-bank/tasks/T39a.md`,
-`memory-bank/tasks/T39b.md`, `memory-bank/implementation-details/integration-provider-api.md`
-**UI contract**: Integrations availability/enablement settings; generic
-descriptor-driven approval and inline result/progress cards; later compact
-tool-policy indicator. Provider configuration remains in its own plugin.
-**Implemented slice**: discovery/version validation, opt-in read-only normal
-chat tools, ToolExecutor dispatch, settings UI, generic labels, and tests.
-
 ## Session History (Last 5)
-1. `sessions/2026-08-05-night.md` — T15 Settings navigation and T34 per-tab process isolation, including manual verification
-2. `sessions/2026-08-04-night.md` — T33 Desktop Chat View Singleton Repair
-3. `sessions/2026-08-02-evening.md` — T32 Security Hardening
-4. `sessions/2026-07-29-afternoon.md` — T15 Past-session search + T27-31 bug fixes
-5. `sessions/2026-07-28-afternoon.md` — T29 Android investigation + repo migration
+1. `sessions/2026-08-02-evening.md` — T32 Security Hardening
+2. `sessions/2026-07-29-afternoon.md` — T15 Past-session search + T27-31 bug fixes
+3. `sessions/2026-07-28-afternoon.md` — T29 Android investigation + repo migration
+4. `sessions/2026-07-28-morning.md` — T26 Phase 1 + T27-30 bug fixes
+5. `sessions/2026-07-25-afternoon.md` — T22 Phase 3 + T15 tabs
