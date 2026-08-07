@@ -118,6 +118,10 @@ export class ToolExecutor {
 					return await this.searchMemories(
 						call.args as { query: string; limit?: number },
 					);
+				case "read_memory_audit":
+					return await this.readMemoryAudit(
+						call.args as { limit?: number },
+					);
 				case "search_past_sessions":
 					return await this.searchPastSessions(
 						call.args as { query: string; limit?: number },
@@ -1127,6 +1131,49 @@ export class ToolExecutor {
 			};
 		} catch (e: any) {
 			return { error: `Failed to search memories: ${e.message}` };
+		}
+	}
+
+	private async readMemoryAudit(args: {
+		limit?: number;
+	}): Promise<ToolResult> {
+		if (!this.personaLoader) {
+			return {
+				error:
+					"Memory audit is disabled. Enable the intelligence layer in Settings.",
+			};
+		}
+
+		if (!this.settings?.intelligence.enableMemoryAuditTool) {
+			return {
+				error:
+					"Memory audit tool is disabled. Enable it in Settings → AI Intelligence Layer.",
+			};
+		}
+
+		try {
+			const entries = await this.personaLoader.memoryStore.readAudit(
+				args.limit ?? 20,
+			);
+			if (entries.length === 0) {
+				return { success: true, content: "No audit entries found." };
+			}
+
+			const lines = entries.map((e) => {
+				const time = new Date(e.timestamp).toLocaleString();
+				const icon = e.operation === "create" ? "+" : e.operation === "update" ? "✎" : "−";
+				const preview = e.content
+					? `"${e.content.slice(0, 60)}${e.content.length > 60 ? "…" : ""}"`
+					: "";
+				return `${time} ${icon} ${e.operation} [${e.entryId}] ${preview}`;
+			});
+			return {
+				success: true,
+				content: lines.join("\n"),
+				count: entries.length,
+			};
+		} catch (e: any) {
+			return { error: `Failed to read memory audit: ${e.message}` };
 		}
 	}
 

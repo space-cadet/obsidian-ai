@@ -124,6 +124,21 @@ export function renderIntelligenceSection(
 			});
 	}
 
+	new Setting(sectionEl)
+		.setName("Enable memory audit tool")
+		.setDesc(
+			"When enabled, the AI can query the memory audit log via the read_memory_audit tool. " +
+			"Useful for debugging memory issues. Off by default to prevent context bloat.",
+		)
+		.addToggle((toggle) => {
+			toggle
+				.setValue(plugin.settings.intelligence.enableMemoryAuditTool)
+				.onChange(async (value) => {
+					plugin.settings.intelligence.enableMemoryAuditTool = value;
+					await saveSettings();
+				});
+		});
+
 	// ── Memory Stats & Export ──
 	const statsEl = sectionEl.createEl("div", { cls: "setting-item" });
 	statsEl.style.padding = "12px 16px";

@@ -24,6 +24,7 @@ const EXPECTED_TOOLS = [
 	"delete_memory",
 	"list_memories",
 	"search_memories",
+	"read_memory_audit",
 	"search_past_sessions",
 ];
 

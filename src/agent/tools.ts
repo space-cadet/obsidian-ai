@@ -345,6 +345,20 @@ export const searchMemoriesTool = t({
 	}),
 });
 
+export const readMemoryAuditTool = t({
+	description:
+		"Read the memory audit log — a record of create, update, and delete operations. " +
+		"Use when the user asks about memory history, what was changed, or to debug memory issues. " +
+		"Requires the memory audit tool to be enabled in Settings.",
+	inputSchema: z.object({
+		limit: z
+			.number()
+			.optional()
+			.default(20)
+			.describe("Maximum audit entries to return (default 20)"),
+	}),
+});
+
 export const searchPastSessionsTool = t({
 	description:
 		"Search past chat sessions by topic, keyword, or content. " +
@@ -382,5 +396,6 @@ export const noteTools = {
 	delete_memory: deleteMemoryTool,
 	list_memories: listMemoriesTool,
 	search_memories: searchMemoriesTool,
+	read_memory_audit: readMemoryAuditTool,
 	search_past_sessions: searchPastSessionsTool,
 };

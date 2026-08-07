@@ -10,6 +10,8 @@ export interface IntelligenceSettings {
 	autoSummarize: boolean;
 	/** Min messages before auto-summarization triggers */
 	autoSummarizeMinMessages: number;
+	/** Allow AI to query memory audit log via read_memory_audit tool */
+	enableMemoryAuditTool: boolean;
 }
 
 export type ProviderType =
@@ -290,6 +292,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 		identityContextBudget: 2000,
 		autoSummarize: false,
 		autoSummarizeMinMessages: 4,
+		enableMemoryAuditTool: false,
 	},
 };
 
@@ -364,6 +367,7 @@ export const normalizeSettings = (
 			identityContextBudget: merged.intelligence?.identityContextBudget ?? 2000,
 			autoSummarize: Boolean(merged.intelligence?.autoSummarize ?? false),
 			autoSummarizeMinMessages: merged.intelligence?.autoSummarizeMinMessages ?? 4,
+			enableMemoryAuditTool: Boolean(merged.intelligence?.enableMemoryAuditTool ?? false),
 		},
 	};
 };
