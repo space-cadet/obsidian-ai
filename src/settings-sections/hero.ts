@@ -11,10 +11,6 @@ export function renderHeroSection(
 	const profile = getActiveProviderProfile(plugin.settings);
 	const heroEl = containerEl.createDiv({ cls: "obsidian-ai-settings-hero" });
 	const copyEl = heroEl.createDiv();
-	copyEl.createEl("div", {
-		text: "Obsidian AI Settings",
-		cls: "obsidian-ai-settings-eyebrow",
-	});
 	copyEl.createEl("h2", { text: "Settings" });
 	copyEl.createEl("p", {
 		text: "Provider profiles, chat defaults, commands, and diagnostics.",

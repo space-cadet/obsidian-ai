@@ -140,22 +140,16 @@ export function renderIntelligenceSection(
 		});
 
 	// ── Memory Stats & Export ──
-	const statsEl = sectionEl.createEl("div", { cls: "setting-item" });
-	statsEl.style.padding = "12px 16px";
-	statsEl.style.borderTop = "1px solid var(--background-modifier-border)";
-	statsEl.style.marginTop = "8px";
+	const statsEl = sectionEl.createEl("div", { cls: "obsidian-ai-memory-stats" });
 
-	const statsLabel = statsEl.createEl("div", { text: "Memory Statistics", cls: "setting-item-name" });
-	statsLabel.style.fontWeight = "600";
-	statsLabel.style.marginBottom = "8px";
+	const statsHeader = statsEl.createEl("div", { cls: "obsidian-ai-memory-stats-header" });
 
-	const statsContent = statsEl.createEl("div", { cls: "setting-item-description" });
-	statsContent.style.fontSize = "0.9em";
-	statsContent.style.lineHeight = "1.6";
+	const statsContent = statsEl.createEl("div", { cls: "obsidian-ai-memory-categories" });
 
 	async function refreshStats() {
 		if (!plugin.personaLoader) {
-			statsContent.textContent = "Intelligence layer not initialized.";
+			statsHeader.empty();
+			statsHeader.createEl("span", { text: "Intelligence layer not initialized." });
 			return;
 		}
 		try {
@@ -186,20 +180,34 @@ export function renderIntelligenceSection(
 					? `${(totalSize / 1024).toFixed(1)} KB`
 					: `${(totalSize / (1024 * 1024)).toFixed(1)} MB`;
 
+			statsHeader.empty();
+			statsHeader.createEl("strong", { text: String(entries.length) });
+			statsHeader.appendText(" entries · ");
+			statsHeader.createEl("strong", { text: sizeStr });
+			statsHeader.appendText(" total");
+
 			const categories: Record<string, number> = {};
 			for (const e of entries) {
 				categories[e.category] = (categories[e.category] || 0) + 1;
 			}
-			const catLines = Object.entries(categories)
-				.map(([cat, count]) => `  • ${cat}: ${count}`)
-				.join("\n");
 
-			statsContent.innerHTML = `
-<strong>${entries.length}</strong> entries | <strong>${sizeStr}</strong> total<br/>
-${catLines || "  No categorized entries yet."}
-			`.trim();
+			statsContent.empty();
+			for (const [cat, count] of Object.entries(categories).sort((a, b) => b[1] - a[1])) {
+				statsContent.createEl("span", {
+					text: `${cat}: ${count}`,
+					cls: "obsidian-ai-memory-chip",
+				});
+			}
+			if (Object.keys(categories).length === 0) {
+				statsContent.createEl("span", {
+					text: "No categorized entries yet.",
+					cls: "obsidian-ai-memory-chip",
+					attr: { style: "opacity: 0.6;" },
+				});
+			}
 		} catch (e) {
-			statsContent.textContent = "Unable to read memory statistics.";
+			statsHeader.empty();
+			statsHeader.createEl("span", { text: "Unable to read memory statistics." });
 		}
 	}
 	void refreshStats();
@@ -272,22 +280,11 @@ ${catLines || "  No categorized entries yet."}
 	refreshBtn.addEventListener("click", () => void refreshStats());
 
 	// ── Audit Log ──
-	const auditEl = sectionEl.createEl("details", { cls: "setting-item" });
-	auditEl.style.padding = "12px 16px";
-	auditEl.style.borderTop = "1px solid var(--background-modifier-border)";
-	auditEl.style.marginTop = "8px";
+	const auditEl = sectionEl.createEl("details", { cls: "obsidian-ai-settings-details" });
 
 	const auditSummary = auditEl.createEl("summary", { text: "Memory Audit Log" });
-	auditSummary.style.fontWeight = "600";
-	auditSummary.style.cursor = "pointer";
-	auditSummary.style.userSelect = "none";
 
-	const auditContent = auditEl.createEl("div", { cls: "setting-item-description" });
-	auditContent.style.fontSize = "0.85em";
-	auditContent.style.lineHeight = "1.6";
-	auditContent.style.marginTop = "8px";
-	auditContent.style.maxHeight = "300px";
-	auditContent.style.overflow = "auto";
+	const auditContent = auditEl.createEl("div", { cls: "details-content" });
 
 	async function refreshAudit() {
 		if (!plugin.personaLoader) {
@@ -300,13 +297,18 @@ ${catLines || "  No categorized entries yet."}
 				auditContent.textContent = "No audit entries yet. Memory operations will be logged here.";
 				return;
 			}
-			const lines = entries.map((e) => {
+			auditContent.empty();
+			for (const e of entries) {
 				const time = new Date(e.timestamp).toLocaleString();
 				const icon = e.operation === "create" ? "+" : e.operation === "update" ? "✎" : "−";
+				const color = e.operation === "create" ? "var(--interactive-accent)" : e.operation === "update" ? "var(--text-normal)" : "var(--text-error)";
 				const preview = e.content ? `"${e.content.slice(0, 60)}${e.content.length > 60 ? "…" : ""}"` : "";
-				return `<span style="color:var(--text-muted)">${time}</span> <strong>${icon} ${e.operation}</strong> [${e.entryId}] ${preview}`;
-			});
-			auditContent.innerHTML = lines.join("<br/>");
+				const line = auditContent.createEl("div", { cls: "obsidian-ai-audit-entry" });
+				line.createEl("span", { text: time, attr: { style: "color: var(--text-muted);" } });
+				line.appendText(" ");
+				line.createEl("strong", { text: `${icon} ${e.operation}`, attr: { style: `color: ${color};` } });
+				line.appendText(` [${e.entryId}] ${preview}`);
+			}
 		} catch (e) {
 			auditContent.textContent = "Unable to read audit log.";
 		}

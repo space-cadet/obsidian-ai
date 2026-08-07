@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obsidian AI Settings — Improved Mockup</title>
+  <style>
+    /* ── Base Obsidian-like Theme ── */
+    :root {
+      --background-primary: #1e1e1e;
+      --background-primary-alt: #262626;
+      --background-secondary: #252526;
+      --background-modifier-border: #3e3e42;
+      --background-modifier-border-hover: #4e4e52;
+      --background-modifier-hover: #2a2d2e;
+      --text-normal: #cccccc;
+      --text-muted: #858585;
+      --text-faint: #6e6e6e;
+      --text-accent: #7ee787;
+      --text-on-accent: #1e1e1e;
+      --interactive-accent: #7ee787;
+      --interactive-accent-rgb: 126, 231, 135;
+      --font-ui-small: 13px;
+      --font-ui-smaller: 11px;
+      --font-monospace: 'SF Mono', Monaco, 'Courier New', monospace;
+      --radius-m: 8px;
+      --radius-l: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: var(--font-ui-small);
+      background: var(--background-primary);
+      color: var(--text-normal);
+      line-height: 1.5;
+      padding: 20px;
+    }
+
+    /* ── Layout: Sidebar + Content ── */
+    .settings-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* ── Sidebar Navigation ── */
+    .settings-sidebar {
+      position: sticky;
+      top: 20px;
+      height: fit-content;
+    }
+
+    .settings-sidebar-title {
+      font-size: var(--font-ui-smaller);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      padding-left: 8px;
+    }
+
+    .nav-group {
+      margin-bottom: 16px;
+    }
+
+    .nav-group-label {
+      font-size: var(--font-ui-smaller);
+      font-weight: 600;
+      color: var(--text-faint);
+      padding: 4px 8px;
+      margin-bottom: 2px;
+    }
+
+    .nav-item {
+      display: block;
+      width: 100%;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: var(--font-ui-small);
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .nav-item:hover {
+      background: var(--background-modifier-hover);
+      color: var(--text-normal);
+    }
+
+    .nav-item.is-active {
+      background: color-mix(in srgb, var(--interactive-accent) 15%, transparent);
+      color: var(--interactive-accent);
+      font-weight: 600;
+    }
+
+    /* ── Content Area ── */
+    .settings-content {
+      min-width: 0;
+    }
+
+    /* ── Hero (Simplified) ── */
+    .settings-hero {
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: var(--radius-l);
+      background: var(--background-secondary);
+    }
+
+    .settings-hero h2 {
+      font-size: 1.3rem;
+      margin-bottom: 4px;
+    }
+
+    .settings-hero p {
+      color: var(--text-muted);
+      font-size: var(--font-ui-small);
+    }
+
+    .hero-meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .hero-meta-item {
+      padding: 8px 10px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: var(--radius-m);
+      background: var(--background-primary);
+    }
+
+    .hero-meta-label {
+      font-size: var(--font-ui-smaller);
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .hero-meta-value {
+      font-family: var(--font-monospace);
+      font-size: var(--font-ui-small);
+      word-break: break-word;
+    }
+
+    /* ── Section Cards ── */
+    .section-card {
+      margin-bottom: 16px;
+      padding: 16px 18px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: var(--radius-l);
+      background: var(--background-secondary);
+    }
+
+    .section-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 4px;
+    }
+
+    .section-desc {
+      color: var(--text-muted);
+      font-size: var(--font-ui-small);
+      margin-bottom: 14px;
+      max-width: 70ch;
+    }
+
+    /* ── Setting Rows ── */
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--background-modifier-border);
+    }
+
+    .setting-row:last-child {
+      border-bottom: none;
+    }
+
+    .setting-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .setting-name {
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .setting-desc {
+      font-size: var(--font-ui-smaller);
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .setting-control {
+      flex-shrink: 0;
+    }
+
+    /* Toggle switch */
+    .toggle {
+      width: 40px;
+      height: 22px;
+      background: var(--background-modifier-border);
+      border-radius: 11px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .toggle.is-on {
+      background: var(--interactive-accent);
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s ease;
+    }
+
+    .toggle.is-on::after {
+      transform: translateX(18px);
+    }
+
+    /* Text inputs */
+    input[type="text"],
+    input[type="password"],
+    textarea,
+    select {
+      padding: 6px 10px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: 6px;
+      background: var(--background-primary);
+      color: var(--text-normal);
+      font-size: var(--font-ui-small);
+      font-family: inherit;
+      outline: none;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--interactive-accent);
+      box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+      font-family: var(--font-monospace);
+      line-height: 1.5;
+    }
+
+    /* ── Profile Cards ── */
+    .profile-list {
+      margin-top: 12px;
+    }
+
+    .profile-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      background: var(--background-primary);
+      border: 1px solid var(--background-modifier-border);
+      border-radius: var(--radius-m);
+      transition: all 0.15s ease;
+    }
+
+    .profile-card:hover {
+      border-color: var(--interactive-accent);
+    }
+
+    .profile-card.is-active {
+      border-color: var(--interactive-accent);
+      background: color-mix(in srgb, var(--interactive-accent) 6%, var(--background-primary));
+      box-shadow: inset 3px 0 0 var(--interactive-accent);
+    }
+
+    .profile-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .profile-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .profile-name-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+
+    .profile-name {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .profile-badge {
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: var(--interactive-accent);
+      color: var(--text-on-accent);
+      font-weight: 500;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .profile-meta {
+      font-size: var(--font-ui-smaller);
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .profile-details {
+      display: flex;
+      gap: 16px;
+      flex: 2;
+      min-width: 0;
+    }
+
+    .profile-detail-col {
+      min-width: 0;
+    }
+
+    .profile-detail-label {
+      font-size: 10px;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+
+    .profile-detail-value {
+      font-family: var(--font-monospace);
+      font-size: var(--font-ui-smaller);
+      color: var(--text-normal);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+    }
+
+    .profile-status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .profile-status.is-ok { background: #4caf50; }
+    .profile-status.is-warn { background: #ff9800; }
+
+    .profile-actions {
+      display: flex;
+      gap: 2px;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .profile-card:hover .profile-actions {
+      opacity: 1;
+    }
+
+    .icon-btn {
+      width: 26px;
+      height: 26px;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: all 0.15s ease;
+    }
+
+    .icon-btn:hover {
+      background: var(--background-modifier-hover);
+      color: var(--text-normal);
+    }
+
+    .icon-btn.is-danger:hover {
+      background: rgba(244, 67, 54, 0.15);
+      color: #f44336;
+    }
+
+    /* ── Metrics Grid ── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 8px 0 16px;
+    }
+
+    .metric-card {
+      padding: 10px 12px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: var(--radius-m);
+      background: var(--background-primary);
+    }
+
+    .metric-label {
+      font-size: var(--font-ui-smaller);
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-family: var(--font-monospace);
+      font-size: 1.1rem;
+      color: var(--text-normal);
+    }
+
+    .metric-value.is-warning { color: #ff9800; }
+    .metric-value.is-danger { color: #f44336; }
+
+    /* ── Usage Bars ── */
+    .usage-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+    }
+
+    .usage-bar-label {
+      width: 120px;
+      font-size: var(--font-ui-smaller);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex-shrink: 0;
+    }
+
+    .usage-bar-track {
+      flex: 1;
+      height: 8px;
+      background: var(--background-modifier-border);
+      border-radius: 4px;
+      overflow: hidden;
+      min-width: 60px;
+    }
+
+    .usage-bar-fill {
+      height: 100%;
+      background: var(--interactive-accent);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .usage-bar-value {
+      width: 80px;
+      text-align: right;
+      font-family: var(--font-monospace);
+      font-size: var(--font-ui-smaller);
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    /* ── Memory Stats ── */
+    .memory-stats {
+      padding: 12px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: var(--radius-m);
+      background: var(--background-primary);
+      margin-top: 8px;
+    }
+
+    .memory-stats-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: var(--font-ui-small);
+    }
+
+    .memory-stats-header strong {
+      color: var(--text-normal);
+    }
+
+    .memory-categories {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .memory-chip {
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
+      color: var(--interactive-accent);
+      font-size: var(--font-ui-smaller);
+      font-weight: 500;
+    }
+
+    /* ── Details / Disclosure ── */
+    .details-block {
+      margin-top: 8px;
+      border-top: 1px solid var(--background-modifier-border);
+      padding-top: 12px;
+    }
+
+    .details-summary {
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-normal);
+    }
+
+    .details-summary::before {
+      content: '▸';
+      color: var(--text-muted);
+      font-size: 10px;
+      transition: transform 0.15s ease;
+      display: inline-block;
+    }
+
+    .details-block[open] .details-summary::before {
+      transform: rotate(90deg);
+    }
+
+    .details-content {
+      margin-top: 8px;
+      padding: 8px;
+      background: var(--background-primary);
+      border-radius: var(--radius-m);
+      font-size: var(--font-ui-smaller);
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-height: 300px;
+      overflow: auto;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 6px 14px;
+      border: none;
+      border-radius: 6px;
+      font-size: var(--font-ui-small);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary {
+      background: var(--interactive-accent);
+      color: var(--text-on-accent);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.1);
+    }
+
+    .btn-secondary {
+      background: var(--background-modifier-hover);
+      color: var(--text-normal);
+    }
+
+    .btn-warning {
+      background: rgba(244, 67, 54, 0.15);
+      color: #f44336;
+    }
+
+    /* ── Command Cards ── */
+    .command-card {
+      padding: 14px;
+      margin-bottom: 10px;
+      border: 1px solid var(--background-modifier-border);
+      border-radius: var(--radius-m);
+      background: var(--background-primary);
+    }
+
+    .command-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .command-trigger {
+      font-family: var(--font-monospace);
+      font-size: var(--font-ui-small);
+      color: var(--interactive-accent);
+      font-weight: 600;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      .settings-layout {
+        grid-template-columns: 1fr;
+      }
+      .settings-sidebar {
+        position: static;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .nav-group {
+        display: contents;
+      }
+      .nav-group-label { display: none; }
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .profile-details {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="settings-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="settings-sidebar">
+      <div class="settings-sidebar-title">Settings</div>
+      
+      <div class="nav-group">
+        <div class="nav-group-label">AI Setup</div>
+        <button class="nav-item is-active" onclick="showSection('profiles')">Provider Profiles</button>
+        <button class="nav-item" onclick="showSection('websearch')">Web Search</button>
+        <button class="nav-item" onclick="showSection('integrations')">Integrations</button>
+      </div>
+      
+      <div class="nav-group">
+        <div class="nav-group-label">Behavior</div>
+        <button class="nav-item" onclick="showSection('chatdefaults')">Chat Defaults</button>
+        <button class="nav-item" onclick="showSection('agenttools')">Agent Tools</button>
+        <button class="nav-item" onclick="showSection('intelligence')">Intelligence</button>
+        <button class="nav-item" onclick="showSection('commands')">Custom Commands</button>
+      </div>
+      
+      <div class="nav-group">
+        <div class="nav-group-label">System</div>
+        <button class="nav-item" onclick="showSection('advanced')">Advanced</button>
+        <button class="nav-item" onclick="showSection('diagnostics')">Diagnostics</button>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="settings-content">
+      <!-- Hero (Simplified) -->
+      <div class="settings-hero">
+        <h2>Settings</h2>
+        <p>Provider profiles, chat defaults, commands, and diagnostics.</p>
+        <div class="hero-meta">
+          <div class="hero-meta-item">
+            <div class="hero-meta-label">Active profile</div>
+            <div class="hero-meta-value">Gemini Default</div>
+          </div>
+          <div class="hero-meta-item">
+            <div class="hero-meta-label">Provider</div>
+            <div class="hero-meta-value">Gemini</div>
+          </div>
+          <div class="hero-meta-item">
+            <div class="hero-meta-label">Model</div>
+            <div class="hero-meta-value">gemini-3-flash</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Provider Profiles -->
+      <div class="section-card" id="profiles">
+        <h3>Provider Profiles</h3>
+        <p class="section-desc">Store multiple provider configurations and switch between them without rewriting credentials.</p>
+        
+        <div class="profile-list">
+          <!-- Active Profile -->
+          <div class="profile-card is-active">
+            <div class="profile-icon" style="background: #8E75B2;">G</div>
+            <div class="profile-info">
+              <div class="profile-name-row">
+                <span class="profile-name">Gemini Default</span>
+                <span class="profile-badge">Default</span>
+              </div>
+              <div class="profile-meta">Gemini · gemini-3-flash-exp</div>
+            </div>
+            <div class="profile-details">
+              <div class="profile-detail-col">
+                <div class="profile-detail-label">Model</div>
+                <div class="profile-detail-value" title="gemini-3-flash-exp">gemini-3-flash-exp</div>
+              </div>
+              <div class="profile-detail-col">
+                <div class="profile-detail-label">Endpoint</div>
+                <div class="profile-detail-value">generativelanguage.googleapis.com</div>
+              </div>
+              <div class="profile-detail-col">
+                <div class="profile-detail-label">Key</div>
+                <div class="profile-detail-value">AIza…Rinw</div>
+              </div>
+            </div>
+            <div class="profile-status is-ok" title="Ready"></div>
+            <div class="profile-actions">
+              <button class="icon-btn" title="Edit">✏️</button>
+              <button class="icon-btn" title="Duplicate">📋</button>
+              <button class="icon-btn" title="Test">🔌</button>
+              <button class="icon-btn" title="Set default">⭐</button>
+              <button class="icon-btn is-danger" title="Delete">🗑️</button>
+            </div>
+          </div>
+
+          <!-- Inactive Profile -->
+          <div class="profile-card">
+            <div class="profile-icon" style="background: #10A37F;">O</div>
+            <div class="profile-info">
+              <div class="profile-name-row">
+                <span class="profile-name">OpenAI Backup</span>
+              </div>
+              <div class="profile-meta">OpenAI · gpt-4o-mini</div>
+            </div>
+            <div class="profile-details">
+              <div class="profile-detail-col">
+                <div class="profile-detail-label">Model</div>
+                <div class="profile-detail-value">gpt-4o-mini</div>
+              </div>
+              <div class="profile-detail-col">
+                <div class="profile-detail-label">Endpoint</div>
+                <div class="profile-detail-value">api.openai.com</div>
+              </div>
+              <div class="profile-detail-col">
+                <div class="profile-detail-label">Key</div>
+                <div class="profile-detail-value">sk-…9x2a</div>
+              </div>
+            </div>
+            <div class="profile-status is-ok" title="Ready"></div>
+            <div class="profile-actions">
+              <button class="icon-btn" title="Edit">✏️</button>
+              <button class="icon-btn" title="Duplicate">📋</button>
+              <button class="icon-btn" title="Test">🔌</button>
+              <button class="icon-btn" title="Set default">⭐</button>
+              <button class="icon-btn is-danger" title="Delete">🗑️</button>
+            </div>
+          </div>
+
+          <!-- Profile with missing key -->
+          <div class="profile-card">
+            <div class="profile-icon" style="background: #FF6B6B;">K</div>
+            <div class="profile-info">
+              <div class="profile-name-row">
+                <span class="profile-name">Kimi</span>
+              </div>
+              <div class="profile-meta">Kimi · kimi-k2</div>
+            </div>
+            <div class="profile-details">
+              <div class="profile-detail-col">
+                <div class="profile-detail-label">Model</div>
+                <div class="profile-detail-value">kimi-k2</div>
+              </div>
+              <div class="profile-detail-col">
+                <div class="profile-detail-label">Endpoint</div>
+                <div class="profile-detail-value">api.moonshot.cn</div>
+              </div>
+              <div class="profile-detail-col">
+                <div class="profile-detail-label">Key</div>
+                <div class="profile-detail-value" style="color: var(--text-faint); font-style: italic;">Not set</div>
+              </div>
+            </div>
+            <div class="profile-status is-warn" title="API key missing"></div>
+            <div class="profile-actions">
+              <button class="icon-btn" title="Edit">✏️</button>
+              <button class="icon-btn" title="Duplicate">📋</button>
+              <button class="icon-btn" title="Test">🔌</button>
+              <button class="icon-btn" title="Set default">⭐</button>
+              <button class="icon-btn is-danger" title="Delete">🗑️</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diagnostics (Showing improved design) -->
+      <div class="section-card" id="diagnostics">
+        <h3>Diagnostics</h3>
+        <p class="section-desc">Monitor runtime state, manage debug behavior, and clear saved chat data when needed.</p>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Debug log level</div>
+            <div class="setting-desc">Choose how much runtime information the plugin records.</div>
+          </div>
+          <div class="setting-control">
+            <select>
+              <option>Info</option>
+              <option>Debug</option>
+              <option>Errors only</option>
+              <option>Off</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-label">JS Heap Used</div>
+            <div class="metric-value">45.2 MB</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">JS Heap Total</div>
+            <div class="metric-value">64.0 MB</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">JS Heap Limit</div>
+            <div class="metric-value">512 MB</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">DOM Nodes</div>
+            <div class="metric-value">1,247</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Chat Sessions</div>
+            <div class="metric-value">12</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Total Messages</div>
+            <div class="metric-value">348</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">LLM Usage (est.)</div>
+            <div class="metric-value">~124K tokens</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Completed Responses</div>
+            <div class="metric-value">156 · 2.3s avg</div>
+          </div>
+        </div>
+
+        <!-- Usage by Model with Bars -->
+        <h4 style="font-size: var(--font-ui-small); margin: 12px 0 8px;">Estimated usage by model</h4>
+        <div class="usage-bar-row">
+          <span class="usage-bar-label">gemini-3-flash</span>
+          <div class="usage-bar-track">
+            <div class="usage-bar-fill" style="width: 78%;"></div>
+          </div>
+          <span class="usage-bar-value">~89,420</span>
+        </div>
+        <div class="usage-bar-row">
+          <span class="usage-bar-label">gpt-4o-mini</span>
+          <div class="usage-bar-track">
+            <div class="usage-bar-fill" style="width: 35%;"></div>
+          </div>
+          <span class="usage-bar-value">~28,100</span>
+        </div>
+        <div class="usage-bar-row">
+          <span class="usage-bar-label">kimi-k2</span>
+          <div class="usage-bar-track">
+            <div class="usage-bar-fill" style="width: 12%;"></div>
+          </div>
+          <span class="usage-bar-value">~6,800</span>
+        </div>
+
+        <!-- Plugin Storage -->
+        <div class="setting-row" style="margin-top: 12px;">
+          <div class="setting-info">
+            <div class="setting-name">Plugin Storage</div>
+            <div class="setting-desc">2.4 MB total · 1.8 MB chats · 0.4 MB attachments · 0.2 MB settings</div>
+          </div>
+          <div class="setting-control">
+            <button class="btn btn-secondary">Refresh</button>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Clear all chat history</div>
+            <div class="setting-desc">Permanently delete all saved chat sessions. This action cannot be undone.</div>
+          </div>
+          <div class="setting-control">
+            <button class="btn btn-warning">Clear History</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Intelligence (Improved Memory Stats) -->
+      <div class="section-card" id="intelligence">
+        <h3>AI Intelligence Layer</h3>
+        <p class="section-desc">Give the AI persistent memory, identity, and cross-session awareness.</p>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Enable intelligence layer</div>
+            <div class="setting-desc">When enabled, the AI loads a persistent persona and memory on every session.</div>
+          </div>
+          <div class="setting-control">
+            <div class="toggle is-on"></div>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Identity context budget</div>
+            <div class="setting-desc">Max tokens for persona + memory injected into the system prompt.</div>
+          </div>
+          <div class="setting-control">
+            <input type="text" value="2000" style="width: 80px; text-align: center;">
+          </div>
+        </div>
+
+        <!-- Improved Memory Stats -->
+        <div class="memory-stats">
+          <div class="memory-stats-header">
+            <strong>102</strong> entries · <strong>74.5 KB</strong> total
+          </div>
+          <div class="memory-categories">
+            <span class="memory-chip">project: 50</span>
+            <span class="memory-chip">reference: 9</span>
+            <span class="memory-chip">user_fact: 3</span>
+            <span class="memory-chip">decision: 2</span>
+            <span class="memory-chip">preference: 38</span>
+          </div>
+          <div style="margin-top: 10px; display: flex; gap: 8px;">
+            <button class="btn btn-primary" style="font-size: var(--font-ui-smaller); padding: 4px 10px;">Export JSON</button>
+            <button class="btn btn-secondary" style="font-size: var(--font-ui-smaller); padding: 4px 10px;">Export Markdown</button>
+            <button class="btn btn-secondary" style="font-size: var(--font-ui-smaller); padding: 4px 10px;">Refresh</button>
+          </div>
+        </div>
+
+        <!-- Audit Log -->
+        <div class="details-block">
+          <div class="details-summary">Memory Audit Log</div>
+          <div class="details-content">
+            <div style="margin-bottom: 6px;"><span style="color: var(--text-muted);">8/7/2026, 9:45:23 PM</span> <strong style="color: var(--interactive-accent);">+ create</strong> [mem_abc123] "User prefers concise responses for code questions"</div>
+            <div style="margin-bottom: 6px;"><span style="color: var(--text-muted);">8/7/2026, 9:30:15 PM</span> <strong>✎ update</strong> [mem_def456] "Working on QHE/BHE paper — added braid model section"</div>
+            <div><span style="color: var(--text-muted);">8/7/2026, 8:12:00 PM</span> <strong style="color: #f44336;">− delete</strong> [mem_old789] "Old project: cron-digest viewer (deprecated)"</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advanced (Larger Textareas) -->
+      <div class="section-card" id="advanced">
+        <h3>Advanced</h3>
+        <p class="section-desc">Adjust inline prompt behavior and low-level interaction details.</p>
+
+        <div class="setting-row" style="flex-direction: column; align-items: stretch; gap: 8px;">
+          <div class="setting-info">
+            <div class="setting-name">Selection prompt</div>
+            <div class="setting-desc">System prompt used when the tooltip is triggered with selected text.</div>
+          </div>
+          <textarea placeholder="e.g., Summarize the selected text.">You are a helpful assistant. Summarize the user's selected text concisely while preserving key technical details.</textarea>
+        </div>
+
+        <div class="setting-row" style="flex-direction: column; align-items: stretch; gap: 8px;">
+          <div class="setting-info">
+            <div class="setting-name">Cursor prompt</div>
+            <div class="setting-desc">System prompt used when the tooltip is triggered without selected text.</div>
+          </div>
+          <textarea placeholder="e.g., Generate text based on cursor position.">You are a helpful writing assistant. Continue the text naturally from the cursor position, matching the tone and style of the existing content.</textarea>
+        </div>
+      </div>
+
+      <!-- Custom Commands (Card Layout) -->
+      <div class="section-card" id="commands">
+        <h3>Custom Commands</h3>
+        <p class="section-desc">Add reusable inline-edit commands triggered by a shared prefix.</p>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <div class="setting-name">Command prefix</div>
+            <div class="setting-desc">The prefix used to trigger custom commands.</div>
+          </div>
+          <div class="setting-control">
+            <input type="text" value="/" style="width: 40px; text-align: center; font-family: var(--font-monospace);">
+          </div>
+        </div>
+
+        <div class="command-card">
+          <div class="command-card-header">
+            <span class="command-trigger">/chat-summary</span>
+            <button class="icon-btn is-danger" title="Delete">🗑️</button>
+          </div>
+          <textarea style="min-height: 60px; font-size: var(--font-ui-smaller);">Summarize this chat conversation into 3-5 bullet points highlighting key decisions and action items.</textarea>
+        </div>
+
+        <div class="command-card">
+          <div class="command-card-header">
+            <span class="command-trigger">/explain-code</span>
+            <button class="icon-btn is-danger" title="Delete">🗑️</button>
+          </div>
+          <textarea style="min-height: 60px; font-size: var(--font-ui-smaller);">Explain the selected code in simple terms. Identify the algorithm or pattern used, and note any potential edge cases or bugs.</textarea>
+        </div>
+
+        <button class="btn btn-primary" style="margin-top: 8px;">+ Add Command</button>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    function showSection(id) {
+      // In a real app, this would scroll to the section
+      // For the mockup, just highlight the nav item
+      document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('is-active'));
+      event.target.classList.add('is-active');
+    }
+  </script>
+</body>
+</html>

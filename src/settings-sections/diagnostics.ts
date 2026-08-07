@@ -206,15 +206,15 @@ export function renderDiagnosticsSection(
 			if (usage.modelEstimatedTokens.length === 0) {
 				modelUsageContent.createEl("p", { text: "No saved estimates yet.", cls: "setting-item-description" });
 			} else {
-				const table = modelUsageContent.createEl("table", { cls: "obsidian-ai-model-usage-table" });
-				const header = table.createEl("thead").createEl("tr");
-				header.createEl("th", { text: "Model" });
-				header.createEl("th", { text: "Estimated tokens" });
-				const body = table.createEl("tbody");
+				const maxTokens = Math.max(...usage.modelEstimatedTokens.map((u) => u.tokens));
 				for (const { model, tokens } of usage.modelEstimatedTokens) {
-					const row = body.createEl("tr");
-					row.createEl("td", { text: model, attr: { title: model } });
-					row.createEl("td", { text: `~${tokens.toLocaleString()}` });
+					const pct = maxTokens > 0 ? (tokens / maxTokens) * 100 : 0;
+					const row = modelUsageContent.createDiv({ cls: "obsidian-ai-usage-bar-row" });
+					row.createEl("span", { text: model, cls: "obsidian-ai-usage-bar-label", attr: { title: model } });
+					const track = row.createDiv({ cls: "obsidian-ai-usage-bar-track" });
+					const fill = track.createDiv({ cls: "obsidian-ai-usage-bar-fill" });
+					fill.style.width = `${pct}%`;
+					row.createEl("span", { text: `~${tokens.toLocaleString()}`, cls: "obsidian-ai-usage-bar-value" });
 				}
 			}
 		} catch {
@@ -261,28 +261,6 @@ export function renderDiagnosticsSection(
 					refreshMetrics().then(() => {
 						btn.setDisabled(false);
 					});
-				}),
-		);
-
-	new Setting(sectionEl)
-		.setName("Force garbage collection")
-		.setDesc(
-			"To force GC, open DevTools (Ctrl/Cmd+Shift+I) and run the GC profiler.",
-		)
-		.addButton((btn) =>
-			btn
-				.setButtonText("Open DevTools")
-				.onClick(() => {
-					// @ts-ignore
-					if (app?.vault?.adapter?.openDevTools) {
-						// @ts-ignore
-						app.vault.adapter.openDevTools();
-					} else {
-						new Notice(
-							"DevTools shortcut: Ctrl+Shift+I (or Cmd+Opt+I on macOS)",
-							8000,
-						);
-					}
 				}),
 		);
 
