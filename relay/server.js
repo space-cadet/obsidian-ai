@@ -72,7 +72,7 @@ wss.on("connection", (ws, req) => {
 	ws.on("message", (raw) => {
 		try {
 			const msg = JSON.parse(raw);
-			console.log(`[relay] ${roomId}: ${msg.userName || msg.userId || "?"}: ${msg.content?.slice(0, 50) || ""}`);
+			console.log(`[relay] ${roomId}: ${msg.agentName || msg.agentId || "?"}: ${msg.content?.slice(0, 50) || ""}`);
 			broadcast(roomId, ws, raw);
 		} catch {
 			// If not JSON, just forward raw

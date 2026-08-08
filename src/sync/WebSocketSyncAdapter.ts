@@ -46,8 +46,8 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 			this.ws.onmessage = (event) => {
 				try {
 					const msg = JSON.parse(event.data) as ChatMessage;
-					// Only process messages from other users
-					if (msg.userId !== this.userId) {
+					// Only process messages from other users (not echo of our own)
+					if (msg.agentId !== this.userId) {
 						this.messageCallback?.(msg);
 					}
 				} catch (err) {
