@@ -23,12 +23,15 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 	private readonly maxReconnectAttempts = 5;
 	private readonly reconnectDelay = 2000;
 
+	private explicitlyDisconnected = false;
+
 	constructor(private readonly relayUrl: string) {}
 
 	async connect(roomId: string, userId: string): Promise<void> {
 		this.roomId = roomId;
 		this.userId = userId;
 		this.reconnectAttempts = 0;
+		this.explicitlyDisconnected = false;
 		return this.doConnect();
 	}
 
@@ -57,7 +60,9 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 
 			this.ws.onclose = () => {
 				console.log("[WebSocketSync] Connection closed");
-				this.attemptReconnect();
+				if (!this.explicitlyDisconnected) {
+					this.attemptReconnect();
+				}
 			};
 
 			this.ws.onerror = (err) => {
@@ -82,12 +87,20 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 	}
 
 	disconnect(): void {
+		this.explicitlyDisconnected = true;
 		if (this.reconnectTimer) {
 			clearTimeout(this.reconnectTimer);
 			this.reconnectTimer = null;
 		}
-		this.ws?.close();
-		this.ws = null;
+		if (this.ws) {
+			// Remove handlers to prevent reconnect logic from firing
+			this.ws.onclose = null;
+			this.ws.onerror = null;
+			this.ws.onmessage = null;
+			this.ws.onopen = null;
+			this.ws.close();
+			this.ws = null;
+		}
 	}
 
 	async sendMessage(msg: ChatMessage): Promise<void> {
