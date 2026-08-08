@@ -24,9 +24,13 @@ export interface ChatPluginLike {
 	saveSettings(): Promise<void>;
 }
 
+import { WebSocketSyncAdapter } from "../sync/WebSocketSyncAdapter";
+import type { SyncAdapter } from "../sync/SyncAdapter";
+
 export class GroupChatView extends ItemView {
 	private root: Root | null = null;
 	private plugin: ChatPluginLike;
+	private syncAdapter: SyncAdapter | null = null;
 
 	constructor(leaf: WorkspaceLeaf, plugin: ChatPluginLike) {
 		super(leaf);
@@ -46,17 +50,33 @@ export class GroupChatView extends ItemView {
 	}
 
 	async onOpen(): Promise<void> {
+		// Create sync adapter if settings are configured
+		const { syncRelayUrl, syncRoomId, syncUserName } = this.plugin.settings;
+		if (syncRelayUrl) {
+			this.syncAdapter = new WebSocketSyncAdapter(syncRelayUrl);
+			try {
+				await this.syncAdapter.connect(syncRoomId, syncUserName);
+			} catch (err) {
+				console.error("[GroupChatView] Failed to connect sync adapter:", err);
+			}
+		}
+
 		this.root = createRoot(this.contentEl);
 		this.root.render(
 			createElement(
 				ChatErrorBoundary,
 				null,
-				createElement(GroupChatApp, { plugin: this.plugin }),
+				createElement(GroupChatApp, { 
+					plugin: this.plugin, 
+					syncAdapter: this.syncAdapter ?? undefined,
+				}),
 			),
 		);
 	}
 
 	async onClose(): Promise<void> {
+		this.syncAdapter?.disconnect();
+		this.syncAdapter = null;
 		this.root?.unmount();
 		this.root = null;
 	}

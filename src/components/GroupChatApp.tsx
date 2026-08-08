@@ -56,6 +56,10 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin, syncAdapter }) => {
 	const [isStreaming, setIsStreaming] = useState(false);
 	const [typingAgents, setTypingAgents] = useState<Set<string>>(new Set());
 	const [isConnected, setIsConnected] = useState(false);
+	const [showSyncSettings, setShowSyncSettings] = useState(false);
+	const [syncRelayUrl, setSyncRelayUrl] = useState(plugin.settings.syncRelayUrl);
+	const [syncRoomId, setSyncRoomId] = useState(plugin.settings.syncRoomId);
+	const [syncUserName, setSyncUserName] = useState(plugin.settings.syncUserName);
 	const controllerRef = useRef<AbortController | null>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -276,6 +280,14 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin, syncAdapter }) => {
 		});
 	}, []);
 
+	const handleSaveSyncSettings = useCallback(() => {
+		plugin.settings.syncRelayUrl = syncRelayUrl;
+		plugin.settings.syncRoomId = syncRoomId;
+		plugin.settings.syncUserName = syncUserName;
+		plugin.saveSettings();
+		new Notice("Sync settings saved. Reload group chat to connect.");
+	}, [plugin, syncRelayUrl, syncRoomId, syncUserName]);
+
 	return (
 		<div className="chat-app-container">
 			{/* Participant roster */}
@@ -319,9 +331,54 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin, syncAdapter }) => {
 							{isConnected ? "🟢 Synced" : "🔴 Offline"}
 						</span>
 					)}
+					<button
+						className="chat-btn chat-icon-btn"
+						onClick={() => setShowSyncSettings(!showSyncSettings)}
+						title="Sync settings"
+					>
+						<ObsidianIcon icon="settings" size={15} />
+					</button>
 					<span className="group-chat-badge">Council</span>
 				</div>
 			</div>
+
+			{showSyncSettings && (
+				<div className="group-chat-sync-settings">
+					<div className="sync-setting-row">
+						<label>Relay URL:</label>
+						<input
+							type="text"
+							value={syncRelayUrl}
+							onChange={(e) => setSyncRelayUrl(e.target.value)}
+							placeholder="ws://localhost:8080"
+						/>
+					</div>
+					<div className="sync-setting-row">
+						<label>Room ID:</label>
+						<input
+							type="text"
+							value={syncRoomId}
+							onChange={(e) => setSyncRoomId(e.target.value)}
+							placeholder="room-name"
+						/>
+					</div>
+					<div className="sync-setting-row">
+						<label>Your Name:</label>
+						<input
+							type="text"
+							value={syncUserName}
+							onChange={(e) => setSyncUserName(e.target.value)}
+							placeholder="Alice"
+						/>
+					</div>
+					<button className="chat-btn" onClick={handleSaveSyncSettings}>
+						Save & Reload
+					</button>
+					<p className="sync-setting-hint">
+						Save and reload the group chat view to connect.
+					</p>
+				</div>
+			)}
 
 			<div className="chat-messages-scroll">
 				{session.messages.map((msg) => (

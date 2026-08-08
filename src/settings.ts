@@ -99,6 +99,11 @@ export interface ObsidianAISettings {
 
 	// Intelligence Layer settings (T26)
 	intelligence: IntelligenceSettings;
+
+	// Multi-user sync settings (T40)
+	syncRelayUrl: string;
+	syncRoomId: string;
+	syncUserName: string;
 }
 
 type LegacySettings = Partial<ObsidianAISettings> & {
@@ -294,6 +299,11 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 		autoSummarizeMinMessages: 4,
 		enableMemoryAuditTool: false,
 	},
+
+	// Multi-user sync defaults (T40)
+	syncRelayUrl: "ws://localhost:8080",
+	syncRoomId: "obsidian-ai-chat",
+	syncUserName: "User",
 };
 
 export const normalizeSettings = (
@@ -369,6 +379,9 @@ export const normalizeSettings = (
 			autoSummarizeMinMessages: merged.intelligence?.autoSummarizeMinMessages ?? 4,
 			enableMemoryAuditTool: Boolean(merged.intelligence?.enableMemoryAuditTool ?? false),
 		},
+		syncRelayUrl: merged.syncRelayUrl ?? "ws://localhost:8080",
+		syncRoomId: merged.syncRoomId ?? "obsidian-ai-chat",
+		syncUserName: merged.syncUserName ?? "User",
 	};
 };
 
