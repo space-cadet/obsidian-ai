@@ -3,18 +3,22 @@
 *Last Updated: 2026-08-05 17:48:15 IST*
 
 ### T40: Multi-User Chat with LaTeX Support (2026-08-08)
-**Status:** 🔄 IN PROGRESS — PoP phase: WebSocket + WebRTC backends
+**Status:** ✅ PoP CODE COMPLETE — Build passes, ready for testing
 
 - Core architecture audit completed.
 - Decision: NO Supabase. Build WebSocket relay + WebRTC peer-to-peer backends.
 - Both implement unified `SyncAdapter` interface; plugin selects at runtime.
-- Phase 1: WebSocket relay server + adapter (for immediate testing)
-- Phase 2: WebRTC adapter (uses WebSocket relay as signaling server)
+- **Phase 1 PoP code written and building:**
+  - ✅ `relay/server.js` — WebSocket broadcast relay (room-based)
+  - ✅ `src/sync/SyncAdapter.ts` — Interface definition
+  - ✅ `src/sync/WebSocketSyncAdapter.ts` — WS implementation with reconnect
+  - ✅ `src/components/GroupChatApp.tsx` — Accepts sync adapter, sends/receives
+  - ✅ Build passes (`pnpm run build` clean)
 - Design principle: GroupChatApp is transport-agnostic — just calls `syncAdapter.sendMessage()`
 - Audit document: `memory-bank/implementation/multi-user-chat-audit.md`
 - Design document: `memory-bank/implementation/multi-user-chat-design.md`
 - Task tracking: `memory-bank/tasks/T40.md`
-- Next: Write relay server, WebSocketSyncAdapter, GroupChatApp integration
+- **Next: Test with two Obsidian instances + node relay/server.js**
 
 ---
 
