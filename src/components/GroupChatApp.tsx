@@ -16,8 +16,12 @@ import ChatInput from "./ChatInput";
 import ObsidianIcon from "./ObsidianIcon";
 import { getSessionTotalTokens } from "../lib/sessionUtils";
 
+import type { SyncAdapter } from "../sync/SyncAdapter";
+
 interface GroupChatAppProps {
 	plugin: ChatPluginLike;
+	/** Optional sync adapter for multi-user chat. If provided, messages are synced to remote peers. */
+	syncAdapter?: SyncAdapter;
 }
 
 const DEFAULT_PARTICIPANTS: GroupChatParticipant[] = [
@@ -38,7 +42,7 @@ function generateGroupTitle(messages: ChatMessage[]): string {
 	return text.length > 40 ? text.slice(0, 40) + "…" : text;
 }
 
-const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin }) => {
+const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin, syncAdapter }) => {
 	const [session, setSession] = useState<ChatSession>({
 		id: makeId(),
 		title: "",
@@ -51,8 +55,25 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin }) => {
 	});
 	const [isStreaming, setIsStreaming] = useState(false);
 	const [typingAgents, setTypingAgents] = useState<Set<string>>(new Set());
+	const [isConnected, setIsConnected] = useState(false);
 	const controllerRef = useRef<AbortController | null>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
+
+	// Listen for remote messages when sync adapter is provided
+	useEffect(() => {
+		if (!syncAdapter) return;
+
+		syncAdapter.onMessage((remoteMsg) => {
+			setSession((prev) => ({
+				...prev,
+				messages: [...prev.messages, remoteMsg],
+				updatedAt: Date.now(),
+			}));
+		});
+
+		// Mark as connected once adapter is set up
+		setIsConnected(true);
+	}, [syncAdapter]);
 
 	const participants = session.participants ?? DEFAULT_PARTICIPANTS;
 
@@ -134,6 +155,14 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin }) => {
 				messages: [...prev.messages, userMsg],
 				updatedAt: Date.now(),
 			}));
+
+			// Sync to remote peers if adapter is available
+			if (syncAdapter) {
+				syncAdapter.sendMessage(userMsg).catch((err) => {
+					console.warn("[GroupChatApp] Failed to sync message:", err);
+				});
+			}
+
 			setIsStreaming(true);
 			controllerRef.current = new AbortController();
 
@@ -194,7 +223,7 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin }) => {
 				controllerRef.current = null;
 			}
 		},
-		[isStreaming, plugin, orchestrator, session.messages],
+		[isStreaming, plugin, orchestrator, session.messages, syncAdapter],
 	);
 
 	const handleStop = useCallback(() => {
@@ -282,6 +311,14 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin }) => {
 					</span>
 				</div>
 				<div className="chat-action-bar-right">
+					{syncAdapter && (
+						<span
+							className={`group-chat-sync-badge ${isConnected ? "connected" : "disconnected"}`}
+							title={isConnected ? "Synced with remote peers" : "Sync disconnected"}
+						>
+							{isConnected ? "🟢 Synced" : "🔴 Offline"}
+						</span>
+					)}
 					<span className="group-chat-badge">Council</span>
 				</div>
 			</div>
