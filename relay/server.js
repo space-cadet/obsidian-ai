@@ -92,8 +92,11 @@ wss.on("connection", (ws, req) => {
 });
 
 server.listen(PORT, () => {
-	console.log(`[relay] WebSocket relay running on ws://localhost:${PORT}/ws/:roomId`);
-	console.log(`[relay] Example: ws://localhost:${PORT}/ws/physics-chat`);
+	console.log(`[relay] WebSocket relay running on port ${PORT}`);
+	console.log(`[relay] For same-device testing: ws://localhost:${PORT}/ws/:roomId`);
+	console.log(`[relay] For cross-device: find this device's local IP, then use:`);
+	console.log(`[relay]   ws://<this-device-ip>:${PORT}/ws/:roomId`);
+	console.log(`[relay] Find your IP: ipconfig getifaddr en0  (macOS) or ip addr  (Linux)`);
 });
 
 // Graceful shutdown
