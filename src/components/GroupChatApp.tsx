@@ -34,6 +34,28 @@ function makeId(): string {
 	return crypto.randomUUID();
 }
 
+/** Try to detect local IP using WebRTC (works in Electron/Obsidian) */
+function detectLocalIP(): Promise<string | null> {
+	return new Promise((resolve) => {
+		try {
+			const pc = new RTCPeerConnection({ iceServers: [] });
+			pc.createDataChannel("");
+			pc.createOffer().then((o) => pc.setLocalDescription(o));
+			pc.onicecandidate = (ice) => {
+				if (!ice || !ice.candidate || !ice.candidate.candidate) {
+					resolve(null);
+					return;
+				}
+				const ipMatch = /([0-9]{1,3}\.){3}[0-9]{1,3}/.exec(ice.candidate.candidate);
+				resolve(ipMatch ? ipMatch[0] : null);
+			};
+			setTimeout(() => resolve(null), 3000);
+		} catch {
+			resolve(null);
+		}
+	});
+}
+
 function generateGroupTitle(messages: ChatMessage[]): string {
 	const firstUser = messages.find((m) => m.role === "user");
 	if (!firstUser) return `Council ${new Date().toLocaleDateString()}`;
@@ -60,6 +82,7 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin, syncAdapter }) => {
 	const [syncRelayUrl, setSyncRelayUrl] = useState(plugin.settings.syncRelayUrl);
 	const [syncRoomId, setSyncRoomId] = useState(plugin.settings.syncRoomId);
 	const [syncUserName, setSyncUserName] = useState(plugin.settings.syncUserName);
+	const [detectedIp, setDetectedIp] = useState<string | null>(null);
 	const controllerRef = useRef<AbortController | null>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -288,6 +311,17 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin, syncAdapter }) => {
 		new Notice("Sync settings saved. Reload group chat to connect.");
 	}, [plugin, syncRelayUrl, syncRoomId, syncUserName]);
 
+	const handleDetectLocalIP = useCallback(async () => {
+		const ip = await detectLocalIP();
+		if (ip) {
+			setDetectedIp(ip);
+			setSyncRelayUrl(`ws://${ip}:8080`);
+			new Notice(`Detected local IP: ${ip}`);
+		} else {
+			new Notice("Could not detect local IP. Enter manually.");
+		}
+	}, []);
+
 	return (
 		<div className="chat-app-container">
 			{/* Participant roster */}
@@ -352,6 +386,13 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin, syncAdapter }) => {
 							onChange={(e) => setSyncRelayUrl(e.target.value)}
 							placeholder="ws://localhost:8080"
 						/>
+						<button
+							className="chat-btn chat-btn-small"
+							onClick={handleDetectLocalIP}
+							title="Auto-detect this device's local IP"
+						>
+							🔍 Detect
+						</button>
 					</div>
 					<div className="sync-setting-row">
 						<label>Room ID:</label>
