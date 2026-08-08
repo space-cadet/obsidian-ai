@@ -3,16 +3,19 @@
 *Last Updated: 2026-08-05 17:48:15 IST*
 
 ### T40: Multi-User Chat with LaTeX Support (2026-08-08)
-**Status:** ✅ PoP CODE COMPLETE — Build passes, ready for testing
+**Status:** ✅ PoP FULLY WIRED — Ready for end-to-end testing
 
 - Core architecture audit completed.
 - Decision: NO Supabase. Build WebSocket relay + WebRTC peer-to-peer backends.
 - Both implement unified `SyncAdapter` interface; plugin selects at runtime.
-- **Phase 1 PoP code written and building:**
+- **Phase 1 PoP complete and building:**
   - ✅ `relay/server.js` — WebSocket broadcast relay (room-based)
   - ✅ `src/sync/SyncAdapter.ts` — Interface definition
   - ✅ `src/sync/WebSocketSyncAdapter.ts` — WS implementation with reconnect
-  - ✅ `src/components/GroupChatApp.tsx` — Accepts sync adapter, sends/receives
+  - ✅ `src/components/GroupChatApp.tsx` — Accepts sync adapter, syncs messages, shows status
+  - ✅ `src/views/GroupChatView.ts` — Auto-creates adapter from settings on open
+  - ✅ `src/settings.ts` — syncRelayUrl, syncRoomId, syncUserName settings with defaults
+  - ✅ In-app sync settings UI — click gear icon, edit relay/room/name, save & reload
   - ✅ Build passes (`pnpm run build` clean)
 - Design principle: GroupChatApp is transport-agnostic — just calls `syncAdapter.sendMessage()`
 - Audit document: `memory-bank/implementation/multi-user-chat-audit.md`
