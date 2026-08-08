@@ -12,6 +12,8 @@
 		"test:e2e:watch": "vitest --config vitest.e2e.config.ts",
 		"package": "pnpm run build && mkdir -p dist && zip dist/obsidian-ai-$(date +'%Y%m%d%H%M%S').zip main.js manifest.json styles.css",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"relay": "node relay/relay-server.js",
+		"relay:port": "node relay/relay-server.js",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
 		"prepare": "husky"

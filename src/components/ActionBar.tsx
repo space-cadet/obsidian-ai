@@ -25,6 +25,8 @@ interface ActionBarProps {
 	onToggleDebateMode?: () => void;
 	searchVisible?: boolean;
 	onToggleSearch?: () => void;
+	relayEnabled?: boolean;
+	onToggleRelay?: () => void;
 }
 
 const ActionBar: React.FC<ActionBarProps> = ({
@@ -48,6 +50,8 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	onToggleDebateMode,
 	searchVisible,
 	onToggleSearch,
+	relayEnabled,
+	onToggleRelay,
 }) => {
 	const openSettings = () => {
 		(plugin.app as any).setting.open();
@@ -103,6 +107,15 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				>
 					<ObsidianIcon icon={autoApprove ? "bot" : "lock"} size={15} />
 				</button>
+				{onToggleRelay && (
+					<button
+						className={`chat-btn chat-icon-btn ${relayEnabled ? "is-active" : ""}`}
+						onClick={onToggleRelay}
+						title={relayEnabled ? "🔌 Relay connected" : "🔌 Relay disconnected"}
+					>
+						<ObsidianIcon icon={relayEnabled ? "plug" : "plug-zap"} size={15} />
+					</button>
+				)}
 				<button
 					className={`chat-btn chat-icon-btn ${autoNameSessions ? "is-active" : ""}`}
 					onClick={onToggleAutoName}

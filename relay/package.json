@@ -1,0 +1,13 @@
+{
+  "name": "obsidian-ai-relay",
+  "version": "1.0.0",
+  "description": "Minimal WebSocket relay for obsidian-ai multi-user sync",
+  "main": "relay-server.js",
+  "scripts": {
+    "start": "node relay-server.js",
+    "start:port": "node relay-server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

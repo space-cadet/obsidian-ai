@@ -53,6 +53,8 @@ import {
 	ProviderProfile,
 } from "../settings";
 import { stripThinkingTags } from "./MessageBubble";
+import { WebSocketSyncAdapter } from "../sync/WebSocketSyncAdapter";
+import type { SyncAdapter } from "../sync/SyncAdapter";
 
 interface ChatAppProps {
 	plugin: ChatPluginLike;
@@ -329,6 +331,99 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		ui,
 	});
 
+	// ═══════════════════════════════════════════════════════
+	// RELAY / SYNC
+	// ═══════════════════════════════════════════════════════
+	const syncAdapterRef = useRef<SyncAdapter | null>(null);
+	const [relayConnected, setRelayConnected] = useState(false);
+
+	const activeSessionRelayEnabled = useMemo(() => {
+		const session = sessions.find((s) => s.id === activeSessionId);
+		return session?.relayEnabled ?? false;
+	}, [sessions, activeSessionId]);
+
+	// Connect/disconnect sync adapter when relayEnabled changes
+	useEffect(() => {
+		if (!activeSessionId) return;
+		const session = sessions.find((s) => s.id === activeSessionId);
+		if (!session) return;
+
+		if (session.relayEnabled) {
+			const adapter = new WebSocketSyncAdapter(plugin.settings.syncRelayUrl);
+			adapter.connect(
+				plugin.settings.syncRoomId,
+				plugin.settings.syncUserName,
+			).then(() => {
+				setRelayConnected(true);
+				new Notice("🔌 Relay connected");
+			}).catch((err) => {
+				console.warn("[ChatApp] Relay connect failed:", err);
+				setRelayConnected(false);
+				new Notice(`🔌 Relay failed: ${err.message}`);
+			});
+			adapter.onMessage((remoteMsg) => {
+				// Append remote message to current session
+				setSessions((prev) =>
+					prev.map((s) =>
+						s.id === activeSessionId
+							? {
+									...s,
+									messages: [...s.messages, remoteMsg],
+									updatedAt: Date.now(),
+								}
+							: s,
+					),
+				);
+			});
+			syncAdapterRef.current = adapter;
+		} else {
+			if (syncAdapterRef.current) {
+				syncAdapterRef.current.disconnect();
+				syncAdapterRef.current = null;
+				setRelayConnected(false);
+			}
+		}
+
+		return () => {
+			if (syncAdapterRef.current) {
+				syncAdapterRef.current.disconnect();
+				syncAdapterRef.current = null;
+				setRelayConnected(false);
+			}
+		};
+	}, [activeSessionId, activeSessionRelayEnabled, plugin.settings.syncRelayUrl, plugin.settings.syncRoomId, plugin.settings.syncUserName]);
+
+	const handleToggleRelay = useCallback(() => {
+		if (!activeSessionId) return;
+		setSessions((prev) =>
+			prev.map((s) =>
+				s.id === activeSessionId
+					? { ...s, relayEnabled: !s.relayEnabled }
+					: s,
+			),
+		);
+	}, [activeSessionId, setSessions]);
+
+	// Wrap handleSend to also sync to relay
+	const handleSendWithSync = useCallback(
+		async (text: string, attachments?: import("../types").Attachment[]) => {
+			await actions.handleSend(text, attachments);
+			if (syncAdapterRef.current && relayConnected) {
+				const userMsg: ChatMessage = {
+					id: makeId(),
+					role: "user",
+					content: text,
+					timestamp: Date.now(),
+					attachments: attachments && attachments.length > 0 ? attachments : undefined,
+				};
+				syncAdapterRef.current.sendMessage(userMsg).catch((err) => {
+					console.warn("[ChatApp] Failed to sync message:", err);
+				});
+			}
+		},
+		[actions.handleSend, relayConnected],
+	);
+
 	// Sync selectedProfileIds into the active session whenever they change
 	useEffect(() => {
 		if (!activeSessionId) return;
@@ -448,6 +543,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 						onToggleDebateMode={ui.toggleDebateMode}
 						searchVisible={searchVisible}
 						onToggleSearch={toggleSearch}
+						relayEnabled={activeSessionRelayEnabled && relayConnected}
+						onToggleRelay={handleToggleRelay}
 					/>
 					{ui.showParticipantDropdown && (
 						<div ref={ui.participantDropdownRef} className="chat-participant-dropdown">
@@ -558,7 +655,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 			<ChatInput
 				app={plugin.app}
 				plugin={plugin}
-				onSend={actions.handleSend}
+				onSend={handleSendWithSync}
 				onStop={actions.handleStop}
 				onAddMention={handleAddMention}
 				isStreaming={activeRuntime.isStreaming}

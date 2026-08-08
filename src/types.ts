@@ -92,6 +92,8 @@ export interface ChatSession {
 	thinkingEnabled?: boolean;
 	/** Unsent composer text saved for recovery across restarts and tab switches */
 	draft?: string;
+	/** Whether this session is connected to a relay server for multi-user sync */
+	relayEnabled?: boolean;
 	/** Vertical message-list offset captured for restoring this tab after reload. */
 	scrollPosition?: number;
 }
