@@ -16,6 +16,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T14 | Remote Agent Connectivity (OpenResponses) | 🔄 | HIGH | 2026-05-07 | T1, T13, T5, T9 | [Details](tasks/T14.md) |
 | T15 | Tabbed Chat Interface with Multi-Profile | 🔄 | HIGH | 2026-05-15 | T13, T14, T9 | [Details](tasks/T15.md) |
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
+| T40 | Multi-User Chat with LaTeX Support | 🔄 | HIGH | 2026-08-08 | T16 | [Details](tasks/T40.md) |
 | T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
 
 ## Completed Tasks

@@ -217,6 +217,31 @@ Alice types: "Hi Bob! $E=mc^2$"
 
 ---
 
+## Phase 1 Verification Log (2026-08-09)
+
+### BRAT Beta Distribution
+**Status:** ✅ Verified
+
+- Plugin repo registered with BRAT successfully
+- BRAT detects releases from `space-cadet/obsidian-ai`
+- Install/update cycle works end-to-end
+- No manual zip download needed
+
+### Relay Server Connection
+**Status:** ✅ Verified
+
+- WebSocket adapter connects to `relay/server.js` without errors
+- Room-based broadcast functioning
+- Connection status indicator in GroupChatApp UI works
+
+### Pending: Cross-Device Messaging
+**Status:** ⬜ Not yet tested
+
+- Need two separate Obsidian instances (or two devices) to verify message flow
+- Planned for next session
+
+---
+
 ## Next Steps
 
 1. ✅ Write relay server (`relay/server.js`)

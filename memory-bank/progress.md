@@ -1,8 +1,8 @@
 # Implementation Progress
 *Last Updated: 2026-08-07 18:40 IST*
 
-### T40: Multi-User Chat with LaTeX Support (2026-08-08)
-**Status:** 🔄 IN PROGRESS — PoP phase
+### T40: Multi-User Chat with LaTeX Support (2026-08-09)
+**Status:** 🔄 IN PROGRESS — PoP Verified, Cross-Device Messaging Next
 
 - Architecture audit reveals obsidian-ai has strong foundation:
   - ✅ LaTeX rendering already works (Obsidian's built-in MathJax/KaTeX)
@@ -15,8 +15,10 @@
   - WebRTC for production peer-to-peer (uses WebSocket relay as signaling)
   - Both implement unified `SyncAdapter` interface
   - GroupChatApp is transport-agnostic
-- Gaps identified: sync adapter, user identity, auth, presence, conflict resolution
-- Proposed: `SyncAdapter` interface + WebSocket relay + WebRTC data channel
+- **Phase 1 Verification (2026-08-09):**
+  - ✅ BRAT beta distribution verified — plugin installs/updates via BRAT successfully
+  - ✅ Relay server connection verified — WebSocket adapter connects to relay
+  - ⬜ End-to-end cross-device messaging — deferred to next session
 - Estimated: 4-6 weeks for solid MVP
 - Full audit: `memory-bank/implementation/multi-user-chat-audit.md`
 - Design doc: `memory-bank/implementation/multi-user-chat-design.md`
