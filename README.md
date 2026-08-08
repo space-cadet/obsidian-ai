@@ -24,7 +24,7 @@
 
 Obsidian AI adds a **persistent chat panel** to your Obsidian sidebar. Unlike typical chat plugins, this one can **directly manipulate your vault** through native tool calling — search notes, edit content, create files, move documents, and more — all from the conversation.
 
-It also supports **group chat mode**: talk to multiple AI agents (different models or remote agents) in the same thread, with each agent aware of the conversation context.
+It also supports **group chat mode**: talk to multiple AI agents (different models or remote agents) in the same thread, with each agent aware of the conversation context. And with **multi-device sync**, you can continue the same conversation across your laptop, tablet, and phone.
 
 And it includes **inline AI editing**: highlight text in any note, press a hotkey, and get AI-powered transformations with a visual diff preview before you commit.
 
@@ -75,6 +75,16 @@ Talk to multiple AI agents in one conversation:
 - **Zen Mode** — Hide all chrome, see only messages and input
 - **Mobile-Responsive** — Works on tablet and phone layouts
 
+### Multi-Device Sync (WebSocket Relay)
+
+Continue the same group chat across multiple devices:
+
+- **Real-Time Sync** — Messages sync instantly between devices via WebSocket relay
+- **Self-Hosted Relay** — Run the relay on your own machine or VPS; no third-party servers
+- **LAN Discovery** — Auto-detect your local IP for easy same-network setup
+- **Cross-Platform** — Laptop, tablet, phone — all stay in sync
+- **Zero Persistence** — Relay is stateless; no messages stored on the server
+
 ### Vault-Aware Context
 
 - **`@mention` Notes** — Reference any note in chat
@@ -123,17 +133,20 @@ Bring your own keys. No data leaves your machine unless you choose it to.
 - **Diagnostics Panel** — Memory usage, DOM nodes, chat sessions, total messages
 - **File-Based Logger** — Debug logs written to disk for troubleshooting
 - **Error Boundary** — Catches React render crashes, shows fallback UI
+- **Build Info in Settings** — Version badge, git commit hash, and branch name visible in Settings hero
 
 ---
 
 ## 📦 Installation
 
-### From Obsidian Community Plugins (recommended)
+### Via BRAT (Recommended for Beta Users)
 
-1. Open **Settings** → **Community Plugins**
-2. Turn off **Safe Mode** if it's enabled
-3. Click **Browse** and search for **"Obsidian AI"**
-4. Click **Install**, then **Enable**
+The fastest way to install and get automatic updates:
+
+1. Install the [**BRAT**](https://github.com/TfTHacker/obsidian42-brat) plugin from Community Plugins
+2. Open **BRAT Settings** → **Add Beta plugin**
+3. Paste: `https://github.com/space-cadet/obsidian-ai`
+4. Click **Add Plugin** — BRAT will install the latest release and auto-update
 
 ### Manual Installation
 
@@ -200,7 +213,23 @@ Click the **👥** participant button in the chat header. Select multiple profil
 
 Toggle **Debate Mode** (🗣️) to have agents discuss each other's responses.
 
-### 7. Web Search (Optional)
+### 7. Multi-Device Sync (Optional)
+
+To sync chat across devices:
+
+1. **Start the relay** on one device (or a server):
+   ```bash
+   pnpm run relay
+   # or
+   node relay/relay-server.js
+   ```
+2. **Note the IP** — The relay logs the listening address (e.g., `ws://192.168.1.42:8080`)
+3. **Connect other devices** — In each device's **Settings** → **Sync**, enter the relay URL and a room ID
+4. **Open the chat** on all devices — Messages sync in real time
+
+See [Multi-User Sync Design](memory-bank/implementation/multi-user-chat-design.md) for architecture details.
+
+### 8. Web Search (Optional)
 
 Open **Settings** → **Web Search**. Choose a provider (DuckDuckGo works without setup). Now you can ask:
 
@@ -253,6 +282,9 @@ pnpm run build
 
 # Package release artifacts
 pnpm run package
+
+# Start the relay server
+pnpm run relay
 ```
 
 ### Project Structure
@@ -271,11 +303,15 @@ src/
 ├── adapters/            # LLMAdapter, ToolAdapter, RAGAdapter, PersistenceAdapter
 ├── modules/             # CodeMirror extensions (inline tooltip, diff, commands)
 ├── noteEditing/         # NoteEditingBridge (apply, append, create from chat)
+├── sync/                # WebSocket sync adapter for multi-device relay
 ├── views/               # Obsidian ItemView registration
 ├── api.ts               # Provider abstractions & streaming
 ├── settings.ts          # Plugin settings & configuration UI
 ├── default_prompts.ts   # Built-in system prompts
 └── main.ts              # Plugin entry point
+
+relay/
+└── relay-server.js      # Standalone WebSocket relay for multi-device sync
 ```
 
 ---

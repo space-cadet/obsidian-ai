@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-ai",
-	"version": "1.2.4",
+	"version": "1.2.5",
 	"description": "AI-powered assistant for Obsidian with inline editing and persistent chat",
 	"main": "main.js",
 	"scripts": {
