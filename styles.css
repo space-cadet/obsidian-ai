@@ -206,6 +206,49 @@
 	word-break: break-word;
 }
 
+/* Version / deployment info in settings hero */
+.obsidian-ai-settings-version-info {
+	background: color-mix(in srgb, var(--background-primary) 60%, transparent);
+}
+
+.obsidian-ai-settings-version-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 6px;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	font-size: var(--font-ui-smaller);
+	font-weight: 600;
+	margin-bottom: 6px;
+}
+
+.obsidian-ai-settings-version-detail {
+	display: block;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	margin-top: 2px;
+}
+
+.obsidian-ai-settings-version-detail-label {
+	color: var(--text-faint);
+}
+
+.obsidian-ai-settings-version-detail-value {
+	color: var(--text-normal);
+	font-family: var(--font-monospace);
+}
+
+.obsidian-ai-settings-version-link {
+	color: var(--text-accent);
+	text-decoration: none;
+	border-bottom: 1px solid transparent;
+	transition: border-color 0.15s ease;
+}
+
+.obsidian-ai-settings-version-link:hover {
+	border-bottom-color: var(--text-accent);
+}
+
 .obsidian-ai-settings-section {
 	margin-bottom: 16px;
 	padding: 16px 18px;

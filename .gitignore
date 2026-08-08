@@ -19,6 +19,9 @@ dist/
 # Exclude sourcemaps
 *.map
 
+# Auto-generated version info
+src/version-info.ts
+
 # obsidian
 data.json
 
