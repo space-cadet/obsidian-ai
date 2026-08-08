@@ -1,6 +1,29 @@
 # Implementation Progress
 *Last Updated: 2026-08-07 18:40 IST*
 
+### T40: Multi-User Chat with LaTeX Support (2026-08-08)
+**Status:** 🔄 IN PROGRESS — PoP phase
+
+- Architecture audit reveals obsidian-ai has strong foundation:
+  - ✅ LaTeX rendering already works (Obsidian's built-in MathJax/KaTeX)
+  - ✅ GroupChatApp UI already renders multi-participant conversations
+  - ✅ Message types support `agentId`/`agentName`/`agentColor` — map to user fields
+  - ✅ Clean `ChatStorage` interface — easy to add sync wrapper
+  - ✅ Context/mention system already powerful
+- **Decision: WebSocket + WebRTC, NO Supabase.**
+  - WebSocket relay for immediate PoP testing (tiny Node.js server)
+  - WebRTC for production peer-to-peer (uses WebSocket relay as signaling)
+  - Both implement unified `SyncAdapter` interface
+  - GroupChatApp is transport-agnostic
+- Gaps identified: sync adapter, user identity, auth, presence, conflict resolution
+- Proposed: `SyncAdapter` interface + WebSocket relay + WebRTC data channel
+- Estimated: 4-6 weeks for solid MVP
+- Full audit: `memory-bank/implementation/multi-user-chat-audit.md`
+- Design doc: `memory-bank/implementation/multi-user-chat-design.md`
+- Task: `memory-bank/tasks/T40.md`
+
+---
+
 ## Active Tasks
 
 ### T39: Integration Provider API for External Obsidian Plugins (2026-08-05)

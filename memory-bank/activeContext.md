@@ -2,6 +2,22 @@
 
 *Last Updated: 2026-08-05 17:48:15 IST*
 
+### T40: Multi-User Chat with LaTeX Support (2026-08-08)
+**Status:** 🔄 IN PROGRESS — PoP phase: WebSocket + WebRTC backends
+
+- Core architecture audit completed.
+- Decision: NO Supabase. Build WebSocket relay + WebRTC peer-to-peer backends.
+- Both implement unified `SyncAdapter` interface; plugin selects at runtime.
+- Phase 1: WebSocket relay server + adapter (for immediate testing)
+- Phase 2: WebRTC adapter (uses WebSocket relay as signaling server)
+- Design principle: GroupChatApp is transport-agnostic — just calls `syncAdapter.sendMessage()`
+- Audit document: `memory-bank/implementation/multi-user-chat-audit.md`
+- Design document: `memory-bank/implementation/multi-user-chat-design.md`
+- Task tracking: `memory-bank/tasks/T40.md`
+- Next: Write relay server, WebSocketSyncAdapter, GroupChatApp integration
+
+---
+
 ## Current Focus
 **T39 Integration Provider API for External Obsidian Plugins** — host read-only slice implemented 2026-08-05. ProviderRegistry discovers validated peer providers, persists opt-in enablement, adds enabled read-only tools to normal chat, and dispatches through ToolExecutor; Integrations settings and generic provider labels are present. Mutations, Git provider code, and OpenResponses conversion remain deferred.
 **T37 Idempotent Bulk Note Creation and Batch Scope Decision** — completed 2026-08-05; `create_notes` skips existing files and reports its created/skipped result, while mutation batching remains deliberately operation-specific.
