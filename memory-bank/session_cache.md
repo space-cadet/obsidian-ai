@@ -1,63 +1,150 @@
 # Session Cache
 
-*Created: 2026-07-13 22:41:55 IST*
-*Last Updated: 2026-08-02 20:18 IST*
+*Created: 2026-08-07 23:23:17 IST*
+*Last Updated: 2026-08-07 23:23:17 IST*
 
-## Current Session
-**Started**: 2026-08-02 18:22 IST
-**Ended**: 2026-08-02 20:18 IST
-**Focus Task**: T32 — Security Hardening + Desktop Duplication Bug
-**Session File**: `memory-bank/sessions/2026-08-02-evening.md`
-**Status**: ✅ COMPLETED
+**Started**: 2026-08-07 23:23:17 IST
+**Focus Task**: T34: Settings Panel UI/UX Improvements
+**Session File**: `sessions/2026-08-07-evening.md`
+**Status**: 🔄 Active: 6, Paused: 0, Completed: 15
 
 ## Overview
 
-- Active: 6 | Paused: 0 | Completed: 20
-- Last Session: 2026-07-29-afternoon
+- Active: 6 | Paused: 0 | Completed: 15
+- Last Session: 2026-08-07
 - Current Period: evening
-
-## Task Registry
-- T11: Debug Logging & Diagnostics — 🔄
-- T14: Remote Agent Connectivity — 🔄
-- T15: Tabbed Chat Interface — 🔄
-- T16: Group Chat — 🔄
-- T22: ChatApp Decomposition — 🔄
-- T26: AI Intelligence Layer — 🔄
-- T32: Security Hardening — ✅ COMPLETED (2026-08-02)
-- T33: Desktop Chat View Duplication — ✅ COMPLETED (2026-08-02)
 
 ## Active Tasks
 
-### T32: Security Hardening — Path Traversal, XSS, SSRF, ReDoS
-**Status:** ✅ **COMPLETED**
-**Priority:** CRITICAL
-**Started:** 2026-08-02 18:35 IST
-**Completed:** 2026-08-02 18:55 IST
-**Context**: Full security audit + implementation of 5 fixes
-**Files**: `src/agent/ToolExecutor.ts`, `src/components/MessageBubble.tsx`, `src/components/ChatMessages.tsx`, `src/api/AgentApiManager.ts`, `src/storage/ChatStorage.ts`, `src/lib/sanitizeHtml.ts`
+### META-1: Memory Bank Setup and Maintenance
+**Status:** 🔄 **IN PROGRESS**
+**Started:** 2026-05-02
+**Context**: [Details](tasks/META-1.md)
 **Progress**:
-1. ✅ Path traversal protection
-2. ✅ XSS sanitization
-3. ✅ SSRF validation
-4. ✅ ReDoS fix (DOMParser)
-5. ✅ JSON validation
-6. ✅ Security test suite (15 tests)
+[Details](tasks/META-1.md)
 
-### T22: ChatApp.tsx Component Decomposition
+### T11: Debug Logging & Diagnostics
 **Status:** 🔄 **IN PROGRESS**
+**Started:** 2026-05-08
+**Context**: [Details](tasks/T11.md)
+**Progress**:
+[Details](tasks/T11.md)
+
+### T14: Remote Agent Connectivity (OpenResponses)
+**Status:** 🔄 **IN PROGRESS**
+**Started:** 2026-05-07
+**Context**: [Details](tasks/T14.md)
+**Progress**:
+[Details](tasks/T14.md)
+
+### T15: Tabbed Chat Interface with Multi-Profile
+**Status:** 🔄 **IN PROGRESS**
+**Started:** 2026-05-15
+**Context**: [Details](tasks/T15.md)
+**Progress**:
+[Details](tasks/T15.md)
+Fix 4 critical streaming/chat UI bugs: Android flicker, interrupted message loss, retry attachment loss, live token counting
+Fix token counter accumulation, remove green streaming border, add live tool result updates without re-rendering entire bubble
+
+### T16: Group Chat (Multi-Agent Conversation)
+**Status:** 🔄 **IN PROGRESS**
+**Started:** 2026-05-16
+**Context**: [Details](tasks/T16.md)
+**Progress**:
+[Details](tasks/T16.md)
+
+### T8: Open Source Release with Branding
+**Status:** 🔄 **IN PROGRESS**
+**Started:** 2026-05-02
+**Context**: [Details](tasks/T8.md)
+**Progress**:
+[Details](tasks/T8.md)
+Promote release from pre-release to proper v1.2.4. GitHub release created with build assets.
+
+## Completed Tasks
+
+### T1: Chat Panel — ItemView + React UI
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-05-02
+**Completed:** 2026-05-02
+
+### T10: Model Discovery & Picker UX
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-05-02
+**Completed:** 2026-05-02
+
+### T13: Agentic Tool Calling for Note Editing
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-05-06
+**Completed:** 2026-05-06
+
+### T18: Web Search Tool for Chat
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-05-16
+**Completed:** 2026-05-16
+
+### T19: File Attachments for Chat Messages
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-05-25
+**Completed:** 2026-05-25
+
+### T2: Conversation Chain & Memory
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-05-02
+**Completed:** 2026-05-02
+
+### T21: CLI Test Harness for AI Features
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-05-25
+**Completed:** 2026-05-25
+
+### T23: Settings.ts Decomposition
+**Status:** ✅ **COMPLETED**
 **Started:** 2026-05-28
-**Context**: Phases 0–3 complete (1,948 → 636 lines). Phases 4–5 pending.
-**Files**: `src/hooks/useMessageActions.ts`, `src/hooks/useChatSession.ts`, `src/hooks/useChatUI.ts`
+**Completed:** 2026-05-28
 
-### T26: AI Intelligence Layer
-**Status:** 🔄 **IN PROGRESS**
-**Started:** 2026-07-21
-**Context**: Phase 2 complete (SessionSummarizer). Phases 3–5 pending.
-**Files**: `src/intelligence/PersonaLoader.ts`, `src/intelligence/SessionSummarizer.ts`
+### T3: Context & Mentions System
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-05-02
+**Completed:** 2026-05-02
 
-## Session History (Last 5)
-1. `sessions/2026-08-02-evening.md` — T32 Security Hardening
-2. `sessions/2026-07-29-afternoon.md` — T15 Past-session search + T27-31 bug fixes
-3. `sessions/2026-07-28-afternoon.md` — T29 Android investigation + repo migration
-4. `sessions/2026-07-28-morning.md` — T26 Phase 1 + T27-30 bug fixes
-5. `sessions/2026-07-25-afternoon.md` — T22 Phase 3 + T15 tabs
+### T34: Settings Panel UI/UX Improvements
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-08-07
+**Completed:** 2026-08-07
+
+### T4: Streaming
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-05-02
+**Completed:** 2026-05-02
+
+### T5: In-Place Note Editing from Chat
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-05-02
+**Completed:** 2026-05-02
+
+### T6: Token & Context Management
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-05-02
+**Completed:** 2026-05-02
+
+### T7: Release System & CI/CD
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-05-02
+**Completed:** 2026-05-02
+
+### T9: Settings & Provider Profiles
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-05-02
+**Completed:** 2026-05-02
+
+## Next Session Focus
+
+1. META-1: Memory Bank Setup and Maintenance
+1. T11: Debug Logging & Diagnostics
+1. T14: Remote Agent Connectivity (OpenResponses)
+
+## System Status
+
+- **Memory Bank**: 🔄 Active
+- **OpenClaw**: ✅ Operational

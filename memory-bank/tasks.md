@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
-*Created: 2026-07-13 22:41:55 IST*
-*Last Updated: 2026-08-05 17:48:15 IST*
+*Created: 2026-08-07 23:23:17 IST*
+*Last Updated: 2026-08-07 23:23:17 IST*
 
 ## Overview
 
@@ -16,13 +16,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T14 | Remote Agent Connectivity (OpenResponses) | 🔄 | HIGH | 2026-05-07 | T1, T13, T5, T9 | [Details](tasks/T14.md) |
 | T15 | Tabbed Chat Interface with Multi-Profile | 🔄 | HIGH | 2026-05-15 | T13, T14, T9 | [Details](tasks/T15.md) |
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
-| T26 | AI Intelligence Layer — Identity, Memory & Context | 🔄 | HIGH | 2026-07-21 | T24, T13 | [Details](tasks/T26.md) | Phase 2 complete (SessionSummarizer), Phases 3-5 pending |
-| T38 | Tool Approval Policies, Batch Plans, and Operation Audit Log | ⏸️ | HIGH | 2026-08-05 | T11, T13, T37 | [Details](tasks/T38.md) | Deferred design for previewed batch mutations, YOLO mode, and bounded audit logs |
-| T39 | Integration Provider API for External Obsidian Plugins | 🔄 | HIGH | 2026-08-05 | T13, T26, T38 | [Details](tasks/T39.md) |
-| T39a | Provider API Host, Lifecycle, and Tool-Policy Boundary | 🔄 | HIGH | 2026-08-05 | T39, T13, T38 | [Details](tasks/T39a.md) |
-| T39b | Obsidian Git as the First AI Tool Provider | ⏸️ | HIGH | 2026-08-05 | T39, T39a, T38 | [Details](tasks/T39b.md) |
-| T32 | Security Hardening — Path Traversal, XSS, SSRF, ReDoS | ✅ | **CRITICAL** | 2026-08-02 | 2026-08-02 | T13, T14 | [Details](tasks/T32.md) |
-| T33 | Desktop Chat View Singleton Repair | ✅ | HIGH | 2026-08-04 | 2026-08-04 | T1, T15 | [Details](tasks/T33.md) |
+| T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
 
 ## Completed Tasks
 
@@ -33,20 +27,16 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T13 | Agentic Tool Calling for Note Editing | ✅ | HIGH | 2026-05-06 | 2026-05-06 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
 | T18 | Web Search Tool for Chat | ✅ | MEDIUM | 2026-05-16 | 2026-05-16 | T13, T9 | [Details](tasks/T18.md) |
 | T19 | File Attachments for Chat Messages | ✅ | HIGH | 2026-05-25 | 2026-05-25 | T13, T4, T9 | [Details](tasks/T19.md) |
-| T25 | Unit Test Infrastructure | ✅ | HIGH | 2026-07-29 | 2026-07-30 | — | [Details](tasks/T25.md) | 125 tests, 7 files, 0 failures |
 | T2 | Conversation Chain & Memory | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T1 | [Details](tasks/T2.md) |
 | T21 | CLI Test Harness for AI Features | ✅ | MEDIUM | 2026-05-25 | 2026-05-25 | T13, T19, T4 | [Details](tasks/T21.md) |
 | T23 | Settings.ts Decomposition | ✅ | HIGH | 2026-05-28 | 2026-05-28 | — | [Details](tasks/T23.md) |
 | T3 | Context & Mentions System | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T1 | [Details](tasks/T3.md) |
+| T34 | Settings Panel UI/UX Improvements | ✅ | MEDIUM | 2026-08-07 | 2026-08-07 | - | [Details](tasks/T34.md) |
 | T4 | Streaming | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T9 | [Details](tasks/T4.md) |
 | T5 | In-Place Note Editing from Chat | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T1 | [Details](tasks/T5.md) |
 | T6 | Token & Context Management | ✅ | MEDIUM | 2026-05-02 | 2026-05-02 | T1, T2 | [Details](tasks/T6.md) |
 | T7 | Release System & CI/CD | ✅ | HIGH | 2026-05-02 | 2026-05-02 | — | [Details](tasks/T7.md) |
 | T9 | Settings & Provider Profiles | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T1 | [Details](tasks/T9.md) |
-| T34 | Per-Tab Chat Process Isolation | ✅ | HIGH | 2026-08-05 | 2026-08-05 | T4, T13, T15 | [Details](tasks/T34.md) | Session-keyed streaming/tool runtime state |
-| T35 | Gemini Tool Continuity, Bulk Note Creation, and Per-Tab Model Selection | ✅ | **CRITICAL** | 2026-08-05 | 2026-08-05 | T13, T15 | [Details](tasks/T35.md) | Preserved Gemini signatures, actual bulk creation, tab-owned models |
-| T36 | Stable Per-Tab Model Selection and Restored Chat View State | ✅ | HIGH | 2026-08-05 | 2026-08-05 | T15, T35 | [Details](tasks/T36.md) | Stops model loop and restores saved tabs/scroll positions |
-| T37 | Idempotent Bulk Note Creation and Batch Scope Decision | ✅ | HIGH | 2026-08-05 | 2026-08-05 | T13, T35 | [Details](tasks/T37.md) | Existing targets skip safely; no generic mutation batching |
 
 ## Task Relationships
 
@@ -76,35 +66,6 @@ T15: Tabbed Chat Interface with Multi-Profile
   └── T9
 T16: Group Chat (Multi-Agent Conversation)
   └── T15
-T34: Per-Tab Chat Process Isolation
-  └── T4
-  └── T13
-  └── T15
-T35: Gemini Tool Continuity, Bulk Note Creation, and Per-Tab Model Selection
-  └── T13
-  └── T15
-T36: Stable Per-Tab Model Selection and Restored Chat View State
-  └── T15
-  └── T35
-T37: Idempotent Bulk Note Creation and Batch Scope Decision
-  └── T13
-  └── T35
-T38: Tool Approval Policies, Batch Plans, and Operation Audit Log
-  └── T11
-  └── T13
-  └── T37
-T39: Integration Provider API for External Obsidian Plugins
-  └── T13
-  └── T26
-  └── T38
-T39a: Provider API Host, Lifecycle, and Tool-Policy Boundary
-  └── T39
-  └── T13
-  └── T38
-T39b: Obsidian Git as the First AI Tool Provider
-  └── T39
-  └── T39a
-  └── T38
 T18: Web Search Tool for Chat
   └── T13
   └── T9
@@ -122,6 +83,7 @@ T23: Settings.ts Decomposition
   └── —
 T3: Context & Mentions System
   └── T1
+T34: Settings Panel UI/UX Improvements
 T4: Streaming
   └── T9
 T5: In-Place Note Editing from Chat
@@ -140,6 +102,6 @@ T9: Settings & Provider Profiles
 ## Status Summary
 
 - **Active**: 6
-- **Completed**: 19
-- **Paused**: 4
-- **Total**: 27
+- **Completed**: 15
+- **Paused**: 0
+- **Total**: 21
