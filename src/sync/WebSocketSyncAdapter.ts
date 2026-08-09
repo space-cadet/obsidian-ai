@@ -36,6 +36,14 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 		this.userId = userId;
 		this.reconnectAttempts = 0;
 		this.explicitlyDisconnected = false;
+
+		// Validate relay URL format
+		if (!this.relayUrl.startsWith("ws://") && !this.relayUrl.startsWith("wss://")) {
+			throw new Error(
+				`Relay URL must start with ws:// or wss:// (got: ${this.relayUrl})`
+			);
+		}
+
 		return this.doConnect();
 	}
 
@@ -75,16 +83,23 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 				}
 			};
 
-			this.ws.onclose = () => {
-				console.log("[WebSocketSync] Connection closed");
+			this.ws.onclose = (event) => {
+				console.log(
+					`[WebSocketSync] Connection closed (code: ${event.code}, reason: ${event.reason || "none"})`
+				);
 				if (!this.explicitlyDisconnected) {
 					this.attemptReconnect();
 				}
 			};
 
-			this.ws.onerror = (err) => {
-				console.error("[WebSocketSync] WebSocket error:", err);
-				reject(err);
+			this.ws.onerror = (event) => {
+				// Browser WebSocket errors are generic Events — extract what we can
+				const errorMsg =
+					typeof event === "string"
+						? event
+						: "WebSocket connection failed — check relay URL and network";
+				console.error("[WebSocketSync] WebSocket error:", errorMsg, event);
+				reject(new Error(errorMsg));
 			};
 		});
 	}

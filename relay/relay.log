@@ -1,0 +1,5 @@
+[relay] WebSocket relay running on port 8080
+[relay] For same-device testing: ws://localhost:8080/ws/:roomId?userId=Alice
+[relay] For cross-device: find this device's local IP, then use:
+[relay]   ws://<this-device-ip>:8080/ws/:roomId?userId=Alice
+[relay] Find your IP: ipconfig getifaddr en0  (macOS) or ip addr  (Linux)
