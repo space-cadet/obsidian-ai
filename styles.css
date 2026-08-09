@@ -2727,6 +2727,62 @@
 	font-style: italic;
 }
 
+/* Remote user dropdown (T40) */
+.chat-remote-user-dropdown {
+	position: absolute;
+	top: calc(100% + 2px);
+	left: 8px;
+	z-index: 100;
+	min-width: 180px;
+	max-width: 260px;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	padding: 6px 0;
+}
+
+.chat-remote-user-dropdown-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 6px 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	font-size: var(--font-ui-smaller);
+	font-weight: 600;
+	color: var(--text-muted);
+}
+
+.chat-remote-user-dropdown-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 12px;
+	font-size: var(--font-ui-small);
+	color: var(--text-normal);
+}
+
+.chat-remote-user-dropdown-item.is-self {
+	font-weight: 600;
+	background: var(--background-modifier-hover);
+}
+
+.chat-remote-user-dot {
+	color: var(--interactive-success);
+	font-size: 10px;
+}
+
+.chat-remote-user-dropdown-empty {
+	padding: 8px 12px;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-style: italic;
+}
+
+.chat-remote-user-status.is-connected {
+	color: var(--interactive-success);
+}
+
 /* Mobile: dropdown full width */
 @media (max-width: 768px) {
 	.chat-participant-dropdown {

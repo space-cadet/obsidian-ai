@@ -122,16 +122,14 @@ wss.on("connection", (ws, req) => {
 
 	const room = getRoom(roomId);
 
-	// Send current room roster to new client
-	const existingUsers = getUserList(roomId);
-	if (existingUsers.length > 0) {
-		send(ws, { type: "roster", users: existingUsers });
-	}
-
-	// Add client to room
+	// Add client to room FIRST so they see themselves in roster
 	room.set(ws, userId);
 
-	// Broadcast join to others
+	// Send current room roster to new client (now includes self)
+	const userList = getUserList(roomId);
+	send(ws, { type: "roster", users: userList });
+
+	// Broadcast join to OTHERS (not self)
 	broadcast(roomId, ws, { type: "join", userId });
 
 	ws.on("message", (raw) => {

@@ -351,17 +351,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 
 		if (session.relayEnabled) {
 			const adapter = new WebSocketSyncAdapter(plugin.settings.syncRelayUrl);
-			adapter.connect(
-				plugin.settings.syncRoomId,
-				plugin.settings.syncUserName,
-			).then(() => {
-				setRelayConnected(true);
-				new Notice("🔌 Relay connected");
-			}).catch((err) => {
-				console.warn("[ChatApp] Relay connect failed:", err);
-				setRelayConnected(false);
-				new Notice(`🔌 Relay failed: ${err.message}`);
-			});
+			// Register callbacks BEFORE connect to avoid race with server roster
 			adapter.onUserList((users) => {
 				setConnectedUsers(users);
 			});
@@ -389,6 +379,17 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 							: s,
 					),
 				);
+			});
+			adapter.connect(
+				plugin.settings.syncRoomId,
+				plugin.settings.syncUserName,
+			).then(() => {
+				setRelayConnected(true);
+				new Notice("🔌 Relay connected");
+			}).catch((err) => {
+				console.warn("[ChatApp] Relay connect failed:", err);
+				setRelayConnected(false);
+				new Notice(`🔌 Relay failed: ${err.message}`);
 			});
 			syncAdapterRef.current = adapter;
 		} else {
@@ -590,6 +591,34 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 								<div className="chat-participant-dropdown-empty">
 									No profiles configured
 								</div>
+							)}
+						</div>
+					)}
+					{ui.showRemoteUserDropdown && (
+						<div ref={ui.remoteUserDropdownRef} className="chat-remote-user-dropdown">
+							<div className="chat-remote-user-dropdown-header">
+								<span>Room: {plugin.settings.syncRoomId}</span>
+								{relayConnected && (
+									<span className="chat-remote-user-status is-connected">●</span>
+								)}
+							</div>
+							{connectedUsers.length === 0 ? (
+								<div className="chat-remote-user-dropdown-empty">
+									No users connected
+								</div>
+							) : (
+								connectedUsers.map((user) => (
+									<div
+										key={user}
+										className={`chat-remote-user-dropdown-item${user === plugin.settings.syncUserName ? " is-self" : ""}`}
+									>
+										<span className="chat-remote-user-dot">●</span>
+										<span className="chat-remote-user-name">
+											{user}
+											{user === plugin.settings.syncUserName && " (You)"}
+										</span>
+									</div>
+								))
 							)}
 						</div>
 					)}
