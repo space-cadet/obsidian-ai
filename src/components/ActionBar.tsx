@@ -27,6 +27,9 @@ interface ActionBarProps {
 	onToggleSearch?: () => void;
 	relayEnabled?: boolean;
 	onToggleRelay?: () => void;
+	connectedUsers?: string[];
+	onToggleRemoteUserDropdown?: () => void;
+	remoteUserCount?: number;
 }
 
 const ActionBar: React.FC<ActionBarProps> = ({
@@ -52,6 +55,9 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	onToggleSearch,
 	relayEnabled,
 	onToggleRelay,
+	connectedUsers,
+	onToggleRemoteUserDropdown,
+	remoteUserCount,
 }) => {
 	const openSettings = () => {
 		(plugin.app as any).setting.open();
@@ -88,6 +94,20 @@ const ActionBar: React.FC<ActionBarProps> = ({
 						>
 							<ObsidianIcon icon="users" size={15} />
 							<span className="chat-council-badge">{participantCount && participantCount > 0 ? participantCount : 1}</span>
+						</button>
+					</div>
+				)}
+				{onToggleRemoteUserDropdown && (
+					<div className="chat-remote-users-trigger">
+						<button
+							className={`chat-btn chat-icon-btn ${(remoteUserCount ?? 0) > 0 ? "is-active" : ""}`}
+							onClick={onToggleRemoteUserDropdown}
+							title={(remoteUserCount ?? 0) > 0 ? `${remoteUserCount} users online` : "Room"}
+						>
+							<ObsidianIcon icon="globe" size={15} />
+							{(remoteUserCount ?? 0) > 0 && (
+								<span className="chat-remote-users-badge">{remoteUserCount}</span>
+							)}
 						</button>
 					</div>
 				)}

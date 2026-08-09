@@ -2,20 +2,24 @@ import type { ChatMessage } from "../types";
 import type { SyncAdapter } from "./SyncAdapter";
 
 /**
- * WebSocket-based sync adapter.
+ * WebSocket-based sync adapter with presence tracking.
  *
- * Connects to a tiny relay server that broadcasts messages to all
- * clients in the same room. No persistence, no auth — just a pipe.
+ * Connects to a relay server that broadcasts messages and presence events
+ * to all clients in the same room.
  *
  * Usage:
  *   const sync = new WebSocketSyncAdapter("ws://localhost:8080");
  *   await sync.connect("physics-chat", "Alice");
  *   sync.onMessage((msg) => console.log("Remote:", msg.content));
+ *   sync.onUserList((users) => console.log("Online:", users));
+ *   sync.onPresence((event) => console.log(event.type, event.userId));
  *   await sync.sendMessage({ id: "1", role: "user", content: "Hi!", ... });
  */
 export class WebSocketSyncAdapter implements SyncAdapter {
 	private ws: WebSocket | null = null;
 	private messageCallback: ((msg: ChatMessage) => void) | null = null;
+	private userListCallback: ((users: string[]) => void) | null = null;
+	private presenceCallback: ((event: { type: "join" | "leave"; userId: string }) => void) | null = null;
 	private roomId: string = "";
 	private userId: string = "";
 	private reconnectTimer: number | null = null;
@@ -37,18 +41,31 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 
 	private doConnect(): Promise<void> {
 		return new Promise((resolve, reject) => {
-			const wsUrl = `${this.relayUrl}/ws/${encodeURIComponent(this.roomId)}`;
+			const wsUrl = `${this.relayUrl}/ws/${encodeURIComponent(this.roomId)}?userId=${encodeURIComponent(this.userId)}`;
 			this.ws = new WebSocket(wsUrl);
 
 			this.ws.onopen = () => {
-				console.log(`[WebSocketSync] Connected to ${wsUrl} as ${this.userId}`);
+				console.log(`[WebSocketSync] Connected to ${wsUrl}`);
 				this.reconnectAttempts = 0;
 				resolve();
 			};
 
 			this.ws.onmessage = (event) => {
 				try {
-					const msg = JSON.parse(event.data) as ChatMessage;
+					const data = JSON.parse(event.data);
+
+					// Handle presence events
+					if (data.type === "roster" && Array.isArray(data.users)) {
+						this.userListCallback?.(data.users);
+						return;
+					}
+					if (data.type === "join" || data.type === "leave") {
+						this.presenceCallback?.(data);
+						return;
+					}
+
+					// Handle chat messages
+					const msg = data as ChatMessage;
 					// Only process messages from other users (not echo of our own)
 					if (msg.agentId !== this.userId) {
 						this.messageCallback?.(msg);
@@ -78,7 +95,9 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 			return;
 		}
 		this.reconnectAttempts++;
-		console.log(`[WebSocketSync] Reconnecting in ${this.reconnectDelay}ms (attempt ${this.reconnectAttempts})`);
+		console.log(
+			`[WebSocketSync] Reconnecting in ${this.reconnectDelay}ms (attempt ${this.reconnectAttempts})`
+		);
 		this.reconnectTimer = window.setTimeout(() => {
 			this.doConnect().catch(() => {
 				// reconnect loop continues via onclose
@@ -112,5 +131,13 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 
 	onMessage(callback: (msg: ChatMessage) => void): void {
 		this.messageCallback = callback;
+	}
+
+	onUserList(callback: (users: string[]) => void): void {
+		this.userListCallback = callback;
+	}
+
+	onPresence(callback: (event: { type: "join" | "leave"; userId: string }) => void): void {
+		this.presenceCallback = callback;
 	}
 }

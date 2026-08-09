@@ -115,6 +115,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	}, []);
 
 	const ui = useChatUI();
+	const { connectedUsers, setConnectedUsers } = ui;
 	const suppressProfilePersistenceRef = useRef(false);
 	const scrollSaveTimersRef = useRef<Map<string, number>>(new Map());
 	const getSelectedProfileIds = useCallback(
@@ -361,6 +362,20 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				setRelayConnected(false);
 				new Notice(`🔌 Relay failed: ${err.message}`);
 			});
+			adapter.onUserList((users) => {
+				setConnectedUsers(users);
+			});
+			adapter.onPresence((event) => {
+				if (event.type === "join") {
+					setConnectedUsers((prev) =>
+						prev.includes(event.userId) ? prev : [...prev, event.userId],
+					);
+				} else if (event.type === "leave") {
+					setConnectedUsers((prev) =>
+						prev.filter((u) => u !== event.userId),
+					);
+				}
+			});
 			adapter.onMessage((remoteMsg) => {
 				// Append remote message to current session
 				setSessions((prev) =>
@@ -381,6 +396,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				syncAdapterRef.current.disconnect();
 				syncAdapterRef.current = null;
 				setRelayConnected(false);
+				setConnectedUsers([]);
 			}
 		}
 
@@ -389,6 +405,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				syncAdapterRef.current.disconnect();
 				syncAdapterRef.current = null;
 				setRelayConnected(false);
+				setConnectedUsers([]);
 			}
 		};
 	}, [activeSessionId, activeSessionRelayEnabled, plugin.settings.syncRelayUrl, plugin.settings.syncRoomId, plugin.settings.syncUserName]);
@@ -545,6 +562,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 						onToggleSearch={toggleSearch}
 						relayEnabled={activeSessionRelayEnabled && relayConnected}
 						onToggleRelay={handleToggleRelay}
+						connectedUsers={connectedUsers}
+						onToggleRemoteUserDropdown={ui.toggleRemoteUserDropdown}
 					/>
 					{ui.showParticipantDropdown && (
 						<div ref={ui.participantDropdownRef} className="chat-participant-dropdown">

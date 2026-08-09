@@ -27,4 +27,16 @@ export interface SyncAdapter {
 	 * The adapter calls this when a remote message arrives.
 	 */
 	onMessage(callback: (msg: ChatMessage) => void): void;
+
+	/**
+	 * Register a callback for room roster updates.
+	 * Called when the adapter receives the full list of connected users.
+	 */
+	onUserList(callback: (users: string[]) => void): void;
+
+	/**
+	 * Register a callback for presence events (join/leave).
+	 * Called when a user joins or leaves the room.
+	 */
+	onPresence(callback: (event: { type: "join" | "leave"; userId: string }) => void): void;
 }

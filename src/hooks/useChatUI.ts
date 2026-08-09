@@ -68,6 +68,14 @@ export interface UseChatUIResult {
 	messageAttachments: Attachment[];
 	setMessageAttachments: React.Dispatch<React.SetStateAction<Attachment[]>>;
 
+	// --- Remote users ---
+	connectedUsers: string[];
+	setConnectedUsers: React.Dispatch<React.SetStateAction<string[]>>;
+	showRemoteUserDropdown: boolean;
+	toggleRemoteUserDropdown: () => void;
+	closeRemoteUserDropdown: () => void;
+	remoteUserDropdownRef: React.RefObject<HTMLDivElement | null>;
+
 	// --- Reset ---
 	resetUIState: () => void;
 }
@@ -143,6 +151,35 @@ export function useChatUI(): UseChatUIResult {
 		return () => document.removeEventListener("mousedown", handleClick);
 	}, [showParticipantDropdown]);
 
+	// --- Remote users ---
+	const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
+	const [showRemoteUserDropdown, setShowRemoteUserDropdown] = useState(false);
+	const toggleRemoteUserDropdown = useCallback(
+		() => setShowRemoteUserDropdown((s) => !s),
+		[],
+	);
+	const closeRemoteUserDropdown = useCallback(
+		() => setShowRemoteUserDropdown(false),
+		[],
+	);
+	const remoteUserDropdownRef = useRef<HTMLDivElement>(null);
+
+	// Close remote user dropdown when clicking outside
+	useEffect(() => {
+		if (!showRemoteUserDropdown) return;
+		const handleClick = (e: MouseEvent) => {
+			const target = e.target as Node;
+			if (
+				!remoteUserDropdownRef.current ||
+				!remoteUserDropdownRef.current.contains(target)
+			) {
+				setShowRemoteUserDropdown(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClick);
+		return () => document.removeEventListener("mousedown", handleClick);
+	}, [showRemoteUserDropdown]);
+
 	// --- Typing ---
 	const [typingAgents, setTypingAgents] = useState<Set<string>>(new Set());
 	const addTypingAgent = useCallback((name: string) => {
@@ -196,6 +233,8 @@ export function useChatUI(): UseChatUIResult {
 		setShowThinking(false);
 		setSelectedProfileIds(new Set());
 		setShowParticipantDropdown(false);
+		setConnectedUsers([]);
+		setShowRemoteUserDropdown(false);
 		setTypingAgents(new Set());
 		setAutoApprove(false);
 		setIsEditing(false);
@@ -236,6 +275,13 @@ export function useChatUI(): UseChatUIResult {
 		toggleParticipantDropdown,
 		closeParticipantDropdown,
 		participantDropdownRef,
+		// Remote users
+		connectedUsers,
+		setConnectedUsers,
+		showRemoteUserDropdown,
+		toggleRemoteUserDropdown,
+		closeRemoteUserDropdown,
+		remoteUserDropdownRef,
 		// Typing
 		typingAgents,
 		setTypingAgents,
