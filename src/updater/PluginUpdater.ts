@@ -114,12 +114,14 @@ export class PluginUpdater {
 
 			if (includePrerelease) {
 				const releases = (await fetchJson(
-					`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=10`,
+					`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=20`,
 				)) as ReleaseInfo[];
 				if (!releases || releases.length === 0) {
 					return { hasUpdate: false, currentVersion, latestVersion: currentVersion, release: null, isPrerelease: false };
 				}
-				release = releases[0];
+				// Find the latest pre-release, or fall back to latest release if none
+				const prerelease = releases.find((r) => r.prerelease);
+				release = prerelease ?? releases[0];
 			} else {
 				release = await fetchJson(
 					`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
