@@ -111,7 +111,7 @@ const server = http.createServer((req, res) => {
 	res.end(JSON.stringify({ status: "ok", rooms: roomData }));
 });
 
-const wss = new WebSocket.Server({ server, path: "/ws" });
+const wss = new WebSocket.Server({ server });
 
 wss.on("connection", (ws, req) => {
 	const parsed = url.parse(req.url, true);
