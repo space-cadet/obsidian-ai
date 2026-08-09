@@ -1,5 +1,5 @@
 // main.ts
-import { Plugin, MarkdownView, App, Notice, WorkspaceLeaf } from "obsidian";
+import { Plugin, MarkdownView, App, Notice, WorkspaceLeaf, Platform } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import {
 	ObsidianAISettings,
@@ -259,8 +259,26 @@ export default class ObsidianAIPlugin extends Plugin {
 			},
 		});
 
-		// Initialize auto-updater
-		this._updater = new PluginUpdater(this.app, this.manifest.id);
+		// Initialize auto-updater (desktop only)
+		if (Platform.isDesktop) {
+			this._updater = new PluginUpdater(this.app, this.manifest.id);
+
+			// Add manual update check command
+			this.addCommand({
+				id: "check-for-updates",
+				name: "Check for updates",
+				callback: () => this.checkForUpdates(true),
+			});
+
+			// Auto-check on startup (if enabled and not checked recently)
+			if (this.settings.checkForUpdates) {
+				const oneDay = 24 * 60 * 60 * 1000;
+				const lastCheck = this.settings.lastUpdateCheck ?? 0;
+				if (Date.now() - lastCheck > oneDay) {
+					this.checkForUpdates(false);
+				}
+			}
+		}
 
 		// Add settings tab
 		this.addSettingTab(new ObsidianAISettingsTab(this.app, this));
@@ -274,22 +292,6 @@ export default class ObsidianAIPlugin extends Plugin {
 				new Notice("Debug log cleared.");
 			},
 		});
-
-		// Add manual update check command
-		this.addCommand({
-			id: "check-for-updates",
-			name: "Check for updates",
-			callback: () => this.checkForUpdates(true),
-		});
-
-		// Auto-check on startup (if enabled and not checked recently)
-		if (this.settings.checkForUpdates) {
-			const oneDay = 24 * 60 * 60 * 1000;
-			const lastCheck = this.settings.lastUpdateCheck ?? 0;
-			if (Date.now() - lastCheck > oneDay) {
-				this.checkForUpdates(false);
-			}
-		}
 	}
 
 	async activateChatView() {
