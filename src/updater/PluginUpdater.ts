@@ -25,10 +25,22 @@ export interface UpdateCheckResult {
 const GITHUB_REPO = "space-cadet/obsidian-ai";
 const RELEASE_FILES = ["main.js", "manifest.json", "styles.css"];
 
-/** Simple semver comparison: returns >0 if v1 > v2, <0 if v1 < v2, 0 if equal */
+/** Simple semver comparison: returns >0 if v1 > v2, <0 if v1 < v2, 0 if equal.
+ *  Non-semver tags (e.g. "latest-dev") are treated as always newer than semver versions. */
 function compareVersions(v1: string, v2: string): number {
-	const a = v1.replace(/^v/, "").split(".").map(Number);
-	const b = v2.replace(/^v/, "").split(".").map(Number);
+	const clean1 = v1.replace(/^v/, "");
+	const clean2 = v2.replace(/^v/, "");
+
+	const isSemver1 = /^\d+(\.\d+)*$/.test(clean1);
+	const isSemver2 = /^\d+(\.\d+)*$/.test(clean2);
+
+	// Non-semver vs semver: non-semver is always "newer" (dev build)
+	if (!isSemver1 && isSemver2) return 1;
+	if (isSemver1 && !isSemver2) return -1;
+	if (!isSemver1 && !isSemver2) return clean1 === clean2 ? 0 : 1;
+
+	const a = clean1.split(".").map(Number);
+	const b = clean2.split(".").map(Number);
 	for (let i = 0; i < Math.max(a.length, b.length); i++) {
 		const av = a[i] || 0;
 		const bv = b[i] || 0;
