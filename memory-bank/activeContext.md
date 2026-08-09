@@ -14,36 +14,17 @@
 - Task tracking: `memory-bank/tasks/T41.md`
 
 ### T40: Multi-User Chat with LaTeX Support (2026-08-10)
-**Status:** 🔄 Phase 2 Complete (Presence Tracking), Phase 2b Pending
+**Status:** 🔄 Phase 2 Complete (Presence Tracking + Bug Fixes), Phase 2b Pending
 
-- Core architecture audit completed.
-- Decision: NO Supabase. Build WebSocket relay + WebRTC peer-to-peer backends.
-- Both implement unified `SyncAdapter` interface; plugin selects at runtime.
-- **Phase 1 PoP code complete and verified:**
-  - ✅ `relay/server.js` — WebSocket broadcast relay (room-based)
-  - ✅ `src/sync/SyncAdapter.ts` — Interface definition
-  - ✅ `src/sync/WebSocketSyncAdapter.ts` — WS implementation with reconnect
-  - ✅ Build passes (`pnpm run build` clean)
-  - ✅ BRAT beta distribution verified — plugin installs/updates via BRAT successfully
-  - ✅ Relay server connection verified — WebSocket adapter connects to relay
-- **Phase 1 Cleanup (2026-08-09 evening):**
-  - ✅ Removed redundant `GroupChatView` and `GroupChatApp.tsx` — all multi-user functionality now in main `ChatApp`
-  - ✅ Build passes, all 188 tests pass
-- **Phase 2 Complete (2026-08-09 evening):**
-  - ✅ Relay presence tracking — `join`/`leave`/`roster` events
-  - ✅ SyncAdapter v2 — `onUserList`, `onPresence` hooks
-  - ✅ WebSocketSyncAdapter — presence protocol implemented
-  - ✅ useChatUI — `connectedUsers` state + `toggleRemoteUserDropdown`
-  - ✅ ActionBar — adjacent dropdown for remote users (icon: `users`)
-  - ✅ ChatApp.tsx — wired presence callbacks to UI state
-  - ✅ Build passes, all 188 tests pass
-  - ✅ Committed: `6746201`
-- **Phase 2b Pending:** Message attribution (AI vs human), typing indicators, `@user` mentions
-- **Next:** End-to-end cross-device messaging test (two Obsidian instances)
-- Design principle: ChatApp is transport-agnostic — just calls `syncAdapter.sendMessage()`
-- Audit document: `memory-bank/implementation-details/multi-user-chat-audit.md`
-- Design document: `memory-bank/implementation-details/multi-user-chat-design.md`
-- Task tracking: `memory-bank/tasks/T40.md`
+- Core architecture audit completed. Decision: NO Supabase. WebSocket relay + WebRTC peer-to-peer.
+- **Phase 1 Complete:** WebSocket relay, SyncAdapter, BRAT distribution, relay verification
+- **Phase 2 Complete:** Presence tracking with remote user dropdown
+  - Bug fixes: `remoteUserCount` prop wiring, badge visibility, callback race condition, roster includes self
+  - UI: Radio icon (📻) with badge, clickable dropdown showing room + users
+  - Commits: `3765188`, `6746201`, `683d9d5`, `108858d`
+- **Next:** End-to-end cross-device messaging test, then Phase 2b (attribution, typing, mentions)
+- **Docs:** `memory-bank/implementation-details/presence-tracking.md` (full design + bug fixes)
+- **Task tracking:** `memory-bank/tasks/T40.md`
 
 ---
 

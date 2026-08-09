@@ -1,7 +1,12 @@
 # Presence Tracking Design
 
 *Created: 2026-08-09*
+*Updated: 2026-08-10*
 *Applies to: T40 Phase 2*
+
+## Screenshot
+![Remote User Dropdown](assets/t40-remote-user-dropdown.jpg)
+*Remote user dropdown showing connected users with room header and connection status*
 
 ## Overview
 
@@ -79,19 +84,52 @@ type PresenceEvent = { type: "join" | "leave"; userId: string };
 - `showRemoteUserDropdown: boolean` — toggle visibility
 
 ### ActionBar
-- Second dropdown adjacent to AI model dropdown
-- Icon: `users` (Lucide icon)
-- Shows: connected users with "You (Alice)" highlighted
-- No checkboxes — informational only
+- Icon: `radio` (📻) when relay connected, `globe` (🌐) when disconnected
+- Badge: always shows count (0, 1, 2, ...)
+- Active state: `is-active` class when connected
 
-### ChatApp Wiring
+### Remote User Dropdown
+- Triggered by clicking the 📻 radio icon
+- Header: shows room name + connection status (green dot)
+- User list: each user with green dot, "You" badge for self
+- Empty state: "No users connected"
+- CSS: `.chat-remote-user-dropdown` with theme variables
+
+### ChatApp Wiring (Critical: Register Callbacks Before Connect)
 ```typescript
+// CORRECT ORDER — register callbacks BEFORE connect()
 adapter.onUserList((users) => setConnectedUsers(users));
 adapter.onPresence((event) => {
   if (event.type === "join") addUser(event.userId);
   if (event.type === "leave") removeUser(event.userId);
 });
+adapter.onMessage((remoteMsg) => {
+  // append to session messages
+});
+adapter.connect(roomId, userId);  // ← must be LAST
 ```
+
+## Bug Fixes (2026-08-10)
+
+### Bug 1: `remoteUserCount` Never Passed
+- **Symptom:** Badge always showed 0, `is-active` never applied
+- **Root cause:** ChatApp.tsx passed `connectedUsers` array but not `remoteUserCount` prop
+- **Fix:** Added `remoteUserCount={connectedUsers.length}` to ActionBar
+
+### Bug 2: Badge Hidden When Count ≤ 0
+- **Symptom:** Couldn't see count when alone in room
+- **Root cause:** Badge condition was `(remoteUserCount ?? 0) > 0`
+- **Fix:** Always render badge; use `is-active` class for visual state
+
+### Bug 3: Race Condition in Callback Registration
+- **Symptom:** First client to join got empty roster
+- **Root cause:** `connect()` called before `onUserList()` registered; server sends roster immediately upon WebSocket open
+- **Fix:** Reordered code — register all callbacks before `connect()`
+
+### Bug 4: Relay Roster Excluded Self
+- **Symptom:** Users never saw themselves in the list
+- **Root cause:** Server added client to room AFTER computing roster
+- **Fix:** Add client to room BEFORE sending roster; include self in user list
 
 ## Edge Cases
 
@@ -118,3 +156,4 @@ adapter.onPresence((event) => {
 | `src/hooks/useChatUI.ts` | UI state for connected users |
 | `src/components/ActionBar.tsx` | Remote user dropdown |
 | `src/components/ChatApp.tsx` | Presence callback wiring |
+| `styles.css` | Dropdown styling |
