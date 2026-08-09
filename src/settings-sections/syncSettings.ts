@@ -30,7 +30,7 @@ export function renderSyncSection(
 ): void {
 	const section = containerEl.createEl("div", {
 		cls: "obsidian-ai-settings-section",
-		attr: { id: "obsidian-ai-settings-sync" },
+		attr: { id: "obsidian-ai-settings-multi-user-sync" },
 	});
 
 	section.createEl("h2", { text: "Multi-User Sync" });

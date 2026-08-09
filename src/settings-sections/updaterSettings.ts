@@ -8,7 +8,7 @@ export function renderUpdaterSection(
 ): void {
 	const section = containerEl.createEl("div", {
 		cls: "obsidian-ai-settings-section",
-		attr: { id: "obsidian-ai-settings-updater" },
+		attr: { id: "obsidian-ai-settings-updates" },
 	});
 
 	section.createEl("h2", { text: "Updates" });
