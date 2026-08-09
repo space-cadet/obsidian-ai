@@ -24,6 +24,7 @@ import { diffExtension } from "./modules/diffExtension";
 import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/ObsidianAIChatView";
 import { GroupChatView, GROUP_CHAT_VIEWTYPE } from "./views/GroupChatView";
 import { PluginUpdater, UpdateAvailableModal } from "./updater/PluginUpdater";
+import { GIT_COMMIT_HASH } from "./version-info";
 import { StoredChatData, ChatSession } from "./types";
 import { createFileLogger, FileLogger } from "./logger";
 import { createStorage, ChatStorage, StorageDeps } from "./storage/ChatStorage";
@@ -405,6 +406,7 @@ export default class ObsidianAIPlugin extends Plugin {
 			const result = await this._updater.checkForUpdate(
 				this.manifest.version,
 				this.settings.updateChannel === "dev",
+				GIT_COMMIT_HASH,
 			);
 
 			this.settings.lastUpdateCheck = Date.now();

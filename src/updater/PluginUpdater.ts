@@ -20,6 +20,7 @@ export interface UpdateCheckResult {
 	latestVersion: string;
 	release: ReleaseInfo | null;
 	isPrerelease: boolean;
+	commitMatch?: boolean;
 }
 
 const GITHUB_REPO = "space-cadet/obsidian-ai";
@@ -49,7 +50,17 @@ function compareVersions(v1: string, v2: string): number {
 	return 0;
 }
 
-/** Cross-platform HTTP GET using Obsidian's requestUrl */
+/** Fetch the latest commit SHA for a branch from GitHub */
+async function fetchLatestCommitSHA(branch: string = "main"): Promise<string | null> {
+	try {
+		const data = await fetchJson(
+			`https://api.github.com/repos/${GITHUB_REPO}/commits/${branch}`,
+		);
+		return data?.sha ?? null;
+	} catch {
+		return null;
+	}
+}
 async function fetchJson(url: string): Promise<any> {
 	const response = await requestUrl({
 		url,
@@ -120,6 +131,7 @@ export class PluginUpdater {
 	async checkForUpdate(
 		currentVersion: string,
 		includePrerelease: boolean,
+		currentCommitHash?: string,
 	): Promise<UpdateCheckResult> {
 		try {
 			let release: ReleaseInfo;
@@ -141,6 +153,28 @@ export class PluginUpdater {
 			}
 
 			const latestVersion = release.tag_name.replace(/^v/, "");
+
+			// For dev channel: compare commit hashes to detect if already on latest
+			let commitMatch = false;
+			if (includePrerelease && currentCommitHash) {
+				const latestCommitSHA = await fetchLatestCommitSHA("main");
+				if (latestCommitSHA) {
+					const shortLocal = currentCommitHash.slice(0, 7);
+					const shortRemote = latestCommitSHA.slice(0, 7);
+					commitMatch = shortLocal === shortRemote;
+					if (commitMatch) {
+						return {
+							hasUpdate: false,
+							currentVersion,
+							latestVersion,
+							release,
+							isPrerelease: true,
+							commitMatch: true,
+						};
+					}
+				}
+			}
+
 			const hasUpdate = compareVersions(latestVersion, currentVersion) > 0;
 
 			return {
@@ -149,6 +183,7 @@ export class PluginUpdater {
 				latestVersion,
 				release,
 				isPrerelease: release.prerelease,
+				commitMatch,
 			};
 		} catch (error) {
 			console.error("[PluginUpdater] Check failed:", error);
