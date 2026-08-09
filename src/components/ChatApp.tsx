@@ -564,6 +564,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 						onToggleRelay={handleToggleRelay}
 						connectedUsers={connectedUsers}
 						onToggleRemoteUserDropdown={ui.toggleRemoteUserDropdown}
+						remoteUserCount={connectedUsers.length}
 					/>
 					{ui.showParticipantDropdown && (
 						<div ref={ui.participantDropdownRef} className="chat-participant-dropdown">

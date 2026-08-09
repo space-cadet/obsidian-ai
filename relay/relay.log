@@ -3,3 +3,14 @@
 [relay] For cross-device: find this device's local IP, then use:
 [relay]   ws://<this-device-ip>:8080/ws/:roomId?userId=Alice
 [relay] Find your IP: ipconfig getifaddr en0  (macOS) or ip addr  (Linux)
+[relay] Client joined room: test-room as TestClient
+[relay] Client left room: test-room (TestClient)
+[relay] Client joined room: test-room as Alice
+[relay] Client joined room: test-room as Bob
+[relay] Client left room: test-room (Bob)
+[relay] Client left room: test-room (Alice)
+[relay] Client joined room: physics-chat as dave
+[relay] Client left room: physics-chat (dave)
+[relay] Client joined room: physics-chat as dave
+[relay] Client left room: physics-chat (dave)
+[relay] Client joined room: physics-chat as dave

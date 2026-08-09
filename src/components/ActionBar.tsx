@@ -100,14 +100,12 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				{onToggleRemoteUserDropdown && (
 					<div className="chat-remote-users-trigger">
 						<button
-							className={`chat-btn chat-icon-btn ${(remoteUserCount ?? 0) > 0 ? "is-active" : ""}`}
+							className={`chat-btn chat-icon-btn ${relayEnabled ? "is-active" : ""}`}
 							onClick={onToggleRemoteUserDropdown}
-							title={(remoteUserCount ?? 0) > 0 ? `${remoteUserCount} users online` : "Room"}
+							title={connectedUsers?.length ? `Room: ${connectedUsers.join(", ")}` : "Room (offline)"}
 						>
-							<ObsidianIcon icon="globe" size={15} />
-							{(remoteUserCount ?? 0) > 0 && (
-								<span className="chat-remote-users-badge">{remoteUserCount}</span>
-							)}
+							<ObsidianIcon icon={relayEnabled ? "radio" : "globe"} size={15} />
+							<span className="chat-remote-users-badge">{remoteUserCount ?? 0}</span>
 						</button>
 					</div>
 				)}
