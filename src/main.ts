@@ -22,7 +22,6 @@ import {
 } from "./modules/SelectionState";
 import { diffExtension } from "./modules/diffExtension";
 import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/ObsidianAIChatView";
-import { GroupChatView, GROUP_CHAT_VIEWTYPE } from "./views/GroupChatView";
 import { PluginUpdater, UpdateAvailableModal } from "./updater/PluginUpdater";
 import { GIT_COMMIT_HASH } from "./version-info";
 import { StoredChatData, ChatSession } from "./types";
@@ -134,21 +133,6 @@ export default class ObsidianAIPlugin extends Plugin {
 		this.app.workspace.onLayoutReady(() => {
 			this.integrationRegistry.discover();
 			this.removeDuplicateChatLeaves();
-		});
-
-		this.registerView(
-			GROUP_CHAT_VIEWTYPE,
-			(leaf) => new GroupChatView(leaf, this),
-		);
-
-		this.addRibbonIcon("users", "Open Group Chat", () => {
-			this.activateGroupChatView();
-		});
-
-		this.addCommand({
-			id: "open-group-chat",
-			name: "Open Group Chat",
-			callback: () => this.activateGroupChatView(),
 		});
 
 		this.addRibbonIcon("message-square", "Open Obsidian AI Chat", () => {
@@ -389,16 +373,6 @@ export default class ObsidianAIPlugin extends Plugin {
 		}
 	}
 
-	async activateGroupChatView() {
-		const { workspace } = this.app;
-		let leaf = workspace.getLeavesOfType(GROUP_CHAT_VIEWTYPE)[0];
-		if (!leaf) {
-			leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf(true);
-			await leaf.setViewState({ type: GROUP_CHAT_VIEWTYPE, active: true });
-		}
-		workspace.revealLeaf(leaf);
-	}
-
 	async checkForUpdates(manual: boolean) {
 		if (!this._updater) return;
 
@@ -445,7 +419,6 @@ export default class ObsidianAIPlugin extends Plugin {
 		this.logger.stopMemoryLogging();
 		this.logger.flushNow();
 		this.app.workspace.detachLeavesOfType(CHAT_VIEWTYPE);
-		this.app.workspace.detachLeavesOfType(GROUP_CHAT_VIEWTYPE);
 	}
 
 	/** Build the storage dependency bag */

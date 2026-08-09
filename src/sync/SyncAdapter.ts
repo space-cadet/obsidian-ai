@@ -4,7 +4,7 @@ import type { ChatMessage } from "../types";
  * Unified interface for multi-user chat synchronization backends.
  *
  * Both WebSocket and WebRTC adapters implement this interface.
- * GroupChatApp is transport-agnostic — it only knows this interface.
+ * ChatApp is transport-agnostic — it only knows this interface.
  */
 export interface SyncAdapter {
 	/**

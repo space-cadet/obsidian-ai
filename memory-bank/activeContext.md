@@ -14,7 +14,7 @@
 - Task tracking: `memory-bank/tasks/T41.md`
 
 ### T40: Multi-User Chat with LaTeX Support (2026-08-09)
-**Status:** 🔄 Phase 1 Complete — Cross-Device Messaging Next
+**Status:** 🔄 Phase 2 In Progress — Presence & User List Implementation
 
 - Core architecture audit completed.
 - Decision: NO Supabase. Build WebSocket relay + WebRTC peer-to-peer backends.
@@ -23,21 +23,21 @@
   - ✅ `relay/server.js` — WebSocket broadcast relay (room-based)
   - ✅ `src/sync/SyncAdapter.ts` — Interface definition
   - ✅ `src/sync/WebSocketSyncAdapter.ts` — WS implementation with reconnect
-  - ✅ `src/components/GroupChatApp.tsx` — Accepts sync adapter, syncs messages, shows status
-  - ✅ `src/views/GroupChatView.ts` — Auto-creates adapter from settings on open
-  - ✅ `src/settings.ts` — syncRelayUrl, syncRoomId, syncUserName settings with defaults
-  - ✅ In-app sync settings UI — click gear icon, edit relay/room/name, save & reload
   - ✅ Build passes (`pnpm run build` clean)
   - ✅ BRAT beta distribution verified — plugin installs/updates via BRAT successfully
   - ✅ Relay server connection verified — WebSocket adapter connects to relay
-- ✅ GroupChatView re-enabled (was commented out)
-- ✅ Message handling logic fixed for sync mode
-- ✅ UI: "AI Council" → "Group Chat" throughout
-- Design principle: GroupChatApp is transport-agnostic — just calls `syncAdapter.sendMessage()`
+- **Phase 1 Cleanup (2026-08-09 evening):**
+  - ✅ Removed redundant `GroupChatView` and `GroupChatApp.tsx` — all multi-user functionality now in main `ChatApp`
+  - ✅ Build passes, all 188 tests pass
+- **Phase 2 Current — Presence & User List:**
+  - 🔄 Relay presence tracking (join/leave/roster broadcast)
+  - 🔄 SyncAdapter v2 (`onUserList`, `onPresence` hooks)
+  - 🔄 Adjacent dropdown in ActionBar for remote users
+  - 🔄 Message attribution (AI vs human)
+- Design principle: ChatApp is transport-agnostic — just calls `syncAdapter.sendMessage()`
 - Audit document: `memory-bank/implementation-details/multi-user-chat-audit.md`
 - Design document: `memory-bank/implementation-details/multi-user-chat-design.md`
 - Task tracking: `memory-bank/tasks/T40.md`
-- **Next: End-to-end cross-device messaging test (two Obsidian instances)**
 
 ---
 
