@@ -1,7 +1,4 @@
-import { App, Notice, Modal, ButtonComponent, Setting } from "obsidian";
-import * as fs from "fs";
-import * as path from "path";
-import * as https from "https";
+import { App, Notice, Modal, Setting, requestUrl } from "obsidian";
 
 export interface ReleaseInfo {
 	tag_name: string;
@@ -40,60 +37,28 @@ function compareVersions(v1: string, v2: string): number {
 	return 0;
 }
 
-function httpsGetJson(url: string): Promise<any> {
-	return new Promise((resolve, reject) => {
-		https
-			.get(url, { headers: { "User-Agent": "obsidian-ai-updater" } }, (res) => {
-				if (res.statusCode === 302 && res.headers.location) {
-					httpsGetJson(res.headers.location).then(resolve).catch(reject);
-					return;
-				}
-				if (res.statusCode !== 200) {
-					reject(new Error(`HTTP ${res.statusCode}: ${url}`));
-					return;
-				}
-				let data = "";
-				res.on("data", (chunk) => (data += chunk));
-				res.on("end", () => {
-					try {
-						resolve(JSON.parse(data));
-					} catch (e) {
-						reject(e);
-					}
-				});
-			})
-			.on("error", reject);
+/** Cross-platform HTTP GET using Obsidian's requestUrl */
+async function fetchJson(url: string): Promise<any> {
+	const response = await requestUrl({
+		url,
+		method: "GET",
+		headers: { "User-Agent": "obsidian-ai-updater" },
 	});
+	return JSON.parse(response.text);
 }
 
-function httpsDownload(url: string, destPath: string): Promise<void> {
-	return new Promise((resolve, reject) => {
-		const file = fs.createWriteStream(destPath);
-		https
-			.get(url, { headers: { "User-Agent": "obsidian-ai-updater" } }, (res) => {
-				if (res.statusCode === 302 && res.headers.location) {
-					file.close();
-					fs.unlinkSync(destPath);
-					httpsDownload(res.headers.location, destPath).then(resolve).catch(reject);
-					return;
-				}
-				if (res.statusCode !== 200) {
-					file.close();
-					reject(new Error(`HTTP ${res.statusCode}: ${url}`));
-					return;
-				}
-				res.pipe(file);
-				file.on("finish", () => {
-					file.close();
-					resolve();
-				});
-			})
-			.on("error", (err) => {
-				file.close();
-				if (fs.existsSync(destPath)) fs.unlinkSync(destPath);
-				reject(err);
-			});
+/** Cross-platform file download using requestUrl + vault adapter */
+async function downloadFile(
+	app: App,
+	url: string,
+	destPath: string,
+): Promise<void> {
+	const response = await requestUrl({
+		url,
+		method: "GET",
+		headers: { "User-Agent": "obsidian-ai-updater" },
 	});
+	await app.vault.adapter.write(destPath, response.text);
 }
 
 export class PluginUpdater {
@@ -102,9 +67,41 @@ export class PluginUpdater {
 
 	constructor(app: App, pluginId: string) {
 		this.app = app;
-		// Obsidian plugins live at <vault>/.obsidian/plugins/<plugin-id>/
-		const basePath = (this.app.vault.adapter as any).basePath ?? "";
-		this.pluginDir = path.join(basePath, ".obsidian", "plugins", pluginId);
+		// Vault-relative path to plugin directory
+		this.pluginDir = `.obsidian/plugins/${pluginId}`;
+	}
+
+	private async ensureDir(dirPath: string): Promise<void> {
+		try {
+			await this.app.vault.adapter.mkdir(dirPath);
+		} catch {
+			// Directory may already exist
+		}
+	}
+
+	private async fileExists(filePath: string): Promise<boolean> {
+		return this.app.vault.adapter.exists(filePath);
+	}
+
+	private async readFile(filePath: string): Promise<string> {
+		return this.app.vault.adapter.read(filePath);
+	}
+
+	private async writeFile(filePath: string, data: string): Promise<void> {
+		return this.app.vault.adapter.write(filePath, data);
+	}
+
+	private async removeFile(filePath: string): Promise<void> {
+		try {
+			// Obsidian adapter doesn't have a direct remove, but we can write empty
+			// and rely on overwrite, or use the internal API
+			const adapter = this.app.vault.adapter as any;
+			if (adapter.remove) {
+				await adapter.remove(filePath);
+			}
+		} catch {
+			// Best effort
+		}
 	}
 
 	/** Check if an update is available */
@@ -116,16 +113,15 @@ export class PluginUpdater {
 			let release: ReleaseInfo;
 
 			if (includePrerelease) {
-				// Fetch all releases and find the latest (including prereleases)
-				const releases = (await httpsGetJson(
+				const releases = (await fetchJson(
 					`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=10`,
 				)) as ReleaseInfo[];
 				if (!releases || releases.length === 0) {
 					return { hasUpdate: false, currentVersion, latestVersion: currentVersion, release: null, isPrerelease: false };
 				}
-				release = releases[0]; // GitHub returns releases sorted by date, newest first
+				release = releases[0];
 			} else {
-				release = await httpsGetJson(
+				release = await fetchJson(
 					`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
 				);
 			}
@@ -148,15 +144,8 @@ export class PluginUpdater {
 
 	/** Download update files to a temp directory */
 	async downloadUpdate(release: ReleaseInfo): Promise<string> {
-		const tempDir = path.join(this.pluginDir, ".update-tmp");
-		if (!fs.existsSync(tempDir)) {
-			fs.mkdirSync(tempDir, { recursive: true });
-		}
-
-		// Clean temp dir
-		for (const f of fs.readdirSync(tempDir)) {
-			fs.unlinkSync(path.join(tempDir, f));
-		}
+		const tempDir = `${this.pluginDir}/.update-tmp`;
+		await this.ensureDir(tempDir);
 
 		// Download each required file
 		for (const filename of RELEASE_FILES) {
@@ -164,8 +153,8 @@ export class PluginUpdater {
 			if (!asset) {
 				throw new Error(`Release missing required file: ${filename}`);
 			}
-			const destPath = path.join(tempDir, filename);
-			await httpsDownload(asset.browser_download_url, destPath);
+			const destPath = `${tempDir}/${filename}`;
+			await downloadFile(this.app, asset.browser_download_url, destPath);
 		}
 
 		return tempDir;
@@ -173,46 +162,41 @@ export class PluginUpdater {
 
 	/** Install downloaded update files */
 	async installUpdate(tempDir: string): Promise<void> {
-		// Backup current files
-		const backupDir = path.join(this.pluginDir, ".backup");
-		if (!fs.existsSync(backupDir)) {
-			fs.mkdirSync(backupDir, { recursive: true });
-		}
+		const backupDir = `${this.pluginDir}/.backup`;
+		await this.ensureDir(backupDir);
 
+		// Backup current files
 		for (const filename of RELEASE_FILES) {
-			const currentPath = path.join(this.pluginDir, filename);
-			const backupPath = path.join(backupDir, filename);
-			if (fs.existsSync(currentPath)) {
-				fs.copyFileSync(currentPath, backupPath);
+			const currentPath = `${this.pluginDir}/${filename}`;
+			const backupPath = `${backupDir}/${filename}`;
+			if (await this.fileExists(currentPath)) {
+				const content = await this.readFile(currentPath);
+				await this.writeFile(backupPath, content);
 			}
 		}
 
 		// Copy new files
 		for (const filename of RELEASE_FILES) {
-			const src = path.join(tempDir, filename);
-			const dest = path.join(this.pluginDir, filename);
-			fs.copyFileSync(src, dest);
+			const src = `${tempDir}/${filename}`;
+			const dest = `${this.pluginDir}/${filename}`;
+			const content = await this.readFile(src);
+			await this.writeFile(dest, content);
 		}
-
-		// Clean up temp dir
-		for (const f of fs.readdirSync(tempDir)) {
-			fs.unlinkSync(path.join(tempDir, f));
-		}
-		fs.rmdirSync(tempDir);
 	}
 
 	/** Rollback to backup files */
 	async rollback(): Promise<void> {
-		const backupDir = path.join(this.pluginDir, ".backup");
-		if (!fs.existsSync(backupDir)) {
+		const backupDir = `${this.pluginDir}/.backup`;
+		if (!(await this.fileExists(backupDir))) {
 			throw new Error("No backup available for rollback");
 		}
 
 		for (const filename of RELEASE_FILES) {
-			const backupPath = path.join(backupDir, filename);
-			const dest = path.join(this.pluginDir, filename);
-			if (fs.existsSync(backupPath)) {
-				fs.copyFileSync(backupPath, dest);
+			const backupPath = `${backupDir}/${filename}`;
+			const dest = `${this.pluginDir}/${filename}`;
+			if (await this.fileExists(backupPath)) {
+				const content = await this.readFile(backupPath);
+				await this.writeFile(dest, content);
 			}
 		}
 	}

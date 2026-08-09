@@ -1,4 +1,4 @@
-import { App, Notice, PluginSettingTab, Platform } from "obsidian";
+import { App, Notice, PluginSettingTab } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { ProviderProfile } from "../settings";
 import { getActiveProviderProfile } from "../settings";
@@ -108,8 +108,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Advanced", "Advanced"],
 				["Custom Commands", "Custom Commands"],
 				["Diagnostics", "Diagnostics"],
-			].filter((item) => item[0] !== "Updates" || Platform.isDesktop)
-			.forEach(([label, sectionTitle]) => {
+			].forEach(([label, sectionTitle]) => {
 				const id = `obsidian-ai-settings-${sectionTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 				const button = nav.createEl("button", { text: label, attr: { type: "button" } });
 				button.addEventListener("click", (event) => {
@@ -135,9 +134,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			renderIntelligenceSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderWebSearchSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderSyncSection(containerEl, this.plugin, this.saveSettings.bind(this));
-			if (Platform.isDesktop) {
-				renderUpdaterSection(containerEl, this.plugin, this.saveSettings.bind(this));
-			}
+			renderUpdaterSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderAdvancedSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderCustomCommandsSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderDiagnosticsSection(containerEl, this.plugin, this.app, this.saveSettings.bind(this));
