@@ -13,8 +13,8 @@
 - **Released:** `latest-dev` rebuilt from ae09179 with fix included
 - Task tracking: `memory-bank/tasks/T41.md`
 
-### T40: Multi-User Chat with LaTeX Support (2026-08-09)
-**Status:** 🔄 Phase 2 In Progress — Presence & User List Implementation
+### T40: Multi-User Chat with LaTeX Support (2026-08-10)
+**Status:** 🔄 Phase 2 Complete (Presence Tracking), Phase 2b Pending
 
 - Core architecture audit completed.
 - Decision: NO Supabase. Build WebSocket relay + WebRTC peer-to-peer backends.
@@ -29,11 +29,17 @@
 - **Phase 1 Cleanup (2026-08-09 evening):**
   - ✅ Removed redundant `GroupChatView` and `GroupChatApp.tsx` — all multi-user functionality now in main `ChatApp`
   - ✅ Build passes, all 188 tests pass
-- **Phase 2 Current — Presence & User List:**
-  - 🔄 Relay presence tracking (join/leave/roster broadcast)
-  - 🔄 SyncAdapter v2 (`onUserList`, `onPresence` hooks)
-  - 🔄 Adjacent dropdown in ActionBar for remote users
-  - 🔄 Message attribution (AI vs human)
+- **Phase 2 Complete (2026-08-09 evening):**
+  - ✅ Relay presence tracking — `join`/`leave`/`roster` events
+  - ✅ SyncAdapter v2 — `onUserList`, `onPresence` hooks
+  - ✅ WebSocketSyncAdapter — presence protocol implemented
+  - ✅ useChatUI — `connectedUsers` state + `toggleRemoteUserDropdown`
+  - ✅ ActionBar — adjacent dropdown for remote users (icon: `users`)
+  - ✅ ChatApp.tsx — wired presence callbacks to UI state
+  - ✅ Build passes, all 188 tests pass
+  - ✅ Committed: `6746201`
+- **Phase 2b Pending:** Message attribution (AI vs human), typing indicators, `@user` mentions
+- **Next:** End-to-end cross-device messaging test (two Obsidian instances)
 - Design principle: ChatApp is transport-agnostic — just calls `syncAdapter.sendMessage()`
 - Audit document: `memory-bank/implementation-details/multi-user-chat-audit.md`
 - Design document: `memory-bank/implementation-details/multi-user-chat-design.md`
