@@ -2,7 +2,7 @@
 *Last Updated: 2026-08-09 07:01 IST*
 
 ### T41: Plugin Auto-Updater with Stable/Dev Channels (2026-08-09)
-**Status:** 🔄 IN PROGRESS — Core Complete, Dev Tag Issue Remaining
+**Status:** ✅ COMPLETE — Commit-hash fix applied, built, and released
 
 - Built complete custom auto-updater for obsidian-ai plugin
 - **Core capabilities:**
@@ -19,7 +19,11 @@
   - Dev channel checked stable releases → now filters `prerelease: true`
   - Version display → added `(stable)` / `(dev channel)` suffix
   - Non-semver dev tags → `latest-dev` treated as newer than semver
-- **Remaining issue:** Dev build release `latest-dev` points to old commit (7b7393f from July 28). Local code is on 862c465 (newer). Updater compares by tag name, not commit hash — offers to "update" to older code. Needs either rebuild latest-dev from HEAD, or commit-hash comparison.
+  - **Perpetual "update available" on dev → commit-hash comparison fix**
+    - `checkForUpdate()` fetches latest commit SHA from GitHub API
+    - Compares with local `GIT_COMMIT_HASH` baked in at build time
+    - If match → returns `hasUpdate: false`, no prompt
+    - `latest-dev` release rebuilt from ae09179 with fix included
 - Files: `src/updater/PluginUpdater.ts`, `src/settings-sections/updaterSettings.ts`
 - Task: `memory-bank/tasks/T41.md`
 
