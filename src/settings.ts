@@ -102,6 +102,7 @@ export interface ObsidianAISettings {
 
 	// Multi-user sync settings (T40)
 	syncRelayUrl: string;
+	syncRelayUrlHistory: string[];
 	syncRoomId: string;
 	syncUserName: string;
 
@@ -308,6 +309,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 
 	// Multi-user sync defaults (T40)
 	syncRelayUrl: "ws://localhost:8080",
+	syncRelayUrlHistory: [],
 	syncRoomId: "obsidian-ai-chat",
 	syncUserName: "User",
 
@@ -392,6 +394,9 @@ export const normalizeSettings = (
 			enableMemoryAuditTool: Boolean(merged.intelligence?.enableMemoryAuditTool ?? false),
 		},
 		syncRelayUrl: merged.syncRelayUrl ?? "ws://localhost:8080",
+		syncRelayUrlHistory: Array.isArray(merged.syncRelayUrlHistory)
+			? merged.syncRelayUrlHistory.filter((u): u is string => typeof u === "string")
+			: [],
 		syncRoomId: merged.syncRoomId ?? "obsidian-ai-chat",
 		syncUserName: merged.syncUserName ?? "User",
 		checkForUpdates: Boolean(merged.checkForUpdates ?? true),

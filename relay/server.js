@@ -69,7 +69,41 @@ function send(ws, message) {
 }
 
 const server = http.createServer((req, res) => {
-	res.writeHead(200, { "Content-Type": "application/json" });
+	res.setHeader("Access-Control-Allow-Origin", "*");
+	res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+	res.setHeader("Content-Type", "application/json");
+
+	if (req.method === "OPTIONS") {
+		res.writeHead(204);
+		res.end();
+		return;
+	}
+
+	const parsed = url.parse(req.url, true);
+
+	// GET /rooms — list all rooms with user counts
+	if (parsed.pathname === "/rooms") {
+		const roomData = {};
+		for (const [roomId, room] of rooms) {
+			roomData[roomId] = Array.from(room.values());
+		}
+		res.writeHead(200);
+		res.end(JSON.stringify({ status: "ok", rooms: roomData }));
+		return;
+	}
+
+	// GET /rooms/:roomId — get users in a specific room
+	const roomMatch = parsed.pathname.match(/^\/rooms\/(.+)$/);
+	if (roomMatch) {
+		const roomId = roomMatch[1];
+		const users = getUserList(roomId);
+		res.writeHead(200);
+		res.end(JSON.stringify({ status: "ok", roomId, users }));
+		return;
+	}
+
+	// GET / — health check + room summary
+	res.writeHead(200);
 	const roomData = {};
 	for (const [roomId, room] of rooms) {
 		roomData[roomId] = Array.from(room.values());
