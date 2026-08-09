@@ -1,9 +1,19 @@
 # Active Context
 
-*Last Updated: 2026-08-05 17:48:15 IST*
+*Last Updated: 2026-08-09 07:01 IST*
+
+### T41: Plugin Auto-Updater with Stable/Dev Channels (2026-08-09)
+**Status:** 🔄 Core Complete — Dev Tag Issue Remaining
+
+- Built complete custom auto-updater for obsidian-ai plugin
+- **Files:** `src/updater/PluginUpdater.ts`, `src/settings-sections/updaterSettings.ts`
+- **Capabilities:** GitHub API fetch, semver compare, stable/dev channels, auto-install toggle, manual "Check Now", backup + rollback, cross-platform (desktop + mobile)
+- **Fixes applied:** Settings nav links, mobile UI (removed Node.js imports), mobile toggles (`Setting.addToggle()`), dev channel prerelease filtering, version display with channel suffix, non-semver tag handling
+- **Remaining issue:** Dev build `latest-dev` points to old commit (7b7393f). Local code on 862c465 (newer). Updater compares tags not commits — offers downgrade. Need: rebuild latest-dev release OR add commit-hash comparison.
+- Task tracking: `memory-bank/tasks/T41.md`
 
 ### T40: Multi-User Chat with LaTeX Support (2026-08-09)
-**Status:** 🔄 PoP Code Complete — BRAT & Relay Verified, Cross-Device Messaging Next
+**Status:** 🔄 Phase 1 Complete — Cross-Device Messaging Next
 
 - Core architecture audit completed.
 - Decision: NO Supabase. Build WebSocket relay + WebRTC peer-to-peer backends.
@@ -19,16 +29,20 @@
   - ✅ Build passes (`pnpm run build` clean)
   - ✅ BRAT beta distribution verified — plugin installs/updates via BRAT successfully
   - ✅ Relay server connection verified — WebSocket adapter connects to relay
+- ✅ GroupChatView re-enabled (was commented out)
+- ✅ Message handling logic fixed for sync mode
+- ✅ UI: "AI Council" → "Group Chat" throughout
 - Design principle: GroupChatApp is transport-agnostic — just calls `syncAdapter.sendMessage()`
-- Audit document: `memory-bank/implementation/multi-user-chat-audit.md`
-- Design document: `memory-bank/implementation/multi-user-chat-design.md`
+- Audit document: `memory-bank/implementation-details/multi-user-chat-audit.md`
+- Design document: `memory-bank/implementation-details/multi-user-chat-design.md`
 - Task tracking: `memory-bank/tasks/T40.md`
 - **Next: End-to-end cross-device messaging test (two Obsidian instances)**
 
 ---
 
 ## Current Focus
-**T40 Multi-User Chat with LaTeX Support** — PoP code complete and verified. BRAT distribution works. Relay server connections established. Next session: end-to-end cross-device messaging test between two Obsidian instances.
+**T41 Plugin Auto-Updater** — Core implementation complete. Settings UI working. Mobile compatibility fixed. Remaining: resolve dev tag pointing to old commit, or add commit-hash comparison to prevent downgrade offers.
+**T40 Multi-User Chat with LaTeX Support** — Phase 1 complete. BRAT distribution works. Relay server connections established. Next: end-to-end cross-device messaging test between two Obsidian instances.
 **T37 Idempotent Bulk Note Creation and Batch Scope Decision** — completed 2026-08-05; `create_notes` skips existing files and reports its created/skipped result, while mutation batching remains deliberately operation-specific.
 **T38 Tool Approval Policies, Batch Plans, and Operation Audit Log** — paused by user request for a later session; the agreed design is a graduated approval policy, previewed batch plans, and a bounded privacy-aware audit log.
 **T36 Stable Per-Tab Model Selection and Restored Chat View State** — completed 2026-08-05; model switching has no session-feedback loop, and saved tabs, active tab, and scroll positions restore by default.

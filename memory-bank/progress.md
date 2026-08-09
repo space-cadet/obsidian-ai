@@ -1,8 +1,30 @@
 # Implementation Progress
-*Last Updated: 2026-08-07 18:40 IST*
+*Last Updated: 2026-08-09 07:01 IST*
+
+### T41: Plugin Auto-Updater with Stable/Dev Channels (2026-08-09)
+**Status:** 🔄 IN PROGRESS — Core Complete, Dev Tag Issue Remaining
+
+- Built complete custom auto-updater for obsidian-ai plugin
+- **Core capabilities:**
+  - ✅ GitHub API fetch for releases
+  - ✅ Stable vs Dev (pre-release) channel support
+  - ✅ Auto-install stable updates silently (optional toggle)
+  - ✅ Manual "Check Now" button in settings
+  - ✅ Backup before install, rollback on failure
+  - ✅ Cross-platform: desktop AND mobile (uses `requestUrl` + `app.vault.adapter`)
+- **Fixes applied:**
+  - Settings nav links for Sync/Updates sections
+  - Mobile UI garbled → removed Node.js imports, used Obsidian APIs
+  - Mobile toggles rectangles → `Setting.addToggle()` / `Setting.addDropdown()`
+  - Dev channel checked stable releases → now filters `prerelease: true`
+  - Version display → added `(stable)` / `(dev channel)` suffix
+  - Non-semver dev tags → `latest-dev` treated as newer than semver
+- **Remaining issue:** Dev build release `latest-dev` points to old commit (7b7393f from July 28). Local code is on 862c465 (newer). Updater compares by tag name, not commit hash — offers to "update" to older code. Needs either rebuild latest-dev from HEAD, or commit-hash comparison.
+- Files: `src/updater/PluginUpdater.ts`, `src/settings-sections/updaterSettings.ts`
+- Task: `memory-bank/tasks/T41.md`
 
 ### T40: Multi-User Chat with LaTeX Support (2026-08-09)
-**Status:** 🔄 IN PROGRESS — PoP Verified, Cross-Device Messaging Next
+**Status:** 🔄 IN PROGRESS — Phase 1 Complete, Phase 2 Pending
 
 - Architecture audit reveals obsidian-ai has strong foundation:
   - ✅ LaTeX rendering already works (Obsidian's built-in MathJax/KaTeX)
@@ -15,13 +37,16 @@
   - WebRTC for production peer-to-peer (uses WebSocket relay as signaling)
   - Both implement unified `SyncAdapter` interface
   - GroupChatApp is transport-agnostic
-- **Phase 1 Verification (2026-08-09):**
+- **Phase 1 Complete (2026-08-09):**
   - ✅ BRAT beta distribution verified — plugin installs/updates via BRAT successfully
   - ✅ Relay server connection verified — WebSocket adapter connects to relay
+  - ✅ GroupChatView re-enabled (was commented out)
+  - ✅ Message handling logic fixed for sync mode
+  - ✅ UI: "AI Council" → "Group Chat" throughout
   - ⬜ End-to-end cross-device messaging — deferred to next session
 - Estimated: 4-6 weeks for solid MVP
-- Full audit: `memory-bank/implementation/multi-user-chat-audit.md`
-- Design doc: `memory-bank/implementation/multi-user-chat-design.md`
+- Full audit: `memory-bank/implementation-details/multi-user-chat-audit.md`
+- Design doc: `memory-bank/implementation-details/multi-user-chat-design.md`
 - Task: `memory-bank/tasks/T40.md`
 
 ---

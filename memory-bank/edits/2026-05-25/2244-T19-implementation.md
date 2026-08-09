@@ -22,8 +22,8 @@ source_commit: a071a24737392b6e35ef3501ab7280f8b8fe46e7
 - Created `memory-bank/implementation-details/cli-test-harness.md` - Implementation doc with mock vault, settings loader, test script examples
 
 #### 22:51:00 IST - T18: Web search implementation doc moved
-- Created `memory-bank/implementation-details/web-search.md` - Moved from `memory-bank/implementation/T18-web-search.md`
-- Deleted `memory-bank/implementation/T18-web-search.md` - Stale location, content now in implementation-details
+- Created `memory-bank/implementation-details/web-search.md` - Moved from `memory-bank/implementation-details/T18-web-search.md`
+- Deleted `memory-bank/implementation-details/T18-web-search.md` - Stale location, content now in implementation-details
 
 #### 23:03:00 IST - META-1: Memory bank update for T19/T21
 - Modified `memory-bank/tasks/T19.md` - Marked core implementation complete, updated Last Active, added commit a071a24

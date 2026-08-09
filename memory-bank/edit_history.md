@@ -1,8 +1,17 @@
 # Edit History
 
-*Last Updated: 2026-08-09 04:14 IST*
+*Last Updated: 2026-08-09 07:01 IST*
 
 ## 2026-08-09
+
+#### 07:01 IST - T40 Phase 1 Complete + T41 Auto-Updater Implementation
+- Moved `memory-bank/implementation/*` → `memory-bank/implementation-details/` (canonical location)
+- Updated all references across memory-bank files to `implementation-details/`
+- Modified `memory-bank/tasks/T40.md` - Marked Phase 1 complete, added UI changes
+- Created `memory-bank/tasks/T41.md` - Plugin Auto-Updater with Stable/Dev Channels
+- Modified `memory-bank/tasks.md` - Added T41 to active tasks
+- Modified `memory-bank/progress.md` - Added T41 entry, updated T40 status
+- Modified `memory-bank/activeContext.md` - Added T41 context, updated current focus
 
 #### 04:14 IST - T40: Multi-User Chat — BRAT distribution verified, relay server connection verified. Updated task status, active context, progress, session cache, task registry, and implementation design doc.
 - Modified `memory-bank/tasks/T40.md` - Updated status and Phase 1 checklist
@@ -10,7 +19,7 @@
 - Modified `memory-bank/progress.md` - Added verification entry for T40
 - Modified `memory-bank/tasks.md` - Added T40 to active tasks registry
 - Modified `memory-bank/session_cache.md` - Updated for current session
-- Modified `memory-bank/implementation/multi-user-chat-design.md` - Added Phase 1 Verification Log section
+- Modified `memory-bank/implementation-details/multi-user-chat-design.md` - Added Phase 1 Verification Log section
 - Created `memory-bank/sessions/2026-08-09-morning.md` - Session log
 
 ---
