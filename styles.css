@@ -3770,3 +3770,27 @@
 .obsidian-ai-profile-row:hover .obsidian-ai-profile-col-actions {
 	opacity: 1;
 }
+
+/* ── Updater styles ── */
+
+.updater-changelog {
+	max-height: 200px;
+	overflow-y: auto;
+	background: var(--background-secondary);
+	border-radius: 6px;
+	padding: 8px 12px;
+	margin: 8px 0;
+	font-size: var(--font-ui-small);
+}
+
+.updater-changelog pre {
+	margin: 0;
+	white-space: pre-wrap;
+	word-break: break-word;
+	font-family: var(--font-monospace);
+}
+
+.updater-prerelease-warning {
+	color: var(--text-warning);
+	font-weight: 500;
+}

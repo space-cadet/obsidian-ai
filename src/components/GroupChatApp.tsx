@@ -188,6 +188,7 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin, syncAdapter }) => {
 				syncAdapter.sendMessage(userMsg).catch((err) => {
 					console.warn("[GroupChatApp] Failed to sync message:", err);
 				});
+				return; // Human chat mode: don't send to AI
 			}
 
 			setIsStreaming(true);
@@ -344,7 +345,7 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin, syncAdapter }) => {
 			{/* Simple action bar for group chat */}
 			<div className="chat-action-bar">
 				<div className="chat-action-bar-left">
-					<button className="chat-btn chat-icon-btn" onClick={handleNewSession} title="New council session">
+					<button className="chat-btn chat-icon-btn" onClick={handleNewSession} title="New group chat session">
 						<ObsidianIcon icon="plus" size={15} />
 					</button>
 					<button className="chat-btn chat-icon-btn" onClick={handleClearChat} title="Clear chat">
@@ -352,8 +353,8 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin, syncAdapter }) => {
 					</button>
 				</div>
 				<div className="chat-action-bar-center">
-					<span className="chat-session-title-display" title={session.title || "AI Council"}>
-						{session.title || "AI Council"}
+					<span className="chat-session-title-display" title={session.title || "Group Chat"}>
+						{session.title || "Group Chat"}
 					</span>
 				</div>
 				<div className="chat-action-bar-right">
@@ -372,7 +373,7 @@ const GroupChatApp: React.FC<GroupChatAppProps> = ({ plugin, syncAdapter }) => {
 					>
 						<ObsidianIcon icon="settings" size={15} />
 					</button>
-					<span className="group-chat-badge">Council</span>
+					<span className="group-chat-badge">Group Chat</span>
 				</div>
 			</div>
 

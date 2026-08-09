@@ -42,7 +42,7 @@ export class GroupChatView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "AI Council";
+		return "Group Chat";
 	}
 
 	getIcon(): string {

@@ -104,6 +104,12 @@ export interface ObsidianAISettings {
 	syncRelayUrl: string;
 	syncRoomId: string;
 	syncUserName: string;
+
+	// Auto-updater settings
+	checkForUpdates: boolean;
+	updateChannel: "stable" | "dev";
+	lastUpdateCheck: number;
+	autoUpdate: boolean;
 }
 
 type LegacySettings = Partial<ObsidianAISettings> & {
@@ -304,6 +310,12 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	syncRelayUrl: "ws://localhost:8080",
 	syncRoomId: "obsidian-ai-chat",
 	syncUserName: "User",
+
+	// Auto-updater defaults
+	checkForUpdates: true,
+	updateChannel: "stable",
+	lastUpdateCheck: 0,
+	autoUpdate: false,
 };
 
 export const normalizeSettings = (
@@ -382,6 +394,10 @@ export const normalizeSettings = (
 		syncRelayUrl: merged.syncRelayUrl ?? "ws://localhost:8080",
 		syncRoomId: merged.syncRoomId ?? "obsidian-ai-chat",
 		syncUserName: merged.syncUserName ?? "User",
+		checkForUpdates: Boolean(merged.checkForUpdates ?? true),
+		updateChannel: (merged.updateChannel as "stable" | "dev") ?? "stable",
+		lastUpdateCheck: merged.lastUpdateCheck ?? 0,
+		autoUpdate: Boolean(merged.autoUpdate ?? false),
 	};
 };
 

@@ -84,7 +84,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
 						<button
 							className={`chat-btn chat-icon-btn ${(participantCount ?? 0) > 0 ? "is-active" : ""}`}
 							onClick={onToggleParticipantDropdown}
-							title={(participantCount ?? 0) > 0 ? `${participantCount} agents in council` : "AI Council"}
+							title={(participantCount ?? 0) > 0 ? `${participantCount} agents in chat` : "Group Chat"}
 						>
 							<ObsidianIcon icon="users" size={15} />
 							<span className="chat-council-badge">{participantCount && participantCount > 0 ? participantCount : 1}</span>

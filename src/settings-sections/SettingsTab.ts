@@ -12,6 +12,7 @@ import { renderProviderProfilesSection } from "./providerProfiles";
 import { renderIntelligenceSection } from "./intelligence";
 import { renderIntegrationsSection } from "./integrations";
 import { renderSyncSection } from "./syncSettings";
+import { renderUpdaterSection } from "./updaterSettings";
 import { renderWebSearchSection } from "./webSearch";
 
 function debounce(fn: () => void, ms: number): () => void {
@@ -103,6 +104,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Intelligence", "AI Intelligence Layer"],
 				["Web Search", "Web Search"],
 				["Sync", "Multi-User Sync"],
+				["Updates", "Updates"],
 				["Advanced", "Advanced"],
 				["Custom Commands", "Custom Commands"],
 				["Diagnostics", "Diagnostics"],
@@ -132,6 +134,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			renderIntelligenceSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderWebSearchSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderSyncSection(containerEl, this.plugin, this.saveSettings.bind(this));
+			renderUpdaterSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderAdvancedSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderCustomCommandsSection(containerEl, this.plugin, this.saveSettings.bind(this));
 			renderDiagnosticsSection(containerEl, this.plugin, this.app, this.saveSettings.bind(this));

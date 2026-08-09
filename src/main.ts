@@ -22,7 +22,8 @@ import {
 } from "./modules/SelectionState";
 import { diffExtension } from "./modules/diffExtension";
 import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/ObsidianAIChatView";
-// import { GroupChatView, GROUP_CHAT_VIEWTYPE } from "./views/GroupChatView";
+import { GroupChatView, GROUP_CHAT_VIEWTYPE } from "./views/GroupChatView";
+import { PluginUpdater, UpdateAvailableModal } from "./updater/PluginUpdater";
 import { StoredChatData, ChatSession } from "./types";
 import { createFileLogger, FileLogger } from "./logger";
 import { createStorage, ChatStorage, StorageDeps } from "./storage/ChatStorage";
@@ -57,6 +58,7 @@ export default class ObsidianAIPlugin extends Plugin {
 	private _chatStorage: ChatStorage | null = null;
 	private _migrationPromptShown = false;
 	private _chatViewActivation: Promise<void> | null = null;
+	private _updater: PluginUpdater | null = null;
 
 	async onload() {
 		// Initialize file logger FIRST so any crash during load is captured.
@@ -133,21 +135,20 @@ export default class ObsidianAIPlugin extends Plugin {
 			this.removeDuplicateChatLeaves();
 		});
 
-		// GROUP_CHAT_VIEW hidden — code preserved in GroupChatView.ts
-		// this.registerView(
-		// 	GROUP_CHAT_VIEWTYPE,
-		// 	(leaf) => new GroupChatView(leaf, this),
-		// );
+		this.registerView(
+			GROUP_CHAT_VIEWTYPE,
+			(leaf) => new GroupChatView(leaf, this),
+		);
 
-		// this.addRibbonIcon("users", "Open AI Council (Group Chat)", () => {
-		// 	this.activateGroupChatView();
-		// });
+		this.addRibbonIcon("users", "Open Group Chat", () => {
+			this.activateGroupChatView();
+		});
 
-		// this.addCommand({
-		// 	id: "open-ai-council",
-		// 	name: "Open AI Council (Group Chat)",
-		// 	callback: () => this.activateGroupChatView(),
-		// });
+		this.addCommand({
+			id: "open-group-chat",
+			name: "Open Group Chat",
+			callback: () => this.activateGroupChatView(),
+		});
 
 		this.addRibbonIcon("message-square", "Open Obsidian AI Chat", () => {
 			this.activateChatView();
@@ -258,6 +259,9 @@ export default class ObsidianAIPlugin extends Plugin {
 			},
 		});
 
+		// Initialize auto-updater
+		this._updater = new PluginUpdater(this.app, this.manifest.id);
+
 		// Add settings tab
 		this.addSettingTab(new ObsidianAISettingsTab(this.app, this));
 
@@ -270,6 +274,22 @@ export default class ObsidianAIPlugin extends Plugin {
 				new Notice("Debug log cleared.");
 			},
 		});
+
+		// Add manual update check command
+		this.addCommand({
+			id: "check-for-updates",
+			name: "Check for updates",
+			callback: () => this.checkForUpdates(true),
+		});
+
+		// Auto-check on startup (if enabled and not checked recently)
+		if (this.settings.checkForUpdates) {
+			const oneDay = 24 * 60 * 60 * 1000;
+			const lastCheck = this.settings.lastUpdateCheck ?? 0;
+			if (Date.now() - lastCheck > oneDay) {
+				this.checkForUpdates(false);
+			}
+		}
 	}
 
 	async activateChatView() {
@@ -368,21 +388,62 @@ export default class ObsidianAIPlugin extends Plugin {
 		}
 	}
 
-	// async activateGroupChatView() {
-	// 	const { workspace } = this.app;
-	// 	let leaf = workspace.getLeavesOfType(GROUP_CHAT_VIEWTYPE)[0];
-	// 	if (!leaf) {
-	// 		leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf(true);
-	// 		await leaf.setViewState({ type: GROUP_CHAT_VIEWTYPE, active: true });
-	// 	}
-	// 	workspace.revealLeaf(leaf);
-	// }
+	async activateGroupChatView() {
+		const { workspace } = this.app;
+		let leaf = workspace.getLeavesOfType(GROUP_CHAT_VIEWTYPE)[0];
+		if (!leaf) {
+			leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf(true);
+			await leaf.setViewState({ type: GROUP_CHAT_VIEWTYPE, active: true });
+		}
+		workspace.revealLeaf(leaf);
+	}
+
+	async checkForUpdates(manual: boolean) {
+		if (!this._updater) return;
+
+		try {
+			const result = await this._updater.checkForUpdate(
+				this.manifest.version,
+				this.settings.updateChannel === "dev",
+			);
+
+			this.settings.lastUpdateCheck = Date.now();
+			await this.saveSettings();
+
+			if (!result.hasUpdate) {
+				if (manual) {
+					new Notice(`✅ Obsidian AI is up to date (${result.currentVersion})`);
+				}
+				return;
+			}
+
+			if (this.settings.autoUpdate && !result.isPrerelease) {
+				// Auto-install stable updates
+				new Notice(`📦 Downloading update ${result.latestVersion}…`);
+				const tempDir = await this._updater.downloadUpdate(result.release!);
+				await this._updater.installUpdate(tempDir);
+				new Notice(`✅ Update ${result.latestVersion} installed. Reload to apply.`);
+			} else {
+				// Show modal for manual confirmation
+				const modal = new UpdateAvailableModal(this.app, result, async () => {
+					const tempDir = await this._updater!.downloadUpdate(result.release!);
+					await this._updater!.installUpdate(tempDir);
+				});
+				modal.open();
+			}
+		} catch (error: any) {
+			console.error("[ObsidianAI] Update check failed:", error);
+			if (manual) {
+				new Notice(`❌ Update check failed: ${error.message}`);
+			}
+		}
+	}
 
 	onunload() {
 		this.logger.stopMemoryLogging();
 		this.logger.flushNow();
 		this.app.workspace.detachLeavesOfType(CHAT_VIEWTYPE);
-		// this.app.workspace.detachLeavesOfType(GROUP_CHAT_VIEWTYPE);
+		this.app.workspace.detachLeavesOfType(GROUP_CHAT_VIEWTYPE);
 	}
 
 	/** Build the storage dependency bag */
