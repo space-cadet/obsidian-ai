@@ -72,17 +72,17 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 						return;
 					}
 
-					// Handle chat messages — unwrap relay envelope
-					if (data.type === "message" && data.message) {
-						const inner = data.message;
+					// Handle chat messages
+					if (data.type === "chat") {
 						// Only process messages from other users (not echo of our own)
-						if (inner.sender !== this.userId) {
+						if (data.sender !== this.userId) {
 							const msg: ChatMessage = {
-								id: inner.id || `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-								role: inner.role || "user",
-								content: inner.content,
-								timestamp: typeof inner.timestamp === "number" ? inner.timestamp : Date.now(),
-								agentId: inner.sender,
+								id: data.id || `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+								role: data.role || "user",
+								content: data.content,
+								timestamp: typeof data.timestamp === "number" ? data.timestamp : Date.now(),
+								agentId: data.sender,
+								attachments: data.attachments,
 							};
 							this.messageCallback?.(msg);
 						}
@@ -150,7 +150,7 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 		if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
 			throw new Error("WebSocket not connected");
 		}
-		this.ws.send(JSON.stringify({ type: "chat", ...msg }));
+		this.ws.send(JSON.stringify({ type: "chat", sender: this.userId, ...msg }));
 	}
 
 	onMessage(callback: (msg: ChatMessage) => void): void {
