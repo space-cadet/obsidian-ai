@@ -186,7 +186,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 
 				try {
 					const stream = ui.debateMode
-						? orchestrator.debate(
+						? orchestrator!.debate(
 								text,
 								sessionsRef.current.find(
 									(s) => s.id === currentActiveId,

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { Orchestrator } from "../Orchestrator";
-import type { ChatApiManager } from "../../api/AgentApiManager";
+import type { ChatApiManager } from "../../api";
 import type { GroupChatParticipant } from "../../types";
 
 function createMockApiManager(): ChatApiManager {
@@ -12,18 +12,14 @@ function createMockApiManager(): ChatApiManager {
 	} as unknown as ChatApiManager;
 }
 
+function createParticipant(id: string, name: string, profileId: string): GroupChatParticipant {
+	return { id, name, profileId, color: "#4285f4" };
+}
+
 describe("Orchestrator remote user context", () => {
 	it("includes remote users in system prompt", async () => {
 		const api = createMockApiManager();
-		const participants: GroupChatParticipant[] = [
-			{
-				id: "gemini",
-				name: "Gemini",
-				profileId: "gemini-profile",
-				provider: "gemini",
-				model: "gemini-2.5-flash",
-			},
-		];
+		const participants = [createParticipant("gemini", "Gemini", "gemini-profile")];
 		const orchestrator = new Orchestrator({
 			api,
 			participants,
@@ -39,15 +35,7 @@ describe("Orchestrator remote user context", () => {
 
 	it("does not include remote users section when empty", async () => {
 		const api = createMockApiManager();
-		const participants: GroupChatParticipant[] = [
-			{
-				id: "gemini",
-				name: "Gemini",
-				profileId: "gemini-profile",
-				provider: "gemini",
-				model: "gemini-2.5-flash",
-			},
-		];
+		const participants = [createParticipant("gemini", "Gemini", "gemini-profile")];
 		const orchestrator = new Orchestrator({
 			api,
 			participants,
@@ -62,15 +50,7 @@ describe("Orchestrator remote user context", () => {
 
 	it("attributes remote user messages in buildContext", async () => {
 		const api = createMockApiManager();
-		const participants: GroupChatParticipant[] = [
-			{
-				id: "gemini",
-				name: "Gemini",
-				profileId: "gemini-profile",
-				provider: "gemini",
-				model: "gemini-2.5-flash",
-			},
-		];
+		const participants = [createParticipant("gemini", "Gemini", "gemini-profile")];
 		const orchestrator = new Orchestrator({
 			api,
 			participants,
@@ -97,15 +77,7 @@ describe("Orchestrator remote user context", () => {
 
 	it("does not attribute non-remote user messages", async () => {
 		const api = createMockApiManager();
-		const participants: GroupChatParticipant[] = [
-			{
-				id: "gemini",
-				name: "Gemini",
-				profileId: "gemini-profile",
-				provider: "gemini",
-				model: "gemini-2.5-flash",
-			},
-		];
+		const participants = [createParticipant("gemini", "Gemini", "gemini-profile")];
 		const orchestrator = new Orchestrator({
 			api,
 			participants,
@@ -127,15 +99,7 @@ describe("Orchestrator remote user context", () => {
 
 	it("does not attribute remote messages from unknown users", async () => {
 		const api = createMockApiManager();
-		const participants: GroupChatParticipant[] = [
-			{
-				id: "gemini",
-				name: "Gemini",
-				profileId: "gemini-profile",
-				provider: "gemini",
-				model: "gemini-2.5-flash",
-			},
-		];
+		const participants = [createParticipant("gemini", "Gemini", "gemini-profile")];
 		const orchestrator = new Orchestrator({
 			api,
 			participants,

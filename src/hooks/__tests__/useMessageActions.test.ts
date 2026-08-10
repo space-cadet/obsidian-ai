@@ -174,6 +174,7 @@ function makeDeps(
 	return {
 		plugin: mockPlugin as any,
 		orchestrator: null,
+		participantRouter: null,
 		resolvedProfile: {
 			id: "p1",
 			name: "Test",
@@ -612,10 +613,10 @@ describe("useMessageActions", () => {
 				yield "response";
 			});
 			const messages = [
-				{ id: "m1", role: "user", content: "Hello", timestamp: 1 },
+				{ id: "m1", role: "user" as const, content: "Hello", timestamp: 1 },
 				{
 					id: "m2",
-					role: "user",
+					role: "user" as const,
 					content: "What do you think?",
 					timestamp: 2,
 					remote: true,
@@ -648,7 +649,7 @@ describe("useMessageActions", () => {
 			});
 			// Verify streamChat was called with attributed history
 			expect(streamChat).toHaveBeenCalled();
-			const history = streamChat.mock.calls[0][0];
+			const history = (streamChat.mock.calls as any)[0][0];
 			expect(history).toEqual(
 				expect.arrayContaining([
 					expect.objectContaining({ content: "Hello" }),
@@ -665,7 +666,7 @@ describe("useMessageActions", () => {
 				yield "response";
 			});
 			const messages = [
-				{ id: "m1", role: "user", content: "Local msg", timestamp: 1 },
+				{ id: "m1", role: "user" as const, content: "Local msg", timestamp: 1 },
 			];
 			const deps = makeDeps({
 				plugin: {
@@ -691,7 +692,7 @@ describe("useMessageActions", () => {
 			await act(async () => {
 				await result.current.handleSend("Next");
 			});
-			const history = streamChat.mock.calls[0][0];
+			const history = (streamChat.mock.calls as any)[0][0];
 			expect(history).toEqual(
 				expect.arrayContaining([
 					expect.objectContaining({ content: "Local msg" }),
