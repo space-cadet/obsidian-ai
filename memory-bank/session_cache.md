@@ -1,12 +1,12 @@
 # Session Cache
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-09 07:01 IST*
+*Last Updated: 2026-08-10 22:45 IST*
 
-**Started**: 2026-08-09 07:01 IST
-**Focus Task**: T41: Plugin Auto-Updater + T40 Phase 1 Completion
-**Session File**: `sessions/2026-08-09-morning.md`
-**Status**: 🔄 Active: 8, Paused: 0, Completed: 15
+**Started**: 2026-08-10 22:42 IST
+**Focus Task**: T40: Multi-User Chat — Fix AI-triggering bug, test cross-device messaging
+**Session File**: `sessions/2026-08-10-evening.md`
+**Status**: 🔄 Active: 8, Paused: 0, Completed: 16
 
 ## Overview
 
@@ -58,7 +58,12 @@ Fix token counter accumulation, remove green streaming border, add live tool res
 **Started:** 2026-08-08
 **Context**: [Details](tasks/T40.md)
 **Progress**:
-PoP code complete. BRAT distribution and relay server connections verified. Next: cross-device messaging test.
+- ✅ Phase 1: WebSocket relay, SyncAdapter, BRAT distribution
+- ✅ Phase 2: Presence tracking (join/leave/roster, remote user dropdown)
+- ✅ Fix: Message rendering (type 'chat' not 'message')
+- 🔴 Bug: Remote messages trigger AI response (fix pending)
+- ⬜ Phase 2b: Attribution, typing indicators, mentions
+- ⬜ Phase 3: WebRTC peer-to-peer
 
 ### T8: Open Source Release with Branding
 **Status:** 🔄 **IN PROGRESS**

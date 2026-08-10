@@ -1,5 +1,31 @@
 # Implementation Progress
-*Last Updated: 2026-08-09 07:01 IST*
+*Last Updated: 2026-08-10 22:45 IST*
+
+### T42: Remote Chat Storage & Sync (2026-08-10)
+**Status:** 🔄 CREATED — Design complete, implementation pending
+
+- **Objective:** Persistent remote storage for chat sessions using relay server
+- **Architecture:** Storage lives on relay server (not Supabase), clients sync via WebSocket
+- **Design doc:** `memory-bank/implementation-details/remote-chat-storage-design.md`
+- **Next:** Phase 1 implementation (relay storage endpoints, client sync protocol)
+- **Task:** `memory-bank/tasks/T42.md`
+
+### T40: Multi-User Chat with LaTeX Support (2026-08-10)
+**Status:** 🔄 Phase 2 Complete, Phase 2b Pending
+
+- **Phase 1 Complete (2026-08-09):** WebSocket relay, SyncAdapter, BRAT distribution
+- **Phase 2 Complete (2026-08-10):** Presence tracking with remote user dropdown
+  - Relay user list, join/leave/roster protocol
+  - SyncAdapter v2 with onUserList/onPresence hooks
+  - Remote user indicator (📻 radio icon with badge)
+  - Clickable dropdown showing room + connected users
+  - Bug fixes: remoteUserCount prop wiring, badge visibility, callback race condition, roster includes self
+  - Commits: `6746201`, `683d9d5`, `108858d`
+- **Message Rendering Fixed (2026-08-10):** Adapter was checking `data.type === "message"` but relay sends `data.type === "chat"`. Fixed in commits `2897b1f` and `e7e29ce`.
+- **Known Bug:** Remote messages trigger AI response — when remote messages arrive, ChatApp treats them as local input and sends to AI. Fix pending (add `skipAI` or `remote` flag).
+- **Next:** Fix AI-triggering bug, end-to-end cross-device test, Phase 2b (attribution, typing, mentions)
+- **Docs:** `memory-bank/implementation-details/presence-tracking.md`, `memory-bank/implementation-details/multi-user-chat-design.md`
+- **Task:** `memory-bank/tasks/T40.md`
 
 ### T41: Plugin Auto-Updater with Stable/Dev Channels (2026-08-09)
 **Status:** ✅ COMPLETE — Commit-hash fix applied, built, and released

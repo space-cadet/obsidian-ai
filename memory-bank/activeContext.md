@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-08-09 07:01 IST*
+*Last Updated: 2026-08-10 22:45 IST*
 
 ### T41: Plugin Auto-Updater with Stable/Dev Channels (2026-08-09)
 **Status:** ✅ COMPLETE — Commit-hash fix applied, built, and released
@@ -22,9 +22,20 @@
   - Bug fixes: `remoteUserCount` prop wiring, badge visibility, callback race condition, roster includes self
   - UI: Radio icon (📻) with badge, clickable dropdown showing room + users
   - Commits: `3765188`, `6746201`, `683d9d5`, `108858d`
-- **Next:** End-to-end cross-device messaging test, then Phase 2b (attribution, typing, mentions)
+- **Message Rendering Fixed (2026-08-10):** Adapter was checking `data.type === "message"` but relay sends `data.type === "chat"`. Fixed in commits `2897b1f` and `e7e29ce`.
+- **NEW BUG (2026-08-10):** Remote messages trigger AI response — when remote messages arrive via relay, ChatApp treats them as local user input and sends them to AI. Fix pending (add `skipAI` or `remote` flag).
+- **Next:** Fix AI-triggering bug, end-to-end cross-device messaging test, then Phase 2b (attribution, typing, mentions)
 - **Docs:** `memory-bank/implementation-details/presence-tracking.md` (full design + bug fixes)
 - **Task tracking:** `memory-bank/tasks/T40.md`
+
+### T42: Remote Chat Storage & Sync (2026-08-10)
+**Status:** 🔄 Created — Design complete, implementation pending
+
+- **Objective:** Persistent remote storage for chat sessions using relay server
+- **Design doc:** `memory-bank/implementation-details/remote-chat-storage-design.md`
+- **Key decision:** Storage lives on relay server (not Supabase), clients sync via WebSocket
+- **Next:** Phase 1 implementation (relay storage endpoints, client sync protocol)
+- **Task tracking:** `memory-bank/tasks/T42.md`
 
 ---
 

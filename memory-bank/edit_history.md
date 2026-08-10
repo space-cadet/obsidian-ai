@@ -1,6 +1,36 @@
 # Edit History
 
-*Last Updated: 2026-08-09 07:01 IST*
+*Last Updated: 2026-08-10 22:45 IST*
+
+## 2026-08-10
+
+#### 21:00:00 IST - T40: Fix message rendering - relay sends type 'chat' not 'message'
+- Modified `src/sync/WebSocketSyncAdapter.ts` - Fixed message type check from 'message' to 'chat'
+- Modified `src/sync/WebSocketSyncAdapter.ts` - Extract content directly from data instead of data.message
+- Modified `src/sync/WebSocketSyncAdapter.ts` - Fixed echo check to use data.sender instead of inner.sender
+- Modified `memory-bank/tasks/T40.md` - Documented known bugs section with AI-triggering issue
+
+#### 16:00:00 IST - T42: Create remote chat storage task and design doc
+- Created `memory-bank/tasks/T42.md` - Remote chat storage task definition
+- Created `memory-bank/implementation-details/remote-chat-storage-design.md` - Architecture design
+
+#### 15:30:00 IST - T40: UI bug fixes for presence tracking
+- Modified `src/components/ChatApp.tsx` - Added remoteUserCount prop to ActionBar
+- Modified `src/components/ActionBar.tsx` - Fixed badge visibility, improved globe icon state
+- Modified `src/hooks/useChatUI.ts` - Fixed callback race condition (register before connect)
+- Modified `relay/server.js` - Include self in roster, fix join/leave broadcast order
+
+#### 12:00:00 IST - T40: Presence tracking implementation - Phase 2 complete
+- Modified `src/sync/SyncAdapter.ts` - Added onUserList and onPresence hooks to interface
+- Modified `src/sync/WebSocketSyncAdapter.ts` - Implemented presence protocol (roster, join, leave)
+- Modified `src/hooks/useChatUI.ts` - Added connectedUsers state tracking
+- Modified `src/components/ActionBar.tsx` - Added remote user dropdown with radio icon and badge
+- Modified `src/components/ChatApp.tsx` - Wired presence callbacks, register before connect
+- Modified `relay/server.js` - Room state management, presence broadcast
+- Modified `styles.css` - Dropdown styling with theme variables
+- Created `memory-bank/implementation-details/presence-tracking.md` - Design doc for presence system
+
+---
 
 ## 2026-08-09
 
