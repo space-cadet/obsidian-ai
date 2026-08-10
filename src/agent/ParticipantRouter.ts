@@ -65,6 +65,7 @@ export class ParticipantRouter {
 				remote: true,
 				fromUserId: this.localUserId,
 			};
+			this.syncAdapter.sendMessage(relayMsg).catch((err) => {
 				console.warn("[ParticipantRouter] Failed to send to relay:", err);
 			});
 		}
