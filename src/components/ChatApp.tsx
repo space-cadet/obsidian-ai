@@ -154,7 +154,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		});
 	}, [ui.selectedProfileIds, plugin.settings.providerProfiles]);
 
-	const isGroupChat = participants.length >= 2;
+	const isGroupChat = participants.length >= 2 || ui.selectedRemoteUserIds.size > 0;
 
 	// ─── Group Chat Orchestrator ───
 	const orchestrator = useMemo(() => {
@@ -221,8 +221,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	// Sync remoteUsers from active session to ParticipantRouter
 	useEffect(() => {
 		const session = sessions.find((s) => s.id === activeSessionId);
-		if (participantRouter && session?.remoteUsers) {
-			participantRouter.setRemoteUsers(session.remoteUsers);
+		if (participantRouter && session?.selectedRemoteUserIds) {
+			participantRouter.setRemoteUsers(session.selectedRemoteUserIds);
 		}
 	}, [activeSessionId, sessions, participantRouter]);
 
@@ -276,6 +276,13 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		if (ids.length !== currentIds.length || ids.some((id) => !ui.selectedProfileIds.has(id))) {
 			suppressProfilePersistenceRef.current = true;
 			ui.setSelectedProfileIds(new Set(ids));
+		}
+		// Also restore selected remote users
+		const remoteIds = activeSession.selectedRemoteUserIds ?? [];
+		const currentRemoteIds = Array.from(ui.selectedRemoteUserIds);
+		if (remoteIds.length !== currentRemoteIds.length || remoteIds.some((id) => !ui.selectedRemoteUserIds.has(id))) {
+			suppressProfilePersistenceRef.current = true;
+			ui.setSelectedRemoteUserIds(new Set(remoteIds));
 		}
 	}, [activeSessionId, chatDataLoaded]);
 
@@ -489,19 +496,21 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				const alreadyMatches =
 					s.profileId === (ids.length === 1 ? ids[0] : undefined) &&
 					JSON.stringify(s.selectedProfileIds ?? []) === JSON.stringify(ids) &&
-					s.isGroupChat === (ids.length >= 2);
+					s.isGroupChat === (ids.length >= 2) &&
+					JSON.stringify(s.selectedRemoteUserIds ?? []) === JSON.stringify(Array.from(ui.selectedRemoteUserIds));
 				return alreadyMatches
 					? s
 					: {
 						...s,
 						profileId: ids.length === 1 ? ids[0] : undefined,
 						selectedProfileIds: ids,
-						isGroupChat: ids.length >= 2,
+						isGroupChat: ids.length >= 2 || ui.selectedRemoteUserIds.size > 0,
 						participants: nextParticipants,
+						selectedRemoteUserIds: Array.from(ui.selectedRemoteUserIds),
 					};
 			}),
 		);
-	}, [ui.selectedProfileIds, activeSessionId, plugin.settings.providerProfiles]);
+	}, [ui.selectedProfileIds, ui.selectedRemoteUserIds, activeSessionId, plugin.settings.providerProfiles]);
 
 	const handleScrollPositionChange = useCallback((sessionId: string, scrollTop: number) => {
 		const existingTimer = scrollSaveTimersRef.current.get(sessionId);
@@ -576,7 +585,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 						sessionTitle={sessions.find((s) => s.id === activeSessionId)?.title}
 						zenMode={ui.zenMode}
 						onToggleZenMode={ui.toggleZenMode}
-						participantCount={participants.length}
+						participantCount={participants.length + ui.selectedRemoteUserIds.size}
 						onToggleParticipantDropdown={ui.toggleParticipantDropdown}
 						debateMode={ui.debateMode}
 						onToggleDebateMode={ui.toggleDebateMode}
@@ -628,18 +637,26 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 									No users connected
 								</div>
 							) : (
-								connectedUsers.map((user) => (
-									<div
-										key={user}
-										className={`chat-remote-user-dropdown-item${user === plugin.settings.syncUserName ? " is-self" : ""}`}
-									>
-										<span className="chat-remote-user-dot">●</span>
-										<span className="chat-remote-user-name">
-											{user}
-											{user === plugin.settings.syncUserName && " (You)"}
-										</span>
-									</div>
-								))
+								connectedUsers.map((user) => {
+									const isSelected = ui.selectedRemoteUserIds.has(user);
+									return (
+										<label
+											key={user}
+											className={`chat-remote-user-dropdown-item${isSelected ? " is-selected" : ""}${user === plugin.settings.syncUserName ? " is-self" : ""}`}
+										>
+											<input
+												type="checkbox"
+												checked={isSelected}
+												onChange={() => ui.toggleRemoteUser(user)}
+											/>
+											<span className="chat-remote-user-dot">●</span>
+											<span className="chat-remote-user-name">
+												{user}
+												{user === plugin.settings.syncUserName && " (You)"}
+											</span>
+										</label>
+									);
+									})
 							)}
 						</div>
 					)}
