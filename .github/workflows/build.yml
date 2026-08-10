@@ -1,35 +1,51 @@
-name: Build Check
+name: Build Obsidian Plugin
 
 on:
     push:
-        branches-ignore:
+        branches:
+            - "*"
+    pull_request:
+        branches:
             - main
-            - master
+
+env:
+    PLUGIN_NAME: obsidian-ai
 
 jobs:
     build:
         runs-on: ubuntu-latest
+
         steps:
-            - name: Checkout
+            - name: Checkout Repository
               uses: actions/checkout@v4
 
-            - name: Setup pnpm
+            - name: Set Up pnpm
               uses: pnpm/action-setup@v4
               with:
                   version: 10
 
-            - name: Setup Node
+            - name: Set Up Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: 22
+                  node-version: "lts/*"
                   cache: "pnpm"
 
-            - name: Install dependencies
-              run: pnpm install --frozen-lockfile
+            - name: Install and Build
+              run: |
+                  pnpm install --frozen-lockfile
+                  pnpm run build
 
-            - name: Build
-              run: pnpm run build
-
-            - name: Verify build output
+            - name: Verify Build Output
               run: |
                   test -f main.js || (echo "Build failed: main.js not found" && exit 1)
+                  test -f manifest.json || (echo "Build failed: manifest.json not found" && exit 1)
+
+            - name: Upload Build Artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ env.PLUGIN_NAME }}-build
+                  path: |
+                      main.js
+                      manifest.json
+                      styles.css
+                  retention-days: 7
