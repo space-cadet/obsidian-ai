@@ -28,6 +28,23 @@
 - **Docs:** `memory-bank/implementation-details/presence-tracking.md` (full design + bug fixes)
 - **Task tracking:** `memory-bank/tasks/T40.md`
 
+### T43: Multi-User and Agent Chat with LaTeX Support (2026-08-10)
+**Status:** 🔄 Architecture Design — New Task
+
+- **Evolution of T40** — builds on relay infrastructure and presence tracking from T40
+- **New architecture:** Equal-footing participant model where AI agents and remote humans are peers
+- **Key decisions:**
+  - All participants (agents, remote users, local user) treated equally
+  - Messages broadcast to ALL participants in a tab
+  - Agents receive full context including remote user messages
+  - Human-only tabs possible (no AI agents)
+- **Phase 1:** Extend types, session state, participant selection
+- **Phase 2:** AI context includes remote messages with attribution
+- **Phase 3:** Human-only tabs (relay-only mode)
+- **Phase 4:** Attribution, typing indicators, participant UI
+- **Docs:** `memory-bank/implementation-details/multi-user-agent-chat.md`
+- **Task tracking:** `memory-bank/tasks/T43.md`
+
 ### T42: Remote Chat Storage & Sync (2026-08-10)
 **Status:** 🔄 Created — Design complete, implementation pending
 

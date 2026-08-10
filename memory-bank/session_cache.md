@@ -3,10 +3,10 @@
 *Created: 2026-08-07 23:23:17 IST*
 *Last Updated: 2026-08-10 22:45 IST*
 
-**Started**: 2026-08-10 22:42 IST
-**Focus Task**: T40: Multi-User Chat — Fix AI-triggering bug, test cross-device messaging
+**Started**: 2026-08-10 23:26 IST
+**Focus Task**: T43: Multi-User and Agent Chat — Architecture design
 **Session File**: `sessions/2026-08-10-evening.md`
-**Status**: 🔄 Active: 8, Paused: 0, Completed: 16
+**Status**: 🔄 Active: 7, Paused: 0, Completed: 16
 
 ## Overview
 
@@ -61,9 +61,19 @@ Fix token counter accumulation, remove green streaming border, add live tool res
 - ✅ Phase 1: WebSocket relay, SyncAdapter, BRAT distribution
 - ✅ Phase 2: Presence tracking (join/leave/roster, remote user dropdown)
 - ✅ Fix: Message rendering (type 'chat' not 'message')
-- 🔴 Bug: Remote messages trigger AI response (fix pending)
+- 🔴 Bug: Remote messages trigger AI response (reclassified — see T43)
 - ⬜ Phase 2b: Attribution, typing indicators, mentions
 - ⬜ Phase 3: WebRTC peer-to-peer
+
+### T43: Multi-User and Agent Chat with LaTeX Support
+**Status:** 🔄 **IN PROGRESS**
+**Started:** 2026-08-10
+**Context**: [Details](tasks/T43.md)
+**Progress**:
+- ⬜ Phase 1: Extend types, session state, participant selection
+- ⬜ Phase 2: AI context includes remote messages
+- ⬜ Phase 3: Human-only tabs (relay-only mode)
+- ⬜ Phase 4: Attribution, typing indicators, participant UI
 
 ### T8: Open Source Release with Branding
 **Status:** 🔄 **IN PROGRESS**
