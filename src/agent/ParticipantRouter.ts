@@ -16,11 +16,18 @@ export interface Participant {
  * Orchestrator to be participant-agnostic in Step 2.
  */
 export class ParticipantRouter {
+	private remoteUsers: string[] = [];
+
 	constructor(
 		private readonly orchestrator: Orchestrator,
 		private readonly syncAdapter: SyncAdapter | null,
 		private readonly localUserId: string,
 	) {}
+
+	/** Update the list of remote user IDs participating in this chat */
+	setRemoteUsers(users: string[]) {
+		this.remoteUsers = users;
+	}
 
 	/**
 	 * Dispatch a user message to all participants.
@@ -31,7 +38,6 @@ export class ParticipantRouter {
 	async *dispatch(
 		text: string,
 		thread: ChatMessage[],
-		participants: Participant[],
 		signal?: AbortSignal,
 	): AsyncGenerator<{
 		agentId: string;
@@ -46,14 +52,10 @@ export class ParticipantRouter {
 		error?: string;
 	}> {
 		// 1. Route to agents via existing Orchestrator
-		const agents = participants.filter((p) => p.type === "agent");
-		if (agents.length > 0) {
-			yield* this.orchestrator.dispatch(text, thread, signal);
-		}
+		yield* this.orchestrator.dispatch(text, thread, signal);
 
-		// 2. Route to remote users via relay
-		const remoteUsers = participants.filter((p) => p.type === "remote");
-		if (remoteUsers.length > 0 && this.syncAdapter) {
+		// 2. Route to remote users via relay (fire-and-forget)
+		if (this.remoteUsers.length > 0 && this.syncAdapter) {
 			const relayMsg: ChatMessage = {
 				id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
 				role: "user",
@@ -68,35 +70,12 @@ export class ParticipantRouter {
 
 	/**
 	 * Parse @mentions and determine target participants.
-	 * If no mentions: all participants respond.
-	 * If mentions: only mentioned participants respond.
+	 * Delegates to Orchestrator for agent targets.
 	 */
 	parseAndRoute(
 		text: string,
-		participants: Participant[],
-	): { targets: Participant[]; cleanText: string } {
-		// For now, delegate mention parsing to Orchestrator for agents
-		// and handle remote users separately
-		const mentionRegex = /@(\w+)/g;
-		const mentions: string[] = [];
-		let match;
-		while ((match = mentionRegex.exec(text)) !== null) {
-			mentions.push(match[1]);
-		}
-
-		const cleanText = text.replace(mentionRegex, "").trim();
-
-		if (mentions.length > 0) {
-			const targets = participants.filter(
-				(p) =>
-					mentions.includes(p.id) || mentions.includes(p.name),
-			);
-			return {
-				targets: targets.length > 0 ? targets : participants,
-				cleanText,
-			};
-		}
-
-		return { targets: participants, cleanText };
+		attachments?: import("../types").Attachment[],
+	): { targets: Array<{ id: string; name: string }>; cleanText: string } {
+		return this.orchestrator.parseAndRoute(text, attachments);
 	}
 }

@@ -53,10 +53,12 @@ function formatPastSessionLinks(
 	return `\n\n### Past sessions\n${links.join("\n")}`;
 }
 import type { UseChatUIResult } from "./useChatUI";
+import type { ParticipantRouter } from "../agent/ParticipantRouter";
 
 export interface UseMessageActionsDeps {
 	plugin: ChatPluginLike;
 	orchestrator: import("../agent/Orchestrator").Orchestrator | null;
+	participantRouter: ParticipantRouter | null;
 	resolvedProfile: ProviderProfile;
 	isGroupChat: boolean;
 	participants: GroupChatParticipant[];
@@ -93,6 +95,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 	const {
 		plugin,
 		orchestrator,
+		participantRouter,
 		resolvedProfile,
 		isGroupChat,
 		participants,
@@ -128,7 +131,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				return;
 
 			// ─── GROUP CHAT PATH ───
-			if (isGroupChat && orchestrator) {
+			if (isGroupChat && (participantRouter || orchestrator)) {
 				const userTokenEstimate =
 					estimateTokens(text) +
 					(ui.messageAttachments?.reduce(
@@ -171,12 +174,14 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					runningTokenTotal: 0,
 				});
 
-				const { targets } = orchestrator.parseAndRoute(
+				// Use ParticipantRouter if available, otherwise fall back to Orchestrator
+				const router = participantRouter || orchestrator!;
+				const { targets } = router.parseAndRoute(
 					text,
 					ui.messageAttachments,
 				);
 				ui.setTypingAgents(
-					new Set(targets.map((t) => t.name)),
+					new Set(targets.map((t: any) => t.name)),
 				);
 
 				try {
@@ -189,13 +194,21 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 								controller.signal,
 								2,
 							)
-						: orchestrator.dispatch(
-								text,
-								sessionsRef.current.find(
-									(s) => s.id === currentActiveId,
-								)?.messages ?? [],
-								controller.signal,
-							);
+						: (participantRouter
+							? participantRouter.dispatch(
+									text,
+									sessionsRef.current.find(
+										(s) => s.id === currentActiveId,
+									)?.messages ?? [],
+									controller.signal,
+								)
+							: orchestrator!.dispatch(
+									text,
+									sessionsRef.current.find(
+										(s) => s.id === currentActiveId,
+									)?.messages ?? [],
+									controller.signal,
+								));
 
 					for await (const response of stream) {
 						ui.setTypingAgents((prev) => {

@@ -17,6 +17,7 @@ import { ToolExecutor } from "../agent/ToolExecutor";
 import { AgentLoop } from "../agent/AgentLoop";
 import type { ToolCall, ToolResult } from "../agent/types";
 import { Orchestrator, AgentResponse } from "../agent/Orchestrator";
+import { ParticipantRouter } from "../agent/ParticipantRouter";
 import { parseMentions } from "../agent/MentionParser";
 import { getAgentColor, getAgentIcon } from "../lib/agentVisuals";
 import { contextItemKey, sameContextItems } from "../lib/contextUtils";
@@ -201,11 +202,29 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		return orch;
 	}, [isGroupChat, participants, plugin.chatapi, plugin.settings, plugin.app]);
 
+	// ─── Participant Router (wraps orchestrator + relay) ───
+	const participantRouter = useMemo(() => {
+		if (!orchestrator || !syncAdapterRef.current) return null;
+		return new ParticipantRouter(
+			orchestrator,
+			syncAdapterRef.current,
+			plugin.settings.syncUserName || "local",
+		);
+	}, [orchestrator]);
+
 	const messages = useMemo(() => {
 		const s = sessions.find((s) => s.id === activeSessionId);
 		return s?.messages ?? [];
 	}, [sessions, activeSessionId]);
 	messagesRef.current = messages;
+
+	// Sync remoteUsers from active session to ParticipantRouter
+	useEffect(() => {
+		const session = sessions.find((s) => s.id === activeSessionId);
+		if (participantRouter && session?.remoteUsers) {
+			participantRouter.setRemoteUsers(session.remoteUsers);
+		}
+	}, [activeSessionId, sessions, participantRouter]);
 
 	// ─── Session Actions ───
 	const {
@@ -313,6 +332,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	const actions = useMessageActions({
 		plugin,
 		orchestrator,
+		participantRouter,
 		resolvedProfile,
 		isGroupChat,
 		participants,
@@ -422,11 +442,12 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		);
 	}, [activeSessionId, setSessions]);
 
-	// Wrap handleSend to also sync to relay
+	// Wrap handleSend to also sync to relay (only if ParticipantRouter is not handling it)
 	const handleSendWithSync = useCallback(
 		async (text: string, attachments?: import("../types").Attachment[]) => {
 			await actions.handleSend(text, attachments);
-			if (syncAdapterRef.current && relayConnected) {
+			// Only do legacy relay sync if ParticipantRouter is not active
+			if (!participantRouter && syncAdapterRef.current && relayConnected) {
 				const userMsg: ChatMessage = {
 					id: makeId(),
 					role: "user",
@@ -439,7 +460,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				});
 			}
 		},
-		[actions.handleSend, relayConnected],
+		[actions.handleSend, relayConnected, participantRouter],
 	);
 
 	// Sync selectedProfileIds into the active session whenever they change
