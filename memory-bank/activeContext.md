@@ -29,19 +29,27 @@
 - **Task tracking:** `memory-bank/tasks/T40.md`
 
 ### T43: Multi-User and Agent Chat with LaTeX Support (2026-08-10)
-**Status:** 🔄 Architecture Design — New Task
+**Status:** 🔄 Architecture Design — Two-Step Implementation Plan
 
 - **Evolution of T40** — builds on relay infrastructure and presence tracking from T40
 - **New architecture:** Equal-footing participant model where AI agents and remote humans are peers
+- **Implementation strategy:**
+  - **Step 1:** `ParticipantRouter` wrapper around existing `Orchestrator` (current)
+    - Minimal risk — agent logic untouched
+    - Adds relay routing for remote users alongside agent dispatch
+    - Validates model before deeper refactor
+  - **Step 2:** Refactor `Orchestrator` to be participant-agnostic (only if Step 1 works)
 - **Key decisions:**
   - All participants (agents, remote users, local user) treated equally
   - Messages broadcast to ALL participants in a tab
   - Agents receive full context including remote user messages
   - Human-only tabs possible (no AI agents)
-- **Phase 1:** Extend types, session state, participant selection
-- **Phase 2:** AI context includes remote messages with attribution
-- **Phase 3:** Human-only tabs (relay-only mode)
-- **Phase 4:** Attribution, typing indicators, participant UI
+- **Phase 1:** Extend types, session state, `ParticipantRouter` skeleton
+- **Phase 2:** Add relay routing to wrapper, test message flow
+- **Phase 3:** AI context includes remote messages with attribution
+- **Phase 4:** Human-only tabs (relay-only mode)
+- **Phase 5:** Attribution, typing indicators, participant UI
+- **Branch:** `t43-multi-user-agent-chat` (from `main` at `19f780d`)
 - **Docs:** `memory-bank/implementation-details/multi-user-agent-chat.md`
 - **Task tracking:** `memory-bank/tasks/T43.md`
 

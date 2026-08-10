@@ -1,6 +1,19 @@
 # Implementation Progress
 *Last Updated: 2026-08-10 22:45 IST*
 
+### T43: Multi-User and Agent Chat with LaTeX Support (2026-08-10)
+**Status:** 🔄 Architecture Design — Two-Step Implementation Plan
+
+- **Evolution of T40** — equal-footing participant model (agents + remote humans as peers)
+- **Branch:** `t43-multi-user-agent-chat` (from `main` at `19f780d`)
+- **Step 1 (Current):** `ParticipantRouter` wrapper around existing `Orchestrator`
+  - Minimal risk — agent logic untouched
+  - Adds relay routing for remote users alongside agent dispatch
+  - Validates model before deeper refactor
+- **Step 2 (Future):** Refactor `Orchestrator` to be participant-agnostic (only if Step 1 works)
+- **Docs:** `memory-bank/implementation-details/multi-user-agent-chat.md`
+- **Task:** `memory-bank/tasks/T43.md`
+
 ### T42: Remote Chat Storage & Sync (2026-08-10)
 **Status:** 🔄 CREATED — Design complete, implementation pending
 
