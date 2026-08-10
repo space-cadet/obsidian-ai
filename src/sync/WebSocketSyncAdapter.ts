@@ -72,11 +72,20 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 						return;
 					}
 
-					// Handle chat messages
-					const msg = data as ChatMessage;
-					// Only process messages from other users (not echo of our own)
-					if (msg.agentId !== this.userId) {
-						this.messageCallback?.(msg);
+					// Handle chat messages — unwrap relay envelope
+					if (data.type === "message" && data.message) {
+						const inner = data.message;
+						// Only process messages from other users (not echo of our own)
+						if (inner.sender !== this.userId) {
+							const msg: ChatMessage = {
+								id: inner.id || `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+								role: inner.role || "user",
+								content: inner.content,
+								timestamp: typeof inner.timestamp === "number" ? inner.timestamp : Date.now(),
+								agentId: inner.sender,
+							};
+							this.messageCallback?.(msg);
+						}
 					}
 				} catch (err) {
 					console.warn("[WebSocketSync] Failed to parse message:", err);
@@ -141,7 +150,7 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 		if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
 			throw new Error("WebSocket not connected");
 		}
-		this.ws.send(JSON.stringify(msg));
+		this.ws.send(JSON.stringify({ type: "chat", ...msg }));
 	}
 
 	onMessage(callback: (msg: ChatMessage) => void): void {
