@@ -337,6 +337,35 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			setContextTokenCount(resolved.stats.estimatedTokens);
 
 			const selectedIds = Array.from(ui.selectedProfileIds);
+
+			// ─── HUMAN-ONLY TAB: No AI selected ───
+			if (selectedIds.length === 0) {
+				const userMsg: ChatMessage = {
+					id: makeId(),
+					role: "user",
+					content: text,
+					timestamp: Date.now(),
+					attachments:
+						attachments && attachments.length > 0
+							? attachments
+							: undefined,
+				};
+				const currentActiveId = activeSessionIdRef.current;
+				if (!currentActiveId) return;
+				setSessions((prev) =>
+					prev.map((s) =>
+						s.id === currentActiveId
+							? {
+									...s,
+									messages: [...s.messages, userMsg],
+									updatedAt: Date.now(),
+								}
+								: s,
+					),
+				);
+				return;
+			}
+
 			const activeProfile: ProviderProfile =
 				selectedIds.length === 1
 					? (plugin.settings.providerProfiles.find(

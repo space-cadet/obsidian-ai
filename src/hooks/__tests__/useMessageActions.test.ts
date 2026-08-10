@@ -642,6 +642,10 @@ describe("useMessageActions", () => {
 						},
 					],
 				},
+				ui: {
+					...makeDeps().ui,
+					selectedProfileIds: new Set(["p1"]),
+				},
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			await act(async () => {
@@ -686,6 +690,10 @@ describe("useMessageActions", () => {
 							contextItems: [],
 						},
 					],
+				},
+				ui: {
+					...makeDeps().ui,
+					selectedProfileIds: new Set(["p1"]),
 				},
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
