@@ -18,8 +18,14 @@
   - `ParticipantRouter` skeleton created — wraps Orchestrator, adds relay dispatch
   - All 188 tests pass
   - Commit: `539ca52`
-- **Phase 2 Next:** Wire ParticipantRouter into ChatApp, test message flow
-- **Phase 3:** AI context includes remote messages with attribution
+- **Phase 2 Complete (2026-08-11):** Wired ParticipantRouter into ChatApp
+  - `ParticipantRouter` created in `ChatApp.tsx` with orchestrator + syncAdapter
+  - `useMessageActions` accepts `participantRouter` prop, uses it for dispatch
+  - `handleSendWithSync` skips legacy relay send when `participantRouter` is active
+  - `remoteUsers` synced from session state to `ParticipantRouter`
+  - All 188 tests pass
+  - Commit: `f83e5d0`
+- **Phase 3 Next:** AI context includes remote messages with attribution
 - **Phase 4:** Human-only tabs (relay-only mode)
 - **Phase 5:** Attribution, typing indicators, participant UI
 - **Docs:** `memory-bank/implementation-details/multi-user-agent-chat.md`
