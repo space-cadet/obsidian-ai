@@ -39,12 +39,18 @@
     - Adds relay routing for remote users alongside agent dispatch
     - Validates model before deeper refactor
   - **Step 2:** Refactor `Orchestrator` to be participant-agnostic (only if Step 1 works)
+- **Phase 1 Complete (2026-08-11):** Types, session state, sync adapter, ParticipantRouter skeleton
+  - `ChatMessage` extended with `remote?: boolean`, `fromUserId?: string`
+  - `ChatSession` extended with `remoteUsers?: string[]`
+  - `WebSocketSyncAdapter` sets `remote: true` on received relay messages
+  - `ParticipantRouter` skeleton created — wraps Orchestrator, adds relay dispatch
+  - All 188 tests pass
+  - Commit: `539ca52`
 - **Key decisions:**
   - All participants (agents, remote users, local user) treated equally
   - Messages broadcast to ALL participants in a tab
   - Agents receive full context including remote user messages
   - Human-only tabs possible (no AI agents)
-- **Phase 1:** Extend types, session state, `ParticipantRouter` skeleton
 - **Phase 2:** Add relay routing to wrapper, test message flow
 - **Phase 3:** AI context includes remote messages with attribution
 - **Phase 4:** Human-only tabs (relay-only mode)

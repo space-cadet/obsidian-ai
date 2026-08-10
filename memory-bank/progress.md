@@ -11,6 +11,17 @@
   - Adds relay routing for remote users alongside agent dispatch
   - Validates model before deeper refactor
 - **Step 2 (Future):** Refactor `Orchestrator` to be participant-agnostic (only if Step 1 works)
+- **Phase 1 Complete (2026-08-11):** Types, session state, sync adapter, ParticipantRouter skeleton
+  - `ChatMessage` extended with `remote?: boolean`, `fromUserId?: string`
+  - `ChatSession` extended with `remoteUsers?: string[]`
+  - `WebSocketSyncAdapter` sets `remote: true` on received relay messages
+  - `ParticipantRouter` skeleton created — wraps Orchestrator, adds relay dispatch
+  - All 188 tests pass
+  - Commit: `539ca52`
+- **Phase 2 Next:** Wire ParticipantRouter into ChatApp, test message flow
+- **Phase 3:** AI context includes remote messages with attribution
+- **Phase 4:** Human-only tabs (relay-only mode)
+- **Phase 5:** Attribution, typing indicators, participant UI
 - **Docs:** `memory-bank/implementation-details/multi-user-agent-chat.md`
 - **Task:** `memory-bank/tasks/T43.md`
 
