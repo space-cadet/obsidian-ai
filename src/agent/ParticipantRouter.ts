@@ -27,6 +27,7 @@ export class ParticipantRouter {
 	/** Update the list of remote user IDs participating in this chat */
 	setRemoteUsers(users: string[]) {
 		this.remoteUsers = users;
+		this.orchestrator.setRemoteUsers(users);
 	}
 
 	/**
@@ -61,8 +62,9 @@ export class ParticipantRouter {
 				role: "user",
 				content: text,
 				timestamp: Date.now(),
+				remote: true,
+				fromUserId: this.localUserId,
 			};
-			this.syncAdapter.sendMessage(relayMsg).catch((err) => {
 				console.warn("[ParticipantRouter] Failed to send to relay:", err);
 			});
 		}

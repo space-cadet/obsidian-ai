@@ -415,7 +415,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				.slice(-maxContextMessages)
 				.map((m) => ({
 					role: m.role as "user" | "assistant",
-					content: m.content,
+					content: m.remote && m.fromUserId
+						? `[Remote User ${m.fromUserId}]: ${m.content}`
+						: m.content,
 				}));
 
 			let userContent = sendText;

@@ -37,6 +37,8 @@ export interface OrchestratorOptions {
 	maxSteps?: number;
 	/** Tool executor for running Obsidian note tools. If provided with enableTools=true, agents will use tool calling. */
 	toolExecutor?: ToolExecutor;
+	/** IDs of remote users participating in this chat (relay user IDs) */
+	remoteUsers?: string[];
 }
 
 /**
@@ -69,7 +71,13 @@ export class Orchestrator {
 		this.enableTools = options.enableTools ?? false;
 		this.autoApprove = options.autoApprove ?? false;
 		this.maxSteps = options.maxSteps ?? 5;
-		this.toolExecutor = options.toolExecutor;
+		this.remoteUsers = options.remoteUsers ?? [];
+	}
+
+	remoteUsers: string[] = [];
+
+	setRemoteUsers(users: string[]) {
+		this.remoteUsers = users;
 	}
 
 	private resolveProfile(profileId: string): ProviderProfile {
@@ -223,6 +231,10 @@ export class Orchestrator {
 				if (msg.role === "assistant" && msg.agentName) {
 					content = `[${msg.agentName}]: ${msg.content}`;
 				}
+				// Attribute remote user messages
+				if (msg.role === "user" && msg.remote && msg.fromUserId && this.remoteUsers.includes(msg.fromUserId)) {
+					content = `[Remote User ${msg.fromUserId}]: ${msg.content}`;
+				}
 				context.push({
 					role: msg.role === "user" ? "user" : "assistant",
 					content,
@@ -362,6 +374,16 @@ export class Orchestrator {
 			`Be concise and helpful.` +
 			`\n\nYou are integrated into an Obsidian note-taking app and can help with notes, research, and tasks.`
 		);
+
+		// Add [Participants] section with agents and remote users
+		prompt += "\n\n[Participants]";
+		if (this.engines.length > 0) {
+			prompt += `\n- AI assistants: ${this.engines.map((e) => e.name).join(", ")}`;
+		}
+		if (this.remoteUsers.length > 0) {
+			prompt += `\n- Remote users: ${this.remoteUsers.join(", ")}`;
+		}
+		prompt += "\n\nMessages from other participants will be prefixed with their name.";
 
 		if (this.enableTools) {
 			prompt += (
