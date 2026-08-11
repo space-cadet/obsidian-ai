@@ -123,6 +123,8 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		() => Array.from(ui.selectedProfileIds),
 		[ui.selectedProfileIds],
 	);
+	const syncAdapterRef = useRef<SyncAdapter | null>(null);
+	const [relayConnected, setRelayConnected] = useState(false);
 
 	/** Resolve the profile for this chat panel */
 	const resolvedProfile: ProviderProfile = useMemo(() => {
@@ -204,13 +206,13 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 
 	// ─── Participant Router (wraps orchestrator + relay) ───
 	const participantRouter = useMemo(() => {
-		if (!orchestrator || !syncAdapterRef.current) return null;
+		if (!orchestrator || !relayConnected || !syncAdapterRef.current) return null;
 		return new ParticipantRouter(
 			orchestrator,
 			syncAdapterRef.current,
 			plugin.settings.syncUserName || "local",
 		);
-	}, [orchestrator]);
+	}, [orchestrator, relayConnected, plugin.settings.syncUserName]);
 
 	const messages = useMemo(() => {
 		const s = sessions.find((s) => s.id === activeSessionId);
@@ -362,9 +364,6 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	// ═══════════════════════════════════════════════════════
 	// RELAY / SYNC
 	// ═══════════════════════════════════════════════════════
-	const syncAdapterRef = useRef<SyncAdapter | null>(null);
-	const [relayConnected, setRelayConnected] = useState(false);
-
 	const activeSessionRelayEnabled = useMemo(() => {
 		const session = sessions.find((s) => s.id === activeSessionId);
 		return session?.relayEnabled ?? false;
