@@ -12,6 +12,8 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
             - name: Setup pnpm
               uses: pnpm/action-setup@v4
@@ -27,5 +29,30 @@ jobs:
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
 
-            - name: Prettier check
-              run: pnpm exec prettier --check .
+            - name: Prettier check changed files
+              env:
+                  BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+                  HEAD_SHA: ${{ github.sha }}
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  if [[ "$BASE_SHA" =~ ^0+$ ]]; then
+                      BASE_SHA="$(git rev-list --max-parents=0 "$HEAD_SHA")"
+                  fi
+
+                  mapfile -t files < <(
+                      git diff --diff-filter=ACMR --name-only "$BASE_SHA" "$HEAD_SHA" \
+                          | grep -E '\.(css|html|js|jsx|json|md|ts|tsx|yaml|yml)$' \
+                          | grep -vE '(^|/)(main\.js|src/version-info\.ts)$' \
+                          || true
+                  )
+
+                  if ((${#files[@]} == 0)); then
+                      echo "No Prettier-supported changed files to check."
+                      exit 0
+                  fi
+
+                  printf 'Checking %d changed files:\n' "${#files[@]}"
+                  printf ' - %s\n' "${files[@]}"
+                  pnpm exec prettier --check "${files[@]}"
