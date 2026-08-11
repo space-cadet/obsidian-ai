@@ -93,7 +93,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
 							title={(participantCount ?? 0) > 0 ? `${participantCount} agents in chat` : "Group Chat"}
 						>
 							<ObsidianIcon icon="users" size={15} />
-							<span className="chat-council-badge">{participantCount && participantCount > 0 ? participantCount : 1}</span>
+							<span className="chat-council-badge">{participantCount ?? 0}</span>
 						</button>
 					</div>
 				)}

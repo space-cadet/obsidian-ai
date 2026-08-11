@@ -157,6 +157,19 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		});
 	}, [ui.selectedProfileIds, plugin.settings.providerProfiles]);
 
+	// All selected agents for display in participant bar (includes single selections)
+	const selectedAgents = useMemo(() => {
+		const ids = Array.from(ui.selectedProfileIds);
+		return ids.map((id) => {
+			const profile = plugin.settings.providerProfiles.find((p) => p.id === id);
+			return {
+				id,
+				name: profile?.name ?? "Unknown",
+				color: getAgentColor(profile?.provider ?? "custom"),
+			};
+		});
+	}, [ui.selectedProfileIds, plugin.settings.providerProfiles]);
+
 	const isGroupChat = participants.length >= 2 || ui.selectedRemoteUserIds.size > 0;
 
 	// ─── Group Chat Orchestrator ───
@@ -674,9 +687,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 					)}
 				</div>
 				{/* Participant list bar */}
-				{(participants.length > 0 || connectedUsers.length > 0) && (
+				{(selectedAgents.length > 0 || connectedUsers.length > 0) && (
 					<div className="chat-participant-bar">
-						{participants.map((p) => (
+						{selectedAgents.map((p) => (
 							<span key={p.id} className="chat-participant-chip" style={{ color: p.color }}>
 								● {p.name}
 							</span>
