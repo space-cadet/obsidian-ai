@@ -29,19 +29,49 @@
 - **Task tracking:** `memory-bank/tasks/T40.md`
 
 ### T43: Multi-User and Agent Chat with LaTeX Support (2026-08-10)
-**Status:** 🔄 Architecture Design — New Task
+**Status:** 🔄 Phase 4 Complete (Human-Only Relay Mode), Phase 5 Deferred
 
 - **Evolution of T40** — builds on relay infrastructure and presence tracking from T40
 - **New architecture:** Equal-footing participant model where AI agents and remote humans are peers
+- **Implementation strategy:**
+  - **Step 1:** `ParticipantRouter` wrapper around existing `Orchestrator` (current)
+    - Minimal risk — agent logic untouched
+    - Adds relay routing for remote users alongside agent dispatch
+    - Validates model before deeper refactor
+  - **Step 2:** Refactor `Orchestrator` to be participant-agnostic (only if Step 1 works)
+- **Phase 1 Complete (2026-08-11):** Types, session state, sync adapter, ParticipantRouter skeleton
+  - `ChatMessage` extended with `remote?: boolean`, `fromUserId?: string`
+  - `ChatSession` extended with `remoteUsers?: string[]`
+  - `WebSocketSyncAdapter` sets `remote: true` on received relay messages
+  - `ParticipantRouter` skeleton created — wraps Orchestrator, adds relay dispatch
+  - All 188 tests pass
+  - Commit: `539ca52`
 - **Key decisions:**
   - All participants (agents, remote users, local user) treated equally
   - Messages broadcast to ALL participants in a tab
   - Agents receive full context including remote user messages
   - Human-only tabs possible (no AI agents)
-- **Phase 1:** Extend types, session state, participant selection
-- **Phase 2:** AI context includes remote messages with attribution
-- **Phase 3:** Human-only tabs (relay-only mode)
-- **Phase 4:** Attribution, typing indicators, participant UI
+- **Phase 2 Complete (2026-08-11):** Wired ParticipantRouter into ChatApp
+  - `ParticipantRouter` created in `ChatApp.tsx` with orchestrator + syncAdapter
+  - `useMessageActions` accepts `participantRouter` prop, uses it for dispatch
+  - `handleSendWithSync` skips legacy relay send when `participantRouter` is active
+  - `remoteUsers` synced from session state to `ParticipantRouter`
+  - All 188 tests pass
+  - Commit: `f83e5d0`
+- **Phase 3 Complete (2026-08-11):** AI context includes remote messages with attribution
+  - `buildSystemPrompt` updated with optional `participants` parameter for `[Participants]` section
+  - `Orchestrator` updated with `remoteUsers` field, attributes remote messages as `[Remote User <id>]: message`
+  - `ParticipantRouter` syncs remote users with Orchestrator, builds relay messages with `remote: true` and `fromUserId`
+  - `useMessageActions` single-chat history includes remote attribution
+  - All 188 tests pass
+  - Commit: `9b2a498`
+- **Phase 4 Complete (2026-08-11):** Human-only tabs use relay-only routing
+  - `ParticipantRouter` accepts a null orchestrator for zero-AI tabs
+  - Relay delivery is attempted without invoking an AI API
+  - The tracked relay runtime log was removed and local relay logs are ignored
+  - Regression coverage added; current full suite passes 202 tests
+- **Phase 5 Deferred:** Attribution, typing indicators, participant UI
+- **Branch:** `t43-multi-user-agent-chat` (from `main` at `19f780d`)
 - **Docs:** `memory-bank/implementation-details/multi-user-agent-chat.md`
 - **Task tracking:** `memory-bank/tasks/T43.md`
 

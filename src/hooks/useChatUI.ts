@@ -71,6 +71,9 @@ export interface UseChatUIResult {
 	// --- Remote users ---
 	connectedUsers: string[];
 	setConnectedUsers: React.Dispatch<React.SetStateAction<string[]>>;
+	selectedRemoteUserIds: Set<string>;
+	setSelectedRemoteUserIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+	toggleRemoteUser: (userId: string) => void;
 	showRemoteUserDropdown: boolean;
 	toggleRemoteUserDropdown: () => void;
 	closeRemoteUserDropdown: () => void;
@@ -153,6 +156,18 @@ export function useChatUI(): UseChatUIResult {
 
 	// --- Remote users ---
 	const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
+	const [selectedRemoteUserIds, setSelectedRemoteUserIds] = useState<Set<string>>(new Set());
+	const toggleRemoteUser = useCallback((userId: string) => {
+		setSelectedRemoteUserIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(userId)) {
+				next.delete(userId);
+			} else {
+				next.add(userId);
+			}
+			return next;
+		});
+	}, []);
 	const [showRemoteUserDropdown, setShowRemoteUserDropdown] = useState(false);
 	const toggleRemoteUserDropdown = useCallback(
 		() => setShowRemoteUserDropdown((s) => !s),
@@ -234,6 +249,7 @@ export function useChatUI(): UseChatUIResult {
 		setSelectedProfileIds(new Set());
 		setShowParticipantDropdown(false);
 		setConnectedUsers([]);
+		setSelectedRemoteUserIds(new Set());
 		setShowRemoteUserDropdown(false);
 		setTypingAgents(new Set());
 		setAutoApprove(false);
@@ -278,6 +294,9 @@ export function useChatUI(): UseChatUIResult {
 		// Remote users
 		connectedUsers,
 		setConnectedUsers,
+		selectedRemoteUserIds,
+		setSelectedRemoteUserIds,
+		toggleRemoteUser,
 		showRemoteUserDropdown,
 		toggleRemoteUserDropdown,
 		closeRemoteUserDropdown,

@@ -25,6 +25,9 @@ src/version-info.ts
 # obsidian
 data.json
 
+# Local relay runtime logs
+relay/logs/*.log
+
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store
 

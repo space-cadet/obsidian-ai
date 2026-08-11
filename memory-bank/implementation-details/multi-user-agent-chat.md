@@ -210,6 +210,12 @@ Use cases:
 - Group chat with no AI assistance
 - Future: file sharing, voice calls
 
+Implementation status: relay-only dispatch is implemented in `ParticipantRouter`.
+When a tab has selected remote users but no AI profiles, the router sends the
+message through the active `SyncAdapter` and skips the AI orchestrator. Visual
+attribution, typing indicators, and the participant header remain deferred to
+Phase 5.
+
 ## Migration from T40
 
 T40 built:

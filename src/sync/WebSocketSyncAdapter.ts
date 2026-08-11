@@ -64,7 +64,9 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 
 					// Handle presence events
 					if (data.type === "roster" && Array.isArray(data.users)) {
-						this.userListCallback?.(data.users);
+						// Filter out self from the user list
+						const others = data.users.filter((u: string) => u !== this.userId);
+						this.userListCallback?.(others);
 						return;
 					}
 					if (data.type === "join" || data.type === "leave") {
@@ -83,6 +85,9 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 								timestamp: typeof data.timestamp === "number" ? data.timestamp : Date.now(),
 								agentId: data.sender,
 								attachments: data.attachments,
+								// Mark as remote message from relay
+								remote: true,
+								fromUserId: data.sender,
 							};
 							this.messageCallback?.(msg);
 						}

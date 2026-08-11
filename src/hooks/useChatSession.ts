@@ -112,6 +112,8 @@ export function useChatSession({
 						: [],
 					profileId: profileId || activeProfile.id,
 					selectedProfileIds: defaultSelectedIds,
+					remoteUsers: [],
+					selectedRemoteUserIds: [],
 				};
 				setSessions([newSession]);
 				setActiveSessionId(newSession.id);
@@ -241,6 +243,8 @@ export function useChatSession({
 					opts?.selectedProfileIds?.length
 						? opts.selectedProfileIds
 						: [getActiveProviderProfile(plugin.settings).id],
+				remoteUsers: [],
+				selectedRemoteUserIds: [],
 			};
 
 			setSessions((prev) => {
@@ -302,6 +306,8 @@ export function useChatSession({
 								? [{ type: "active-note", id: makeId() }]
 								: [],
 							profileId: profileId || undefined,
+							remoteUsers: [],
+							selectedRemoteUserIds: [],
 						};
 						filtered.push(empty);
 						setActiveSessionId(empty.id);

@@ -2,11 +2,17 @@ import { ContextItem } from "../types";
 import { SlashCommand } from "./slashCommand";
 import { PersonaLoader } from "../intelligence/PersonaLoader";
 
+export interface SystemPromptParticipant {
+	name: string;
+	type: "agent" | "remote" | "local";
+}
+
 export async function buildSystemPrompt(
 	contextItems: ContextItem[],
 	personaLoader: PersonaLoader | null,
 	slashCmd?: SlashCommand,
 	toolsEnabled = false,
+	participants?: SystemPromptParticipant[],
 ): Promise<string> {
 	let identityContext = "";
 	if (personaLoader) {
@@ -84,5 +90,22 @@ export async function buildSystemPrompt(
 		prompt +=
 			"\n\nThe active note is included in context. When the user asks you to edit, rewrite, or improve the note, return ONLY the complete revised note content. Do not wrap it in markdown code blocks or add explanations.";
 	}
+	if (participants && participants.length > 0) {
+		prompt += "\n\n[Participants]";
+		const agents = participants.filter((p) => p.type === "agent");
+		const remotes = participants.filter((p) => p.type === "remote");
+		const local = participants.find((p) => p.type === "local");
+		if (agents.length > 0) {
+			prompt += `\n- AI assistants: ${agents.map((a) => a.name).join(", ")}`;
+		}
+		if (local) {
+			prompt += `\n- Local user: ${local.name}`;
+		}
+		if (remotes.length > 0) {
+			prompt += `\n- Remote users: ${remotes.map((r) => r.name).join(", ")}`;
+		}
+		prompt += "\n\nMessages from other participants will be prefixed with their name.";
+	}
+
 	return prompt;
 }

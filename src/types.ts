@@ -52,6 +52,10 @@ export interface ChatMessage {
 	agentName?: string;
 	/** Agent color for display (for group chat) */
 	agentColor?: string;
+	/** True if this message came from a remote user via relay */
+	remote?: boolean;
+	/** User ID of the remote sender (when remote is true) */
+	fromUserId?: string;
 }
 
 /** Participant in a group chat session */
@@ -88,12 +92,16 @@ export interface ChatSession {
 	participants?: GroupChatParticipant[];
 	/** IDs of profiles selected in the multi-select toolbar */
 	selectedProfileIds?: string[];
+	/** IDs of remote users explicitly added to this chat */
+	selectedRemoteUserIds?: string[];
 	/** Whether thinking/reasoning is enabled for this session */
 	thinkingEnabled?: boolean;
 	/** Unsent composer text saved for recovery across restarts and tab switches */
 	draft?: string;
 	/** Whether this session is connected to a relay server for multi-user sync */
 	relayEnabled?: boolean;
+	/** IDs of remote users participating in this session (relay user IDs) */
+	remoteUsers?: string[];
 	/** Vertical message-list offset captured for restoring this tab after reload. */
 	scrollPosition?: number;
 }

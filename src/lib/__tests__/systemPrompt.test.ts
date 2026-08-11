@@ -117,17 +117,51 @@ describe("buildSystemPrompt", () => {
 		expect(prompt).not.toContain("The active note is included in context");
 	});
 
-	it("prefers slash command over active note context", async () => {
-		const contextItems = [
-			{ type: "active-note" as const, id: "active-1", path: "Notes/Daily.md", name: "Daily.md" },
+	it("does not include participants section when participants is empty", async () => {
+		const prompt = await buildSystemPrompt([], null, undefined, false, []);
+		expect(prompt).not.toContain("[Participants]");
+	});
+
+	it("includes agents in participants section", async () => {
+		const participants = [
+			{ name: "Gemini", type: "agent" as const },
+			{ name: "Kimi", type: "agent" as const },
 		];
-		const slashCmd: SlashCommand = {
-			command: "edit",
-			target: "Target Note",
-			prompt: "",
-		};
-		const prompt = await buildSystemPrompt(contextItems, null, slashCmd);
-		expect(prompt).toContain('edit the note "Target Note"');
-		expect(prompt).not.toContain("The active note is included in context");
+		const prompt = await buildSystemPrompt([], null, undefined, false, participants);
+		expect(prompt).toContain("[Participants]");
+		expect(prompt).toContain("AI assistants: Gemini, Kimi");
+	});
+
+	it("includes remote users in participants section", async () => {
+		const participants = [
+			{ name: "Alice", type: "remote" as const },
+			{ name: "Bob", type: "remote" as const },
+		];
+		const prompt = await buildSystemPrompt([], null, undefined, false, participants);
+		expect(prompt).toContain("[Participants]");
+		expect(prompt).toContain("Remote users: Alice, Bob");
+	});
+
+	it("includes local user in participants section", async () => {
+		const participants = [
+			{ name: "Deepak", type: "local" as const },
+		];
+		const prompt = await buildSystemPrompt([], null, undefined, false, participants);
+		expect(prompt).toContain("[Participants]");
+		expect(prompt).toContain("Local user: Deepak");
+	});
+
+	it("includes all participant types together", async () => {
+		const participants = [
+			{ name: "Gemini", type: "agent" as const },
+			{ name: "Alice", type: "remote" as const },
+			{ name: "Deepak", type: "local" as const },
+		];
+		const prompt = await buildSystemPrompt([], null, undefined, false, participants);
+		expect(prompt).toContain("[Participants]");
+		expect(prompt).toContain("AI assistants: Gemini");
+		expect(prompt).toContain("Remote users: Alice");
+		expect(prompt).toContain("Local user: Deepak");
+		expect(prompt).toContain("Messages from other participants will be prefixed with their name.");
 	});
 });

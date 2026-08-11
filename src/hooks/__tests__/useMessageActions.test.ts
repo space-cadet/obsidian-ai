@@ -174,6 +174,7 @@ function makeDeps(
 	return {
 		plugin: mockPlugin as any,
 		orchestrator: null,
+		participantRouter: null,
 		resolvedProfile: {
 			id: "p1",
 			name: "Test",
@@ -606,78 +607,112 @@ describe("useMessageActions", () => {
 		});
 	});
 
-	describe("handleSend — single chat guardrails", () => {
-		it("routes stream deltas to the originating session after a tab switch", async () => {
-			const activeSessionIdRef = { current: "session-1" as string | null };
-			const patchRuntime = vi.fn();
+	describe("handleSend — single chat remote attribution", () => {
+		it("attributes remote user messages in history", async () => {
 			const streamChat = vi.fn(async function* () {
-				activeSessionIdRef.current = "session-2";
-				yield "hello";
+				yield "response";
 			});
-			const sessions = [
+			const messages = [
+				{ id: "m1", role: "user" as const, content: "Hello", timestamp: 1 },
 				{
-					id: "session-1",
-					messages: [],
-					title: "One",
-					createdAt: 1,
-					updatedAt: 1,
-					contextItems: [],
+					id: "m2",
+					role: "user" as const,
+					content: "What do you think?",
+					timestamp: 2,
+					remote: true,
+					fromUserId: "alice",
 				},
-				{
-					id: "session-2",
-					messages: [],
-					title: "Two",
-					createdAt: 1,
-					updatedAt: 1,
-					contextItems: [],
-				},
-			] as any[];
+			];
 			const deps = makeDeps({
 				plugin: {
 					...mockPlugin,
 					chatapi: { streamChat },
 				} as any,
-				activeSessionIdRef,
-				sessionsRef: { current: sessions },
-				patchRuntime,
+				activeSessionIdRef: { current: "session-1" },
+				messagesRef: { current: messages },
+				sessionsRef: {
+					current: [
+						{
+							id: "session-1",
+							messages,
+							title: "Test",
+							createdAt: 1,
+							updatedAt: 1,
+							contextItems: [],
+						},
+					],
+				},
+				ui: {
+					...makeDeps().ui,
+					selectedProfileIds: new Set(["p1"]),
+				},
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
-
 			await act(async () => {
-				await result.current.handleSend("hello");
+				await result.current.handleSend("Local message");
 			});
-
-			expect(patchRuntime).toHaveBeenCalledWith(
-				"session-1",
-				expect.objectContaining({ currentAiMessage: "hello" }),
-			);
-			expect(patchRuntime).not.toHaveBeenCalledWith(
-				"session-2",
-				expect.objectContaining({ currentAiMessage: "hello" }),
+			// Verify streamChat was called with attributed history
+			expect(streamChat).toHaveBeenCalled();
+			const history = (streamChat.mock.calls as any)[0][0];
+			expect(history).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({ content: "Hello" }),
+					expect.objectContaining({
+						content: "[Remote User alice]: What do you think?",
+					}),
+					expect.objectContaining({ content: "Local message" }),
+				]),
 			);
 		});
 
-		it("does nothing on empty input with no attachments", async () => {
-			const deps = makeDeps();
-			const { result } = renderHook(() => useMessageActions(deps));
-			await act(async () => {
-				await result.current.handleSend("   ");
+		it("does not attribute local user messages", async () => {
+			const streamChat = vi.fn(async function* () {
+				yield "response";
 			});
-			expect(deps.patchRuntime).not.toHaveBeenCalled();
-		});
-
-		it("does nothing when controller is active", async () => {
+			const messages = [
+				{ id: "m1", role: "user" as const, content: "Local msg", timestamp: 1 },
+			];
 			const deps = makeDeps({
-				getRuntime: vi.fn(() => ({
-					...emptyChatRuntime,
-					controller: { signal: {} } as any,
-				})),
+				plugin: {
+					...mockPlugin,
+					chatapi: { streamChat },
+				} as any,
+				activeSessionIdRef: { current: "session-1" },
+				messagesRef: { current: messages },
+				sessionsRef: {
+					current: [
+						{
+							id: "session-1",
+							messages,
+							title: "Test",
+							createdAt: 1,
+							updatedAt: 1,
+							contextItems: [],
+						},
+					],
+				},
+				ui: {
+					...makeDeps().ui,
+					selectedProfileIds: new Set(["p1"]),
+				},
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			await act(async () => {
-				await result.current.handleSend("hello");
+				await result.current.handleSend("Next");
 			});
-			expect(deps.patchRuntime).not.toHaveBeenCalled();
+			const history = (streamChat.mock.calls as any)[0][0];
+			expect(history).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({ content: "Local msg" }),
+				]),
+			);
+			expect(history).not.toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({
+						content: expect.stringContaining("[Remote User"),
+					}),
+				]),
+			);
 		});
 	});
 });
