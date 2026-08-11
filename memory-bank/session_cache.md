@@ -1,7 +1,7 @@
 # Session Cache
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-10 22:45 IST*
+*Last Updated: 2026-08-11*
 
 **Started**: 2026-08-10 23:26 IST
 **Focus Task**: T43: Multi-User and Agent Chat — Architecture design
@@ -70,10 +70,11 @@ Fix token counter accumulation, remove green streaming border, add live tool res
 **Started:** 2026-08-10
 **Context**: [Details](tasks/T43.md)
 **Progress**:
-- ⬜ Phase 1: Extend types, session state, participant selection
-- ⬜ Phase 2: AI context includes remote messages
-- ⬜ Phase 3: Human-only tabs (relay-only mode)
-- ⬜ Phase 4: Attribution, typing indicators, participant UI
+- ✅ Phase 1: Extend types, session state, participant selection
+- ✅ Phase 2: Wire ParticipantRouter into ChatApp
+- ✅ Phase 3: AI context includes remote messages
+- ✅ Phase 4: Human-only tabs (relay-only mode)
+- ⬜ Phase 5: Attribution, typing indicators, participant UI (deferred)
 
 ### T8: Open Source Release with Branding
 **Status:** 🔄 **IN PROGRESS**

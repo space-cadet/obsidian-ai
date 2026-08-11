@@ -1,8 +1,8 @@
 # Implementation Progress
-*Last Updated: 2026-08-10 22:45 IST*
+*Last Updated: 2026-08-11*
 
 ### T43: Multi-User and Agent Chat with LaTeX Support (2026-08-10)
-**Status:** 🔄 Architecture Design — Two-Step Implementation Plan
+**Status:** 🔄 Phase 4 Complete — Phase 5 Deferred
 
 - **Evolution of T40** — equal-footing participant model (agents + remote humans as peers)
 - **Branch:** `t43-multi-user-agent-chat` (from `main` at `19f780d`)
@@ -25,9 +25,11 @@
   - `remoteUsers` synced from session state to `ParticipantRouter`
   - All 188 tests pass
   - Commit: `f83e5d0`
-- **Phase 3 Next:** AI context includes remote messages with attribution
-- **Phase 4:** Human-only tabs (relay-only mode)
-- **Phase 5:** Attribution, typing indicators, participant UI
+- **Phase 3 Complete:** AI context includes remote messages with attribution
+- **Phase 4 Complete:** Human-only tabs route through relay without an AI orchestrator
+  - `ParticipantRouter` supports relay-only dispatch
+  - Relay-only regression tests added
+- **Phase 5 Deferred:** Attribution, typing indicators, participant UI
 - **Docs:** `memory-bank/implementation-details/multi-user-agent-chat.md`
 - **Task:** `memory-bank/tasks/T43.md`
 

@@ -39,6 +39,34 @@ function createMockOrchestrator(remoteUsers: string[] = []) {
 }
 
 describe("ParticipantRouter remote user sync", () => {
+	it("routes to relay without an orchestrator for human-only tabs", async () => {
+		const syncAdapter = createMockSyncAdapter();
+		const router = new ParticipantRouter(null, syncAdapter as any, "local-1");
+		router.setRemoteUsers(["alice"]);
+
+		const responses = [];
+		for await (const response of router.dispatch("Hello", [])) {
+			responses.push(response);
+		}
+
+		expect(responses).toEqual([]);
+		expect(syncAdapter.sendMessage).toHaveBeenCalledTimes(1);
+		expect(syncAdapter.sendMessage.mock.calls[0][0]).toMatchObject({
+			content: "Hello",
+			remote: true,
+			fromUserId: "local-1",
+		});
+	});
+
+	it("returns no agent targets for a human-only tab", () => {
+		const router = new ParticipantRouter(null, null, "local-1");
+
+		expect(router.parseAndRoute("Hello")).toEqual({
+			targets: [],
+			cleanText: "Hello",
+		});
+	});
+
 	it("syncs remote users to orchestrator on construction", () => {
 		const syncAdapter = createMockSyncAdapter();
 		const orchestrator = createMockOrchestrator(["alice", "bob"]);

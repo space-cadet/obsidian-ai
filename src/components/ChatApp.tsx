@@ -206,13 +206,13 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 
 	// ─── Participant Router (wraps orchestrator + relay) ───
 	const participantRouter = useMemo(() => {
-		if (!orchestrator || !relayConnected || !syncAdapterRef.current) return null;
+		if (!isGroupChat || !relayConnected || !syncAdapterRef.current) return null;
 		return new ParticipantRouter(
 			orchestrator,
 			syncAdapterRef.current,
 			plugin.settings.syncUserName || "local",
 		);
-	}, [orchestrator, relayConnected, plugin.settings.syncUserName]);
+	}, [isGroupChat, orchestrator, relayConnected, plugin.settings.syncUserName]);
 
 	const messages = useMemo(() => {
 		const s = sessions.find((s) => s.id === activeSessionId);

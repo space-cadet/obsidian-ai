@@ -19,7 +19,7 @@ export class ParticipantRouter {
 	private remoteUsers: string[] = [];
 
 	constructor(
-		private readonly orchestrator: Orchestrator,
+		private readonly orchestrator: Orchestrator | null,
 		private readonly syncAdapter: SyncAdapter | null,
 		private readonly localUserId: string,
 	) {}
@@ -27,7 +27,7 @@ export class ParticipantRouter {
 	/** Update the list of remote user IDs participating in this chat */
 	setRemoteUsers(users: string[]) {
 		this.remoteUsers = users;
-		this.orchestrator.setRemoteUsers(users);
+		this.orchestrator?.setRemoteUsers(users);
 	}
 
 	/**
@@ -52,10 +52,8 @@ export class ParticipantRouter {
 		tokenEstimate?: number;
 		error?: string;
 	}> {
-		// 1. Route to agents via existing Orchestrator
-		yield* this.orchestrator.dispatch(text, thread, signal);
-
-		// 2. Route to remote users via relay (fire-and-forget)
+		// Route to remote users immediately so relay delivery does not wait for
+		// an agent response or fail when this is a human-only tab.
 		if (this.remoteUsers.length > 0 && this.syncAdapter) {
 			const relayMsg: ChatMessage = {
 				id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -69,6 +67,11 @@ export class ParticipantRouter {
 				console.warn("[ParticipantRouter] Failed to send to relay:", err);
 			});
 		}
+
+		// Route to agents via the existing Orchestrator when this tab has agents.
+		if (this.orchestrator) {
+			yield* this.orchestrator.dispatch(text, thread, signal);
+		}
 	}
 
 	/**
@@ -79,6 +82,9 @@ export class ParticipantRouter {
 		text: string,
 		attachments?: import("../types").Attachment[],
 	): { targets: Array<{ id: string; name: string }>; cleanText: string } {
-		return this.orchestrator.parseAndRoute(text, attachments);
+		if (this.orchestrator) {
+			return this.orchestrator.parseAndRoute(text, attachments);
+		}
+		return { targets: [], cleanText: text };
 	}
 }
