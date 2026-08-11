@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-08-10 22:45 IST*
+*Last Updated: 2026-08-11 08:01:32 IST*
 
 ### T41: Plugin Auto-Updater with Stable/Dev Channels (2026-08-09)
 **Status:** ✅ COMPLETE — Commit-hash fix applied, built, and released
@@ -23,8 +23,8 @@
   - UI: Radio icon (📻) with badge, clickable dropdown showing room + users
   - Commits: `3765188`, `6746201`, `683d9d5`, `108858d`
 - **Message Rendering Fixed (2026-08-10):** Adapter was checking `data.type === "message"` but relay sends `data.type === "chat"`. Fixed in commits `2897b1f` and `e7e29ce`.
-- **NEW BUG (2026-08-10):** Remote messages trigger AI response — when remote messages arrive via relay, ChatApp treats them as local user input and sends them to AI. Fix pending (add `skipAI` or `remote` flag).
-- **Next:** Fix AI-triggering bug, end-to-end cross-device messaging test, then Phase 2b (attribution, typing, mentions)
+- **Resolution:** The remote-message behavior was reclassified under T43's equal-footing participant model; T43 now routes remote messages through the participant router and supports relay-only human tabs.
+- **Next:** End-to-end cross-device messaging test, then Phase 2b (attribution, typing, mentions)
 - **Docs:** `memory-bank/implementation-details/presence-tracking.md` (full design + bug fixes)
 - **Task tracking:** `memory-bank/tasks/T40.md`
 
@@ -71,6 +71,8 @@
   - The tracked relay runtime log was removed and local relay logs are ignored
   - Regression coverage added; current full suite passes 202 tests
 - **Phase 5 Deferred:** Attribution, typing indicators, participant UI
+- **Merged (2026-08-11):** PR #1 merged T43 into `main` as `de38d697`; the final implementation commit was `77c9445`.
+- **Repository CI follow-up (2026-08-11):** PR #2 merged a changed-files-only Prettier workflow as `41d52ab`; the old global check was failing on existing baseline formatting debt.
 - **Branch:** `t43-multi-user-agent-chat` (from `main` at `19f780d`)
 - **Docs:** `memory-bank/implementation-details/multi-user-agent-chat.md`
 - **Task tracking:** `memory-bank/tasks/T43.md`
@@ -88,7 +90,7 @@
 
 ## Current Focus
 **T41 Plugin Auto-Updater** — ✅ COMPLETE. Commit-hash comparison fix implemented, built, and released. `latest-dev` release now contains correct hash (ae09179).
-**T40 Multi-User Chat with LaTeX Support** — Phase 1 complete. BRAT distribution works. Relay server connections established. Next: end-to-end cross-device messaging test between two Obsidian instances.
+**T40 Multi-User Chat with LaTeX Support** — Phase 2 complete. T43's participant-routing foundation is merged; next: end-to-end cross-device messaging test between two Obsidian instances.
 **T37 Idempotent Bulk Note Creation and Batch Scope Decision** — completed 2026-08-05; `create_notes` skips existing files and reports its created/skipped result, while mutation batching remains deliberately operation-specific.
 **T38 Tool Approval Policies, Batch Plans, and Operation Audit Log** — paused by user request for a later session; the agreed design is a graduated approval policy, previewed batch plans, and a bounded privacy-aware audit log.
 **T36 Stable Per-Tab Model Selection and Restored Chat View State** — completed 2026-08-05; model switching has no session-feedback loop, and saved tabs, active tab, and scroll positions restore by default.

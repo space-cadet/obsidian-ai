@@ -1,16 +1,16 @@
 # Session Cache
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-11*
+*Last Updated: 2026-08-11 08:01:32 IST*
 
 **Started**: 2026-08-10 23:26 IST
-**Focus Task**: T43: Multi-User and Agent Chat — Architecture design
+**Focus Task**: T43: Participant routing delivered and merged; Phase 5 deferred
 **Session File**: `sessions/2026-08-10-evening.md`
-**Status**: 🔄 Active: 7, Paused: 0, Completed: 16
+**Status**: 🔄 Active: 9, Paused: 0, Completed: 15
 
 ## Overview
 
-- Active: 6 | Paused: 0 | Completed: 15
+- Active: 9 | Paused: 0 | Completed: 15
 - Last Session: 2026-08-07
 - Current Period: evening
 
@@ -61,12 +61,12 @@ Fix token counter accumulation, remove green streaming border, add live tool res
 - ✅ Phase 1: WebSocket relay, SyncAdapter, BRAT distribution
 - ✅ Phase 2: Presence tracking (join/leave/roster, remote user dropdown)
 - ✅ Fix: Message rendering (type 'chat' not 'message')
-- 🔴 Bug: Remote messages trigger AI response (reclassified — see T43)
+- ✅ Remote-message routing is handled by T43; Phase 2b UI work remains pending
 - ⬜ Phase 2b: Attribution, typing indicators, mentions
 - ⬜ Phase 3: WebRTC peer-to-peer
 
 ### T43: Multi-User and Agent Chat with LaTeX Support
-**Status:** 🔄 **IN PROGRESS**
+**Status:** 🔄 **PHASE 4 DELIVERED AND MERGED — PHASE 5 DEFERRED**
 **Started:** 2026-08-10
 **Context**: [Details](tasks/T43.md)
 **Progress**:
@@ -74,6 +74,7 @@ Fix token counter accumulation, remove green streaming border, add live tool res
 - ✅ Phase 2: Wire ParticipantRouter into ChatApp
 - ✅ Phase 3: AI context includes remote messages
 - ✅ Phase 4: Human-only tabs (relay-only mode)
+- ✅ PR #1 merged into `main` as `de38d697`
 - ⬜ Phase 5: Attribution, typing indicators, participant UI (deferred)
 
 ### T8: Open Source Release with Branding
@@ -163,6 +164,7 @@ Promote release from pre-release to proper v1.2.4. GitHub release created with b
 
 ## Next Session Focus
 
+1. T43: Multi-User and Agent Chat — Phase 5 follow-up when approved
 1. T40: Multi-User Chat with LaTeX Support
 1. META-1: Memory Bank Setup and Maintenance
 1. T11: Debug Logging & Diagnostics

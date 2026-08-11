@@ -1,11 +1,11 @@
 # Implementation Progress
-*Last Updated: 2026-08-11*
+*Last Updated: 2026-08-11 08:01:32 IST*
 
 ### T43: Multi-User and Agent Chat with LaTeX Support (2026-08-10)
-**Status:** 🔄 Phase 4 Complete — Phase 5 Deferred
+**Status:** 🔄 Phase 4 Delivered and Merged — Phase 5 Deferred
 
 - **Evolution of T40** — equal-footing participant model (agents + remote humans as peers)
-- **Branch:** `t43-multi-user-agent-chat` (from `main` at `19f780d`)
+- **Branch:** `t43-multi-user-agent-chat` (from `main` at `19f780d`); merged into `main` via PR #1 as `de38d697`
 - **Step 1 (Current):** `ParticipantRouter` wrapper around existing `Orchestrator`
   - Minimal risk — agent logic untouched
   - Adds relay routing for remote users alongside agent dispatch
@@ -30,6 +30,8 @@
   - `ParticipantRouter` supports relay-only dispatch
   - Relay-only regression tests added
 - **Phase 5 Deferred:** Attribution, typing indicators, participant UI
+- **Verification:** 20 test files, 202 tests passed; `git diff --check` passed
+- **Repository CI follow-up:** PR #2 merged the changed-files-only Prettier workflow as `41d52ab`, avoiding the pre-existing global formatting baseline failure
 - **Docs:** `memory-bank/implementation-details/multi-user-agent-chat.md`
 - **Task:** `memory-bank/tasks/T43.md`
 

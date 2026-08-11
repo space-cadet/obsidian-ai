@@ -1,6 +1,18 @@
 # Edit History
 
-*Last Updated: 2026-08-10 22:45 IST*
+*Last Updated: 2026-08-11 08:01:32 IST*
+
+## 2026-08-11
+
+#### 08:01:32 IST - T40, T43: Merge participant routing and scope repository format check
+- Modified `memory-bank/tasks/T43.md` - Recorded Phase 4 delivery, merge commit `de38d697`, verification results, and deferred Phase 5 scope
+- Modified `memory-bank/tasks/T40.md` - Linked the resolved remote-message behavior to the merged T43 architecture
+- Modified `memory-bank/activeContext.md` - Reconciled T40/T43 status with `main` and recorded the format-check follow-up
+- Modified `memory-bank/progress.md` - Recorded T43 merge and repository CI verification
+- Modified `memory-bank/session_cache.md` - Updated current focus, counts, T43 delivery status, and next-session priority
+- Modified `memory-bank/implementation-details/multi-user-agent-chat.md` - Marked delivered participant-routing capabilities and retained Phase 5 boundary
+- Modified `memory-bank/sessions/2026-08-10-evening.md` - Appended the merged-work closeout and session title
+- Modified `memory-bank/tasks.md` - Updated registry last-updated timestamp
 
 ## 2026-08-10
 
@@ -83,4 +95,3 @@
 - Modified `src/components/ChatMessages.tsx` - Modified src/components/ChatMessages.tsx
 - Modified `src/hooks/useMessageActions.ts` - Modified src/hooks/useMessageActions.ts
 - Modified `src/components/ChatApp.tsx` - Modified src/components/ChatApp.tsx
-

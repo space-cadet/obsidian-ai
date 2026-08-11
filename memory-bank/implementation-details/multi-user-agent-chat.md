@@ -1,7 +1,7 @@
 # Multi-User and Agent Chat Architecture
 
 *Created: 2026-08-10*
-*Status: Architecture Design*
+*Status: Phase 4 Delivered and Merged; Phase 5 Deferred*
 *Depends on: T40 (Multi-User Chat with LaTeX Support)*
 
 ## Overview
@@ -224,12 +224,14 @@ T40 built:
 - ✅ SyncAdapter interface
 - ✅ WebSocketSyncAdapter
 
-T43 adds:
-- 🔄 Remote users as tab participants (not just connections)
-- 🔄 Participant selection UI (agent + user dropdowns)
-- 🔄 Message routing to all participants
-- 🔄 AI context includes remote messages
-- 🔄 Human-only tabs (no agents)
+T43 delivered:
+- ✅ Remote users as tab participants (not just connections)
+- ✅ Participant selection through the existing agent and user controls
+- ✅ Message routing to all participants
+- ✅ AI context includes remote messages
+- ✅ Human-only tabs (no agents)
+
+Delivery: PR #1 merged into `main` as `de38d697` on 2026-08-11. Visual attribution, typing indicators, and the participant header remain deferred to Phase 5.
 
 ## Files
 
