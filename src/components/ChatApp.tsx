@@ -125,6 +125,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	);
 	const syncAdapterRef = useRef<SyncAdapter | null>(null);
 	const [relayConnected, setRelayConnected] = useState(false);
+	const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
 	/** Resolve the profile for this chat panel */
 	const resolvedProfile: ProviderProfile = useMemo(() => {
@@ -406,6 +407,15 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 					),
 				);
 			});
+			adapter.onTyping((userId) => {
+				// Show typing indicator for 3 seconds then remove
+				setTypingUsers((prev) =>
+					prev.includes(userId) ? prev : [...prev, userId],
+				);
+				window.setTimeout(() => {
+					setTypingUsers((prev) => prev.filter((u) => u !== userId));
+				}, 3000);
+			});
 			adapter.connect(
 				plugin.settings.syncRoomId,
 				plugin.settings.syncUserName,
@@ -424,6 +434,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				syncAdapterRef.current = null;
 				setRelayConnected(false);
 				setConnectedUsers([]);
+			setTypingUsers([]);
 			}
 		}
 
@@ -433,6 +444,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				syncAdapterRef.current = null;
 				setRelayConnected(false);
 				setConnectedUsers([]);
+			setTypingUsers([]);
 			}
 		};
 	}, [activeSessionId, activeSessionRelayEnabled, plugin.settings.syncRelayUrl, plugin.settings.syncRoomId, plugin.settings.syncUserName]);
@@ -568,6 +580,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	return (
 		<div className={`chat-panel${ui.zenMode ? ' is-zen' : ''}`}>
 			{!ui.zenMode && (
+				<>
 				<div className="chat-action-bar-wrapper">
 					<ActionBar
 						onNewChat={handleNewChat}
@@ -660,7 +673,22 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 						</div>
 					)}
 				</div>
-			)}
+				{/* Participant list bar */}
+				{(participants.length > 0 || connectedUsers.length > 0) && (
+					<div className="chat-participant-bar">
+						{participants.map((p) => (
+							<span key={p.id} className="chat-participant-chip" style={{ color: p.color }}>
+								● {p.name}
+							</span>
+						))}
+						{connectedUsers.map((user) => (
+							<span key={user} className="chat-participant-chip chat-participant-chip-remote">
+								<span className="chat-participant-dot-online">●</span> {user}
+							</span>
+						))}
+					</div>
+				)}
+			</>)}
 			{!ui.zenMode && (
 				<ChatTabBar
 					sessions={sessions}
@@ -727,6 +755,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				onAppendToTarget={actions.handleAppendToTarget}
 				onOpenPastSession={openSessionInTab}
 				scrollToMessageId={scrollToMessageId}
+			typingUsers={typingUsers}
 			/>
 
 			{activeRuntime.pendingToolCall && (
@@ -743,6 +772,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				plugin={plugin}
 				onSend={handleSendWithSync}
 				onStop={actions.handleStop}
+			onTyping={() => syncAdapterRef.current?.sendTyping()}
 				onAddMention={handleAddMention}
 				isStreaming={activeRuntime.isStreaming}
 				isEditing={ui.isEditing}

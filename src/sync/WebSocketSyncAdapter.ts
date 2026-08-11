@@ -20,6 +20,7 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 	private messageCallback: ((msg: ChatMessage) => void) | null = null;
 	private userListCallback: ((users: string[]) => void) | null = null;
 	private presenceCallback: ((event: { type: "join" | "leave"; userId: string }) => void) | null = null;
+	private typingCallback: ((userId: string) => void) | null = null;
 	private roomId: string = "";
 	private userId: string = "";
 	private reconnectTimer: number | null = null;
@@ -71,6 +72,14 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 					}
 					if (data.type === "join" || data.type === "leave") {
 						this.presenceCallback?.(data);
+						return;
+					}
+
+					// Handle typing indicators
+					if (data.type === "typing") {
+						if (data.sender !== this.userId) {
+							this.typingCallback?.(data.sender);
+						}
 						return;
 					}
 
@@ -168,5 +177,16 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 
 	onPresence(callback: (event: { type: "join" | "leave"; userId: string }) => void): void {
 		this.presenceCallback = callback;
+	}
+
+	sendTyping(): void {
+		if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+			return;
+		}
+		this.ws.send(JSON.stringify({ type: "typing", sender: this.userId }));
+	}
+
+	onTyping(callback: (userId: string) => void): void {
+		this.typingCallback = callback;
 	}
 }

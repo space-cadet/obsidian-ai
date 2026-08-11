@@ -232,6 +232,7 @@ interface ChatMessagesProps {
 	showThinking?: boolean;
 	onOpenPastSession?: (sessionId: string, messageId: string) => void;
 	scrollToMessageId?: string;
+	typingUsers?: string[];
 }
 
 const ChatMessages: React.FC<ChatMessagesProps> = ({
@@ -255,6 +256,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	showThinking,
 	onOpenPastSession,
 	scrollToMessageId,
+	typingUsers,
 }) => {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
@@ -385,6 +387,16 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 						<span />
 						<span />
 						<span />
+					</div>
+				)}
+				{typingUsers && typingUsers.length > 0 && (
+					<div className="chat-typing-indicator-remote">
+						<span className="chat-typing-indicator-remote-label">
+							{typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"} typing…
+						</span>
+						<span className="chat-typing-dot" />
+						<span className="chat-typing-dot" />
+						<span className="chat-typing-dot" />
 					</div>
 				)}
 				<div ref={bottomRef} />

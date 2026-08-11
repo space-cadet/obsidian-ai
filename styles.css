@@ -980,6 +980,24 @@
 	}
 }
 
+/* Remote typing indicator */
+.chat-typing-indicator-remote {
+tdisplay: flex;
+talign-items: center;
+tgap: 6px;
+tpadding: 8px 14px;
+tbackground: var(--background-secondary);
+tborder-radius: 8px;
+talign-self: flex-start;
+tfont-size: 0.85em;
+tcolor: var(--text-muted);
+}
+
+.chat-typing-indicator-remote-label {
+tmargin-right: 4px;
+}
+
+
 /* Chat bubble: streaming state */
 .chat-bubble-streaming {
 	/* No border — was causing green outline flicker on Android */
@@ -3849,4 +3867,33 @@
 .updater-prerelease-warning {
 	color: var(--text-warning);
 	font-weight: 500;
+}
+
+/* Participant list bar */
+.chat-participant-bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 4px 12px;
+	background: var(--background-primary);
+	border-bottom: 1px solid var(--background-modifier-border);
+	font-size: 0.8em;
+}
+
+.chat-participant-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 2px 6px;
+	background: var(--background-secondary);
+	border-radius: 4px;
+	white-space: nowrap;
+}
+
+.chat-participant-chip-remote {
+	color: var(--text-muted);
+}
+
+.chat-participant-dot-online {
+	color: #4caf50;
 }

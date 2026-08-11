@@ -293,7 +293,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 			<div className="chat-bubble-header">
 				<span className="chat-bubble-role">
 					{message.role === "user"
-						? "You"
+						? message.remote && message.fromUserId
+							? message.fromUserId
+							: "You"
 						: message.agentName
 							? message.agentName
 							: "Obsidian AI"}

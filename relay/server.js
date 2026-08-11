@@ -144,10 +144,10 @@ wss.on("connection", (ws, req) => {
 			console.log(
 				`[relay] ${roomId}: ${msg.agentName || msg.agentId || userId}: ${msg.content?.slice(0, 50) || ""}`
 			);
-			broadcast(roomId, ws, raw);
+			broadcast(roomId, ws, raw.toString());
 		} catch {
 			// If not JSON, just forward raw
-			broadcast(roomId, ws, raw);
+			broadcast(roomId, ws, raw.toString());
 		}
 	});
 

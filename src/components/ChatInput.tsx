@@ -30,6 +30,8 @@ interface ChatInputProps {
 	draft?: string;
 	/** Called when the composer text changes (debounced by parent) */
 	onDraftChange?: (text: string) => void;
+	/** Called when user is typing (for relay sync) */
+	onTyping?: () => void;
 }
 
 type AutoType = "mention" | "slash" | "wikilink";
@@ -112,6 +114,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	tokenTotal,
 	draft,
 	onDraftChange,
+	onTyping,
 }) => {
 	const [value, setValue] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -119,6 +122,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	const [showAttachDropdown, setShowAttachDropdown] = useState(false);
 	const attachDropdownRef = useRef<HTMLDivElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const typingThrottleRef = useRef<number | null>(null);
 
 	// Close attachment dropdown when clicking outside
 	useEffect(() => {
@@ -356,8 +360,17 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			} else {
 				setAuto(null);
 			}
+			// Throttled typing indicator (max once per 2 seconds)
+			if (onTyping) {
+				if (!typingThrottleRef.current) {
+					onTyping();
+					typingThrottleRef.current = window.setTimeout(() => {
+						typingThrottleRef.current = null;
+					}, 2000);
+				}
+			}
 		},
-		[onDraftChange],
+		[onDraftChange, onTyping],
 	);
 
 	const insertCandidate = useCallback(
