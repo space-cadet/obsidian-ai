@@ -1,8 +1,17 @@
 # Edit History
 
-*Last Updated: 2026-08-12 11:11:56 IST*
+*Last Updated: 2026-08-12 16:10 IST*
 
 ## 2026-08-12
+
+#### 16:10 IST - T44: Markdown renderer adapter and session wrap-up
+- Modified `src/components/MessageBubble.tsx` - Removed `MarkdownRenderer`/`Component` imports, added `renderMarkdown` prop, replaced all `MarkdownRenderer.render()` calls.
+- Modified `src/components/ChatMessages.tsx` - Removed `MarkdownRenderer`/`Component` imports, added `renderMarkdown` prop to `StreamingBubble` and `ChatMessages`, passed to `MessageBubble`.
+- Modified `src/components/ChatMainArea.tsx` - Added `renderMarkdown` prop, passed to `ChatMessages`.
+- Modified `src/components/ChatApp.tsx` - Imported `MarkdownRenderer`/`Component`, created `renderMarkdown` callback, passed to `ChatMainArea`.
+- Modified `memory-bank/tasks/T44.md` - Updated progress: T44.1 complete, T22 Phase 5 complete, markdown renderer adapter complete. Remaining work delegated to beads.
+- Modified `memory-bank/session_cache.md` - Marked session complete, updated focus task and end time.
+- Created `memory-bank/sessions/2026-08-12-afternoon.md` - Session log for T22 Phase 5 + T44 markdown adapter work.
 
 #### 11:11:56 IST - T22, T44: Reconcile UI decomposition and plan standalone preview
 - Modified `memory-bank/tasks/T22.md` - Marked Phase 4 complete from `da4af7d`, retained Phase 5 as pending, and reconciled current file sizes.
