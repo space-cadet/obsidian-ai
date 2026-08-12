@@ -1,12 +1,12 @@
 # Session Cache
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-11 08:01:32 IST*
+*Last Updated: 2026-08-12 10:35:04 IST*
 
-**Started**: 2026-08-10 23:26 IST
-**Focus Task**: T43: Participant routing delivered and merged; Phase 5 deferred
-**Session File**: `sessions/2026-08-10-evening.md`
-**Status**: 🔄 Active: 9, Paused: 0, Completed: 15
+**Started**: 2026-08-12 10:35:04 IST
+**Focus Task**: T43, T15, T8: Mobile chat hardening, model badge fix, and format-gate cleanup
+**Session File**: `sessions/2026-08-12-morning.md`
+**Status**: ✅ Active: 8, Paused: 0, Completed: 16
 
 ## Overview
 
@@ -65,18 +65,6 @@ Fix token counter accumulation, remove green streaming border, add live tool res
 - ⬜ Phase 2b: Attribution, typing indicators, mentions
 - ⬜ Phase 3: WebRTC peer-to-peer
 
-### T43: Multi-User and Agent Chat with LaTeX Support
-**Status:** 🔄 **PHASE 4 DELIVERED AND MERGED — PHASE 5 DEFERRED**
-**Started:** 2026-08-10
-**Context**: [Details](tasks/T43.md)
-**Progress**:
-- ✅ Phase 1: Extend types, session state, participant selection
-- ✅ Phase 2: Wire ParticipantRouter into ChatApp
-- ✅ Phase 3: AI context includes remote messages
-- ✅ Phase 4: Human-only tabs (relay-only mode)
-- ✅ PR #1 merged into `main` as `de38d697`
-- ⬜ Phase 5: Attribution, typing indicators, participant UI (deferred)
-
 ### T8: Open Source Release with Branding
 **Status:** 🔄 **IN PROGRESS**
 **Started:** 2026-05-02
@@ -84,6 +72,17 @@ Fix token counter accumulation, remove green streaming border, add live tool res
 **Progress**:
 [Details](tasks/T8.md)
 Promote release from pre-release to proper v1.2.4. GitHub release created with build assets.
+
+### T43: Multi-User and Agent Chat with LaTeX Support
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-08-10
+**Completed:** 2026-08-12
+**Context**: [Details](tasks/T43.md)
+**Progress**:
+- ✅ All five participant-routing phases
+- ✅ Mobile scrolling and composer spacing hardening
+- ✅ Correct model-selection badge counts and regression tests
+- ✅ Changed-files-only format check passes
 
 ## Completed Tasks
 
@@ -164,11 +163,16 @@ Promote release from pre-release to proper v1.2.4. GitHub release created with b
 
 ## Next Session Focus
 
-1. T43: Multi-User and Agent Chat — Phase 5 follow-up when approved
 1. T40: Multi-User Chat with LaTeX Support
 1. META-1: Memory Bank Setup and Maintenance
 1. T11: Debug Logging & Diagnostics
 1. T14: Remote Agent Connectivity (OpenResponses)
+
+## Session History (Last 5)
+
+1. `sessions/2026-08-12-morning.md` - Mobile chat hardening, model badge fix, and format-gate cleanup
+2. `sessions/2026-08-10-evening.md` - T43 participant routing merge and Phase 5 scope
+3. `sessions/2026-08-09-morning.md` - T40 relay verification and T41 updater work
 
 ## System Status
 

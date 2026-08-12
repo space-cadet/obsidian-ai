@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-08-11 11:40 IST*
+*Last Updated: 2026-08-12 10:35:04 IST*
 
 ### T41: Plugin Auto-Updater with Stable/Dev Channels (2026-08-09)
 **Status:** ✅ COMPLETE — Commit-hash fix applied, built, and released
@@ -42,6 +42,8 @@
   - Commits: `90503d9`, `ab23e5f`
 - **Merged (2026-08-11):** `t43-multi-user-agent-chat` → `main` (fast-forward), pushed to GitHub
 - **Tests:** Relay tested MacBook ↔ mobile; participant bar verified; typing indicators need 2-device test
+- **2026-08-12 follow-up:** Mobile transcript scrolling was fixed with constrained flex sizing and touch scrolling behavior; mobile composer bottom padding was reduced; the host-owned view-selector gap was documented; model-selection badge count now uses selected model IDs directly with regression coverage.
+- **Verification:** 21 test files, 206 tests passed; changed-files-only Prettier and `git diff --check` passed. TypeScript remains blocked by the pre-existing AI SDK API mismatch in `src/api.ts`.
 - **Docs:** `memory-bank/implementation-details/multi-user-agent-chat.md`
 - **Task tracking:** `memory-bank/tasks/T43.md`
 
@@ -73,6 +75,7 @@
 
 ## Current Focus
 **T41 Plugin Auto-Updater** — ✅ COMPLETE. Commit-hash comparison fix implemented, built, and released. `latest-dev` release now contains correct hash (ae09179).
+**T43 Multi-User and Agent Chat** — ✅ COMPLETE. Phase 5 UI is delivered, and the 2026-08-12 mobile scrolling, composer spacing, model-badge, test, and formatting follow-up is complete.
 **T40 Multi-User Chat with LaTeX Support** — Phase 2 complete. T43's participant-routing foundation is merged; next: end-to-end cross-device messaging test between two Obsidian instances.
 **T37 Idempotent Bulk Note Creation and Batch Scope Decision** — completed 2026-08-05; `create_notes` skips existing files and reports its created/skipped result, while mutation batching remains deliberately operation-specific.
 **T38 Tool Approval Policies, Batch Plans, and Operation Audit Log** — paused by user request for a later session; the agreed design is a graduated approval policy, previewed batch plans, and a bounded privacy-aware audit log.

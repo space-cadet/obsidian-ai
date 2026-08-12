@@ -1,5 +1,5 @@
 # Implementation Progress
-*Last Updated: 2026-08-11 11:40 IST*
+*Last Updated: 2026-08-12 10:35:04 IST*
 
 ### T43: Multi-User and Agent Chat with LaTeX Support (2026-08-10 → 2026-08-11)
 **Status:** ✅ COMPLETE — All 5 Phases Delivered and Merged
@@ -21,6 +21,8 @@
 - **Verification:** 20+ test files, 202+ tests passed; `git diff --check` passed
 - **Docs:** `memory-bank/implementation-details/multi-user-agent-chat.md`
 - **Task:** `memory-bank/tasks/T43.md`
+- **2026-08-12 follow-up:** Fixed mobile transcript scrolling with constrained flex sizing and touch behavior; removed mobile composer bottom padding; documented the host-owned view-selector gap; corrected the model badge to count selected model IDs rather than the group-only participant array; added four badge regression assertions.
+- **Verification:** 21 test files, 206 tests passed; changed-files-only Prettier and `git diff --check` passed. TypeScript remains blocked by the existing AI SDK API mismatch.
 
 ### T42: Remote Chat Storage & Sync (2026-08-10)
 **Status:** 🔄 CREATED — Design complete, implementation pending

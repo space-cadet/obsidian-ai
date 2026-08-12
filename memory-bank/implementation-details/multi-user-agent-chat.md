@@ -191,6 +191,15 @@ When a remote user is typing:
 - 3-second auto-clear in ChatApp.tsx
 - 2-second throttled emitter in ChatInput.tsx
 
+## Mobile Layout Hardening (2026-08-12)
+
+- The transcript flex chain now uses `min-height: 0` on the chat panel, scroll wrapper, and message container so the message element gets a real constrained scroll region.
+- The message container opts into vertical touch panning, contains vertical overscroll, and enables the mobile WebKit scrolling path.
+- The mobile composer removes its bottom padding below the attachment toolbar. The larger gap before the rounded `Obsidian AI Chat` view selector is host-generated Obsidian mobile chrome, not plugin markup.
+- The model-selection badge counts `selectedProfileIds.size` directly. Remote users remain represented by the separate remote-user badge.
+- `src/components/__tests__/ActionBar.test.tsx` covers 0, 1, and 2 selected models plus separate remote-user counts.
+- Verification: 21 test files and 206 tests passed; changed-files-only Prettier and `git diff --check` passed.
+
 ## Data Flow Diagram
 
 ```

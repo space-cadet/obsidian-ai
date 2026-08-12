@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased - 2026-08-12
+
+### Fixed
+- Mobile chat transcript scrolling now has a constrained flex layout and touch-friendly vertical scrolling — T43
+- Mobile composer no longer reserves unnecessary bottom padding below the attachment toolbar — T43
+- Model-selection badge now reports 0, 1, 2, or more selected models correctly while keeping remote-user counts separate — T43
+
+### Tests
+- Added ActionBar regression coverage for model and remote-user badge counts — T43
+- Formatted touched files so the changed-files-only GitHub Prettier check passes — T8
+
 ## Unreleased - 2026-08-05
 
 ### Changed

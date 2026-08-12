@@ -49,10 +49,7 @@ import SearchResults from "./search-results";
 import { ChatApiManager } from "../api";
 import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
 import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
-import {
-	getActiveProviderProfile,
-	ProviderProfile,
-} from "../settings";
+import { getActiveProviderProfile, ProviderProfile } from "../settings";
 import { stripThinkingTags } from "./MessageBubble";
 import { WebSocketSyncAdapter } from "../sync/WebSocketSyncAdapter";
 import type { SyncAdapter } from "../sync/SyncAdapter";
@@ -65,7 +62,12 @@ interface ChatAppProps {
 	initialMessageId?: string;
 }
 
-const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, initialMessageId }) => {
+const ChatApp: React.FC<ChatAppProps> = ({
+	plugin,
+	profileId,
+	initialSessionId,
+	initialMessageId,
+}) => {
 	const {
 		sessions,
 		setSessions,
@@ -87,7 +89,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 
 	const [wasTruncated, setWasTruncated] = useState(false);
 	const [contextTokenCount, setContextTokenCount] = useState(0);
-	const [scrollToMessageId, setScrollToMessageId] = useState<string | undefined>(initialMessageId);
+	const [scrollToMessageId, setScrollToMessageId] = useState<
+		string | undefined
+	>(initialMessageId);
 	const [thinkingEnabled, setThinkingEnabled] = useState(false);
 	const savedSessions = useMemo(
 		() => sessions.filter((session) => session.messages.length > 0),
@@ -110,7 +114,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	// Force re-render when user returns to chat tab (settings may have changed)
 	const [settingsTick, setSettingsTick] = useState(0);
 	useEffect(() => {
-		const onVis = () => { if (!document.hidden) setSettingsTick(t => t + 1); };
+		const onVis = () => {
+			if (!document.hidden) setSettingsTick((t) => t + 1);
+		};
 		document.addEventListener("visibilitychange", onVis);
 		return () => document.removeEventListener("visibilitychange", onVis);
 	}, []);
@@ -130,23 +136,35 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	/** Resolve the profile for this chat panel */
 	const resolvedProfile: ProviderProfile = useMemo(() => {
 		if (profileId) {
-			const p = plugin.settings.providerProfiles.find((pr) => pr.id === profileId);
+			const p = plugin.settings.providerProfiles.find(
+				(pr) => pr.id === profileId,
+			);
 			if (p) return p;
 		}
 		const activeSession = sessions.find((s) => s.id === activeSessionId);
 		if (activeSession?.profileId) {
-			const p = plugin.settings.providerProfiles.find((pr) => pr.id === activeSession.profileId);
+			const p = plugin.settings.providerProfiles.find(
+				(pr) => pr.id === activeSession.profileId,
+			);
 			if (p) return p;
 		}
 		return getActiveProviderProfile(plugin.settings);
-	}, [profileId, activeSessionId, plugin.settings.providerProfiles, sessions, settingsTick]);
+	}, [
+		profileId,
+		activeSessionId,
+		plugin.settings.providerProfiles,
+		sessions,
+		settingsTick,
+	]);
 
 	// ─── Derive participants from selectedProfileIds ───
 	const participants = useMemo(() => {
 		const ids = Array.from(ui.selectedProfileIds);
 		if (ids.length < 2) return [];
 		return ids.map((id) => {
-			const profile = plugin.settings.providerProfiles.find((p) => p.id === id);
+			const profile = plugin.settings.providerProfiles.find(
+				(p) => p.id === id,
+			);
 			return {
 				id,
 				name: profile?.name ?? "Unknown",
@@ -161,7 +179,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	const selectedAgents = useMemo(() => {
 		const ids = Array.from(ui.selectedProfileIds);
 		return ids.map((id) => {
-			const profile = plugin.settings.providerProfiles.find((p) => p.id === id);
+			const profile = plugin.settings.providerProfiles.find(
+				(p) => p.id === id,
+			);
 			return {
 				id,
 				name: profile?.name ?? "Unknown",
@@ -170,13 +190,16 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		});
 	}, [ui.selectedProfileIds, plugin.settings.providerProfiles]);
 
-	const isGroupChat = participants.length >= 2 || ui.selectedRemoteUserIds.size > 0;
+	const isGroupChat =
+		participants.length >= 2 || ui.selectedRemoteUserIds.size > 0;
 
 	// ─── Group Chat Orchestrator ───
 	const orchestrator = useMemo(() => {
 		if (!isGroupChat || participants.length === 0) return null;
 		const resolved = participants.map((p) => {
-			const profile = plugin.settings.providerProfiles.find((pr) => pr.id === p.profileId);
+			const profile = plugin.settings.providerProfiles.find(
+				(pr) => pr.id === p.profileId,
+			);
 			return { ...p, profile: profile ?? undefined };
 		});
 		const orch = new Orchestrator({
@@ -197,36 +220,50 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				plugin.app,
 				plugin.settings,
 				plugin.personaLoader ?? undefined,
-			plugin.searchIndex ?? undefined,
-			() => activeSessionIdRef.current,
-			plugin.integrationRegistry,
+				plugin.searchIndex ?? undefined,
+				() => activeSessionIdRef.current,
+				plugin.integrationRegistry,
 			),
 		});
 		orch.engines = resolved.map((e) => ({
 			id: e.id,
 			name: e.name,
 			color: e.color,
-			profile: e.profile ?? {
-				id: e.profileId,
-				name: e.name,
-				provider: "custom",
-				model: "default",
-				createdAt: Date.now(),
-				updatedAt: Date.now(),
-			} as ProviderProfile,
+			profile:
+				e.profile ??
+				({
+					id: e.profileId,
+					name: e.name,
+					provider: "custom",
+					model: "default",
+					createdAt: Date.now(),
+					updatedAt: Date.now(),
+				} as ProviderProfile),
 		}));
 		return orch;
-	}, [isGroupChat, participants, plugin.chatapi, plugin.settings, plugin.app]);
+	}, [
+		isGroupChat,
+		participants,
+		plugin.chatapi,
+		plugin.settings,
+		plugin.app,
+	]);
 
 	// ─── Participant Router (wraps orchestrator + relay) ───
 	const participantRouter = useMemo(() => {
-		if (!isGroupChat || !relayConnected || !syncAdapterRef.current) return null;
+		if (!isGroupChat || !relayConnected || !syncAdapterRef.current)
+			return null;
 		return new ParticipantRouter(
 			orchestrator,
 			syncAdapterRef.current,
 			plugin.settings.syncUserName || "local",
 		);
-	}, [isGroupChat, orchestrator, relayConnected, plugin.settings.syncUserName]);
+	}, [
+		isGroupChat,
+		orchestrator,
+		relayConnected,
+		plugin.settings.syncUserName,
+	]);
 
 	const messages = useMemo(() => {
 		const s = sessions.find((s) => s.id === activeSessionId);
@@ -281,7 +318,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	// newly active session. This is deliberately one-way: writing picker changes
 	// back into the session happens in the separate effect below.
 	useEffect(() => {
-		const activeSession = sessions.find((session) => session.id === activeSessionId);
+		const activeSession = sessions.find(
+			(session) => session.id === activeSessionId,
+		);
 		if (!activeSession) return;
 		const ids = activeSession.selectedProfileIds?.length
 			? activeSession.selectedProfileIds
@@ -289,14 +328,20 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				? [activeSession.profileId]
 				: [getActiveProviderProfile(plugin.settings).id];
 		const currentIds = Array.from(ui.selectedProfileIds);
-		if (ids.length !== currentIds.length || ids.some((id) => !ui.selectedProfileIds.has(id))) {
+		if (
+			ids.length !== currentIds.length ||
+			ids.some((id) => !ui.selectedProfileIds.has(id))
+		) {
 			suppressProfilePersistenceRef.current = true;
 			ui.setSelectedProfileIds(new Set(ids));
 		}
 		// Also restore selected remote users
 		const remoteIds = activeSession.selectedRemoteUserIds ?? [];
 		const currentRemoteIds = Array.from(ui.selectedRemoteUserIds);
-		if (remoteIds.length !== currentRemoteIds.length || remoteIds.some((id) => !ui.selectedRemoteUserIds.has(id))) {
+		if (
+			remoteIds.length !== currentRemoteIds.length ||
+			remoteIds.some((id) => !ui.selectedRemoteUserIds.has(id))
+		) {
 			suppressProfilePersistenceRef.current = true;
 			ui.setSelectedRemoteUserIds(new Set(remoteIds));
 		}
@@ -367,7 +412,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		setContextTokenCount,
 		setContextItems,
 		messagesRef,
-		contextItemsRef: { current: contextItems } as React.MutableRefObject<ContextItem[]>,
+		contextItemsRef: { current: contextItems } as React.MutableRefObject<
+			ContextItem[]
+		>,
 		lastMarkdownLeafRef: useRef<WorkspaceLeaf | null>(null),
 		getRuntime,
 		patchRuntime,
@@ -390,7 +437,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		if (!session) return;
 
 		if (session.relayEnabled) {
-			const adapter = new WebSocketSyncAdapter(plugin.settings.syncRelayUrl);
+			const adapter = new WebSocketSyncAdapter(
+				plugin.settings.syncRelayUrl,
+			);
 			// Register callbacks BEFORE connect to avoid race with server roster
 			adapter.onUserList((users) => {
 				setConnectedUsers(users);
@@ -398,7 +447,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 			adapter.onPresence((event) => {
 				if (event.type === "join") {
 					setConnectedUsers((prev) =>
-						prev.includes(event.userId) ? prev : [...prev, event.userId],
+						prev.includes(event.userId)
+							? prev
+							: [...prev, event.userId],
 					);
 				} else if (event.type === "leave") {
 					setConnectedUsers((prev) =>
@@ -429,17 +480,20 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 					setTypingUsers((prev) => prev.filter((u) => u !== userId));
 				}, 3000);
 			});
-			adapter.connect(
-				plugin.settings.syncRoomId,
-				plugin.settings.syncUserName,
-			).then(() => {
-				setRelayConnected(true);
-				new Notice("🔌 Relay connected");
-			}).catch((err) => {
-				console.warn("[ChatApp] Relay connect failed:", err);
-				setRelayConnected(false);
-				new Notice(`🔌 Relay failed: ${err.message}`);
-			});
+			adapter
+				.connect(
+					plugin.settings.syncRoomId,
+					plugin.settings.syncUserName,
+				)
+				.then(() => {
+					setRelayConnected(true);
+					new Notice("🔌 Relay connected");
+				})
+				.catch((err) => {
+					console.warn("[ChatApp] Relay connect failed:", err);
+					setRelayConnected(false);
+					new Notice(`🔌 Relay failed: ${err.message}`);
+				});
 			syncAdapterRef.current = adapter;
 		} else {
 			if (syncAdapterRef.current) {
@@ -447,7 +501,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				syncAdapterRef.current = null;
 				setRelayConnected(false);
 				setConnectedUsers([]);
-			setTypingUsers([]);
+				setTypingUsers([]);
 			}
 		}
 
@@ -457,10 +511,16 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				syncAdapterRef.current = null;
 				setRelayConnected(false);
 				setConnectedUsers([]);
-			setTypingUsers([]);
+				setTypingUsers([]);
 			}
 		};
-	}, [activeSessionId, activeSessionRelayEnabled, plugin.settings.syncRelayUrl, plugin.settings.syncRoomId, plugin.settings.syncUserName]);
+	}, [
+		activeSessionId,
+		activeSessionRelayEnabled,
+		plugin.settings.syncRelayUrl,
+		plugin.settings.syncRoomId,
+		plugin.settings.syncUserName,
+	]);
 
 	const handleToggleRelay = useCallback(() => {
 		if (!activeSessionId) return;
@@ -478,13 +538,20 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		async (text: string, attachments?: import("../types").Attachment[]) => {
 			await actions.handleSend(text, attachments);
 			// Only do legacy relay sync if ParticipantRouter is not active
-			if (!participantRouter && syncAdapterRef.current && relayConnected) {
+			if (
+				!participantRouter &&
+				syncAdapterRef.current &&
+				relayConnected
+			) {
 				const userMsg: ChatMessage = {
 					id: makeId(),
 					role: "user",
 					content: text,
 					timestamp: Date.now(),
-					attachments: attachments && attachments.length > 0 ? attachments : undefined,
+					attachments:
+						attachments && attachments.length > 0
+							? attachments
+							: undefined,
 				};
 				syncAdapterRef.current.sendMessage(userMsg).catch((err) => {
 					console.warn("[ChatApp] Failed to sync message:", err);
@@ -505,70 +572,106 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 		setSessions((prev) =>
 			prev.map((s) => {
 				if (s.id !== activeSessionId) return s;
-				const nextParticipants = ids.length >= 2
-					? ids.map((id) => {
-						const profile = plugin.settings.providerProfiles.find((p) => p.id === id);
-						return {
-							id,
-							name: profile?.name ?? "Unknown",
-							profileId: id,
-							color: getAgentColor(profile?.provider ?? "custom"),
-							icon: getAgentIcon(profile?.provider ?? "custom"),
-						};
-					})
-					: [];
+				const nextParticipants =
+					ids.length >= 2
+						? ids.map((id) => {
+								const profile =
+									plugin.settings.providerProfiles.find(
+										(p) => p.id === id,
+									);
+								return {
+									id,
+									name: profile?.name ?? "Unknown",
+									profileId: id,
+									color: getAgentColor(
+										profile?.provider ?? "custom",
+									),
+									icon: getAgentIcon(
+										profile?.provider ?? "custom",
+									),
+								};
+							})
+						: [];
 				const alreadyMatches =
 					s.profileId === (ids.length === 1 ? ids[0] : undefined) &&
-					JSON.stringify(s.selectedProfileIds ?? []) === JSON.stringify(ids) &&
-					s.isGroupChat === (ids.length >= 2) &&
-					JSON.stringify(s.selectedRemoteUserIds ?? []) === JSON.stringify(Array.from(ui.selectedRemoteUserIds));
+					JSON.stringify(s.selectedProfileIds ?? []) ===
+						JSON.stringify(ids) &&
+					s.isGroupChat === ids.length >= 2 &&
+					JSON.stringify(s.selectedRemoteUserIds ?? []) ===
+						JSON.stringify(Array.from(ui.selectedRemoteUserIds));
 				return alreadyMatches
 					? s
 					: {
-						...s,
-						profileId: ids.length === 1 ? ids[0] : undefined,
-						selectedProfileIds: ids,
-						isGroupChat: ids.length >= 2 || ui.selectedRemoteUserIds.size > 0,
-						participants: nextParticipants,
-						selectedRemoteUserIds: Array.from(ui.selectedRemoteUserIds),
-					};
+							...s,
+							profileId: ids.length === 1 ? ids[0] : undefined,
+							selectedProfileIds: ids,
+							isGroupChat:
+								ids.length >= 2 ||
+								ui.selectedRemoteUserIds.size > 0,
+							participants: nextParticipants,
+							selectedRemoteUserIds: Array.from(
+								ui.selectedRemoteUserIds,
+							),
+						};
 			}),
 		);
-	}, [ui.selectedProfileIds, ui.selectedRemoteUserIds, activeSessionId, plugin.settings.providerProfiles]);
+	}, [
+		ui.selectedProfileIds,
+		ui.selectedRemoteUserIds,
+		activeSessionId,
+		plugin.settings.providerProfiles,
+	]);
 
-	const handleScrollPositionChange = useCallback((sessionId: string, scrollTop: number) => {
-		const existingTimer = scrollSaveTimersRef.current.get(sessionId);
-		if (existingTimer) window.clearTimeout(existingTimer);
-		scrollSaveTimersRef.current.set(sessionId, window.setTimeout(() => {
-			setSessions((current) => current.map((session) =>
-				session.id === sessionId && session.scrollPosition !== scrollTop
-					? { ...session, scrollPosition: scrollTop }
-					: session,
-			));
-			scrollSaveTimersRef.current.delete(sessionId);
-		}, 200));
-	}, [setSessions]);
-	useEffect(() => () => {
-		scrollSaveTimersRef.current.forEach((timer) => window.clearTimeout(timer));
-	}, []);
+	const handleScrollPositionChange = useCallback(
+		(sessionId: string, scrollTop: number) => {
+			const existingTimer = scrollSaveTimersRef.current.get(sessionId);
+			if (existingTimer) window.clearTimeout(existingTimer);
+			scrollSaveTimersRef.current.set(
+				sessionId,
+				window.setTimeout(() => {
+					setSessions((current) =>
+						current.map((session) =>
+							session.id === sessionId &&
+							session.scrollPosition !== scrollTop
+								? { ...session, scrollPosition: scrollTop }
+								: session,
+						),
+					);
+					scrollSaveTimersRef.current.delete(sessionId);
+				}, 200),
+			);
+		},
+		[setSessions],
+	);
+	useEffect(
+		() => () => {
+			scrollSaveTimersRef.current.forEach((timer) =>
+				window.clearTimeout(timer),
+			);
+		},
+		[],
+	);
 
 	// ─── Draft auto-save (debounced) ───
 	const draftTimerRef = useRef<number | null>(null);
-	const handleDraftChange = useCallback((text: string) => {
-		const currentActiveId = activeSessionIdRef.current;
-		if (!currentActiveId) return;
-		if (draftTimerRef.current) {
-			window.clearTimeout(draftTimerRef.current);
-		}
-		draftTimerRef.current = window.setTimeout(() => {
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === currentActiveId ? { ...s, draft: text } : s,
-				),
-			);
-			draftTimerRef.current = null;
-		}, 500);
-	}, [setSessions]);
+	const handleDraftChange = useCallback(
+		(text: string) => {
+			const currentActiveId = activeSessionIdRef.current;
+			if (!currentActiveId) return;
+			if (draftTimerRef.current) {
+				window.clearTimeout(draftTimerRef.current);
+			}
+			draftTimerRef.current = window.setTimeout(() => {
+				setSessions((prev) =>
+					prev.map((s) =>
+						s.id === currentActiveId ? { ...s, draft: text } : s,
+					),
+				);
+				draftTimerRef.current = null;
+			}, 500);
+		},
+		[setSessions],
+	);
 	useEffect(() => {
 		return () => {
 			if (draftTimerRef.current) {
@@ -591,117 +694,180 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 	const hasHistory = savedSessions.length > 0;
 
 	return (
-		<div className={`chat-panel${ui.zenMode ? ' is-zen' : ''}`}>
+		<div className={`chat-panel${ui.zenMode ? " is-zen" : ""}`}>
 			{!ui.zenMode && (
 				<>
-				<div className="chat-action-bar-wrapper">
-					<ActionBar
-						onNewChat={handleNewChat}
-						onLoadChat={() => ui.setShowSessionPicker(true)}
-						onExportChat={handleExportChat}
-						canLoad={hasHistory}
-						plugin={plugin}
-						autoApprove={autoApprove}
-						onToggleAutoApprove={handleToggleAutoApprove}
-						autoNameSessions={autoNameSessions}
-						onToggleAutoName={handleToggleAutoName}
-						onManualRename={handleManualRename}
-						profile={resolvedProfile}
-						sessionTitle={sessions.find((s) => s.id === activeSessionId)?.title}
-						zenMode={ui.zenMode}
-						onToggleZenMode={ui.toggleZenMode}
-						participantCount={participants.length + ui.selectedRemoteUserIds.size}
-						onToggleParticipantDropdown={ui.toggleParticipantDropdown}
-						debateMode={ui.debateMode}
-						onToggleDebateMode={ui.toggleDebateMode}
-						searchVisible={searchVisible}
-						onToggleSearch={toggleSearch}
-						relayEnabled={activeSessionRelayEnabled && relayConnected}
-						onToggleRelay={handleToggleRelay}
-						connectedUsers={connectedUsers}
-						onToggleRemoteUserDropdown={ui.toggleRemoteUserDropdown}
-						remoteUserCount={connectedUsers.length}
-					/>
-					{ui.showParticipantDropdown && (
-						<div ref={ui.participantDropdownRef} className="chat-participant-dropdown">
-							{plugin.settings.providerProfiles.map((profile) => {
-								const isSelected = ui.selectedProfileIds.has(profile.id);
-								return (
-									<label
-										key={profile.id}
-										className={`chat-participant-dropdown-item${isSelected ? " is-selected" : ""}`}
-									>
-										<input
-											type="checkbox"
-											checked={isSelected}
-											onChange={() => ui.toggleProfile(profile.id)}
-										/>
-										<span style={{ color: getAgentColor(profile.provider) }}>●</span>
-										<span className="chat-participant-dropdown-name">{profile.name}</span>
-										<span className="chat-participant-dropdown-model">{profile.model}</span>
-									</label>
-								);
-							})}
-							{plugin.settings.providerProfiles.length === 0 && (
-								<div className="chat-participant-dropdown-empty">
-									No profiles configured
-								</div>
-							)}
-						</div>
-					)}
-					{ui.showRemoteUserDropdown && (
-						<div ref={ui.remoteUserDropdownRef} className="chat-remote-user-dropdown">
-							<div className="chat-remote-user-dropdown-header">
-								<span>Room: {plugin.settings.syncRoomId}</span>
-								{relayConnected && (
-									<span className="chat-remote-user-status is-connected">●</span>
+					<div className="chat-action-bar-wrapper">
+						<ActionBar
+							onNewChat={handleNewChat}
+							onLoadChat={() => ui.setShowSessionPicker(true)}
+							onExportChat={handleExportChat}
+							canLoad={hasHistory}
+							plugin={plugin}
+							autoApprove={autoApprove}
+							onToggleAutoApprove={handleToggleAutoApprove}
+							autoNameSessions={autoNameSessions}
+							onToggleAutoName={handleToggleAutoName}
+							onManualRename={handleManualRename}
+							profile={resolvedProfile}
+							sessionTitle={
+								sessions.find((s) => s.id === activeSessionId)
+									?.title
+							}
+							zenMode={ui.zenMode}
+							onToggleZenMode={ui.toggleZenMode}
+							participantCount={ui.selectedProfileIds.size}
+							onToggleParticipantDropdown={
+								ui.toggleParticipantDropdown
+							}
+							debateMode={ui.debateMode}
+							onToggleDebateMode={ui.toggleDebateMode}
+							searchVisible={searchVisible}
+							onToggleSearch={toggleSearch}
+							relayEnabled={
+								activeSessionRelayEnabled && relayConnected
+							}
+							onToggleRelay={handleToggleRelay}
+							connectedUsers={connectedUsers}
+							onToggleRemoteUserDropdown={
+								ui.toggleRemoteUserDropdown
+							}
+							remoteUserCount={connectedUsers.length}
+						/>
+						{ui.showParticipantDropdown && (
+							<div
+								ref={ui.participantDropdownRef}
+								className="chat-participant-dropdown"
+							>
+								{plugin.settings.providerProfiles.map(
+									(profile) => {
+										const isSelected =
+											ui.selectedProfileIds.has(
+												profile.id,
+											);
+										return (
+											<label
+												key={profile.id}
+												className={`chat-participant-dropdown-item${isSelected ? " is-selected" : ""}`}
+											>
+												<input
+													type="checkbox"
+													checked={isSelected}
+													onChange={() =>
+														ui.toggleProfile(
+															profile.id,
+														)
+													}
+												/>
+												<span
+													style={{
+														color: getAgentColor(
+															profile.provider,
+														),
+													}}
+												>
+													●
+												</span>
+												<span className="chat-participant-dropdown-name">
+													{profile.name}
+												</span>
+												<span className="chat-participant-dropdown-model">
+													{profile.model}
+												</span>
+											</label>
+										);
+									},
+								)}
+								{plugin.settings.providerProfiles.length ===
+									0 && (
+									<div className="chat-participant-dropdown-empty">
+										No profiles configured
+									</div>
 								)}
 							</div>
-							{connectedUsers.length === 0 ? (
-								<div className="chat-remote-user-dropdown-empty">
-									No users connected
+						)}
+						{ui.showRemoteUserDropdown && (
+							<div
+								ref={ui.remoteUserDropdownRef}
+								className="chat-remote-user-dropdown"
+							>
+								<div className="chat-remote-user-dropdown-header">
+									<span>
+										Room: {plugin.settings.syncRoomId}
+									</span>
+									{relayConnected && (
+										<span className="chat-remote-user-status is-connected">
+											●
+										</span>
+									)}
 								</div>
-							) : (
-								connectedUsers.map((user) => {
-									const isSelected = ui.selectedRemoteUserIds.has(user);
-									return (
-										<label
-											key={user}
-											className={`chat-remote-user-dropdown-item${isSelected ? " is-selected" : ""}${user === plugin.settings.syncUserName ? " is-self" : ""}`}
-										>
-											<input
-												type="checkbox"
-												checked={isSelected}
-												onChange={() => ui.toggleRemoteUser(user)}
-											/>
-											<span className="chat-remote-user-dot">●</span>
-											<span className="chat-remote-user-name">
-												{user}
-												{user === plugin.settings.syncUserName && " (You)"}
-											</span>
-										</label>
-									);
+								{connectedUsers.length === 0 ? (
+									<div className="chat-remote-user-dropdown-empty">
+										No users connected
+									</div>
+								) : (
+									connectedUsers.map((user) => {
+										const isSelected =
+											ui.selectedRemoteUserIds.has(user);
+										return (
+											<label
+												key={user}
+												className={`chat-remote-user-dropdown-item${isSelected ? " is-selected" : ""}${user === plugin.settings.syncUserName ? " is-self" : ""}`}
+											>
+												<input
+													type="checkbox"
+													checked={isSelected}
+													onChange={() =>
+														ui.toggleRemoteUser(
+															user,
+														)
+													}
+												/>
+												<span className="chat-remote-user-dot">
+													●
+												</span>
+												<span className="chat-remote-user-name">
+													{user}
+													{user ===
+														plugin.settings
+															.syncUserName &&
+														" (You)"}
+												</span>
+											</label>
+										);
 									})
-							)}
+								)}
+							</div>
+						)}
+					</div>
+					{/* Participant list bar */}
+					{(selectedAgents.length > 0 ||
+						connectedUsers.length > 0) && (
+						<div className="chat-participant-bar">
+							{selectedAgents.map((p) => (
+								<span
+									key={p.id}
+									className="chat-participant-chip"
+									style={{ color: p.color }}
+								>
+									● {p.name}
+								</span>
+							))}
+							{connectedUsers.map((user) => (
+								<span
+									key={user}
+									className="chat-participant-chip chat-participant-chip-remote"
+								>
+									<span className="chat-participant-dot-online">
+										●
+									</span>{" "}
+									{user}
+								</span>
+							))}
 						</div>
 					)}
-				</div>
-				{/* Participant list bar */}
-				{(selectedAgents.length > 0 || connectedUsers.length > 0) && (
-					<div className="chat-participant-bar">
-						{selectedAgents.map((p) => (
-							<span key={p.id} className="chat-participant-chip" style={{ color: p.color }}>
-								● {p.name}
-							</span>
-						))}
-						{connectedUsers.map((user) => (
-							<span key={user} className="chat-participant-chip chat-participant-chip-remote">
-								<span className="chat-participant-dot-online">●</span> {user}
-							</span>
-						))}
-					</div>
-				)}
-			</>)}
+				</>
+			)}
 			{!ui.zenMode && (
 				<ChatTabBar
 					sessions={sessions}
@@ -747,9 +913,13 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 
 			<ChatMessages
 				sessionId={activeSessionId}
-				restoreScrollTop={plugin.settings.restoreChatTabs
-					? sessions.find((session) => session.id === activeSessionId)?.scrollPosition
-					: undefined}
+				restoreScrollTop={
+					plugin.settings.restoreChatTabs
+						? sessions.find(
+								(session) => session.id === activeSessionId,
+							)?.scrollPosition
+						: undefined
+				}
 				onScrollPositionChange={handleScrollPositionChange}
 				messages={messages}
 				currentAiMessage={activeRuntime.currentAiMessage}
@@ -768,7 +938,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				onAppendToTarget={actions.handleAppendToTarget}
 				onOpenPastSession={openSessionInTab}
 				scrollToMessageId={scrollToMessageId}
-			typingUsers={typingUsers}
+				typingUsers={typingUsers}
 			/>
 
 			{activeRuntime.pendingToolCall && (
@@ -776,7 +946,9 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 					toolCall={activeRuntime.pendingToolCall}
 					onApprove={actions.handleApproveTool}
 					onReject={actions.handleRejectTool}
-					providerDisplay={plugin.integrationRegistry?.getCapabilityDisplay(activeRuntime.pendingToolCall.toolName)}
+					providerDisplay={plugin.integrationRegistry?.getCapabilityDisplay(
+						activeRuntime.pendingToolCall.toolName,
+					)}
 				/>
 			)}
 
@@ -785,7 +957,7 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 				plugin={plugin}
 				onSend={handleSendWithSync}
 				onStop={actions.handleStop}
-			onTyping={() => syncAdapterRef.current?.sendTyping()}
+				onTyping={() => syncAdapterRef.current?.sendTyping()}
 				onAddMention={handleAddMention}
 				isStreaming={activeRuntime.isStreaming}
 				isEditing={ui.isEditing}
@@ -803,7 +975,10 @@ const ChatApp: React.FC<ChatAppProps> = ({ plugin, profileId, initialSessionId, 
 					const sessionTotal = session
 						? getSessionTotalTokens(session)
 						: 0;
-					if (activeRuntime.isStreaming && activeRuntime.runningTokenTotal > 0) {
+					if (
+						activeRuntime.isStreaming &&
+						activeRuntime.runningTokenTotal > 0
+					) {
 						return `~${(sessionTotal + activeRuntime.runningTokenTotal).toLocaleString()} tokens`;
 					}
 					if (sessionTotal > 0) {
