@@ -5,7 +5,7 @@ import React, {
 	useEffect,
 	useMemo,
 } from "react";
-import { Notice, TFile, WorkspaceLeaf, MarkdownView } from "obsidian";
+import { Notice, TFile, WorkspaceLeaf, MarkdownView, MarkdownRenderer, Component } from "obsidian";
 
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
 import { ChatMessage, ChatSession, ContextItem, ContentPart } from "../types";
@@ -696,6 +696,14 @@ const ChatApp: React.FC<ChatAppProps> = ({
 
 	const hasHistory = savedSessions.length > 0;
 
+	const renderMarkdown = useCallback(
+		async (markdown: string, target: HTMLElement, sourcePath?: string) => {
+			const comp = new Component();
+			await MarkdownRenderer.render(plugin.app, markdown, target, sourcePath ?? "", comp);
+		},
+		[plugin.app],
+	);
+
 	return (
 		<div className={`chat-panel${ui.zenMode ? " is-zen" : ""}`}>
 			{!ui.zenMode && (
@@ -779,6 +787,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			)}
 			<ChatMainArea
 				app={plugin.app}
+				renderMarkdown={renderMarkdown}
 				plugin={plugin}
 				sessionId={activeSessionId}
 				messages={messages}

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { App, Component, MarkdownRenderer } from "obsidian";
+import { App } from "obsidian";
 import { ChatMessage, ContentPart } from "../types";
 import { createRoot } from "react-dom/client";
 import MessageBubble from "./MessageBubble";
@@ -9,9 +9,9 @@ import { sanitizeHtmlForRenderer } from "../lib/sanitizeHtml";
 const StreamingBubble: React.FC<{
 	content: string;
 	contentParts?: ContentPart[];
-	app: App;
+	renderMarkdown: (markdown: string, target: HTMLElement, sourcePath?: string) => Promise<void>;
 	onOpenPastSession?: (sessionId: string, messageId: string) => void;
-}> = ({ content, contentParts, app, onOpenPastSession }) => {
+}> = ({ content, contentParts, renderMarkdown, onOpenPastSession }) => {
 	const contentRef = useRef<HTMLDivElement>(null);
 	const renderedCountRef = useRef(0);
 	const lastTextRef = useRef("");
@@ -79,8 +79,7 @@ const StreamingBubble: React.FC<{
 					const partIndex = currentCount + i;
 					if (part.type === "text") {
 						const textDiv = contentRef.current.createDiv({ cls: "chat-bubble-text" });
-						const comp = new Component();
-						MarkdownRenderer.render(app, sanitizeHtmlForRenderer(part.content), textDiv, "", comp);
+						renderMarkdown(sanitizeHtmlForRenderer(part.content), textDiv, "");
 					} else if (part.type === "tool_call") {
 						const toolDiv = contentRef.current.createDiv({ cls: "chat-bubble-tool" });
 						const root = createRoot(toolDiv);
@@ -124,8 +123,7 @@ const StreamingBubble: React.FC<{
 					} else {
 						remainDiv.empty();
 					}
-					const comp = new Component();
-					MarkdownRenderer.render(app, sanitizeHtmlForRenderer(remainingText), remainDiv, "", comp);
+					renderMarkdown(sanitizeHtmlForRenderer(remainingText), remainDiv, "");
 				} else {
 					const remainDiv = contentRef.current.querySelector(".chat-bubble-remain");
 					if (remainDiv) remainDiv.remove();
@@ -139,24 +137,21 @@ const StreamingBubble: React.FC<{
 						"debug",
 						`[StreamingBubble] text changed, re-rendering`,
 					);
-					const comp = new Component();
-					MarkdownRenderer.render(
-						app,
+					renderMarkdown(
 						sanitizeHtmlForRenderer(content),
 						contentRef.current,
 						"",
-						comp,
 					).then(() => {
 						if (unmounted) return;
 						logger?.writeDirect?.(
 							"debug",
-							`[StreamingBubble] MarkdownRenderer.render resolved`,
+							`[StreamingBubble] renderMarkdown resolved`,
 						);
 					}).catch((err: any) => {
 						if (unmounted) return;
 						logger?.writeDirect?.(
 							"error",
-							`[StreamingBubble] MarkdownRenderer.render rejected:`,
+							`[StreamingBubble] renderMarkdown rejected:`,
 							err,
 						);
 						if (contentRef.current) {
@@ -172,7 +167,7 @@ const StreamingBubble: React.FC<{
 		} catch (err: any) {
 			logger?.writeDirect?.(
 				"fatal",
-				`[StreamingBubble] MarkdownRenderer.render threw synchronously:`,
+				`[StreamingBubble] renderMarkdown threw synchronously:`,
 				err,
 			);
 			if (contentRef.current) {
@@ -187,7 +182,7 @@ const StreamingBubble: React.FC<{
 		return () => {
 			unmounted = true;
 		};
-	}, [content, contentParts, app, onOpenPastSession]);
+	}, [content, contentParts, renderMarkdown, onOpenPastSession]);
 
 	// Cleanup tool roots on unmount
 	useEffect(() => {
@@ -221,6 +216,7 @@ interface ChatMessagesProps {
 	isStreaming: boolean;
 	isEditing: boolean;
 	app: App;
+	renderMarkdown: (markdown: string, target: HTMLElement, sourcePath?: string) => Promise<void>;
 	onAppend: (content: string) => void;
 	onInsertAtCursor: (content: string) => void;
 	onApply: (content: string) => void;
@@ -245,6 +241,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	isStreaming,
 	isEditing,
 	app,
+	renderMarkdown,
 	onAppend,
 	onInsertAtCursor,
 	onApply,
@@ -366,6 +363,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 						<MessageBubble
 							message={msg}
 							app={app}
+							renderMarkdown={renderMarkdown}
 							showThinking={showThinking}
 							onOpenPastSession={onOpenPastSession}
 							onAppend={onAppend}
@@ -380,7 +378,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 					</div>
 				))}
 				{isStreaming && currentAiMessage && (
-					<StreamingBubble content={currentAiMessage} contentParts={currentContentParts} app={app} onOpenPastSession={onOpenPastSession} />
+					<StreamingBubble content={currentAiMessage} contentParts={currentContentParts} renderMarkdown={renderMarkdown} onOpenPastSession={onOpenPastSession} />
 				)}
 				{isStreaming && !currentAiMessage && (
 					<div className="chat-typing-indicator">

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { App, MarkdownRenderer, Component } from "obsidian";
+import { App } from "obsidian";
 import { ChatMessage, ContextItem, ContentPart } from "../types";
 import MessageActions from "./presentational/MessageActions";
 import ToolCallNotification from "./presentational/ToolCallNotification";
@@ -131,6 +131,7 @@ function setupLinkInterception(container: HTMLElement, app: App): void {
 interface MessageBubbleProps {
 	message: ChatMessage;
 	app: App;
+	renderMarkdown: (markdown: string, target: HTMLElement, sourcePath?: string) => Promise<void>;
 	isStreaming?: boolean;
 	showThinking?: boolean;
 	onAppend: (content: string) => void;
@@ -175,11 +176,13 @@ export function stripThinkingTags(text: string): string {
 function TextSegment({
 	content,
 	app,
+	renderMarkdown,
 	showThinking,
 	contextItems,
 }: {
 	content: string;
 	app: App;
+	renderMarkdown: (markdown: string, target: HTMLElement, sourcePath?: string) => Promise<void>;
 	showThinking?: boolean;
 	contextItems?: ContextItem[];
 }): React.ReactElement {
@@ -189,10 +192,9 @@ function TextSegment({
 	useEffect(() => {
 		if (!ref.current) return;
 		let unmounted = false;
-		const comp = new Component();
 		ref.current.innerHTML = "";
 
-		MarkdownRenderer.render(app, sanitizeHtmlForRenderer(cleanContent), ref.current, "", comp).catch(
+		renderMarkdown(sanitizeHtmlForRenderer(cleanContent), ref.current, "").catch(
 			(err: any) => {
 				if (unmounted || !ref.current) return;
 				ref.current.innerHTML = "";
@@ -213,7 +215,7 @@ function TextSegment({
 		return () => {
 			unmounted = true;
 		};
-	}, [cleanContent, app, contextItems]);
+	}, [cleanContent, app, contextItems, renderMarkdown]);
 
 	return <div ref={ref} className="chat-bubble-content-segment" />;
 }
@@ -221,6 +223,7 @@ function TextSegment({
 const MessageBubble: React.FC<MessageBubbleProps> = ({
 	message,
 	app,
+	renderMarkdown,
 	isStreaming,
 	showThinking,
 	onAppend,
@@ -318,12 +321,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
 			{/* Content: inline parts or legacy single block */}
 			{useLegacyRender ? (
-				<LegacyContent content={message.content} app={app} messageId={message.id} contextItems={message.contextItems} />
+				<LegacyContent content={message.content} app={app} renderMarkdown={renderMarkdown} messageId={message.id} contextItems={message.contextItems} />
 			) : (
 				<div className="chat-bubble-content-inline">
 					{renderParts!.map((part, i) =>
 						part.type === "text" ? (
-							<TextSegment key={i} content={part.content} app={app} showThinking={showThinking} contextItems={message.contextItems} />
+							<TextSegment key={i} content={part.content} app={app} renderMarkdown={renderMarkdown} showThinking={showThinking} contextItems={message.contextItems} />
 						) : (
 							<ToolCallNotification
 								key={i}
@@ -411,11 +414,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 function LegacyContent({
 	content,
 	app,
+	renderMarkdown,
 	messageId,
 	contextItems,
 }: {
 	content: string;
 	app: App;
+	renderMarkdown: (markdown: string, target: HTMLElement, sourcePath?: string) => Promise<void>;
 	messageId: string;
 	contextItems?: ContextItem[];
 }): React.ReactElement {
@@ -433,13 +438,10 @@ function LegacyContent({
 
 		try {
 			contentRef.current.innerHTML = "";
-			const comp = new Component();
-			MarkdownRenderer.render(
-				app,
+			renderMarkdown(
 				sanitizeHtmlForRenderer(displayContent),
 				contentRef.current,
 				"",
-				comp,
 			).catch((err: any) => {
 				if (unmounted || !contentRef.current) return;
 				contentRef.current.innerHTML = "";
@@ -467,7 +469,7 @@ function LegacyContent({
 		return () => {
 			unmounted = true;
 		};
-	}, [displayContent, app]);
+	}, [displayContent, app, renderMarkdown]);
 
 	return <div ref={contentRef} className="chat-bubble-content" />;
 }

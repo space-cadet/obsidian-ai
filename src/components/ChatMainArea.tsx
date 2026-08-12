@@ -9,6 +9,7 @@ import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 
 interface ChatMainAreaProps {
 	app: App;
+	renderMarkdown: (markdown: string, target: HTMLElement, sourcePath?: string) => Promise<void>;
 	plugin: ChatPluginLike;
 	sessionId: string | null;
 	messages: ChatMessage[];
@@ -52,6 +53,7 @@ interface ChatMainAreaProps {
 
 const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 	app,
+	renderMarkdown,
 	plugin,
 	sessionId,
 	messages,
@@ -104,6 +106,7 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 				isStreaming={isStreaming}
 				isEditing={isEditing}
 				app={app}
+				renderMarkdown={renderMarkdown}
 				showThinking={showThinking}
 				onAppend={onAppend}
 				onInsertAtCursor={onInsertAtCursor}
