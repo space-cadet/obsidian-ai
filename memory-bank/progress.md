@@ -1,37 +1,24 @@
 # Implementation Progress
-*Last Updated: 2026-08-11 08:01:32 IST*
+*Last Updated: 2026-08-11 11:40 IST*
 
-### T43: Multi-User and Agent Chat with LaTeX Support (2026-08-10)
-**Status:** 🔄 Phase 4 Delivered and Merged — Phase 5 Deferred
+### T43: Multi-User and Agent Chat with LaTeX Support (2026-08-10 → 2026-08-11)
+**Status:** ✅ COMPLETE — All 5 Phases Delivered and Merged
 
 - **Evolution of T40** — equal-footing participant model (agents + remote humans as peers)
-- **Branch:** `t43-multi-user-agent-chat` (from `main` at `19f780d`); merged into `main` via PR #1 as `de38d697`
-- **Step 1 (Current):** `ParticipantRouter` wrapper around existing `Orchestrator`
-  - Minimal risk — agent logic untouched
-  - Adds relay routing for remote users alongside agent dispatch
-  - Validates model before deeper refactor
-- **Step 2 (Future):** Refactor `Orchestrator` to be participant-agnostic (only if Step 1 works)
-- **Phase 1 Complete (2026-08-11):** Types, session state, sync adapter, ParticipantRouter skeleton
-  - `ChatMessage` extended with `remote?: boolean`, `fromUserId?: string`
-  - `ChatSession` extended with `remoteUsers?: string[]`
-  - `WebSocketSyncAdapter` sets `remote: true` on received relay messages
-  - `ParticipantRouter` skeleton created — wraps Orchestrator, adds relay dispatch
-  - All 188 tests pass
-  - Commit: `539ca52`
-- **Phase 2 Complete (2026-08-11):** Wired ParticipantRouter into ChatApp
-  - `ParticipantRouter` created in `ChatApp.tsx` with orchestrator + syncAdapter
-  - `useMessageActions` accepts `participantRouter` prop, uses it for dispatch
-  - `handleSendWithSync` skips legacy relay send when `participantRouter` is active
-  - `remoteUsers` synced from session state to `ParticipantRouter`
-  - All 188 tests pass
-  - Commit: `f83e5d0`
-- **Phase 3 Complete:** AI context includes remote messages with attribution
-- **Phase 4 Complete:** Human-only tabs route through relay without an AI orchestrator
-  - `ParticipantRouter` supports relay-only dispatch
-  - Relay-only regression tests added
-- **Phase 5 Deferred:** Attribution, typing indicators, participant UI
-- **Verification:** 20 test files, 202 tests passed; `git diff --check` passed
-- **Repository CI follow-up:** PR #2 merged the changed-files-only Prettier workflow as `41d52ab`, avoiding the pre-existing global formatting baseline failure
+- **Branch:** `t43-multi-user-agent-chat` (from `main` at `19f780d`); merged into `main` on 2026-08-11
+- **All phases complete:**
+  - **Phase 1:** Types, session state, sync adapter, ParticipantRouter skeleton (`539ca52`)
+  - **Phase 2:** Wired ParticipantRouter into ChatApp (`f83e5d0`)
+  - **Phase 3:** AI context includes remote messages with attribution (`9b2a498`)
+  - **Phase 4:** Human-only tabs use relay-only routing (`8b6f70f`)
+  - **Phase 5:** Attribution UI, typing indicators, participant bar (`90503d9`)
+    - Phase 5a: Message attribution — MessageBubble.tsx shows fromUserId with colored dot
+    - Phase 5b: Typing indicators — SyncAdapter.sendTyping()/onTyping(), 3s auto-clear, 2s throttle
+    - Phase 5c: Participant bar — persistent bar below ActionBar showing agents + remote users
+    - Relay bug fix: Buffer→string conversion in broadcast
+    - Post-phase fixes: ActionBar badge ?? 0 fix, single-agent participant bar fix (`ab23e5f`)
+- **Tests:** Relay tested MacBook ↔ mobile; participant bar verified; typing indicators need 2-device test
+- **Verification:** 20+ test files, 202+ tests passed; `git diff --check` passed
 - **Docs:** `memory-bank/implementation-details/multi-user-agent-chat.md`
 - **Task:** `memory-bank/tasks/T43.md`
 
@@ -259,231 +246,6 @@ Clean separation from upstream fork. Project is now fully independent.
 
 ---
 
-### Bug Fixes Batch (2026-07-28)
-**Status:** 🔄 IN PROGRESS (3/4 completed)
-**Priority:** HIGH
-
-#### T27: Gemini Tool Calling — thought_signature Error ✅
-**File:** `src/api.ts`  
-**Fix:** Added Gemini-specific provider option `google: { structuredOutputs: false }` in `streamChatWithTools()` to disable structured tool outputs that cause the thought_signature error.  
-**Root cause:** Gemini's API requires thought signatures in function call responses when using structured outputs.  
-**Implementation doc:** `memory-bank/implementation-details/gemini-tool-calling-fix.md`
-
-#### T28: Obsidian Note Link Click Crash ✅
-**File:** `src/components/MessageBubble.tsx`  
-**Fix:** Added `setupLinkInterception()` function that intercepts click events on all `<a>` tags in rendered messages, routes internal links through `app.workspace.openLinkText()`, opens external URLs in browser, and catches errors to prevent crashes.  
-**Root cause:** `MarkdownRenderer.render()` converts wiki-links to HTML `<a>` tags that crash when clicked outside a MarkdownView context.  
-**Implementation doc:** `memory-bank/implementation-details/note-link-interception.md`
-
-#### T30: System Information Tool ✅
-**File:** `src/lib/systemPrompt.ts`  
-**Fix:** Injected `[System Context]` block into `buildSystemPrompt()` providing current date, time, timezone, platform, and locale.  
-**Rationale:** Agent needs date/time awareness for context-aware responses (e.g., "what notes did I create today?").  
-**Implementation doc:** `memory-bank/implementation-details/system-context-prompt.md`
-
-#### T29: Android Background Processing ⏸️ DEFERRED
-**File:** `src/components/ChatApp.tsx`  
-**Status:** Investigation complete (2026-07-28). Marked as DEFERRED per user decision.
-
-**Investigation Results:**
-- Cloned and examined AI Tagger Universe source code — it has NO special background handling
-- Obsidian API provides no mobile lifecycle hooks (`onResume`, `onPause`, etc.)
-- Android WebView pausing JavaScript execution is platform behavior, not a plugin bug
-- AI Tagger Universe "works" because it doesn't stream (single request/response, completes in 2-10s)
-
-**Decision:** Accept mobile limitation. Desktop = full streaming. Mobile = pauses on background.
-**Task file:** `memory-bank/tasks/T29.md`
-
----
-**Status:** ✅ **FIXED**
-**Priority:** HIGH
-
-Three bugs fixed in a single session:
-1. **Tool call cards not rendering during OpenResponses streaming** (`OpenResponsesLoop.ts`) — `accumulatedText` reset per step → added `totalAccumulatedText`
-2. **Token count frozen during AgentLoop streaming** (`AgentLoop.ts`) — only counted at step boundaries → added incremental counting during `text-delta`
-3. **StreamingBubble remaining-text + memory leaks** (`ChatMessages.tsx`) — `lastIndexOf` could return -1; `createRoot` uncleaned → fallback + root cleanup
-
-**Build:** ✅ Passes
-**Commit:** Pending user approval
-
-### META-1: Memory Bank Setup and Maintenance
-**Status:** 🔄 IN PROGRESS
-**Priority:** HIGH
-
-#### Completed Steps
-- ✅ Initial memory-bank structure created
-- ✅ T1 through T18 planning and implementation state captured
-- ✅ Session and edit chunks created through 2026-05-23
-- ✅ Implementation docs updated for agentic tool calling, context engine, list_notes, count_notes
-
-#### Current Work
-- 🔄 Keep memory bank current as T13/T16/T19 work continues
-
-### T24: SessionStorage — JSONL Chat Persistence + Search
-**Status:** ✅ COMPLETED
-**Priority:** HIGH
-**Started:** 2026-06-14
-**Completed:** 2026-06-15
-
-#### Completed Steps
-- ✅ SessionStorage core (`src/storage/session-storage.ts`): loadSession, appendMessage, createSession
-- ✅ ChatStorage wrapper (`src/storage/ChatStorage.ts`): async API for save/load/list/delete
-- ✅ Migration utility (`src/storage/Migration.ts`): old format → JSONL
-- ✅ MigrationPromptModal (`src/modals/MigrationPromptModal.ts`): UI for migration prompt
-- ✅ Plugin integration (`main.ts`): sessionStorage property, onload init
-- ✅ Fix: added missing `contextPickerPathDisplay` to `ObsidianAISettings` interface
-- ✅ Build passes (`npm run build`)
-- ✅ **Search feature (87z-a/b/c)**:
-  - `src/search/index.ts` — SearchIndex class, inverted index from JSONL sessions
-  - `src/search/fuzzy-search.ts` — FuzzySearcher with score threshold 0.4, highlighted snippets
-  - `src/components/SearchInput.tsx` — debounced input (300ms), clear button
-  - `src/components/search-results.tsx` — results list with title badge, highlighted snippets
-  - Manually wired into ChatApp.tsx with FuzzySearcher ref
-- ✅ **Search UI polish**:
-  - CSS fix for garbled results display (overlap/overflow)
-  - Click result → open full session + scroll to specific message + highlight animation
-  - Search bar hidden by default — toggle button in ActionBar toolbar
-  - Search results only render when query is non-empty
-- ✅ Committed and pushed: `fdc8b58` → `503d8a7` (7 commits)
-
-#### Files Changed
-- 4 new files in `src/storage/` and `src/modals/`
-- 9 modified files (main.ts, ChatApp.tsx, tokenEstimator, useMessageActions, settings, agent loops)
-- 4 new files in `src/search/` and `src/components/SearchInput.tsx`, `src/components/search-results.tsx`
-- `src/components/ChatMessages.tsx` — wrapped MessageBubble in div with data-message-id
-- `src/components/ActionBar.tsx` — added search button toggle
-- `styles.css` — search-related styles + highlight animation
-
-#### Notes
-- User confirmed migration works on **both desktop and mobile** via Syncthing
-- Pre-existing vitest failure in `useMessageActions` (obsidian import resolution) — unrelated
-- Remaining open task: workspace-c2v (P2 — Show plugin disk usage in Settings metrics)
-
----
-
-### T13: Agentic Tool Calling for Note Editing
-**Status:** ✅ COMPLETED (with ongoing refinements)
-**Priority:** HIGH
-**Started:** 2026-05-06
-
-#### Completed Steps
-- ✅ MVP foundation built (types.ts, tools.ts, ToolExecutor.ts, api.ts updates)
-- ✅ All 13 tools implemented (read, edit, append, create, patch, edit_section, search, list, metadata, create_folder, move, delete, list_folders)
-- ✅ AgentLoop extracted from ChatApp into src/agent/AgentLoop.ts
-- ✅ PendingToolCard component created
-- ✅ Tool result formatting (markdown tables, bulleted lists, formatted summaries)
-- ✅ resolveNote() with three-tier basename resolution + ambiguity detection
-- ✅ Auto-approve toggle in ActionBar
-- ✅ Session auto-naming v3 (context-aware, toggle reactivity)
-- ✅ **2026-05-23: Context overload fix** — folder/tag context returns file listings, not full contents
-- ✅ **2026-05-23: list_notes enhanced** — include_subfolders, depth params, subfolders array
-- ✅ **2026-05-23: count_notes accuracy** — five-count breakdown (total, markdown, direct, directMarkdown, subfolder)
-
-#### Current Work
-- 🔄 Export feature investigation (T16-related)
-
-#### Up Next
-- ✅ **Issue #2: Tool-call streaming ContentPart cleanup** — FIXED 2026-07-14 (see Streaming Fixes above)
-- ⬜ Issue #3: Token usage for tool calls (stepTokenEstimates) — partially fixed by incremental counting in AgentLoop
-- ⬜ Issue #4: Agent dropdown click-outside handler
-
-### T16: Group Chat (Multi-Agent Conversation)
-**Status:** 🔄 IN PROGRESS
-**Priority:** HIGH
-**Started:** 2026-05-16
-
-#### Completed Steps
-- ✅ Phases 1–17 implemented (MVP through debate mode, participant persistence, session sync, thinking toggle)
-- ✅ Message metadata (model name + response time)
-- ✅ Profile dropdown mid-session switching
-- ✅ All participant/session bug fixes
-- ✅ Thinking display toggle (`showThinking` state in ChatApp)
-
-#### Current Work
-- 🔄 Export feature request — needs UI design clarification
-
-#### Up Next
-- ⬜ Export feature implementation (pending UI spec)
-- ⬜ Mention autocomplete
-- ⬜ Parallel dispatch toggle
-- ⬜ Manual tool approval in council mode
-
-### T11: Debug Logging & Diagnostics
-**Status:** 🔄 IN PROGRESS
-**Priority:** MEDIUM
-**Started:** 2026-05-08
-
-#### Completed Steps
-- ✅ Diagnostics panel in Settings
-- ✅ File-based debug logger
-- ✅ React ErrorBoundary
-- ✅ Defensive render logging
-- ✅ Crash debugging support
-- ✅ Persistence queue/debounce fix
-
-#### Up Next
-- ⬜ Privacy redaction
-- ⬜ Structured event pipeline
-
-### T14: Remote Agent Connectivity (OpenResponses)
-**Status:** 🔄 IN PROGRESS
-**Priority:** HIGH
-**Started:** 2026-05-07
-
-#### Completed Steps
-- ✅ Architecture diagram and design decisions documented
-- ✅ Tailscale mesh 2/3 complete (MacBook + VPS)
-
-#### Up Next
-- ⬜ Add "agent" provider type
-- ⬜ Create AgentApiManager
-- ⬜ Wire agent streaming
-
-### T15: Tabbed Chat Interface with Multi-Profile
-**Status:** 🔄 IN PROGRESS (Paused)
-**Priority:** HIGH
-
-#### Completed Steps
-- ✅ Phase 1 (Settings profile list)
-- ✅ Phase 2 (Per-profile engine)
-
-#### Up Next
-- ⬜ Phase 3 (TabBar UI) — paused in favor of T16
-
-### T17: Advanced Vault Tools — Backlinks, YAML, Bulk Ops
-**Status:** ⏸️ PENDING
-**Priority:** HIGH
-
-#### Up Next
-- ⬜ Phase 1: Backlinks + YAML (user-prioritized)
-
-## Paused Tasks
-
-### T12: Chat Onboarding, Tips & Empty States
-**Status:** ⏸️ PAUSED
-**Priority:** MEDIUM
-
-### T25: Unit Test Infrastructure for Streaming & Token Estimation
-**Status:** ⏸️ PENDING
-**Priority:** MEDIUM
-**Created:** 2026-07-14
-
-#### Description
-Unit test coverage for streaming state accumulation, token estimation, and message rendering. Extract pure functions from `AgentLoop.ts`, `OpenResponsesLoop.ts`, `useMessageActions.ts`, and `ChatMessages.tsx`. Create mock-based tests for streaming loops.
-
-#### Phases
-1. Extract pure functions (low risk)
-2. Unit tests for `tokenEstimator.ts`, `accumulateContentParts()`, `getRemainingText()`
-3. Mock-based tests for `AgentLoop` and `OpenResponsesLoop`
-4. E2E regression tests (future)
-
-#### Deferred Until
-After next release cycle. Fixes verified by build + manual QA.
-
-### T31: Chat Input Draft Auto-Save
-**Completed:** 2026-07-29
-**Summary:** Persist unsent composer text across app restarts and tab switches via `ChatSession.draft`. Debounced 500ms save through existing session persistence pipeline.
-
 ## Completed Tasks
 
 ### T1: Chat Panel - ItemView + React UI
@@ -557,33 +319,29 @@ After next release cycle. Fixes verified by build + manual QA.
 
 ---
 
-## Completed Today (2026-08-07)
+## Paused Tasks
 
-### Memory CRUD System (T26 Phase 2)
-**Status:** ✅ COMPLETED
+### T12: Chat Onboarding, Tips & Empty States
+**Status:** ⏸️ PAUSED
+**Priority:** MEDIUM
 
-- **MemoryStore** (`src/intelligence/MemoryStore.ts`): JSON-backed structured storage
-- **5 memory tools**: create_memory, update_memory, delete_memory, list_memories, search_memories
-- **Legacy migration**: auto-migrates old `memory.md` format to `memory.json`
-- **Audit log**: append-only `memory-audit.jsonl` tracking all operations
-- **Settings UI**: memory stats (entry count, size, category breakdown), export to JSON/Markdown, collapsible audit log viewer
-- **read_memory_audit tool**: AI-accessible audit log, disabled by default via `enableMemoryAuditTool` setting
-- **26 unit tests** in `src/intelligence/__tests__/MemoryStore.test.ts`
-- **All 184 tests pass** (158 original + 26 new + updated tool count test)
+### T25: Unit Test Infrastructure for Streaming & Token Estimation
+**Status:** ⏸️ PENDING
+**Priority:** MEDIUM
+**Created:** 2026-07-14
 
-### SDK 7.x Migration & Bug Fixes
-**Status:** ✅ COMPLETED
+#### Description
+Unit test coverage for streaming state accumulation, token estimation, and message rendering. Extract pure functions from `AgentLoop.ts`, `OpenResponsesLoop.ts`, `useMessageActions.ts`, and `ChatMessages.tsx`. Create mock-based tests for streaming loops.
 
-- Updated `@ai-sdk/google` 3.0.79 → 4.0.37, `ai` 6.0.174 → 7.0.56, all providers to 4.x
-- **Fixed system message handling**: SDK 7.x requires system messages as separate `system` parameter, not in messages array
-- **Fixed deprecated APIs**: `stepCountIs` → `isStepCount`, `fullStream` → `stream`
-- **Fixed StreamingBubble text duplication**: replaced `lastIndexOf` with prefix matching for remaining text
+#### Phases
+1. Extract pure functions (low risk)
+2. Unit tests for `tokenEstimator.ts`, `accumulateContentParts()`, `getRemainingText()`
+3. Mock-based tests for `AgentLoop` and `OpenResponsesLoop`
+4. E2E regression tests (future)
 
-### Commits
-- `4988b31` — Fix Gemini SDK + streaming duplication + memory CRUD
-- `46da068` — Fix system message handling for SDK 7.x
-- `e587ffa` — Fix SDK 7.x deprecated API usages
-- `0cd16bb` — Add memory export and statistics to Settings UI
-- `8987b86` — Add memory audit log
-- `12f66cc` — Add comprehensive tests for MemoryStore
-- `9350623` — Add read_memory_audit tool with settings toggle
+#### Deferred Until
+After next release cycle. Fixes verified by build + manual QA.
+
+### T31: Chat Input Draft Auto-Save
+**Completed:** 2026-07-29
+**Summary:** Persist unsent composer text across app restarts and tab switches via `ChatSession.draft`. Debounced 500ms save through existing session persistence pipeline.

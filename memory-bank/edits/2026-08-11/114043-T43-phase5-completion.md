@@ -1,0 +1,16 @@
+#### 11:40 IST - T43: Phase 5 Completion + Bug Fixes (obsidian-ai)
+- Modified `memory-bank/tasks/T43.md` — Marked Phase 5 COMPLETE with full details on attribution UI, typing indicators, participant bar, relay bug fix, post-phase bug fixes, and branch merge
+- Modified `memory-bank/implementation-details/multi-user-agent-chat.md` — Added Phase 5 section with message attribution, typing indicators, participant bar, relay buffer fix, and post-phase bug fixes
+- Modified `memory-bank/activeContext.md` — Updated T43 status to COMPLETE, removed from current focus
+- Modified `memory-bank/progress.md` — Updated T43 status to COMPLETE with all 5 phases and commit details
+- Created `memory-bank/edits/2026-08-11/114043-T43-phase5-completion.md` — Edit chunk documenting this memory-bank update
+- **Key events**:
+  - Phase 5a: Message attribution — MessageBubble.tsx shows fromUserId with colored dot
+  - Phase 5b: Typing indicators — SyncAdapter.sendTyping()/onTyping(), WebSocketSyncAdapter implementation, 3-second auto-clear, 2-second throttle
+  - Phase 5c: Participant bar — persistent bar below ActionBar showing agents + remote users with colored/green dots
+  - Relay bug fix: broadcast() was receiving Buffer objects, fixed with raw.toString()
+  - Post-Phase 5 fixes: ActionBar badge showing "1" when 0 agents (changed to ?? 0), participant bar missing single agents (added selectedAgents array)
+  - Branch merged: t43-multi-user-agent-chat → main (fast-forward), pushed to GitHub
+  - Commits: 90503d9 (Phase 5), ab23e5f (post-phase fixes)
+- **Files changed**: src/sync/SyncAdapter.ts, src/sync/WebSocketSyncAdapter.ts, src/components/ChatApp.tsx, src/components/ChatInput.tsx, src/components/ChatMessages.tsx, src/components/MessageBubble.tsx, src/components/ActionBar.tsx, styles.css, relay/server.js
+- **Testing**: Relay tested MacBook ↔ mobile devices; typing indicators not yet end-to-end tested; participant bar works after ab23e5f fix

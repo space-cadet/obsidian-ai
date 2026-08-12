@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-08-11 08:01:32 IST*
+*Last Updated: 2026-08-11 11:40 IST*
 
 ### T41: Plugin Auto-Updater with Stable/Dev Channels (2026-08-09)
 **Status:** ✅ COMPLETE — Commit-hash fix applied, built, and released
@@ -12,6 +12,38 @@
 - **Commit-hash fix:** `checkForUpdate()` fetches latest SHA from GitHub API, compares with local `GIT_COMMIT_HASH`. If match, returns `hasUpdate: false`. Prevents perpetual "update available" on dev channel.
 - **Released:** `latest-dev` rebuilt from ae09179 with fix included
 - Task tracking: `memory-bank/tasks/T41.md`
+
+### T43: Multi-User and Agent Chat with LaTeX Support (2026-08-10 → 2026-08-11)
+**Status:** ✅ COMPLETE — All 5 Phases Delivered and Merged
+
+- **Evolution of T40** — builds on relay infrastructure and presence tracking from T40
+- **New architecture:** Equal-footing participant model where AI agents and remote humans are peers
+- **Implementation strategy:**
+  - **Step 1:** `ParticipantRouter` wrapper around existing `Orchestrator` — validated successfully
+  - **Step 2:** Refactor `Orchestrator` to be participant-agnostic (future, if needed)
+- **Phase 1 Complete (2026-08-11):** Types, session state, sync adapter, ParticipantRouter skeleton
+  - `ChatMessage` extended with `remote?: boolean`, `fromUserId?: string`
+  - `ChatSession` extended with `remoteUsers?: string[]`
+  - `WebSocketSyncAdapter` sets `remote: true` on received relay messages
+  - `ParticipantRouter` skeleton created — wraps Orchestrator, adds relay dispatch
+  - Commit: `539ca52`
+- **Phase 2 Complete (2026-08-11):** Wired ParticipantRouter into ChatApp
+  - Commit: `f83e5d0`
+- **Phase 3 Complete (2026-08-11):** AI context includes remote messages with attribution
+  - Commit: `9b2a498`
+- **Phase 4 Complete (2026-08-11):** Human-only tabs use relay-only routing
+  - `ParticipantRouter` supports relay-only dispatch (null orchestrator)
+- **Phase 5 Complete (2026-08-11):** Attribution UI, typing indicators, participant bar
+  - **Phase 5a:** Message attribution — `MessageBubble.tsx` shows `fromUserId` with colored dot
+  - **Phase 5b:** Typing indicators — `SyncAdapter.sendTyping()`/`onTyping()`, WebSocket relay, 3s auto-clear, 2s throttle
+  - **Phase 5c:** Participant bar — persistent bar below ActionBar showing agents + remote users
+  - **Relay bug fix:** `relay/server.js` `Buffer`→`string` conversion in broadcast
+  - **Post-phase fixes:** ActionBar badge `?? 0` fix, single-agent participant bar fix
+  - Commits: `90503d9`, `ab23e5f`
+- **Merged (2026-08-11):** `t43-multi-user-agent-chat` → `main` (fast-forward), pushed to GitHub
+- **Tests:** Relay tested MacBook ↔ mobile; participant bar verified; typing indicators need 2-device test
+- **Docs:** `memory-bank/implementation-details/multi-user-agent-chat.md`
+- **Task tracking:** `memory-bank/tasks/T43.md`
 
 ### T40: Multi-User Chat with LaTeX Support (2026-08-10)
 **Status:** 🔄 Phase 2 Complete (Presence Tracking + Bug Fixes), Phase 2b Pending
@@ -27,55 +59,6 @@
 - **Next:** End-to-end cross-device messaging test, then Phase 2b (attribution, typing, mentions)
 - **Docs:** `memory-bank/implementation-details/presence-tracking.md` (full design + bug fixes)
 - **Task tracking:** `memory-bank/tasks/T40.md`
-
-### T43: Multi-User and Agent Chat with LaTeX Support (2026-08-10)
-**Status:** 🔄 Phase 4 Complete (Human-Only Relay Mode), Phase 5 Deferred
-
-- **Evolution of T40** — builds on relay infrastructure and presence tracking from T40
-- **New architecture:** Equal-footing participant model where AI agents and remote humans are peers
-- **Implementation strategy:**
-  - **Step 1:** `ParticipantRouter` wrapper around existing `Orchestrator` (current)
-    - Minimal risk — agent logic untouched
-    - Adds relay routing for remote users alongside agent dispatch
-    - Validates model before deeper refactor
-  - **Step 2:** Refactor `Orchestrator` to be participant-agnostic (only if Step 1 works)
-- **Phase 1 Complete (2026-08-11):** Types, session state, sync adapter, ParticipantRouter skeleton
-  - `ChatMessage` extended with `remote?: boolean`, `fromUserId?: string`
-  - `ChatSession` extended with `remoteUsers?: string[]`
-  - `WebSocketSyncAdapter` sets `remote: true` on received relay messages
-  - `ParticipantRouter` skeleton created — wraps Orchestrator, adds relay dispatch
-  - All 188 tests pass
-  - Commit: `539ca52`
-- **Key decisions:**
-  - All participants (agents, remote users, local user) treated equally
-  - Messages broadcast to ALL participants in a tab
-  - Agents receive full context including remote user messages
-  - Human-only tabs possible (no AI agents)
-- **Phase 2 Complete (2026-08-11):** Wired ParticipantRouter into ChatApp
-  - `ParticipantRouter` created in `ChatApp.tsx` with orchestrator + syncAdapter
-  - `useMessageActions` accepts `participantRouter` prop, uses it for dispatch
-  - `handleSendWithSync` skips legacy relay send when `participantRouter` is active
-  - `remoteUsers` synced from session state to `ParticipantRouter`
-  - All 188 tests pass
-  - Commit: `f83e5d0`
-- **Phase 3 Complete (2026-08-11):** AI context includes remote messages with attribution
-  - `buildSystemPrompt` updated with optional `participants` parameter for `[Participants]` section
-  - `Orchestrator` updated with `remoteUsers` field, attributes remote messages as `[Remote User <id>]: message`
-  - `ParticipantRouter` syncs remote users with Orchestrator, builds relay messages with `remote: true` and `fromUserId`
-  - `useMessageActions` single-chat history includes remote attribution
-  - All 188 tests pass
-  - Commit: `9b2a498`
-- **Phase 4 Complete (2026-08-11):** Human-only tabs use relay-only routing
-  - `ParticipantRouter` accepts a null orchestrator for zero-AI tabs
-  - Relay delivery is attempted without invoking an AI API
-  - The tracked relay runtime log was removed and local relay logs are ignored
-  - Regression coverage added; current full suite passes 202 tests
-- **Phase 5 Deferred:** Attribution, typing indicators, participant UI
-- **Merged (2026-08-11):** PR #1 merged T43 into `main` as `de38d697`; the final implementation commit was `77c9445`.
-- **Repository CI follow-up (2026-08-11):** PR #2 merged a changed-files-only Prettier workflow as `41d52ab`; the old global check was failing on existing baseline formatting debt.
-- **Branch:** `t43-multi-user-agent-chat` (from `main` at `19f780d`)
-- **Docs:** `memory-bank/implementation-details/multi-user-agent-chat.md`
-- **Task tracking:** `memory-bank/tasks/T43.md`
 
 ### T42: Remote Chat Storage & Sync (2026-08-10)
 **Status:** 🔄 Created — Design complete, implementation pending
@@ -221,3 +204,105 @@ Then reopen chat once. New code prevents recurrence.
 - **[T21]**: ✅ **COMPLETED**
 - **[T24]**: ✅ **COMPLETED**
 - **[T23]**: ✅ **COMPLETED**
+
+---
+
+## Completed Tasks
+
+### T1: Chat Panel - ItemView + React UI
+**Completed:** 2026-05-02
+
+### T2: Conversation Chain & Memory
+**Completed:** 2026-05-04
+
+### T3: Context & Mentions System
+**Completed:** 2026-05-04
+
+### T4: Streaming
+**Completed:** 2026-05-02
+
+### T5: In-Place Note Editing from Chat
+**Completed:** 2026-05-04
+
+### T6: Token & Context Management
+**Completed:** 2026-05-04
+
+### T7: Release System & CI/CD
+**Completed:** 2026-05-02
+
+### T9: Settings & Provider Profiles
+**Completed:** 2026-05-02
+
+### T10: Model Discovery & Picker UX
+**Completed:** 2026-05-04
+
+### T18: Web Search Tool for Chat
+**Completed:** 2026-05-17
+**Summary:** Web search tool with 5 providers (DuckDuckGo, Brave, Tavily, Exa, SearXNG).
+
+### T19: File Attachments for Chat Messages
+**Status:** 🔄 IN PROGRESS
+**Priority:** HIGH
+**Started:** 2026-05-25
+
+#### Completed Steps
+- ✅ `Attachment` interface in `src/types.ts`
+- ✅ `AttachmentEngine.ts` — resolves markdown/image/PDF to AI SDK content parts
+- ✅ ChatInput 📎 dropdown with note/image/PDF picker
+- ✅ MessageBubble attachment chip rendering
+- ✅ `api.ts` multimodal support (`SdkMessage`, `MessageContentPart`)
+- ✅ `ChatApp.tsx` attachment resolution in `handleSend()`
+- ✅ `Orchestrator.ts` accepts attachments param
+
+#### Current Work
+- 🔄 Group chat attachment broadcasting (deferred per user request)
+
+#### Up Next
+- ⬜ Test with Gemini (images + PDFs)
+- ⬜ Test with OpenAI/Anthropic (images only)
+- ⬜ Test with Kimi/DeepSeek/Ollama
+
+### T21: CLI Test Harness for AI Features
+**Status:** 🔄 IN PROGRESS
+**Priority:** MEDIUM
+**Started:** 2026-05-25
+
+#### Completed Steps
+- ✅ Task file created
+- ✅ Implementation doc created (`memory-bank/implementation-details/cli-test-harness.md`)
+
+#### Up Next
+- ⬜ Create `scripts/test-attachments.ts`
+- ⬜ Create `scripts/test-stream-chat.ts`
+- ⬜ Create `scripts/test-tool-calling.ts`
+- ⬜ Create `scripts/test-multimodal.ts`
+- ⬜ Create `scripts/lib/mockApp.ts` and `loadSettings.ts`
+
+---
+
+## Paused Tasks
+
+### T12: Chat Onboarding, Tips & Empty States
+**Status:** ⏸️ PAUSED
+**Priority:** MEDIUM
+
+### T25: Unit Test Infrastructure for Streaming & Token Estimation
+**Status:** ⏸️ PENDING
+**Priority:** MEDIUM
+**Created:** 2026-07-14
+
+#### Description
+Unit test coverage for streaming state accumulation, token estimation, and message rendering. Extract pure functions from `AgentLoop.ts`, `OpenResponsesLoop.ts`, `useMessageActions.ts`, and `ChatMessages.tsx`. Create mock-based tests for streaming loops.
+
+#### Phases
+1. Extract pure functions (low risk)
+2. Unit tests for `tokenEstimator.ts`, `accumulateContentParts()`, `getRemainingText()`
+3. Mock-based tests for `AgentLoop` and `OpenResponsesLoop`
+4. E2E regression tests (future)
+
+#### Deferred Until
+After next release cycle. Fixes verified by build + manual QA.
+
+### T31: Chat Input Draft Auto-Save
+**Completed:** 2026-07-29
+**Summary:** Persist unsent composer text across app restarts and tab switches via `ChatSession.draft`. Debounced 500ms save through existing session persistence pipeline.

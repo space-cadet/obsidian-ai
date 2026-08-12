@@ -14,30 +14,55 @@
 
 ---
 
-> **🤖 AI-Powered Assistant for Obsidian**
+> **🤖 Collaborative AI + Human Chat for Obsidian**
 >
-> An AI chat panel that can read, edit, create, and organize your Obsidian notes — with support for multiple AI agents in a single conversation. Bring your own API keys. Your data stays in your vault.
+> A persistent chat panel where **AI agents and humans participate as equals** — across devices, in real time. Agents can read and edit your vault through native tool calling. Bring your own API keys. Your data stays in your vault.
 
 ---
 
 ## ✨ What It Does
 
-Obsidian AI adds a **persistent chat panel** to your Obsidian sidebar. Unlike typical chat plugins, this one can **directly manipulate your vault** through native tool calling — search notes, edit content, create files, move documents, and more — all from the conversation.
+Obsidian AI adds a **persistent chat panel** to your Obsidian sidebar. Unlike typical chat plugins, it treats **AI agents and remote humans as equal participants** in the same conversation. Everyone broadcasts to everyone. Each participant decides whether and how to respond.
 
-It also supports **group chat mode**: talk to multiple AI agents (different models or remote agents) in the same thread, with each agent aware of the conversation context. And with **multi-device sync**, you can continue the same conversation across your laptop, tablet, and phone.
+**Key idea:** You can have a chat tab with:
+- Just you and an AI agent
+- You + multiple AI agents
+- You + remote humans (via WebSocket relay) — with or without AI agents present
+- Any mix of the above
 
-And it includes **inline AI editing**: highlight text in any note, press a hotkey, and get AI-powered transformations with a visual diff preview before you commit.
+Messages are tagged with the sender's identity. You always know who said what — whether it's a local AI agent, a remote user on another device, or yourself.
+
+The AI can also **directly manipulate your vault** through structured tool calls — search notes, edit content, create files, move documents, and more — all from the conversation.
 
 ---
 
 ## 🚀 Features
 
-### Inline AI Editing
+### Collaborative Chat (AI + Human Peers)
 
-- **Context-Aware Suggestions** — Highlight text or place your cursor, press `Ctrl/Cmd + K`, and get AI-powered transformations
-- **Visual Diff Preview** — See exactly what changed with inline markers for additions and deletions before you commit
-- **One-Click Apply / Discard** — Accept changes instantly or dismiss them without touching your note
-- **Custom Slash Commands** — Define your own system prompts and trigger them with `/` shortcuts
+The core of Obsidian AI is a **multi-participant chat** where everyone is a first-class citizen:
+
+- **Equal-Footing Participant Model** — AI agents, remote humans, and the local user all broadcast messages to each other. No special orchestrator hierarchy.
+- **Message Attribution** — Every message shows who sent it: local user ("You"), an AI agent (with colored dot), or a remote human (with their device/user ID).
+- **Participant List Bar** — Persistent bar below the chat header showing all active participants: selected AI agents and connected remote users, each with a colored status dot.
+- **Typing Indicators** — See when remote users or agents are typing ("Alice is typing…" with animated dots). Auto-clears after 3 seconds.
+- **Multi-Agent Panel** — Select which AI profiles participate via checkbox dropdown. Each agent sees the full conversation context.
+- **Mention Routing** — `@Cloudy fetch arxiv` sends that request only to the agent named Cloudy.
+- **Zen Mode** — Hide all chrome, see only messages and input.
+- **Mobile-Responsive** — Works on tablet and phone layouts.
+
+### Multi-Device Sync (WebSocket Relay)
+
+Continue the same chat across multiple devices — laptop, tablet, phone:
+
+- **Real-Time Sync** — Messages sync instantly between devices via WebSocket relay.
+- **Human-Only Chat** — Chat with other humans without any AI agents present. Pure peer-to-peer messaging.
+- **Mixed Chat** — Have both AI agents and remote humans in the same tab. Agents see human messages; humans see agent responses.
+- **Self-Hosted Relay** — Run the relay on your own machine or VPS; no third-party servers.
+- **LAN Discovery** — Auto-detect your local IP for easy same-network setup.
+- **Zero Persistence** — Relay is stateless; no messages stored on the server.
+
+See [Multi-User Chat Design](memory-bank/implementation/multi-user-chat-design.md) for architecture details.
 
 ### Agentic Note Editing (13 Tools)
 
@@ -63,42 +88,27 @@ The AI can directly manage your vault through structured tool calls:
 
 **Smart Results**: Tool outputs are formatted as markdown tables and lists before the AI sees them — no raw JSON dumps in your chat.
 
-### Group Chat / Council Mode
+### Inline AI Editing
 
-Talk to multiple AI agents in one conversation:
-
-- **Multi-Agent Panel** — Select which profiles participate via checkbox dropdown
-- **Sequential Dispatch** — Agents respond one after another, building on previous answers
-- **Debate Mode** — Agents see each other's responses and can add follow-ups (or pass)
-- **Mention Routing** — `@Cloudy fetch arxiv` sends that request only to Cloudy
-- **Identity Badges** — Each agent gets a colored dot and name label on their messages
-- **Zen Mode** — Hide all chrome, see only messages and input
-- **Mobile-Responsive** — Works on tablet and phone layouts
-
-### Multi-Device Sync (WebSocket Relay)
-
-Continue the same group chat across multiple devices:
-
-- **Real-Time Sync** — Messages sync instantly between devices via WebSocket relay
-- **Self-Hosted Relay** — Run the relay on your own machine or VPS; no third-party servers
-- **LAN Discovery** — Auto-detect your local IP for easy same-network setup
-- **Cross-Platform** — Laptop, tablet, phone — all stay in sync
-- **Zero Persistence** — Relay is stateless; no messages stored on the server
+- **Context-Aware Suggestions** — Highlight text or place your cursor, press `Ctrl/Cmd + K`, and get AI-powered transformations.
+- **Visual Diff Preview** — See exactly what changed with inline markers for additions and deletions before you commit.
+- **One-Click Apply / Discard** — Accept changes instantly or dismiss them without touching your note.
+- **Custom Slash Commands** — Define your own system prompts and trigger them with `/` shortcuts.
 
 ### Vault-Aware Context
 
-- **`@mention` Notes** — Reference any note in chat
-- **Folder & Tag Context** — Attach folders or tags (returns file listings, not full contents — no token bloat)
-- **Active Note** — Include the note you're currently editing
-- **Embed Expansion** — `![[...]]` embeds resolved recursively up to depth 2
+- **`@mention` Notes** — Reference any note in chat.
+- **Folder & Tag Context** — Attach folders or tags (returns file listings, not full contents — no token bloat).
+- **Active Note** — Include the note you're currently editing.
+- **Embed Expansion** — `![[...]]` embeds resolved recursively up to depth 2.
 
 ### Web Search
 
 Ask about recent events or facts beyond the model's training data:
 
-- **5 Providers**: DuckDuckGo (free), Brave Search API, Tavily, Exa, SearXNG (self-hosted)
-- **No extra setup** for DuckDuckGo — works immediately
-- **API keys** for Brave, Tavily, Exa entered in Settings
+- **5 Providers**: DuckDuckGo (free), Brave Search API, Tavily, Exa, SearXNG (self-hosted).
+- **No extra setup** for DuckDuckGo — works immediately.
+- **API keys** for Brave, Tavily, Exa entered in Settings.
 
 ### Multi-Provider Support
 
@@ -115,25 +125,25 @@ Bring your own keys. No data leaves your machine unless you choose it to.
 | **Azure OpenAI** | Enterprise GPT models | Cloud |
 | **Custom** | Any OpenAI-compatible endpoint | Either |
 
-- **Per-Provider Profiles** — Save multiple configurations and switch between them
-- **Model Discovery** — Fetch available models from your provider automatically
-- **Mid-Session Switching** — Change profile without starting a new chat
+- **Per-Provider Profiles** — Save multiple configurations and switch between them.
+- **Model Discovery** — Fetch available models from your provider automatically.
+- **Mid-Session Switching** — Change profile without starting a new chat.
 
 ### Streaming & Quality-of-Life
 
-- **Streaming Responses** — See output appear in real time
-- **Token Usage Indicator** — Visual feedback on context budget (green → amber → red)
-- **Session History** — Conversations saved and restored across restarts
-- **Archive & Rename** — Organize past chats, auto-name sessions
-- **Abort** — Cancel streaming mid-generation
-- **Retry** — Regenerate a response with one click
+- **Streaming Responses** — See output appear in real time.
+- **Token Usage Indicator** — Visual feedback on context budget (green → amber → red).
+- **Session History** — Conversations saved and restored across restarts.
+- **Archive & Rename** — Organize past chats, auto-name sessions.
+- **Abort** — Cancel streaming mid-generation.
+- **Retry** — Regenerate a response with one click.
 
 ### Debug & Diagnostics
 
-- **Diagnostics Panel** — Memory usage, DOM nodes, chat sessions, total messages
-- **File-Based Logger** — Debug logs written to disk for troubleshooting
-- **Error Boundary** — Catches React render crashes, shows fallback UI
-- **Build Info in Settings** — Version badge, git commit hash, and branch name visible in Settings hero
+- **Diagnostics Panel** — Memory usage, DOM nodes, chat sessions, total messages.
+- **File-Based Logger** — Debug logs written to disk for troubleshooting.
+- **Error Boundary** — Catches React render crashes, shows fallback UI.
+- **Build Info in Settings** — Version badge, git commit hash, and branch name visible in Settings hero.
 
 ---
 
@@ -153,13 +163,17 @@ The fastest way to install and get automatic updates:
 1. Download the latest release from [GitHub Releases](https://github.com/space-cadet/obsidian-ai/releases)
 2. Extract `main.js`, `styles.css`, and `manifest.json`
 3. Copy them to your vault: `.obsidian/plugins/obsidian-ai/`
-4. Enable in **Settings** → **Community Plugins**
+4. Enable in **Settings** → **Community Plugins`
 
 ---
 
 ## ⚡ Quick Start
 
-### 1. Configure Your Provider
+### 1. Open the Chat Panel
+
+Click the **💬** icon in the left ribbon (or run **"Open Obsidian AI Chat"** from the Command Palette).
+
+### 2. Configure Your Provider
 
 Open **Settings** → **Obsidian AI** → **Provider Profiles**.
 
@@ -168,22 +182,28 @@ Click **Add Profile**, choose your provider, and enter:
 - **Model** — type a name or click **Fetch Models** to discover
 - **Custom URL** (for Ollama or custom endpoints)
 
-### 2. Inline Editing
+### 3. Chat with AI Agents
 
-1. Select text in any note (or place your cursor)
-2. Press `Ctrl/Cmd + K` (customizable in Hotkeys)
-3. Type your instruction — e.g. *"make this more concise"* or *"translate to Spanish"*
-4. Review the diff preview
-5. Click **✓ Accept** to apply, or **✗ Discard** to cancel
+1. Select which AI profiles participate via the **👥** participant button
+2. Type a message — all selected agents see it and can respond
+3. Use `@AgentName` to route a message to a specific agent
+4. Toggle **Zen Mode** (🧘) to hide all chrome
 
-### 3. Chat Panel
+### 4. Chat with Remote Humans
 
-1. Click the **💬** icon in the left ribbon (or run **"Open Obsidian AI Chat"** from the Command Palette)
-2. Ask questions, brainstorm, or request help writing
-3. Use `@` to mention notes, folders, or tags for vault-aware answers
-4. Toggle **Active Note** in the context bar to include the note you're editing
+1. **Start the relay** on one device (or a server):
+   ```bash
+   pnpm run relay
+   # or
+   node relay/relay-server.js
+   ```
+2. **Note the IP** — The relay logs the listening address (e.g., `ws://192.168.1.42:8080`)
+3. **Connect other devices** — In each device's **Settings** → **Sync**, enter the relay URL and a room ID
+4. **Open the chat** on all devices — Messages sync in real time, with attribution showing who sent each message
 
-### 4. Edit Notes from Chat
+You can have AI agents and remote humans in the same tab, or humans only.
+
+### 5. Edit Notes from Chat
 
 When the AI generates content you want to keep:
 
@@ -196,7 +216,7 @@ Or use slash commands in your message:
 - `/edit [[Note Name]]` — overwrite an existing note
 - `/append [[Note Name]]` — append to an existing note
 
-### 5. Agentic Tools
+### 6. Agentic Tools
 
 Ask the AI to manage your vault directly:
 
@@ -207,27 +227,13 @@ The AI will:
 2. Generate a summary
 3. Create the draft via `create_note` — pending your approval (unless Auto-Apply is on)
 
-### 6. Group Chat (Optional)
+### 7. Inline Editing (Optional)
 
-Click the **👥** participant button in the chat header. Select multiple profiles. Type a message — all selected agents will respond.
-
-Toggle **Debate Mode** (🗣️) to have agents discuss each other's responses.
-
-### 7. Multi-Device Sync (Optional)
-
-To sync chat across devices:
-
-1. **Start the relay** on one device (or a server):
-   ```bash
-   pnpm run relay
-   # or
-   node relay/relay-server.js
-   ```
-2. **Note the IP** — The relay logs the listening address (e.g., `ws://192.168.1.42:8080`)
-3. **Connect other devices** — In each device's **Settings** → **Sync**, enter the relay URL and a room ID
-4. **Open the chat** on all devices — Messages sync in real time
-
-See [Multi-User Sync Design](memory-bank/implementation/multi-user-chat-design.md) for architecture details.
+1. Select text in any note (or place your cursor)
+2. Press `Ctrl/Cmd + K` (customizable in Hotkeys)
+3. Type your instruction — e.g. *"make this more concise"* or *"translate to Spanish"*
+4. Review the diff preview
+5. Click **✓ Accept** to apply, or **✗ Discard** to cancel
 
 ### 8. Web Search (Optional)
 
@@ -296,7 +302,7 @@ src/
 │   ├── ToolExecutor.ts  # Vault operation handlers (13 tools)
 │   ├── tools.ts         # Zod tool definitions
 │   ├── types.ts         # StreamEvent union, ToolCall, ToolResult
-│   └── Orchestrator.ts  # Multi-agent dispatch for group chat
+│   └── Orchestrator.ts  # Participant-agnostic dispatch for multi-user chat
 ├── components/          # React UI (ChatApp, ChatInput, MessageBubble, PendingToolCard, etc.)
 ├── context/             # ContextEngine (vault context assembly, token estimation)
 ├── core/                # ChatEngine, useChat hook, streaming logic
@@ -304,6 +310,8 @@ src/
 ├── modules/             # CodeMirror extensions (inline tooltip, diff, commands)
 ├── noteEditing/         # NoteEditingBridge (apply, append, create from chat)
 ├── sync/                # WebSocket sync adapter for multi-device relay
+│   ├── SyncAdapter.ts   # Interface: send, receive, sendTyping, onTyping
+│   └── WebSocketSyncAdapter.ts  # Relay implementation
 ├── views/               # Obsidian ItemView registration
 ├── api.ts               # Provider abstractions & streaming
 ├── settings.ts          # Plugin settings & configuration UI
@@ -311,7 +319,7 @@ src/
 └── main.ts              # Plugin entry point
 
 relay/
-└── relay-server.js      # Standalone WebSocket relay for multi-device sync
+└── server.js            # Standalone WebSocket relay for multi-device sync
 ```
 
 ---
@@ -326,7 +334,7 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 
 ## Acknowledgments
 
-This plugin was originally forked from [FBarrca/obsidian-inlineAI](https://github.com/FBarrca/obsidian-inlineAI) and has been significantly extended with chat, context, agentic tools, and multi-agent features.
+This plugin was originally forked from [FBarrca/obsidian-inlineAI](https://github.com/FBarrca/obsidian-inlineAI) and has been significantly extended with chat, context, agentic tools, and multi-user/agent collaborative features.
 
 UI and design patterns inspired by [Logan Yang](https://github.com/logancyang)'s excellent [Obsidian Copilot](https://github.com/logancyang/obsidian-copilot) plugin.
 
