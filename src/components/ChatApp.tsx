@@ -43,6 +43,9 @@ import ContextPickerModal from "./ContextPickerModal";
 import ExportModal from "./presentational/ExportModal";
 import PendingToolCard from "./presentational/PendingToolCard";
 import ObsidianIcon from "./ObsidianIcon";
+import ChatToolbar from "./ChatToolbar";
+import ChatMainArea from "./ChatMainArea";
+import ChatOverlays from "./ChatOverlays";
 import SearchInput from "./presentational/SearchInput";
 import SearchResults from "./presentational/search-results";
 
@@ -696,177 +699,45 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	return (
 		<div className={`chat-panel${ui.zenMode ? " is-zen" : ""}`}>
 			{!ui.zenMode && (
-				<>
-					<div className="chat-action-bar-wrapper">
-						<ActionBar
-							onNewChat={handleNewChat}
-							onLoadChat={() => ui.setShowSessionPicker(true)}
-							onExportChat={handleExportChat}
-							canLoad={hasHistory}
-							plugin={plugin}
-							autoApprove={autoApprove}
-							onToggleAutoApprove={handleToggleAutoApprove}
-							autoNameSessions={autoNameSessions}
-							onToggleAutoName={handleToggleAutoName}
-							onManualRename={handleManualRename}
-							profile={resolvedProfile}
-							sessionTitle={
-								sessions.find((s) => s.id === activeSessionId)
-									?.title
-							}
-							zenMode={ui.zenMode}
-							onToggleZenMode={ui.toggleZenMode}
-							participantCount={ui.selectedProfileIds.size}
-							onToggleParticipantDropdown={
-								ui.toggleParticipantDropdown
-							}
-							debateMode={ui.debateMode}
-							onToggleDebateMode={ui.toggleDebateMode}
-							searchVisible={searchVisible}
-							onToggleSearch={toggleSearch}
-							relayEnabled={
-								activeSessionRelayEnabled && relayConnected
-							}
-							onToggleRelay={handleToggleRelay}
-							connectedUsers={connectedUsers}
-							onToggleRemoteUserDropdown={
-								ui.toggleRemoteUserDropdown
-							}
-							remoteUserCount={connectedUsers.length}
-						/>
-						{ui.showParticipantDropdown && (
-							<div
-								ref={ui.participantDropdownRef}
-								className="chat-participant-dropdown"
-							>
-								{plugin.settings.providerProfiles.map(
-									(profile) => {
-										const isSelected =
-											ui.selectedProfileIds.has(
-												profile.id,
-											);
-										return (
-											<label
-												key={profile.id}
-												className={`chat-participant-dropdown-item${isSelected ? " is-selected" : ""}`}
-											>
-												<input
-													type="checkbox"
-													checked={isSelected}
-													onChange={() =>
-														ui.toggleProfile(
-															profile.id,
-														)
-													}
-												/>
-												<span
-													style={{
-														color: getAgentColor(
-															profile.provider,
-														),
-													}}
-												>
-													●
-												</span>
-												<span className="chat-participant-dropdown-name">
-													{profile.name}
-												</span>
-												<span className="chat-participant-dropdown-model">
-													{profile.model}
-												</span>
-											</label>
-										);
-									},
-								)}
-								{plugin.settings.providerProfiles.length ===
-									0 && (
-									<div className="chat-participant-dropdown-empty">
-										No profiles configured
-									</div>
-								)}
-							</div>
-						)}
-						{ui.showRemoteUserDropdown && (
-							<div
-								ref={ui.remoteUserDropdownRef}
-								className="chat-remote-user-dropdown"
-							>
-								<div className="chat-remote-user-dropdown-header">
-									<span>
-										Room: {plugin.settings.syncRoomId}
-									</span>
-									{relayConnected && (
-										<span className="chat-remote-user-status is-connected">
-											●
-										</span>
-									)}
-								</div>
-								{connectedUsers.length === 0 ? (
-									<div className="chat-remote-user-dropdown-empty">
-										No users connected
-									</div>
-								) : (
-									connectedUsers.map((user) => {
-										const isSelected =
-											ui.selectedRemoteUserIds.has(user);
-										return (
-											<label
-												key={user}
-												className={`chat-remote-user-dropdown-item${isSelected ? " is-selected" : ""}${user === plugin.settings.syncUserName ? " is-self" : ""}`}
-											>
-												<input
-													type="checkbox"
-													checked={isSelected}
-													onChange={() =>
-														ui.toggleRemoteUser(
-															user,
-														)
-													}
-												/>
-												<span className="chat-remote-user-dot">
-													●
-												</span>
-												<span className="chat-remote-user-name">
-													{user}
-													{user ===
-														plugin.settings
-															.syncUserName &&
-														" (You)"}
-												</span>
-											</label>
-										);
-									})
-								)}
-							</div>
-						)}
-					</div>
-					{/* Participant list bar */}
-					{(selectedAgents.length > 0 ||
-						connectedUsers.length > 0) && (
-						<div className="chat-participant-bar">
-							{selectedAgents.map((p) => (
-								<span
-									key={p.id}
-									className="chat-participant-chip"
-									style={{ color: p.color }}
-								>
-									● {p.name}
-								</span>
-							))}
-							{connectedUsers.map((user) => (
-								<span
-									key={user}
-									className="chat-participant-chip chat-participant-chip-remote"
-								>
-									<span className="chat-participant-dot-online">
-										●
-									</span>{" "}
-									{user}
-								</span>
-							))}
-						</div>
-					)}
-				</>
+				<ChatToolbar
+					plugin={plugin}
+					resolvedProfile={resolvedProfile}
+					sessionTitle={
+						sessions.find((s) => s.id === activeSessionId)?.title
+					}
+					selectedAgents={selectedAgents}
+					connectedUsers={connectedUsers}
+					selectedProfileIds={ui.selectedProfileIds}
+					selectedRemoteUserIds={ui.selectedRemoteUserIds}
+					showParticipantDropdown={ui.showParticipantDropdown}
+					showRemoteUserDropdown={ui.showRemoteUserDropdown}
+					participantDropdownRef={ui.participantDropdownRef}
+					remoteUserDropdownRef={ui.remoteUserDropdownRef}
+					autoApprove={autoApprove}
+					autoNameSessions={autoNameSessions}
+					zenMode={ui.zenMode}
+					debateMode={ui.debateMode}
+					searchVisible={searchVisible}
+					relayEnabled={activeSessionRelayEnabled}
+					relayConnected={relayConnected}
+					remoteUserCount={connectedUsers.length}
+					hasHistory={hasHistory}
+					participantCount={ui.selectedProfileIds.size}
+					onNewChat={handleNewChat}
+					onLoadChat={() => ui.setShowSessionPicker(true)}
+					onExportChat={handleExportChat}
+					onToggleAutoApprove={handleToggleAutoApprove}
+					onToggleAutoName={handleToggleAutoName}
+					onManualRename={handleManualRename}
+					onToggleZenMode={ui.toggleZenMode}
+					onToggleDebateMode={ui.toggleDebateMode}
+					onToggleSearch={toggleSearch}
+					onToggleRelay={handleToggleRelay}
+					onToggleParticipantDropdown={ui.toggleParticipantDropdown}
+					onToggleRemoteUserDropdown={ui.toggleRemoteUserDropdown}
+					onToggleProfile={ui.toggleProfile}
+					onToggleRemoteUser={ui.toggleRemoteUser}
+				/>
 			)}
 			{!ui.zenMode && (
 				<ChatTabBar
@@ -881,8 +752,6 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					onRename={handleRenameSession}
 				/>
 			)}
-
-			{/* Search input + results */}
 			{!ui.zenMode && searchVisible && (
 				<>
 					<SearchInput
@@ -899,8 +768,6 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					)}
 				</>
 			)}
-
-			{/* Zen mode exit button (floating) */}
 			{ui.zenMode && (
 				<button
 					className="chat-btn chat-icon-btn chat-zen-exit"
@@ -910,9 +777,18 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					<ObsidianIcon icon="eye-off" size={15} />
 				</button>
 			)}
-
-			<ChatMessages
+			<ChatMainArea
+				app={plugin.app}
+				plugin={plugin}
 				sessionId={activeSessionId}
+				messages={messages}
+				currentAiMessage={activeRuntime.currentAiMessage}
+				currentContentParts={activeRuntime.currentContentParts}
+				isStreaming={activeRuntime.isStreaming}
+				isEditing={ui.isEditing}
+				thinkingEnabled={thinkingEnabled}
+				showThinking={thinkingEnabled}
+				scrollToMessageId={scrollToMessageId}
 				restoreScrollTop={
 					plugin.settings.restoreChatTabs
 						? sessions.find(
@@ -920,51 +796,33 @@ const ChatApp: React.FC<ChatAppProps> = ({
 							)?.scrollPosition
 						: undefined
 				}
-				onScrollPositionChange={handleScrollPositionChange}
-				messages={messages}
-				currentAiMessage={activeRuntime.currentAiMessage}
-				currentContentParts={activeRuntime.currentContentParts}
-				isStreaming={activeRuntime.isStreaming}
-				isEditing={ui.isEditing}
-				app={plugin.app}
-				showThinking={thinkingEnabled}
-				onAppend={actions.handleAppend}
-				onInsertAtCursor={actions.handleInsertAtCursor}
-				onApply={actions.handleApply}
-				onRetry={actions.handleRetry}
-				onEdit={actions.handleEditMessage}
-				onApplyToTarget={actions.handleApplyToTarget}
-				onCreateNote={actions.handleCreateNote}
-				onAppendToTarget={actions.handleAppendToTarget}
-				onOpenPastSession={openSessionInTab}
-				scrollToMessageId={scrollToMessageId}
+				pendingToolCall={activeRuntime.pendingToolCall}
+				pendingToolDisplay={
+					activeRuntime.pendingToolCall?.toolName
+						? plugin.integrationRegistry?.getCapabilityDisplay(
+								activeRuntime.pendingToolCall.toolName,
+							) ?? null
+					: null
+				}
 				typingUsers={typingUsers}
-			/>
-
-			{activeRuntime.pendingToolCall && (
-				<PendingToolCard
-					toolCall={activeRuntime.pendingToolCall}
-					onApprove={actions.handleApproveTool}
-					onReject={actions.handleRejectTool}
-					providerDisplay={plugin.integrationRegistry?.getCapabilityDisplay(
-						activeRuntime.pendingToolCall.toolName,
-					)}
-				/>
-			)}
-
-			<ChatInput
-				app={plugin.app}
-				plugin={plugin}
 				onSend={handleSendWithSync}
 				onStop={actions.handleStop}
 				onTyping={() => syncAdapterRef.current?.sendTyping()}
 				onAddMention={handleAddMention}
-				isStreaming={activeRuntime.isStreaming}
-				isEditing={ui.isEditing}
-				onCancel={actions.handleCancelEdit}
-				editMessage={ui.editMessageText}
-				thinkingEnabled={thinkingEnabled}
+				onCancelEdit={actions.handleCancelEdit}
 				onToggleThinking={() => setThinkingEnabled((t) => !t)}
+				onAppend={actions.handleAppend}
+				onInsertAtCursor={actions.handleInsertAtCursor}
+				onApply={actions.handleApply}
+				onRetry={actions.handleRetry}
+				onEditMessage={actions.handleEditMessage}
+				onApplyToTarget={actions.handleApplyToTarget}
+				onCreateNote={actions.handleCreateNote}
+				onAppendToTarget={actions.handleAppendToTarget}
+				onOpenPastSession={openSessionInTab}
+				onScrollPositionChange={handleScrollPositionChange}
+				onApproveTool={actions.handleApproveTool}
+				onRejectTool={actions.handleRejectTool}
 				attachments={ui.messageAttachments}
 				onAttachmentsChange={ui.setMessageAttachments}
 				pressEnterToSend={plugin.settings.pressEnterToSend}
@@ -988,33 +846,23 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				})()}
 				draft={undefined}
 				onDraftChange={undefined}
+				editMessage={ui.editMessageText}
 			/>
-			{ui.showSessionPicker && (
-				<SessionPickerModal
-					sessions={savedSessions}
-					activeSessionId={activeSessionId}
-					onLoad={handleLoadSession}
-					onDelete={handleDeleteSession}
-					onRename={handleRenameSession}
-					onClose={() => ui.setShowSessionPicker(false)}
-				/>
-			)}
-			{ui.showExportModal && (
-				<ExportModal
-					sessions={savedSessions}
-					activeSessionId={activeSessionId}
-					plugin={plugin}
-					onClose={() => ui.setShowExportModal(false)}
-				/>
-			)}
-			{ui.showContextPicker && (
-				<ContextPickerModal
-					plugin={plugin}
-					app={plugin.app}
-					onAdd={handleAddContextItems}
-					onClose={() => ui.setShowContextPicker(false)}
-				/>
-			)}
+			<ChatOverlays
+				plugin={plugin}
+				savedSessions={savedSessions}
+				activeSessionId={activeSessionId || null}
+				showSessionPicker={ui.showSessionPicker}
+				showExportModal={ui.showExportModal}
+				showContextPicker={ui.showContextPicker}
+				onLoadSession={handleLoadSession}
+				onDeleteSession={handleDeleteSession}
+				onRenameSession={handleRenameSession}
+				onCloseSessionPicker={() => ui.setShowSessionPicker(false)}
+				onCloseExportModal={() => ui.setShowExportModal(false)}
+				onCloseContextPicker={() => ui.setShowContextPicker(false)}
+				onAddContextItems={handleAddContextItems}
+			/>
 		</div>
 	);
 };
