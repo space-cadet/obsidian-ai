@@ -1,18 +1,18 @@
 # Session Cache
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-12 10:54:55 IST*
+*Last Updated: 2026-08-12 11:11:56 IST*
 
 **Started**: 2026-08-12 10:35:04 IST
-**Focus Task**: T43, T15, T8: Mobile chat hardening, model badge fix, and format-gate cleanup
+**Focus Task**: T22, T44: Reconcile ChatApp decomposition and plan standalone UI preview
 **Session File**: `sessions/2026-08-12-morning.md`
-**Status**: ✅ Active: 8, Paused: 0, Completed: 16
+**Status**: 🔄 Active: 10, Paused: 0, Completed: 17
 
 ## Overview
 
-- Active: 9 | Paused: 0 | Completed: 15
+- Active: 10 | Paused: 0 | Completed: 17
 - Last Session: 2026-08-07
-- Current Period: evening
+- Current Period: late morning
 
 ## Active Tasks
 
@@ -53,6 +53,24 @@ Fix token counter accumulation, remove green streaming border, add live tool res
 **Progress**:
 [Details](tasks/T16.md)
 
+### T22: ChatApp Component Decomposition
+**Status:** 🔄 **IN PROGRESS — Phase 5 pending**
+**Started:** 2026-05-28
+**Context**: [Details](tasks/T22.md)
+**Progress**:
+- ✅ Phases 0–3 completed.
+- ✅ Phase 4 landed in `da4af7d` with session/settings/export/search/context hooks.
+- ⬜ Phase 5: extract `ChatLayout`, `ChatToolbar`, `ChatMainArea`, and `ChatOverlays`.
+
+### T44: Standalone UI Preview and Obsidian Host Boundary
+**Status:** 🔄 **IN PROGRESS — planning complete; implementation pending**
+**Started:** 2026-08-12
+**Context**: [Details](tasks/T44.md)
+**Progress**:
+- ✅ Existing Vitest/jsdom, React Testing Library, and T21 CLI harness reviewed.
+- ✅ Storybook selected as the planned persistent preview surface.
+- ⬜ Define the neutral host adapter, fixtures, and browser workflow.
+
 ### T40: Multi-User Chat with LaTeX Support
 **Status:** 🔄 **IN PROGRESS**
 **Started:** 2026-08-08
@@ -64,6 +82,14 @@ Fix token counter accumulation, remove green streaming border, add live tool res
 - ✅ Remote-message routing is handled by T43; Phase 2b UI work remains pending
 - ⬜ Phase 2b: Attribution, typing indicators, mentions
 - ⬜ Phase 3: WebRTC peer-to-peer
+
+### T42: Remote Chat Storage & Sync
+**Status:** 🔄 **IN PROGRESS**
+**Started:** 2026-08-10
+**Context**: [Details](tasks/T42.md)
+**Progress**:
+- ✅ Design complete: relay-server storage and WebSocket client sync.
+- ⬜ Phase 1 implementation: relay storage endpoints and client sync protocol.
 
 ### T8: Open Source Release with Branding
 **Status:** 🔄 **IN PROGRESS**
@@ -162,12 +188,18 @@ Promote release from pre-release to proper v1.2.4. GitHub release created with b
 **Started:** 2026-05-02
 **Completed:** 2026-05-02
 
+### T41: Plugin Auto-Updater with Stable/Dev Channels
+**Status:** ✅ **COMPLETED**
+**Started:** 2026-08-09
+**Completed:** 2026-08-12
+**Context**: [Details](tasks/T41.md)
+
 ## Next Session Focus
 
+1. T22: ChatApp Component Decomposition
+1. T44: Standalone UI Preview and Obsidian Host Boundary
 1. T40: Multi-User Chat with LaTeX Support
 1. META-1: Memory Bank Setup and Maintenance
-1. T11: Debug Logging & Diagnostics
-1. T14: Remote Agent Connectivity (OpenResponses)
 
 ## Session History (Last 5)
 

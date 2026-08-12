@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-12 10:54:55 IST*
+*Last Updated: 2026-08-12 11:11:56 IST*
 
 ## Overview
 
@@ -17,8 +17,9 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T15 | Tabbed Chat Interface with Multi-Profile | 🔄 | HIGH | 2026-05-15 | T13, T14, T9 | [Details](tasks/T15.md) |
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
 | T40 | Multi-User Chat with LaTeX Support | 🔄 | HIGH | 2026-08-08 | T16 | [Details](tasks/T40.md) |
-| T41 | Plugin Auto-Updater with Stable/Dev Channels | ✅ | HIGH | 2026-08-09 | T7 | [Details](tasks/T41.md) |
 | T42 | Remote Chat Storage & Sync | 🔄 | HIGH | 2026-08-10 | T40 | [Details](tasks/T42.md) |
+| T22 | ChatApp.tsx Component Decomposition | 🔄 | HIGH | 2026-05-28 | T1, T15 | [Details](tasks/T22.md) |
+| T44 | Standalone UI Preview and Obsidian Host Boundary | 🔄 | MEDIUM | 2026-08-12 | T1, T22 | [Details](tasks/T44.md) |
 | T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
 
 ## Completed Tasks
@@ -40,6 +41,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T6 | Token & Context Management | ✅ | MEDIUM | 2026-05-02 | 2026-05-02 | T1, T2 | [Details](tasks/T6.md) |
 | T7 | Release System & CI/CD | ✅ | HIGH | 2026-05-02 | 2026-05-02 | — | [Details](tasks/T7.md) |
 | T9 | Settings & Provider Profiles | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T1 | [Details](tasks/T9.md) |
+| T41 | Plugin Auto-Updater with Stable/Dev Channels | ✅ | HIGH | 2026-08-09 | 2026-08-12 | T7 | [Details](tasks/T41.md) |
 | T43 | Multi-User and Agent Chat with LaTeX Support | ✅ | HIGH | 2026-08-10 | 2026-08-12 | T40 | [Details](tasks/T43.md) |
 
 ## Task Relationships
@@ -83,6 +85,9 @@ T21: CLI Test Harness for AI Features
   └── T13
   └── T19
   └── T4
+T22: ChatApp.tsx Component Decomposition
+  └── T1
+  └── T15
 T23: Settings.ts Decomposition
   └── —
 T3: Context & Mentions System
@@ -101,11 +106,14 @@ T8: Open Source Release with Branding
   └── T7
 T9: Settings & Provider Profiles
   └── T1
+T44: Standalone UI Preview and Obsidian Host Boundary
+  └── T1
+  └── T22
 ```
 
 ## Status Summary
 
-- **Active**: 6
-- **Completed**: 15
+- **Active**: 10
+- **Completed**: 17
 - **Paused**: 0
-- **Total**: 21
+- **Total**: 27

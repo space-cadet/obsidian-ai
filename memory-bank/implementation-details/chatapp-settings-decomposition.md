@@ -1,9 +1,23 @@
 # Implementation Detail: ChatApp + Settings Decomposition
 *Created: 2026-05-28 23:10 IST*
+*Last Updated: 2026-08-12 11:11:56 IST*
 *Related Tasks: T22, T23*
 
 ## Context
 Deepak identified that `ChatApp.tsx` (1,948 lines) and `settings.ts` (1,187 lines) are unmaintainably large. This doc records the full analysis and refactoring strategy.
+
+## Current State Reconciliation (2026-08-12)
+
+T22 Phase 4 was implemented in commit `da4af7d`, but the original task notes
+were not updated at the time. The repository now contains the session,
+settings, export, search, and context hooks planned for that phase.
+
+The remaining T22 Phase 5 work is the layout extraction: `ChatLayout`,
+`ChatToolbar`, `ChatMainArea`, and `ChatOverlays`. Later T43 participant and
+mobile work means the current `ChatApp.tsx` is 1,022 lines rather than the
+historical 551-line Phase 4 result. T44 separately tracks the host boundary
+and standalone browser preview; it should consume the extracted layout rather
+than force the entire controller into a browser fixture.
 
 ## File Size Report
 

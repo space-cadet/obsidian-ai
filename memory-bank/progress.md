@@ -1,5 +1,5 @@
 # Implementation Progress
-*Last Updated: 2026-08-12 10:54:55 IST*
+*Last Updated: 2026-08-12 11:11:56 IST*
 
 ### T43: Multi-User and Agent Chat with LaTeX Support (2026-08-10 → 2026-08-11)
 **Status:** ✅ COMPLETE — All 5 Phases Delivered and Merged
@@ -33,6 +33,31 @@
 - **Design doc:** `memory-bank/implementation-details/remote-chat-storage-design.md`
 - **Next:** Phase 1 implementation (relay storage endpoints, client sync protocol)
 - **Task:** `memory-bank/tasks/T42.md`
+
+### T22: ChatApp Component Decomposition (2026-05-28 → current)
+**Status:** 🔄 Phase 4 complete; Phase 5 pending
+
+- Phase 4 landed in `da4af7d`, extracting session, settings, export, search,
+  and context hooks.
+- The task record now reflects the implementation instead of the old Phase 3
+  status.
+- Phase 5 remains: extract `ChatLayout`, `ChatToolbar`, `ChatMainArea`, and
+  `ChatOverlays` while preserving T43 participant and mobile behavior.
+- Current measurements: `ChatApp.tsx` 1,022 lines and
+  `useMessageActions.ts` 1,309 lines.
+- **Task:** `memory-bank/tasks/T22.md`
+
+### T44: Standalone UI Preview and Obsidian Host Boundary (2026-08-12)
+**Status:** 🔄 Planning complete; implementation pending
+
+- No existing standalone visual preview or neutral host-boundary task was
+  found.
+- Storybook is the planned persistent browser workshop; Vitest/jsdom remains
+  the fast behavior layer, with one real-browser layer added only where needed.
+- The preview target is extracted layout/presentational UI, not a recreated
+  Obsidian runtime.
+- **Task:** `memory-bank/tasks/T44.md`
+- **Design:** `memory-bank/implementation-details/standalone-ui-preview.md`
 
 ### T40: Multi-User Chat with LaTeX Support (2026-08-10)
 **Status:** 🔄 Phase 2 Complete, Phase 2b Pending

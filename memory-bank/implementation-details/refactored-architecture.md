@@ -1,11 +1,16 @@
 # Refactored Architecture Guide
 
 *Created: 2026-05-29*
+*Last Updated: 2026-08-12 11:11:56 IST*
 *Applies to: obsidian-ai plugin codebase*
 
 ## Overview
 
 This document describes the refactored codebase architecture after T22 (ChatApp.tsx decomposition) and T23 (Settings.ts decomposition). It serves as the canonical reference for where code lives, how modules relate, and what conventions to follow when adding new features.
+
+Current measurements and follow-up boundaries are maintained here after later
+T15, T34, T40, and T43 work. T22 remains active for its layout extraction
+phase. T44 tracks the separate browser preview and Obsidian host boundary.
 
 ## Guiding Principles
 
@@ -33,7 +38,7 @@ src/
 │   └── diagnostics.ts             # Metrics, debug level, clear history
 │
 ├── components/                    # React UI components
-│   ├── ChatApp.tsx                # Main chat container (636 lines, was 1,948)
+│   ├── ChatApp.tsx                # Controller/composition root (1,022 lines)
 │   ├── ChatMessages.tsx           # Message list rendering
 │   ├── MessageBubble.tsx          # Individual message bubble
 │   ├── ChatInput.tsx              # Input bar with attachments
@@ -43,7 +48,11 @@ src/
 │   ├── PendingToolCard.tsx        # Tool approval card
 │   ├── ToolResultCard.tsx         # Tool result display
 │   ├── ContextPickerModal.tsx     # Note selection modal
-│   └── GroupChatApp.tsx           # Group chat variant
+│   ├── GroupChatApp.tsx           # Group chat variant
+│   ├── ChatLayout.tsx             # T22 Phase 5: planned layout shell
+│   ├── ChatToolbar.tsx            # T22 Phase 5: planned toolbar/participants
+│   ├── ChatMainArea.tsx           # T22 Phase 5: planned messages/composer
+│   └── ChatOverlays.tsx           # T22 Phase 5: planned modal composition
 │
 ├── hooks/                         # React hooks
 │   ├── useChatSession.ts          # Session CRUD, persistence, auto-naming
@@ -84,6 +93,17 @@ src/
 └── default_prompts.ts             # Default prompt templates
 ```
 
+T44 planned host boundary:
+
+```text
+src/host/
+├── ChatHost.ts                     # Neutral UI-facing capability interfaces
+└── ObsidianChatHost.ts             # Production adapter over Obsidian APIs
+```
+
+Standalone stories should depend on fixture implementations of `ChatHost`;
+only the production adapter should depend on Obsidian APIs.
+
 ## Settings Architecture (T23)
 
 ### Before
@@ -120,14 +140,20 @@ The section appends its DOM elements to `containerEl`. It does not return anythi
 - `src/components/ChatApp.tsx` (1,948 lines): state, effects, handlers, UI, utilities all inline
 
 ### After
-- `src/components/ChatApp.tsx` (636 lines): composition of hooks + JSX layout
+- `src/components/ChatApp.tsx` (1,022 lines): controller/composition of hooks,
+  relay lifecycle, participant state, and JSX; T22 Phase 5 remains pending
 - `src/hooks/useChatSession.ts` (317 lines): session state, persistence, CRUD
-- `src/hooks/useChatUI.ts` (264 lines): UI state, modals, toggles, typing indicators
-- `src/hooks/useMessageActions.ts` (1,111 lines): message action handlers
+- `src/hooks/useChatUI.ts` (329 lines): UI state, modals, toggles, participants,
+  typing indicators, and attachments
+- `src/hooks/useMessageActions.ts` (1,309 lines): message action handlers
+- `src/hooks/useSessionActions.ts`, `useSettingsActions.ts`,
+  `useExportActions.ts`, `useSearch.ts`, and `useContextItems.ts`: extracted
+  session, settings, export, search, and context actions from T22 Phase 4
 - `src/lib/*.ts` (23–137 lines): extracted utilities
 
 ### Pattern
-ChatApp.tsx is now a thin composition layer:
+ChatApp.tsx is intended to be a composition layer. It is not yet thin enough;
+T22 Phase 5 should move the remaining JSX into layout components:
 ```typescript
 const { sessions, activeSessionId, createSession, ... } = useChatSession(plugin);
 const { isZenMode, isDebateMode, showThinking, ... } = useChatUI(plugin);
@@ -135,6 +161,10 @@ const { handleSend, handleStop, handleRetry, ... } = useMessageActions({
   plugin, sessions, activeSessionId, ...
 });
 ```
+
+The standalone UI preview in T44 must consume the extracted layout and
+presentational components through a fixture host, not import the Obsidian
+`ItemView` or production view module.
 
 ### Hook Responsibilities
 - **useChatSession**: Everything about session lifecycle. Creating, deleting, switching, loading, saving, auto-naming, manual renaming.
@@ -173,8 +203,8 @@ import { buildContext } from "../lib/contextUtils";
 |----------|-----------|------------|-----------------|
 | Settings config | 400 lines | 500 | settings.ts: 341 ✅ |
 | Settings sections | 200 lines | 300 | diagnostics.ts: 189 ✅ |
-| React components | 500 lines | 700 | ChatApp.tsx: 636 ✅ |
-| Hooks | 400 lines | 600 | useMessageActions.ts: 1,111 ⚠️ |
+| React components | 500 lines | 700 | ChatApp.tsx: 1,022 ⚠️ |
+| Hooks | 400 lines | 600 | useMessageActions.ts: 1,309 ⚠️ |
 | Utilities | 150 lines | 200 | sessionTitle.ts: 137 ✅ |
 | Agent logic | 500 lines | 700 | ToolExecutor.ts: 865 ⚠️ |
 | API layer | 400 lines | 500 | api.ts: 689 ⚠️ |
@@ -219,3 +249,5 @@ When a file grows beyond its target size:
 - **2026-05-28**: T22 Phase 2 — Extracted `useChatUI` hook + 31 tests. ChatApp.tsx: 1,533 → 1,269 lines.
 - **2026-05-28**: T22 Phase 3 — Extracted `useMessageActions` hook + 21 tests. ChatApp.tsx: 1,269 → 636 lines.
 - **2026-05-29**: T23 — Extracted `ObsidianAISettingsTab` + decomposed into 8 section files. settings.ts: 1,187 → 341 lines. No files >1,000 lines remain.
+- **2026-07-30**: T22 Phase 4 — Extracted session, settings, export, search, and context hooks. ChatApp.tsx: 636 → 551 lines at that point.
+- **2026-08-12**: T43 and related tab/relay work increased the composition surface. T22 Phase 5 and T44 now track the remaining layout and host-boundary work.
