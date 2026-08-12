@@ -1,5 +1,5 @@
 import React from "react";
-import type { ToolCall } from "../agent/types";
+import type { ToolCall } from "../../agent/types";
 
 interface PendingToolCardProps {
 	toolCall: ToolCall;

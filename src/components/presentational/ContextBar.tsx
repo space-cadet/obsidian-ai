@@ -1,5 +1,5 @@
 import React from "react";
-import { ContextItem } from "../types";
+import { ContextItem } from "../../types";
 
 interface ContextBarProps {
 	contextItems: ContextItem[];

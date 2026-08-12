@@ -3,7 +3,7 @@ import { App, Component, MarkdownRenderer } from "obsidian";
 import { ChatMessage, ContentPart } from "../types";
 import { createRoot } from "react-dom/client";
 import MessageBubble from "./MessageBubble";
-import ToolCallNotification from "./ToolCallNotification";
+import ToolCallNotification from "./presentational/ToolCallNotification";
 import { sanitizeHtmlForRenderer } from "../lib/sanitizeHtml";
 
 const StreamingBubble: React.FC<{

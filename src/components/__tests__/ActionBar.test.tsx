@@ -1,7 +1,7 @@
 import React from "react";
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import ActionBar from "../ActionBar";
+import ActionBar from "../presentational/ActionBar";
 
 const profile = {
 	id: "profile-1",

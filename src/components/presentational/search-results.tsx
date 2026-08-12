@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
-import ObsidianIcon from "./ObsidianIcon";
-import type { FuzzySearchResult } from "../search/fuzzy-search";
+import ObsidianIcon from "../ObsidianIcon";
+import type { FuzzySearchResult } from "../../search/fuzzy-search";
 
 interface SearchResultsProps {
 	results: FuzzySearchResult[];

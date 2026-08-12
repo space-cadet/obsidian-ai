@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { App, MarkdownRenderer, Component } from "obsidian";
 import { ChatMessage, ContextItem, ContentPart } from "../types";
-import MessageActions from "./MessageActions";
-import ToolCallNotification from "./ToolCallNotification";
+import MessageActions from "./presentational/MessageActions";
+import ToolCallNotification from "./presentational/ToolCallNotification";
 import { sanitizeHtmlForRenderer } from "../lib/sanitizeHtml";
 import {
 	formatMessageTimestamp,

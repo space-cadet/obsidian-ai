@@ -1,6 +1,6 @@
 import React from "react";
-import { ProviderProfile, getProviderColor } from "../settings";
-import ObsidianIcon from "./ObsidianIcon";
+import { ProviderProfile, getProviderColor } from "../../settings";
+import ObsidianIcon from "../ObsidianIcon";
 
 interface ProfileIndicatorProps {
 	profile: ProviderProfile;

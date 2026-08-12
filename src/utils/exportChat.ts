@@ -1,5 +1,5 @@
 import { ChatSession, ChatMessage } from "../types";
-import { ExportScope } from "../components/ExportModal";
+import { ExportScope } from "../components/presentational/ExportModal";
 
 function formatTimestamp(ts: number): string {
 	return new Date(ts).toISOString();

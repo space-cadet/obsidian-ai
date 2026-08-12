@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import SessionPickerModal from "../SessionPickerModal";
+import SessionPickerModal from "../presentational/SessionPickerModal";
 import type { ChatSession } from "../../types";
 
 const savedSession: ChatSession = {

@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from "react";
-import { ChatSession } from "../types";
+import { ChatSession } from "../../types";
 import {
 	serializeToMarkdown,
 	serializeToJSON,
 	serializeToJSONL,
 	generateFilename,
-} from "../utils/exportChat";
+} from "../../utils/exportChat";
 
 export type ExportScope = "single" | "multiple" | "all";
 export type ExportFormat = "md" | "json" | "jsonl";

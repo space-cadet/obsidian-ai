@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { ChatSession } from "../types";
-import { getSessionTotalTokens } from "../lib/sessionUtils";
+import { ChatSession } from "../../types";
+import { getSessionTotalTokens } from "../../lib/sessionUtils";
 
 
 interface SessionPickerModalProps {

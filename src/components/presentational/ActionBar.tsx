@@ -1,7 +1,7 @@
 import React from "react";
-import { ChatPluginLike } from "../views/ObsidianAIChatView";
-import { ProviderProfile } from "../settings";
-import ObsidianIcon from "./ObsidianIcon";
+import { ChatPluginLike } from "../../views/ObsidianAIChatView";
+import { ProviderProfile } from "../../settings";
+import ObsidianIcon from "../ObsidianIcon";
 import ProfileIndicator from "./ProfileIndicator";
 
 interface ActionBarProps {

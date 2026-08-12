@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from "react";
-import ObsidianIcon from "./ObsidianIcon";
+import ObsidianIcon from "../ObsidianIcon";
 
 interface SearchInputProps {
 	onSearch: (query: string) => void;

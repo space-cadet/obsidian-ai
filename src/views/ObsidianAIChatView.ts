@@ -2,7 +2,7 @@ import { ItemView, WorkspaceLeaf } from "obsidian";
 import { createRoot, Root } from "react-dom/client";
 import { createElement } from "react";
 import ChatApp from "../components/ChatApp";
-import { ChatErrorBoundary } from "../components/ErrorBoundary";
+import { ChatErrorBoundary } from "../components/presentational/ErrorBoundary";
 import { ChatApiManager } from "../api";
 import { App } from "obsidian";
 import { StoredChatData } from "../types";

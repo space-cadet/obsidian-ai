@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { ToolCall, ToolResult } from "../agent/types";
+import type { ToolCall, ToolResult } from "../../agent/types";
 
 interface ToolCallNotificationProps {
 	toolCall: ToolCall;
