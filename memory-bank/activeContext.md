@@ -84,15 +84,18 @@
 - Task tracking: `memory-bank/tasks/T22.md`
 
 ### T44: Standalone UI Preview and Obsidian Host Boundary (2026-08-12)
-**Status:** 🔄 Planning complete; implementation pending
+**Status:** 🔄 **T44.1 COMPLETE — T44.2-5 pending**
 
-- No existing standalone UI preview or host-boundary task existed.
-- Storybook is the planned persistent browser workshop; existing Vitest/jsdom
-  tests remain the fast behavior layer.
-- The first preview target is extracted layout/presentational UI, not a fake
-  complete Obsidian runtime.
-- Task and design: `memory-bank/tasks/T44.md`,
-  `memory-bank/implementation-details/standalone-ui-preview.md`
+- **T44.1 DONE (2026-08-12 11:47 IST):** Host boundary implemented and committed (`1dc4b63`)
+  - `src/host/ChatHost.ts` — neutral interface, zero Obsidian imports
+  - `src/host/ObsidianChatHost.ts` — production adapter backed by Obsidian APIs
+  - `src/host/FixtureChatHost.ts` — Storybook/browser preview adapter with stub markdown renderer
+  - 11 clean presentational components moved to `src/components/presentational/`
+  - All imports updated across controllers, tests, settings sections
+  - Build passes (`pnpm run build`), all 206 tests green (`pnpm test`)
+- **T44.2-5 pending:** Layout extraction prerequisite, standalone fixtures, Storybook setup, real-browser checks
+- Task tracking: `memory-bank/tasks/T44.md`
+- Design doc: `memory-bank/implementation-details/standalone-ui-preview.md`
 
 ---
 
@@ -100,7 +103,7 @@
 **T41 Plugin Auto-Updater** — ✅ COMPLETE. Commit-hash comparison fix implemented, built, and released. `latest-dev` release now contains correct hash (ae09179).
 **T43 Multi-User and Agent Chat** — ✅ COMPLETE. Phase 5 UI, the 2026-08-12 mobile scrolling/composer/model-badge follow-up, and the dependency/typecheck cleanup are complete.
 **T22 ChatApp Component Decomposition** — Phase 4 is complete; Phase 5 layout extraction remains pending.
-**T44 Standalone UI Preview and Host Boundary** — Planning complete; implementation remains pending after T22 layout extraction.
+**T44 Standalone UI Preview and Host Boundary** — 🔄 **T44.1 COMPLETE**. Host boundary (`ChatHost` interface + Obsidian/Fixture adapters) implemented and committed. T44.2-5 pending after T22 layout extraction.
 **T40 Multi-User Chat with LaTeX Support** — Phase 2 complete. T43's participant-routing foundation is merged; next: end-to-end cross-device messaging test between two Obsidian instances.
 **T37 Idempotent Bulk Note Creation and Batch Scope Decision** — completed 2026-08-05; `create_notes` skips existing files and reports its created/skipped result, while mutation batching remains deliberately operation-specific.
 **T38 Tool Approval Policies, Batch Plans, and Operation Audit Log** — paused by user request for a later session; the agreed design is a graduated approval policy, previewed batch plans, and a bounded privacy-aware audit log.
@@ -215,7 +218,7 @@ Then reopen chat once. New code prevents recurrence.
 ## Active Tasks
 - **[T11]**: 🔄 **IN PROGRESS** — Log size limit, startup crash fix, CI/CD archive fix.
 - **[T22]**: 🔄 **IN PROGRESS** — Phase 4 complete; Phase 5 layout extraction pending. Current ChatApp.tsx: 1,022 lines.
-- **[T44]**: 🔄 **IN PROGRESS** — Standalone UI preview and neutral Obsidian host boundary planned; implementation pending.
+- **[T44]**: 🔄 **IN PROGRESS — T44.1 COMPLETE** — Host boundary implemented. T44.2-5 pending.
 - **[T16]**: 🔄 **IN PROGRESS** — Phases 1–17 implemented. Debate mode working.
 - **[T14]**: 🔄 **IN PROGRESS** — Phase 3 integration test.
 - **[T15]**: 🔄 **IN PROGRESS** — Past-session search and shared internal tabs complete. Tab-heading polish deferred.
