@@ -200,6 +200,13 @@ When a remote user is typing:
 - `src/components/__tests__/ActionBar.test.tsx` covers 0, 1, and 2 selected models plus separate remote-user counts.
 - Verification: 21 test files and 206 tests passed; changed-files-only Prettier and `git diff --check` passed.
 
+## TypeScript Dependency and Build Verification (2026-08-12)
+
+- Reinstalled dependencies with `CI=true pnpm install --frozen-lockfile`, restoring the versions declared by `pnpm-lock.yaml` (`ai@7.0.56` and `@ai-sdk/provider@4.0.6`).
+- The earlier `src/api.ts` AI SDK diagnostics were caused by stale installed packages and disappeared after reinstalling from the lockfile.
+- Added `skipLibCheck: true` to the base `tsconfig.json`, matching the existing production build and `tsconfig.check.json` policy for third-party declaration files.
+- Verification: `pnpm exec tsc --noEmit`, `pnpm run build`, 21 test files, 206 tests, Prettier, and `git diff --check` all passed.
+
 ## Data Flow Diagram
 
 ```

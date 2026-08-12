@@ -1,7 +1,7 @@
 # Session Cache
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-12 10:35:04 IST*
+*Last Updated: 2026-08-12 10:54:55 IST*
 
 **Started**: 2026-08-12 10:35:04 IST
 **Focus Task**: T43, T15, T8: Mobile chat hardening, model badge fix, and format-gate cleanup
@@ -83,6 +83,7 @@ Promote release from pre-release to proper v1.2.4. GitHub release created with b
 - ✅ Mobile scrolling and composer spacing hardening
 - ✅ Correct model-selection badge counts and regression tests
 - ✅ Changed-files-only format check passes
+- ✅ Dependencies reinstalled from the lockfile; TypeScript check and production build pass
 
 ## Completed Tasks
 

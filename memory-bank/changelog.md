@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - Mobile chat transcript scrolling now has a constrained flex layout and touch-friendly vertical scrolling — T43
 - Mobile composer no longer reserves unnecessary bottom padding below the attachment toolbar — T43
 - Model-selection badge now reports 0, 1, 2, or more selected models correctly while keeping remote-user counts separate — T43
+- TypeScript checks now use the same third-party declaration policy as the production build after dependencies were reinstalled from the lockfile — T43
 
 ### Tests
 - Added ActionBar regression coverage for model and remote-user badge counts — T43
