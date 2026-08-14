@@ -1410,14 +1410,14 @@
 }
 
 .chat-session-export-select {
-	background-color: #2563eb;
-	border-color: #2563eb;
-	color: #fff;
+	background-color: var(--interactive-normal);
+	border-color: var(--background-modifier-border);
+	color: var(--text-normal);
 }
 
 .chat-session-export-select:hover {
-	background-color: #1d4ed8;
-	color: #fff;
+	background-color: var(--interactive-hover);
+	color: var(--text-normal);
 }
 
 .chat-btn-danger {
@@ -3978,6 +3978,21 @@
 .updater-prerelease-warning {
 	color: var(--text-warning);
 	font-weight: 500;
+}
+
+.updater-build-info {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 8px 12px;
+	margin: 8px 0 16px;
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
+}
+
+.updater-build-info a {
+	font-family: var(--font-monospace);
+	font-weight: 600;
 }
 
 /* Participant list bar */

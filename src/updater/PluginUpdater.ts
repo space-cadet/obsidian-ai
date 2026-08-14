@@ -14,6 +14,13 @@ export interface ReleaseInfo {
 	}>;
 }
 
+export interface CommitInfo {
+	sha: string;
+	message: string;
+	authorName: string;
+	committedAt: string;
+}
+
 export interface UpdateCheckResult {
 	hasUpdate: boolean;
 	currentVersion: string;
@@ -21,6 +28,7 @@ export interface UpdateCheckResult {
 	release: ReleaseInfo | null;
 	isPrerelease: boolean;
 	commitMatch?: boolean;
+	latestCommit?: CommitInfo | null;
 }
 
 const GITHUB_REPO = "space-cadet/obsidian-ai";
@@ -51,12 +59,18 @@ function compareVersions(v1: string, v2: string): number {
 }
 
 /** Fetch the latest commit SHA for a branch from GitHub */
-async function fetchLatestCommitSHA(branch: string = "main"): Promise<string | null> {
+async function fetchLatestCommit(branch: string = "main"): Promise<CommitInfo | null> {
 	try {
 		const data = await fetchJson(
 			`https://api.github.com/repos/${GITHUB_REPO}/commits/${branch}`,
 		);
-		return data?.sha ?? null;
+		if (!data?.sha) return null;
+		return {
+			sha: data.sha,
+			message: data.commit?.message?.split("\n")[0] ?? "",
+			authorName: data.commit?.author?.name ?? data.author?.login ?? "",
+			committedAt: data.commit?.author?.date ?? data.commit?.committer?.date ?? "",
+		};
 	} catch {
 		return null;
 	}
@@ -154,24 +168,25 @@ export class PluginUpdater {
 
 			const latestVersion = release.tag_name.replace(/^v/, "");
 
+			const latestCommit = await fetchLatestCommit(
+				includePrerelease ? "main" : release.tag_name,
+			);
 			// For dev channel: compare commit hashes to detect if already on latest
 			let commitMatch = false;
-			if (includePrerelease && currentCommitHash) {
-				const latestCommitSHA = await fetchLatestCommitSHA("main");
-				if (latestCommitSHA) {
-					const shortLocal = currentCommitHash.slice(0, 7);
-					const shortRemote = latestCommitSHA.slice(0, 7);
-					commitMatch = shortLocal === shortRemote;
-					if (commitMatch) {
-						return {
-							hasUpdate: false,
-							currentVersion,
-							latestVersion,
-							release,
-							isPrerelease: true,
-							commitMatch: true,
-						};
-					}
+			if (includePrerelease && currentCommitHash && latestCommit) {
+				const shortLocal = currentCommitHash.slice(0, 7);
+				const shortRemote = latestCommit.sha.slice(0, 7);
+				commitMatch = shortLocal === shortRemote;
+				if (commitMatch) {
+					return {
+						hasUpdate: false,
+						currentVersion,
+						latestVersion,
+						release,
+						isPrerelease: true,
+						commitMatch: true,
+						latestCommit,
+					};
 				}
 			}
 
@@ -184,6 +199,7 @@ export class PluginUpdater {
 				release,
 				isPrerelease: release.prerelease,
 				commitMatch,
+				latestCommit,
 			};
 		} catch (error) {
 			console.error("[PluginUpdater] Check failed:", error);
@@ -281,6 +297,22 @@ export class UpdateAvailableModal extends Modal {
 			info.createEl("p", {
 				text: "⚠️ This is a pre-release (dev build).",
 				cls: "updater-prerelease-warning",
+			});
+		}
+
+		if (this.checkResult.latestCommit) {
+			const commit = this.checkResult.latestCommit;
+			contentEl.createEl("h3", { text: "Build information" });
+			const buildInfo = contentEl.createDiv("updater-build-info");
+			const commitLink = buildInfo.createEl("a", {
+				text: commit.sha.slice(0, 7),
+				href: `https://github.com/${GITHUB_REPO}/commit/${commit.sha}`,
+			});
+			commitLink.setAttr("target", "_blank");
+			buildInfo.createEl("span", { text: ` — ${commit.message || "No commit message"}` });
+			buildInfo.createEl("br");
+			buildInfo.createEl("span", {
+				text: `${commit.authorName ? `${commit.authorName} · ` : ""}${commit.committedAt ? new Date(commit.committedAt).toLocaleString() : "Timestamp unavailable"}`,
 			});
 		}
 
