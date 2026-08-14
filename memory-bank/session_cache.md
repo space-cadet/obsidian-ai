@@ -1,12 +1,12 @@
 # Session Cache
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-14 19:31:00 IST*
+*Last Updated: 2026-08-14 21:28:00 IST*
 
-**Started**: 2026-08-14 16:19:00 IST
-**Ended**: 2026-08-14 16:42 IST
-**Focus Task**: T19a, T20, T41: attachment replay, Chat History UI, updater metadata
-**Session File**: `sessions/2026-08-14-afternoon.md`
+**Started**: 2026-08-14 20:32:00 IST
+**Ended**: 2026-08-14 21:28:00 IST
+**Focus Task**: T8: Open Source Release — README branding, version bump, security audit, submission prep
+**Session File**: `sessions/2026-08-14-evening.md`
 **Status**: ✅ Complete
 
 ## Overview
@@ -214,9 +214,11 @@ Promote release from pre-release to proper v1.2.4. GitHub release created with b
 
 ## Session History (Last 5)
 
-1. `sessions/2026-08-12-morning.md` - Mobile chat hardening, model badge fix, and format-gate cleanup
-2. `sessions/2026-08-10-evening.md` - T43 participant routing merge and Phase 5 scope
-3. `sessions/2026-08-09-morning.md` - T40 relay verification and T41 updater work
+1. `sessions/2026-08-14-evening.md` - T8 open-source release: branding, version bump, security audit, submission prep
+2. `sessions/2026-08-14-afternoon.md` - T19a, T20, T41 completion and documentation
+3. `sessions/2026-08-12-morning.md` - Mobile chat hardening, model badge fix, and format-gate cleanup
+4. `sessions/2026-08-10-evening.md` - T43 participant routing merge and Phase 5 scope
+5. `sessions/2026-08-09-morning.md` - T40 relay verification and T41 updater work
 
 ## System Status
 

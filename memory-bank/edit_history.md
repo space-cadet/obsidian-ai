@@ -2,6 +2,19 @@
 
 *Last Updated: 2026-08-14 16:42:00 IST*
 
+#### 21:28:00 IST - T8: README branding, version bump, security audit, submission prep
+- Modified `README.md` - Renamed "Obsidian AI" to "Chat Lab" (official) / "Chat Lab: Obsidian AI" (display); updated features, commands, settings refs; added Feature Highlights table; moved demo.gif to Inline Editing section; fixed "Sync" → "Chat Relay" wording; removed "Rollback Safety" claim.
+- Modified `manifest.json` - Bumped version to 1.3.0.
+- Modified `package.json` - Bumped version to 1.3.0.
+- Modified `versions.json` - Added 1.3.0 entry.
+- Modified `CONTRIBUTING.md` - Updated branding to "Chat Lab: Obsidian AI".
+- Created `docs/security-audit-2026-08-14.md` - Security audit report: PASS with defense-in-depth notes.
+- Created `.coderabbit.yaml` - CodeRabbit AI config for automated security-focused PR reviews.
+- Modified `memory-bank/tasks/T8.md` - Marked complete with all subtasks and submission details.
+- Modified `memory-bank/tasks.md` - Moved T8 to Completed Tasks; updated counts.
+- Pushed tag `v1.3.0` to origin/main.
+- Forked `obsidianmd/obsidian-releases` and added entry to `community-plugins.json`.
+
 ## 2026-08-14
 
 #### 16:42:00 IST - T19a, T20, T41: Closeout documentation

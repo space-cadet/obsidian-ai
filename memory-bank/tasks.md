@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-14 19:31:00 IST*
+*Last Updated: 2026-08-14 21:28:00 IST*
 
 ## Overview
 
@@ -20,13 +20,13 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T42 | Remote Chat Storage & Sync | 🔄 | HIGH | 2026-08-10 | T40 | [Details](tasks/T42.md) |
 | T22 | ChatApp.tsx Component Decomposition | ✅ | HIGH | 2026-05-28 | T1, T15 | [Details](tasks/T22.md) |
 | T44 | Standalone UI Preview and Obsidian Host Boundary | 🔄 | MEDIUM | 2026-08-12 | T1, T22 | [Details](tasks/T44.md) |
-| T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
 
 ## Completed Tasks
 
 | ID | Title | Status | Priority | Started | Completed | Dependencies | Details |
 |----|-------|--------|----------|---------|-----------|--------------|---------|
 | T1 | Chat Panel — ItemView + React UI | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T4, T9 | [Details](tasks/T1.md) |
+| T8 | Open Source Release with Branding | ✅ | HIGH | 2026-05-02 | 2026-08-14 | T7 | [Details](tasks/T8.md) |
 | T10 | Model Discovery & Picker UX | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T9 | [Details](tasks/T10.md) |
 | T13 | Agentic Tool Calling for Note Editing | ✅ | HIGH | 2026-05-06 | 2026-05-06 | T1, T3, T5, T9 | [Details](tasks/T13.md) |
 | T18 | Web Search Tool for Chat | ✅ | MEDIUM | 2026-05-16 | 2026-05-16 | T13, T9 | [Details](tasks/T18.md) |
@@ -124,7 +124,7 @@ T44: Standalone UI Preview and Obsidian Host Boundary
 
 ## Status Summary
 
-- **Active**: 9
-- **Completed**: 19
+- **Active**: 8
+- **Completed**: 20
 - **Paused**: 0
 - **Total**: 28

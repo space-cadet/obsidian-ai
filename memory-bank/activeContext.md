@@ -2,6 +2,16 @@
 
 *Last Updated: 2026-08-14 19:31:00 IST*
 
+### 2026-08-14 Evening — T8 Complete
+
+- T8 (Open Source Release) is now fully complete and ready for community plugin submission.
+- README branding finalized: "Chat Lab" (official) / "Chat Lab: Obsidian AI" (display).
+- Version bumped to 1.3.0 with tag pushed.
+- Security audit passed — report at `docs/security-audit-2026-08-14.md`.
+- CodeRabbit config created for future automated reviews.
+- Forked `obsidianmd/obsidian-releases`; entry added to `community-plugins.json`.
+- PR link ready: `github.com/obsidianmd/obsidian-releases/compare/master...space-cadet:master?expand=1`
+
 ### 2026-08-14 T44 Complete
 
 - T44 is now fully complete with all acceptance criteria met.
