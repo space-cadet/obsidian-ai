@@ -4,6 +4,7 @@ import type { ChatSession } from "../types";
 import SessionPickerModal from "./presentational/SessionPickerModal";
 import ExportModal from "./presentational/ExportModal";
 import ContextPickerModal from "./ContextPickerModal";
+import type { ExportFormat } from "./presentational/ExportModal";
 
 interface ChatOverlaysProps {
 	plugin: ChatPluginLike;
@@ -19,6 +20,8 @@ interface ChatOverlaysProps {
 	onCloseExportModal: () => void;
 	onCloseContextPicker: () => void;
 	onAddContextItems: (items: import("../types").ContextItem[]) => void;
+	onCopySession: (session: ChatSession, format: ExportFormat) => void;
+	onExportSession: (session: ChatSession, format: ExportFormat) => void;
 }
 
 const ChatOverlays: React.FC<ChatOverlaysProps> = ({
@@ -35,6 +38,8 @@ const ChatOverlays: React.FC<ChatOverlaysProps> = ({
 	onCloseExportModal,
 	onCloseContextPicker,
 	onAddContextItems,
+	onCopySession,
+	onExportSession,
 }) => {
 	return (
 		<>
@@ -46,6 +51,8 @@ const ChatOverlays: React.FC<ChatOverlaysProps> = ({
 					onDelete={onDeleteSession}
 					onRename={onRenameSession}
 					onClose={onCloseSessionPicker}
+					onCopy={onCopySession}
+					onExport={onExportSession}
 				/>
 			)}
 			{showExportModal && (

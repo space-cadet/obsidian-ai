@@ -49,6 +49,10 @@ interface ChatMainAreaProps {
 	draft?: string;
 	onDraftChange?: (text: string) => void;
 	editMessage?: string;
+	selectionMode?: boolean;
+	selectedMessageIds?: Set<string>;
+	onLongPress?: (messageId: string) => void;
+	onToggleSelection?: (messageId: string) => void;
 }
 
 const ChatMainArea: React.FC<ChatMainAreaProps> = ({
@@ -93,6 +97,10 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 	draft,
 	onDraftChange,
 	editMessage,
+	selectionMode,
+	selectedMessageIds,
+	onLongPress,
+	onToggleSelection,
 }) => {
 	return (
 		<>
@@ -119,6 +127,10 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 				onOpenPastSession={onOpenPastSession}
 				scrollToMessageId={scrollToMessageId}
 				typingUsers={typingUsers}
+				selectionMode={selectionMode}
+				selectedMessageIds={selectedMessageIds}
+				onLongPress={onLongPress}
+				onToggleSelection={onToggleSelection}
 			/>
 			{pendingToolCall && (
 				<PendingToolCard

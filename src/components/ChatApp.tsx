@@ -61,6 +61,8 @@ import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
 import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
 import { getActiveProviderProfile, ProviderProfile } from "../settings";
 import { stripThinkingTags } from "./MessageBubble";
+import { serializeMessagesToMarkdown, serializeToJSON, serializeToJSONL, generateFilename } from "../utils/exportChat";
+import type { ExportFormat } from "./presentational/ExportModal";
 import { WebSocketSyncAdapter } from "../sync/WebSocketSyncAdapter";
 import type { SyncAdapter } from "../sync/SyncAdapter";
 
@@ -133,6 +135,9 @@ const ChatApp: React.FC<ChatAppProps> = ({
 
 	const ui = useChatUI();
 	const { connectedUsers, setConnectedUsers } = ui;
+	useEffect(() => {
+		ui.clearMessageSelection();
+	}, [activeSessionId]);
 	const suppressProfilePersistenceRef = useRef(false);
 	const scrollSaveTimersRef = useRef<Map<string, number>>(new Map());
 	const getSelectedProfileIds = useCallback(
@@ -717,6 +722,51 @@ const ChatApp: React.FC<ChatAppProps> = ({
 
 	const hasHistory = savedSessions.length > 0;
 
+	const handleCopySelectedMessages = useCallback(async () => {
+		const selected = messages.filter((message) => ui.selectedMessageIds.has(message.id));
+		if (!selected.length) return;
+		try {
+			await navigator.clipboard.writeText(serializeMessagesToMarkdown(selected));
+			new Notice(`Copied ${selected.length} messages`);
+			ui.clearMessageSelection();
+		} catch (error) {
+			new Notice(`Copy failed: ${(error as Error).message}`);
+		}
+	}, [messages, ui.selectedMessageIds, ui.clearMessageSelection]);
+
+	const handleSessionCopy = useCallback(async (session: ChatSession, format: ExportFormat) => {
+		const content = format === "md"
+			? serializeMessagesToMarkdown(session.messages)
+			: format === "json"
+				? serializeToJSON([session], "single")
+				: serializeToJSONL([session], "single");
+		try {
+			await navigator.clipboard.writeText(content);
+			new Notice(`Copied ${format.toUpperCase()} chat`);
+		} catch (error) {
+			new Notice(`Copy failed: ${(error as Error).message}`);
+		}
+	}, []);
+
+	const handleSessionExport = useCallback(async (session: ChatSession, format: ExportFormat) => {
+		const content = format === "md"
+			? serializeMessagesToMarkdown(session.messages)
+			: format === "json" ? serializeToJSON([session], "single") : serializeToJSONL([session], "single");
+		try {
+			const filename = generateFilename("single", format, session.title);
+			await plugin.app.vault.create(filename, content);
+			new Notice(`Exported ${filename}`);
+		} catch (error: any) {
+			try {
+				const filename = generateFilename("single", format, session.title, true);
+				await plugin.app.vault.create(filename, content);
+				new Notice(`Exported ${filename}`);
+			} catch (retryError: any) {
+				new Notice(`Export failed: ${retryError.message}`);
+			}
+		}
+	}, [plugin.app]);
+
 	const renderMarkdown = useCallback(
 		async (markdown: string, target: HTMLElement, sourcePath?: string) => {
 			const comp = new Component();
@@ -883,7 +933,18 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				draft={undefined}
 				onDraftChange={undefined}
 				editMessage={ui.editMessageText}
+				selectionMode={ui.selectionMode}
+				selectedMessageIds={ui.selectedMessageIds}
+				onLongPress={ui.enterSelectionMode}
+				onToggleSelection={ui.toggleMessageSelection}
 			/>
+			{ui.selectionMode && (
+				<div className="chat-selection-toolbar" role="toolbar">
+					<span>{ui.selectedMessageIds.size} selected</span>
+					<button onClick={handleCopySelectedMessages} disabled={ui.selectedMessageIds.size === 0}>Copy</button>
+					<button onClick={ui.clearMessageSelection}>Cancel</button>
+				</div>
+			)}
 			<ChatOverlays
 				plugin={plugin}
 				savedSessions={savedSessions}
@@ -898,6 +959,8 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				onCloseExportModal={() => ui.setShowExportModal(false)}
 				onCloseContextPicker={() => ui.setShowContextPicker(false)}
 				onAddContextItems={handleAddContextItems}
+				onCopySession={handleSessionCopy}
+				onExportSession={handleSessionExport}
 			/>
 		</div>
 	);

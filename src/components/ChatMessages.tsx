@@ -229,6 +229,10 @@ interface ChatMessagesProps {
 	onOpenPastSession?: (sessionId: string, messageId: string) => void;
 	scrollToMessageId?: string;
 	typingUsers?: string[];
+	selectionMode?: boolean;
+	selectedMessageIds?: Set<string>;
+	onLongPress?: (messageId: string) => void;
+	onToggleSelection?: (messageId: string) => void;
 }
 
 const ChatMessages: React.FC<ChatMessagesProps> = ({
@@ -254,6 +258,10 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	onOpenPastSession,
 	scrollToMessageId,
 	typingUsers,
+	selectionMode,
+	selectedMessageIds,
+	onLongPress,
+	onToggleSelection,
 }) => {
 	const scrollRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
@@ -373,7 +381,11 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 							onEdit={() => onEdit(msg.id)}
 							onApplyToTarget={onApplyToTarget}
 							onCreateNote={onCreateNote}
-							onAppendToTarget={onAppendToTarget}
+							 onAppendToTarget={onAppendToTarget}
+							selectionMode={selectionMode}
+							selected={selectedMessageIds?.has(msg.id)}
+							onLongPress={onLongPress}
+							onToggleSelection={onToggleSelection}
 						/>
 					</div>
 				))}

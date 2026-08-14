@@ -16,7 +16,7 @@ function formatDateForFilename(ts: number): string {
 
 /** --- Markdown export --- */
 
-function messageToMarkdown(msg: ChatMessage, index: number): string {
+export function messageToMarkdown(msg: ChatMessage, index: number): string {
 	const roleLabel = msg.role === "user" ? "👤 User" : "🤖 Assistant";
 	const ts = formatTimestamp(msg.timestamp);
 	const modelTag = msg.modelName ? ` *(model: ${msg.modelName})*` : "";
@@ -59,6 +59,11 @@ function messageToMarkdown(msg: ChatMessage, index: number): string {
 	}
 
 	return `### ${index + 1}. ${roleLabel}${modelTag}${agentTag}${errorTag}\n*${ts}*\n\n${body}\n`;
+}
+
+/** Serialize an ordered subset of messages using the same Markdown format as chat exports. */
+export function serializeMessagesToMarkdown(messages: ChatMessage[]): string {
+	return messages.map((message, index) => messageToMarkdown(message, index)).join("\n---\n\n") + "\n";
 }
 
 function sessionToMarkdown(session: ChatSession): string {

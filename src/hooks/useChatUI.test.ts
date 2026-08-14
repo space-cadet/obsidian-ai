@@ -234,6 +234,27 @@ describe("useChatUI", () => {
 		});
 	});
 
+	describe("message selection", () => {
+		it("enters selection mode and toggles messages", () => {
+			const { result } = renderHook(() => useChatUI());
+			act(() => result.current.enterSelectionMode("m1"));
+			expect(result.current.selectionMode).toBe(true);
+			expect(result.current.selectedMessageIds.has("m1")).toBe(true);
+			act(() => result.current.toggleMessageSelection("m2"));
+			expect(result.current.selectedMessageIds).toEqual(new Set(["m1", "m2"]));
+			act(() => result.current.toggleMessageSelection("m1"));
+			expect(result.current.selectedMessageIds).toEqual(new Set(["m2"]));
+		});
+
+		it("clears selection mode and selected messages", () => {
+			const { result } = renderHook(() => useChatUI());
+			act(() => result.current.enterSelectionMode("m1"));
+			act(() => result.current.clearMessageSelection());
+			expect(result.current.selectionMode).toBe(false);
+			expect(result.current.selectedMessageIds.size).toBe(0);
+		});
+	});
+
 	describe("auto-approve", () => {
 		it("starts false", () => {
 			const { result } = renderHook(() => useChatUI());

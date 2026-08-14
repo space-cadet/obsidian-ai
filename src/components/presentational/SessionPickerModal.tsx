@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ChatSession } from "../../types";
 import { getSessionTotalTokens } from "../../lib/sessionUtils";
+import type { ExportFormat } from "./ExportModal";
 
 
 interface SessionPickerModalProps {
@@ -10,6 +11,8 @@ interface SessionPickerModalProps {
 	onDelete: (sessionId: string) => void;
 	onRename: (sessionId: string, newTitle: string) => void;
 	onClose: () => void;
+	onCopy?: (session: ChatSession, format: ExportFormat) => void;
+	onExport?: (session: ChatSession, format: ExportFormat) => void;
 }
 
 function formatRelativeTime(timestamp: number): string {
@@ -33,6 +36,8 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 	onDelete,
 	onRename,
 	onClose,
+	onCopy,
+	onExport,
 }) => {
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editValue, setEditValue] = useState("");
@@ -70,7 +75,7 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 		<div className="chat-modal-overlay" onClick={onClose}>
 			<div className="chat-modal" onClick={(e) => e.stopPropagation()}>
 				<div className="chat-modal-header">
-					<h3>Load Chat Session</h3>
+					<h3>Chat History</h3>
 					<button
 						className="chat-modal-close"
 						onClick={onClose}
@@ -155,6 +160,10 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 											>
 												{isActive ? "Current" : "Load"}
 											</button>
+											<button className="chat-btn-small" onClick={() => onCopy?.(session, "md")} title="Copy as Markdown">Copy</button>
+											<button className="chat-btn-small" onClick={() => onExport?.(session, "md")} title="Export Markdown">MD</button>
+											<button className="chat-btn-small" onClick={() => onExport?.(session, "json")} title="Export JSON">JSON</button>
+											<button className="chat-btn-small" onClick={() => onExport?.(session, "jsonl")} title="Export JSONL">JSONL</button>
 											<button
 												className="chat-btn-small"
 												onClick={() => startRename(session)}

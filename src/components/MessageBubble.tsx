@@ -143,6 +143,10 @@ interface MessageBubbleProps {
 	onCreateNote: (content: string, target: string) => void;
 	onAppendToTarget: (content: string, target: string) => void;
 	onOpenPastSession?: (sessionId: string, messageId: string) => void;
+	selectionMode?: boolean;
+	selected?: boolean;
+	onLongPress?: (messageId: string) => void;
+	onToggleSelection?: (messageId: string) => void;
 }
 
 function formatContextItems(items: ContextItem[]): string {
@@ -235,11 +239,35 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	onCreateNote,
 	onAppendToTarget,
 	onOpenPastSession,
+	selectionMode,
+	selected,
+	onLongPress,
+	onToggleSelection,
 }) => {
 	const [isActive, setIsActive] = useState(false);
 	const bubbleRef = useRef<HTMLDivElement>(null);
+	const longPressTimer = useRef<number | null>(null);
+	const longPressTriggered = useRef(false);
+
+	const cancelLongPress = () => {
+		if (longPressTimer.current !== null) window.clearTimeout(longPressTimer.current);
+		longPressTimer.current = null;
+	};
+	const handlePointerDown = (e: React.PointerEvent) => {
+		if (e.pointerType === "mouse" && e.button !== 0) return;
+		longPressTriggered.current = false;
+		cancelLongPress();
+		longPressTimer.current = window.setTimeout(() => {
+			longPressTriggered.current = true;
+			onLongPress?.(message.id);
+		}, 600);
+	};
 
 	// Click outside to deactivate
+	useEffect(() => {
+		return cancelLongPress;
+	}, []);
+
 	useEffect(() => {
 		if (!isActive) return;
 		const handleDocClick = (e: MouseEvent) => {
@@ -278,8 +306,21 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	return (
 		<div
 			ref={bubbleRef}
-			className={`chat-bubble chat-bubble-${message.role}${message.isError ? " chat-bubble-error" : ""}${isActive ? " is-active" : ""}${isStreaming ? " chat-bubble-streaming" : ""}`}
+			className={`chat-bubble chat-bubble-${message.role}${message.isError ? " chat-bubble-error" : ""}${isActive ? " is-active" : ""}${selected ? " chat-bubble-selected" : ""}${isStreaming ? " chat-bubble-streaming" : ""}`}
+			onPointerDown={handlePointerDown}
+			onPointerUp={cancelLongPress}
+			onPointerCancel={cancelLongPress}
+			onPointerMove={cancelLongPress}
 			onClick={() => {
+				cancelLongPress();
+				if (longPressTriggered.current) {
+					longPressTriggered.current = false;
+					return;
+				}
+				if (selectionMode) {
+					onToggleSelection?.(message.id);
+					return;
+				}
 				// Don't activate bubble if user is selecting/highlighting text
 				const selection = window.getSelection();
 				if (selection && selection.toString().trim().length > 0) {
@@ -293,6 +334,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 				setIsActive(true);
 			}}
 		>
+			{selectionMode && <span className="chat-message-selection-check" aria-label={selected ? "Selected" : "Not selected"}>{selected ? "✓" : "○"}</span>}
 			<div className="chat-bubble-header">
 				<span className="chat-bubble-role">
 					{message.role === "user"

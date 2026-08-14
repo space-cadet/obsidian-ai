@@ -68,6 +68,13 @@ export interface UseChatUIResult {
 	messageAttachments: Attachment[];
 	setMessageAttachments: React.Dispatch<React.SetStateAction<Attachment[]>>;
 
+	// --- Message selection ---
+	selectionMode: boolean;
+	selectedMessageIds: Set<string>;
+	enterSelectionMode: (messageId?: string) => void;
+	toggleMessageSelection: (messageId: string) => void;
+	clearMessageSelection: () => void;
+
 	// --- Remote users ---
 	connectedUsers: string[];
 	setConnectedUsers: React.Dispatch<React.SetStateAction<string[]>>;
@@ -238,6 +245,26 @@ export function useChatUI(): UseChatUIResult {
 		[],
 	);
 
+	// --- Message selection ---
+	const [selectionMode, setSelectionMode] = useState(false);
+	const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
+	const enterSelectionMode = useCallback((messageId?: string) => {
+		setSelectionMode(true);
+		if (messageId) setSelectedMessageIds((prev) => new Set(prev).add(messageId));
+	}, []);
+	const toggleMessageSelection = useCallback((messageId: string) => {
+		setSelectedMessageIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(messageId)) next.delete(messageId);
+			else next.add(messageId);
+			return next;
+		});
+	}, []);
+	const clearMessageSelection = useCallback(() => {
+		setSelectionMode(false);
+		setSelectedMessageIds(new Set());
+	}, []);
+
 	// --- Reset ---
 	const resetUIState = useCallback(() => {
 		setShowSessionPicker(false);
@@ -257,6 +284,8 @@ export function useChatUI(): UseChatUIResult {
 		setOriginalMessages([]);
 		setEditMessageText("");
 		setMessageAttachments([]);
+		setSelectionMode(false);
+		setSelectedMessageIds(new Set());
 	}, []);
 
 	return {
@@ -323,6 +352,11 @@ export function useChatUI(): UseChatUIResult {
 		// Attachments
 		messageAttachments,
 		setMessageAttachments,
+		selectionMode,
+		selectedMessageIds,
+		enterSelectionMode,
+		toggleMessageSelection,
+		clearMessageSelection,
 		// Reset
 		resetUIState,
 	};
