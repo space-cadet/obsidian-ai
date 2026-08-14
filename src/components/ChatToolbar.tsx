@@ -91,7 +91,7 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 
 	return (
 		<>
-			<div className="chat-action-bar-wrapper">
+			<div className="chat-action-bar-wrapper" data-testid="chat-toolbar">
 				<ActionBar
 					onNewChat={onNewChat}
 					onLoadChat={onLoadChat}

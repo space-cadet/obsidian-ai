@@ -72,7 +72,7 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 	};
 
 	return (
-		<div className="chat-modal-overlay" onClick={onClose}>
+		<div className="chat-modal-overlay" data-testid="session-picker-modal" onClick={onClose}>
 			<div className="chat-modal" onClick={(e) => e.stopPropagation()}>
 				<div className="chat-modal-header">
 					<h3>Chat History</h3>

@@ -591,6 +591,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	return (
 		<div
 			style={{ position: "relative" }}
+			data-testid="chat-composer"
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}

@@ -359,7 +359,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	}, []);
 
 	return (
-		<div className="chat-messages-scroll-wrapper">
+		<div className="chat-messages-scroll-wrapper" data-testid="chat-transcript">
 			<div className="chat-messages" ref={scrollRef}>
 				{messages.length === 0 && (
 					<div className="chat-empty-state">

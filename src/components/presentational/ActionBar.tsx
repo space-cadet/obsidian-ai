@@ -71,6 +71,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
 					<ObsidianIcon icon="plus" size={15} />
 				</button>
 				<button
+					data-testid="history-button"
 					className="chat-btn chat-icon-btn"
 					onClick={onLoadChat}
 					disabled={!canLoad}

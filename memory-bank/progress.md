@@ -53,15 +53,15 @@
   `useMessageActions.ts` 1,309 lines.
 - **Task:** `memory-bank/tasks/T22.md`
 
-### T44: Standalone UI Preview and Obsidian Host Boundary (2026-08-12)
-**Status:** 🔄 Planning complete; implementation pending
+### T44: Standalone UI Preview and Obsidian Host Boundary (2026-08-12 → 2026-08-14)
+**Status:** ✅ COMPLETE
 
-- No existing standalone visual preview or neutral host-boundary task was
-  found.
-- Storybook is the planned persistent browser workshop; Vitest/jsdom remains
-  the fast behavior layer, with one real-browser layer added only where needed.
-- The preview target is extracted layout/presentational UI, not a recreated
-  Obsidian runtime.
+- T44.1: Host boundary implemented (`ChatHost.ts`, `ObsidianChatHost.ts`, `FixtureChatHost.ts`)
+- T22 Phase 5: Layout extraction (`ChatToolbar`, `ChatMainArea`, `ChatOverlays`)
+- T44.2b: Production-component preview with 8 fixture states
+- T44.3: Playwright e2e tests verify mobile/desktop viewports, scrolling, modals
+- All gates pass: `pnpm test` (22 files, 213 tests), `pnpm exec tsc --noEmit`, `pnpm run build`
+- Boundary documentation: standalone preview ≠ Obsidian host acceptance
 - **Task:** `memory-bank/tasks/T44.md`
 - **Design:** `memory-bank/implementation-details/standalone-ui-preview.md`
 
