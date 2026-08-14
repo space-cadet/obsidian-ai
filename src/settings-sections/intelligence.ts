@@ -334,6 +334,56 @@ export function renderIntelligenceSection(
 		}
 	});
 
+	const aiPruneDesc = optimizeRow.createEl("div", {
+		text: "AI-powered: uses your configured LLM to judge semantic similarity. Slower but catches paraphrased duplicates (e.g., 'User is studying Chinese' vs 'User is learning Mandarin'). Costs a few API calls.",
+	});
+	aiPruneDesc.style.fontSize = "0.85em";
+	aiPruneDesc.style.color = "var(--text-muted)";
+	aiPruneDesc.style.marginBottom = "8px";
+
+	const aiOptimizeResult = optimizeRow.createEl("div");
+	aiOptimizeResult.style.fontSize = "0.9em";
+	aiOptimizeResult.style.minHeight = "1.5em";
+
+	const aiOptimizeBtn = optimizeRow.createEl("button", { text: "🤖 AI-Powered Prune" });
+	aiOptimizeBtn.addClass("mod-cta");
+	aiOptimizeBtn.style.marginLeft = "8px";
+	aiOptimizeBtn.addEventListener("click", async () => {
+		if (!plugin.personaLoader || !plugin.chatapi) {
+			new Notice("Intelligence layer or API not initialized.");
+			return;
+		}
+		aiOptimizeBtn.disabled = true;
+		aiOptimizeBtn.textContent = "Analyzing with AI...";
+		const { MemoryOptimizer } = await import("../intelligence/MemoryOptimizer");
+		const optimizer = new MemoryOptimizer({
+			memoryStore: plugin.personaLoader.memoryStore,
+			chatApi: plugin.chatapi,
+			logger: plugin.logger,
+		});
+		try {
+			const result = await optimizer.aiPrune();
+			const savedKb = ((result.bytesBefore - result.bytesAfter) / 1024).toFixed(1);
+			aiOptimizeResult.empty();
+			aiOptimizeResult.createEl("span", {
+				text: `✅ AI removed ${result.removed} duplicates (${result.groups} groups). Kept ${result.kept} unique entries. Saved ~${savedKb} KB.`,
+				attr: { style: "color: var(--text-success);" },
+			});
+			new Notice(`AI memory prune: ${result.removed} duplicates removed, ~${savedKb} KB saved.`);
+			void refreshStats();
+		} catch (e: any) {
+			aiOptimizeResult.empty();
+			aiOptimizeResult.createEl("span", {
+				text: `❌ AI prune failed: ${e.message}`,
+				attr: { style: "color: var(--text-error);" },
+			});
+			new Notice(`AI prune failed: ${e.message}`);
+		} finally {
+			aiOptimizeBtn.disabled = false;
+			aiOptimizeBtn.textContent = "🤖 AI-Powered Prune";
+		}
+	});
+
 	// ── Audit Log ──
 	const auditEl = sectionEl.createEl("details", { cls: "obsidian-ai-settings-details" });
 

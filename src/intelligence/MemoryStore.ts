@@ -85,6 +85,11 @@ export class MemoryStore {
 	}
 
 	/** Overwrite JSON and regenerate markdown. */
+	async saveEntries(entries: MemoryEntry[]): Promise<void> {
+		await this._save(entries);
+	}
+
+	/** Overwrite JSON and regenerate markdown. */
 	private async _save(entries: MemoryEntry[]): Promise<void> {
 		const adapter = this.deps.app.vault.adapter;
 		await adapter.write(this.jsonPath, JSON.stringify(entries, null, 2));
