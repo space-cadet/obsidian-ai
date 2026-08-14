@@ -1,9 +1,9 @@
 {
 	"id": "obsidian-ai",
 	"name": "Chat Lab",
-	"version": "1.2.5",
+	"version": "1.3.0",
 	"minAppVersion": "0.15.0",
-	"description": "AI-powered chat with multi-device sync, agentic tools, and collaborative conversation.",
+	"description": "AI-powered chat with multi-device relay, agentic tools, and collaborative conversation.",
 	"author": "space-cadet",
 	"authorUrl": "https://github.com/space-cadet/",
 	"isDesktopOnly": false
