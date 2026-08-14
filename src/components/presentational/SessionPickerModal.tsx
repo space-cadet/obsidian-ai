@@ -152,28 +152,28 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 												{preview}
 											</div>
 										</div>
-										<div className="chat-session-actions">
+										<div className="chat-session-actions" aria-label={`Actions for ${displayTitle}`}>
 											<button
-												className="chat-btn-small"
+												className="chat-btn-small chat-session-load"
 												onClick={() => onLoad(session.id)}
 												disabled={isActive}
 											>
 												{isActive ? "Current" : "Load"}
 											</button>
-											<button className="chat-btn-small" onClick={() => onCopy?.(session, "md")} title="Copy as Markdown">Copy</button>
-											<button className="chat-btn-small" onClick={() => onExport?.(session, "md")} title="Export Markdown">MD</button>
-											<button className="chat-btn-small" onClick={() => onExport?.(session, "json")} title="Export JSON">JSON</button>
-											<button className="chat-btn-small" onClick={() => onExport?.(session, "jsonl")} title="Export JSONL">JSONL</button>
+											<button className="chat-btn-small" onClick={(e) => { e.stopPropagation(); onCopy?.(session, "md"); }} title="Copy as Markdown">Copy</button>
+											<button className="chat-btn-small" onClick={(e) => { e.stopPropagation(); onExport?.(session, "md"); }} title="Export Markdown">Markdown</button>
+											<button className="chat-btn-small" onClick={(e) => { e.stopPropagation(); onExport?.(session, "json"); }} title="Export JSON">JSON</button>
+											<button className="chat-btn-small" onClick={(e) => { e.stopPropagation(); onExport?.(session, "jsonl"); }} title="Export JSONL">JSONL</button>
 											<button
 												className="chat-btn-small"
-												onClick={() => startRename(session)}
+												onClick={(e) => { e.stopPropagation(); startRename(session); }}
 												title="Rename session"
 											>
 												✎
 											</button>
 											<button
 												className="chat-btn-small chat-btn-danger"
-							onClick={() => setDeleteCandidate(session)}
+												onClick={(e) => { e.stopPropagation(); setDeleteCandidate(session); }}
 												title="Delete session"
 											>
 												×

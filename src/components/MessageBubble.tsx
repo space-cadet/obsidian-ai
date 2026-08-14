@@ -427,7 +427,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 					<MessageActions
 						onCopy={handleCopy}
 						onRetry={onRetry}
-						onApply={!message.command ? () => onApply(message.content) : undefined}
+						// Applying is only meaningful for explicit edit/create/append
+						// commands. Ordinary assistant replies should retain the
+						// standard Copy/Retry actions only.
+						onApply={undefined}
 						onInsertAtCursor={() => onInsertAtCursor(message.content)}
 						onAppend={!message.command ? () => onAppend(message.content) : undefined}
 						onApplyToTarget={message.command?.type === "edit" ? () => onApplyToTarget(message.content, message.command!.target) : undefined}
