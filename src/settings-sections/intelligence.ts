@@ -1,6 +1,9 @@
 import { Setting, Notice } from "obsidian";
+import { createRoot } from "react-dom/client";
 import ObsidianAIPlugin from "../main";
 import { createSection } from "./helpers";
+import AIPruneModal from "../components/presentational/AIPruneModal";
+import { MemoryOptimizer } from "../intelligence/MemoryOptimizer";
 
 export function renderIntelligenceSection(
 	containerEl: HTMLElement,
@@ -341,47 +344,36 @@ export function renderIntelligenceSection(
 	aiPruneDesc.style.color = "var(--text-muted)";
 	aiPruneDesc.style.marginBottom = "8px";
 
-	const aiOptimizeResult = optimizeRow.createEl("div");
-	aiOptimizeResult.style.fontSize = "0.9em";
-	aiOptimizeResult.style.minHeight = "1.5em";
-
 	const aiOptimizeBtn = optimizeRow.createEl("button", { text: "🤖 AI-Powered Prune" });
 	aiOptimizeBtn.addClass("mod-cta");
-	aiOptimizeBtn.style.marginLeft = "8px";
-	aiOptimizeBtn.addEventListener("click", async () => {
+	aiOptimizeBtn.addEventListener("click", () => {
 		if (!plugin.personaLoader || !plugin.chatapi) {
 			new Notice("Intelligence layer or API not initialized.");
 			return;
 		}
-		aiOptimizeBtn.disabled = true;
-		aiOptimizeBtn.textContent = "Analyzing with AI...";
-		const { MemoryOptimizer } = await import("../intelligence/MemoryOptimizer");
-		const optimizer = new MemoryOptimizer({
-			memoryStore: plugin.personaLoader.memoryStore,
-			chatApi: plugin.chatapi,
-			logger: plugin.logger,
-		});
-		try {
-			const result = await optimizer.aiPrune();
-			const savedKb = ((result.bytesBefore - result.bytesAfter) / 1024).toFixed(1);
-			aiOptimizeResult.empty();
-			aiOptimizeResult.createEl("span", {
-				text: `✅ AI removed ${result.removed} duplicates (${result.groups} groups). Kept ${result.kept} unique entries. Saved ~${savedKb} KB.`,
-				attr: { style: "color: var(--text-success);" },
-			});
-			new Notice(`AI memory prune: ${result.removed} duplicates removed, ~${savedKb} KB saved.`);
-			void refreshStats();
-		} catch (e: any) {
-			aiOptimizeResult.empty();
-			aiOptimizeResult.createEl("span", {
-				text: `❌ AI prune failed: ${e.message}`,
-				attr: { style: "color: var(--text-error);" },
-			});
-			new Notice(`AI prune failed: ${e.message}`);
-		} finally {
-			aiOptimizeBtn.disabled = false;
-			aiOptimizeBtn.textContent = "🤖 AI-Powered Prune";
-		}
+
+		// Create modal container
+		const modalContainer = document.createElement("div");
+		modalContainer.className = "obsidian-ai-modal-container";
+		document.body.appendChild(modalContainer);
+
+		const root = createRoot(modalContainer);
+		root.render(
+			<AIPruneModal
+				onClose={() => {
+					root.unmount();
+					modalContainer.remove();
+					void refreshStats();
+				}}
+				createOptimizer={() =>
+					new MemoryOptimizer({
+						memoryStore: plugin.personaLoader!.memoryStore,
+						chatApi: plugin.chatapi,
+						logger: plugin.logger,
+					})
+				}
+			/>,
+		);
 	});
 
 	// ── Audit Log ──

@@ -8,6 +8,14 @@ export interface MemoryOptimizerDeps {
 	logger?: FileLogger;
 }
 
+export interface ProgressUpdate {
+	stage: "loading" | "clustering" | "pruning" | "done" | "error";
+	message: string;
+	current: number;
+	total: number;
+	etaSeconds?: number;
+}
+
 const SYSTEM_PROMPT = `You are a memory deduplication assistant. Your job is to group memory entries that represent the SAME underlying fact, even if worded differently.
 
 Rules:
@@ -26,18 +34,41 @@ Where each inner array is a cluster of entry indices (0-based) that represent th
  */
 export class MemoryOptimizer {
 	private deps: MemoryOptimizerDeps;
+	private abortSignal: AbortSignal | null = null;
+	private abortController: AbortController | null = null;
 
 	constructor(deps: MemoryOptimizerDeps) {
 		this.deps = deps;
+	}
+
+	cancel(): void {
+		this.abortController?.abort();
 	}
 
 	/**
 	 * AI-powered prune: uses an LLM to judge semantic similarity.
 	 * Groups entries by category, then asks the LLM to cluster duplicates.
 	 */
-	async aiPrune(): Promise<PruneResult> {
+	async aiPrune(
+		onProgress?: (update: ProgressUpdate) => void,
+	): Promise<PruneResult> {
+		this.abortController = new AbortController();
+		this.abortSignal = this.abortController.signal;
+
+		const startTime = Date.now();
 		const entries = await this.deps.memoryStore.loadEntries();
 		const beforeSize = JSON.stringify(entries).length;
+
+		onProgress?.({
+			stage: "loading",
+			message: `Loaded ${entries.length} entries`,
+			current: 0,
+			total: 0,
+		});
+
+		if (this.abortSignal.aborted) {
+			throw new Error("Cancelled by user");
+		}
 
 		const kept: MemoryEntry[] = [];
 		let removed = 0;
@@ -51,20 +82,47 @@ export class MemoryOptimizer {
 			byCategory.set(e.category, list);
 		}
 
-		for (const [category, catEntries] of byCategory) {
+		const categories = Array.from(byCategory.entries());
+		const totalCategories = categories.length;
+
+		for (let catIdx = 0; catIdx < categories.length; catIdx++) {
+			if (this.abortSignal.aborted) {
+				throw new Error("Cancelled by user");
+			}
+
+			const [category, catEntries] = categories[catIdx];
+
 			if (catEntries.length < 2) {
 				kept.push(...catEntries);
+				onProgress?.({
+					stage: "clustering",
+					message: `${category}: ${catEntries.length} entries — too few to cluster`,
+					current: catIdx + 1,
+					total: totalCategories,
+					etaSeconds: this._estimateEta(startTime, catIdx, totalCategories),
+				});
 				continue;
 			}
 
+			onProgress?.({
+				stage: "clustering",
+				message: `${category}: clustering ${catEntries.length} entries...`,
+				current: catIdx + 1,
+				total: totalCategories,
+				etaSeconds: this._estimateEta(startTime, catIdx, totalCategories),
+			});
+
 			const clusters = await this._clusterWithAI(category, catEntries);
+
+			if (this.abortSignal.aborted) {
+				throw new Error("Cancelled by user");
+			}
 
 			for (const cluster of clusters) {
 				if (cluster.length === 1) {
 					kept.push(catEntries[cluster[0]]);
 				} else {
 					groups++;
-					// Keep the entry with the longest content (most detail)
 					const groupEntries = cluster.map((idx) => catEntries[idx]);
 					groupEntries.sort((a, b) => {
 						const lenDiff = b.content.length - a.content.length;
@@ -75,7 +133,26 @@ export class MemoryOptimizer {
 					removed += cluster.length - 1;
 				}
 			}
+
+			onProgress?.({
+				stage: "clustering",
+				message: `${category}: done — found ${clusters.filter(c => c.length > 1).length} duplicate groups`,
+				current: catIdx + 1,
+				total: totalCategories,
+				etaSeconds: this._estimateEta(startTime, catIdx + 1, totalCategories),
+			});
 		}
+
+		if (this.abortSignal.aborted) {
+			throw new Error("Cancelled by user");
+		}
+
+		onProgress?.({
+			stage: "pruning",
+			message: `Saving ${kept.length} entries (removed ${removed} duplicates)...`,
+			current: totalCategories,
+			total: totalCategories,
+		});
 
 		// Preserve original order
 		const idSet = new Set(kept.map((e) => e.id));
@@ -89,6 +166,13 @@ export class MemoryOptimizer {
 			`AI prune complete: removed ${removed}, kept ${kept.length}, saved ${beforeSize - afterSize} bytes`,
 		);
 
+		onProgress?.({
+			stage: "done",
+			message: `Done! Removed ${removed} duplicates (${groups} groups). Kept ${kept.length} entries.`,
+			current: totalCategories,
+			total: totalCategories,
+		});
+
 		return {
 			removed,
 			kept: kept.length,
@@ -98,11 +182,22 @@ export class MemoryOptimizer {
 		};
 	}
 
+	private _estimateEta(startTime: number, current: number, total: number): number | undefined {
+		if (current <= 0 || current >= total) return undefined;
+		const elapsed = Date.now() - startTime;
+		const avgPerItem = elapsed / current;
+		const remaining = (total - current) * avgPerItem;
+		return Math.ceil(remaining / 1000);
+	}
+
 	private async _clusterWithAI(
 		category: MemoryCategory,
 		entries: MemoryEntry[],
 	): Promise<number[][]> {
-		// Build the prompt
+		if (this.abortSignal?.aborted) {
+			throw new Error("Cancelled by user");
+		}
+
 		const lines = entries.map((e, i) => `${i}. [${e.timestamp}] ${e.content}`);
 		const prompt = `Category: ${category}\n\nEntries:\n${lines.join("\n")}\n\nGroup these entries into clusters of duplicates. Return ONLY JSON: {"clusters":[[...]]}`;
 
@@ -112,11 +207,16 @@ export class MemoryOptimizer {
 				prompt,
 			);
 
+			if (this.abortSignal?.aborted) {
+				throw new Error("Cancelled by user");
+			}
+
 			const clusters = this._parseClusters(response, entries.length);
 			if (clusters) {
 				return clusters;
 			}
 		} catch (e) {
+			if (e instanceof Error && e.message === "Cancelled by user") throw e;
 			this.deps.logger?.log("warn", `AI clustering failed for ${category}: ${e}`);
 		}
 
@@ -125,7 +225,6 @@ export class MemoryOptimizer {
 	}
 
 	private _parseClusters(response: string, entryCount: number): number[][] | null {
-		// Try to extract JSON from the response
 		const jsonMatch = response.match(/\{[\s\S]*"clusters"[\s\S]*\}/);
 		if (!jsonMatch) return null;
 
@@ -146,7 +245,6 @@ export class MemoryOptimizer {
 				clusters.push(validIndices);
 			}
 
-			// Add any missing entries as singleton clusters
 			for (let i = 0; i < entryCount; i++) {
 				if (!seen.has(i)) clusters.push([i]);
 			}
