@@ -1,4 +1,4 @@
-<h1 align="center">Obsidian AI</h1>
+<h1 align="center">Chat Lab</h1>
 
 <p align="center">
   <a href="https://github.com/space-cadet/obsidian-ai">GitHub</a>
@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/demo.gif" alt="Obsidian AI Demo" width="600">
+  <img src="docs/demo.gif" alt="Chat Lab Demo" width="600">
 </p>
 
 ---
@@ -22,7 +22,7 @@
 
 ## ✨ What It Does
 
-Obsidian AI adds a **persistent chat panel** to your Obsidian sidebar. Unlike typical chat plugins, it treats **AI agents and remote humans as equal participants** in the same conversation. Everyone broadcasts to everyone. Each participant decides whether and how to respond.
+Chat Lab adds a **persistent chat panel** to your Obsidian sidebar. Unlike typical chat plugins, it treats **AI agents and remote humans as equal participants** in the same conversation. Everyone broadcasts to everyone. Each participant decides whether and how to respond.
 
 **Key idea:** You can have a chat tab with:
 - Just you and an AI agent
@@ -40,7 +40,7 @@ The AI can also **directly manipulate your vault** through structured tool calls
 
 ### Collaborative Chat (AI + Human Peers)
 
-The core of Obsidian AI is a **multi-participant chat** where everyone is a first-class citizen:
+The core of Chat Lab is a **multi-participant chat** where everyone is a first-class citizen:
 
 - **Equal-Footing Participant Model** — AI agents, remote humans, and the local user all broadcast messages to each other. No special orchestrator hierarchy.
 - **Message Attribution** — Every message shows who sent it: local user ("You"), an AI agent (with colored dot), or a remote human (with their device/user ID).
@@ -138,6 +138,15 @@ Bring your own keys. No data leaves your machine unless you choose it to.
 - **Abort** — Cancel streaming mid-generation.
 - **Retry** — Regenerate a response with one click.
 
+### Auto-Updater (v1.2.5+)
+
+Stay current without manual downloads:
+- **Automatic Update Checks** — Plugin checks for new releases on startup (configurable interval)
+- **One-Click Update** — Notification shows latest version, commit message, and author; click to update
+- **Stable / Dev Channels** — Switch between release builds and latest `main` branch
+- **Manual Check** — Button in Settings to check immediately
+- **Rollback Safety** — Update preserves previous version for recovery
+
 ### Debug & Diagnostics
 
 - **Diagnostics Panel** — Memory usage, DOM nodes, chat sessions, total messages.
@@ -171,11 +180,11 @@ The fastest way to install and get automatic updates:
 
 ### 1. Open the Chat Panel
 
-Click the **💬** icon in the left ribbon (or run **"Open Obsidian AI Chat"** from the Command Palette).
+Click the **💬** icon in the left ribbon (or run **"Open Chat Lab"** from the Command Palette).
 
 ### 2. Configure Your Provider
 
-Open **Settings** → **Obsidian AI** → **Provider Profiles**.
+Open **Settings** → **Chat Lab** → **Provider Profiles**.
 
 Click **Add Profile**, choose your provider, and enter:
 - **API Key** (if required)
@@ -245,7 +254,7 @@ Open **Settings** → **Web Search**. Choose a provider (DuckDuckGo works withou
 
 ## 📱 Mobile Notes
 
-Obsidian AI works on mobile (iOS/Android), but there are platform-specific behaviors to be aware of:
+Chat Lab works on mobile (iOS/Android), but there are platform-specific behaviors to be aware of:
 
 ### Background Execution
 
