@@ -135,13 +135,13 @@ export default class ObsidianAIPlugin extends Plugin {
 			this.removeDuplicateChatLeaves();
 		});
 
-		this.addRibbonIcon("message-square", "Open Obsidian AI Chat", () => {
+		this.addRibbonIcon("message-square", "Open Chat Lab", () => {
 			this.activateChatView();
 		});
 
 		this.addCommand({
 			id: "open-obsidian-ai-chat",
-			name: "Open Obsidian AI Chat",
+			name: "Open Chat Lab",
 			callback: () => this.activateChatView(),
 		});
 
@@ -388,7 +388,7 @@ export default class ObsidianAIPlugin extends Plugin {
 
 			if (!result.hasUpdate) {
 				if (manual) {
-					new Notice(`✅ Obsidian AI is up to date (${result.currentVersion})`);
+					new Notice(`✅ Chat Lab is up to date (${result.currentVersion})`);
 				}
 				return;
 			}

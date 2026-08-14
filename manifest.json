@@ -1,9 +1,9 @@
 {
 	"id": "obsidian-ai",
-	"name": "Obsidian AI",
+	"name": "Chat Lab",
 	"version": "1.2.5",
 	"minAppVersion": "0.15.0",
-	"description": "AI-powered suggestions, contextual edits, and advanced text transformations directly into your editor.",
+	"description": "AI-powered chat with multi-device sync, agentic tools, and collaborative conversation.",
 	"author": "space-cadet",
 	"authorUrl": "https://github.com/space-cadet/",
 	"isDesktopOnly": false

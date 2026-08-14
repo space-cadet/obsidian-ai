@@ -16,6 +16,8 @@ package-lock.json
 main.js
 dist/
 preview-dist/
+preview-*.png
+test-results/
 
 # Exclude sourcemaps
 *.map
