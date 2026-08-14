@@ -1,6 +1,18 @@
 # Edit History
 
-*Last Updated: 2026-08-12 16:10 IST*
+*Last Updated: 2026-08-14 16:42:00 IST*
+
+## 2026-08-14
+
+#### 16:42:00 IST - T19a, T20, T41: Closeout documentation
+- Modified `memory-bank/tasks/T19a.md` - Marked group-chat attachment replay complete and recorded validation and commit.
+- Created `memory-bank/tasks/T20.md` - Recorded message selection and Chat History copy/export feature completion.
+- Created `memory-bank/implementation-details/message-selection-chat-history.md` - Documented selection behavior, serializers, dropdown actions, and verification.
+- Modified `memory-bank/tasks/T41.md` - Added update-modal commit metadata to implementation details and progress.
+- Modified `memory-bank/tasks.md` - Closed T19a and registered completed T20.
+- Modified `memory-bank/activeContext.md` - Recorded session closeout and remaining work boundary.
+- Modified `memory-bank/progress.md` - Recorded T19a, T20, and T41 milestones.
+- Modified `memory-bank/changelog.md` - Added unreleased 2026-08-14 feature and updater entries.
 
 ## 2026-08-12
 

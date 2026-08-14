@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased - 2026-08-14
+
+### Added
+- Long-press multi-message selection with Markdown copy — T20
+- Per-session Copy and Export dropdowns in Chat History for Markdown, JSON, and JSONL — T20
+- Group-chat attachment full replay across local and relay message paths — T19a
+
+### Changed
+- Chat History action cards now use compact icon actions and responsive layout — T20
+- Update modal now displays commit hash, message, author, and timestamp — T41
+
 ## Unreleased - 2026-08-12
 
 ### Fixed

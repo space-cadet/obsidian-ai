@@ -1,5 +1,11 @@
 # Implementation Progress
-*Last Updated: 2026-08-12 11:11:56 IST*
+*Last Updated: 2026-08-14 16:42:00 IST*
+
+### 2026-08-14 Session Closeout
+
+- T19a completed: group-chat attachments are persisted, replayed, and propagated through relay messages (`f694685`).
+- T20 completed: long-press message selection, multi-message Markdown copy, Chat History rename, and Copy/Export dropdowns (`b980d7a` through `a9cad79`).
+- T41 completed follow-up: updater modal exposes commit hash, message, author, and timestamp (`7a770f3`).
 
 ### T43: Multi-User and Agent Chat with LaTeX Support (2026-08-10 → 2026-08-11)
 **Status:** ✅ COMPLETE — All 5 Phases Delivered and Merged

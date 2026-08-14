@@ -1,6 +1,13 @@
 # Active Context
 
-*Last Updated: 2026-08-12 11:11:56 IST*
+*Last Updated: 2026-08-14 16:42:00 IST*
+
+### 2026-08-14 Session Closeout
+
+- T19a group-chat attachment full replay completed and pushed as `f694685`; local group and relay paths preserve `attachments` and `resolvedParts`.
+- T20 message selection and Chat History copy/export workflows completed and pushed through `a9cad79`; implementation details are in `implementation-details/message-selection-chat-history.md`.
+- T41 update modal metadata completed and pushed as `7a770f3`.
+- No engineering tasks remain from this session; T22/T44, T42, and older backlog items remain unchanged.
 
 ### T41: Plugin Auto-Updater with Stable/Dev Channels (2026-08-09)
 **Status:** ✅ COMPLETE — Commit-hash fix applied, built, and released

@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-14 14:03:28 IST*
+*Last Updated: 2026-08-14 16:42:00 IST*
 
 ## Overview
 
@@ -20,7 +20,6 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T42 | Remote Chat Storage & Sync | 🔄 | HIGH | 2026-08-10 | T40 | [Details](tasks/T42.md) |
 | T22 | ChatApp.tsx Component Decomposition | 🔄 | HIGH | 2026-05-28 | T1, T15 | [Details](tasks/T22.md) |
 | T44 | Standalone UI Preview and Obsidian Host Boundary | 🔄 | MEDIUM | 2026-08-12 | T1, T22 | [Details](tasks/T44.md) |
-| T19a | Group-Chat Attachment Full Replay | 🔄 | HIGH | 2026-08-14 | T19, T16, T43 | [Details](tasks/T19a.md) |
 | T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
 
 ## Completed Tasks
@@ -44,6 +43,8 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T9 | Settings & Provider Profiles | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T1 | [Details](tasks/T9.md) |
 | T41 | Plugin Auto-Updater with Stable/Dev Channels | ✅ | HIGH | 2026-08-09 | 2026-08-12 | T7 | [Details](tasks/T41.md) |
 | T43 | Multi-User and Agent Chat with LaTeX Support | ✅ | HIGH | 2026-08-10 | 2026-08-12 | T40 | [Details](tasks/T43.md) |
+| T19a | Group-Chat Attachment Full Replay | ✅ | HIGH | 2026-08-14 | 2026-08-14 | T19, T16, T43 | [Details](tasks/T19a.md) |
+| T20 | Message Selection and Chat History Exports | ✅ | HIGH | 2026-08-14 | 2026-08-14 | T2, T5, T19 | [Details](tasks/T20.md) |
 
 ## Task Relationships
 
@@ -80,8 +81,17 @@ T19: File Attachments for Chat Messages
   └── T13
   └── T4
   └── T9
+  └── T19a
+T19a: Group-Chat Attachment Full Replay
+  └── T19
+  └── T16
+  └── T43
 T2: Conversation Chain & Memory
   └── T1
+T20: Message Selection and Chat History Exports
+  └── T2
+  └── T5
+  └── T19
 T21: CLI Test Harness for AI Features
   └── T13
   └── T19
@@ -114,7 +124,7 @@ T44: Standalone UI Preview and Obsidian Host Boundary
 
 ## Status Summary
 
-- **Active**: 10
-- **Completed**: 17
+- **Active**: 9
+- **Completed**: 19
 - **Paused**: 0
-- **Total**: 27
+- **Total**: 28
