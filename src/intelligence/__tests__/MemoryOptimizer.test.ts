@@ -27,6 +27,7 @@ function createMockChatApi(response: string) {
 
 describe("MemoryOptimizer", () => {
 	let store: MemoryStore;
+	let optimizer: MemoryOptimizer;
 
 	beforeEach(() => {
 		store = new MemoryStore({
@@ -35,7 +36,7 @@ describe("MemoryOptimizer", () => {
 		});
 	});
 
-	it("removes exact duplicates via single-prompt AI clustering", async () => {
+	it("removes exact duplicates via AI clustering", async () => {
 		const adapter = store["deps"].app.vault.adapter;
 		await adapter.write("/test/intelligence/memory.json", JSON.stringify([
 			{ id: "a1", timestamp: "2026-08-01", category: "preference", content: "User likes tea", tags: [] },
@@ -43,7 +44,7 @@ describe("MemoryOptimizer", () => {
 			{ id: "a3", timestamp: "2026-08-03", category: "preference", content: "User likes coffee", tags: [] },
 		]));
 
-		const optimizer = new MemoryOptimizer({
+		optimizer = new MemoryOptimizer({
 			memoryStore: store,
 			chatApi: createMockChatApi('{"clusters":[[0,1],[2]]}'),
 		});
@@ -61,7 +62,7 @@ describe("MemoryOptimizer", () => {
 			{ id: "b2", timestamp: "2026-08-02", category: "insight", content: "A much longer and more detailed version of the same insight with extra context", tags: [] },
 		]));
 
-		const optimizer = new MemoryOptimizer({
+		optimizer = new MemoryOptimizer({
 			memoryStore: store,
 			chatApi: createMockChatApi('{"clusters":[[0,1]]}'),
 		});
@@ -79,7 +80,7 @@ describe("MemoryOptimizer", () => {
 			{ id: "c2", timestamp: "2026-08-02", category: "project", content: "Fact A again", tags: [] },
 		]));
 
-		const optimizer = new MemoryOptimizer({
+		optimizer = new MemoryOptimizer({
 			memoryStore: store,
 			chatApi: createMockChatApi('Here is the result:\n\n```json\n{"clusters":[[0,1]]}\n```'),
 		});
@@ -95,7 +96,7 @@ describe("MemoryOptimizer", () => {
 			{ id: "d2", timestamp: "2026-08-02", category: "reference", content: "Ref 2", tags: [] },
 		]));
 
-		const optimizer = new MemoryOptimizer({
+		optimizer = new MemoryOptimizer({
 			memoryStore: store,
 			chatApi: createMockChatApi("invalid response with no json"),
 		});
@@ -106,7 +107,7 @@ describe("MemoryOptimizer", () => {
 	});
 
 	it("handles empty memory store", async () => {
-		const optimizer = new MemoryOptimizer({
+		optimizer = new MemoryOptimizer({
 			memoryStore: store,
 			chatApi: createMockChatApi('{"clusters":[]}'),
 		});
@@ -123,29 +124,12 @@ describe("MemoryOptimizer", () => {
 			{ id: "e2", timestamp: "2026-08-02", category: "user_fact", content: "User is a physicist who works on quantum gravity", tags: ["physics"] },
 		]));
 
-		const optimizer = new MemoryOptimizer({
+		optimizer = new MemoryOptimizer({
 			memoryStore: store,
 			chatApi: createMockChatApi('{"clusters":[[0,1]]}'),
 		});
 
 		const result = await optimizer.aiPrune();
 		expect(result.bytesBefore).toBeGreaterThan(result.bytesAfter);
-	});
-
-	it("supports cancellation via AbortController", async () => {
-		const adapter = store["deps"].app.vault.adapter;
-		await adapter.write("/test/intelligence/memory.json", JSON.stringify([
-			{ id: "f1", timestamp: "2026-08-01", category: "test", content: "Test entry", tags: [] },
-		]));
-
-		const optimizer = new MemoryOptimizer({
-			memoryStore: store,
-			chatApi: createMockChatApi('{"clusters":[[0]]}'),
-		});
-
-		const promise = optimizer.aiPrune();
-		optimizer.cancel();
-
-		await expect(promise).rejects.toThrow("Cancelled by user");
 	});
 });

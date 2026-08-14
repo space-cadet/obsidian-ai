@@ -14,6 +14,9 @@ interface LogEntry {
 const AIPruneModal: React.FC<AIPruneModalProps> = ({ onClose, createOptimizer }) => {
 	const [logs, setLogs] = useState<LogEntry[]>([]);
 	const [stage, setStage] = useState<ProgressUpdate["stage"]>("loading");
+	const [current, setCurrent] = useState(0);
+	const [total, setTotal] = useState(0);
+	const [eta, setEta] = useState<number | undefined>();
 	const [isRunning, setIsRunning] = useState(true);
 	const [result, setResult] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -34,6 +37,9 @@ const AIPruneModal: React.FC<AIPruneModalProps> = ({ onClose, createOptimizer })
 		optimizer
 			.aiPrune((update) => {
 				setStage(update.stage);
+				setCurrent(update.current);
+				setTotal(update.total);
+				setEta(update.etaSeconds);
 				addLog(update.message);
 			})
 			.then((pruneResult) => {
@@ -68,19 +74,21 @@ const AIPruneModal: React.FC<AIPruneModalProps> = ({ onClose, createOptimizer })
 		addLog("Cancelling...");
 	};
 
+	const formatEta = (seconds?: number): string => {
+		if (seconds === undefined) return "";
+		if (seconds < 60) return `~${seconds}s remaining`;
+		const mins = Math.floor(seconds / 60);
+		const secs = seconds % 60;
+		return `~${mins}m ${secs}s remaining`;
+	};
+
 	const stageLabel: Record<string, string> = {
 		loading: "Loading entries...",
-		analyzing: "Analyzing with AI...",
+		clustering: "Clustering with AI...",
 		pruning: "Saving results...",
 		done: "Complete",
 		error: "Error",
 	};
-
-	const progressWidth =
-		stage === "done" ? "100%" :
-		stage === "analyzing" ? "50%" :
-		stage === "pruning" ? "80%" :
-		"10%";
 
 	return (
 		<div className="chat-modal-overlay" onClick={!isRunning ? onClose : undefined}>
@@ -95,26 +103,34 @@ const AIPruneModal: React.FC<AIPruneModalProps> = ({ onClose, createOptimizer })
 				</div>
 				<div className="chat-modal-body">
 					{/* Progress bar */}
-					<div style={{ marginBottom: "12px" }}>
-						<div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "0.85em" }}>
-							<span>{stageLabel[stage] || stage}</span>
-						</div>
-						<div style={{
-							width: "100%",
-							height: "6px",
-							background: "var(--background-modifier-border)",
-							borderRadius: "3px",
-							overflow: "hidden",
-						}}>
+					{total > 0 && (
+						<div style={{ marginBottom: "12px" }}>
+							<div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "0.85em" }}>
+								<span>{stageLabel[stage] || stage}</span>
+								<span>{current}/{total}</span>
+							</div>
 							<div style={{
-								width: progressWidth,
-								height: "100%",
-								background: stage === "error" ? "var(--text-error)" : "var(--interactive-accent)",
+								width: "100%",
+								height: "6px",
+								background: "var(--background-modifier-border)",
 								borderRadius: "3px",
-								transition: "width 0.5s ease",
-							}} />
+								overflow: "hidden",
+							}}>
+								<div style={{
+									width: `${total > 0 ? (current / total) * 100 : 0}%`,
+									height: "100%",
+									background: stage === "error" ? "var(--text-error)" : "var(--interactive-accent)",
+									borderRadius: "3px",
+									transition: "width 0.3s ease",
+								}} />
+							</div>
+							{eta !== undefined && isRunning && (
+								<div style={{ fontSize: "0.8em", color: "var(--text-muted)", marginTop: "2px", textAlign: "right" }}>
+									{formatEta(eta)}
+								</div>
+							)}
 						</div>
-					</div>
+					)}
 
 					{/* Log output */}
 					<div style={{

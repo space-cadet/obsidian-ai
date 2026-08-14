@@ -1,5 +1,5 @@
 import { ChatApiManager } from "../api";
-import { MemoryStore, MemoryEntry, PruneResult } from "./MemoryStore";
+import { MemoryStore, MemoryEntry, MemoryCategory, PruneResult } from "./MemoryStore";
 import { FileLogger } from "../logger";
 
 export interface MemoryOptimizerDeps {
@@ -9,7 +9,7 @@ export interface MemoryOptimizerDeps {
 }
 
 export interface ProgressUpdate {
-	stage: "loading" | "analyzing" | "pruning" | "done" | "error";
+	stage: "loading" | "clustering" | "pruning" | "done" | "error";
 	message: string;
 	current: number;
 	total: number;
@@ -23,7 +23,6 @@ Rules:
 - Entries with different timestamps about ongoing projects are NOT duplicates (e.g., "migrated 8 sections" vs "migrated 20 sections")
 - Preferences stated once vs preferences stated with examples ARE duplicates
 - Entries about different sessions, dates, or progress updates are NOT duplicates
-- Consider category when judging — entries in different categories are NEVER duplicates
 
 Return ONLY a JSON object with no markdown formatting:
 {"clusters":[[0,2],[1],[3,4,5]]}
@@ -32,7 +31,6 @@ Where each inner array is a cluster of entry indices (0-based) that represent th
 
 /**
  * AI-powered memory optimization using LLM semantic clustering.
- * Single-prompt batching for efficiency.
  */
 export class MemoryOptimizer {
 	private deps: MemoryOptimizerDeps;
@@ -48,8 +46,8 @@ export class MemoryOptimizer {
 	}
 
 	/**
-	 * AI-powered prune: sends ALL entries in a single LLM prompt for batch clustering.
-	 * One API call total, regardless of category count.
+	 * AI-powered prune: uses an LLM to judge semantic similarity.
+	 * Groups entries by category, then asks the LLM to cluster duplicates.
 	 */
 	async aiPrune(
 		onProgress?: (update: ProgressUpdate) => void,
@@ -65,51 +63,84 @@ export class MemoryOptimizer {
 			stage: "loading",
 			message: `Loaded ${entries.length} entries`,
 			current: 0,
-			total: 1,
+			total: 0,
 		});
 
 		if (this.abortSignal.aborted) {
 			throw new Error("Cancelled by user");
 		}
 
-		onProgress?.({
-			stage: "analyzing",
-			message: `Sending all ${entries.length} entries to AI for analysis...`,
-			current: 0,
-			total: 1,
-		});
-
-		const clusters = await this._clusterAllWithAI(entries);
-
-		if (this.abortSignal.aborted) {
-			throw new Error("Cancelled by user");
-		}
-
-		const duplicateGroups = clusters.filter((c) => c.length > 1);
-		onProgress?.({
-			stage: "analyzing",
-			message: `AI found ${duplicateGroups.length} duplicate groups`,
-			current: 1,
-			total: 1,
-		});
-
-		// Build keep list
 		const kept: MemoryEntry[] = [];
 		let removed = 0;
+		let groups = 0;
 
-		for (const cluster of clusters) {
-			if (cluster.length === 1) {
-				kept.push(entries[cluster[0]]);
-			} else {
-				const groupEntries = cluster.map((idx) => entries[idx]);
-				groupEntries.sort((a, b) => {
-					const lenDiff = b.content.length - a.content.length;
-					if (lenDiff !== 0) return lenDiff;
-					return a.timestamp.localeCompare(b.timestamp);
-				});
-				kept.push(groupEntries[0]);
-				removed += cluster.length - 1;
+		// Group by category
+		const byCategory = new Map<MemoryCategory, MemoryEntry[]>();
+		for (const e of entries) {
+			const list = byCategory.get(e.category) ?? [];
+			list.push(e);
+			byCategory.set(e.category, list);
+		}
+
+		const categories = Array.from(byCategory.entries());
+		const totalCategories = categories.length;
+
+		for (let catIdx = 0; catIdx < categories.length; catIdx++) {
+			if (this.abortSignal.aborted) {
+				throw new Error("Cancelled by user");
 			}
+
+			const [category, catEntries] = categories[catIdx];
+
+			if (catEntries.length < 2) {
+				kept.push(...catEntries);
+				onProgress?.({
+					stage: "clustering",
+					message: `${category}: ${catEntries.length} entries — too few to cluster`,
+					current: catIdx + 1,
+					total: totalCategories,
+					etaSeconds: this._estimateEta(startTime, catIdx, totalCategories),
+				});
+				continue;
+			}
+
+			onProgress?.({
+				stage: "clustering",
+				message: `${category}: clustering ${catEntries.length} entries...`,
+				current: catIdx + 1,
+				total: totalCategories,
+				etaSeconds: this._estimateEta(startTime, catIdx, totalCategories),
+			});
+
+			const clusters = await this._clusterWithAI(category, catEntries);
+
+			if (this.abortSignal.aborted) {
+				throw new Error("Cancelled by user");
+			}
+
+			for (const cluster of clusters) {
+				if (cluster.length === 1) {
+					kept.push(catEntries[cluster[0]]);
+				} else {
+					groups++;
+					const groupEntries = cluster.map((idx) => catEntries[idx]);
+					groupEntries.sort((a, b) => {
+						const lenDiff = b.content.length - a.content.length;
+						if (lenDiff !== 0) return lenDiff;
+						return a.timestamp.localeCompare(b.timestamp);
+					});
+					kept.push(groupEntries[0]);
+					removed += cluster.length - 1;
+				}
+			}
+
+			onProgress?.({
+				stage: "clustering",
+				message: `${category}: done — found ${clusters.filter(c => c.length > 1).length} duplicate groups`,
+				current: catIdx + 1,
+				total: totalCategories,
+				etaSeconds: this._estimateEta(startTime, catIdx + 1, totalCategories),
+			});
 		}
 
 		if (this.abortSignal.aborted) {
@@ -119,8 +150,8 @@ export class MemoryOptimizer {
 		onProgress?.({
 			stage: "pruning",
 			message: `Saving ${kept.length} entries (removed ${removed} duplicates)...`,
-			current: 1,
-			total: 1,
+			current: totalCategories,
+			total: totalCategories,
 		});
 
 		// Preserve original order
@@ -137,28 +168,38 @@ export class MemoryOptimizer {
 
 		onProgress?.({
 			stage: "done",
-			message: `Done! Removed ${removed} duplicates (${duplicateGroups.length} groups). Kept ${kept.length} entries.`,
-			current: 1,
-			total: 1,
+			message: `Done! Removed ${removed} duplicates (${groups} groups). Kept ${kept.length} entries.`,
+			current: totalCategories,
+			total: totalCategories,
 		});
 
 		return {
 			removed,
 			kept: kept.length,
-			groups: duplicateGroups.length,
+			groups,
 			bytesBefore: beforeSize,
 			bytesAfter: afterSize,
 		};
 	}
 
-	private async _clusterAllWithAI(entries: MemoryEntry[]): Promise<number[][]> {
+	private _estimateEta(startTime: number, current: number, total: number): number | undefined {
+		if (current <= 0 || current >= total) return undefined;
+		const elapsed = Date.now() - startTime;
+		const avgPerItem = elapsed / current;
+		const remaining = (total - current) * avgPerItem;
+		return Math.ceil(remaining / 1000);
+	}
+
+	private async _clusterWithAI(
+		category: MemoryCategory,
+		entries: MemoryEntry[],
+	): Promise<number[][]> {
 		if (this.abortSignal?.aborted) {
 			throw new Error("Cancelled by user");
 		}
 
-		// Build single prompt with all entries, annotated with category
-		const lines = entries.map((e, i) => `${i}. [${e.category}] ${e.content}`);
-		const prompt = `Entries:\n${lines.join("\n")}\n\nGroup these entries into clusters of duplicates. Same-category entries with the same underlying fact (even if worded differently) should be clustered together. Entries in different categories are never duplicates.\n\nReturn ONLY JSON: {"clusters":[[...]]}`;
+		const lines = entries.map((e, i) => `${i}. [${e.timestamp}] ${e.content}`);
+		const prompt = `Category: ${category}\n\nEntries:\n${lines.join("\n")}\n\nGroup these entries into clusters of duplicates. Return ONLY JSON: {"clusters":[[...]]}`;
 
 		try {
 			const response = await this.deps.chatApi.callApi(
@@ -176,7 +217,7 @@ export class MemoryOptimizer {
 			}
 		} catch (e) {
 			if (e instanceof Error && e.message === "Cancelled by user") throw e;
-			this.deps.logger?.log("warn", `AI clustering failed: ${e}`);
+			this.deps.logger?.log("warn", `AI clustering failed for ${category}: ${e}`);
 		}
 
 		// Fallback: each entry in its own cluster (no pruning)
