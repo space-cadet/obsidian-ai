@@ -1,4 +1,5 @@
 import { Setting, Notice } from "obsidian";
+import { createElement } from "react";
 import { createRoot } from "react-dom/client";
 import ObsidianAIPlugin from "../main";
 import { createSection } from "./helpers";
@@ -359,20 +360,19 @@ export function renderIntelligenceSection(
 
 		const root = createRoot(modalContainer);
 		root.render(
-			<AIPruneModal
-				onClose={() => {
+			createElement(AIPruneModal, {
+				onClose: () => {
 					root.unmount();
 					modalContainer.remove();
 					void refreshStats();
-				}}
-				createOptimizer={() =>
+				},
+				createOptimizer: () =>
 					new MemoryOptimizer({
 						memoryStore: plugin.personaLoader!.memoryStore,
 						chatApi: plugin.chatapi,
 						logger: plugin.logger,
-					})
-				}
-			/>,
+					}),
+			}),
 		);
 	});
 
