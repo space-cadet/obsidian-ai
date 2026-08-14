@@ -1,0 +1,59 @@
+# CodeRabbit AI Configuration
+# https://docs.coderabbit.ai/guides/configure-coderabbit
+#
+# To enable: Install the CodeRabbit GitHub App on your repo
+# https://github.com/apps/coderabbitai
+
+language: en
+
+reviews:
+  # Review all PRs automatically
+  auto_review:
+    enabled: true
+    # Don't review draft PRs
+    drafts: false
+    # Review when PR is opened or updated
+    base_branches: ["main", "master"]
+
+  # Security-focused review settings
+  path_filters:
+    # Focus on security-critical paths
+    - "!**/*.test.ts"
+    - "!**/*.test.tsx"
+    - "!e2e/**"
+    - "!docs/**"
+
+  # What to check
+  review_checklist:
+    - "Check for hardcoded secrets (API keys, tokens, passwords)"
+    - "Verify XSS protection in message rendering"
+    - "Check for unsafe eval() or Function() usage"
+    - "Verify path traversal protection in file operations"
+    - "Check for unauthorized external network calls"
+    - "Verify tool approval flow is present"
+
+  # Custom instructions for the AI reviewer
+  path_instructions:
+    - path: "src/components/MessageBubble.tsx"
+      instructions: "Verify that all innerHTML assignments are preceded by sanitizeHtmlForRenderer(). Flag any direct HTML injection from user content."
+    - path: "src/agent/tools.ts"
+      instructions: "Verify that all file operations use normalizePath() and checkPathInVault(). Flag any path construction from user input without validation."
+    - path: "src/updater/PluginUpdater.ts"
+      instructions: "Verify that update URLs are hardcoded to GitHub API only. No user-configurable URLs for updates."
+    - path: "src/sync/WebSocketSyncAdapter.ts"
+      instructions: "Verify that WebSocket connections only use user-configured relay URL. No hardcoded external endpoints."
+
+# Security-specific settings
+security:
+  enabled: true
+  # Enable secret scanning
+  secret_scanning:
+    enabled: true
+  # Enable dependency vulnerability scanning
+  dependency_scanning:
+    enabled: true
+
+# Chat settings
+chat:
+  # Allow replying to CodeRabbit's comments
+  auto_reply: true
