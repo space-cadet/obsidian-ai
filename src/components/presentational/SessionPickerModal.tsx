@@ -160,7 +160,24 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 											>
 												{isActive ? "Current" : "Load"}
 											</button>
-											<button className="chat-btn-small" onClick={(e) => { e.stopPropagation(); onCopy?.(session, "md"); }} title="Copy as Markdown">Copy</button>
+										<label className="chat-session-copy-menu" onClick={(e) => e.stopPropagation()}>
+											<span className="sr-only">Copy session</span>
+											<select
+												className="chat-btn-small chat-session-copy-select"
+												defaultValue=""
+												aria-label={`Copy ${displayTitle}`}
+												onChange={(e) => {
+													const format = e.target.value as ExportFormat;
+													if (format) onCopy?.(session, format);
+													e.target.value = "";
+												}}
+											>
+												<option value="" disabled>Copy ▾</option>
+												<option value="md">Copy Markdown</option>
+												<option value="json">Copy JSON</option>
+												<option value="jsonl">Copy JSONL</option>
+											</select>
+										</label>
 											<button className="chat-btn-small" onClick={(e) => { e.stopPropagation(); onExport?.(session, "md"); }} title="Export Markdown">Markdown</button>
 											<button className="chat-btn-small" onClick={(e) => { e.stopPropagation(); onExport?.(session, "json"); }} title="Export JSON">JSON</button>
 											<button className="chat-btn-small" onClick={(e) => { e.stopPropagation(); onExport?.(session, "jsonl"); }} title="Export JSONL">JSONL</button>
