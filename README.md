@@ -1,4 +1,4 @@
-<h1 align="center">Chat Lab</h1>
+<h1 align="center">Chat Lab: Obsidian AI</h1>
 
 <p align="center">
   <a href="https://github.com/space-cadet/obsidian-ai">GitHub</a>
@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/demo.gif" alt="Chat Lab Demo" width="600">
+  <img src="docs/demo.gif" alt="Chat Lab: Obsidian AI Demo" width="600">
 </p>
 
 ---
@@ -22,7 +22,7 @@
 
 ## ✨ What It Does
 
-Chat Lab adds a **persistent chat panel** to your Obsidian sidebar. Unlike typical chat plugins, it treats **AI agents and remote humans as equal participants** in the same conversation. Everyone broadcasts to everyone. Each participant decides whether and how to respond.
+Chat Lab: Obsidian AI adds a **persistent chat panel** to your Obsidian sidebar. Unlike typical chat plugins, it treats **AI agents and remote humans as equal participants** in the same conversation. Everyone broadcasts to everyone. Each participant decides whether and how to respond.
 
 **Key idea:** You can have a chat tab with:
 - Just you and an AI agent
@@ -40,7 +40,7 @@ The AI can also **directly manipulate your vault** through structured tool calls
 
 ### Collaborative Chat (AI + Human Peers)
 
-The core of Chat Lab is a **multi-participant chat** where everyone is a first-class citizen:
+The core of Chat Lab: Obsidian AI is a **multi-participant chat** where everyone is a first-class citizen:
 
 - **Equal-Footing Participant Model** — AI agents, remote humans, and the local user all broadcast messages to each other. No special orchestrator hierarchy.
 - **Message Attribution** — Every message shows who sent it: local user ("You"), an AI agent (with colored dot), or a remote human (with their device/user ID).
@@ -184,7 +184,7 @@ Click the **💬** icon in the left ribbon (or run **"Open Chat Lab"** from the 
 
 ### 2. Configure Your Provider
 
-Open **Settings** → **Chat Lab** → **Provider Profiles**.
+Open **Settings** → **Chat Lab: Obsidian AI** → **Provider Profiles**.
 
 Click **Add Profile**, choose your provider, and enter:
 - **API Key** (if required)
@@ -254,7 +254,7 @@ Open **Settings** → **Web Search**. Choose a provider (DuckDuckGo works withou
 
 ## 📱 Mobile Notes
 
-Chat Lab works on mobile (iOS/Android), but there are platform-specific behaviors to be aware of:
+Chat Lab: Obsidian AI works on mobile (iOS/Android), but there are platform-specific behaviors to be aware of:
 
 ### Background Execution
 

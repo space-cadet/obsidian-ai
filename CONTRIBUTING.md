@@ -1,6 +1,6 @@
-# Contributing to Obsidian AI
+# Contributing to Chat Lab: Obsidian AI
 
-Thanks for helping improve Obsidian AI. This project is an Obsidian plugin, so small, focused changes with clear manual test notes are easiest to review.
+Thanks for helping improve Chat Lab: Obsidian AI. This project is an Obsidian plugin, so small, focused changes with clear manual test notes are easiest to review.
 
 ## Development Setup
 
@@ -17,7 +17,7 @@ For local Obsidian testing, copy `main.js`, `manifest.json`, and `styles.css` in
 Please include:
 
 - Obsidian version
-- Obsidian AI version
+- Chat Lab: Obsidian AI version
 - Operating system
 - AI provider and model, if relevant
 - Steps to reproduce
