@@ -4,6 +4,10 @@
 *Status: ✅ COMPLETE — All 5 Phases Delivered and Merged*
 *Depends on: T40 (Multi-User Chat with LaTeX Support)*
 
+### Attachment replay extension (T19a, 2026-08-14)
+
+The participant message contract now preserves `ChatMessage.attachments` and persisted `resolvedParts` through local group dispatch and WebSocket relay. Orchestrator contexts may contain multimodal content for both historical user messages and the current prompt. This extends the original text-only flow documented below; large-file persistence is intentionally outside T19a and remains a T42/T19 concern.
+
 ## Overview
 
 This document describes the **equal-footing participant model** for multi-user chat, where AI agents and remote human users participate as peers in the same chat tab.

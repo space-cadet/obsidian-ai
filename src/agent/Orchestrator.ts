@@ -1,5 +1,10 @@
 import { ChatApiManager } from "../api";
-import { ChatMessage, GroupChatParticipant } from "../types";
+import {
+	ChatMessage,
+	GroupChatParticipant,
+	ResolvedMessagePart,
+} from "../types";
+import type { MessageContentPart } from "../api";
 import { ProviderProfile } from "../settings";
 import { parseMentions, ParsedMention } from "./MentionParser";
 import type { ToolCall, ToolResult } from "./types";
@@ -9,6 +14,7 @@ import { noteTools } from "./tools";
 
 export type DispatchMode = "sequential" | "parallel";
 export type ContextStrategy = "full" | "isolated";
+type ContextContent = string | MessageContentPart[];
 
 export interface AgentResponse {
 	agentId: string;
@@ -98,13 +104,21 @@ export class Orchestrator {
 	 * If no mentions: all agents respond.
 	 * If mentions: only mentioned agents respond.
 	 */
-	parseAndRoute(text: string, attachments?: import("../types").Attachment[]): { targets: AgentEngine[]; cleanText: string } {
+	parseAndRoute(
+		text: string,
+		attachments?: import("../types").Attachment[],
+	): { targets: AgentEngine[]; cleanText: string } {
 		const parsed = parseMentions(text);
 		if (parsed.mentions.length > 0) {
-			const targets = this.engines.filter((e) =>
-				parsed.mentions.includes(e.id) || parsed.mentions.includes(e.name),
+			const targets = this.engines.filter(
+				(e) =>
+					parsed.mentions.includes(e.id) ||
+					parsed.mentions.includes(e.name),
 			);
-			return { targets: targets.length > 0 ? targets : this.engines, cleanText: parsed.cleanText };
+			return {
+				targets: targets.length > 0 ? targets : this.engines,
+				cleanText: parsed.cleanText,
+			};
 		}
 		return { targets: this.engines, cleanText: parsed.cleanText };
 	}
@@ -119,6 +133,7 @@ export class Orchestrator {
 		text: string,
 		thread: ChatMessage[],
 		signal?: AbortSignal,
+		resolvedParts: ResolvedMessagePart[] = [],
 		maxRounds: number = 2,
 	): AsyncGenerator<AgentResponse> {
 		const { targets, cleanText } = this.parseAndRoute(text);
@@ -127,7 +142,13 @@ export class Orchestrator {
 		// Round 1: all agents respond to user
 		const round1Responses: AgentResponse[] = [];
 		for (const engine of targets) {
-			const response = await this.sendToAgent(engine, workingThread, cleanText, signal);
+			const response = await this.sendToAgent(
+				engine,
+				workingThread,
+				cleanText,
+				signal,
+				resolvedParts,
+			);
 			round1Responses.push(response);
 			yield response;
 			if (signal?.aborted) return;
@@ -153,8 +174,18 @@ export class Orchestrator {
 
 			for (const engine of targets) {
 				// Ask agent if it wants to respond to the conversation
-				const prompt = this.buildDebatePrompt(engine.name, round, round1Responses, cleanText);
-				const response = await this.sendToAgent(engine, workingThread, prompt, signal);
+				const prompt = this.buildDebatePrompt(
+					engine.name,
+					round,
+					round1Responses,
+					cleanText,
+				);
+				const response = await this.sendToAgent(
+					engine,
+					workingThread,
+					prompt,
+					signal,
+				);
 
 				// Only include if agent actually wants to add something
 				const trimmed = response.text.trim();
@@ -184,7 +215,12 @@ export class Orchestrator {
 		}
 	}
 
-	private buildDebatePrompt(agentName: string, round: number, prevResponses: AgentResponse[], originalQuestion: string): string {
+	private buildDebatePrompt(
+		agentName: string,
+		round: number,
+		prevResponses: AgentResponse[],
+		originalQuestion: string,
+	): string {
 		const otherResponses = prevResponses
 			.filter((r) => r.agentName !== agentName)
 			.map((r) => `${r.agentName}: ${r.text}`)
@@ -210,19 +246,30 @@ export class Orchestrator {
 		agentId: string,
 		thread: ChatMessage[],
 		cleanText: string,
-	): Array<{ role: "user" | "assistant" | "system"; content: string }> {
+		resolvedParts: ResolvedMessagePart[] = [],
+	): Array<{
+		role: "user" | "assistant" | "system";
+		content: ContextContent;
+	}> {
 		const systemPrompt = this.buildSystemPrompt(agentId);
-		const context: Array<{ role: "user" | "assistant" | "system"; content: string }> = [
-			{ role: "system", content: systemPrompt },
-		];
+		const context: Array<{
+			role: "user" | "assistant" | "system";
+			content: ContextContent;
+		}> = [{ role: "system", content: systemPrompt }];
 
 		for (const msg of thread) {
 			if (this.contextStrategy === "isolated") {
 				// Isolated: agent only sees user messages + its own responses
 				if (msg.role === "user" || msg.agentId === agentId) {
+					const content = msg.resolvedParts?.length
+						? [
+								{ type: "text" as const, text: msg.content },
+								...msg.resolvedParts,
+							]
+						: msg.content;
 					context.push({
 						role: msg.role === "user" ? "user" : "assistant",
-						content: msg.content,
+						content,
 					});
 				}
 			} else {
@@ -232,17 +279,36 @@ export class Orchestrator {
 					content = `[${msg.agentName}]: ${msg.content}`;
 				}
 				// Attribute remote user messages
-				if (msg.role === "user" && msg.remote && msg.fromUserId && this.remoteUsers.includes(msg.fromUserId)) {
+				if (
+					msg.role === "user" &&
+					msg.remote &&
+					msg.fromUserId &&
+					this.remoteUsers.includes(msg.fromUserId)
+				) {
 					content = `[Remote User ${msg.fromUserId}]: ${msg.content}`;
 				}
+				const multimodalContent = msg.resolvedParts?.length
+					? [
+							{ type: "text" as const, text: content },
+							...msg.resolvedParts,
+						]
+					: content;
 				context.push({
 					role: msg.role === "user" ? "user" : "assistant",
-					content,
+					content: multimodalContent,
 				});
 			}
 		}
 
-		context.push({ role: "user", content: cleanText });
+		context.push({
+			role: "user",
+			content: resolvedParts.length
+				? ([
+						{ type: "text" as const, text: cleanText },
+						...resolvedParts,
+					] as MessageContentPart[])
+				: cleanText,
+		});
 		return context;
 	}
 
@@ -254,13 +320,20 @@ export class Orchestrator {
 		text: string,
 		thread: ChatMessage[],
 		signal?: AbortSignal,
+		resolvedParts: ResolvedMessagePart[] = [],
 	): AsyncGenerator<AgentResponse> {
 		const { targets, cleanText } = this.parseAndRoute(text);
 
 		if (this.mode === "parallel") {
 			// Launch all in parallel, yield as they complete
 			const promises = targets.map(async (engine) => {
-				const response = await this.sendToAgent(engine, thread, cleanText, signal);
+				const response = await this.sendToAgent(
+					engine,
+					thread,
+					cleanText,
+					signal,
+					resolvedParts,
+				);
 				return response;
 			});
 
@@ -270,7 +343,13 @@ export class Orchestrator {
 		} else {
 			// Sequential: one at a time
 			for (const engine of targets) {
-				yield await this.sendToAgent(engine, thread, cleanText, signal);
+				yield await this.sendToAgent(
+					engine,
+					thread,
+					cleanText,
+					signal,
+					resolvedParts,
+				);
 			}
 		}
 	}
@@ -283,14 +362,23 @@ export class Orchestrator {
 		thread: ChatMessage[],
 		cleanText: string,
 		signal?: AbortSignal,
+		resolvedParts: ResolvedMessagePart[] = [],
 	): Promise<AgentResponse> {
 		try {
-			const messages = this.buildContext(engine.id, thread, cleanText);
+			const messages = this.buildContext(
+				engine.id,
+				thread,
+				cleanText,
+				resolvedParts,
+			);
 
 			// Tool-enabled path: use AgentLoop (same as single-user chat)
 			if (this.enableTools && this.toolExecutor) {
 				let fullText = "";
-				const toolCallsLog: Array<{ call: ToolCall; result?: ToolResult }> = [];
+				const toolCallsLog: Array<{
+					call: ToolCall;
+					result?: ToolResult;
+				}> = [];
 
 				const agent = new AgentLoop({
 					chatApi: this.api,
@@ -310,14 +398,19 @@ export class Orchestrator {
 						if (this.autoApprove) {
 							return await this.toolExecutor!.execute(call);
 						}
-						return { error: "Tool call rejected: manual approval is not supported in group chat. Enable auto-approve to use tools in council mode." };
+						return {
+							error: "Tool call rejected: manual approval is not supported in group chat. Enable auto-approve to use tools in council mode.",
+						};
 					},
 					onToolResult: (call, result) => {
 						const idx = toolCallsLog.findIndex(
 							(tc) => tc.call.toolCallId === call.toolCallId,
 						);
 						if (idx >= 0) {
-							toolCallsLog[idx] = { ...toolCallsLog[idx], result };
+							toolCallsLog[idx] = {
+								...toolCallsLog[idx],
+								result,
+							};
 						}
 					},
 				});
@@ -333,14 +426,19 @@ export class Orchestrator {
 					agentName: engine.name,
 					agentColor: engine.color,
 					text: result.text || fullText,
-					toolCalls: toolCallsLog.length > 0 ? toolCallsLog : undefined,
+					toolCalls:
+						toolCallsLog.length > 0 ? toolCallsLog : undefined,
 					tokenEstimate: result.tokenEstimate,
 				};
 			}
 
 			// Simple non-tooling path (original MVP behavior preserved)
 			let fullText = "";
-			const stream = this.api.streamChat(messages, undefined, engine.profile);
+			const stream = this.api.streamChat(
+				messages,
+				undefined,
+				engine.profile,
+			);
 			for await (const chunk of stream) {
 				if (signal?.aborted) break;
 				fullText += chunk;
@@ -366,14 +464,13 @@ export class Orchestrator {
 	private buildSystemPrompt(agentId: string): string {
 		const engine = this.engines.find((e) => e.id === agentId);
 		const name = engine?.name ?? "Assistant";
-		let prompt = (
+		let prompt =
 			`You are ${name}, participating in a collaborative discussion with other AI assistants. ` +
 			`You each bring different strengths and knowledge. ` +
 			`When asked to compare or review other assistants' perspectives, offer your own view — ` +
 			`agree, disagree, add nuance, or correct errors. This is normal collaborative discussion. ` +
 			`Be concise and helpful.` +
-			`\n\nYou are integrated into an Obsidian note-taking app and can help with notes, research, and tasks.`
-		);
+			`\n\nYou are integrated into an Obsidian note-taking app and can help with notes, research, and tasks.`;
 
 		// Add [Participants] section with agents and remote users
 		prompt += "\n\n[Participants]";
@@ -383,10 +480,11 @@ export class Orchestrator {
 		if (this.remoteUsers.length > 0) {
 			prompt += `\n- Remote users: ${this.remoteUsers.join(", ")}`;
 		}
-		prompt += "\n\nMessages from other participants will be prefixed with their name.";
+		prompt +=
+			"\n\nMessages from other participants will be prefixed with their name.";
 
 		if (this.enableTools) {
-			prompt += (
+			prompt +=
 				"\n\nYou have access to the following tools for managing Obsidian notes:" +
 				"\n- read_note: Read the full content of a note. Use this before editing to understand current content." +
 				"\n- edit_note: Overwrite the entire content of a note. Provide COMPLETE new content." +
@@ -407,8 +505,7 @@ export class Orchestrator {
 				" Do not say you cannot search — you have the search_notes and list_notes tools." +
 				" Before editing a note you are unfamiliar with, use read_note to see its current content." +
 				"\n\nImportant: When using edit_note, provide the COMPLETE new note content." +
-				" Do not use diff syntax or markdown code blocks."
-			);
+				" Do not use diff syntax or markdown code blocks.";
 		}
 
 		return prompt;

@@ -22,7 +22,11 @@ function createMockOrchestrator(remoteUsers: string[] = []) {
 				{ role: "system", content: "system prompt" },
 			];
 			for (const msg of thread) {
-				if (msg.remote && msg.fromUserId && remoteUsersRef.current.includes(msg.fromUserId)) {
+				if (
+					msg.remote &&
+					msg.fromUserId &&
+					remoteUsersRef.current.includes(msg.fromUserId)
+				) {
 					context.push({
 						role: "user",
 						content: `[Remote User ${msg.fromUserId}]: ${msg.content}`,
@@ -33,7 +37,9 @@ function createMockOrchestrator(remoteUsers: string[] = []) {
 			}
 			return context;
 		}),
-		dispatch: async function* () { /* empty async generator */ },
+		dispatch: async function* () {
+			/* empty async generator */
+		},
 		parseAndRoute: vi.fn(() => ({ targets: [], cleanText: "" })),
 	};
 }
@@ -41,7 +47,11 @@ function createMockOrchestrator(remoteUsers: string[] = []) {
 describe("ParticipantRouter remote user sync", () => {
 	it("routes to relay without an orchestrator for human-only tabs", async () => {
 		const syncAdapter = createMockSyncAdapter();
-		const router = new ParticipantRouter(null, syncAdapter as any, "local-1");
+		const router = new ParticipantRouter(
+			null,
+			syncAdapter as any,
+			"local-1",
+		);
 		router.setRemoteUsers(["alice"]);
 
 		const responses = [];
@@ -135,5 +145,25 @@ describe("ParticipantRouter remote user sync", () => {
 		expect(relayMsg.remote).toBe(true);
 		expect(relayMsg.fromUserId).toBe("local-1");
 		expect(relayMsg.content).toBe("Hello");
+	});
+
+	it("preserves resolved parts in relay messages", async () => {
+		const syncAdapter = createMockSyncAdapter();
+		const router = new ParticipantRouter(
+			null,
+			syncAdapter as any,
+			"local-1",
+		);
+		router.setRemoteUsers(["alice"]);
+		const parts = [{ type: "image" as const, image: "base64-image" }];
+
+		for await (const _ of router.dispatch("Look", [], undefined, parts)) {
+			// no-op
+		}
+
+		expect(syncAdapter.sendMessage.mock.calls[0][0]).toMatchObject({
+			content: "Look",
+			resolvedParts: parts,
+		});
 	});
 });

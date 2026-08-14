@@ -40,6 +40,7 @@ export class ParticipantRouter {
 		text: string,
 		thread: ChatMessage[],
 		signal?: AbortSignal,
+		resolvedParts: import("../types").ResolvedMessagePart[] = [],
 	): AsyncGenerator<{
 		agentId: string;
 		agentName: string;
@@ -60,17 +61,27 @@ export class ParticipantRouter {
 				role: "user",
 				content: text,
 				timestamp: Date.now(),
+				resolvedParts:
+					resolvedParts.length > 0 ? resolvedParts : undefined,
 				remote: true,
 				fromUserId: this.localUserId,
 			};
 			this.syncAdapter.sendMessage(relayMsg).catch((err) => {
-				console.warn("[ParticipantRouter] Failed to send to relay:", err);
+				console.warn(
+					"[ParticipantRouter] Failed to send to relay:",
+					err,
+				);
 			});
 		}
 
 		// Route to agents via the existing Orchestrator when this tab has agents.
 		if (this.orchestrator) {
-			yield* this.orchestrator.dispatch(text, thread, signal);
+			yield* this.orchestrator.dispatch(
+				text,
+				thread,
+				signal,
+				resolvedParts,
+			);
 		}
 	}
 

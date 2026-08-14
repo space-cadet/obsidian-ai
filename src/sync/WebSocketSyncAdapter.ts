@@ -19,7 +19,9 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 	private ws: WebSocket | null = null;
 	private messageCallback: ((msg: ChatMessage) => void) | null = null;
 	private userListCallback: ((users: string[]) => void) | null = null;
-	private presenceCallback: ((event: { type: "join" | "leave"; userId: string }) => void) | null = null;
+	private presenceCallback:
+		| ((event: { type: "join" | "leave"; userId: string }) => void)
+		| null = null;
 	private typingCallback: ((userId: string) => void) | null = null;
 	private roomId: string = "";
 	private userId: string = "";
@@ -39,9 +41,12 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 		this.explicitlyDisconnected = false;
 
 		// Validate relay URL format
-		if (!this.relayUrl.startsWith("ws://") && !this.relayUrl.startsWith("wss://")) {
+		if (
+			!this.relayUrl.startsWith("ws://") &&
+			!this.relayUrl.startsWith("wss://")
+		) {
 			throw new Error(
-				`Relay URL must start with ws:// or wss:// (got: ${this.relayUrl})`
+				`Relay URL must start with ws:// or wss:// (got: ${this.relayUrl})`,
 			);
 		}
 
@@ -66,7 +71,9 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 					// Handle presence events
 					if (data.type === "roster" && Array.isArray(data.users)) {
 						// Filter out self from the user list
-						const others = data.users.filter((u: string) => u !== this.userId);
+						const others = data.users.filter(
+							(u: string) => u !== this.userId,
+						);
 						this.userListCallback?.(others);
 						return;
 					}
@@ -88,12 +95,18 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 						// Only process messages from other users (not echo of our own)
 						if (data.sender !== this.userId) {
 							const msg: ChatMessage = {
-								id: data.id || `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+								id:
+									data.id ||
+									`${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
 								role: data.role || "user",
 								content: data.content,
-								timestamp: typeof data.timestamp === "number" ? data.timestamp : Date.now(),
+								timestamp:
+									typeof data.timestamp === "number"
+										? data.timestamp
+										: Date.now(),
 								agentId: data.sender,
 								attachments: data.attachments,
+								resolvedParts: data.resolvedParts,
 								// Mark as remote message from relay
 								remote: true,
 								fromUserId: data.sender,
@@ -102,13 +115,16 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 						}
 					}
 				} catch (err) {
-					console.warn("[WebSocketSync] Failed to parse message:", err);
+					console.warn(
+						"[WebSocketSync] Failed to parse message:",
+						err,
+					);
 				}
 			};
 
 			this.ws.onclose = (event) => {
 				console.log(
-					`[WebSocketSync] Connection closed (code: ${event.code}, reason: ${event.reason || "none"})`
+					`[WebSocketSync] Connection closed (code: ${event.code}, reason: ${event.reason || "none"})`,
 				);
 				if (!this.explicitlyDisconnected) {
 					this.attemptReconnect();
@@ -121,7 +137,11 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 					typeof event === "string"
 						? event
 						: "WebSocket connection failed — check relay URL and network";
-				console.error("[WebSocketSync] WebSocket error:", errorMsg, event);
+				console.error(
+					"[WebSocketSync] WebSocket error:",
+					errorMsg,
+					event,
+				);
 				reject(new Error(errorMsg));
 			};
 		});
@@ -134,7 +154,7 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 		}
 		this.reconnectAttempts++;
 		console.log(
-			`[WebSocketSync] Reconnecting in ${this.reconnectDelay}ms (attempt ${this.reconnectAttempts})`
+			`[WebSocketSync] Reconnecting in ${this.reconnectDelay}ms (attempt ${this.reconnectAttempts})`,
 		);
 		this.reconnectTimer = window.setTimeout(() => {
 			this.doConnect().catch(() => {
@@ -164,7 +184,9 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 		if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
 			throw new Error("WebSocket not connected");
 		}
-		this.ws.send(JSON.stringify({ type: "chat", sender: this.userId, ...msg }));
+		this.ws.send(
+			JSON.stringify({ type: "chat", sender: this.userId, ...msg }),
+		);
 	}
 
 	onMessage(callback: (msg: ChatMessage) => void): void {
@@ -175,7 +197,9 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 		this.userListCallback = callback;
 	}
 
-	onPresence(callback: (event: { type: "join" | "leave"; userId: string }) => void): void {
+	onPresence(
+		callback: (event: { type: "join" | "leave"; userId: string }) => void,
+	): void {
 		this.presenceCallback = callback;
 	}
 

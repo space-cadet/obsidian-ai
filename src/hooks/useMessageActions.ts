@@ -7,6 +7,7 @@ import type {
 	ContextItem,
 	ContentPart,
 	GroupChatParticipant,
+	ResolvedMessagePart,
 } from "../types";
 import type { ProviderProfile } from "../settings";
 import type { ToolCall, ToolResult } from "../agent/types";
@@ -17,7 +18,11 @@ import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
 import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
 import { resolveContextItems } from "../context/ContextEngine";
 import { resolveAttachments } from "../context/AttachmentEngine";
-import { estimateTokens, estimateContentPartsTokens, estimateAttachmentTokens } from "../context/tokenEstimator";
+import {
+	estimateTokens,
+	estimateContentPartsTokens,
+	estimateAttachmentTokens,
+} from "../context/tokenEstimator";
 import { appendPendingText, finalizeContentParts } from "../lib/streamingUtils";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { parseSlashCommand } from "../lib/slashCommand";
@@ -35,19 +40,30 @@ function formatPastSessionLinks(
 	const results = toolCalls
 		.filter((entry) => entry.call.toolName === "search_past_sessions")
 		.flatMap((entry) => entry.result?.sessionResults ?? [])
-		.filter((result, index, all) =>
-			all.findIndex((candidate) =>
-				candidate.sessionId === result.sessionId && candidate.messageId === result.messageId,
-			) === index,
+		.filter(
+			(result, index, all) =>
+				all.findIndex(
+					(candidate) =>
+						candidate.sessionId === result.sessionId &&
+						candidate.messageId === result.messageId,
+				) === index,
 		);
 	if (results.length === 0) return "";
 
 	const links = results.map((session) => {
-		const title = sessions.find((candidate) => candidate.id === session.sessionId)?.title
-			|| `Session from ${new Date(session.timestamp).toLocaleDateString()}`;
-		const params = new URLSearchParams({ sessionId: session.sessionId, messageId: session.messageId });
+		const title =
+			sessions.find((candidate) => candidate.id === session.sessionId)
+				?.title ||
+			`Session from ${new Date(session.timestamp).toLocaleDateString()}`;
+		const params = new URLSearchParams({
+			sessionId: session.sessionId,
+			messageId: session.messageId,
+		});
 		const safeTitle = title.replace(/[\\[\]]/g, "\\$&");
-		const snippet = session.snippet.replace(/\s+/g, " ").trim().slice(0, 180);
+		const snippet = session.snippet
+			.replace(/\s+/g, " ")
+			.trim()
+			.slice(0, 180);
 		return `- **[${safeTitle}](obsidian-ai://open-session?${params.toString()})**  \n  ${snippet}${session.snippet.length > 180 ? "…" : ""}`;
 	});
 	return `\n\n### Past sessions\n${links.join("\n")}`;
@@ -115,38 +131,65 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 		ui,
 	} = deps;
 
+	const buildReplayContent = (
+		message: ChatMessage,
+	): string | import("../api").MessageContentPart[] => {
+		const replayText =
+			message.remote && message.fromUserId
+				? `[Remote User ${message.fromUserId}]: ${message.content}`
+				: message.content;
+
+		if (!message.resolvedParts || message.resolvedParts.length === 0) {
+			return replayText;
+		}
+
+		return [
+			{ type: "text", text: replayText },
+			...(message.resolvedParts as import("../api").MessageContentPart[]),
+		];
+	};
+
 	// ═══════════════════════════════════════════════════════
 	// SEND
 	// ═══════════════════════════════════════════════════════
 	const handleSend = useCallback(
-		async (
-			text: string,
-			attachments?: import("../types").Attachment[],
-		) => {
+		async (text: string, attachments?: import("../types").Attachment[]) => {
 			if (
-				(!text.trim() &&
-					(!attachments || attachments.length === 0)) ||
+				(!text.trim() && (!attachments || attachments.length === 0)) ||
 				getRuntime(activeSessionIdRef.current).controller
 			)
 				return;
 
 			// ─── GROUP CHAT PATH ───
 			if (isGroupChat && (participantRouter || orchestrator)) {
+				const groupAttachments =
+					attachments ?? ui.messageAttachments ?? [];
+				const groupResolvedParts =
+					groupAttachments.length > 0
+						? await resolveAttachments(
+								groupAttachments,
+								plugin.app,
+								resolvedProfile.provider,
+							)
+						: [];
 				const userTokenEstimate =
 					estimateTokens(text) +
-					(ui.messageAttachments?.reduce(
+					groupAttachments.reduce(
 						(sum, att) => sum + estimateAttachmentTokens(att),
 						0,
-					) ?? 0);
+					);
 				const userMsg: ChatMessage = {
 					id: makeId(),
 					role: "user",
 					content: text,
 					timestamp: Date.now(),
 					attachments:
-						ui.messageAttachments &&
-						ui.messageAttachments.length > 0
-							? ui.messageAttachments
+						groupAttachments.length > 0
+							? groupAttachments
+							: undefined,
+					resolvedParts:
+						groupResolvedParts.length > 0
+							? (groupResolvedParts as ResolvedMessagePart[])
 							: undefined,
 					estimatedTokens: userTokenEstimate,
 				};
@@ -160,7 +203,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 									messages: [...s.messages, userMsg],
 									updatedAt: Date.now(),
 								}
-								: s,
+							: s,
 					),
 				);
 				const controller = new AbortController();
@@ -178,11 +221,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				const router = participantRouter || orchestrator!;
 				const { targets } = router.parseAndRoute(
 					text,
-					ui.messageAttachments,
+					groupAttachments,
 				);
-				ui.setTypingAgents(
-					new Set(targets.map((t: any) => t.name)),
-				);
+				ui.setTypingAgents(new Set(targets.map((t: any) => t.name)));
 
 				try {
 					const stream = ui.debateMode
@@ -192,15 +233,17 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 									(s) => s.id === currentActiveId,
 								)?.messages ?? [],
 								controller.signal,
+								groupResolvedParts,
 								2,
 							)
-						: (participantRouter
+						: participantRouter
 							? participantRouter.dispatch(
 									text,
 									sessionsRef.current.find(
 										(s) => s.id === currentActiveId,
 									)?.messages ?? [],
 									controller.signal,
+									groupResolvedParts,
 								)
 							: orchestrator!.dispatch(
 									text,
@@ -208,7 +251,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 										(s) => s.id === currentActiveId,
 									)?.messages ?? [],
 									controller.signal,
-								));
+									groupResolvedParts,
+								);
 
 					for await (const response of stream) {
 						ui.setTypingAgents((prev) => {
@@ -248,9 +292,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						);
 					}
 				} catch (error: any) {
-					new Notice(
-						`❌ Group chat error: ${error.message}`,
-					);
+					new Notice(`❌ Group chat error: ${error.message}`);
 					const errorMsg: ChatMessage = {
 						id: makeId(),
 						role: "assistant",
@@ -263,10 +305,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							s.id === currentActiveId
 								? {
 										...s,
-										messages: [
-											...s.messages,
-											errorMsg,
-										],
+										messages: [...s.messages, errorMsg],
 										updatedAt: Date.now(),
 									}
 								: s,
@@ -302,16 +341,13 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					slashCmd.command === "edit" ||
 					slashCmd.command === "append"
 				) {
-					const file =
-						plugin.app.metadataCache.getFirstLinkpathDest(
-							slashCmd.target,
-							"",
-						);
+					const file = plugin.app.metadataCache.getFirstLinkpathDest(
+						slashCmd.target,
+						"",
+					);
 					if (file && file instanceof TFile) {
 						const exists = sendContextItems.some(
-							(i) =>
-								i.type === "note" &&
-								i.path === file.path,
+							(i) => i.type === "note" && i.path === file.path,
 						);
 						if (!exists) {
 							sendContextItems = [
@@ -360,7 +396,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 									messages: [...s.messages, userMsg],
 									updatedAt: Date.now(),
 								}
-								: s,
+							: s,
 					),
 				);
 				return;
@@ -374,7 +410,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					: resolvedProfile;
 
 			// Resolve attachments before computing token estimate
-			let resolvedAttachmentParts: import("../api").MessageContentPart[] = [];
+			let resolvedAttachmentParts: import("../api").MessageContentPart[] =
+				[];
 			if (attachments && attachments.length > 0) {
 				resolvedAttachmentParts = await resolveAttachments(
 					attachments,
@@ -409,6 +446,10 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					attachments && attachments.length > 0
 						? attachments
 						: undefined,
+				resolvedParts:
+					resolvedAttachmentParts.length > 0
+						? (resolvedAttachmentParts as ResolvedMessagePart[])
+						: undefined,
 				estimatedTokens: userTokenEstimate,
 			};
 
@@ -423,7 +464,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 								updatedAt: Date.now(),
 								contextItems: sendContextItems,
 							}
-							: s,
+						: s,
 				),
 			);
 			const controller = new AbortController();
@@ -438,15 +479,12 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			});
 			const streamStartTime = Date.now();
 
-			const maxContextMessages =
-				plugin.settings.maxContextMessages || 10;
+			const maxContextMessages = plugin.settings.maxContextMessages || 10;
 			const history = messagesRef.current
 				.slice(-maxContextMessages)
 				.map((m) => ({
 					role: m.role as "user" | "assistant",
-					content: m.remote && m.fromUserId
-						? `[Remote User ${m.fromUserId}]: ${m.content}`
-						: m.content,
+					content: buildReplayContent(m),
 				}));
 
 			let userContent = sendText;
@@ -457,7 +495,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			const isAgentProvider = activeProfile.provider === "agent";
 			const useTools =
 				plugin.settings.enableAgentTools || isAgentProvider;
-			const toolRegistry = plugin.integrationRegistry?.getToolRegistry(noteTools) ?? noteTools;
+			const toolRegistry =
+				plugin.integrationRegistry?.getToolRegistry(noteTools) ??
+				noteTools;
 			const autoApprove = plugin.settings.autoApply;
 			const maxAgentSteps = plugin.settings.maxAgentSteps;
 
@@ -517,8 +557,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							sessionKey: activeProfile.sessionKey,
 							autoApprove:
 								activeProfile.autoApprove ?? autoApprove,
-							maxSteps:
-								activeProfile.maxSteps ?? maxAgentSteps,
+							maxSteps: activeProfile.maxSteps ?? maxAgentSteps,
 						},
 						plugin.app,
 					);
@@ -532,10 +571,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							() => currentActiveId,
 							plugin.integrationRegistry,
 						),
-						maxSteps:
-							activeProfile.maxSteps ?? maxAgentSteps,
-						autoApprove:
-							activeProfile.autoApprove ?? autoApprove,
+						maxSteps: activeProfile.maxSteps ?? maxAgentSteps,
+						autoApprove: activeProfile.autoApprove ?? autoApprove,
 						onTextDelta: (text) => {
 							fullText = text;
 							patchRuntime(currentActiveId, {
@@ -563,14 +600,15 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							textCheckpoint = fullText.length;
 						},
 						requestApproval: async (call) => {
-							const resolved = await new Promise<
-								ToolResult | null
-							>((resolve) => {
-								patchRuntime(currentActiveId, {
-									pendingToolCall: call,
-									resolveTool: resolve,
-								});
-							});
+							const resolved =
+								await new Promise<ToolResult | null>(
+									(resolve) => {
+										patchRuntime(currentActiveId, {
+											pendingToolCall: call,
+											resolveTool: resolve,
+										});
+									},
+								);
 							patchRuntime(currentActiveId, {
 								pendingToolCall: null,
 								resolveTool: null,
@@ -600,8 +638,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						},
 						onToolResult: (call, result) => {
 							const idx = toolCallsLog.findIndex(
-								(tc) =>
-									tc.call.toolCallId === call.toolCallId,
+								(tc) => tc.call.toolCallId === call.toolCallId,
 							);
 							if (idx >= 0) {
 								toolCallsLog[idx] = {
@@ -642,10 +679,16 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						orTools,
 						controller.signal,
 					);
-					const sessionLinks = formatPastSessionLinks(toolCallsLog, sessionsRef.current);
+					const sessionLinks = formatPastSessionLinks(
+						toolCallsLog,
+						sessionsRef.current,
+					);
 					assistantContent = resultText + sessionLinks;
 					if (sessionLinks) {
-						contentParts.push({ type: "text", content: sessionLinks });
+						contentParts.push({
+							type: "text",
+							content: sessionLinks,
+						});
 					}
 					assistantTokenEstimate = estimateTokens(assistantContent);
 				} else if (useTools && !slashCmd) {
@@ -691,14 +734,15 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							textCheckpoint = fullText.length;
 						},
 						requestApproval: async (call) => {
-							const resolved = await new Promise<
-								ToolResult | null
-							>((resolve) => {
-								patchRuntime(currentActiveId, {
-									pendingToolCall: call,
-									resolveTool: resolve,
-								});
-							});
+							const resolved =
+								await new Promise<ToolResult | null>(
+									(resolve) => {
+										patchRuntime(currentActiveId, {
+											pendingToolCall: call,
+											resolveTool: resolve,
+										});
+									},
+								);
 							patchRuntime(currentActiveId, {
 								pendingToolCall: null,
 								resolveTool: null,
@@ -728,8 +772,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						},
 						onToolResult: (call, result) => {
 							const idx = toolCallsLog.findIndex(
-								(tc) =>
-									tc.call.toolCallId === call.toolCallId,
+								(tc) => tc.call.toolCallId === call.toolCallId,
 							);
 							if (idx >= 0) {
 								toolCallsLog[idx] = {
@@ -768,10 +811,16 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						controller.signal,
 					);
 					assistantContent = result.text;
-					const sessionLinks = formatPastSessionLinks(toolCallsLog, sessionsRef.current);
+					const sessionLinks = formatPastSessionLinks(
+						toolCallsLog,
+						sessionsRef.current,
+					);
 					if (sessionLinks) {
 						assistantContent += sessionLinks;
-						contentParts.push({ type: "text", content: sessionLinks });
+						contentParts.push({
+							type: "text",
+							content: sessionLinks,
+						});
 					}
 					assistantTokenEstimate = result.tokenEstimate;
 				} else {
@@ -790,7 +839,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							});
 						}
 						// Update running token total incrementally for standard stream
-						streamTokenTotal = userTokenEstimate + estimateTokens(fullText);
+						streamTokenTotal =
+							userTokenEstimate + estimateTokens(fullText);
 						patchRuntime(currentActiveId, {
 							runningTokenTotal: streamTokenTotal,
 						});
@@ -811,27 +861,21 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						? slashCmd.target
 						: `${slashCmd.target}.md`;
 					try {
-						await plugin.app.vault.create(
-							fileName,
-							fullText,
-						);
+						await plugin.app.vault.create(fileName, fullText);
 						new Notice(`✓ Created note: ${slashCmd.target}`);
 						assistantContent = `✓ Created note: ${slashCmd.target}`;
 					} catch (e: any) {
-						new Notice(
-							`⚠️ Could not create note: ${e.message}`,
-						);
+						new Notice(`⚠️ Could not create note: ${e.message}`);
 						assistantContent = `⚠️ Could not create note: ${e.message}`;
 					}
 					assistantTokenEstimate = estimateTokens(assistantContent);
 				} else if (slashCmd?.command === "edit" && fullText) {
-					const success =
-						await NoteEditingBridge.applyToTargetNote(
-							plugin.app,
-							slashCmd.target,
-							fullText,
-							"Apply AI edit",
-						);
+					const success = await NoteEditingBridge.applyToTargetNote(
+						plugin.app,
+						slashCmd.target,
+						fullText,
+						"Apply AI edit",
+					);
 					assistantContent = success
 						? `✓ Applied edits to ${slashCmd.target}`
 						: `⚠️ Could not apply edits to ${slashCmd.target}`;
@@ -876,7 +920,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					}
 				}
 
-				const cleanAssistantContent = stripThinkingTags(assistantContent);
+				const cleanAssistantContent =
+					stripThinkingTags(assistantContent);
 				const assistantMsg: ChatMessage = {
 					id: makeId(),
 					role: "assistant",
@@ -887,9 +932,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					modelName: activeProfile.model,
 					responseTimeMs: Date.now() - streamStartTime,
 					toolCalls:
-						toolCallsLog.length > 0
-							? toolCallsLog
-							: undefined,
+						toolCallsLog.length > 0 ? toolCallsLog : undefined,
 					contentParts:
 						contentParts.length > 0 ? contentParts : undefined,
 				};
@@ -898,14 +941,11 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						s.id === currentActiveId
 							? {
 									...s,
-									messages: [
-										...s.messages,
-										assistantMsg,
-									],
+									messages: [...s.messages, assistantMsg],
 									updatedAt: Date.now(),
 									contextItems: sendContextItems,
 								}
-								: s,
+							: s,
 					),
 				);
 			} catch (e: any) {
@@ -937,8 +977,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					const interruptedMsg: ChatMessage = {
 						id: makeId(),
 						role: "assistant",
-						content:
-							stripThinkingTags(fullText) + " [interrupted]",
+						content: stripThinkingTags(fullText) + " [interrupted]",
 						timestamp: Date.now(),
 						command: commandMeta,
 						estimatedTokens: estimateTokens(fullText),
@@ -971,19 +1010,14 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						timestamp: Date.now(),
 						isError: true,
 						command: commandMeta,
-						estimatedTokens: estimateTokens(
-							`Error: ${e.message}`,
-						),
+						estimatedTokens: estimateTokens(`Error: ${e.message}`),
 					};
 					setSessions((prev) =>
 						prev.map((s) =>
 							s.id === currentActiveId
 								? {
 										...s,
-										messages: [
-											...s.messages,
-											errorMsg,
-										],
+										messages: [...s.messages, errorMsg],
 										updatedAt: Date.now(),
 										contextItems: sendContextItems,
 									}
@@ -1068,7 +1102,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 								messages: truncated,
 								updatedAt: Date.now(),
 							}
-							: s,
+						: s,
 				),
 			);
 
@@ -1099,11 +1133,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			);
 			if (!session) return;
 
-			const index = session.messages.findIndex(
-				(m) => m.id === messageId,
-			);
-			if (index < 0 || session.messages[index].role !== "user")
-				return;
+			const index = session.messages.findIndex((m) => m.id === messageId);
+			if (index < 0 || session.messages[index].role !== "user") return;
 
 			const msg = session.messages[index];
 			const truncated = session.messages.slice(0, index);
@@ -1123,7 +1154,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 								messages: truncated,
 								updatedAt: Date.now(),
 							}
-							: s,
+						: s,
 				),
 			);
 			ui.setIsEditing(true);
@@ -1145,7 +1176,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							messages: ui.originalMessages,
 							updatedAt: Date.now(),
 						}
-						: s,
+					: s,
 			),
 		);
 		ui.setIsEditing(false);
@@ -1236,21 +1267,16 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 		async (content: string, target: string) => {
 			let file = plugin.app.vault.getAbstractFileByPath(target);
 			if (!file || !(file instanceof TFile)) {
-				const resolved =
-					plugin.app.metadataCache.getFirstLinkpathDest(
-						target,
-						"",
-					);
+				const resolved = plugin.app.metadataCache.getFirstLinkpathDest(
+					target,
+					"",
+				);
 				if (resolved && resolved instanceof TFile) {
 					file = resolved;
 				}
 			}
 			if (file && file instanceof TFile) {
-				await NoteEditingBridge.appendToNote(
-					plugin.app,
-					file,
-					content,
-				);
+				await NoteEditingBridge.appendToNote(plugin.app, file, content);
 			} else {
 				new Notice(`⚠️ Note not found: ${target}`);
 			}
@@ -1261,27 +1287,24 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 	// ═══════════════════════════════════════════════════════
 	// TOOL APPROVAL
 	// ═══════════════════════════════════════════════════════
-	const handleApproveTool = useCallback(
-		async () => {
-			const currentActiveId = activeSessionIdRef.current;
-			if (!currentActiveId) return;
-			const runtime = getRuntime(currentActiveId);
-			const pendingToolCall = runtime.pendingToolCall;
-			if (!pendingToolCall) return;
-			const toolExecutor = new ToolExecutor(
-				plugin.app,
-				plugin.settings,
-				plugin.personaLoader ?? undefined,
-				plugin.searchIndex ?? undefined,
-				() => currentActiveId,
-				plugin.integrationRegistry,
-			);
-			const result = await toolExecutor.execute(pendingToolCall);
-			runtime.resolveTool?.(result);
-			patchRuntime(currentActiveId, { resolveTool: null });
-		},
-		[plugin, activeSessionIdRef, getRuntime, patchRuntime],
-	);
+	const handleApproveTool = useCallback(async () => {
+		const currentActiveId = activeSessionIdRef.current;
+		if (!currentActiveId) return;
+		const runtime = getRuntime(currentActiveId);
+		const pendingToolCall = runtime.pendingToolCall;
+		if (!pendingToolCall) return;
+		const toolExecutor = new ToolExecutor(
+			plugin.app,
+			plugin.settings,
+			plugin.personaLoader ?? undefined,
+			plugin.searchIndex ?? undefined,
+			() => currentActiveId,
+			plugin.integrationRegistry,
+		);
+		const result = await toolExecutor.execute(pendingToolCall);
+		runtime.resolveTool?.(result);
+		patchRuntime(currentActiveId, { resolveTool: null });
+	}, [plugin, activeSessionIdRef, getRuntime, patchRuntime]);
 
 	const handleRejectTool = useCallback(() => {
 		const currentActiveId = activeSessionIdRef.current;

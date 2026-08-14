@@ -14,6 +14,12 @@ export interface Attachment {
 	mimeType?: string;
 }
 
+/** Persisted multimodal payload for replaying prior message attachments. */
+export type ResolvedMessagePart =
+	| { type: "text"; text: string }
+	| { type: "image"; image: string }
+	| { type: "file"; data: string; mimeType: string };
+
 /** A segment of message content — either text or an inline tool call */
 export type ContentPart =
 	| { type: "text"; content: string }
@@ -33,6 +39,8 @@ export interface ChatMessage {
 	contextItems?: ContextItem[];
 	/** Files attached to this message for the LLM to consume */
 	attachments?: Attachment[];
+	/** Resolved multimodal parts captured at send time for history replay */
+	resolvedParts?: ResolvedMessagePart[];
 	/** Estimated token count for this message (including context for user messages) */
 	estimatedTokens?: number;
 	/** Model name that generated this message (e.g. "gpt-4o", "gemini-1.5-pro") */

@@ -12,14 +12,20 @@ function createMockApiManager(): ChatApiManager {
 	} as unknown as ChatApiManager;
 }
 
-function createParticipant(id: string, name: string, profileId: string): GroupChatParticipant {
+function createParticipant(
+	id: string,
+	name: string,
+	profileId: string,
+): GroupChatParticipant {
 	return { id, name, profileId, color: "#4285f4" };
 }
 
 describe("Orchestrator remote user context", () => {
 	it("includes remote users in system prompt", async () => {
 		const api = createMockApiManager();
-		const participants = [createParticipant("gemini", "Gemini", "gemini-profile")];
+		const participants = [
+			createParticipant("gemini", "Gemini", "gemini-profile"),
+		];
 		const orchestrator = new Orchestrator({
 			api,
 			participants,
@@ -35,7 +41,9 @@ describe("Orchestrator remote user context", () => {
 
 	it("does not include remote users section when empty", async () => {
 		const api = createMockApiManager();
-		const participants = [createParticipant("gemini", "Gemini", "gemini-profile")];
+		const participants = [
+			createParticipant("gemini", "Gemini", "gemini-profile"),
+		];
 		const orchestrator = new Orchestrator({
 			api,
 			participants,
@@ -50,7 +58,9 @@ describe("Orchestrator remote user context", () => {
 
 	it("attributes remote user messages in buildContext", async () => {
 		const api = createMockApiManager();
-		const participants = [createParticipant("gemini", "Gemini", "gemini-profile")];
+		const participants = [
+			createParticipant("gemini", "Gemini", "gemini-profile"),
+		];
 		const orchestrator = new Orchestrator({
 			api,
 			participants,
@@ -69,15 +79,23 @@ describe("Orchestrator remote user context", () => {
 			},
 		];
 
-		const context = (orchestrator as any).buildContext("gemini", messages, "");
+		const context = (orchestrator as any).buildContext(
+			"gemini",
+			messages,
+			"",
+		);
 		expect(context).toHaveLength(4); // system + 2 messages + user input
 		expect(context[1].content).toBe("Hello");
-		expect(context[2].content).toBe("[Remote User alice]: What do you think?");
+		expect(context[2].content).toBe(
+			"[Remote User alice]: What do you think?",
+		);
 	});
 
 	it("does not attribute non-remote user messages", async () => {
 		const api = createMockApiManager();
-		const participants = [createParticipant("gemini", "Gemini", "gemini-profile")];
+		const participants = [
+			createParticipant("gemini", "Gemini", "gemini-profile"),
+		];
 		const orchestrator = new Orchestrator({
 			api,
 			participants,
@@ -93,13 +111,19 @@ describe("Orchestrator remote user context", () => {
 			},
 		];
 
-		const context = (orchestrator as any).buildContext("gemini", messages, "");
+		const context = (orchestrator as any).buildContext(
+			"gemini",
+			messages,
+			"",
+		);
 		expect(context[1].content).toBe("Local message");
 	});
 
 	it("does not attribute remote messages from unknown users", async () => {
 		const api = createMockApiManager();
-		const participants = [createParticipant("gemini", "Gemini", "gemini-profile")];
+		const participants = [
+			createParticipant("gemini", "Gemini", "gemini-profile"),
+		];
 		const orchestrator = new Orchestrator({
 			api,
 			participants,
@@ -117,7 +141,11 @@ describe("Orchestrator remote user context", () => {
 			},
 		];
 
-		const context = (orchestrator as any).buildContext("gemini", messages, "");
+		const context = (orchestrator as any).buildContext(
+			"gemini",
+			messages,
+			"",
+		);
 		expect(context[1].content).toBe("From Bob"); // Not attributed since bob not in remoteUsers
 	});
 
@@ -142,7 +170,44 @@ describe("Orchestrator remote user context", () => {
 			},
 		];
 
-		const context = (orchestrator as any).buildContext("gemini", messages, "");
+		const context = (orchestrator as any).buildContext(
+			"gemini",
+			messages,
+			"",
+		);
 		expect(context[1].content).toBe("[Remote User charlie]: Hi");
+	});
+
+	it("replays resolved attachment parts in group context", () => {
+		const orchestrator = new Orchestrator({
+			api: createMockApiManager(),
+			participants: [
+				createParticipant("gemini", "Gemini", "gemini-profile"),
+			],
+		});
+		const parts = [{ type: "image" as const, image: "base64-image" }];
+		const context = (orchestrator as any).buildContext(
+			"gemini",
+			[
+				{
+					id: "1",
+					role: "user",
+					content: "Describe this",
+					timestamp: 1,
+					resolvedParts: parts,
+				},
+			],
+			"Follow up",
+			parts,
+		);
+
+		expect(context[1].content).toEqual([
+			{ type: "text", text: "Describe this" },
+			...parts,
+		]);
+		expect(context[2].content).toEqual([
+			{ type: "text", text: "Follow up" },
+			...parts,
+		]);
 	});
 });

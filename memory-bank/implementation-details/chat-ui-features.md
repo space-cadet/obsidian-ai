@@ -90,6 +90,14 @@ When Enter is configured for a new line, Shift+Enter and Cmd/Ctrl+Enter still se
 - `src/api.ts` — `SdkMessage`, `MessageContentPart` multimodal types
 - `src/types.ts` — `Attachment` interface
 
+### Group-chat full replay (T19a, 2026-08-14)
+
+Group messages now use the same persisted `resolvedParts` representation as single-chat messages. The group send path resolves attachments before dispatch, stores the parts on the user `ChatMessage`, and passes them through the participant router and orchestrator. Historical group messages replay their multimodal parts rather than collapsing to text. Relay messages carry both `attachments` and `resolvedParts` so remote messages remain available to local agents.
+
+The current group implementation resolves once using the active profile. Images and text are provider-neutral; PDF behavior follows the provider selected during resolution. A future per-agent resolution pass may be needed if a group mixes providers with materially different file-part support.
+
+**Files:** `useMessageActions.ts`, `ParticipantRouter.ts`, `Orchestrator.ts`, `WebSocketSyncAdapter.ts`, `types.ts`.
+
 ---
 
 *Last Updated: 2026-07-29 13:47:51 IST*

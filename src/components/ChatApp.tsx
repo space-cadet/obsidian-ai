@@ -5,7 +5,14 @@ import React, {
 	useEffect,
 	useMemo,
 } from "react";
-import { Notice, TFile, WorkspaceLeaf, MarkdownView, MarkdownRenderer, Component } from "obsidian";
+import {
+	Notice,
+	TFile,
+	WorkspaceLeaf,
+	MarkdownView,
+	MarkdownRenderer,
+	Component,
+} from "obsidian";
 
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
 import { ChatMessage, ChatSession, ContextItem, ContentPart } from "../types";
@@ -555,13 +562,27 @@ const ChatApp: React.FC<ChatAppProps> = ({
 						attachments && attachments.length > 0
 							? attachments
 							: undefined,
+					resolvedParts:
+						attachments && attachments.length > 0
+							? await resolveAttachments(
+									attachments,
+									plugin.app,
+									resolvedProfile.provider,
+								)
+							: undefined,
 				};
 				syncAdapterRef.current.sendMessage(userMsg).catch((err) => {
 					console.warn("[ChatApp] Failed to sync message:", err);
 				});
 			}
 		},
-		[actions.handleSend, relayConnected, participantRouter],
+		[
+			actions.handleSend,
+			plugin.app,
+			relayConnected,
+			participantRouter,
+			resolvedProfile.provider,
+		],
 	);
 
 	// Sync selectedProfileIds into the active session whenever they change
@@ -699,7 +720,13 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	const renderMarkdown = useCallback(
 		async (markdown: string, target: HTMLElement, sourcePath?: string) => {
 			const comp = new Component();
-			await MarkdownRenderer.render(plugin.app, markdown, target, sourcePath ?? "", comp);
+			await MarkdownRenderer.render(
+				plugin.app,
+				markdown,
+				target,
+				sourcePath ?? "",
+				comp,
+			);
 		},
 		[plugin.app],
 	);
@@ -808,10 +835,10 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				pendingToolCall={activeRuntime.pendingToolCall}
 				pendingToolDisplay={
 					activeRuntime.pendingToolCall?.toolName
-						? plugin.integrationRegistry?.getCapabilityDisplay(
+						? (plugin.integrationRegistry?.getCapabilityDisplay(
 								activeRuntime.pendingToolCall.toolName,
-							) ?? null
-					: null
+							) ?? null)
+						: null
 				}
 				typingUsers={typingUsers}
 				onSend={handleSendWithSync}
