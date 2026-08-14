@@ -154,25 +154,28 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 										</div>
 										<div className="chat-session-actions" aria-label={`Actions for ${displayTitle}`}>
 											<button
-												className="chat-btn-small chat-session-load"
+													className="chat-btn-small chat-session-load"
 												onClick={() => onLoad(session.id)}
 												disabled={isActive}
+												title={isActive ? "Current session" : "Load session"}
+												aria-label={isActive ? "Current session" : `Load ${displayTitle}`}
 											>
-												{isActive ? "Current" : "Load"}
+												<span aria-hidden="true">↪</span>
 											</button>
 										<label className="chat-session-copy-menu" onClick={(e) => e.stopPropagation()}>
-											<span className="sr-only">Copy session</span>
-											<select
-												className="chat-btn-small chat-session-copy-select"
-												defaultValue=""
-												aria-label={`Copy ${displayTitle}`}
+												<span className="sr-only">Copy session</span>
+												<select
+													className="chat-btn-small chat-session-copy-select"
+													defaultValue=""
+													aria-label={`Copy ${displayTitle}`}
+													title="Copy session"
 												onChange={(e) => {
 													const format = e.target.value as ExportFormat;
 													if (format) onCopy?.(session, format);
 													e.target.value = "";
 												}}
 											>
-												<option value="" disabled>Copy ▾</option>
+														<option value="" disabled>📋</option>
 												<option value="md">Copy Markdown</option>
 												<option value="json">Copy JSON</option>
 												<option value="jsonl">Copy JSONL</option>

@@ -1388,6 +1388,10 @@
 }
 
 .chat-session-load {
+	width: 32px;
+	padding: 4px 0 !important;
+	font-size: 18px;
+	line-height: 20px;
 	background: #0d9488;
 	border-color: #0d9488;
 	color: #fff;
@@ -1396,6 +1400,13 @@
 .chat-session-load:hover:not(:disabled) {
 	background: #0f766e;
 	color: #fff;
+}
+
+.chat-session-copy-select {
+	width: 32px;
+	padding: 4px 2px !important;
+	text-align: center;
+	font-size: 16px;
 }
 
 .chat-btn-danger {
