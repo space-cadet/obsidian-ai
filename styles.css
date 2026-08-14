@@ -1409,6 +1409,17 @@
 	font-size: 16px;
 }
 
+.chat-session-export-select {
+	background-color: #2563eb;
+	border-color: #2563eb;
+	color: #fff;
+}
+
+.chat-session-export-select:hover {
+	background-color: #1d4ed8;
+	color: #fff;
+}
+
 .chat-btn-danger {
 	color: var(--text-error);
 }
