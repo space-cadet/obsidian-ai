@@ -8,10 +8,6 @@
   <a href="https://github.com/space-cadet/obsidian-ai/discussions">Discussions</a>
 </p>
 
-<p align="center">
-  <img src="docs/demo.gif" alt="Chat Lab: Obsidian AI Demo" width="600">
-</p>
-
 ---
 
 > **🤖 Collaborative AI + Human Chat for Obsidian**
@@ -34,6 +30,20 @@ Messages are tagged with the sender's identity. You always know who said what �
 
 The AI can also **directly manipulate your vault** through structured tool calls — search notes, edit content, create files, move documents, and more — all from the conversation.
 
+## 🚀 Feature Highlights
+
+| Feature | What It Does |
+|---|---|
+| **Collaborative Chat** | AI agents, remote humans, and you as equal participants |
+| **Multi-Agent Chat Relay** | Real-time chat across devices via self-hosted WebSocket relay |
+| **Agentic Note Editing** | 13 vault tools with approval flow — read, edit, create, move, search |
+| **Inline AI Editing** | Context-aware suggestions with visual diff preview |
+| **Vault-Aware Context** | `@mention` notes, folders, tags, active note, embed expansion |
+| **Web Search** | DuckDuckGo, Brave, Tavily, Exa, SearXNG |
+| **Multi-Provider** | OpenAI, Anthropic, Google, DeepSeek, OpenRouter, Ollama, Azure |
+| **Auto-Updater** | One-click updates with stable/dev channels |
+| **Mobile-Responsive** | Full functionality on iOS/Android |
+
 ---
 
 ## 🚀 Features
@@ -51,16 +61,18 @@ The core of Chat Lab: Obsidian AI is a **multi-participant chat** where everyone
 - **Zen Mode** — Hide all chrome, see only messages and input.
 - **Mobile-Responsive** — Works on tablet and phone layouts.
 
-### Multi-Device Sync (WebSocket Relay)
+### Multi-Device Chat Relay (WebSocket)
 
-Continue the same chat across multiple devices — laptop, tablet, phone:
+Chat with remote humans across devices — laptop, tablet, phone — in real time:
 
-- **Real-Time Sync** — Messages sync instantly between devices via WebSocket relay.
+- **Real-Time Message Relay** — Chat messages broadcast instantly between devices via WebSocket relay.
 - **Human-Only Chat** — Chat with other humans without any AI agents present. Pure peer-to-peer messaging.
 - **Mixed Chat** — Have both AI agents and remote humans in the same tab. Agents see human messages; humans see agent responses.
 - **Self-Hosted Relay** — Run the relay on your own machine or VPS; no third-party servers.
 - **LAN Discovery** — Auto-detect your local IP for easy same-network setup.
 - **Zero Persistence** — Relay is stateless; no messages stored on the server.
+
+> **Note:** This relays chat messages between clients, not vault content. Notes are not synced — only the conversation is.
 
 See [Multi-User Chat Design](memory-bank/implementation/multi-user-chat-design.md) for architecture details.
 
@@ -89,6 +101,10 @@ The AI can directly manage your vault through structured tool calls:
 **Smart Results**: Tool outputs are formatted as markdown tables and lists before the AI sees them — no raw JSON dumps in your chat.
 
 ### Inline AI Editing
+
+<p align="center">
+  <img src="docs/demo.gif" alt="Inline AI Editing Demo" width="600">
+</p>
 
 - **Context-Aware Suggestions** — Highlight text or place your cursor, press `Ctrl/Cmd + K`, and get AI-powered transformations.
 - **Visual Diff Preview** — See exactly what changed with inline markers for additions and deletions before you commit.
@@ -145,7 +161,6 @@ Stay current without manual downloads:
 - **One-Click Update** — Notification shows latest version, commit message, and author; click to update
 - **Stable / Dev Channels** — Switch between release builds and latest `main` branch
 - **Manual Check** — Button in Settings to check immediately
-- **Rollback Safety** — Update preserves previous version for recovery
 
 ### Debug & Diagnostics
 
