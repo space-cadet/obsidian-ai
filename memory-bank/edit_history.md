@@ -156,3 +156,12 @@
 - Modified `src/components/ChatMessages.tsx` - Modified src/components/ChatMessages.tsx
 - Modified `src/hooks/useMessageActions.ts` - Modified src/hooks/useMessageActions.ts
 - Modified `src/components/ChatApp.tsx` - Modified src/components/ChatApp.tsx
+# Edit History
+
+#### 19:31:00 IST - T22/T44: Reconcile layout extraction and faithful preview progress
+- Updated `memory-bank/tasks/T22.md` - Marked Phase 5 complete and recorded T44 follow-up ownership.
+- Updated `memory-bank/tasks/T44.md` - Recorded production component integration, layout/modal fixes, and Playwright evidence.
+- Updated `memory-bank/activeContext.md` - Added T22/T44 closeout context.
+- Updated `memory-bank/sessions/2026-08-14-afternoon.md` - Appended session work and remaining T44 scope.
+- Updated `memory-bank/session_cache.md` - Reconciled T22/T44 statuses and progress.
+- Updated `memory-bank/tasks.md` - Marked T22 complete in the task registry.

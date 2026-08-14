@@ -15,6 +15,7 @@ package-lock.json
 # They should be uploaded to GitHub releases instead.
 main.js
 dist/
+preview-dist/
 
 # Exclude sourcemaps
 *.map

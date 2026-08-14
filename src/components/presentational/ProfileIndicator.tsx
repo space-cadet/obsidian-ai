@@ -1,5 +1,5 @@
 import React from "react";
-import { ProviderProfile, getProviderColor } from "../../settings";
+import type { ProviderProfile } from "../../settings";
 import ObsidianIcon from "../ObsidianIcon";
 
 interface ProfileIndicatorProps {
@@ -15,11 +15,20 @@ const providerIcons: Record<string, string> = {
 	agent: "network",
 };
 
+const providerColors: Record<string, string> = {
+	openai: "#74aa9c",
+	anthropic: "#d97757",
+	google: "#4285f4",
+	deepseek: "#4d6bfe",
+	ollama: "#999999",
+	agent: "#a78bfa",
+};
+
 export const ProfileIndicator: React.FC<ProfileIndicatorProps> = ({
 	profile,
 }) => {
 	const iconName = providerIcons[profile.provider] || "bot";
-	const color = getProviderColor(profile.provider);
+	const color = providerColors[profile.provider] ?? "#888888";
 
 	return (
 		<div className="chat-profile-chip" title={`${profile.name} — ${profile.provider} / ${profile.model}`}>

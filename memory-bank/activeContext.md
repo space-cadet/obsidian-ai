@@ -1,6 +1,18 @@
 # Active Context
 
-*Last Updated: 2026-08-14 16:42:00 IST*
+*Last Updated: 2026-08-14 19:31:00 IST*
+
+### 2026-08-14 T22/T44 Closeout
+
+- T22 Phase 5 is reconciled as complete: `ChatToolbar`, `ChatMainArea`, and
+  `ChatOverlays` are extracted and composed by `ChatApp.tsx`.
+- T44.2b now renders the production toolbar/tabs, `ChatMessages`, `ChatInput`,
+  and `ChatOverlays` in a standalone browser preview.
+- Fixed preview CSS loading, icon shim sizing, layout containment, and the
+  history modal's initial/open/close state. Playwright verified the production
+  transcript/composer, modal interaction, and mobile no-overflow behavior.
+- T44 remains active for richer fixture states, final boundary documentation,
+  and acceptance evidence; the initial hand-written preview is smoke-only.
 
 ### 2026-08-14 Session Closeout
 
@@ -8,6 +20,18 @@
 - T20 message selection and Chat History copy/export workflows completed and pushed through `a9cad79`; implementation details are in `implementation-details/message-selection-chat-history.md`.
 - T41 update modal metadata completed and pushed as `7a770f3`.
 - No engineering tasks remain from this session; T22/T44, T42, and older backlog items remain unchanged.
+
+### 2026-08-14 T44.2b Follow-up
+
+- Corrected the T44 preview assessment: the first browser preview was a
+  hand-written smoke harness, not the production chat UI.
+- T22 Phase 5 is confirmed complete in the branch (`a219e07`, `48e747d`):
+  `ChatToolbar`, `ChatMainArea`, and `ChatOverlays` are present.
+- Started T44.2b with real production `ChatToolbar` and `ChatTabBar` rendered
+  in the preview, fixture props, an Obsidian module shim, and production CSS.
+- Preview build, TypeScript, and the 3 fixture contract tests pass.
+- Remaining: wire `ChatMainArea`/`ChatOverlays`, then run Playwright against
+  the faithful surface and update T44 acceptance evidence.
 
 ### T41: Plugin Auto-Updater with Stable/Dev Channels (2026-08-09)
 **Status:** ✅ COMPLETE — Commit-hash fix applied, built, and released
@@ -109,8 +133,8 @@
 ## Current Focus
 **T41 Plugin Auto-Updater** — ✅ COMPLETE. Commit-hash comparison fix implemented, built, and released. `latest-dev` release now contains correct hash (ae09179).
 **T43 Multi-User and Agent Chat** — ✅ COMPLETE. Phase 5 UI, the 2026-08-12 mobile scrolling/composer/model-badge follow-up, and the dependency/typecheck cleanup are complete.
-**T22 ChatApp Component Decomposition** — Phase 4 is complete; Phase 5 layout extraction remains pending.
-**T44 Standalone UI Preview and Host Boundary** — 🔄 **T44.1 COMPLETE**. Host boundary (`ChatHost` interface + Obsidian/Fixture adapters) implemented and committed. T44.2-5 pending after T22 layout extraction.
+**T22 ChatApp Component Decomposition** — ✅ Phase 5 layout extraction is complete; faithful preview follow-up is tracked under T44.2b.
+**T44 Standalone UI Preview and Host Boundary** — 🔄 **T44.1 and T22 prerequisite complete; T44.2b production-component preview active.**
 **T40 Multi-User Chat with LaTeX Support** — Phase 2 complete. T43's participant-routing foundation is merged; next: end-to-end cross-device messaging test between two Obsidian instances.
 **T37 Idempotent Bulk Note Creation and Batch Scope Decision** — completed 2026-08-05; `create_notes` skips existing files and reports its created/skipped result, while mutation batching remains deliberately operation-specific.
 **T38 Tool Approval Policies, Batch Plans, and Operation Audit Log** — paused by user request for a later session; the agreed design is a graduated approval policy, previewed batch plans, and a bounded privacy-aware audit log.

@@ -1,7 +1,7 @@
 # Session Cache
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-14 16:42:00 IST*
+*Last Updated: 2026-08-14 19:31:00 IST*
 
 **Started**: 2026-08-14 16:19:00 IST
 **Ended**: 2026-08-14 16:42 IST
@@ -63,22 +63,24 @@ Fix token counter accumulation, remove green streaming border, add live tool res
 [Details](tasks/T16.md)
 
 ### T22: ChatApp Component Decomposition
-**Status:** 🔄 **IN PROGRESS — Phase 5 pending**
+**Status:** ✅ **COMPLETED — Phase 5 delivered**
 **Started:** 2026-05-28
 **Context**: [Details](tasks/T22.md)
 **Progress**:
 - ✅ Phases 0–3 completed.
 - ✅ Phase 4 landed in `da4af7d` with session/settings/export/search/context hooks.
-- ⬜ Phase 5: extract `ChatLayout`, `ChatToolbar`, `ChatMainArea`, and `ChatOverlays`.
+- ✅ Phase 5: `ChatToolbar`, `ChatMainArea`, and `ChatOverlays` extracted and composed by `ChatApp`.
 
 ### T44: Standalone UI Preview and Obsidian Host Boundary
-**Status:** 🔄 **IN PROGRESS — planning complete; implementation pending**
+**Status:** 🔄 **IN PROGRESS — faithful production preview active**
 **Started:** 2026-08-12
 **Context**: [Details](tasks/T44.md)
 **Progress**:
 - ✅ Existing Vitest/jsdom, React Testing Library, and T21 CLI harness reviewed.
 - ✅ Storybook selected as the planned persistent preview surface.
-- ⬜ Define the neutral host adapter, fixtures, and browser workflow.
+- ✅ Production preview renders toolbar/tabs, messages, input, and overlays.
+- ✅ Playwright verifies modal interaction and mobile no-overflow behavior.
+- ⬜ Broaden fixture coverage and finish boundary documentation/acceptance.
 
 ### T40: Multi-User Chat with LaTeX Support
 **Status:** 🔄 **IN PROGRESS**

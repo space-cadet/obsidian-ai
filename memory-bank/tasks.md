@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-14 16:42:00 IST*
+*Last Updated: 2026-08-14 19:31:00 IST*
 
 ## Overview
 
@@ -18,7 +18,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
 | T40 | Multi-User Chat with LaTeX Support | 🔄 | HIGH | 2026-08-08 | T16 | [Details](tasks/T40.md) |
 | T42 | Remote Chat Storage & Sync | 🔄 | HIGH | 2026-08-10 | T40 | [Details](tasks/T42.md) |
-| T22 | ChatApp.tsx Component Decomposition | 🔄 | HIGH | 2026-05-28 | T1, T15 | [Details](tasks/T22.md) |
+| T22 | ChatApp.tsx Component Decomposition | ✅ | HIGH | 2026-05-28 | T1, T15 | [Details](tasks/T22.md) |
 | T44 | Standalone UI Preview and Obsidian Host Boundary | 🔄 | MEDIUM | 2026-08-12 | T1, T22 | [Details](tasks/T44.md) |
 | T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
 

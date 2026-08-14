@@ -1,0 +1,28 @@
+:root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #171717; color: #dedede; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+.preview-shell { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+.preview-header { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 28px; }
+.preview-eyebrow { color: #9ecbff; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; margin: 0 0 8px; }
+h1 { margin: 0; font-size: clamp(28px, 5vw, 46px); letter-spacing: -.04em; }
+.preview-subtitle { color: #999; margin: 10px 0 0; }
+label { display: grid; gap: 6px; color: #aaa; font-size: 12px; }
+select, button { border: 1px solid #444; border-radius: 7px; background: #242424; color: #eee; padding: 9px 12px; }
+.preview-card { position: relative; overflow: hidden; height: min(760px, 78vh); min-height: 620px; border: 1px solid #383838; border-radius: 12px; background: #202020; box-shadow: 0 18px 50px #0005; }
+.preview-card .chat-panel { position: relative; height: 100%; min-height: 0; }
+.preview-card .chat-messages-scroll-wrapper { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.preview-card .chat-messages { height: 100%; overflow-y: auto; }
+.preview-card .chat-input-wrapper { flex: 0 0 auto; }
+.preview-card .chat-modal-overlay { position: absolute; z-index: 1000; }
+.preview-toolbar, .preview-composer { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #383838; }
+.preview-toolbar span { color: #8ccf9b; font-size: 12px; }
+.preview-transcript { min-height: 430px; padding: 24px; display: grid; align-content: end; gap: 16px; }
+.preview-empty { color: #888; text-align: center; padding: 100px 0; }
+.preview-message { max-width: 78%; padding: 12px 15px; border-radius: 10px; background: #292929; }
+.preview-message.user { justify-self: end; background: #29415b; }
+.preview-message.error { border: 1px solid #a95858; }
+.preview-message-meta { display: flex; gap: 8px; align-items: center; color: #aaa; font-size: 11px; }
+.preview-message-meta span { color: #e8b36a; }
+.preview-message p { white-space: pre-wrap; line-height: 1.55; margin: 7px 0 0; }
+.preview-composer { border-top: 1px solid #383838; border-bottom: 0; color: #777; }
+@media (max-width: 600px) { .preview-shell { padding: 22px 12px; } .preview-header { align-items: stretch; flex-direction: column; } .preview-card { height: 78vh; min-height: 560px; } .preview-message { max-width: 92%; } .preview-transcript { min-height: 0; padding: 16px 12px; } }
