@@ -55,6 +55,75 @@ describe("MemoryStore", () => {
 		});
 	});
 
+	describe("deduplication", () => {
+		it("reaffirms an existing entry instead of creating a near-duplicate", async () => {
+			const original = await store.create("preference", "User prefers dark mode");
+			const duplicate = await store.create("preference", "User prefers dark mode for the UI");
+			expect(duplicate.id).toBe(original.id); // Same entry returned
+			const all = await store.list();
+			expect(all).toHaveLength(1);
+		});
+
+		it("allows distinct entries with different content", async () => {
+			await store.create("preference", "User prefers dark mode");
+			await store.create("preference", "User prefers tea over coffee");
+			const all = await store.list();
+			expect(all).toHaveLength(2);
+		});
+
+		it("reaffirming bumps the timestamp", async () => {
+			const original = await store.create("user_fact", "User is a physicist");
+			const originalDate = original.timestamp;
+
+			// Advance time by mocking Date
+			const mockDate = new Date("2026-12-31T00:00:00Z");
+			const realDate = Date;
+			global.Date = class extends Date {
+				constructor() {
+					super(mockDate);
+				}
+				static now() {
+					return mockDate.getTime();
+				}
+			} as any;
+
+			const reaffirmed = await store.create("user_fact", "User is a physicist who studies quantum gravity");
+			global.Date = realDate;
+
+			expect(reaffirmed.id).toBe(original.id);
+			expect(reaffirmed.timestamp).not.toBe(originalDate);
+			expect(reaffirmed.timestamp).toBe("2026-12-31");
+		});
+
+		it("only deduplicates within the same category by default", async () => {
+			await store.create("user_fact", "User is studying Chinese");
+			await store.create("project", "User is studying Chinese vocabulary");
+			const all = await store.list();
+			expect(all).toHaveLength(2);
+		});
+
+		it("cross-category dedup when sameCategoryOnly is false", async () => {
+			await store.create("user_fact", "User is studying Chinese");
+			const dup = await store.create("project", "User is studying Chinese", [], {
+				sameCategoryOnly: false,
+			});
+			const all = await store.list();
+			expect(all).toHaveLength(1);
+			expect(dup.category).toBe("user_fact"); // Original category preserved
+		});
+
+		it("respects custom threshold", async () => {
+			await store.create("preference", "User likes Julia for numerical work");
+			// Low threshold (0.99) should NOT match similar-but-different content
+			const entry = await store.create("preference", "User likes Python for scripting", [], {
+				threshold: 0.99,
+			});
+			expect(entry.content).toBe("User likes Python for scripting");
+			const all = await store.list();
+			expect(all).toHaveLength(2);
+		});
+	});
+
 	describe("read", () => {
 		it("returns the entry by ID", async () => {
 			const created = await store.create("project", "QHE paper");
@@ -247,6 +316,102 @@ describe("MemoryStore", () => {
 			await adapter.write("/test/intelligence/memory.md", "- [2026-01-01] **user_fact**: Test");
 			const migrated = await store.migrateFromMarkdown();
 			expect(migrated).toBe(0);
+		});
+	});
+
+	describe("pruneDuplicates", () => {
+		it("removes exact duplicates", async () => {
+			// Inject raw duplicates directly (simulating pre-dedup data)
+			const adapter = store["deps"].app.vault.adapter;
+			await adapter.write("/test/intelligence/memory.json", JSON.stringify([
+				{ id: "a1", timestamp: "2026-08-01", category: "preference", content: "User likes tea", tags: [] },
+				{ id: "a2", timestamp: "2026-08-02", category: "preference", content: "User likes tea", tags: [] },
+				{ id: "a3", timestamp: "2026-08-03", category: "preference", content: "User likes tea", tags: [] },
+			]));
+			const result = await store.pruneDuplicates(0.7);
+			expect(result.removed).toBe(2);
+			expect(result.kept).toBe(1);
+			expect(result.groups).toBe(1);
+			const all = await store.list();
+			expect(all).toHaveLength(1);
+		});
+
+		it("removes near-duplicates within category", async () => {
+			const adapter = store["deps"].app.vault.adapter;
+			await adapter.write("/test/intelligence/memory.json", JSON.stringify([
+				{ id: "b1", timestamp: "2026-08-01", category: "project", content: "The user is working on a quantum hall effect paper for publication", tags: [] },
+				{ id: "b2", timestamp: "2026-08-02", category: "project", content: "The user is working on a quantum hall effect paper revision", tags: [] },
+				{ id: "b3", timestamp: "2026-08-03", category: "project", content: "Completely different topic about machine learning", tags: [] },
+			]));
+			const result = await store.pruneDuplicates(0.7);
+			expect(result.removed).toBe(1);
+			expect(result.kept).toBe(2);
+			expect(result.groups).toBe(1);
+		});
+
+		it("keeps distinct entries across categories", async () => {
+			const adapter = store["deps"].app.vault.adapter;
+			await adapter.write("/test/intelligence/memory.json", JSON.stringify([
+				{ id: "c1", timestamp: "2026-08-01", category: "user_fact", content: "User is a physicist", tags: [] },
+				{ id: "c2", timestamp: "2026-08-02", category: "preference", content: "User is a physicist", tags: [] },
+			]));
+			const result = await store.pruneDuplicates(0.7);
+			expect(result.removed).toBe(0);
+			expect(result.kept).toBe(2);
+		});
+
+		it("keeps the longest/most detailed entry in a group", async () => {
+			const adapter = store["deps"].app.vault.adapter;
+			await adapter.write("/test/intelligence/memory.json", JSON.stringify([
+				{ id: "d1", timestamp: "2026-08-01", category: "insight", content: "Dataview renders in preview mode only", tags: [] },
+				{ id: "d2", timestamp: "2026-08-02", category: "insight", content: "Dataview renders in preview mode only, not edit mode, because rows are generated live", tags: [] },
+			]));
+			const result = await store.pruneDuplicates(0.7);
+			expect(result.removed).toBe(1);
+			const all = await store.list();
+			expect(all[0].content.length).toBeGreaterThan(50); // The longer one
+		});
+
+		it("reports byte savings", async () => {
+			const adapter = store["deps"].app.vault.adapter;
+			await adapter.write("/test/intelligence/memory.json", JSON.stringify([
+				{ id: "e1", timestamp: "2026-08-01", category: "reference", content: "Test content for size measurement", tags: [] },
+				{ id: "e2", timestamp: "2026-08-02", category: "reference", content: "Test content for size measurement duplicate", tags: [] },
+			]));
+			const result = await store.pruneDuplicates(0.7);
+			expect(result.bytesBefore).toBeGreaterThan(result.bytesAfter);
+			expect(result.bytesBefore - result.bytesAfter).toBeGreaterThan(0);
+		});
+
+		it("logs a prune audit entry", async () => {
+			const adapter = store["deps"].app.vault.adapter;
+			await adapter.write("/test/intelligence/memory.json", JSON.stringify([
+				{ id: "f1", timestamp: "2026-08-01", category: "preference", content: "User prefers dark mode for the interface", tags: [] },
+				{ id: "f2", timestamp: "2026-08-02", category: "preference", content: "User prefers dark mode for the user interface", tags: [] },
+			]));
+			await store.pruneDuplicates(0.7);
+			const audit = await store.readAudit(10);
+			const pruneEntry = audit.find((a) => a.operation === "delete" && a.entryId.startsWith("prune-"));
+			expect(pruneEntry).toBeDefined();
+			expect(pruneEntry!.content).toContain("Pruned 1 duplicates");
+		});
+	});
+
+	describe("getStats", () => {
+		it("returns entry count and size", async () => {
+			await store.create("user_fact", "Fact A");
+			await store.create("project", "Project B");
+			const stats = await store.getStats();
+			expect(stats.entries).toBe(2);
+			expect(stats.size).toBeGreaterThan(0);
+			expect(stats.categories).toEqual({ user_fact: 1, project: 1 });
+		});
+
+		it("returns zeros for empty store", async () => {
+			const stats = await store.getStats();
+			expect(stats.entries).toBe(0);
+			expect(stats.size).toBe(2); // "[]"
+			expect(stats.categories).toEqual({});
 		});
 	});
 });

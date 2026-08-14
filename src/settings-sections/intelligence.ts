@@ -279,6 +279,61 @@ export function renderIntelligenceSection(
 	const refreshBtn = exportRow.createEl("button", { text: "Refresh Stats" });
 	refreshBtn.addEventListener("click", () => void refreshStats());
 
+	// ── Memory Optimization ──
+	const optimizeRow = statsEl.createEl("div");
+	optimizeRow.style.marginTop = "12px";
+	optimizeRow.style.padding = "10px";
+	optimizeRow.style.border = "1px solid var(--background-modifier-border)";
+	optimizeRow.style.borderRadius = "6px";
+	optimizeRow.style.background = "var(--background-secondary)";
+
+	const optimizeHeader = optimizeRow.createEl("div", { text: "Memory Optimization" });
+	optimizeHeader.style.fontWeight = "600";
+	optimizeHeader.style.marginBottom = "6px";
+
+	const optimizeDesc = optimizeRow.createEl("div", {
+		text: "Remove duplicate entries from historical data. This does not affect new writes — deduplication already happens automatically there.",
+	});
+	optimizeDesc.style.fontSize = "0.9em";
+	optimizeDesc.style.color = "var(--text-muted)";
+	optimizeDesc.style.marginBottom = "8px";
+
+	const optimizeResult = optimizeRow.createEl("div");
+	optimizeResult.style.fontSize = "0.9em";
+	optimizeResult.style.minHeight = "1.5em";
+
+	const optimizeBtn = optimizeRow.createEl("button", { text: "🧹 Prune Duplicates" });
+	optimizeBtn.addClass("mod-warning");
+	optimizeBtn.addEventListener("click", async () => {
+		if (!plugin.personaLoader) {
+			new Notice("Intelligence layer not initialized.");
+			return;
+		}
+		optimizeBtn.disabled = true;
+		optimizeBtn.textContent = "Pruning...";
+		try {
+			const result = await plugin.personaLoader.memoryStore.pruneDuplicates(0.7);
+			const savedKb = ((result.bytesBefore - result.bytesAfter) / 1024).toFixed(1);
+			optimizeResult.empty();
+			optimizeResult.createEl("span", {
+				text: `✅ Removed ${result.removed} duplicates (${result.groups} groups). Kept ${result.kept} unique entries. Saved ~${savedKb} KB.`,
+				attr: { style: "color: var(--text-success);" },
+			});
+			new Notice(`Memory pruned: ${result.removed} duplicates removed, ~${savedKb} KB saved.`);
+			void refreshStats();
+		} catch (e: any) {
+			optimizeResult.empty();
+			optimizeResult.createEl("span", {
+				text: `❌ Prune failed: ${e.message}`,
+				attr: { style: "color: var(--text-error);" },
+			});
+			new Notice(`Prune failed: ${e.message}`);
+		} finally {
+			optimizeBtn.disabled = false;
+			optimizeBtn.textContent = "🧹 Prune Duplicates";
+		}
+	});
+
 	// ── Audit Log ──
 	const auditEl = sectionEl.createEl("details", { cls: "obsidian-ai-settings-details" });
 
