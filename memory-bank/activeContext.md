@@ -21,6 +21,12 @@
 - CI run `31874348465` passed, including `main.js` and `styles.css` attestations.
 - Remaining external gate: request a fresh Community Directory review, then perform manual desktop/mobile smoke tests.
 
+### 2026-08-15 T8a Follow-up Release
+
+- Fixed all remaining errors reported by the latest scanner context and published `1.3.4`.
+- Release CI passed build, attestations, and supported asset upload.
+- Request the next Community Directory review against release `1.3.4`.
+
 ### 2026-08-15 Release Readiness Audit
 
 - Reopened T8 after policy and release audit; the previous “ready” assessment is no longer valid.

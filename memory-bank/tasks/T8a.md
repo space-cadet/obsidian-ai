@@ -5,13 +5,13 @@ source_commit: 2b81b96
 
 # T8a: Community Directory Review Remediation
 *Created: 2026-08-15 13:19:00 IST*
-*Last Updated: 2026-08-15 13:55:00 IST*
+*Last Updated: 2026-08-15 14:40:00 IST*
 
 **Description**: Resolve the failed automated Community Directory checks for the Chat Lab AI release and produce a reproducible, policy-compliant 1.3.3 release.
 **Status**: 🔄 IN PROGRESS
 **Priority**: HIGH
 **Started**: 2026-08-15
-**Last Active**: 2026-08-15 13:55:00 IST
+**Last Active**: 2026-08-15 14:40:00 IST
 **Dependencies**: T8, T7
 
 ## Completion Criteria
@@ -36,7 +36,7 @@ source_commit: 2b81b96
 3. ✅ Remediation plan and acceptance criteria documented.
 4. 🔄 First remediation batch implemented and verified.
 5. ✅ Publish 1.3.3 with attested assets.
-6. ⬜ Request fresh Community Directory review and complete manual smoke tests.
+6. ⬜ Request fresh Community Directory review for 1.3.4 and complete manual smoke tests.
 
 ## Context
 The 1.3.2 review found errors in compatibility, DOM safety, dynamic script detection, mobile filesystem access, release reproducibility, asset packaging, and provenance attestations. The source README currently matches `manifest.json`; the reported mismatch may come from the reviewed release artifact and must be rechecked after a clean CI build.
@@ -57,3 +57,12 @@ The 1.3.2 review found errors in compatibility, DOM safety, dynamic script detec
 - CI run `31874348465` passed all steps, including both build attestations.
 - Release assets are `main.js`, `manifest.json`, `styles.css`, and `release-sha256sums.txt`; no unsupported zip is attached.
 - Release URL: https://github.com/space-cadet/obsidian-ai/releases/tag/1.3.3
+
+## 2026-08-15 Follow-up Review Fixes
+
+- Added descriptions to all six flagged directive comments.
+- Removed preview `innerHTML` assignments using parsed DOM nodes and replaced preview stub style assignments with `setCssStyles`.
+- Removed logger `navigator.userAgent` usage and replaced it with Obsidian `Platform`.
+- Replaced the remaining unsupported `workspace.revealLeaf` call with `setActiveLeaf`.
+- Published follow-up release `1.3.4` from commit `75c83be`; CI run `31874989163` passed both attestations and asset upload.
+- Release URL: https://github.com/space-cadet/obsidian-ai/releases/tag/1.3.4

@@ -13,6 +13,13 @@
 - CI release run `31874348465` passed build, asset validation, attestations, and release upload.
 - Release includes only supported plugin assets plus checksums; fresh Community review is now the remaining external gate.
 
+### 2026-08-15 T8a Follow-up Release 1.3.4
+
+- Fixed the remaining review findings: directive comments, preview innerHTML/style usage, logger navigator access, and unsupported leaf reveal API.
+- Local gates pass: 234 tests, TypeScript, build, audit, and diff check.
+- Published `1.3.4`; tagged CI run `31874989163` passed attestations and release upload.
+- Next: request fresh Community review for 1.3.4 and complete manual smoke tests.
+
 ### 2026-08-15 Community Directory Review — T8a Created
 
 - Parsed the supplied review PDF for release `1.3.2` at commit `056428c`.
