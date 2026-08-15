@@ -17,7 +17,7 @@ const baseProps = {
 	onLoadChat: vi.fn(),
 	onExportChat: vi.fn(),
 	canLoad: true,
-	plugin: { app: {}, manifest: { id: "obsidian-ai" } } as any,
+		plugin: { app: {}, manifest: { id: "chat-lab" } } as any,
 	autoApprove: false,
 	onToggleAutoApprove: vi.fn(),
 	autoNameSessions: false,

@@ -11,7 +11,6 @@ const providerIcons: Record<string, string> = {
 	anthropic: "bot-message-square",
 	google: "bot",
 	deepseek: "bot",
-	ollama: "cpu",
 	agent: "network",
 };
 
@@ -20,7 +19,6 @@ const providerColors: Record<string, string> = {
 	anthropic: "#d97757",
 	google: "#4285f4",
 	deepseek: "#4d6bfe",
-	ollama: "#999999",
 	agent: "#a78bfa",
 };
 

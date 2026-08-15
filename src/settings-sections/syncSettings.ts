@@ -1,4 +1,4 @@
-import { Notice } from "obsidian";
+import { Notice, requestUrl } from "obsidian";
 import ObsidianAIPlugin from "../main";
 
 /** Try to detect local IP using WebRTC (works in Electron/Obsidian) */
@@ -32,19 +32,13 @@ async function testRelayConnection(relayUrl: string): Promise<{
 	try {
 		// Convert ws:// to http:// for the test
 		const httpUrl = relayUrl.replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://");
-		const controller = new AbortController();
-		const timeout = setTimeout(() => controller.abort(), 5000);
+		const res = await requestUrl({ url: `${httpUrl}/rooms`, method: "GET" });
 
-		const res = await fetch(`${httpUrl}/rooms`, {
-			signal: controller.signal,
-		});
-		clearTimeout(timeout);
-
-		if (!res.ok) {
+		if (res.status < 200 || res.status >= 300) {
 			return { ok: false, error: `HTTP ${res.status}` };
 		}
 
-		const data = await res.json();
+		const data = JSON.parse(res.text);
 		return { ok: true, rooms: data.rooms };
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);

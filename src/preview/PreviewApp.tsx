@@ -11,7 +11,7 @@ const profiles = [
 ];
 const plugin = {
 	app: { setting: { open() {}, openTabById() {} }, workspace: { openLinkText() {} } },
-	manifest: { id: "obsidian-ai" },
+	manifest: { id: "chat-lab" },
 	settings: {
 		providerProfiles: profiles, syncRoomId: "obsidian-ai-chat", syncUserName: "FixtureUser",
 		chatTabTitleWidth: 160, pressEnterToSend: true,

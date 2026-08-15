@@ -47,7 +47,7 @@ export class ChatErrorBoundary extends Component<Props, State> {
 						</p>
 						<p>
 							<code>
-								.vault/.obsidian/plugins/obsidian-ai/debug.log
+						.vault/.obsidian/plugins/chat-lab/debug.log
 							</code>
 						</p>
 					</div>

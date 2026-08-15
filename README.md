@@ -12,7 +12,13 @@
 
 > **🤖 Collaborative AI + Human Chat for Obsidian**
 >
-> A persistent chat panel where **AI agents and humans participate as equals** — across devices, in real time. Agents can read and edit your vault through native tool calling. Bring your own API keys. Your data stays in your vault.
+> A persistent chat panel where **AI agents and humans participate as equals** — across devices, in real time. Agents can read and edit your vault through native tool calling. Bring your own API keys. Your data stays in your vault unless you explicitly send it to a configured provider, search service, or relay.
+
+## 🔐 Privacy and network behavior
+
+Obsidian AI includes no telemetry or analytics service. Network requests occur only when you use a configured feature: chat and AI memory/pruning send the selected prompt, context, and (when enabled) memory to the selected LLM provider; web search sends your query to the selected search provider; model discovery contacts the provider endpoint; and multi-device chat sends conversation messages to the relay URL you configure. Vault files are read or changed only when you select context, invoke an agent tool, or use an editing feature. API keys are stored in plugin settings and sent only to the provider or search service they configure.
+
+Agent tools that create, modify, move, or delete vault files require approval by default. Automatic updates are disabled by default; downloaded release files are backed up before installation, but users who need cryptographic verification should install manually from a verified release.
 
 ---
 
@@ -40,7 +46,7 @@ The AI can also **directly manipulate your vault** through structured tool calls
 | **Inline AI Editing** | Context-aware suggestions with visual diff preview |
 | **Vault-Aware Context** | `@mention` notes, folders, tags, active note, embed expansion |
 | **Web Search** | DuckDuckGo, Brave, Tavily, Exa, SearXNG |
-| **Multi-Provider** | OpenAI, Anthropic, Google, DeepSeek, OpenRouter, Ollama, Azure |
+| **Multi-Provider** | OpenAI, Anthropic, Google, DeepSeek, OpenRouter, Azure, and custom OpenAI-compatible endpoints |
 | **Auto-Updater** | One-click updates with stable/dev channels |
 | **Mobile-Responsive** | Full functionality on iOS/Android |
 
@@ -137,7 +143,7 @@ Bring your own keys. No data leaves your machine unless you choose it to.
 | **Google** | Gemini 1.5 Pro, Gemini Flash | Cloud |
 | **DeepSeek** | DeepSeek V3, DeepSeek R1 | Cloud |
 | **OpenRouter** | 200+ models via unified endpoint | Cloud |
-| **Ollama** | Llama, Mistral, Qwen, and more | **Local** |
+| **Local models** | Use a custom OpenAI-compatible endpoint; official Ollama integration is deferred for 1.3.1 | **Optional** |
 | **Azure OpenAI** | Enterprise GPT models | Cloud |
 | **Custom** | Any OpenAI-compatible endpoint | Either |
 
@@ -186,7 +192,7 @@ The fastest way to install and get automatic updates:
 
 1. Download the latest release from [GitHub Releases](https://github.com/space-cadet/obsidian-ai/releases)
 2. Extract `main.js`, `styles.css`, and `manifest.json`
-3. Copy them to your vault: `.obsidian/plugins/obsidian-ai/`
+3. Copy them to your vault: `.obsidian/plugins/chat-lab/`
 4. Enable in **Settings** → **Community Plugins`
 
 ---
@@ -204,7 +210,7 @@ Open **Settings** → **Chat Lab: Obsidian AI** → **Provider Profiles**.
 Click **Add Profile**, choose your provider, and enter:
 - **API Key** (if required)
 - **Model** — type a name or click **Fetch Models** to discover
-- **Custom URL** (for Ollama or custom endpoints)
+- **Custom URL** (for OpenAI-compatible or other custom endpoints)
 
 ### 3. Chat with AI Agents
 

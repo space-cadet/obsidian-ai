@@ -15,7 +15,7 @@ import {
 	ProviderProfile,
 	ProviderType,
 } from "./settings";
-import { App, MarkdownView, Notice } from "obsidian";
+import { App, MarkdownView, Notice, requestUrl } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import { setGeneratedResponseEffect } from "./modules/AIExtension";
 import { parseCommand } from "./modules/commands/parser";
@@ -81,7 +81,10 @@ export function validateProfile(profile: ProviderProfile): string | null {
 /**
  * Creates a Vercel AI SDK language model from a provider profile.
  */
-function getThinkingProviderOptions(profile: ProviderProfile, thinkingEnabled?: boolean): Record<string, any> | undefined {
+function getThinkingProviderOptions(
+	profile: ProviderProfile,
+	thinkingEnabled?: boolean,
+): Record<string, any> | undefined {
 	if (!thinkingEnabled) return undefined;
 	switch (profile.provider) {
 		case "deepseek":
@@ -95,7 +98,11 @@ function getThinkingProviderOptions(profile: ProviderProfile, thinkingEnabled?: 
 		case "anthropic":
 			// Claude 3.7 Sonnet supports extended thinking via providerOptions
 			if (profile.model?.includes("claude-3-7")) {
-				return { anthropic: { thinking: { type: "enabled", budgetTokens: 12000 } } };
+				return {
+					anthropic: {
+						thinking: { type: "enabled", budgetTokens: 12000 },
+					},
+				};
 			}
 			return undefined;
 		default:
@@ -216,18 +223,16 @@ function createLanguageModel(profile: ProviderProfile): LanguageModelV4 | null {
 async function fetchProviderModels(
 	profile: ProviderProfile,
 ): Promise<string[]> {
+	const requestJson = async (url: string, headers?: Record<string, string>): Promise<any> => {
+		const response = await requestUrl({ url, method: "GET", headers });
+		return JSON.parse(response.text);
+	};
 	try {
 		switch (profile.provider) {
 			case "openai": {
 				const baseURL =
 					profile.customURL?.trim() || getDefaultEndpoint("openai");
-				const res = await fetch(`${baseURL}/models`, {
-					headers: {
-						Authorization: `Bearer ${profile.apiKey}`,
-					},
-				});
-				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-				const data = await res.json();
+				const data = await requestJson(`${baseURL}/models`, { Authorization: `Bearer ${profile.apiKey}` });
 				return (data.data ?? [])
 					.map((m: any) => m.id)
 					.filter((id: string) => id.includes("gpt"));
@@ -250,11 +255,7 @@ async function fetchProviderModels(
 			case "gemini": {
 				const baseURL =
 					profile.customURL?.trim() || getDefaultEndpoint("gemini");
-				const res = await fetch(
-					`${baseURL}/models?key=${profile.apiKey}`,
-				);
-				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-				const data = await res.json();
+				const data = await requestJson(`${baseURL}/models?key=${profile.apiKey}`);
 				return (data.models ?? [])
 					.map((m: any) => m.name.replace("models/", ""))
 					.filter((id: string) => id.startsWith("gemini"));
@@ -263,13 +264,7 @@ async function fetchProviderModels(
 			case "deepseek": {
 				const baseURL =
 					profile.customURL?.trim() || getDefaultEndpoint("deepseek");
-				const res = await fetch(`${baseURL}/models`, {
-					headers: {
-						Authorization: `Bearer ${profile.apiKey}`,
-					},
-				});
-				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-				const data = await res.json();
+				const data = await requestJson(`${baseURL}/models`, { Authorization: `Bearer ${profile.apiKey}` });
 				return (data.data ?? []).map((m: any) => m.id);
 			}
 
@@ -277,22 +272,14 @@ async function fetchProviderModels(
 				const baseURL =
 					profile.customURL?.trim() ||
 					getDefaultEndpoint("openrouter");
-				const res = await fetch(`${baseURL}/models`);
-				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-				const data = await res.json();
+				const data = await requestJson(`${baseURL}/models`);
 				return (data.data ?? []).map((m: any) => m.id);
 			}
 
 			case "kimi": {
 				const baseURL =
 					profile.customURL?.trim() || getDefaultEndpoint("kimi");
-				const res = await fetch(`${baseURL}/models`, {
-					headers: {
-						Authorization: `Bearer ${profile.apiKey}`,
-					},
-				});
-				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-				const data = await res.json();
+				const data = await requestJson(`${baseURL}/models`, { Authorization: `Bearer ${profile.apiKey}` });
 				return (data.data ?? [])
 					.map((m: any) => m.id)
 					.filter((id: string) => id.includes("kimi"));
@@ -301,23 +288,13 @@ async function fetchProviderModels(
 			case "ollama": {
 				const baseURL =
 					profile.customURL?.trim() || getDefaultEndpoint("ollama");
-				const res = await fetch(
-					`${baseURL.replace("/v1", "")}/api/tags`,
-				);
-				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-				const data = await res.json();
+				const data = await requestJson(`${baseURL.replace("/v1", "")}/api/tags`);
 				return (data.models ?? []).map((m: any) => m.name);
 			}
 
 			case "custom": {
 				const baseURL = profile.customURL!.trim();
-				const res = await fetch(`${baseURL}/models`, {
-					headers: {
-						Authorization: `Bearer ${profile.apiKey}`,
-					},
-				});
-				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-				const data = await res.json();
+				const data = await requestJson(`${baseURL}/models`, { Authorization: `Bearer ${profile.apiKey}` });
 				return (data.data ?? []).map((m: any) => m.id);
 			}
 
@@ -333,16 +310,10 @@ async function fetchProviderModels(
 					);
 				}
 				const instance = instanceMatch[1];
-				const res = await fetch(
+				const data = await requestJson(
 					`https://${instance}.openai.azure.com/openai/deployments?api-version=2023-03-15-preview`,
-					{
-						headers: {
-							"api-key": profile.apiKey!,
-						},
-					},
+					{ "api-key": profile.apiKey! },
 				);
-				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-				const data = await res.json();
 				return (data.data ?? []).map((m: any) => m.id || m.model);
 			}
 
@@ -372,7 +343,7 @@ export class ChatApiManager {
 		this.app = app;
 		this.settings = settings;
 		this.messageHistory = new MessageQueue<HistoryMessage>(
-			settings.messageHistory ? (settings.maxContextMessages || 50) : 0,
+			settings.messageHistory ? settings.maxContextMessages || 50 : 0,
 		);
 	}
 
@@ -387,6 +358,7 @@ export class ChatApiManager {
 		systemMessage: string,
 		message: string,
 		profile?: ProviderProfile,
+		signal?: AbortSignal,
 	): Promise<string> {
 		const model = createLanguageModel(
 			profile ?? getActiveProviderProfile(this.settings),
@@ -403,9 +375,13 @@ export class ChatApiManager {
 				model,
 				system: systemMessage,
 				messages: [{ role: "user", content: message }],
+				abortSignal: signal,
 			});
 			return result.text;
 		} catch (error: any) {
+			if (signal?.aborted || error?.name === "AbortError") {
+				throw error;
+			}
 			console.error("Error calling the chat model:", error);
 			new Notice(`❌ Error calling the chat model: ${error.message}`);
 			return "⚠️ Failed to generate a response. Please try again later.";
@@ -439,20 +415,26 @@ export class ChatApiManager {
 				systemParts.push(
 					typeof m.content === "string"
 						? m.content
-						: m.content.map((c) => ("text" in c ? c.text : "")).join(""),
+						: m.content
+								.map((c) => ("text" in c ? c.text : ""))
+								.join(""),
 				);
 			} else {
 				chatMessages.push(m);
 			}
 		}
-		const system = systemParts.length > 0 ? systemParts.join("\n\n") : undefined;
+		const system =
+			systemParts.length > 0 ? systemParts.join("\n\n") : undefined;
 
 		const result = streamText({
 			model,
 			system,
 			messages: chatMessages as any,
 			abortSignal: signal,
-			providerOptions: getThinkingProviderOptions(profile ?? getActiveProviderProfile(this.settings), thinkingEnabled),
+			providerOptions: getThinkingProviderOptions(
+				profile ?? getActiveProviderProfile(this.settings),
+				thinkingEnabled,
+			),
 		});
 
 		for await (const chunk of result.textStream) {
@@ -476,7 +458,8 @@ export class ChatApiManager {
 		profile?: ProviderProfile,
 		thinkingEnabled?: boolean,
 	): AsyncIterable<StreamEvent> {
-		const activeProfile = profile ?? getActiveProviderProfile(this.settings);
+		const activeProfile =
+			profile ?? getActiveProviderProfile(this.settings);
 		const model = createLanguageModel(activeProfile);
 		if (!model) {
 			throw new Error("Chat client is not initialized.");
@@ -490,21 +473,26 @@ export class ChatApiManager {
 				systemParts.push(
 					typeof m.content === "string"
 						? m.content
-						: m.content.map((c) => ("text" in c ? c.text : "")).join(""),
+						: m.content
+								.map((c) => ("text" in c ? c.text : ""))
+								.join(""),
 				);
 			} else {
 				chatMessages.push(m);
 			}
 		}
-		const system = systemParts.length > 0 ? systemParts.join("\n\n") : undefined;
+		const system =
+			systemParts.length > 0 ? systemParts.join("\n\n") : undefined;
 
 		// ── Gemini-specific: disable structured outputs to avoid thought_signature errors ──
 		const providerOptions = {
 			...getThinkingProviderOptions(activeProfile, thinkingEnabled),
 			// Gemini requires special handling for tool calls
-			...(activeProfile.provider === "gemini" ? {
-				google: { structuredOutputs: false },
-			} : {}),
+			...(activeProfile.provider === "gemini"
+				? {
+						google: { structuredOutputs: false },
+					}
+				: {}),
 		};
 
 		const result = streamText({
@@ -532,8 +520,9 @@ export class ChatApiManager {
 							toolCallId: part.toolCallId,
 							toolName: part.toolName,
 							args: part.input as Record<string, unknown>,
-							providerMetadata:
-								part.providerMetadata as Record<string, unknown> | undefined,
+							providerMetadata: part.providerMetadata as
+								| Record<string, unknown>
+								| undefined,
 						},
 					};
 					break;
@@ -660,7 +649,7 @@ export class ChatApiManager {
 	public updateSettings(settings: ObsidianAISettings): void {
 		this.settings = settings;
 		this.messageHistory = new MessageQueue<HistoryMessage>(
-			settings.messageHistory ? (settings.maxContextMessages || 50) : 0,
+			settings.messageHistory ? settings.maxContextMessages || 50 : 0,
 		);
 	}
 

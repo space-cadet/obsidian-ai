@@ -13,10 +13,11 @@ import { Notice } from "obsidian";
 
 // ─── Provider metadata ─────────────────────────────────────────────
 
-const PROVIDER_META: Record<
+
+const PROVIDER_META: Partial<Record<
 	ProviderType,
 	{ label: string; color: string; icon: string }
-> = {
+>> = {
 	openai: { label: "OpenAI", color: "#10A37F", icon: "O" },
 	anthropic: { label: "Anthropic", color: "#D97757", icon: "A" },
 	deepseek: { label: "DeepSeek", color: "#4D6BFA", icon: "D" },
@@ -24,7 +25,6 @@ const PROVIDER_META: Record<
 	gemini: { label: "Gemini", color: "#8E75B2", icon: "G" },
 	openrouter: { label: "OpenRouter", color: "#FF9500", icon: "R" },
 	azure: { label: "Azure", color: "#0078D4", icon: "Az" },
-	ollama: { label: "Ollama", color: "#FFCC00", icon: "🦙" },
 	custom: { label: "Custom", color: "#888888", icon: "C" },
 	agent: { label: "Agent", color: "#00D26A", icon: "🤖" },
 };
@@ -57,7 +57,6 @@ function validateProfileQuick(profile: ProviderProfile): { ok: boolean; hint?: s
 				: { ok: false, hint: "API key or URL missing" };
 		case "agent":
 			return profile.endpointUrl ? { ok: true } : { ok: false, hint: "Endpoint missing" };
-		case "ollama":
 		default:
 			return { ok: true };
 	}
@@ -118,7 +117,7 @@ function ProfileEditForm({
 				provider,
 				model: getDefaultModel(provider),
 				name,
-				apiKey: provider === "ollama" ? "" : prev.apiKey,
+				apiKey: prev.apiKey,
 				customURL: "",
 				azureEndpoint: "",
 				endpointUrl: "",
@@ -218,7 +217,6 @@ function ProfileEditForm({
 					<option value="gemini">Gemini</option>
 					<option value="openrouter">OpenRouter</option>
 					<option value="azure">Azure OpenAI</option>
-					<option value="ollama">Ollama</option>
 					<option value="custom">Custom/OpenAI-compatible</option>
 					<option value="agent">Agent (OpenResponses)</option>
 				</select>

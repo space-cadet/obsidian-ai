@@ -1,4 +1,4 @@
-import { App, Notice, TFile, normalizePath } from "obsidian";
+import { App, Notice, TFile, normalizePath, requestUrl } from "obsidian";
 import type { ToolCall, ToolResult } from "./types";
 import type { ObsidianAISettings, WebSearchProvider } from "../settings";
 import type { PersonaLoader } from "../intelligence/PersonaLoader";
@@ -765,19 +765,21 @@ export class ToolExecutor {
 		url.searchParams.set("count", String(limit));
 		url.searchParams.set("offset", "0");
 
-		const res = await fetch(url.toString(), {
+		const res = await requestUrl({
+			url: url.toString(),
+			method: "GET",
 			headers: {
 				"X-Subscription-Token": apiKey,
 				Accept: "application/json",
 			},
 		});
 
-		if (!res.ok) {
-			const text = await res.text().catch(() => "");
+		if (res.status < 200 || res.status >= 300) {
+			const text = res.text || "";
 			throw new Error(`Brave API ${res.status}: ${text}`);
 		}
 
-		const data = await res.json();
+		const data = JSON.parse(res.text);
 		const results = data.web?.results ?? [];
 
 		return results.slice(0, limit).map((r: any) => ({
@@ -796,18 +798,20 @@ export class ToolExecutor {
 		url.searchParams.set("q", query);
 		url.searchParams.set("kl", "us-en"); // region
 
-		const res = await fetch(url.toString(), {
+		const res = await requestUrl({
+			url: url.toString(),
+			method: "GET",
 			headers: {
 				"User-Agent":
 					"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.0",
 			},
 		});
 
-		if (!res.ok) {
+		if (res.status < 200 || res.status >= 300) {
 			throw new Error(`DuckDuckGo ${res.status}`);
 		}
 
-		const html = await res.text();
+		const html = res.text;
 		const results: Array<{ title: string; url: string; snippet: string }> = [];
 
 		// Parse using DOMParser instead of regex to avoid ReDoS
@@ -867,12 +871,12 @@ export class ToolExecutor {
 		url.searchParams.set("format", "json");
 		url.searchParams.set("language", "en");
 
-		const res = await fetch(url.toString());
-		if (!res.ok) {
+		const res = await requestUrl({ url: url.toString(), method: "GET" });
+		if (res.status < 200 || res.status >= 300) {
 			throw new Error(`SearXNG ${res.status}`);
 		}
 
-		const data = await res.json();
+		const data = JSON.parse(res.text);
 		const results = data.results ?? [];
 
 		return results.slice(0, limit).map((r: any) => ({
@@ -893,7 +897,8 @@ export class ToolExecutor {
 			);
 		}
 
-		const res = await fetch("https://api.tavily.com/search", {
+		const res = await requestUrl({
+			url: "https://api.tavily.com/search",
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -909,12 +914,12 @@ export class ToolExecutor {
 			}),
 		});
 
-		if (!res.ok) {
-			const text = await res.text().catch(() => "");
+		if (res.status < 200 || res.status >= 300) {
+			const text = res.text || "";
 			throw new Error(`Tavily API ${res.status}: ${text}`);
 		}
 
-		const data = await res.json();
+		const data = JSON.parse(res.text);
 		const results = data.results ?? [];
 
 		return results.slice(0, limit).map((r: any) => ({
@@ -935,7 +940,8 @@ export class ToolExecutor {
 			);
 		}
 
-		const res = await fetch("https://api.exa.ai/search", {
+		const res = await requestUrl({
+			url: "https://api.exa.ai/search",
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -951,12 +957,12 @@ export class ToolExecutor {
 			}),
 		});
 
-		if (!res.ok) {
-			const text = await res.text().catch(() => "");
+		if (res.status < 200 || res.status >= 300) {
+			const text = res.text || "";
 			throw new Error(`Exa API ${res.status}: ${text}`);
 		}
 
-		const data = await res.json();
+		const data = JSON.parse(res.text);
 		const results = data.results ?? [];
 
 		return results.slice(0, limit).map((r: any) => ({

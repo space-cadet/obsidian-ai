@@ -36,7 +36,7 @@ Feel free to edit or delete anything — it's your memory.
 /**
  * Loads the AI's persistent identity (persona) and dynamic memory
  * from the plugin directory. All files live in:
- *   .obsidian/plugins/obsidian-ai/intelligence/
+ *   .obsidian/plugins/chat-lab/intelligence/
  */
 export class PersonaLoader {
 	private deps: PersonaLoaderDeps;

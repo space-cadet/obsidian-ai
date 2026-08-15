@@ -45,7 +45,7 @@ export function renderUpdaterSection(
 	// Auto-update toggle
 	new Setting(section)
 		.setName("Auto-install stable updates")
-		.setDesc("Automatically install stable updates without prompting. Dev builds always require confirmation.")
+		.setDesc("Automatically install stable updates without prompting. Disabled by default; downloaded files are backed up before installation. Dev builds always require confirmation.")
 		.addToggle((toggle) =>
 			toggle.setValue(plugin.settings.autoUpdate).onChange(async (value) => {
 				plugin.settings.autoUpdate = value;

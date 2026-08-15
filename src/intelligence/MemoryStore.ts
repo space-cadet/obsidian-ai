@@ -59,12 +59,16 @@ export class MemoryStore {
 	private readonly jsonPath: string;
 	private readonly mdPath: string;
 	private readonly auditPath: string;
+	private readonly jsonBackupPath: string;
+	private readonly mdBackupPath: string;
 
 	constructor(deps: MemoryStoreDeps) {
 		this.deps = deps;
 		this.jsonPath = `${deps.intelligenceDir}/memory.json`;
 		this.mdPath = `${deps.intelligenceDir}/memory.md`;
 		this.auditPath = `${deps.intelligenceDir}/memory-audit.jsonl`;
+		this.jsonBackupPath = `${this.jsonPath}.bak`;
+		this.mdBackupPath = `${this.mdPath}.bak`;
 	}
 
 	/** Ensure the JSON store exists; return current entries. */
@@ -92,8 +96,43 @@ export class MemoryStore {
 	/** Overwrite JSON and regenerate markdown. */
 	private async _save(entries: MemoryEntry[]): Promise<void> {
 		const adapter = this.deps.app.vault.adapter;
+		await this._snapshot();
 		await adapter.write(this.jsonPath, JSON.stringify(entries, null, 2));
 		await this._regenerateMarkdown(entries);
+	}
+
+	/** Restore the last pre-write snapshot, if one exists. */
+	async restoreLastSnapshot(): Promise<boolean> {
+		const adapter = this.deps.app.vault.adapter;
+		if (!(await adapter.exists(this.jsonBackupPath))) return false;
+		await adapter.write(this.jsonPath, await adapter.read(this.jsonBackupPath));
+		if (await adapter.exists(this.mdBackupPath)) {
+			await adapter.write(this.mdPath, await adapter.read(this.mdBackupPath));
+		} else {
+			await this._regenerateMarkdown(await this.loadEntries());
+		}
+		this.deps.logger?.log("info", "Restored memory from the last backup");
+		return true;
+	}
+
+	private async _snapshot(): Promise<void> {
+		const adapter = this.deps.app.vault.adapter;
+		try {
+			const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+			if (await adapter.exists(this.jsonPath)) {
+				const json = await adapter.read(this.jsonPath);
+				await adapter.write(this.jsonBackupPath, json);
+				await adapter.write(`${this.jsonPath}.bak.${stamp}`, json);
+			}
+			if (await adapter.exists(this.mdPath)) {
+				const markdown = await adapter.read(this.mdPath);
+				await adapter.write(this.mdBackupPath, markdown);
+				await adapter.write(`${this.mdPath}.bak.${stamp}`, markdown);
+			}
+		} catch (e) {
+			this.deps.logger?.log("warn", `Failed to snapshot memory before write: ${e}`);
+			throw new Error(`Could not create a memory backup: ${e}`);
+		}
 	}
 
 	/** Create a new memory entry, or reaffirm an existing one if a near-duplicate is found. */

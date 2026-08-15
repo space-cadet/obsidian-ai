@@ -227,7 +227,7 @@ export const createProviderProfile = (
 	overrides: Partial<ProviderProfile> = {},
 ): ProviderProfile => {
 	const now = Date.now();
-	const provider = overrides.provider ?? "ollama";
+	const provider = overrides.provider ?? "openai";
 	return {
 		id: overrides.id ?? generateId(),
 		name: overrides.name ?? getDefaultProfileName(provider),
@@ -252,7 +252,8 @@ export const createProviderProfile = (
 const DEFAULT_PROFILES: ProviderProfile[] = [
 	createProviderProfile({
 		id: DEFAULT_PROFILE_ID,
-		name: "Local Ollama",
+		name: "OpenAI",
+		provider: "openai",
 	}),
 	createProviderProfile({ provider: "openai", name: "OpenAI" }),
 	createProviderProfile({ provider: "anthropic", name: "Anthropic" }),
@@ -419,7 +420,7 @@ export const getActiveProviderProfile = (
 const createProfileFromLegacySettings = (
 	settings: LegacySettings | null | undefined,
 ): ProviderProfile => {
-	const provider = settings?.provider ?? "ollama";
+	const provider = settings?.provider === "ollama" ? "custom" : (settings?.provider ?? "openai");
 	return createProviderProfile({
 		id: DEFAULT_PROFILE_ID,
 		name: getDefaultProfileName(provider),
@@ -435,7 +436,7 @@ const createProfileFromLegacySettings = (
 const normalizeProviderProfile = (
 	profile: ProviderProfile,
 ): ProviderProfile => {
-	const provider = profile.provider ?? "ollama";
+	const provider = profile.provider === "ollama" ? "custom" : (profile.provider ?? "openai");
 	return createProviderProfile({
 		...profile,
 		provider,

@@ -27,7 +27,7 @@ Obsidian AI is an AI-powered assistant for Obsidian that combines fast inline ed
 3. Auto-updates enabled
 
 ### Manual
-Download `main.js`, `manifest.json`, and `styles.css` from [GitHub Releases](https://github.com/space-cadet/obsidian-ai/releases) and copy to `.obsidian/plugins/obsidian-ai/`.
+Download `main.js`, `manifest.json`, and `styles.css` from [GitHub Releases](https://github.com/space-cadet/obsidian-ai/releases) and copy to `.obsidian/plugins/chat-lab/`.
 
 ## Full Feature Set
 
@@ -37,7 +37,7 @@ Download `main.js`, `manifest.json`, and `styles.css` from [GitHub Releases](htt
 - **Multi-Device Sync** — WebSocket relay for real-time cross-device chat
 - **Vault-Aware Context** — @mention notes, folders, tags; active note context
 - **Web Search** — DuckDuckGo, Brave, Tavily, Exa, SearXNG
-- **8 Providers** — OpenAI, Anthropic, Google, DeepSeek, OpenRouter, Ollama, Azure, Custom
+- **Provider paths** — OpenAI, Anthropic, Google, DeepSeek, OpenRouter, Azure, Agent, and Custom/OpenAI-compatible endpoints. Official Ollama integration is deferred pending a maintained dependency.
 - **Streaming** — Real-time response streaming with token usage indicator
 - **Session History** — Persistent conversations across restarts
 

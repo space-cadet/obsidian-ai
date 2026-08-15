@@ -1,5 +1,10 @@
 import { ChatApiManager } from "../api";
-import { MemoryStore, MemoryEntry, MemoryCategory, PruneResult } from "./MemoryStore";
+import {
+	MemoryStore,
+	MemoryEntry,
+	MemoryCategory,
+	PruneResult,
+} from "./MemoryStore";
 import { FileLogger } from "../logger";
 
 export interface MemoryOptimizerDeps {
@@ -14,6 +19,10 @@ export interface ProgressUpdate {
 	current: number;
 	total: number;
 	etaSeconds?: number;
+}
+
+export interface AiPruneOptions {
+	onBeforeSave?: (removed: number, groups: number) => Promise<boolean> | boolean;
 }
 
 const SYSTEM_PROMPT = `You are a memory deduplication assistant. Your job is to group memory entries that represent the SAME underlying fact, even if worded differently.
@@ -51,6 +60,7 @@ export class MemoryOptimizer {
 	 */
 	async aiPrune(
 		onProgress?: (update: ProgressUpdate) => void,
+		options?: AiPruneOptions,
 	): Promise<PruneResult> {
 		this.abortController = new AbortController();
 		this.abortSignal = this.abortController.signal;
@@ -99,7 +109,11 @@ export class MemoryOptimizer {
 					message: `${category}: ${catEntries.length} entries — too few to cluster`,
 					current: catIdx + 1,
 					total: totalCategories,
-					etaSeconds: this._estimateEta(startTime, catIdx, totalCategories),
+					etaSeconds: this._estimateEta(
+						startTime,
+						catIdx,
+						totalCategories,
+					),
 				});
 				continue;
 			}
@@ -109,7 +123,11 @@ export class MemoryOptimizer {
 				message: `${category}: clustering ${catEntries.length} entries...`,
 				current: catIdx + 1,
 				total: totalCategories,
-				etaSeconds: this._estimateEta(startTime, catIdx, totalCategories),
+				etaSeconds: this._estimateEta(
+					startTime,
+					catIdx,
+					totalCategories,
+				),
 			});
 
 			const clusters = await this._clusterWithAI(category, catEntries);
@@ -136,10 +154,14 @@ export class MemoryOptimizer {
 
 			onProgress?.({
 				stage: "clustering",
-				message: `${category}: done — found ${clusters.filter(c => c.length > 1).length} duplicate groups`,
+				message: `${category}: done — found ${clusters.filter((c) => c.length > 1).length} duplicate groups`,
 				current: catIdx + 1,
 				total: totalCategories,
-				etaSeconds: this._estimateEta(startTime, catIdx + 1, totalCategories),
+				etaSeconds: this._estimateEta(
+					startTime,
+					catIdx + 1,
+					totalCategories,
+				),
 			});
 		}
 
@@ -157,6 +179,9 @@ export class MemoryOptimizer {
 		// Preserve original order
 		const idSet = new Set(kept.map((e) => e.id));
 		const finalEntries = entries.filter((e) => idSet.has(e.id));
+		if (options?.onBeforeSave && !(await options.onBeforeSave(removed, groups))) {
+			throw new Error("Prune declined by user");
+		}
 
 		await this.deps.memoryStore.saveEntries(finalEntries);
 
@@ -182,7 +207,15 @@ export class MemoryOptimizer {
 		};
 	}
 
-	private _estimateEta(startTime: number, current: number, total: number): number | undefined {
+	async restoreLastSnapshot(): Promise<boolean> {
+		return this.deps.memoryStore.restoreLastSnapshot();
+	}
+
+	private _estimateEta(
+		startTime: number,
+		current: number,
+		total: number,
+	): number | undefined {
 		if (current <= 0 || current >= total) return undefined;
 		const elapsed = Date.now() - startTime;
 		const avgPerItem = elapsed / current;
@@ -198,13 +231,17 @@ export class MemoryOptimizer {
 			throw new Error("Cancelled by user");
 		}
 
-		const lines = entries.map((e, i) => `${i}. [${e.timestamp}] ${e.content}`);
+		const lines = entries.map(
+			(e, i) => `${i}. [${e.timestamp}] ${e.content}`,
+		);
 		const prompt = `Category: ${category}\n\nEntries:\n${lines.join("\n")}\n\nGroup these entries into clusters of duplicates. Return ONLY JSON: {"clusters":[[...]]}`;
 
 		try {
 			const response = await this.deps.chatApi.callApi(
 				SYSTEM_PROMPT,
 				prompt,
+				undefined,
+				this.abortSignal ?? undefined,
 			);
 
 			if (this.abortSignal?.aborted) {
@@ -216,15 +253,22 @@ export class MemoryOptimizer {
 				return clusters;
 			}
 		} catch (e) {
-			if (e instanceof Error && e.message === "Cancelled by user") throw e;
-			this.deps.logger?.log("warn", `AI clustering failed for ${category}: ${e}`);
+			if (e instanceof Error && e.message === "Cancelled by user")
+				throw e;
+			this.deps.logger?.log(
+				"warn",
+				`AI clustering failed for ${category}: ${e}`,
+			);
 		}
 
 		// Fallback: each entry in its own cluster (no pruning)
 		return entries.map((_, i) => [i]);
 	}
 
-	private _parseClusters(response: string, entryCount: number): number[][] | null {
+	private _parseClusters(
+		response: string,
+		entryCount: number,
+	): number[][] | null {
 		const jsonMatch = response.match(/\{[\s\S]*"clusters"[\s\S]*\}/);
 		if (!jsonMatch) return null;
 
@@ -239,7 +283,13 @@ export class MemoryOptimizer {
 				if (!Array.isArray(cluster)) continue;
 				const validIndices = cluster
 					.map((i) => Number(i))
-					.filter((i) => Number.isInteger(i) && i >= 0 && i < entryCount && !seen.has(i));
+					.filter(
+						(i) =>
+							Number.isInteger(i) &&
+							i >= 0 &&
+							i < entryCount &&
+							!seen.has(i),
+					);
 				if (validIndices.length === 0) continue;
 				for (const i of validIndices) seen.add(i);
 				clusters.push(validIndices);

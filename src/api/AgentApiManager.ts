@@ -1,7 +1,7 @@
 // src/api/AgentApiManager.ts
 // OpenResponses API client for connecting to remote OpenClaw agents
 
-import { App, Notice } from "obsidian";
+import { App, Notice, requestUrl } from "obsidian";
 import {
 	parseOpenResponsesStream,
 	parseSseEvent,
@@ -234,7 +234,8 @@ export class AgentApiManager {
 		}
 
 		try {
-			const response = await fetch(this.profile.endpointUrl, {
+			const response = await requestUrl({
+				url: this.profile.endpointUrl,
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -252,10 +253,10 @@ export class AgentApiManager {
 				}),
 			});
 
-			if (!response.ok) {
+			if (response.status < 200 || response.status >= 300) {
 				let errMsg = `HTTP ${response.status}`;
 				try {
-					const errBody = await response.json();
+					const errBody = JSON.parse(response.text);
 					errMsg = errBody.error?.message || errMsg;
 				} catch {
 					/* ignore */

@@ -40,6 +40,7 @@ import { SessionSummarizer } from "./intelligence/SessionSummarizer";
 import { ProviderRegistry } from "./integrations/ProviderRegistry";
 
 export default class ObsidianAIPlugin extends Plugin {
+	private static readonly LEGACY_PLUGIN_ID = "obsidian-ai";
 	settings: ObsidianAISettings = DEFAULT_SETTINGS;
 	chatapi!: ChatApiManager;
 	agentapi: AgentApiManager | null = null;
@@ -61,6 +62,7 @@ export default class ObsidianAIPlugin extends Plugin {
 	private _updater: PluginUpdater | null = null;
 
 	async onload() {
+		await this._migrateLegacyPluginData();
 		// Initialize file logger FIRST so any crash during load is captured.
 		this.logger = createFileLogger(this.app, this.manifest.id);
 		await this.logger.init();
@@ -275,6 +277,42 @@ export default class ObsidianAIPlugin extends Plugin {
 				new Notice("Debug log cleared.");
 			},
 		});
+	}
+
+	/**
+	 * Preserve existing installations when the technical plugin ID changes.
+	 * The legacy directory is intentionally retained as a rollback backup.
+	 */
+	private async _migrateLegacyPluginData(): Promise<void> {
+		const adapter = this.app.vault.adapter;
+		const configDir = this.app.vault.configDir;
+		const legacyDir = `${configDir}/plugins/${ObsidianAIPlugin.LEGACY_PLUGIN_ID}`;
+		const currentDir = `${configDir}/plugins/${this.manifest.id}`;
+
+		if (this.manifest.id === ObsidianAIPlugin.LEGACY_PLUGIN_ID) return;
+		if (!(await adapter.exists(legacyDir)) || (await adapter.exists(currentDir))) return;
+
+		try {
+			await adapter.mkdir(currentDir);
+			const copyTree = async (sourceDir: string, destinationDir: string): Promise<void> => {
+				const listing = await adapter.list(sourceDir);
+				for (const folder of listing.folders) {
+					const relative = folder.slice(sourceDir.length).replace(/^\//, "");
+					const target = `${destinationDir}/${relative}`;
+					await adapter.mkdir(target).catch(() => undefined);
+					await copyTree(folder, target);
+				}
+				for (const file of listing.files) {
+					const relative = file.slice(sourceDir.length).replace(/^\//, "");
+					await adapter.write(`${destinationDir}/${relative}`, await adapter.read(file));
+				}
+			};
+			await copyTree(legacyDir, currentDir);
+			this.logger?.log("info", `Migrated plugin data from ${legacyDir} to ${currentDir}`);
+		} catch (error) {
+			this.logger?.log("error", `Plugin data migration failed: ${error}`);
+			throw new Error(`Could not migrate existing Obsidian AI data: ${error}`);
+		}
 	}
 
 	async activateChatView() {

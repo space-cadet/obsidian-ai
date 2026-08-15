@@ -40,8 +40,7 @@ export function getProviderLabel(provider: string): string {
 			return "Custom endpoint";
 		case "agent":
 			return "Agent (OpenResponses)";
-		case "ollama":
 		default:
-			return "Ollama";
+			return "OpenAI";
 	}
 }

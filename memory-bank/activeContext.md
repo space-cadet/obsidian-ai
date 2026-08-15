@@ -1,6 +1,14 @@
 # Active Context
 
-*Last Updated: 2026-08-14 19:31:00 IST*
+*Last Updated: 2026-08-15 12:15:40 IST*
+
+### 2026-08-15 Release Readiness Audit
+
+- Reopened T8 after policy and release audit; the previous “ready” assessment is no longer valid.
+- Cancellation bug fixed locally: active LLM requests receive an abort signal; modal cancellation is immediate; unmount cancels the optimizer.
+- 234 tests and the production build pass.
+- Before 1.3.1: choose a valid manifest ID, replace production `fetch()` with `requestUrl`, expand privacy/network disclosures, add AI-prune backup/confirmation/restore, and harden memory persistence.
+- Full plan: `memory-bank/implementation-details/release-readiness-audit.md`.
 
 ### 2026-08-14 Evening — T8 Complete
 
