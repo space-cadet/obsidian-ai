@@ -6,6 +6,13 @@
 
 - The 1.3.2 directory review failed release, compatibility, DOM-safety, mobile, dynamic-script, packaging, and provenance checks.
 - Created T8a as a child of T8 to track remediation for a clean 1.3.3 release.
+
+### 2026-08-15 T8a Closeout
+
+- Community review passed for Chat Lab AI release 1.3.4.
+- Dev polish commit `cac9688` is published through `latest-dev`: early sidebar command registration, branded `Chat Lab AI` view title, README/CI naming cleanup, pinned Node 22.22.3, and regression tests.
+- Verification: 236 tests, build/typecheck, and diff check passed.
+- Open item: manual desktop/mobile smoke tests against `latest-dev`.
 - Findings and acceptance gates: `memory-bank/implementation-details/community-review-remediation.md`.
 - No source code or release assets were changed in this documentation update.
 

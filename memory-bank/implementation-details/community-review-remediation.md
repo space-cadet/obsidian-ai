@@ -101,3 +101,14 @@ Remove duplicate declarations and unnecessary `!important`; replace unsupported 
 ## Deferred/non-blocking items
 
 Ollama integration remains deferred because of the previously documented production dependency vulnerability chain. Custom OpenAI-compatible endpoints remain supported. General type cleanup and deprecated API migration may be split into follow-up work only after every review error has an explicit safe disposition.
+
+## 2026-08-15 Closeout Polish
+
+The Community Directory review passed against release `1.3.4`. Follow-up dev polish was published through `latest-dev` from commit `cac9688`.
+
+- Added early `Open Chat Lab AI sidebar` command registration and retained the legacy command alias.
+- Changed the ItemView display title to `Chat Lab AI` so the sidebar identity matches the directory name.
+- Updated README command instructions, aligned dev/build artifact names to `chat-lab`, and pinned dev/build Node versions to `22.22.3`.
+- Added command-identity and sidebar-title regression tests.
+- Verification passed: 25 test files, 236 tests, TypeScript, production build, and `git diff --check`.
+- Stable release `1.3.4` was not changed. Manual desktop/mobile smoke testing remains the final closeout item.

@@ -6,6 +6,15 @@
 **Started**: 2026-08-14 20:32:00 IST
 **Ended**: 2026-08-14 21:28:00 IST
 **Focus Task**: T8a: Community Directory Review Remediation
+
+## 2026-08-15 Session Handoff
+
+- **Task**: T8a Community Directory Review Remediation
+- **Completed**: review fixes, 1.3.4 stable release, sidebar command discoverability, Chat Lab AI sidebar branding, README/CI polish, regression coverage.
+- **Latest commit**: `cac9688` on `main`; `latest-dev` workflow passed as `31876440415`.
+- **Verification**: 25 test files, 236 tests, build/typecheck, and diff check passed.
+- **Open item**: manual desktop/mobile smoke tests against `latest-dev`.
+- **Session state**: closed 2026-08-15 14:53 IST.
 **Session File**: `sessions/2026-08-14-evening.md`
 **Status**: 🔄 In progress — findings documented; implementation pending
 

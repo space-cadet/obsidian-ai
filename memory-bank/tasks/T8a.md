@@ -5,10 +5,10 @@ source_commit: 2b81b96
 
 # T8a: Community Directory Review Remediation
 *Created: 2026-08-15 13:19:00 IST*
-*Last Updated: 2026-08-15 14:40:00 IST*
+*Last Updated: 2026-08-15 14:53:44 IST*
 
 **Description**: Resolve the failed automated Community Directory checks for the Chat Lab AI release and produce a reproducible, policy-compliant 1.3.3 release.
-**Status**: 🔄 IN PROGRESS
+**Status**: 🔄 IN PROGRESS — release accepted; manual smoke tests remain
 **Priority**: HIGH
 **Started**: 2026-08-15
 **Last Active**: 2026-08-15 14:40:00 IST
@@ -36,7 +36,8 @@ source_commit: 2b81b96
 3. ✅ Remediation plan and acceptance criteria documented.
 4. 🔄 First remediation batch implemented and verified.
 5. ✅ Publish 1.3.3 with attested assets.
-6. ⬜ Request fresh Community Directory review for 1.3.4 and complete manual smoke tests.
+6. ✅ Fresh Community Directory review passed for 1.3.4.
+7. ✅ Dev polish pushed through `latest-dev`; manual desktop/mobile smoke tests remain.
 
 ## Context
 The 1.3.2 review found errors in compatibility, DOM safety, dynamic script detection, mobile filesystem access, release reproducibility, asset packaging, and provenance attestations. The source README currently matches `manifest.json`; the reported mismatch may come from the reviewed release artifact and must be rechecked after a clean CI build.
@@ -66,3 +67,16 @@ The 1.3.2 review found errors in compatibility, DOM safety, dynamic script detec
 - Replaced the remaining unsupported `workspace.revealLeaf` call with `setActiveLeaf`.
 - Published follow-up release `1.3.4` from commit `75c83be`; CI run `31874989163` passed both attestations and asset upload.
 - Release URL: https://github.com/space-cadet/obsidian-ai/releases/tag/1.3.4
+
+## 2026-08-15 Dev Polish
+
+- Registered `Open Chat Lab AI sidebar` before asynchronous startup work so the Command Palette can discover it reliably; retained the legacy open-chat command.
+- Renamed the ItemView display title from `Obsidian AI Chat` to `Chat Lab AI` to align the sidebar with the directory-facing plugin name.
+- Updated README command guidance, aligned dev/build artifact naming to `chat-lab`, and pinned CI Node to `22.22.3` with current action major versions in dev workflows.
+- Added regression tests for command identity and sidebar display identity.
+- Verification: 25 test files, 236 tests, TypeScript, production build, and `git diff --check` pass.
+- Commit `cac9688`; dev workflow `31876440415`; stable `1.3.4` unchanged.
+
+## Remaining Closeout
+
+- Perform manual desktop/mobile smoke tests against `latest-dev`: command palette, sidebar title, migration, chat, cancellation, AI-prune restore, vault-tool approval, updater-disabled default, and diagnostics fallback.

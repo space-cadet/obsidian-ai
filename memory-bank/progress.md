@@ -7,6 +7,12 @@
 - Verification passes: 23 test files, 234 tests, TypeScript, production build, and `git diff --check`.
 - Release remains pending policy scanner rerun, final 1.3.3 version bump, CI attestation verification, and manual desktop/mobile smoke tests.
 
+### 2026-08-15 Release Closeout
+
+- T8a Community Directory remediation completed through review acceptance at 1.3.4.
+- Final polish shipped to `latest-dev` in `cac9688`; 236 tests and production build pass.
+- Remaining: manual desktop/mobile smoke testing only.
+
 ### 2026-08-15 T8a Release 1.3.3
 
 - Bumped manifest/package/version metadata to `1.3.3` and published exact tag `1.3.3`.
