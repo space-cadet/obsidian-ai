@@ -38,6 +38,7 @@ Download `main.js`, `manifest.json`, and `styles.css` from [GitHub Releases](htt
 - **Vault-Aware Context** — @mention notes, folders, tags; active note context
 - **Web Search** — DuckDuckGo, Brave, Tavily, Exa, SearXNG
 - **Provider paths** — OpenAI, Anthropic, Google, DeepSeek, OpenRouter, Azure, Agent, and Custom/OpenAI-compatible endpoints. Official Ollama integration is deferred pending a maintained dependency.
+- **Directory name** — The valid Community Plugins name is `Chat Lab AI`; “Obsidian AI” remains the product subtitle and UI branding because directory names may not contain “Obsidian”.
 - **Streaming** — Real-time response streaming with token usage indicator
 - **Session History** — Persistent conversations across restarts
 

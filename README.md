@@ -1,4 +1,6 @@
-<h1 align="center">Chat Lab: Obsidian AI</h1>
+<h1 align="center">Chat Lab AI</h1>
+
+> **Obsidian AI** is the product subtitle and branding used throughout the documentation and interface.
 
 <p align="center">
   <a href="https://github.com/space-cadet/obsidian-ai">GitHub</a>

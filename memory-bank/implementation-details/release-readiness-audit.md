@@ -39,7 +39,9 @@ The implementation blockers are addressed locally for 1.3.1. Do not publish unti
 
 ## Dependency audit blocker
 
-`pnpm audit --prod` initially reported three vulnerabilities through `ollama-ai-provider@1.2.0`: two high-severity `nanoid` findings and one low-severity `@ai-sdk/provider-utils` finding. The npm registry has no newer provider release. The owner chose to defer official Ollama integration for 1.3.1. The vulnerable package was removed; local models remain available through custom OpenAI-compatible endpoints, and legacy Ollama profiles normalize to that path.
+`pnpm audit --prod` initially reported three vulnerabilities through `ollama-ai-provider@1.2.0`: two high-severity `nanoid` findings and one low-severity `@ai-sdk/provider-utils` finding. The npm registry has no newer provider release. Official Ollama integration was deferred; the vulnerable package was removed, local models remain available through custom OpenAI-compatible endpoints, and legacy Ollama profiles normalize to that path.
+
+The Community directory rejected `Chat Lab: Obsidian AI` because manifest names may not contain “Obsidian” and may not use a colon. The valid directory name is now `Chat Lab AI`; “Obsidian AI” remains the product subtitle and UI branding. This requires release `1.3.2` so the default-branch manifest and release asset match.
 
 ## Verification snapshot
 
