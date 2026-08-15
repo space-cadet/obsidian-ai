@@ -1,8 +1,10 @@
 # Release Readiness Audit — 2026-08-15
 
-*Last Updated: 2026-08-15 12:33:00 IST*
+*Last Updated: 2026-08-15 13:19:00 IST*
 
 ## Decision
+
+The subsequent Community Directory review of `1.3.2` found additional release blockers. This document's earlier local-readiness decision is superseded by child task T8.1. See [Community review remediation](community-review-remediation.md) for the complete finding-by-finding plan and acceptance gates.
 
 The implementation blockers are addressed locally for 1.3.1. Do not publish until the final artifact, dependency, and manual Obsidian smoke checks pass.
 

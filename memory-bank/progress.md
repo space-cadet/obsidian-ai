@@ -1,5 +1,11 @@
 # Implementation Progress
-*Last Updated: 2026-08-15 12:15:40 IST*
+*Last Updated: 2026-08-15 13:19:00 IST*
+
+### 2026-08-15 Community Directory Review — T8.1 Created
+
+- Parsed the supplied review PDF for release `1.3.2` at commit `056428c`.
+- Documented all reported failures and warnings, including unsupported APIs, unsafe DOM operations, dynamic scripts, Node filesystem access, artifact mismatch, unsupported zip packaging, missing attestations, and release-note metadata.
+- Created the remediation child task T8.1 under T8; implementation work has not started.
 
 ### 2026-08-15 Release Audit — T8 Reopened
 

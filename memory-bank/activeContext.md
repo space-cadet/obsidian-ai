@@ -1,6 +1,13 @@
 # Active Context
 
-*Last Updated: 2026-08-15 12:15:40 IST*
+*Last Updated: 2026-08-15 13:19:00 IST*
+
+### 2026-08-15 Community Directory Review — T8.1
+
+- The 1.3.2 directory review failed release, compatibility, DOM-safety, mobile, dynamic-script, packaging, and provenance checks.
+- Created T8.1 as a child of T8 to track remediation for a clean 1.3.3 release.
+- Findings and acceptance gates: `memory-bank/implementation-details/community-review-remediation.md`.
+- No source code or release assets were changed in this documentation update.
 
 ### 2026-08-15 Release Readiness Audit
 

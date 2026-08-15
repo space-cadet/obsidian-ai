@@ -1,19 +1,23 @@
 # Session Cache
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-14 21:28:00 IST*
+*Last Updated: 2026-08-15 13:19:00 IST*
 
 **Started**: 2026-08-14 20:32:00 IST
 **Ended**: 2026-08-14 21:28:00 IST
-**Focus Task**: T8: Open Source Release — README branding, version bump, security audit, submission prep
+**Focus Task**: T8.1: Community Directory Review Remediation
 **Session File**: `sessions/2026-08-14-evening.md`
-**Status**: ✅ Complete
+**Status**: 🔄 In progress — findings documented; implementation pending
 
 ## Overview
 
 - Active: 9 | Paused: 0 | Completed: 19
 - Last Session: 2026-08-12
 - Current Period: afternoon
+
+### 2026-08-15 Review Follow-up
+- Created T8.1 under T8 for the failed Community Directory checks.
+- Implementation findings: [Community review remediation](implementation-details/community-review-remediation.md)
 
 ## Session History (Last 5)
 
