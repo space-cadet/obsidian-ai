@@ -30,7 +30,6 @@ import { createStorage, ChatStorage, StorageDeps } from "./storage/ChatStorage";
 import { ChatStorageMigration } from "./storage/Migration";
 import { MigrationPromptModal } from "./modals/MigrationPromptModal";
 
-
 import { AgentApiManager } from "./api/AgentApiManager";
 
 import { SessionStorage } from "./storage/session-storage";
@@ -38,6 +37,9 @@ import { PersonaLoader } from "./intelligence/PersonaLoader";
 import { SearchIndex } from "./search/index";
 import { SessionSummarizer } from "./intelligence/SessionSummarizer";
 import { ProviderRegistry } from "./integrations/ProviderRegistry";
+
+export const OPEN_CHAT_COMMAND_ID = "open-chat-lab-sidebar";
+export const OPEN_CHAT_COMMAND_NAME = "Open Chat Lab AI sidebar";
 
 export default class ObsidianAIPlugin extends Plugin {
 	private static readonly LEGACY_PLUGIN_ID = "obsidian-ai";
@@ -65,8 +67,8 @@ export default class ObsidianAIPlugin extends Plugin {
 		// Register the entry command before asynchronous migration/settings work so
 		// Obsidian's command palette can discover it even while startup completes.
 		this.addCommand({
-			id: "open-chat-lab-sidebar",
-			name: "Open Chat Lab AI sidebar",
+			id: OPEN_CHAT_COMMAND_ID,
+			name: OPEN_CHAT_COMMAND_NAME,
 			callback: () => this.activateChatView(),
 		});
 
@@ -76,7 +78,10 @@ export default class ObsidianAIPlugin extends Plugin {
 		await this.logger.init();
 
 		await this.loadSettings();
-		this.integrationRegistry = new ProviderRegistry(this.app, this.settings);
+		this.integrationRegistry = new ProviderRegistry(
+			this.app,
+			this.settings,
+		);
 		this.integrationRegistry.discover();
 		this.logger.setMaxSize(this.settings.debugLogMaxSizeMB * 1024 * 1024);
 		this.chatapi = new ChatApiManager(this.settings, this.app);
@@ -106,7 +111,10 @@ export default class ObsidianAIPlugin extends Plugin {
 		);
 
 		// Initialize chat storage layer
-		this._chatStorage = createStorage(this._storageDeps(), this.settings.chatStorageFormat);
+		this._chatStorage = createStorage(
+			this._storageDeps(),
+			this.settings.chatStorageFormat,
+		);
 
 		// Detect legacy format and prompt for migration (non-blocking, once per session)
 		if (this.settings.chatStorageFormat === "legacy") {
@@ -120,7 +128,10 @@ export default class ObsidianAIPlugin extends Plugin {
 					async () => {
 						// On migrate: switch to jsonl format and reinitialize storage
 						this.settings.chatStorageFormat = "jsonl";
-						this._chatStorage = createStorage(this._storageDeps(), "jsonl");
+						this._chatStorage = createStorage(
+							this._storageDeps(),
+							"jsonl",
+						);
 						await this.saveSettings();
 					},
 					() => {
@@ -298,28 +309,47 @@ export default class ObsidianAIPlugin extends Plugin {
 		const currentDir = `${configDir}/plugins/${this.manifest.id}`;
 
 		if (this.manifest.id === ObsidianAIPlugin.LEGACY_PLUGIN_ID) return;
-		if (!(await adapter.exists(legacyDir)) || (await adapter.exists(currentDir))) return;
+		if (
+			!(await adapter.exists(legacyDir)) ||
+			(await adapter.exists(currentDir))
+		)
+			return;
 
 		try {
 			await adapter.mkdir(currentDir);
-			const copyTree = async (sourceDir: string, destinationDir: string): Promise<void> => {
+			const copyTree = async (
+				sourceDir: string,
+				destinationDir: string,
+			): Promise<void> => {
 				const listing = await adapter.list(sourceDir);
 				for (const folder of listing.folders) {
-					const relative = folder.slice(sourceDir.length).replace(/^\//, "");
+					const relative = folder
+						.slice(sourceDir.length)
+						.replace(/^\//, "");
 					const target = `${destinationDir}/${relative}`;
 					await adapter.mkdir(target).catch(() => undefined);
 					await copyTree(folder, target);
 				}
 				for (const file of listing.files) {
-					const relative = file.slice(sourceDir.length).replace(/^\//, "");
-					await adapter.write(`${destinationDir}/${relative}`, await adapter.read(file));
+					const relative = file
+						.slice(sourceDir.length)
+						.replace(/^\//, "");
+					await adapter.write(
+						`${destinationDir}/${relative}`,
+						await adapter.read(file),
+					);
 				}
 			};
 			await copyTree(legacyDir, currentDir);
-			this.logger?.log("info", `Migrated plugin data from ${legacyDir} to ${currentDir}`);
+			this.logger?.log(
+				"info",
+				`Migrated plugin data from ${legacyDir} to ${currentDir}`,
+			);
 		} catch (error) {
 			this.logger?.log("error", `Plugin data migration failed: ${error}`);
-			throw new Error(`Could not migrate existing Obsidian AI data: ${error}`);
+			throw new Error(
+				`Could not migrate existing Obsidian AI data: ${error}`,
+			);
 		}
 	}
 
@@ -347,7 +377,9 @@ export default class ObsidianAIPlugin extends Plugin {
 			// Defensive: workspace restoration may still be in progress,
 			// so the restored leaf might not yet appear in getLeavesOfType.
 			// Wait one animation frame before falling back to creating a new leaf.
-			await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+			await new Promise<void>((resolve) =>
+				requestAnimationFrame(() => resolve()),
+			);
 			leaf = this.removeDuplicateChatLeaves();
 		}
 		if (!leaf) {
@@ -364,9 +396,8 @@ export default class ObsidianAIPlugin extends Plugin {
 		if (leaves.length === 0) return undefined;
 
 		const activeLeaf = workspace.activeLeaf;
-		const canonicalLeaf = activeLeaf && leaves.includes(activeLeaf)
-			? activeLeaf
-			: leaves[0];
+		const canonicalLeaf =
+			activeLeaf && leaves.includes(activeLeaf) ? activeLeaf : leaves[0];
 
 		for (const leaf of leaves) {
 			if (leaf !== canonicalLeaf) {
@@ -377,12 +408,17 @@ export default class ObsidianAIPlugin extends Plugin {
 		return canonicalLeaf;
 	}
 
-	async openSessionInNewTab(sessionId: string, messageId: string): Promise<void> {
+	async openSessionInNewTab(
+		sessionId: string,
+		messageId: string,
+	): Promise<void> {
 		// Session tabs are managed inside the existing chat view so the toolbar and
 		// composer stay shared rather than creating stacked sidebar leaves.
-		window.dispatchEvent(new CustomEvent("obsidian-ai:open-session", {
-			detail: { sessionId, messageId },
-		}));
+		window.dispatchEvent(
+			new CustomEvent("obsidian-ai:open-session", {
+				detail: { sessionId, messageId },
+			}),
+		);
 	}
 
 	/**
@@ -394,18 +430,31 @@ export default class ObsidianAIPlugin extends Plugin {
 		if (!this.sessionSummarizer) return;
 		if (!this.settings.intelligence?.enableIntelligence) return;
 
-		const minMessages = this.settings.intelligence.autoSummarizeMinMessages ?? 4;
-		if (!this.sessionSummarizer.shouldSummarize(session.messages, minMessages)) {
+		const minMessages =
+			this.settings.intelligence.autoSummarizeMinMessages ?? 4;
+		if (
+			!this.sessionSummarizer.shouldSummarize(
+				session.messages,
+				minMessages,
+			)
+		) {
 			return;
 		}
 
-		const activeProfile = this.settings.providerProfiles.find(
-			(p) => p.id === (session.profileId || this.settings.activeProviderProfileId),
-		) || this.settings.providerProfiles[0];
+		const activeProfile =
+			this.settings.providerProfiles.find(
+				(p) =>
+					p.id ===
+					(session.profileId ||
+						this.settings.activeProviderProfileId),
+			) || this.settings.providerProfiles[0];
 
 		if (!activeProfile) return;
 
-		this.logger?.log("info", `[onSessionEnd] Summarizing session ${session.id}`);
+		this.logger?.log(
+			"info",
+			`[onSessionEnd] Summarizing session ${session.id}`,
+		);
 		try {
 			const entries = await this.sessionSummarizer.summarizeSession(
 				session.id,
@@ -413,9 +462,15 @@ export default class ObsidianAIPlugin extends Plugin {
 				activeProfile,
 				{ minMessages },
 			);
-			this.logger?.log("info", `[onSessionEnd] Saved ${entries.length} memory entries`);
+			this.logger?.log(
+				"info",
+				`[onSessionEnd] Saved ${entries.length} memory entries`,
+			);
 		} catch (e) {
-			this.logger?.log("warn", `[onSessionEnd] Summarization failed: ${e}`);
+			this.logger?.log(
+				"warn",
+				`[onSessionEnd] Summarization failed: ${e}`,
+			);
 		}
 	}
 
@@ -434,7 +489,9 @@ export default class ObsidianAIPlugin extends Plugin {
 
 			if (!result.hasUpdate) {
 				if (manual) {
-					new Notice(`✅ Chat Lab is up to date (${result.currentVersion})`);
+					new Notice(
+						`✅ Chat Lab is up to date (${result.currentVersion})`,
+					);
 				}
 				return;
 			}
@@ -442,15 +499,25 @@ export default class ObsidianAIPlugin extends Plugin {
 			if (this.settings.autoUpdate && !result.isPrerelease) {
 				// Auto-install stable updates
 				new Notice(`📦 Downloading update ${result.latestVersion}…`);
-				const tempDir = await this._updater.downloadUpdate(result.release!);
+				const tempDir = await this._updater.downloadUpdate(
+					result.release!,
+				);
 				await this._updater.installUpdate(tempDir);
-				new Notice(`✅ Update ${result.latestVersion} installed. Reload to apply.`);
+				new Notice(
+					`✅ Update ${result.latestVersion} installed. Reload to apply.`,
+				);
 			} else {
 				// Show modal for manual confirmation
-				const modal = new UpdateAvailableModal(this.app, result, async () => {
-					const tempDir = await this._updater!.downloadUpdate(result.release!);
-					await this._updater!.installUpdate(tempDir);
-				});
+				const modal = new UpdateAvailableModal(
+					this.app,
+					result,
+					async () => {
+						const tempDir = await this._updater!.downloadUpdate(
+							result.release!,
+						);
+						await this._updater!.installUpdate(tempDir);
+					},
+				);
 				modal.open();
 			}
 		} catch (error: any) {
@@ -528,20 +595,29 @@ export default class ObsidianAIPlugin extends Plugin {
 		this.logger?.log("info", "saveSettings: writing data.json to disk");
 		await this._ensureRollingBackup(existing);
 		await this.saveData(payload);
-		this.logger?.log("info", "saveSettings: data.json written successfully");
+		this.logger?.log(
+			"info",
+			"saveSettings: data.json written successfully",
+		);
 	}
 
 	async loadChatData(): Promise<StoredChatData> {
 		this.logger?.log("info", "loadChatData: delegating to storage layer");
 		if (!this._chatStorage) {
-			this._chatStorage = createStorage(this._storageDeps(), this.settings.chatStorageFormat);
+			this._chatStorage = createStorage(
+				this._storageDeps(),
+				this.settings.chatStorageFormat,
+			);
 		}
 		return this._chatStorage.loadChatData();
 	}
 
 	async saveChatData(chatData: StoredChatData): Promise<void> {
 		if (!this._chatStorage) {
-			this._chatStorage = createStorage(this._storageDeps(), this.settings.chatStorageFormat);
+			this._chatStorage = createStorage(
+				this._storageDeps(),
+				this.settings.chatStorageFormat,
+			);
 		}
 		if (this._saveInProgress) {
 			this._pendingChatData = chatData;
@@ -557,7 +633,10 @@ export default class ObsidianAIPlugin extends Plugin {
 			let nextChatData: StoredChatData | null = chatData;
 			while (nextChatData) {
 				this._pendingChatData = null;
-				this.logger?.log("info", "saveChatData: writing via storage layer");
+				this.logger?.log(
+					"info",
+					"saveChatData: writing via storage layer",
+				);
 				await this._chatStorage.saveChatData(nextChatData);
 				this.logger?.log(
 					"info",
@@ -595,7 +674,8 @@ export default class ObsidianAIPlugin extends Plugin {
 
 			// Rotate existing backups: .bak.2 -> .bak.3, .bak.1 -> .bak.2, .bak -> .bak.1
 			for (let i = backupCount - 1; i >= 1; i--) {
-				const src = i === 1 ? `${dataPath}.bak` : `${dataPath}.bak.${i - 1}`;
+				const src =
+					i === 1 ? `${dataPath}.bak` : `${dataPath}.bak.${i - 1}`;
 				const dst = `${dataPath}.bak.${i}`;
 				if (await adapter.exists(src)) {
 					await adapter.write(dst, await adapter.read(src));
@@ -604,7 +684,10 @@ export default class ObsidianAIPlugin extends Plugin {
 
 			// Write the new .bak
 			await adapter.write(`${dataPath}.bak`, content);
-			this.logger?.log("info", `Rolling backup created for data.json (keeping ${backupCount} copies)`);
+			this.logger?.log(
+				"info",
+				`Rolling backup created for data.json (keeping ${backupCount} copies)`,
+			);
 		} catch (e) {
 			this.logger?.log("warn", `Failed to create rolling backup: ${e}`);
 		}

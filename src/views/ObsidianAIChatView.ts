@@ -72,8 +72,14 @@ export class ObsidianAIChatView extends ItemView {
 		return { ...this.options };
 	}
 
-	async setState(state: Record<string, unknown>, result: unknown): Promise<void> {
-		this.options = { ...this.options, ...(state as ObsidianAIChatViewOptions) };
+	async setState(
+		state: Record<string, unknown>,
+		result: unknown,
+	): Promise<void> {
+		this.options = {
+			...this.options,
+			...(state as ObsidianAIChatViewOptions),
+		};
 		await super.setState(state, result as never);
 		this.render();
 	}

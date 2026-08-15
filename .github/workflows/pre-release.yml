@@ -6,7 +6,7 @@ on:
             - main
 
 env:
-    PLUGIN_NAME: obsidian-ai
+    PLUGIN_NAME: chat-lab
 
 jobs:
     pre-release:
@@ -16,7 +16,7 @@ jobs:
 
         steps:
             - name: Checkout Repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
 
             - name: Set Up pnpm
               uses: pnpm/action-setup@v4
@@ -24,9 +24,9 @@ jobs:
                   version: 10
 
             - name: Set Up Node.js
-              uses: actions/setup-node@v3
+              uses: actions/setup-node@v4
               with:
-                  node-version: "lts/*"
+                  node-version: "22.22.3"
                   cache: "pnpm"
 
             - name: Install and Build

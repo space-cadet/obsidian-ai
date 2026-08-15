@@ -4,7 +4,7 @@ on:
     workflow_dispatch:
 
 env:
-    PLUGIN_NAME: obsidian-ai
+    PLUGIN_NAME: chat-lab
 
 jobs:
     build:
@@ -21,7 +21,7 @@ jobs:
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: 22
+                  node-version: "22.22.3"
                   cache: "pnpm"
 
             - name: Install dependencies

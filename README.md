@@ -29,6 +29,7 @@ Agent tools that create, modify, move, or delete vault files require approval by
 Chat Lab: Obsidian AI adds a **persistent chat panel** to your Obsidian sidebar. Unlike typical chat plugins, it treats **AI agents and remote humans as equal participants** in the same conversation. Everyone broadcasts to everyone. Each participant decides whether and how to respond.
 
 **Key idea:** You can have a chat tab with:
+
 - Just you and an AI agent
 - You + multiple AI agents
 - You + remote humans (via WebSocket relay) — with or without AI agents present
@@ -40,17 +41,17 @@ The AI can also **directly manipulate your vault** through structured tool calls
 
 ## 🚀 Feature Highlights
 
-| Feature | What It Does |
-|---|---|
-| **Collaborative Chat** | AI agents, remote humans, and you as equal participants |
-| **Multi-Agent Chat Relay** | Real-time chat across devices via self-hosted WebSocket relay |
-| **Agentic Note Editing** | 13 vault tools with approval flow — read, edit, create, move, search |
-| **Inline AI Editing** | Context-aware suggestions with visual diff preview |
-| **Vault-Aware Context** | `@mention` notes, folders, tags, active note, embed expansion |
-| **Web Search** | DuckDuckGo, Brave, Tavily, Exa, SearXNG |
-| **Multi-Provider** | OpenAI, Anthropic, Google, DeepSeek, OpenRouter, Azure, and custom OpenAI-compatible endpoints |
-| **Auto-Updater** | One-click updates with stable/dev channels |
-| **Mobile-Responsive** | Full functionality on iOS/Android |
+| Feature                    | What It Does                                                                                   |
+| -------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Collaborative Chat**     | AI agents, remote humans, and you as equal participants                                        |
+| **Multi-Agent Chat Relay** | Real-time chat across devices via self-hosted WebSocket relay                                  |
+| **Agentic Note Editing**   | 13 vault tools with approval flow — read, edit, create, move, search                           |
+| **Inline AI Editing**      | Context-aware suggestions with visual diff preview                                             |
+| **Vault-Aware Context**    | `@mention` notes, folders, tags, active note, embed expansion                                  |
+| **Web Search**             | DuckDuckGo, Brave, Tavily, Exa, SearXNG                                                        |
+| **Multi-Provider**         | OpenAI, Anthropic, Google, DeepSeek, OpenRouter, Azure, and custom OpenAI-compatible endpoints |
+| **Auto-Updater**           | One-click updates with stable/dev channels                                                     |
+| **Mobile-Responsive**      | Full functionality on iOS/Android                                                              |
 
 ---
 
@@ -88,21 +89,21 @@ See [Multi-User Chat Design](memory-bank/implementation/multi-user-chat-design.m
 
 The AI can directly manage your vault through structured tool calls:
 
-| Tool | What It Does |
-|------|-------------|
-| `read_note` | Read any note's full content |
-| `edit_note` | Overwrite a note with new content |
-| `append_to_note` | Add content to the end of a note |
-| `create_note` | Create a new note in any folder |
-| `patch_note` | Find-and-replace inside a note |
-| `edit_section` | Rewrite content under a specific heading |
-| `search_notes` | Search by filename or path |
-| `list_notes` | Browse folders with subfolder support |
-| `get_note_metadata` | File stats (size, dates, word count) |
-| `create_folder` | Create new folders |
-| `move_note` | Move or rename notes |
-| `delete_note` | Delete notes (to system trash) |
-| `list_folders` | Navigate vault structure |
+| Tool                | What It Does                             |
+| ------------------- | ---------------------------------------- |
+| `read_note`         | Read any note's full content             |
+| `edit_note`         | Overwrite a note with new content        |
+| `append_to_note`    | Add content to the end of a note         |
+| `create_note`       | Create a new note in any folder          |
+| `patch_note`        | Find-and-replace inside a note           |
+| `edit_section`      | Rewrite content under a specific heading |
+| `search_notes`      | Search by filename or path               |
+| `list_notes`        | Browse folders with subfolder support    |
+| `get_note_metadata` | File stats (size, dates, word count)     |
+| `create_folder`     | Create new folders                       |
+| `move_note`         | Move or rename notes                     |
+| `delete_note`       | Delete notes (to system trash)           |
+| `list_folders`      | Navigate vault structure                 |
 
 **Approval Flow**: By default, every tool call shows a preview card in chat — you approve or reject before it executes. Toggle **Auto-Apply** (🤖) to skip approval for trusted workflows.
 
@@ -138,16 +139,16 @@ Ask about recent events or facts beyond the model's training data:
 
 Bring your own keys. No data leaves your machine unless you choose it to.
 
-| Provider | Models | Local / Cloud |
-|---|---|---|
-| **OpenAI** | GPT-4o, GPT-4, GPT-3.5 | Cloud |
-| **Anthropic** | Claude 3.5 Sonnet, Claude 3 Opus | Cloud |
-| **Google** | Gemini 1.5 Pro, Gemini Flash | Cloud |
-| **DeepSeek** | DeepSeek V3, DeepSeek R1 | Cloud |
-| **OpenRouter** | 200+ models via unified endpoint | Cloud |
-| **Local models** | Use a custom OpenAI-compatible endpoint; official Ollama integration is deferred for 1.3.1 | **Optional** |
-| **Azure OpenAI** | Enterprise GPT models | Cloud |
-| **Custom** | Any OpenAI-compatible endpoint | Either |
+| Provider         | Models                                                                                     | Local / Cloud |
+| ---------------- | ------------------------------------------------------------------------------------------ | ------------- |
+| **OpenAI**       | GPT-4o, GPT-4, GPT-3.5                                                                     | Cloud         |
+| **Anthropic**    | Claude 3.5 Sonnet, Claude 3 Opus                                                           | Cloud         |
+| **Google**       | Gemini 1.5 Pro, Gemini Flash                                                               | Cloud         |
+| **DeepSeek**     | DeepSeek V3, DeepSeek R1                                                                   | Cloud         |
+| **OpenRouter**   | 200+ models via unified endpoint                                                           | Cloud         |
+| **Local models** | Use a custom OpenAI-compatible endpoint; official Ollama integration is deferred for 1.3.1 | **Optional**  |
+| **Azure OpenAI** | Enterprise GPT models                                                                      | Cloud         |
+| **Custom**       | Any OpenAI-compatible endpoint                                                             | Either        |
 
 - **Per-Provider Profiles** — Save multiple configurations and switch between them.
 - **Model Discovery** — Fetch available models from your provider automatically.
@@ -165,6 +166,7 @@ Bring your own keys. No data leaves your machine unless you choose it to.
 ### Auto-Updater (v1.2.5+)
 
 Stay current without manual downloads:
+
 - **Automatic Update Checks** — Plugin checks for new releases on startup (configurable interval)
 - **One-Click Update** — Notification shows latest version, commit message, and author; click to update
 - **Stable / Dev Channels** — Switch between release builds and latest `main` branch
@@ -195,7 +197,7 @@ The fastest way to install and get automatic updates:
 1. Download the latest release from [GitHub Releases](https://github.com/space-cadet/obsidian-ai/releases)
 2. Extract `main.js`, `styles.css`, and `manifest.json`
 3. Copy them to your vault: `.obsidian/plugins/chat-lab/`
-4. Enable in **Settings** → **Community Plugins`
+4. Enable in **Settings** → \*\*Community Plugins`
 
 ---
 
@@ -203,13 +205,14 @@ The fastest way to install and get automatic updates:
 
 ### 1. Open the Chat Panel
 
-Click the **💬** icon in the left ribbon (or run **"Open Chat Lab"** from the Command Palette).
+Click the **💬** icon in the left ribbon (or run **"Open Chat Lab AI sidebar"** from the Command Palette).
 
 ### 2. Configure Your Provider
 
 Open **Settings** → **Chat Lab: Obsidian AI** → **Provider Profiles**.
 
 Click **Add Profile**, choose your provider, and enter:
+
 - **API Key** (if required)
 - **Model** — type a name or click **Fetch Models** to discover
 - **Custom URL** (for OpenAI-compatible or other custom endpoints)
@@ -224,11 +227,11 @@ Click **Add Profile**, choose your provider, and enter:
 ### 4. Chat with Remote Humans
 
 1. **Start the relay** on one device (or a server):
-   ```bash
-   pnpm run relay
-   # or
-   node relay/relay-server.js
-   ```
+    ```bash
+    pnpm run relay
+    # or
+    node relay/relay-server.js
+    ```
 2. **Note the IP** — The relay logs the listening address (e.g., `ws://192.168.1.42:8080`)
 3. **Connect other devices** — In each device's **Settings** → **Sync**, enter the relay URL and a room ID
 4. **Open the chat** on all devices — Messages sync in real time, with attribution showing who sent each message
@@ -244,6 +247,7 @@ When the AI generates content you want to keep:
 - Click **Append → Note** to add it to the end of an existing file
 
 Or use slash commands in your message:
+
 - `/create [[Note Name]]` — create a new note
 - `/edit [[Note Name]]` — overwrite an existing note
 - `/append [[Note Name]]` — append to an existing note
@@ -255,6 +259,7 @@ Ask the AI to manage your vault directly:
 > "Summarize my `[[Project Notes]]` and create a draft in `Drafts/`"
 
 The AI will:
+
 1. Read `Project Notes` via `read_note`
 2. Generate a summary
 3. Create the draft via `create_note` — pending your approval (unless Auto-Apply is on)
@@ -263,7 +268,7 @@ The AI will:
 
 1. Select text in any note (or place your cursor)
 2. Press `Ctrl/Cmd + K` (customizable in Hotkeys)
-3. Type your instruction — e.g. *"make this more concise"* or *"translate to Spanish"*
+3. Type your instruction — e.g. _"make this more concise"_ or _"translate to Spanish"_
 4. Review the diff preview
 5. Click **✓ Accept** to apply, or **✗ Discard** to cancel
 
@@ -295,6 +300,7 @@ When the Obsidian app is moved to the background, the operating system suspends 
 ### Mobile-Responsive UI
 
 The chat interface adapts to smaller screens:
+
 - **Horizontal scrolling** for the action bar on narrow viewports
 - **Auto-expanding textarea** for the input field
 - **Compact icon buttons** to maximize message space

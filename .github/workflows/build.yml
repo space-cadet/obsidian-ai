@@ -9,7 +9,7 @@ on:
             - main
 
 env:
-    PLUGIN_NAME: obsidian-ai
+    PLUGIN_NAME: chat-lab
 
 jobs:
     build:
@@ -27,7 +27,7 @@ jobs:
             - name: Set Up Node.js
               uses: actions/setup-node@v4
               with:
-                  node-version: "lts/*"
+                  node-version: "22.22.3"
                   cache: "pnpm"
 
             - name: Install and Build
