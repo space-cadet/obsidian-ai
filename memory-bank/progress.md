@@ -7,6 +7,12 @@
 - Verification passes: 23 test files, 234 tests, TypeScript, production build, and `git diff --check`.
 - Release remains pending policy scanner rerun, final 1.3.3 version bump, CI attestation verification, and manual desktop/mobile smoke tests.
 
+### 2026-08-15 T8a Release 1.3.3
+
+- Bumped manifest/package/version metadata to `1.3.3` and published exact tag `1.3.3`.
+- CI release run `31874348465` passed build, asset validation, attestations, and release upload.
+- Release includes only supported plugin assets plus checksums; fresh Community review is now the remaining external gate.
+
 ### 2026-08-15 Community Directory Review — T8a Created
 
 - Parsed the supplied review PDF for release `1.3.2` at commit `056428c`.

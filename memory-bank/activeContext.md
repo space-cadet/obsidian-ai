@@ -15,6 +15,12 @@
 - Verification passes: 23 test files, 234 tests, TypeScript, production build, and `git diff --check`.
 - Remaining: policy scanner rerun, release version 1.3.3, CI attestation verification, manual desktop/mobile smoke tests, and Community resubmission.
 
+### 2026-08-15 T8a Release Published
+
+- Published `1.3.3` from commit `0d970a0`.
+- CI run `31874348465` passed, including `main.js` and `styles.css` attestations.
+- Remaining external gate: request a fresh Community Directory review, then perform manual desktop/mobile smoke tests.
+
 ### 2026-08-15 Release Readiness Audit
 
 - Reopened T8 after policy and release audit; the previous “ready” assessment is no longer valid.
