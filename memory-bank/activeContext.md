@@ -9,6 +9,12 @@
 - Findings and acceptance gates: `memory-bank/implementation-details/community-review-remediation.md`.
 - No source code or release assets were changed in this documentation update.
 
+### 2026-08-15 T8a Implementation Batch
+
+- First remediation batch is implemented locally: compatibility baseline `1.4.5`, mobile filesystem guard, platform/lifecycle fixes, safe DOM/style changes, React 18 pin, and reproducible release workflow changes.
+- Verification passes: 23 test files, 234 tests, TypeScript, production build, and `git diff --check`.
+- Remaining: policy scanner rerun, release version 1.3.3, CI attestation verification, manual desktop/mobile smoke tests, and Community resubmission.
+
 ### 2026-08-15 Release Readiness Audit
 
 - Reopened T8 after policy and release audit; the previous “ready” assessment is no longer valid.

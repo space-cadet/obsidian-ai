@@ -14,7 +14,7 @@ export function renderUpdaterSection(
 	section.createEl("h2", { text: "Updates" });
 
 	const desc = section.createEl("p", { cls: "setting-item-description" });
-	desc.innerHTML =
+	desc.textContent =
 		"Automatically check for new versions from GitHub releases. " +
 		"Stable releases are tested builds. Dev builds include the latest features but may be less stable.";
 

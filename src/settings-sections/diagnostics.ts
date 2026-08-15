@@ -1,4 +1,4 @@
-import { App, Modal, Notice, Setting } from "obsidian";
+import { App, Modal, Notice, Platform, Setting } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection } from "./helpers";
 import { summarizeLlmUsage } from "../lib/usageStats";
@@ -15,12 +15,11 @@ interface DiskUsageBreakdown {
 async function calculatePluginDiskUsage(
 	pluginDir: string,
 ): Promise<DiskUsageBreakdown | null> {
-	try {
-		// Dynamic require for Node fs — safe in Electron, graceful fallback if unavailable
-		const fs = require("fs") as typeof import("fs");
-		const path = require("path") as typeof import("path");
+	if (!Platform.isDesktop) return null;
 
-		if (!fs || !path) return null;
+	try {
+		// Node modules are loaded only after the desktop guard; mobile never evaluates them.
+		const [fs, path] = await Promise.all([import("fs"), import("path")]);
 
 		const walk = async (dir: string): Promise<{ size: number; files: Map<string, number> }> => {
 			let total = 0;
@@ -213,7 +212,7 @@ export function renderDiagnosticsSection(
 					row.createEl("span", { text: model, cls: "obsidian-ai-usage-bar-label", attr: { title: model } });
 					const track = row.createDiv({ cls: "obsidian-ai-usage-bar-track" });
 					const fill = track.createDiv({ cls: "obsidian-ai-usage-bar-fill" });
-					fill.style.width = `${pct}%`;
+					fill.setCssStyles({ width: `${pct}%` });
 					row.createEl("span", { text: `~${tokens.toLocaleString()}`, cls: "obsidian-ai-usage-bar-value" });
 				}
 			}
@@ -280,9 +279,7 @@ export function renderDiagnosticsSection(
 						text: "This will permanently delete all chat sessions. This action cannot be undone.",
 					});
 					const btnContainer = modal.contentEl.createEl("div");
-					btnContainer.style.display = "flex";
-					btnContainer.style.gap = "8px";
-					btnContainer.style.marginTop = "12px";
+					btnContainer.setCssStyles({ display: "flex", gap: "8px", marginTop: "12px" });
 
 					const cancelBtn = btnContainer.createEl("button", {
 						text: "Cancel",

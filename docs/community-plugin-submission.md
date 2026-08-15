@@ -18,7 +18,7 @@ Obsidian community plugins require review before being listed. This checklist tr
   "id": "obsidian-ai",
   "name": "Obsidian AI",
   "version": "1.2.5",
-  "minAppVersion": "0.15.0",
+  "minAppVersion": "1.4.5",
   "description": "AI-powered suggestions, contextual edits, and advanced text transformations directly into your editor.",
   "author": "space-cadet",
   "authorUrl": "https://github.com/space-cadet/",

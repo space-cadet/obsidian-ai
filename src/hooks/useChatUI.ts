@@ -40,7 +40,7 @@ export interface UseChatUIResult {
 	showParticipantDropdown: boolean;
 	toggleParticipantDropdown: () => void;
 	closeParticipantDropdown: () => void;
-	participantDropdownRef: React.RefObject<HTMLDivElement | null>;
+	participantDropdownRef: React.RefObject<HTMLDivElement>;
 
 	// --- Typing ---
 	typingAgents: Set<string>;
@@ -84,7 +84,7 @@ export interface UseChatUIResult {
 	showRemoteUserDropdown: boolean;
 	toggleRemoteUserDropdown: () => void;
 	closeRemoteUserDropdown: () => void;
-	remoteUserDropdownRef: React.RefObject<HTMLDivElement | null>;
+	remoteUserDropdownRef: React.RefObject<HTMLDivElement>;
 
 	// --- Reset ---
 	resetUIState: () => void;

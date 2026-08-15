@@ -15,7 +15,7 @@ export const ObsidianIcon: React.FC<ObsidianIconProps> = ({
 	const ref = useRef<HTMLSpanElement>(null);
 	useEffect(() => {
 		if (ref.current) {
-			ref.current.innerHTML = "";
+			ref.current.replaceChildren();
 			setIcon(ref.current, icon);
 		}
 	}, [icon]);

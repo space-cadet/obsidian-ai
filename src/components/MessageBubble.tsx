@@ -196,12 +196,12 @@ function TextSegment({
 	useEffect(() => {
 		if (!ref.current) return;
 		let unmounted = false;
-		ref.current.innerHTML = "";
+		ref.current.replaceChildren();
 
 		renderMarkdown(sanitizeHtmlForRenderer(cleanContent), ref.current, "").catch(
 			(err: any) => {
 				if (unmounted || !ref.current) return;
-				ref.current.innerHTML = "";
+				ref.current.replaceChildren();
 				ref.current.createEl("pre", {
 					text: cleanContent,
 					cls: "chat-plaintext-fallback",
@@ -482,14 +482,14 @@ function LegacyContent({
 		let unmounted = false;
 
 		try {
-			contentRef.current.innerHTML = "";
+			contentRef.current.replaceChildren();
 			renderMarkdown(
 				sanitizeHtmlForRenderer(displayContent),
 				contentRef.current,
 				"",
 			).catch((err: any) => {
 				if (unmounted || !contentRef.current) return;
-				contentRef.current.innerHTML = "";
+				contentRef.current.replaceChildren();
 				contentRef.current.createEl("pre", {
 					text: displayContent,
 					cls: "chat-plaintext-fallback",
@@ -504,7 +504,7 @@ function LegacyContent({
 			});
 		} catch (err: any) {
 			if (!contentRef.current) return;
-			contentRef.current.innerHTML = "";
+			contentRef.current.replaceChildren();
 			contentRef.current.createEl("pre", {
 				text: displayContent,
 				cls: "chat-plaintext-fallback",

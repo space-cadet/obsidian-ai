@@ -20,8 +20,8 @@ interface ChatToolbarProps {
 	selectedRemoteUserIds: Set<string>;
 	showParticipantDropdown: boolean;
 	showRemoteUserDropdown: boolean;
-	participantDropdownRef: React.RefObject<HTMLDivElement | null>;
-	remoteUserDropdownRef: React.RefObject<HTMLDivElement | null>;
+	participantDropdownRef: React.RefObject<HTMLDivElement>;
+	remoteUserDropdownRef: React.RefObject<HTMLDivElement>;
 	autoApprove: boolean;
 	autoNameSessions: boolean;
 	zenMode: boolean;

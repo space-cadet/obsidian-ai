@@ -41,6 +41,7 @@ vi.mock("obsidian", () => ({
 	TFile: class {},
 	MarkdownView: class {},
 	WorkspaceLeaf: class {},
+	Platform: { isMobile: false, isDesktop: true },
 }));
 
 vi.mock("../noteEditing/NoteEditingBridge", () => ({

@@ -40,8 +40,7 @@ export function renderIntelligenceSection(
 		const hint = sectionEl.createEl("div", {
 			cls: "setting-item-description",
 		});
-		hint.style.padding = "0 16px 12px";
-		hint.style.color = "var(--text-muted)";
+	hint.setCssStyles({ padding: "0 16px 12px", color: "var(--text-muted)" });
 		hint.textContent =
 			"Turn this on to unlock memory creation, persona loading, and cross-session search. " +
 			"All data stays in the plugin directory — never in your vault.";
@@ -218,10 +217,7 @@ export function renderIntelligenceSection(
 
 	// Export buttons row
 	const exportRow = statsEl.createEl("div");
-	exportRow.style.display = "flex";
-	exportRow.style.gap = "8px";
-	exportRow.style.marginTop = "10px";
-	exportRow.style.flexWrap = "wrap";
+	exportRow.setCssStyles({ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" });
 
 	const exportJsonBtn = exportRow.createEl("button", { text: "Export JSON" });
 	exportJsonBtn.addClass("mod-cta");
@@ -285,26 +281,18 @@ export function renderIntelligenceSection(
 
 	// ── Memory Optimization ──
 	const optimizeRow = statsEl.createEl("div");
-	optimizeRow.style.marginTop = "12px";
-	optimizeRow.style.padding = "10px";
-	optimizeRow.style.border = "1px solid var(--background-modifier-border)";
-	optimizeRow.style.borderRadius = "6px";
-	optimizeRow.style.background = "var(--background-secondary)";
+	optimizeRow.setCssStyles({ marginTop: "12px", padding: "10px", border: "1px solid var(--background-modifier-border)", borderRadius: "6px", background: "var(--background-secondary)" });
 
 	const optimizeHeader = optimizeRow.createEl("div", { text: "Memory Optimization" });
-	optimizeHeader.style.fontWeight = "600";
-	optimizeHeader.style.marginBottom = "6px";
+	optimizeHeader.setCssStyles({ fontWeight: "600", marginBottom: "6px" });
 
 	const optimizeDesc = optimizeRow.createEl("div", {
 		text: "Remove duplicate entries from historical data. This does not affect new writes — deduplication already happens automatically there.",
 	});
-	optimizeDesc.style.fontSize = "0.9em";
-	optimizeDesc.style.color = "var(--text-muted)";
-	optimizeDesc.style.marginBottom = "8px";
+	optimizeDesc.setCssStyles({ fontSize: "0.9em", color: "var(--text-muted)", marginBottom: "8px" });
 
 	const optimizeResult = optimizeRow.createEl("div");
-	optimizeResult.style.fontSize = "0.9em";
-	optimizeResult.style.minHeight = "1.5em";
+	optimizeResult.setCssStyles({ fontSize: "0.9em", minHeight: "1.5em" });
 
 	const optimizeBtn = optimizeRow.createEl("button", { text: "🧹 Prune Duplicates" });
 	optimizeBtn.addClass("mod-warning");
@@ -341,9 +329,7 @@ export function renderIntelligenceSection(
 	const aiPruneDesc = optimizeRow.createEl("div", {
 		text: "AI-powered: uses your configured LLM to judge semantic similarity. Slower but catches paraphrased duplicates (e.g., 'User is studying Chinese' vs 'User is learning Mandarin'). Costs a few API calls.",
 	});
-	aiPruneDesc.style.fontSize = "0.85em";
-	aiPruneDesc.style.color = "var(--text-muted)";
-	aiPruneDesc.style.marginBottom = "8px";
+	aiPruneDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "8px" });
 
 	const aiOptimizeBtn = optimizeRow.createEl("button", { text: "🤖 AI-Powered Prune" });
 	aiOptimizeBtn.addClass("mod-cta");
@@ -417,8 +403,7 @@ export function renderIntelligenceSection(
 	});
 
 	const auditRefreshBtn = auditEl.createEl("button", { text: "Refresh Audit" });
-	auditRefreshBtn.style.marginTop = "8px";
-	auditRefreshBtn.style.fontSize = "0.85em";
+	auditRefreshBtn.setCssStyles({ marginTop: "8px", fontSize: "0.85em" });
 	auditRefreshBtn.addEventListener("click", () => void refreshAudit());
 
 	// Button to open intelligence folder
@@ -426,7 +411,7 @@ export function renderIntelligenceSection(
 		text: "Open Intelligence Folder",
 		cls: "mod-cta",
 	});
-	openDirBtn.style.margin = "8px 16px 12px";
+	openDirBtn.setCssStyles({ margin: "8px 16px 12px" });
 	openDirBtn.addEventListener("click", () => {
 		const dir = `${plugin.app.vault.configDir}/plugins/${plugin.manifest.id}/intelligence`;
 		// Copy path to clipboard and notify user

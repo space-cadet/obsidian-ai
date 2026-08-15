@@ -60,7 +60,7 @@ export function renderSyncSection(
 	section.createEl("h2", { text: "Multi-User Sync" });
 
 	const desc = section.createEl("p", { cls: "setting-item-description" });
-	desc.innerHTML =
+	desc.textContent =
 		"Connect to a WebSocket relay server to synchronize chat sessions across multiple devices or users. " +
 		"When enabled on a chat session, messages are broadcast to all peers in the same room.";
 
@@ -71,9 +71,7 @@ export function renderSyncSection(
 
 	// URL input with history dropdown
 	const urlWrapper = relayControl.createEl("div", { cls: "obsidian-ai-url-wrapper" });
-	urlWrapper.style.display = "flex";
-	urlWrapper.style.alignItems = "center";
-	urlWrapper.style.gap = "4px";
+	urlWrapper.setCssStyles({ display: "flex", alignItems: "center", gap: "4px" });
 
 	const relayInput = urlWrapper.createEl("input", {
 		type: "text",
@@ -81,7 +79,7 @@ export function renderSyncSection(
 		value: plugin.settings.syncRelayUrl,
 		placeholder: "ws://localhost:8080",
 	});
-	relayInput.style.minWidth = "200px";
+	relayInput.setCssStyles({ minWidth: "200px" });
 
 	// History dropdown (if any entries exist)
 	const history = plugin.settings.syncRelayUrlHistory;
@@ -118,11 +116,9 @@ export function renderSyncSection(
 
 	// ── Test + Detect buttons ──
 	const btnRow = section.createEl("div", { cls: "setting-item" });
-	btnRow.style.borderTop = "none";
-	btnRow.style.paddingTop = "0";
+	btnRow.setCssStyles({ borderTop: "none", paddingTop: "0" });
 	const btnControl = btnRow.createEl("div", { cls: "setting-item-control" });
-	btnControl.style.display = "flex";
-	btnControl.style.gap = "8px";
+	btnControl.setCssStyles({ display: "flex", gap: "8px" });
 
 	// Test Connection button
 	const testBtn = btnControl.createEl("button", {
@@ -170,15 +166,13 @@ export function renderSyncSection(
 	const roomBrowserSection = section.createEl("div", {
 		cls: "obsidian-ai-room-browser",
 	});
-	roomBrowserSection.style.marginTop = "12px";
-	roomBrowserSection.style.display = "none";
+	roomBrowserSection.setCssStyles({ marginTop: "12px", display: "none" });
 
 	const roomBrowserTitle = roomBrowserSection.createEl("h3", {
 		text: "Available Rooms",
 		cls: "obsidian-ai-room-browser-title",
 	});
-	roomBrowserTitle.style.fontSize = "0.9em";
-	roomBrowserTitle.style.marginBottom = "8px";
+	roomBrowserTitle.setCssStyles({ fontSize: "0.9em", marginBottom: "8px" });
 
 	const roomList = roomBrowserSection.createEl("div", {
 		cls: "obsidian-ai-room-list",
@@ -197,23 +191,17 @@ export function renderSyncSection(
 				const row = roomList.createEl("div", {
 					cls: "obsidian-ai-room-row",
 				});
-				row.style.display = "flex";
-				row.style.justifyContent = "space-between";
-				row.style.alignItems = "center";
-				row.style.padding = "4px 8px";
-				row.style.borderRadius = "4px";
-				row.style.cursor = "pointer";
-				row.style.marginBottom = "4px";
+				row.setCssStyles({ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 8px", borderRadius: "4px", cursor: "pointer", marginBottom: "4px" });
 
 				const info = row.createEl("span");
-				info.innerHTML = `<strong>${roomId}</strong> — ${users.length} user(s): ${users.join(", ")}`;
+				info.createEl("strong", { text: roomId });
+				info.appendText(` — ${users.length} user(s): ${users.join(", ")}`);
 
 				const joinBtn = row.createEl("button", {
 					text: "Join",
 					cls: "mod-cta",
 				});
-				joinBtn.style.fontSize = "0.8em";
-				joinBtn.style.padding = "2px 8px";
+				joinBtn.setCssStyles({ fontSize: "0.8em", padding: "2px 8px" });
 
 				row.addEventListener("click", (e) => {
 					if (e.target === joinBtn) return;
@@ -231,7 +219,7 @@ export function renderSyncSection(
 				});
 			}
 		}
-		roomBrowserSection.style.display = "block";
+	roomBrowserSection.setCssStyles({ display: "block" });
 	}
 
 	// ── Room ID ──
@@ -244,7 +232,7 @@ export function renderSyncSection(
 		value: plugin.settings.syncRoomId,
 		placeholder: "obsidian-ai-chat",
 	});
-	roomInput.style.minWidth = "200px";
+	roomInput.setCssStyles({ minWidth: "200px" });
 	roomInput.addEventListener("change", async () => {
 		plugin.settings.syncRoomId = roomInput.value.trim();
 		await saveSettings({ quiet: true });
@@ -260,7 +248,7 @@ export function renderSyncSection(
 		value: plugin.settings.syncUserName,
 		placeholder: "User",
 	});
-	nameInput.style.minWidth = "150px";
+	nameInput.setCssStyles({ minWidth: "150px" });
 	nameInput.addEventListener("change", async () => {
 		plugin.settings.syncUserName = nameInput.value.trim();
 		await saveSettings({ quiet: true });
@@ -268,8 +256,9 @@ export function renderSyncSection(
 
 	// ── Hint ──
 	const hint = section.createEl("p", { cls: "setting-item-description" });
-	hint.style.marginTop = "12px";
-	hint.innerHTML =
-		"<strong>Note:</strong> Relay connection is configured per chat session. " +
-		"Enable it from the chat toolbar (🔌 icon) after starting a new chat.";
+	hint.setCssStyles({ marginTop: "12px" });
+	hint.createEl("strong", { text: "Note: " });
+	hint.appendText(
+		"Relay connection is configured per chat session. Enable it from the chat toolbar (🔌 icon) after starting a new chat.",
+	);
 }

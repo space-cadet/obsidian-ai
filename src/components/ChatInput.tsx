@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { App, Notice, TFile, TFolder } from "obsidian";
 import { ContextItem } from "../types";
-import { createExternalAttachment } from "../context/AttachmentEngine";
+import { createAttachment, createExternalAttachment } from "../context/AttachmentEngine";
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
 
 interface ChatInputProps {
@@ -155,30 +155,28 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			return;
 		}
 
-		const modal = document.createElement("div");
-		modal.className = "chat-attach-modal";
-		modal.innerHTML = `
-			<div class="chat-attach-modal-content">
-				<h4>Select ${type === "note" ? "Note" : type === "image" ? "Image" : "PDF"}</h4>
-				<div class="chat-attach-list"></div>
-				<button class="chat-btn chat-attach-cancel">Cancel</button>
-			</div>
-		`;
-		const list = modal.querySelector(".chat-attach-list")!;
+		const modal = document.body.createEl("div", { cls: "chat-attach-modal" });
+		const content = modal.createEl("div", { cls: "chat-attach-modal-content" });
+		content.createEl("h4", {
+			text: `Select ${type === "note" ? "Note" : type === "image" ? "Image" : "PDF"}`,
+		});
+		const list = content.createEl("div", { cls: "chat-attach-list" });
+		const cancelButton = content.createEl("button", {
+			text: "Cancel",
+			cls: "chat-btn chat-attach-cancel",
+		});
 		files.forEach((file) => {
-			const item = document.createElement("div");
-			item.className = "chat-attach-item";
-			item.textContent = file.path;
+			const item = list.createEl("div", {
+				text: file.path,
+				cls: "chat-attach-item",
+			});
 			item.addEventListener("click", () => {
-				const { createAttachment } = require("../context/AttachmentEngine");
 				const att = createAttachment(file.path);
 				onAttachmentsChange?.([...attachments, att]);
 				modal.remove();
 			});
-			list.appendChild(item);
 		});
-		modal.querySelector(".chat-attach-cancel")!.addEventListener("click", () => modal.remove());
-		document.body.appendChild(modal);
+		cancelButton.addEventListener("click", () => modal.remove());
 	}, [app, attachments, onAttachmentsChange]);
 
 	const handleRemoveAttachment = useCallback((id: string) => {
@@ -218,10 +216,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	useEffect(() => {
 		const textarea = textareaRef.current;
 		if (!textarea) return;
-		textarea.style.height = "auto";
+		textarea.setCssStyles({ height: "auto" });
 		const maxHeight = 96;
 		const newHeight = Math.min(textarea.scrollHeight, maxHeight);
-		textarea.style.height = newHeight + "px";
+		textarea.setCssStyles({ height: newHeight + "px" });
 	}, [value]);
 
 	useEffect(() => {

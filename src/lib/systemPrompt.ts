@@ -1,3 +1,4 @@
+import { Platform } from "obsidian";
 import { ContextItem } from "../types";
 import { SlashCommand } from "./slashCommand";
 import { PersonaLoader } from "../intelligence/PersonaLoader";
@@ -32,9 +33,7 @@ export async function buildSystemPrompt(
 	// ── System Context (date, time, platform) ──
 	const now = new Date();
 	const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-	const platformInfo = typeof navigator !== "undefined" 
-		? `Platform: ${navigator.platform || "unknown"}` 
-		: "";
+	const platformInfo = `Platform: ${Platform.isMobile ? "mobile" : "desktop"}`;
 	
 	prompt += `\n\n[System Context]`;
 	prompt += `\n- Current date: ${now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;

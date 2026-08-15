@@ -456,7 +456,6 @@ export default class ObsidianAIPlugin extends Plugin {
 	onunload() {
 		this.logger.stopMemoryLogging();
 		this.logger.flushNow();
-		this.app.workspace.detachLeavesOfType(CHAT_VIEWTYPE);
 	}
 
 	/** Build the storage dependency bag */

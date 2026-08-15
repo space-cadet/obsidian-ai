@@ -13,11 +13,13 @@ jobs:
         runs-on: ubuntu-latest
         permissions:
             contents: write
+            id-token: write
+            attestations: write
 
         steps:
             # 1. Checkout the repository
             - name: Checkout Repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
 
             - name: Set Up pnpm
               uses: pnpm/action-setup@v4
@@ -26,9 +28,9 @@ jobs:
 
             # 2. Set up Node.js environment with caching
             - name: Set Up Node.js
-              uses: actions/setup-node@v3
+              uses: actions/setup-node@v4
               with:
-                  node-version: "lts/*" # Use the latest LTS version
+                  node-version: "22.22.3"
                   cache: "pnpm"
 
             # 3. Install dependencies and build the project
@@ -42,30 +44,35 @@ jobs:
               run: |
                   test -f main.js || (echo "Build failed: main.js not found" && exit 1)
 
-            # 5. Prepare release assets
+            # 5. Verify the manifest and prepare only directory-supported assets
             - name: Prepare Release Assets
               run: |
-                  mkdir -p $PLUGIN_NAME
-                  cp main.js manifest.json styles.css $PLUGIN_NAME
-                  zip -r ${PLUGIN_NAME}.zip $PLUGIN_NAME
+                  test "$(node -p "require('./manifest.json').version")" = "${GITHUB_REF_NAME#v}"
+                  sha256sum main.js manifest.json styles.css > release-sha256sums.txt
 
-            # 6. Retrieve the tag name
-            - name: Get Tag Name
-              id: get_tag
-              run: echo "tag_name=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+            - name: Attest main.js
+              uses: actions/attest-build-provenance@v2
+              with:
+                  subject-path: main.js
 
-            # 7. Create a new release and upload all assets in one step
+            - name: Attest styles.css
+              uses: actions/attest-build-provenance@v2
+              with:
+                  subject-path: styles.css
+
+            # 6. Create/update the release with exactly the built assets
             - name: Create Release and Upload Assets
               uses: ncipollo/release-action@v1
               with:
-                  tag: ${{ steps.get_tag.outputs.tag_name }}
-                  name: ${{ steps.get_tag.outputs.tag_name }}
+                  tag: ${{ github.ref_name }}
+                  name: ${{ github.ref_name }}
+                  bodyFile: docs/release-announcement.md
                   allowUpdates: true
                   removeArtifacts: true
                   artifacts: |
-                      ${{ env.PLUGIN_NAME }}.zip
                       main.js
                       manifest.json
                       styles.css
+                      release-sha256sums.txt
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

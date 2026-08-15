@@ -51,7 +51,7 @@ obsidian-ai/
     "id": "obsidian-ai",
     "name": "Obsidian AI",
     "version": "1.2.4",
-    "minAppVersion": "0.15.0",
+    "minAppVersion": "1.4.5",
     "description": "AI-powered assistant for Obsidian with inline editing and persistent chat",
     "author": "space-cadet",
     "authorUrl": "https://github.com/space-cadet/",
