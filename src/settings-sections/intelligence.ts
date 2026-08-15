@@ -1,6 +1,10 @@
 import { Setting, Notice } from "obsidian";
+import { createElement } from "react";
+import { createRoot } from "react-dom/client";
 import ObsidianAIPlugin from "../main";
 import { createSection } from "./helpers";
+import AIPruneModal from "../components/presentational/AIPruneModal";
+import { MemoryOptimizer } from "../intelligence/MemoryOptimizer";
 
 export function renderIntelligenceSection(
 	containerEl: HTMLElement,
@@ -278,6 +282,99 @@ export function renderIntelligenceSection(
 
 	const refreshBtn = exportRow.createEl("button", { text: "Refresh Stats" });
 	refreshBtn.addEventListener("click", () => void refreshStats());
+
+	// ── Memory Optimization ──
+	const optimizeRow = statsEl.createEl("div");
+	optimizeRow.style.marginTop = "12px";
+	optimizeRow.style.padding = "10px";
+	optimizeRow.style.border = "1px solid var(--background-modifier-border)";
+	optimizeRow.style.borderRadius = "6px";
+	optimizeRow.style.background = "var(--background-secondary)";
+
+	const optimizeHeader = optimizeRow.createEl("div", { text: "Memory Optimization" });
+	optimizeHeader.style.fontWeight = "600";
+	optimizeHeader.style.marginBottom = "6px";
+
+	const optimizeDesc = optimizeRow.createEl("div", {
+		text: "Remove duplicate entries from historical data. This does not affect new writes — deduplication already happens automatically there.",
+	});
+	optimizeDesc.style.fontSize = "0.9em";
+	optimizeDesc.style.color = "var(--text-muted)";
+	optimizeDesc.style.marginBottom = "8px";
+
+	const optimizeResult = optimizeRow.createEl("div");
+	optimizeResult.style.fontSize = "0.9em";
+	optimizeResult.style.minHeight = "1.5em";
+
+	const optimizeBtn = optimizeRow.createEl("button", { text: "🧹 Prune Duplicates" });
+	optimizeBtn.addClass("mod-warning");
+	optimizeBtn.addEventListener("click", async () => {
+		if (!plugin.personaLoader) {
+			new Notice("Intelligence layer not initialized.");
+			return;
+		}
+		optimizeBtn.disabled = true;
+		optimizeBtn.textContent = "Pruning...";
+		try {
+			const result = await plugin.personaLoader.memoryStore.pruneDuplicates(0.7);
+			const savedKb = ((result.bytesBefore - result.bytesAfter) / 1024).toFixed(1);
+			optimizeResult.empty();
+			optimizeResult.createEl("span", {
+				text: `✅ Removed ${result.removed} duplicates (${result.groups} groups). Kept ${result.kept} unique entries. Saved ~${savedKb} KB.`,
+				attr: { style: "color: var(--text-success);" },
+			});
+			new Notice(`Memory pruned: ${result.removed} duplicates removed, ~${savedKb} KB saved.`);
+			void refreshStats();
+		} catch (e: any) {
+			optimizeResult.empty();
+			optimizeResult.createEl("span", {
+				text: `❌ Prune failed: ${e.message}`,
+				attr: { style: "color: var(--text-error);" },
+			});
+			new Notice(`Prune failed: ${e.message}`);
+		} finally {
+			optimizeBtn.disabled = false;
+			optimizeBtn.textContent = "🧹 Prune Duplicates";
+		}
+	});
+
+	const aiPruneDesc = optimizeRow.createEl("div", {
+		text: "AI-powered: uses your configured LLM to judge semantic similarity. Slower but catches paraphrased duplicates (e.g., 'User is studying Chinese' vs 'User is learning Mandarin'). Costs a few API calls.",
+	});
+	aiPruneDesc.style.fontSize = "0.85em";
+	aiPruneDesc.style.color = "var(--text-muted)";
+	aiPruneDesc.style.marginBottom = "8px";
+
+	const aiOptimizeBtn = optimizeRow.createEl("button", { text: "🤖 AI-Powered Prune" });
+	aiOptimizeBtn.addClass("mod-cta");
+	aiOptimizeBtn.addEventListener("click", () => {
+		if (!plugin.personaLoader || !plugin.chatapi) {
+			new Notice("Intelligence layer or API not initialized.");
+			return;
+		}
+
+		// Create modal container
+		const modalContainer = document.createElement("div");
+		modalContainer.className = "obsidian-ai-modal-container";
+		document.body.appendChild(modalContainer);
+
+		const root = createRoot(modalContainer);
+		root.render(
+			createElement(AIPruneModal, {
+				onClose: () => {
+					root.unmount();
+					modalContainer.remove();
+					void refreshStats();
+				},
+				createOptimizer: () =>
+					new MemoryOptimizer({
+						memoryStore: plugin.personaLoader!.memoryStore,
+						chatApi: plugin.chatapi,
+						logger: plugin.logger,
+					}),
+			}),
+		);
+	});
 
 	// ── Audit Log ──
 	const auditEl = sectionEl.createEl("details", { cls: "obsidian-ai-settings-details" });

@@ -1,7 +1,7 @@
 # AI Intelligence Layer — Implementation Details
 
 *Created: 2026-07-21 21:50 IST*  
-*Last Updated: 2026-08-05 17:31 IST*
+*Last Updated: 2026-08-14 22:56 IST*
 *Task: [T26](../tasks/T26.md)*
 
 ---
@@ -587,6 +587,60 @@ interface IntelligenceSettings {
 - [T26 Task File](../tasks/T26.md)
 - [T24 SessionStorage](T24.md) — JSONL persistence foundation
 - [T13 Agentic Tool Calling](T13.md) — tool framework
+
+---
+
+## Appendix: Phase 2.5 — Memory Deduplication (2026-08-14)
+
+### Problem
+MemoryStore.create() was appending duplicates endlessly. After months of usage, the same facts ("User prefers YAML frontmatter tags", "User is studying Chinese") were repeated 10-20× each. Memory file grew to 184 KB with ~131 unique entries but significant duplication.
+
+### Solution: Two-layer approach
+
+**Layer 1: Write-time deduplication (automatic)**
+- `MemoryStore.create()` now checks for similar existing entries before appending
+- Uses Jaccard word-overlap similarity at 70% threshold
+- Category-scoped by default (cross-category entries never collide)
+- Fast path: substring containment = 100% similarity (exact or superset match)
+- If duplicate found: skip creating new entry
+- Result: future writes are clean, no duplicates accumulate
+
+**Layer 2: Historical cleanup (manual, on-demand)**
+- `MemoryStore.pruneDuplicates(threshold)` — one-time scan and removal
+- Groups entries by similarity, keeps longest/most detailed version per group
+- Threshold configurable (default 0.7)
+- Returns PruneResult: {removed, kept, groups, bytesBefore, bytesAfter}
+- **Note:** Most historical "duplicates" are semantic variations (different wording, same fact). Jaccard at 0.7 catches near-exact matches but misses paraphrases.
+
+**AI-Powered Semantic Prune**
+- `MemoryOptimizer` class sends entries to configured LLM for semantic clustering
+- Per-category batching (one API call per category)
+- LLM returns JSON clusters: `{"clusters": [[0,2], [1], [3,4,5]]}`
+- Keeps longest entry from each cluster
+- Progress modal with live logs, ETA, and cancel button
+- **Single-prompt batching was attempted but reverted** (see below)
+
+**Settings UI additions:**
+- "Memory Optimization" section in Settings → AI Intelligence Layer
+- 🧹 Prune Duplicates button (Jaccard-based, local, fast)
+- 🤖 AI-Powered Prune button (LLM-based, slower, catches paraphrases)
+- Live result display showing duplicates removed and KB saved
+
+### Files changed
+- `src/intelligence/MemoryStore.ts` — dedup logic + prune method
+- `src/intelligence/__tests__/MemoryStore.test.ts` — 40 tests (was 26)
+- `src/intelligence/MemoryOptimizer.ts` — AI semantic clustering
+- `src/intelligence/__tests__/MemoryOptimizer.test.ts` — 7 tests
+- `src/components/presentational/AIPruneModal.tsx` — progress modal UI
+- `src/settings-sections/intelligence.ts` — optimization UI + modal integration
+
+### Reverted: Single-prompt batching (0c80359 → b22c2a7)
+**Attempted:** Send all entries in one LLM prompt instead of per-category.
+**Expected:** Faster (1 call vs 5 calls).
+**Observed:** Hung for 5+ minutes with zero response. Cancel worked but the API call never returned.
+**Root cause unknown:** Could be provider-specific latency, prompt size issue, or model behavior with large clustering tasks.
+**Reverted to:** Per-category batching (ad088a1 approach) which was working reliably at ~1.5 min per category.
+**Lesson:** Don't optimize latency without measuring. "Fewer API calls" ≠ "faster" if the single call is disproportionately slower.
 
 ---
 
