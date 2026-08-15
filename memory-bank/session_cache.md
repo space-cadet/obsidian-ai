@@ -5,7 +5,7 @@
 
 **Started**: 2026-08-14 20:32:00 IST
 **Ended**: 2026-08-14 21:28:00 IST
-**Focus Task**: T8.1: Community Directory Review Remediation
+**Focus Task**: T8a: Community Directory Review Remediation
 **Session File**: `sessions/2026-08-14-evening.md`
 **Status**: 🔄 In progress — findings documented; implementation pending
 
@@ -16,7 +16,7 @@
 - Current Period: afternoon
 
 ### 2026-08-15 Review Follow-up
-- Created T8.1 under T8 for the failed Community Directory checks.
+- Created T8a under T8 for the failed Community Directory checks.
 - Implementation findings: [Community review remediation](implementation-details/community-review-remediation.md)
 
 ## Session History (Last 5)

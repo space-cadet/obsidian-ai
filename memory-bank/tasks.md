@@ -21,7 +21,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T22 | ChatApp.tsx Component Decomposition | ✅ | HIGH | 2026-05-28 | T1, T15 | [Details](tasks/T22.md) |
 | T44 | Standalone UI Preview and Obsidian Host Boundary | 🔄 | MEDIUM | 2026-08-12 | T1, T22 | [Details](tasks/T44.md) |
 | T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
-| T8.1 | Community Directory Review Remediation | 🔄 | HIGH | 2026-08-15 | T8, T7 | [Details](tasks/T8.1.md) |
+| T8a | Community Directory Review Remediation | 🔄 | HIGH | 2026-08-15 | T8, T7 | [Details](tasks/T8a.md) |
 
 ## Completed Tasks
 
@@ -116,8 +116,8 @@ T7: Release System & CI/CD
   └── —
 T8: Open Source Release with Branding
   └── T7
-  └── T8.1
-T8.1: Community Directory Review Remediation
+  └── T8a
+T8a: Community Directory Review Remediation
   └── T8
   └── T7
 T9: Settings & Provider Profiles

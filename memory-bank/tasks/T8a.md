@@ -1,17 +1,17 @@
 ---
 source_branch: main
-source_commit: 056428cad7701848d583915e12efa66cfb39a1a9
+source_commit: 2b81b96
 ---
 
-# T8.1: Community Directory Review Remediation
+# T8a: Community Directory Review Remediation
 *Created: 2026-08-15 13:19:00 IST*
-*Last Updated: 2026-08-15 13:19:00 IST*
+*Last Updated: 2026-08-15 13:28:00 IST*
 
 **Description**: Resolve the failed automated Community Directory checks for the Chat Lab AI release and produce a reproducible, policy-compliant 1.3.3 release.
 **Status**: 🔄 IN PROGRESS
 **Priority**: HIGH
 **Started**: 2026-08-15
-**Last Active**: 2026-08-15 13:19:00 IST
+**Last Active**: 2026-08-15 13:28:00 IST
 **Dependencies**: T8, T7
 
 ## Completion Criteria
@@ -33,7 +33,7 @@ source_commit: 056428cad7701848d583915e12efa66cfb39a1a9
 ## Progress
 1. ✅ Review PDF extracted and findings classified.
 2. ✅ Repository state checked against the review at commit `056428c`.
-3. 🔄 Remediation plan and acceptance criteria documented.
+3. ✅ Remediation plan and acceptance criteria documented.
 4. ⬜ Implement compatibility, security, and packaging fixes.
 5. ⬜ Publish and resubmit 1.3.3.
 
