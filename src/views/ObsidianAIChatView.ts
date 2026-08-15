@@ -53,7 +53,7 @@ export class ObsidianAIChatView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "Obsidian AI Chat";
+		return "Chat Lab AI";
 	}
 
 	getIcon(): string {
