@@ -1,8 +1,7 @@
 export const setIcon = (target: HTMLElement, icon: string): void => {
 	target.textContent = "•";
 	target.title = icon;
-	target.style.overflow = "hidden";
-	target.style.fontSize = "12px";
+	target.setCssStyles({ overflow: "hidden", fontSize: "12px" });
 	target.setAttribute("aria-hidden", "true");
 };
 

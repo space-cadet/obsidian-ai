@@ -1,4 +1,4 @@
-import { App } from "obsidian";
+import { App, Platform } from "obsidian";
 
 const ORIGINAL = {
 	log: console.log,
@@ -35,7 +35,7 @@ export class FileLogger {
 		this.setupErrorHandlers();
 
 		this.writeDirect("info", "=== Obsidian AI debug log started ===");
-		this.writeDirect("info", `User agent: ${navigator.userAgent}`);
+		this.writeDirect("info", `Platform: ${Platform.isMobile ? "mobile" : "desktop"}`);
 		this.writeDirect("info", `Obsidian version: ${(window as any).app?.version || "unknown"}`);
 
 		// Defer size enforcement so it does not block plugin startup.

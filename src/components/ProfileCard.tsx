@@ -587,7 +587,7 @@ export function ProfileList({ plugin }: ProfileListProps) {
 		(id: string) => {
 			const source = profiles.find((p) => p.id === id);
 			if (!source) return;
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructuring intentionally removes the source profile ID before duplication.
 			const { id: _unused, ...sourceWithoutId } = source;
 			const dup = createProviderProfile({
 				...sourceWithoutId,

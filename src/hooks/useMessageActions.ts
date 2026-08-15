@@ -1042,7 +1042,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				setContextItems([]);
 			}
 		},
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- action callbacks are stable runtime dependencies managed by the hook.
 		[
 			plugin,
 			orchestrator,
@@ -1160,7 +1160,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			ui.setIsEditing(true);
 			ui.setEditMessageText(msg.content);
 		},
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- edit cancellation intentionally reads the current session refs.
 		[activeSessionIdRef, sessionsRef, setSessions, ui, getRuntime],
 	);
 

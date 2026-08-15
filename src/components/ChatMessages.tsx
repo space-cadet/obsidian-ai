@@ -325,7 +325,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 			bottomRef.current?.scrollIntoView({ behavior: "auto" });
 			isNearBottomRef.current = true;
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only scroll positioning intentionally ignores changing message dependencies.
 	}, []);
 
 	useEffect(() => {

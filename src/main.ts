@@ -346,7 +346,7 @@ export default class ObsidianAIPlugin extends Plugin {
 			leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf(true);
 			await leaf.setViewState({ type: CHAT_VIEWTYPE, active: true });
 		}
-		workspace.revealLeaf(leaf);
+		workspace.setActiveLeaf(leaf, { focus: true });
 	}
 
 	/** Keep the focused chat leaf when possible and remove stale duplicate leaves. */

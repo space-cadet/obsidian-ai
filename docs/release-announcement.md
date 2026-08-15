@@ -1,10 +1,10 @@
-# Chat Lab AI v1.3.3 Release Announcement
+# Chat Lab AI v1.3.4 Release Announcement
 
 Obsidian AI is an AI-powered assistant for Obsidian that combines fast inline editing with a persistent sidebar chat panel — now with multi-device sync and group chat.
 
-## What's New in v1.3.3
+## What's New in v1.3.4
 
-- Community Directory compatibility and security remediation.
+- Community Directory compatibility and security remediation follow-up.
 - Reproducible, attested release assets built from the exact tag.
 - Official Ollama integration remains deferred; custom OpenAI-compatible endpoints remain supported.
 

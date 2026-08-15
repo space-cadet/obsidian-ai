@@ -15,8 +15,8 @@ export class FixtureChatHost implements ChatHost {
 		target: HTMLElement,
 		_sourcePath?: string,
 	): Promise<void> {
-		// Simple markdown-to-HTML for preview
-		target.innerHTML = markdown
+		// Simple markdown-to-HTML for preview; parse into nodes without assigning innerHTML.
+		const html = markdown
 			.replace(/^### (.*$)/gim, "<h3>$1</h3>")
 			.replace(/^## (.*$)/gim, "<h2>$1</h2>")
 			.replace(/^# (.*$)/gim, "<h1>$1</h1>")
@@ -25,6 +25,8 @@ export class FixtureChatHost implements ChatHost {
 			.replace(/```([\s\S]*?)```/gim, "<pre><code>$1</code></pre>")
 			.replace(/`([^`]+)`/gim, "<code>$1</code>")
 			.replace(/\n/gim, "<br>");
+		const parsed = new DOMParser().parseFromString(html, "text/html");
+		target.replaceChildren(...Array.from(parsed.body.childNodes));
 	}
 
 	renderIcon(iconId: string, target: HTMLElement): void {

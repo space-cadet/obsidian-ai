@@ -124,7 +124,7 @@ export function useChatSession({
 		return () => {
 			cancelled = true;
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- session initialization runs once for the plugin instance.
 	}, [plugin]);
 
 	// ─── Persist sessions whenever they change (debounced) ───
@@ -212,7 +212,7 @@ export function useChatSession({
 				}
 			})();
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- autosave dependencies are intentionally limited to session state and settings.
 	}, [sessions, activeSessionId, autoNameSessions, plugin.settings, plugin.chatapi]);
 
 	// ─── Create a new session ───

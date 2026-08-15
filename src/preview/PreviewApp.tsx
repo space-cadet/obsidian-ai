@@ -19,10 +19,12 @@ const plugin = {
 } as any;
 const previewApp = plugin.app as any;
 const renderMarkdown = async (markdown: string, target: HTMLElement): Promise<void> => {
-	target.innerHTML = markdown
+	const html = markdown
 		.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 		.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
 		.replace(/\n/g, "<br>");
+	const parsed = new DOMParser().parseFromString(html, "text/html");
+	target.replaceChildren(...Array.from(parsed.body.childNodes));
 };
 
 const PreviewApp: React.FC = () => {
