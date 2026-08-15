@@ -6,7 +6,7 @@ on:
             - "*" # Triggers on any tag
 
 env:
-    PLUGIN_NAME: obsidian-ai
+    PLUGIN_NAME: chat-lab
 
 jobs:
     build-and-release:
@@ -60,6 +60,8 @@ jobs:
               with:
                   tag: ${{ steps.get_tag.outputs.tag_name }}
                   name: ${{ steps.get_tag.outputs.tag_name }}
+                  allowUpdates: true
+                  removeArtifacts: true
                   artifacts: |
                       ${{ env.PLUGIN_NAME }}.zip
                       main.js
