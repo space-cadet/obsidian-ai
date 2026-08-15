@@ -62,6 +62,14 @@ export default class ObsidianAIPlugin extends Plugin {
 	private _updater: PluginUpdater | null = null;
 
 	async onload() {
+		// Register the entry command before asynchronous migration/settings work so
+		// Obsidian's command palette can discover it even while startup completes.
+		this.addCommand({
+			id: "open-chat-lab-sidebar",
+			name: "Open Chat Lab AI sidebar",
+			callback: () => this.activateChatView(),
+		});
+
 		await this._migrateLegacyPluginData();
 		// Initialize file logger FIRST so any crash during load is captured.
 		this.logger = createFileLogger(this.app, this.manifest.id);
