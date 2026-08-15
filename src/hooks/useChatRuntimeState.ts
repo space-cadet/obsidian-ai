@@ -95,13 +95,12 @@ export function useChatRuntimeState(activeSessionId: string | null) {
 		runtimeBySessionRef.current = rest;
 	}, []);
 
-	const abortRuntime = useCallback(
-		(sessionId: string | null | undefined) => {
-			const runtime = sessionId ? runtimeBySessionRef.current[sessionId] : null;
-			runtime?.controller?.abort();
-		},
-		[],
-	);
+	const abortRuntime = useCallback((sessionId: string | null | undefined) => {
+		const runtime = sessionId
+			? runtimeBySessionRef.current[sessionId]
+			: null;
+		runtime?.controller?.abort();
+	}, []);
 
 	const activeRuntime = useMemo(
 		() => getRuntime(activeSessionId),

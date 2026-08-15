@@ -67,7 +67,11 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	return (
 		<div className="chat-action-bar">
 			<div className="chat-action-bar-left">
-				<button className="chat-btn chat-icon-btn" onClick={onNewChat} title="New chat">
+				<button
+					className="chat-btn chat-icon-btn"
+					onClick={onNewChat}
+					title="New chat"
+				>
 					<ObsidianIcon icon="plus" size={15} />
 				</button>
 				<button
@@ -75,7 +79,9 @@ const ActionBar: React.FC<ActionBarProps> = ({
 					className="chat-btn chat-icon-btn"
 					onClick={onLoadChat}
 					disabled={!canLoad}
-					title={canLoad ? "Load previous session" : "No saved sessions"}
+					title={
+						canLoad ? "Load previous session" : "No saved sessions"
+					}
 				>
 					<ObsidianIcon icon="history" size={15} />
 				</button>
@@ -91,10 +97,16 @@ const ActionBar: React.FC<ActionBarProps> = ({
 						<button
 							className={`chat-btn chat-icon-btn ${(participantCount ?? 0) > 0 ? "is-active" : ""}`}
 							onClick={onToggleParticipantDropdown}
-							title={(participantCount ?? 0) > 0 ? `${participantCount} agents in chat` : "Group Chat"}
+							title={
+								(participantCount ?? 0) > 0
+									? `${participantCount} agents in chat`
+									: "Group Chat"
+							}
 						>
 							<ObsidianIcon icon="users" size={15} />
-							<span className="chat-council-badge">{participantCount ?? 0}</span>
+							<span className="chat-council-badge">
+								{participantCount ?? 0}
+							</span>
 						</button>
 					</div>
 				)}
@@ -103,10 +115,19 @@ const ActionBar: React.FC<ActionBarProps> = ({
 						<button
 							className={`chat-btn chat-icon-btn ${relayEnabled ? "is-active" : ""}`}
 							onClick={onToggleRemoteUserDropdown}
-							title={connectedUsers?.length ? `Room: ${connectedUsers.join(", ")}` : "Room (offline)"}
+							title={
+								connectedUsers?.length
+									? `Room: ${connectedUsers.join(", ")}`
+									: "Room (offline)"
+							}
 						>
-							<ObsidianIcon icon={relayEnabled ? "radio" : "globe"} size={15} />
-							<span className="chat-remote-users-badge">{remoteUserCount ?? 0}</span>
+							<ObsidianIcon
+								icon={relayEnabled ? "radio" : "globe"}
+								size={15}
+							/>
+							<span className="chat-remote-users-badge">
+								{remoteUserCount ?? 0}
+							</span>
 						</button>
 					</div>
 				)}
@@ -114,33 +135,63 @@ const ActionBar: React.FC<ActionBarProps> = ({
 					<button
 						className={`chat-btn chat-icon-btn ${debateMode ? "is-active" : ""}`}
 						onClick={onToggleDebateMode}
-						title={debateMode ? "🗣️ Debate mode ON" : "🗣️ Debate mode OFF"}
+						title={
+							debateMode
+								? "🗣️ Debate mode ON"
+								: "🗣️ Debate mode OFF"
+						}
 					>
-						<ObsidianIcon icon={debateMode ? "message-circle" : "message-square"} size={15} />
+						<ObsidianIcon
+							icon={
+								debateMode ? "message-circle" : "message-square"
+							}
+							size={15}
+						/>
 					</button>
 				)}
 				<button
 					className={`chat-btn chat-icon-btn ${autoApprove ? "is-active" : ""}`}
 					onClick={onToggleAutoApprove}
-					title={autoApprove ? "🤖 Auto-approve ON" : "🔒 Manual approval"}
+					title={
+						autoApprove
+							? "🤖 Auto-approve ON"
+							: "🔒 Manual approval"
+					}
 				>
-					<ObsidianIcon icon={autoApprove ? "bot" : "lock"} size={15} />
+					<ObsidianIcon
+						icon={autoApprove ? "bot" : "lock"}
+						size={15}
+					/>
 				</button>
 				{onToggleRelay && (
 					<button
 						className={`chat-btn chat-icon-btn ${relayEnabled ? "is-active" : ""}`}
 						onClick={onToggleRelay}
-						title={relayEnabled ? "🔌 Relay connected" : "🔌 Relay disconnected"}
+						title={
+							relayEnabled
+								? "🔌 Relay connected"
+								: "🔌 Relay disconnected"
+						}
 					>
-						<ObsidianIcon icon={relayEnabled ? "plug" : "plug-zap"} size={15} />
+						<ObsidianIcon
+							icon={relayEnabled ? "plug" : "plug-zap"}
+							size={15}
+						/>
 					</button>
 				)}
 				<button
 					className={`chat-btn chat-icon-btn ${autoNameSessions ? "is-active" : ""}`}
 					onClick={onToggleAutoName}
-					title={autoNameSessions ? "✨ Auto-name ON" : "✨ Auto-name OFF"}
+					title={
+						autoNameSessions
+							? "✨ Auto-name ON"
+							: "✨ Auto-name OFF"
+					}
 				>
-					<ObsidianIcon icon={autoNameSessions ? "sparkles" : "type"} size={15} />
+					<ObsidianIcon
+						icon={autoNameSessions ? "sparkles" : "type"}
+						size={15}
+					/>
 				</button>
 				<button
 					className="chat-btn chat-icon-btn"
@@ -168,7 +219,10 @@ const ActionBar: React.FC<ActionBarProps> = ({
 			</div>
 			<div className="chat-action-bar-center">
 				{sessionTitle && (
-					<span className="chat-session-title-display" title={sessionTitle}>
+					<span
+						className="chat-session-title-display"
+						title={sessionTitle}
+					>
 						{sessionTitle}
 					</span>
 				)}
@@ -180,7 +234,10 @@ const ActionBar: React.FC<ActionBarProps> = ({
 						onClick={onToggleZenMode}
 						title={zenMode ? "Exit zen mode" : "Zen mode (focus)"}
 					>
-						<ObsidianIcon icon={zenMode ? "eye-off" : "eye"} size={15} />
+						<ObsidianIcon
+							icon={zenMode ? "eye-off" : "eye"}
+							size={15}
+						/>
 					</button>
 				)}
 				<ProfileIndicator profile={profile} />

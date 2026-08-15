@@ -237,7 +237,9 @@ export class AgentLoop {
 			this.opts.onToolCall(pendingCall);
 
 			// Count tokens for tool call args only (text already counted incrementally)
-			const toolCallTokens = estimateTokens(JSON.stringify(pendingCall.args));
+			const toolCallTokens = estimateTokens(
+				JSON.stringify(pendingCall.args),
+			);
 			runningTotal += toolCallTokens;
 			this.opts.onTokenUpdate?.(runningTotal);
 
@@ -245,10 +247,9 @@ export class AgentLoop {
 			if (autoApprove) {
 				result = await toolExecutor.execute(pendingCall);
 			} else {
-				result =
-					(await this.opts.requestApproval(pendingCall)) ?? {
-						error: "User rejected the tool call",
-					};
+				result = (await this.opts.requestApproval(pendingCall)) ?? {
+					error: "User rejected the tool call",
+				};
 			}
 
 			console.log(
@@ -302,11 +303,7 @@ export class AgentLoop {
 				],
 			};
 
-			currentMessages = [
-				...currentMessages,
-				assistantMsg,
-				toolMsg,
-			];
+			currentMessages = [...currentMessages, assistantMsg, toolMsg];
 
 			// Count tokens for tool result
 			const resultTokens = estimateTokens(formattedResult);
@@ -318,7 +315,8 @@ export class AgentLoop {
 		}
 
 		// No more tool calls — compute final total.
-		const totalTokens = runningTotal > 0 ? runningTotal : estimateTokens(fullText);
+		const totalTokens =
+			runningTotal > 0 ? runningTotal : estimateTokens(fullText);
 
 		// Report final total
 		this.opts.onTokenUpdate?.(totalTokens);

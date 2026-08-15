@@ -82,7 +82,10 @@ export class MemoryStore {
 					return parsed as MemoryEntry[];
 				}
 			} catch (e) {
-				this.deps.logger?.log("warn", `Failed to parse memory.json: ${e}`);
+				this.deps.logger?.log(
+					"warn",
+					`Failed to parse memory.json: ${e}`,
+				);
 			}
 		}
 		return [...DEFAULT_MEMORY_ENTRIES];
@@ -105,9 +108,15 @@ export class MemoryStore {
 	async restoreLastSnapshot(): Promise<boolean> {
 		const adapter = this.deps.app.vault.adapter;
 		if (!(await adapter.exists(this.jsonBackupPath))) return false;
-		await adapter.write(this.jsonPath, await adapter.read(this.jsonBackupPath));
+		await adapter.write(
+			this.jsonPath,
+			await adapter.read(this.jsonBackupPath),
+		);
 		if (await adapter.exists(this.mdBackupPath)) {
-			await adapter.write(this.mdPath, await adapter.read(this.mdBackupPath));
+			await adapter.write(
+				this.mdPath,
+				await adapter.read(this.mdBackupPath),
+			);
 		} else {
 			await this._regenerateMarkdown(await this.loadEntries());
 		}
@@ -130,7 +139,10 @@ export class MemoryStore {
 				await adapter.write(`${this.mdPath}.bak.${stamp}`, markdown);
 			}
 		} catch (e) {
-			this.deps.logger?.log("warn", `Failed to snapshot memory before write: ${e}`);
+			this.deps.logger?.log(
+				"warn",
+				`Failed to snapshot memory before write: ${e}`,
+			);
 			throw new Error(`Could not create a memory backup: ${e}`);
 		}
 	}
@@ -184,7 +196,10 @@ export class MemoryStore {
 			content: entry.content,
 			tags: entry.tags,
 		});
-		this.deps.logger?.log("info", `Created memory ${entry.id}: ${category}`);
+		this.deps.logger?.log(
+			"info",
+			`Created memory ${entry.id}: ${category}`,
+		);
 		return entry;
 	}
 
@@ -203,8 +218,10 @@ export class MemoryStore {
 		const idx = entries.findIndex((e) => e.id === id);
 		if (idx === -1) return null;
 
-		if (updates.category !== undefined) entries[idx].category = updates.category;
-		if (updates.content !== undefined) entries[idx].content = updates.content.trim();
+		if (updates.category !== undefined)
+			entries[idx].category = updates.category;
+		if (updates.content !== undefined)
+			entries[idx].content = updates.content.trim();
 		if (updates.tags !== undefined) {
 			entries[idx].tags = updates.tags.map((t) => t.toLowerCase().trim());
 		}
@@ -297,7 +314,9 @@ export class MemoryStore {
 			for (const line of lines.slice(-limit)) {
 				try {
 					entries.push(JSON.parse(line));
-				} catch { /* skip malformed */ }
+				} catch {
+					/* skip malformed */
+				}
 			}
 			return entries.reverse();
 		} catch (e) {
@@ -317,8 +336,13 @@ export class MemoryStore {
 		];
 
 		for (const e of entries) {
-			const tagStr = e.tags.length > 0 ? " " + e.tags.map((t) => `#${t}`).join(" ") : "";
-			lines.push(`- [${e.timestamp}] **${e.category}**: ${e.content}${tagStr} [id:${e.id}]`);
+			const tagStr =
+				e.tags.length > 0
+					? " " + e.tags.map((t) => `#${t}`).join(" ")
+					: "";
+			lines.push(
+				`- [${e.timestamp}] **${e.category}**: ${e.content}${tagStr} [id:${e.id}]`,
+			);
 		}
 
 		lines.push("");
@@ -463,7 +487,11 @@ export class MemoryStore {
 	}
 
 	/** Quick stats about the memory store. */
-	async getStats(): Promise<{ entries: number; size: number; categories: Record<string, number> }> {
+	async getStats(): Promise<{
+		entries: number;
+		size: number;
+		categories: Record<string, number>;
+	}> {
 		const entries = await this.loadEntries();
 		const cats: Record<string, number> = {};
 		for (const e of entries) {
@@ -503,7 +531,13 @@ export class MemoryStore {
 	}
 
 	private _isValidCategory(c: string): c is MemoryCategory {
-		return ["user_fact", "project", "preference", "insight", "reference"].includes(c);
+		return [
+			"user_fact",
+			"project",
+			"preference",
+			"insight",
+			"reference",
+		].includes(c);
 	}
 
 	private _makeId(): string {

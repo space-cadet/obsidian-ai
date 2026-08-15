@@ -59,7 +59,9 @@ function compareVersions(v1: string, v2: string): number {
 }
 
 /** Fetch the latest commit SHA for a branch from GitHub */
-async function fetchLatestCommit(branch: string = "main"): Promise<CommitInfo | null> {
+async function fetchLatestCommit(
+	branch: string = "main",
+): Promise<CommitInfo | null> {
 	try {
 		const data = await fetchJson(
 			`https://api.github.com/repos/${GITHUB_REPO}/commits/${branch}`,
@@ -69,7 +71,8 @@ async function fetchLatestCommit(branch: string = "main"): Promise<CommitInfo | 
 			sha: data.sha,
 			message: data.commit?.message?.split("\n")[0] ?? "",
 			authorName: data.commit?.author?.name ?? data.author?.login ?? "",
-			committedAt: data.commit?.author?.date ?? data.commit?.committer?.date ?? "",
+			committedAt:
+				data.commit?.author?.date ?? data.commit?.committer?.date ?? "",
 		};
 	} catch {
 		return null;
@@ -155,7 +158,13 @@ export class PluginUpdater {
 					`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=20`,
 				)) as ReleaseInfo[];
 				if (!releases || releases.length === 0) {
-					return { hasUpdate: false, currentVersion, latestVersion: currentVersion, release: null, isPrerelease: false };
+					return {
+						hasUpdate: false,
+						currentVersion,
+						latestVersion: currentVersion,
+						release: null,
+						isPrerelease: false,
+					};
 				}
 				// Find the latest pre-release, or fall back to latest release if none
 				const prerelease = releases.find((r) => r.prerelease);
@@ -190,7 +199,8 @@ export class PluginUpdater {
 				}
 			}
 
-			const hasUpdate = compareVersions(latestVersion, currentVersion) > 0;
+			const hasUpdate =
+				compareVersions(latestVersion, currentVersion) > 0;
 
 			return {
 				hasUpdate,
@@ -203,7 +213,13 @@ export class PluginUpdater {
 			};
 		} catch (error) {
 			console.error("[PluginUpdater] Check failed:", error);
-			return { hasUpdate: false, currentVersion, latestVersion: currentVersion, release: null, isPrerelease: false };
+			return {
+				hasUpdate: false,
+				currentVersion,
+				latestVersion: currentVersion,
+				release: null,
+				isPrerelease: false,
+			};
 		}
 	}
 
@@ -309,7 +325,9 @@ export class UpdateAvailableModal extends Modal {
 				href: `https://github.com/${GITHUB_REPO}/commit/${commit.sha}`,
 			});
 			commitLink.setAttr("target", "_blank");
-			buildInfo.createEl("span", { text: ` — ${commit.message || "No commit message"}` });
+			buildInfo.createEl("span", {
+				text: ` — ${commit.message || "No commit message"}`,
+			});
 			buildInfo.createEl("br");
 			buildInfo.createEl("span", {
 				text: `${commit.authorName ? `${commit.authorName} · ` : ""}${commit.committedAt ? new Date(commit.committedAt).toLocaleString() : "Timestamp unavailable"}`,
@@ -334,7 +352,9 @@ export class UpdateAvailableModal extends Modal {
 							await this.onInstall();
 							this.result = "install";
 							this.close();
-							new Notice("✅ Update installed. Reloading Obsidian…");
+							new Notice(
+								"✅ Update installed. Reloading Obsidian…",
+							);
 							// @ts-ignore
 							this.app.commands.executeCommandById("app:reload");
 						} catch (error: any) {

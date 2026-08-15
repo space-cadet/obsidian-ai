@@ -21,7 +21,7 @@ const crypto = require("crypto");
 
 const PORT = parseInt(process.argv[2], 10) || 8080;
 const PING_INTERVAL_MS = 30000; // Send ping every 30s
-const PONG_TIMEOUT_MS = 90000;  // Disconnect if no activity for 90s
+const PONG_TIMEOUT_MS = 90000; // Disconnect if no activity for 90s
 
 // ─── State ───────────────────────────────────────────────────────────
 
@@ -54,12 +54,16 @@ function getRoomStats() {
 					const meta = clientMeta.get(s);
 					return meta
 						? {
-							id: meta.id,
-							joinedAt: new Date(meta.joinedAt).toISOString(),
-							lastActivity: new Date(meta.lastActivity).toISOString(),
-							remoteAddress: meta.remoteAddress,
-							duration: formatDuration(Date.now() - meta.joinedAt),
-						}
+								id: meta.id,
+								joinedAt: new Date(meta.joinedAt).toISOString(),
+								lastActivity: new Date(
+									meta.lastActivity,
+								).toISOString(),
+								remoteAddress: meta.remoteAddress,
+								duration: formatDuration(
+									Date.now() - meta.joinedAt,
+								),
+							}
 						: { id: "unknown" };
 				})
 				.filter(Boolean),
@@ -90,7 +94,7 @@ function removeClient(socket, reason = "unknown") {
 	if (hadClient) {
 		const duration = Date.now() - joinedAt;
 		console.log(
-			`[relay] Client left room: ${roomId} (${remaining} clients) [${id}, ${reason}, duration: ${formatDuration(duration)}]`
+			`[relay] Client left room: ${roomId} (${remaining} clients) [${id}, ${reason}, duration: ${formatDuration(duration)}]`,
 		);
 	}
 
@@ -145,7 +149,9 @@ function broadcast(roomId, senderSocket, payloadBuffer) {
 			peer.write(frame);
 		} catch (err) {
 			const peerMeta = clientMeta.get(peer);
-			console.error(`[relay] Send failed to ${peerMeta?.id || "?"}: ${err.message}`);
+			console.error(
+				`[relay] Send failed to ${peerMeta?.id || "?"}: ${err.message}`,
+			);
 			removeClient(peer, "send-error");
 		}
 	}
@@ -167,8 +173,8 @@ const server = http.createServer((req, res) => {
 					uptimeSeconds: Math.floor(process.uptime()),
 				},
 				null,
-				2
-			)
+				2,
+			),
 		);
 		return;
 	}
@@ -183,7 +189,9 @@ server.on("upgrade", (request, socket, head) => {
 	const { pathname } = parse(request.url || "/", true);
 	const match = pathname.match(/^\/ws\/(.+)$/);
 	if (!match) {
-		console.log(`[relay] Rejected: invalid path ${pathname} from ${socket.remoteAddress || "unknown"}`);
+		console.log(
+			`[relay] Rejected: invalid path ${pathname} from ${socket.remoteAddress || "unknown"}`,
+		);
 		socket.destroy();
 		return;
 	}
@@ -194,7 +202,9 @@ server.on("upgrade", (request, socket, head) => {
 	// WebSocket handshake
 	const key = request.headers["sec-websocket-key"];
 	if (!key) {
-		console.log(`[relay] Rejected: missing sec-websocket-key from ${remoteAddress}`);
+		console.log(
+			`[relay] Rejected: missing sec-websocket-key from ${remoteAddress}`,
+		);
 		socket.destroy();
 		return;
 	}
@@ -207,13 +217,15 @@ server.on("upgrade", (request, socket, head) => {
 	try {
 		socket.write(
 			"HTTP/1.1 101 Switching Protocols\r\n" +
-			"Upgrade: websocket\r\n" +
-			"Connection: Upgrade\r\n" +
-			`Sec-WebSocket-Accept: ${accept}\r\n` +
-			"\r\n"
+				"Upgrade: websocket\r\n" +
+				"Connection: Upgrade\r\n" +
+				`Sec-WebSocket-Accept: ${accept}\r\n` +
+				"\r\n",
 		);
 	} catch (err) {
-		console.error(`[relay] Handshake failed for ${remoteAddress}: ${err.message}`);
+		console.error(
+			`[relay] Handshake failed for ${remoteAddress}: ${err.message}`,
+		);
 		socket.destroy();
 		return;
 	}
@@ -236,7 +248,9 @@ server.on("upgrade", (request, socket, head) => {
 	});
 	room.add(socket);
 
-	console.log(`[relay] Client joined room: ${roomId} (${room.size} clients) [${clientId}, ${remoteAddress}]`);
+	console.log(
+		`[relay] Client joined room: ${roomId} (${room.size} clients) [${clientId}, ${remoteAddress}]`,
+	);
 
 	// ─── Socket Event Handlers ───────────────────────────────────────
 
@@ -294,7 +308,9 @@ server.on("upgrade", (request, socket, head) => {
 			if (opcode === 0x08) {
 				// Close frame — acknowledge and close
 				const meta2 = clientMeta.get(socket);
-				console.log(`[relay] Close frame from ${meta2?.id || "?"} in room ${roomId}`);
+				console.log(
+					`[relay] Close frame from ${meta2?.id || "?"} in room ${roomId}`,
+				);
 				// Send close frame back (echo payload if any)
 				const closeFrameLen = 2 + payload.length;
 				const closeFrame = Buffer.allocUnsafe(closeFrameLen);
@@ -314,7 +330,7 @@ server.on("upgrade", (request, socket, head) => {
 			if (opcode === 0x09) {
 				// Ping — send pong with same payload
 				const pong = Buffer.allocUnsafe(2 + payload.length);
-				pong[0] = 0x8A; // FIN + pong
+				pong[0] = 0x8a; // FIN + pong
 				pong[1] = payload.length;
 				payload.copy(pong, 2);
 				try {
@@ -325,18 +341,24 @@ server.on("upgrade", (request, socket, head) => {
 				continue;
 			}
 
-			if (opcode === 0x0A) {
+			if (opcode === 0x0a) {
 				// Pong — activity updated above
 				continue;
 			}
 
 			// ── Data Frames ──
-			if (opcode === 0x01 || (opcode === 0x00 && fragmentedBuffer !== null)) {
+			if (
+				opcode === 0x01 ||
+				(opcode === 0x00 && fragmentedBuffer !== null)
+			) {
 				// Text frame or continuation
 				if (opcode === 0x01) {
 					fragmentedBuffer = payload;
 				} else {
-					fragmentedBuffer = Buffer.concat([fragmentedBuffer, payload]);
+					fragmentedBuffer = Buffer.concat([
+						fragmentedBuffer,
+						payload,
+					]);
 				}
 
 				if (!fin) {
@@ -350,7 +372,12 @@ server.on("upgrade", (request, socket, head) => {
 				let preview = text;
 				try {
 					const msg = JSON.parse(text);
-					const who = msg.agentName || msg.agentId || msg.userName || msg.userId || "?";
+					const who =
+						msg.agentName ||
+						msg.agentId ||
+						msg.userName ||
+						msg.userId ||
+						"?";
 					const content = msg.content?.slice(0, 60) || "[no content]";
 					preview = `${who}: ${content}`;
 				} catch {
@@ -358,7 +385,9 @@ server.on("upgrade", (request, socket, head) => {
 				}
 
 				const meta2 = clientMeta.get(socket);
-				console.log(`[relay] ${roomId} | ${meta2?.id || "?"} → ${preview}`);
+				console.log(
+					`[relay] ${roomId} | ${meta2?.id || "?"} → ${preview}`,
+				);
 
 				// Broadcast to room
 				broadcast(roomId, socket, Buffer.from(text, "utf8"));
@@ -367,7 +396,9 @@ server.on("upgrade", (request, socket, head) => {
 
 			// Unknown opcode — log and ignore
 			const meta2 = clientMeta.get(socket);
-			console.warn(`[relay] Unknown opcode ${opcode} from ${meta2?.id || "?"} in room ${roomId}`);
+			console.warn(
+				`[relay] Unknown opcode ${opcode} from ${meta2?.id || "?"} in room ${roomId}`,
+			);
 		}
 	});
 
@@ -381,13 +412,17 @@ server.on("upgrade", (request, socket, head) => {
 
 	socket.on("error", (err) => {
 		const meta = clientMeta.get(socket);
-		console.error(`[relay] Socket error from ${meta?.id || "?"} in room ${roomId}: ${err.message}`);
+		console.error(
+			`[relay] Socket error from ${meta?.id || "?"} in room ${roomId}: ${err.message}`,
+		);
 		cleanup("error");
 	});
 
 	socket.on("timeout", () => {
 		const meta = clientMeta.get(socket);
-		console.log(`[relay] Socket timeout from ${meta?.id || "?"} in room ${roomId}`);
+		console.log(
+			`[relay] Socket timeout from ${meta?.id || "?"} in room ${roomId}`,
+		);
 		socket.destroy();
 		cleanup("timeout");
 	});
@@ -410,7 +445,7 @@ const pingInterval = setInterval(() => {
 			// Check for timeout (no activity including pongs)
 			if (now - meta.lastActivity > PONG_TIMEOUT_MS) {
 				console.log(
-					`[relay] Timeout: ${meta.id} in room ${roomId} (inactive for ${formatDuration(now - meta.lastActivity)})`
+					`[relay] Timeout: ${meta.id} in room ${roomId} (inactive for ${formatDuration(now - meta.lastActivity)})`,
 				);
 				socket.destroy();
 				removeClient(socket, "inactive");
@@ -424,7 +459,9 @@ const pingInterval = setInterval(() => {
 			try {
 				socket.write(pingFrame);
 			} catch (err) {
-				console.error(`[relay] Ping failed for ${meta.id}: ${err.message}`);
+				console.error(
+					`[relay] Ping failed for ${meta.id}: ${err.message}`,
+				);
 				socket.destroy();
 				removeClient(socket, "ping-failed");
 			}
@@ -437,7 +474,9 @@ const pingInterval = setInterval(() => {
 server.listen(PORT, () => {
 	console.log(`[relay] Listening on ws://0.0.0.0:${PORT}/ws/<room-id>`);
 	console.log(`[relay] Health check: http://0.0.0.0:${PORT}/`);
-	console.log(`[relay] Ping interval: ${PING_INTERVAL_MS}ms, timeout: ${PONG_TIMEOUT_MS}ms`);
+	console.log(
+		`[relay] Ping interval: ${PING_INTERVAL_MS}ms, timeout: ${PONG_TIMEOUT_MS}ms`,
+	);
 	console.log(`[relay] Press Ctrl+C to stop`);
 });
 

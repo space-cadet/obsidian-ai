@@ -61,7 +61,12 @@ import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
 import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
 import { getActiveProviderProfile, ProviderProfile } from "../settings";
 import { stripThinkingTags } from "./MessageBubble";
-import { serializeMessagesToMarkdown, serializeToJSON, serializeToJSONL, generateFilename } from "../utils/exportChat";
+import {
+	serializeMessagesToMarkdown,
+	serializeToJSON,
+	serializeToJSONL,
+	generateFilename,
+} from "../utils/exportChat";
 import type { ExportFormat } from "./presentational/ExportModal";
 import { WebSocketSyncAdapter } from "../sync/WebSocketSyncAdapter";
 import type { SyncAdapter } from "../sync/SyncAdapter";
@@ -723,10 +728,14 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	const hasHistory = savedSessions.length > 0;
 
 	const handleCopySelectedMessages = useCallback(async () => {
-		const selected = messages.filter((message) => ui.selectedMessageIds.has(message.id));
+		const selected = messages.filter((message) =>
+			ui.selectedMessageIds.has(message.id),
+		);
 		if (!selected.length) return;
 		try {
-			await navigator.clipboard.writeText(serializeMessagesToMarkdown(selected));
+			await navigator.clipboard.writeText(
+				serializeMessagesToMarkdown(selected),
+			);
 			new Notice(`Copied ${selected.length} messages`);
 			ui.clearMessageSelection();
 		} catch (error) {
@@ -734,38 +743,57 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		}
 	}, [messages, ui.selectedMessageIds, ui.clearMessageSelection]);
 
-	const handleSessionCopy = useCallback(async (session: ChatSession, format: ExportFormat) => {
-		const content = format === "md"
-			? serializeMessagesToMarkdown(session.messages)
-			: format === "json"
-				? serializeToJSON([session], "single")
-				: serializeToJSONL([session], "single");
-		try {
-			await navigator.clipboard.writeText(content);
-			new Notice(`Copied ${format.toUpperCase()} chat`);
-		} catch (error) {
-			new Notice(`Copy failed: ${(error as Error).message}`);
-		}
-	}, []);
-
-	const handleSessionExport = useCallback(async (session: ChatSession, format: ExportFormat) => {
-		const content = format === "md"
-			? serializeMessagesToMarkdown(session.messages)
-			: format === "json" ? serializeToJSON([session], "single") : serializeToJSONL([session], "single");
-		try {
-			const filename = generateFilename("single", format, session.title);
-			await plugin.app.vault.create(filename, content);
-			new Notice(`Exported ${filename}`);
-		} catch (error: any) {
+	const handleSessionCopy = useCallback(
+		async (session: ChatSession, format: ExportFormat) => {
+			const content =
+				format === "md"
+					? serializeMessagesToMarkdown(session.messages)
+					: format === "json"
+						? serializeToJSON([session], "single")
+						: serializeToJSONL([session], "single");
 			try {
-				const filename = generateFilename("single", format, session.title, true);
+				await navigator.clipboard.writeText(content);
+				new Notice(`Copied ${format.toUpperCase()} chat`);
+			} catch (error) {
+				new Notice(`Copy failed: ${(error as Error).message}`);
+			}
+		},
+		[],
+	);
+
+	const handleSessionExport = useCallback(
+		async (session: ChatSession, format: ExportFormat) => {
+			const content =
+				format === "md"
+					? serializeMessagesToMarkdown(session.messages)
+					: format === "json"
+						? serializeToJSON([session], "single")
+						: serializeToJSONL([session], "single");
+			try {
+				const filename = generateFilename(
+					"single",
+					format,
+					session.title,
+				);
 				await plugin.app.vault.create(filename, content);
 				new Notice(`Exported ${filename}`);
-			} catch (retryError: any) {
-				new Notice(`Export failed: ${retryError.message}`);
+			} catch (error: any) {
+				try {
+					const filename = generateFilename(
+						"single",
+						format,
+						session.title,
+						true,
+					);
+					await plugin.app.vault.create(filename, content);
+					new Notice(`Exported ${filename}`);
+				} catch (retryError: any) {
+					new Notice(`Export failed: ${retryError.message}`);
+				}
 			}
-		}
-	}, [plugin.app]);
+		},
+		[plugin.app],
+	);
 
 	const renderMarkdown = useCallback(
 		async (markdown: string, target: HTMLElement, sourcePath?: string) => {
@@ -941,7 +969,12 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			{ui.selectionMode && (
 				<div className="chat-selection-toolbar" role="toolbar">
 					<span>{ui.selectedMessageIds.size} selected</span>
-					<button onClick={handleCopySelectedMessages} disabled={ui.selectedMessageIds.size === 0}>Copy</button>
+					<button
+						onClick={handleCopySelectedMessages}
+						disabled={ui.selectedMessageIds.size === 0}
+					>
+						Copy
+					</button>
 					<button onClick={ui.clearMessageSelection}>Cancel</button>
 				</div>
 			)}

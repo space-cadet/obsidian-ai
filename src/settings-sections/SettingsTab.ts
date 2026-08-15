@@ -86,16 +86,21 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			const { containerEl } = this;
 
 			// Cleanup existing React roots before re-rendering
-			containerEl.querySelectorAll('.obsidian-ai-settings-react-profiles').forEach((el) => {
-				const root = (el as any).__reactRoot;
-				if (root) root.unmount();
-			});
+			containerEl
+				.querySelectorAll(".obsidian-ai-settings-react-profiles")
+				.forEach((el) => {
+					const root = (el as any).__reactRoot;
+					if (root) root.unmount();
+				});
 
 			containerEl.empty();
 			containerEl.addClass("obsidian-ai-settings");
 
 			renderHeroSection(containerEl, this.plugin);
-			const nav = containerEl.createEl("nav", { cls: "obsidian-ai-settings-toc", attr: { "aria-label": "Settings sections" } });
+			const nav = containerEl.createEl("nav", {
+				cls: "obsidian-ai-settings-toc",
+				attr: { "aria-label": "Settings sections" },
+			});
 			[
 				["Provider Profiles", "Provider Profiles"],
 				["Chat Defaults", "Chat Defaults"],
@@ -110,34 +115,84 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Diagnostics", "Diagnostics"],
 			].forEach(([label, sectionTitle]) => {
 				const id = `obsidian-ai-settings-${sectionTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-				const button = nav.createEl("button", { text: label, attr: { type: "button" } });
+				const button = nav.createEl("button", {
+					text: label,
+					attr: { type: "button" },
+				});
 				button.addEventListener("click", (event) => {
 					event.preventDefault();
-					const section = containerEl.querySelector<HTMLElement>(`#${id}`);
+					const section = containerEl.querySelector<HTMLElement>(
+						`#${id}`,
+					);
 					if (!section) return;
 					const scrollContainer = getScrollableAncestor(containerEl);
 					if (scrollContainer) {
-						const top = section.getBoundingClientRect().top
-							- scrollContainer.getBoundingClientRect().top
-							+ scrollContainer.scrollTop
-							- 12;
+						const top =
+							section.getBoundingClientRect().top -
+							scrollContainer.getBoundingClientRect().top +
+							scrollContainer.scrollTop -
+							12;
 						scrollContainer.scrollTo({ top, behavior: "smooth" });
 					} else {
-						section.scrollIntoView({ behavior: "smooth", block: "start" });
+						section.scrollIntoView({
+							behavior: "smooth",
+							block: "start",
+						});
 					}
 				});
 			});
 			renderProviderProfilesSection(containerEl, this.plugin);
-			renderChatDefaultsSection(containerEl, this.plugin, this.saveSettings.bind(this));
-			renderAgentToolsSection(containerEl, this.plugin, this.saveSettings.bind(this));
-			renderIntegrationsSection(containerEl, this.plugin, this.saveSettings.bind(this));
-			renderIntelligenceSection(containerEl, this.plugin, this.saveSettings.bind(this));
-			renderWebSearchSection(containerEl, this.plugin, this.saveSettings.bind(this));
-			renderSyncSection(containerEl, this.plugin, this.saveSettings.bind(this));
-			renderUpdaterSection(containerEl, this.plugin, this.saveSettings.bind(this));
-			renderAdvancedSection(containerEl, this.plugin, this.saveSettings.bind(this));
-			renderCustomCommandsSection(containerEl, this.plugin, this.saveSettings.bind(this));
-			renderDiagnosticsSection(containerEl, this.plugin, this.app, this.saveSettings.bind(this));
+			renderChatDefaultsSection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
+			renderAgentToolsSection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
+			renderIntegrationsSection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
+			renderIntelligenceSection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
+			renderWebSearchSection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
+			renderSyncSection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
+			renderUpdaterSection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
+			renderAdvancedSection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
+			renderCustomCommandsSection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
+			renderDiagnosticsSection(
+				containerEl,
+				this.plugin,
+				this.app,
+				this.saveSettings.bind(this),
+			);
 		} finally {
 			this.isDisplaying = false;
 			if (this.pendingRefresh) {

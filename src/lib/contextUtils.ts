@@ -16,5 +16,7 @@ export function contextItemKey(item: ContextItem): string {
 
 export function sameContextItems(a: ContextItem[], b: ContextItem[]): boolean {
 	if (a.length !== b.length) return false;
-	return a.every((item, index) => contextItemKey(item) === contextItemKey(b[index]));
+	return a.every(
+		(item, index) => contextItemKey(item) === contextItemKey(b[index]),
+	);
 }

@@ -65,7 +65,9 @@ describe("ProfileList", () => {
 
 		expect(screen.getByText("OpenAI Default")).toBeTruthy();
 		// Use profile-name class to get all profile names
-		const names = Array.from(document.querySelectorAll('.obsidian-ai-profile-name')).map(el => el.textContent);
+		const names = Array.from(
+			document.querySelectorAll(".obsidian-ai-profile-name"),
+		).map((el) => el.textContent);
 		expect(names).toContain("Gemini");
 	});
 
@@ -80,6 +82,8 @@ describe("ProfileList", () => {
 	it("shows + New Profile button", () => {
 		render(<ProfileList plugin={mockPlugin as any} />);
 
-		expect(screen.getByRole("button", { name: /New Profile/i })).toBeTruthy();
+		expect(
+			screen.getByRole("button", { name: /New Profile/i }),
+		).toBeTruthy();
 	});
 });

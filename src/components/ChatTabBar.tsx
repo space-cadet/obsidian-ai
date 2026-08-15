@@ -45,7 +45,11 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 			ref={tabListRef}
 			className="chat-session-tabs"
 			role="tablist"
-			style={{ "--chat-tab-title-width": `${tabTitleWidth}px` } as React.CSSProperties}
+			style={
+				{
+					"--chat-tab-title-width": `${tabTitleWidth}px`,
+				} as React.CSSProperties
+			}
 		>
 			{openSessions.map((session) => {
 				const active = session.id === activeSessionId;
@@ -69,21 +73,25 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 								menu.addItem((item) =>
 									item
 										.setTitle("Close tab")
-									.setIcon("x")
-									.onClick(() => onClose(session.id)),
+										.setIcon("x")
+										.onClick(() => onClose(session.id)),
 								);
 								menu.addSeparator();
 								menu.addItem((item) =>
 									item
 										.setTitle("Close other tabs")
 										.setIcon("panel-right-close")
-										.onClick(() => onCloseOthers(session.id)),
+										.onClick(() =>
+											onCloseOthers(session.id),
+										),
 								);
 								menu.addItem((item) =>
 									item
 										.setTitle("Close tabs to the right")
 										.setIcon("chevrons-right")
-										.onClick(() => onCloseToRight(session.id)),
+										.onClick(() =>
+											onCloseToRight(session.id),
+										),
 								);
 								menu.addSeparator();
 								menu.addItem((item) =>
@@ -91,8 +99,12 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 										.setTitle("Rename session")
 										.setIcon("pencil")
 										.onClick(() => {
-											const renamed = window.prompt("Session title", title);
-											if (renamed?.trim()) onRename(session.id, renamed);
+											const renamed = window.prompt(
+												"Session title",
+												title,
+											);
+											if (renamed?.trim())
+												onRename(session.id, renamed);
 										}),
 								);
 								menu.showAtMouseEvent(event.nativeEvent);

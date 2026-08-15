@@ -7,11 +7,11 @@ import type { ProviderRegistry } from "../integrations/ProviderRegistry";
 
 /* ── Security: forbidden path patterns ── */
 const FORBIDDEN_PATH_PATTERNS = [
-	/^\.obsidian\b/,           // plugin config / data
-	/^\.trash\b/,              // Obsidian trash
-	/^\.git\b/,                // git internals
-	/^\.+\//,                  // leading ../ or ./
-	/\.\.\//,                   // any ../ anywhere
+	/^\.obsidian\b/, // plugin config / data
+	/^\.trash\b/, // Obsidian trash
+	/^\.git\b/, // git internals
+	/^\.+\//, // leading ../ or ./
+	/\.\.\//, // any ../ anywhere
 ];
 
 function isPathAllowed(path: string): boolean {
@@ -36,7 +36,8 @@ export class ToolExecutor {
 
 	async execute(call: ToolCall): Promise<ToolResult> {
 		try {
-			const providerResult = await this.integrationRegistry?.execute(call);
+			const providerResult =
+				await this.integrationRegistry?.execute(call);
 			if (providerResult) return providerResult;
 			switch (call.toolName) {
 				case "read_note":
@@ -55,7 +56,9 @@ export class ToolExecutor {
 					);
 				case "create_notes":
 					return await this.createNotes(
-						call.args as { notes: Array<{ path: string; content: string }> },
+						call.args as {
+							notes: Array<{ path: string; content: string }>;
+						},
 					);
 				case "patch_note":
 					return await this.patchNote(
@@ -76,11 +79,22 @@ export class ToolExecutor {
 					);
 				case "search_notes":
 					return await this.searchNotes(
-						call.args as { query: string; sort_by?: string; limit?: number; folder?: string },
+						call.args as {
+							query: string;
+							sort_by?: string;
+							limit?: number;
+							folder?: string;
+						},
 					);
 				case "list_notes":
 					return await this.listNotes(
-						call.args as { folder?: string; sort_by?: string; limit?: number; include_subfolders?: boolean; depth?: number },
+						call.args as {
+							folder?: string;
+							sort_by?: string;
+							limit?: number;
+							include_subfolders?: boolean;
+							depth?: number;
+						},
 					);
 				case "count_notes":
 					return await this.countNotes(
@@ -100,19 +114,30 @@ export class ToolExecutor {
 					);
 				case "create_memory":
 					return await this.createMemory(
-						call.args as { category: string; content: string; tags?: string[] },
+						call.args as {
+							category: string;
+							content: string;
+							tags?: string[];
+						},
 					);
 				case "update_memory":
 					return await this.updateMemory(
-						call.args as { id: string; category?: string; content?: string; tags?: string[] },
+						call.args as {
+							id: string;
+							category?: string;
+							content?: string;
+							tags?: string[];
+						},
 					);
 				case "delete_memory":
-					return await this.deleteMemory(
-						call.args as { id: string },
-					);
+					return await this.deleteMemory(call.args as { id: string });
 				case "list_memories":
 					return await this.listMemories(
-						call.args as { category?: string; tag?: string; limit?: number },
+						call.args as {
+							category?: string;
+							tag?: string;
+							limit?: number;
+						},
 					);
 				case "search_memories":
 					return await this.searchMemories(
@@ -135,9 +160,7 @@ export class ToolExecutor {
 						call.args as { path: string; new_path: string },
 					);
 				case "delete_note":
-					return await this.deleteNote(
-						call.args as { path: string },
-					);
+					return await this.deleteNote(call.args as { path: string });
 				default:
 					return { error: `Unknown tool: ${call.toolName}` };
 			}
@@ -146,7 +169,12 @@ export class ToolExecutor {
 		}
 	}
 
-	private async searchNotes(args: { query: string; sort_by?: string; limit?: number; folder?: string }): Promise<ToolResult> {
+	private async searchNotes(args: {
+		query: string;
+		sort_by?: string;
+		limit?: number;
+		folder?: string;
+	}): Promise<ToolResult> {
 		const query = args.query?.toLowerCase() ?? "";
 		const sortBy = args.sort_by ?? "name";
 		const limit = Math.min(args.limit ?? 20, 100);
@@ -156,13 +184,19 @@ export class ToolExecutor {
 
 		// Folder filter
 		if (folder) {
-			files = files.filter(f => f.path.startsWith(folder + "/") || f.parent?.path === folder);
+			files = files.filter(
+				(f) =>
+					f.path.startsWith(folder + "/") ||
+					f.parent?.path === folder,
+			);
 		}
 
 		// Query filter (empty query = list all)
 		if (query) {
-			files = files.filter(f => {
-				const nameMatch = f.path.toLowerCase().includes(query) || f.basename.toLowerCase().includes(query);
+			files = files.filter((f) => {
+				const nameMatch =
+					f.path.toLowerCase().includes(query) ||
+					f.basename.toLowerCase().includes(query);
 				return nameMatch;
 			});
 		}
@@ -173,13 +207,15 @@ export class ToolExecutor {
 		// Limit
 		files = files.slice(0, limit);
 
-		const matches = await Promise.all(files.map(async f => ({
-			path: f.path,
-			basename: f.basename,
-			modified: f.stat.mtime,
-			created: f.stat.ctime,
-			size: f.stat.size,
-		})));
+		const matches = await Promise.all(
+			files.map(async (f) => ({
+				path: f.path,
+				basename: f.basename,
+				modified: f.stat.mtime,
+				created: f.stat.ctime,
+				size: f.stat.size,
+			})),
+		);
 
 		return {
 			success: true,
@@ -189,7 +225,13 @@ export class ToolExecutor {
 		};
 	}
 
-	private async listNotes(args: { folder?: string; sort_by?: string; limit?: number; include_subfolders?: boolean; depth?: number }): Promise<ToolResult> {
+	private async listNotes(args: {
+		folder?: string;
+		sort_by?: string;
+		limit?: number;
+		include_subfolders?: boolean;
+		depth?: number;
+	}): Promise<ToolResult> {
 		const sortBy = args.sort_by ?? "name";
 		const limit = Math.min(args.limit ?? 30, 100);
 		const folder = args.folder;
@@ -199,19 +241,25 @@ export class ToolExecutor {
 		let files = this.app.vault.getFiles();
 
 		if (folder) {
-			files = files.filter(f => f.path.startsWith(folder + "/") || f.parent?.path === folder);
+			files = files.filter(
+				(f) =>
+					f.path.startsWith(folder + "/") ||
+					f.parent?.path === folder,
+			);
 		}
 
 		files = this.sortFiles(files, sortBy);
 		files = files.slice(0, limit);
 
-		const notes = await Promise.all(files.map(async f => ({
-			path: f.path,
-			basename: f.basename,
-			modified: f.stat.mtime,
-			created: f.stat.ctime,
-			size: f.stat.size,
-		})));
+		const notes = await Promise.all(
+			files.map(async (f) => ({
+				path: f.path,
+				basename: f.basename,
+				modified: f.stat.mtime,
+				created: f.stat.ctime,
+				size: f.stat.size,
+			})),
+		);
 
 		// Collect subfolders
 		let subfolders: string[] | undefined;
@@ -254,20 +302,32 @@ export class ToolExecutor {
 		let markdownFiles = this.app.vault.getMarkdownFiles();
 
 		if (folder) {
-			allFiles = allFiles.filter(f => f.path.startsWith(folder + "/") || f.parent?.path === folder);
-			markdownFiles = markdownFiles.filter(f => f.path.startsWith(folder + "/") || f.parent?.path === folder);
+			allFiles = allFiles.filter(
+				(f) =>
+					f.path.startsWith(folder + "/") ||
+					f.parent?.path === folder,
+			);
+			markdownFiles = markdownFiles.filter(
+				(f) =>
+					f.path.startsWith(folder + "/") ||
+					f.parent?.path === folder,
+			);
 		}
 
 		const totalCount = allFiles.length;
 		const markdownCount = markdownFiles.length;
 
 		// Count direct files (not in subfolders)
-		const directAllFiles = allFiles.filter(f => {
-			const relativePath = folder ? f.path.slice(folder.length + 1) : f.path;
+		const directAllFiles = allFiles.filter((f) => {
+			const relativePath = folder
+				? f.path.slice(folder.length + 1)
+				: f.path;
 			return !relativePath.includes("/");
 		});
-		const directMarkdownFiles = markdownFiles.filter(f => {
-			const relativePath = folder ? f.path.slice(folder.length + 1) : f.path;
+		const directMarkdownFiles = markdownFiles.filter((f) => {
+			const relativePath = folder
+				? f.path.slice(folder.length + 1)
+				: f.path;
 			return !relativePath.includes("/");
 		});
 
@@ -300,7 +360,8 @@ export class ToolExecutor {
 			directCount: directAllFiles.length,
 			directMarkdownCount: directMarkdownFiles.length,
 			subfolderCount,
-			content: `${folder ?? "Vault"}: ${totalCount} total files (${markdownCount} markdown, ${totalCount - markdownCount} non-markdown). ` +
+			content:
+				`${folder ?? "Vault"}: ${totalCount} total files (${markdownCount} markdown, ${totalCount - markdownCount} non-markdown). ` +
 				`${directAllFiles.length} directly in folder, ${totalCount - directAllFiles.length} in ${subfolderCount} subfolder${subfolderCount !== 1 ? "s" : ""}.`,
 		};
 	}
@@ -310,7 +371,9 @@ export class ToolExecutor {
 		if (!file) return { error: `Note not found: ${args.path}` };
 
 		const content = await this.app.vault.read(file);
-		const wordCount = content.split(/\s+/).filter(w => w.length > 0).length;
+		const wordCount = content
+			.split(/\s+/)
+			.filter((w) => w.length > 0).length;
 
 		return {
 			success: true,
@@ -398,8 +461,9 @@ export class ToolExecutor {
 			return {
 				content,
 				path: file.path,
-				warning: `⚠️ Ambiguous name: ${ambiguous.length} notes share the basename "${file.basename}". ` +
-					`Reading "${file.path}". Other matches: ${ambiguous.filter(p => p !== file.path).join(", ")}. ` +
+				warning:
+					`⚠️ Ambiguous name: ${ambiguous.length} notes share the basename "${file.basename}". ` +
+					`Reading "${file.path}". Other matches: ${ambiguous.filter((p) => p !== file.path).join(", ")}. ` +
 					`Use the full path (e.g. "Folder/${file.basename}") to target a specific note.`,
 			};
 		}
@@ -453,7 +517,11 @@ export class ToolExecutor {
 	private async createNotes(args: {
 		notes: Array<{ path: string; content: string }>;
 	}): Promise<ToolResult> {
-		if (!Array.isArray(args.notes) || args.notes.length < 2 || args.notes.length > 100) {
+		if (
+			!Array.isArray(args.notes) ||
+			args.notes.length < 2 ||
+			args.notes.length > 100
+		) {
 			return { error: "create_notes requires between 2 and 100 notes." };
 		}
 
@@ -463,8 +531,10 @@ export class ToolExecutor {
 		}));
 		const paths = new Set<string>();
 		for (const note of normalizedNotes) {
-			if (!note.path || !isPathAllowed(note.path)) return denyPath(note.path);
-			if (paths.has(note.path)) return { error: `Duplicate note path in batch: ${note.path}` };
+			if (!note.path || !isPathAllowed(note.path))
+				return denyPath(note.path);
+			if (paths.has(note.path))
+				return { error: `Duplicate note path in batch: ${note.path}` };
 			paths.add(note.path);
 		}
 
@@ -616,9 +686,14 @@ export class ToolExecutor {
 		return { success: true, path: folderPath };
 	}
 
-	private async moveNote(args: { path: string; new_path: string }): Promise<ToolResult> {
+	private async moveNote(args: {
+		path: string;
+		new_path: string;
+	}): Promise<ToolResult> {
 		if (!isPathAllowed(args.path) || !isPathAllowed(args.new_path)) {
-			return denyPath(!isPathAllowed(args.path) ? args.path : args.new_path);
+			return denyPath(
+				!isPathAllowed(args.path) ? args.path : args.new_path,
+			);
 		}
 		const file = this.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
@@ -632,7 +707,8 @@ export class ToolExecutor {
 		// Ensure parent folder exists
 		const destFolder = destPath.substring(0, destPath.lastIndexOf("/"));
 		if (destFolder) {
-			const folderExists = this.app.vault.getAbstractFileByPath(destFolder);
+			const folderExists =
+				this.app.vault.getAbstractFileByPath(destFolder);
 			if (!folderExists) {
 				await this.app.vault.createFolder(destFolder);
 			}
@@ -660,7 +736,8 @@ export class ToolExecutor {
 	}
 
 	private async listFolders(args: { path?: string }): Promise<ToolResult> {
-		const parentPath = args.path?.replace(/\\+/g, "/").replace(/\/$/, "") ?? "";
+		const parentPath =
+			args.path?.replace(/\\+/g, "/").replace(/\/$/, "") ?? "";
 		const allFiles = this.app.vault.getAllLoadedFiles();
 		const folderSet = new Set<string>();
 
@@ -679,7 +756,8 @@ export class ToolExecutor {
 					const relativeParts = relativePath.split("/");
 					if (relativeParts.length >= 2) {
 						// At least one folder below the file name
-						const immediateSub = parentPath + "/" + relativeParts[0];
+						const immediateSub =
+							parentPath + "/" + relativeParts[0];
 						folderSet.add(immediateSub);
 					}
 				}
@@ -710,7 +788,11 @@ export class ToolExecutor {
 		const limit = Math.min(args.limit ?? 5, 20);
 
 		try {
-			let results: Array<{ title: string; url: string; snippet: string }> = [];
+			let results: Array<{
+				title: string;
+				url: string;
+				snippet: string;
+			}> = [];
 
 			if (provider === "brave") {
 				results = await this.searchBrave(args.query, limit);
@@ -812,20 +894,27 @@ export class ToolExecutor {
 		}
 
 		const html = res.text;
-		const results: Array<{ title: string; url: string; snippet: string }> = [];
+		const results: Array<{ title: string; url: string; snippet: string }> =
+			[];
 
 		// Parse using DOMParser instead of regex to avoid ReDoS
 		const parser = new DOMParser();
 		const doc = parser.parseFromString(html, "text/html");
 
 		// Find all result containers
-		const resultDivs = doc.querySelectorAll(".result, .result__a, .result__snippet");
+		const resultDivs = doc.querySelectorAll(
+			".result, .result__a, .result__snippet",
+		);
 
 		// Collect links and snippets
 		const linkElements = doc.querySelectorAll("a.result__a");
 		const snippetElements = doc.querySelectorAll("a.result__snippet");
 
-		for (let i = 0; i < linkElements.length && results.length < limit; i++) {
+		for (
+			let i = 0;
+			i < linkElements.length && results.length < limit;
+			i++
+		) {
 			const linkEl = linkElements[i];
 			const rawUrl = linkEl.getAttribute("href") ?? "";
 			const title = this.stripHtml(linkEl.textContent ?? "");
@@ -999,8 +1088,7 @@ export class ToolExecutor {
 	}): Promise<ToolResult> {
 		if (!this.personaLoader) {
 			return {
-				error:
-					"Memory creation is disabled. Enable the intelligence layer in Settings → AI Intelligence Layer.",
+				error: "Memory creation is disabled. Enable the intelligence layer in Settings → AI Intelligence Layer.",
 			};
 		}
 
@@ -1028,8 +1116,7 @@ export class ToolExecutor {
 	}): Promise<ToolResult> {
 		if (!this.personaLoader) {
 			return {
-				error:
-					"Memory update is disabled. Enable the intelligence layer in Settings.",
+				error: "Memory update is disabled. Enable the intelligence layer in Settings.",
 			};
 		}
 
@@ -1055,13 +1142,14 @@ export class ToolExecutor {
 	private async deleteMemory(args: { id: string }): Promise<ToolResult> {
 		if (!this.personaLoader) {
 			return {
-				error:
-					"Memory deletion is disabled. Enable the intelligence layer in Settings.",
+				error: "Memory deletion is disabled. Enable the intelligence layer in Settings.",
 			};
 		}
 
 		try {
-			const deleted = await this.personaLoader.memoryStore.delete(args.id);
+			const deleted = await this.personaLoader.memoryStore.delete(
+				args.id,
+			);
 			if (!deleted) {
 				return { error: `Memory not found: ${args.id}` };
 			}
@@ -1078,8 +1166,7 @@ export class ToolExecutor {
 	}): Promise<ToolResult> {
 		if (!this.personaLoader) {
 			return {
-				error:
-					"Memory listing is disabled. Enable the intelligence layer in Settings.",
+				error: "Memory listing is disabled. Enable the intelligence layer in Settings.",
 			};
 		}
 
@@ -1112,18 +1199,22 @@ export class ToolExecutor {
 	}): Promise<ToolResult> {
 		if (!this.personaLoader) {
 			return {
-				error:
-					"Memory search is disabled. Enable the intelligence layer in Settings.",
+				error: "Memory search is disabled. Enable the intelligence layer in Settings.",
 			};
 		}
 
 		try {
-			const entries = await this.personaLoader.memoryStore.search(args.query);
+			const entries = await this.personaLoader.memoryStore.search(
+				args.query,
+			);
 			const limit = Math.min(args.limit ?? 10, 50);
 			const limited = entries.slice(0, limit);
 
 			if (limited.length === 0) {
-				return { success: true, content: "No memories match your query." };
+				return {
+					success: true,
+					content: "No memories match your query.",
+				};
 			}
 
 			const lines = limited.map(
@@ -1145,15 +1236,13 @@ export class ToolExecutor {
 	}): Promise<ToolResult> {
 		if (!this.personaLoader) {
 			return {
-				error:
-					"Memory audit is disabled. Enable the intelligence layer in Settings.",
+				error: "Memory audit is disabled. Enable the intelligence layer in Settings.",
 			};
 		}
 
 		if (!this.settings?.intelligence.enableMemoryAuditTool) {
 			return {
-				error:
-					"Memory audit tool is disabled. Enable it in Settings → AI Intelligence Layer.",
+				error: "Memory audit tool is disabled. Enable it in Settings → AI Intelligence Layer.",
 			};
 		}
 
@@ -1167,7 +1256,12 @@ export class ToolExecutor {
 
 			const lines = entries.map((e) => {
 				const time = new Date(e.timestamp).toLocaleString();
-				const icon = e.operation === "create" ? "+" : e.operation === "update" ? "✎" : "−";
+				const icon =
+					e.operation === "create"
+						? "+"
+						: e.operation === "update"
+							? "✎"
+							: "−";
 				const preview = e.content
 					? `"${e.content.slice(0, 60)}${e.content.length > 60 ? "…" : ""}"`
 					: "";
@@ -1189,15 +1283,15 @@ export class ToolExecutor {
 	}): Promise<ToolResult> {
 		if (!this.searchIndex) {
 			return {
-				error:
-					"Session search is not available. The search index has not been initialized.",
+				error: "Session search is not available. The search index has not been initialized.",
 			};
 		}
 
 		try {
 			const activeSessionId = this.getActiveSessionId?.();
-			const results = (await this.searchIndex.search(args.query))
-				.filter((result) => result.sessionId !== activeSessionId);
+			const results = (await this.searchIndex.search(args.query)).filter(
+				(result) => result.sessionId !== activeSessionId,
+			);
 			const limit = Math.min(args.limit ?? 5, 20);
 			const limited = results.slice(0, limit);
 

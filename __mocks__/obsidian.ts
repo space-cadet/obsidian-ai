@@ -411,7 +411,7 @@ export class MarkdownRenderer {
 		markdown: string,
 		el: HTMLElement,
 		sourcePath: string,
-		component: Component
+		component: Component,
 	): Promise<void> {
 		return Promise.resolve();
 	}
@@ -437,7 +437,10 @@ export function parseFrontMatterTags(cache: any): string[] {
 	return [];
 }
 
-export function parseFrontMatterStringArray(cache: any, key: string): string[] | undefined {
+export function parseFrontMatterStringArray(
+	cache: any,
+	key: string,
+): string[] | undefined {
 	return undefined;
 }
 

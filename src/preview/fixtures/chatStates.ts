@@ -51,44 +51,78 @@ export function getChatFixture(state: ChatFixtureState): ChatSession {
 		case "streaming":
 			return baseSession([
 				message("user", "Explain quantum error correction."),
-				message("assistant", "A logical qubit can be protected by spreading", {
-					modelName: "Fixture GPT",
-				}),
+				message(
+					"assistant",
+					"A logical qubit can be protected by spreading",
+					{
+						modelName: "Fixture GPT",
+					},
+				),
 			]);
 		case "tool-approval":
 			return baseSession([
-				message("user", "Read my research note and extract the key claims.", {
-					contextItems: [{ id: "note-1", type: "note", path: "Research.md", name: "Research" }],
-				}),
+				message(
+					"user",
+					"Read my research note and extract the key claims.",
+					{
+						contextItems: [
+							{
+								id: "note-1",
+								type: "note",
+								path: "Research.md",
+								name: "Research",
+							},
+						],
+					},
+				),
 			]);
 		case "error":
 			return baseSession([
 				message("user", "Try the unavailable provider."),
-				message("assistant", "The provider request failed. Please check the connection.", {
-					isError: true,
-				}),
+				message(
+					"assistant",
+					"The provider request failed. Please check the connection.",
+					{
+						isError: true,
+					},
+				),
 			]);
 		case "multi-agent":
 			return baseSession([
-				message("user", "Compare geometric and string-theoretic viewpoints."),
-				message("assistant", "The geometric viewpoint begins with quantized areas.", {
-					agentId: "geometry",
-					agentName: "Geometry",
-					agentColor: "#6d9eeb",
-				}),
-				message("assistant", "The string viewpoint begins with extended excitations.", {
-					agentId: "strings",
-					agentName: "Strings",
-					agentColor: "#e06666",
-				}),
+				message(
+					"user",
+					"Compare geometric and string-theoretic viewpoints.",
+				),
+				message(
+					"assistant",
+					"The geometric viewpoint begins with quantized areas.",
+					{
+						agentId: "geometry",
+						agentName: "Geometry",
+						agentColor: "#6d9eeb",
+					},
+				),
+				message(
+					"assistant",
+					"The string viewpoint begins with extended excitations.",
+					{
+						agentId: "strings",
+						agentName: "Strings",
+						agentColor: "#e06666",
+					},
+				),
 			]);
 		case "relay-only":
 			return {
 				...baseSession([
-					message("user", "I found a useful connection to spin networks.", {
-						remote: true,
-						fromUserId: "remote-alice",
-					}),
+					message(
+						"user",
+						"I found a useful connection to spin networks.",
+						{
+							remote: true,
+							fromUserId: "remote-alice",
+						},
+					),
 				]),
 				relayEnabled: true,
 				remoteUsers: ["FixtureUser", "remote-alice"],

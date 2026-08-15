@@ -41,13 +41,19 @@ export class SessionStorage {
 			const lines = raw.split("\n").filter((l) => l.trim());
 			return lines.map((line) => JSON.parse(line) as ChatMessage);
 		} catch (err) {
-			this.log("error", `SessionStorage.loadSession failed for ${sessionId}: ${err}`);
+			this.log(
+				"error",
+				`SessionStorage.loadSession failed for ${sessionId}: ${err}`,
+			);
 			return [];
 		}
 	}
 
 	/** Append a single message to a session JSONL file. */
-	async appendMessage(sessionId: string, message: ChatMessage): Promise<void> {
+	async appendMessage(
+		sessionId: string,
+		message: ChatMessage,
+	): Promise<void> {
 		const adapter = this.deps.app.vault.adapter;
 		const path = `${this.sessionsDir}/${sessionId}.jsonl`;
 
@@ -56,7 +62,10 @@ export class SessionStorage {
 			const line = JSON.stringify(message) + "\n";
 			await adapter.append(path, line);
 		} catch (err) {
-			this.log("error", `SessionStorage.appendMessage failed for ${sessionId}: ${err}`);
+			this.log(
+				"error",
+				`SessionStorage.appendMessage failed for ${sessionId}: ${err}`,
+			);
 			throw err;
 		}
 	}
@@ -70,7 +79,10 @@ export class SessionStorage {
 		try {
 			await this.ensureDir();
 			await adapter.write(path, "");
-			this.log("info", `SessionStorage.createSession: created ${sessionId}`);
+			this.log(
+				"info",
+				`SessionStorage.createSession: created ${sessionId}`,
+			);
 			return sessionId;
 		} catch (err) {
 			this.log("error", `SessionStorage.createSession failed: ${err}`);
@@ -86,10 +98,16 @@ export class SessionStorage {
 		try {
 			if (await adapter.exists(path)) {
 				await adapter.remove(path);
-				this.log("info", `SessionStorage.deleteSession: removed ${sessionId}`);
+				this.log(
+					"info",
+					`SessionStorage.deleteSession: removed ${sessionId}`,
+				);
 			}
 		} catch (err) {
-			this.log("error", `SessionStorage.deleteSession failed for ${sessionId}: ${err}`);
+			this.log(
+				"error",
+				`SessionStorage.deleteSession failed for ${sessionId}: ${err}`,
+			);
 			throw err;
 		}
 	}

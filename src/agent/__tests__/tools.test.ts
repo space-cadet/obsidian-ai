@@ -39,14 +39,23 @@ describe("noteTools", () => {
 
 	it("every tool has a non-empty description", () => {
 		for (const [name, tool] of Object.entries(noteTools)) {
-			expect(tool.description, `Tool ${name} should have a description`).toBeTruthy();
-			expect(tool.description.length, `Tool ${name} description should not be empty`).toBeGreaterThan(0);
+			expect(
+				tool.description,
+				`Tool ${name} should have a description`,
+			).toBeTruthy();
+			expect(
+				tool.description.length,
+				`Tool ${name} description should not be empty`,
+			).toBeGreaterThan(0);
 		}
 	});
 
 	it("every tool has an inputSchema", () => {
 		for (const [name, tool] of Object.entries(noteTools)) {
-			expect(tool.inputSchema, `Tool ${name} should have inputSchema`).toBeDefined();
+			expect(
+				tool.inputSchema,
+				`Tool ${name} should have inputSchema`,
+			).toBeDefined();
 		}
 	});
 });
@@ -72,7 +81,10 @@ describe("edit_note schema", () => {
 	const schema = noteTools.edit_note.inputSchema as z.ZodSchema;
 
 	it("accepts valid input", () => {
-		const result = schema.parse({ path: "My Note", content: "New content" });
+		const result = schema.parse({
+			path: "My Note",
+			content: "New content",
+		});
 		expect(result).toEqual({ path: "My Note", content: "New content" });
 	});
 
@@ -95,10 +107,17 @@ describe("create_notes schema", () => {
 	});
 
 	it("rejects a singleton or more than 100 notes", () => {
-		expect(() => schema.parse({ notes: [{ path: "Only", content: "x" }] })).toThrow();
-		expect(() => schema.parse({
-			notes: Array.from({ length: 101 }, (_, i) => ({ path: `N${i}`, content: "x" })),
-		})).toThrow();
+		expect(() =>
+			schema.parse({ notes: [{ path: "Only", content: "x" }] }),
+		).toThrow();
+		expect(() =>
+			schema.parse({
+				notes: Array.from({ length: 101 }, (_, i) => ({
+					path: `N${i}`,
+					content: "x",
+				})),
+			}),
+		).toThrow();
 	});
 });
 
@@ -129,7 +148,9 @@ describe("patch_note schema", () => {
 	});
 
 	it("rejects missing search field", () => {
-		expect(() => schema.parse({ path: "My Note", replace: "new" })).toThrow();
+		expect(() =>
+			schema.parse({ path: "My Note", replace: "new" }),
+		).toThrow();
 	});
 });
 
@@ -159,7 +180,9 @@ describe("search_notes schema", () => {
 	});
 
 	it("rejects invalid sort_by enum value", () => {
-		expect(() => schema.parse({ query: "test", sort_by: "size" })).toThrow();
+		expect(() =>
+			schema.parse({ query: "test", sort_by: "size" }),
+		).toThrow();
 	});
 
 	it("accepts large limit values (no max constraint in schema)", () => {

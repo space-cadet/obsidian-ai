@@ -36,10 +36,7 @@ export class SessionSummarizer {
 	/**
 	 * Check if a session has enough content to be worth summarizing.
 	 */
-	shouldSummarize(
-		messages: ChatMessage[],
-		minMessages: number = 4,
-	): boolean {
+	shouldSummarize(messages: ChatMessage[], minMessages: number = 4): boolean {
 		if (!messages || messages.length < minMessages) return false;
 
 		// Count non-system messages
@@ -112,10 +109,7 @@ export class SessionSummarizer {
 	/**
 	 * Build a condensed text context from messages, respecting token budget.
 	 */
-	private _buildContext(
-		messages: ChatMessage[],
-		maxTokens: number,
-	): string {
+	private _buildContext(messages: ChatMessage[], maxTokens: number): string {
 		// Filter to user + assistant only, skip system/tool
 		const chatMessages = messages.filter(
 			(m) => m.role === "user" || m.role === "assistant",
@@ -188,7 +182,9 @@ export class SessionSummarizer {
 		const lines = jsonStr
 			.split("\n")
 			.map((l) => l.trim())
-			.filter((l) => l.length > 5 && (l.startsWith("-") || l.startsWith("*")));
+			.filter(
+				(l) => l.length > 5 && (l.startsWith("-") || l.startsWith("*")),
+			);
 
 		if (lines.length > 0) {
 			return lines.map((line) => ({
@@ -202,9 +198,7 @@ export class SessionSummarizer {
 		return [];
 	}
 
-	private _normalizeCategory(
-		cat: string,
-	): MemoryEntry["category"] {
+	private _normalizeCategory(cat: string): MemoryEntry["category"] {
 		const valid = new Set([
 			"user_fact",
 			"project",
@@ -220,7 +214,9 @@ export class SessionSummarizer {
 	 * Format a memory entry as a markdown bullet for memory.md.
 	 */
 	private _formatEntry(entry: MemoryEntry): string {
-		const tagStr = entry.tags?.length ? " " + entry.tags.map((t) => `#${t}`).join(" ") : "";
+		const tagStr = entry.tags?.length
+			? " " + entry.tags.map((t) => `#${t}`).join(" ")
+			: "";
 		return `- [${entry.date}] **${entry.category}**: ${entry.content}${tagStr}`;
 	}
 }

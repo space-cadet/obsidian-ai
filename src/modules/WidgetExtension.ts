@@ -163,7 +163,9 @@ class FloatingWidget extends WidgetType {
 	}
 
 	public override destroy(): void {
-		console.log("[WidgetExtension] FloatingWidget.destroy — cleaning up widget");
+		console.log(
+			"[WidgetExtension] FloatingWidget.destroy — cleaning up widget",
+		);
 		this.textFieldView?.destroy();
 		this.innerDom.empty();
 
@@ -181,7 +183,9 @@ class FloatingWidget extends WidgetType {
 		this.textFieldView = undefined;
 		this.outerEditorView = null;
 		this.messageHistoryIndex = null;
-		console.log("[WidgetExtension] FloatingWidget.destroy — cleanup complete");
+		console.log(
+			"[WidgetExtension] FloatingWidget.destroy — cleanup complete",
+		);
 	}
 
 	private dismissTooltip() {
@@ -492,7 +496,9 @@ class FloatingWidget extends WidgetType {
 	 * Confirms the result, applies changes, and closes the tooltip.
 	 */
 	private acceptAction() {
-		console.log("[WidgetExtension] acceptAction — dispatching acceptTooltipEffect and dismissTooltipEffect");
+		console.log(
+			"[WidgetExtension] acceptAction — dispatching acceptTooltipEffect and dismissTooltipEffect",
+		);
 		if (this.outerEditorView) {
 			this.outerEditorView.dispatch({
 				effects: acceptTooltipEffect.of(null),

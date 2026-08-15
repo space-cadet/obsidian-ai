@@ -13,7 +13,9 @@ function detectLocalIP(): Promise<string | null> {
 					resolve(null);
 					return;
 				}
-				const ipMatch = /([0-9]{1,3}\.){3}[0-9]{1,3}/.exec(ice.candidate.candidate);
+				const ipMatch = /([0-9]{1,3}\.){3}[0-9]{1,3}/.exec(
+					ice.candidate.candidate,
+				);
 				resolve(ipMatch ? ipMatch[0] : null);
 			};
 			setTimeout(() => resolve(null), 3000);
@@ -31,8 +33,13 @@ async function testRelayConnection(relayUrl: string): Promise<{
 }> {
 	try {
 		// Convert ws:// to http:// for the test
-		const httpUrl = relayUrl.replace(/^ws:\/\//, "http://").replace(/^wss:\/\//, "https://");
-		const res = await requestUrl({ url: `${httpUrl}/rooms`, method: "GET" });
+		const httpUrl = relayUrl
+			.replace(/^ws:\/\//, "http://")
+			.replace(/^wss:\/\//, "https://");
+		const res = await requestUrl({
+			url: `${httpUrl}/rooms`,
+			method: "GET",
+		});
 
 		if (res.status < 200 || res.status >= 300) {
 			return { ok: false, error: `HTTP ${res.status}` };
@@ -67,11 +74,19 @@ export function renderSyncSection(
 	// ── Relay URL row ──
 	const relayRow = section.createEl("div", { cls: "setting-item" });
 	relayRow.createEl("div", { cls: "setting-item-info", text: "Relay URL" });
-	const relayControl = relayRow.createEl("div", { cls: "setting-item-control" });
+	const relayControl = relayRow.createEl("div", {
+		cls: "setting-item-control",
+	});
 
 	// URL input with history dropdown
-	const urlWrapper = relayControl.createEl("div", { cls: "obsidian-ai-url-wrapper" });
-	urlWrapper.setCssStyles({ display: "flex", alignItems: "center", gap: "4px" });
+	const urlWrapper = relayControl.createEl("div", {
+		cls: "obsidian-ai-url-wrapper",
+	});
+	urlWrapper.setCssStyles({
+		display: "flex",
+		alignItems: "center",
+		gap: "4px",
+	});
 
 	const relayInput = urlWrapper.createEl("input", {
 		type: "text",
@@ -140,9 +155,15 @@ export function renderSyncSection(
 		testBtn.textContent = "🧪 Test Connection";
 
 		if (result.ok) {
-			const roomCount = result.rooms ? Object.keys(result.rooms).length : 0;
-			const roomNames = result.rooms ? Object.keys(result.rooms).join(", ") : "none";
-			new Notice(`✅ Relay reachable! ${roomCount} room(s): ${roomNames}`);
+			const roomCount = result.rooms
+				? Object.keys(result.rooms).length
+				: 0;
+			const roomNames = result.rooms
+				? Object.keys(result.rooms).join(", ")
+				: "none";
+			new Notice(
+				`✅ Relay reachable! ${roomCount} room(s): ${roomNames}`,
+			);
 			// Populate room browser
 			populateRoomBrowser(result.rooms ?? {});
 		} else {
@@ -191,11 +212,21 @@ export function renderSyncSection(
 				const row = roomList.createEl("div", {
 					cls: "obsidian-ai-room-row",
 				});
-				row.setCssStyles({ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 8px", borderRadius: "4px", cursor: "pointer", marginBottom: "4px" });
+				row.setCssStyles({
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					padding: "4px 8px",
+					borderRadius: "4px",
+					cursor: "pointer",
+					marginBottom: "4px",
+				});
 
 				const info = row.createEl("span");
 				info.createEl("strong", { text: roomId });
-				info.appendText(` — ${users.length} user(s): ${users.join(", ")}`);
+				info.appendText(
+					` — ${users.length} user(s): ${users.join(", ")}`,
+				);
 
 				const joinBtn = row.createEl("button", {
 					text: "Join",
@@ -219,13 +250,18 @@ export function renderSyncSection(
 				});
 			}
 		}
-	roomBrowserSection.setCssStyles({ display: "block" });
+		roomBrowserSection.setCssStyles({ display: "block" });
 	}
 
 	// ── Room ID ──
 	const roomRow = section.createEl("div", { cls: "setting-item" });
-	roomRow.createEl("div", { cls: "setting-item-info", text: "Default Room ID" });
-	const roomControl = roomRow.createEl("div", { cls: "setting-item-control" });
+	roomRow.createEl("div", {
+		cls: "setting-item-info",
+		text: "Default Room ID",
+	});
+	const roomControl = roomRow.createEl("div", {
+		cls: "setting-item-control",
+	});
 	const roomInput = roomControl.createEl("input", {
 		type: "text",
 		cls: "obsidian-ai-settings-input",
@@ -241,7 +277,9 @@ export function renderSyncSection(
 	// ── User Name ──
 	const nameRow = section.createEl("div", { cls: "setting-item" });
 	nameRow.createEl("div", { cls: "setting-item-info", text: "Your Name" });
-	const nameControl = nameRow.createEl("div", { cls: "setting-item-control" });
+	const nameControl = nameRow.createEl("div", {
+		cls: "setting-item-control",
+	});
 	const nameInput = nameControl.createEl("input", {
 		type: "text",
 		cls: "obsidian-ai-settings-input",

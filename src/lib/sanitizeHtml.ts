@@ -14,17 +14,19 @@
 export function sanitizeHtmlForRenderer(text: string): string {
 	if (!text) return text;
 
-	return text
-		// Remove <script> tags and contents
-		.replace(/<script[\s\S]*?<\/script>/gi, "")
-		// Remove javascript: URLs (href/src)
-		.replace(/(href|src)\s*=\s*["']?javascript:/gi, '$1="blocked:')
-		// Remove on* event handlers
-		.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, "")
-		// Remove data:text/html URLs
-		.replace(/(href|src)\s*=\s*["']?data:text\/html/gi, '$1="blocked:')
-		// Remove iframe/object/embed tags
-		.replace(/<(iframe|object|embed)[\s\S]*?<\/\1>/gi, "")
-		// Remove self-closing iframe/object/embed
-		.replace(/<(iframe|object|embed)[^>]*\/>/gi, "");
+	return (
+		text
+			// Remove <script> tags and contents
+			.replace(/<script[\s\S]*?<\/script>/gi, "")
+			// Remove javascript: URLs (href/src)
+			.replace(/(href|src)\s*=\s*["']?javascript:/gi, '$1="blocked:')
+			// Remove on* event handlers
+			.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, "")
+			// Remove data:text/html URLs
+			.replace(/(href|src)\s*=\s*["']?data:text\/html/gi, '$1="blocked:')
+			// Remove iframe/object/embed tags
+			.replace(/<(iframe|object|embed)[\s\S]*?<\/\1>/gi, "")
+			// Remove self-closing iframe/object/embed
+			.replace(/<(iframe|object|embed)[^>]*\/>/gi, "")
+	);
 }

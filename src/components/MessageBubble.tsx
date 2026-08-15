@@ -12,19 +12,29 @@ import {
 /** Highlight context item names in rendered DOM */
 function highlightMentions(container: HTMLElement, items: ContextItem[]): void {
 	if (!items || items.length === 0) return;
-	const names = items.map((item) => {
-		switch (item.type) {
-			case "note": return item.name;
-			case "folder": return item.name;
-			case "tag": return item.tag;
-			case "active-note": return "Active note";
-		}
-	}).filter(Boolean);
+	const names = items
+		.map((item) => {
+			switch (item.type) {
+				case "note":
+					return item.name;
+				case "folder":
+					return item.name;
+				case "tag":
+					return item.tag;
+				case "active-note":
+					return "Active note";
+			}
+		})
+		.filter(Boolean);
 	if (names.length === 0) return;
 	// Sort by length descending to prefer longer matches
 	names.sort((a, b) => b.length - a.length);
 	// Walk text nodes and replace
-	const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+	const walker = document.createTreeWalker(
+		container,
+		NodeFilter.SHOW_TEXT,
+		null,
+	);
 	const nodes: Text[] = [];
 	let node: Node | null;
 	while ((node = walker.nextNode())) {
@@ -49,9 +59,11 @@ function highlightMentions(container: HTMLElement, items: ContextItem[]): void {
 		span.textContent = matchName;
 		const parent = textNode.parentNode;
 		if (!parent) continue;
-		if (before) parent.insertBefore(document.createTextNode(before), textNode);
+		if (before)
+			parent.insertBefore(document.createTextNode(before), textNode);
 		parent.insertBefore(span, textNode);
-		if (after) parent.insertBefore(document.createTextNode(after), textNode);
+		if (after)
+			parent.insertBefore(document.createTextNode(after), textNode);
 		parent.removeChild(textNode);
 	}
 }
@@ -78,9 +90,11 @@ function setupLinkInterception(container: HTMLElement, app: App): void {
 				const sessionId = url.searchParams.get("sessionId");
 				const messageId = url.searchParams.get("messageId");
 				if (sessionId && messageId) {
-					window.dispatchEvent(new CustomEvent("obsidian-ai:open-session", {
-						detail: { sessionId, messageId },
-					}));
+					window.dispatchEvent(
+						new CustomEvent("obsidian-ai:open-session", {
+							detail: { sessionId, messageId },
+						}),
+					);
 				}
 				return;
 			}
@@ -93,10 +107,15 @@ function setupLinkInterception(container: HTMLElement, app: App): void {
 			) {
 				try {
 					// Remove [[ ]] wrappers if present
-					const cleanHref = href.replace(/^\[\[/, "").replace(/\]\]$/, "");
+					const cleanHref = href
+						.replace(/^\[\[/, "")
+						.replace(/\]\]$/, "");
 					app.workspace.openLinkText(cleanHref, "", false);
 				} catch (err) {
-					console.error("[obsidian-ai] Failed to open internal link:", err);
+					console.error(
+						"[obsidian-ai] Failed to open internal link:",
+						err,
+					);
 				}
 				return;
 			}
@@ -106,7 +125,10 @@ function setupLinkInterception(container: HTMLElement, app: App): void {
 				try {
 					window.open(href, "_blank");
 				} catch (err) {
-					console.error("[obsidian-ai] Failed to open obsidian:// link:", err);
+					console.error(
+						"[obsidian-ai] Failed to open obsidian:// link:",
+						err,
+					);
 				}
 				return;
 			}
@@ -127,11 +149,14 @@ function setupLinkInterception(container: HTMLElement, app: App): void {
 	});
 }
 
-
 interface MessageBubbleProps {
 	message: ChatMessage;
 	app: App;
-	renderMarkdown: (markdown: string, target: HTMLElement, sourcePath?: string) => Promise<void>;
+	renderMarkdown: (
+		markdown: string,
+		target: HTMLElement,
+		sourcePath?: string,
+	) => Promise<void>;
 	isStreaming?: boolean;
 	showThinking?: boolean;
 	onAppend: (content: string) => void;
@@ -186,7 +211,11 @@ function TextSegment({
 }: {
 	content: string;
 	app: App;
-	renderMarkdown: (markdown: string, target: HTMLElement, sourcePath?: string) => Promise<void>;
+	renderMarkdown: (
+		markdown: string,
+		target: HTMLElement,
+		sourcePath?: string,
+	) => Promise<void>;
 	showThinking?: boolean;
 	contextItems?: ContextItem[];
 }): React.ReactElement {
@@ -198,23 +227,23 @@ function TextSegment({
 		let unmounted = false;
 		ref.current.replaceChildren();
 
-		renderMarkdown(sanitizeHtmlForRenderer(cleanContent), ref.current, "").catch(
-			(err: any) => {
+		renderMarkdown(sanitizeHtmlForRenderer(cleanContent), ref.current, "")
+			.catch((err: any) => {
 				if (unmounted || !ref.current) return;
 				ref.current.replaceChildren();
 				ref.current.createEl("pre", {
 					text: cleanContent,
 					cls: "chat-plaintext-fallback",
 				});
-			},
-		).then(() => {
-			if (!unmounted && ref.current) {
-				if (contextItems) {
-					highlightMentions(ref.current, contextItems);
+			})
+			.then(() => {
+				if (!unmounted && ref.current) {
+					if (contextItems) {
+						highlightMentions(ref.current, contextItems);
+					}
+					setupLinkInterception(ref.current, app);
 				}
-				setupLinkInterception(ref.current, app);
-			}
-		});
+			});
 
 		return () => {
 			unmounted = true;
@@ -250,7 +279,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	const longPressTriggered = useRef(false);
 
 	const cancelLongPress = () => {
-		if (longPressTimer.current !== null) window.clearTimeout(longPressTimer.current);
+		if (longPressTimer.current !== null)
+			window.clearTimeout(longPressTimer.current);
 		longPressTimer.current = null;
 	};
 	const handlePointerDown = (e: React.PointerEvent) => {
@@ -271,7 +301,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	useEffect(() => {
 		if (!isActive) return;
 		const handleDocClick = (e: MouseEvent) => {
-			if (bubbleRef.current && !bubbleRef.current.contains(e.target as Node)) {
+			if (
+				bubbleRef.current &&
+				!bubbleRef.current.contains(e.target as Node)
+			) {
 				setIsActive(false);
 			}
 		};
@@ -334,7 +367,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 				setIsActive(true);
 			}}
 		>
-			{selectionMode && <span className="chat-message-selection-check" aria-label={selected ? "Selected" : "Not selected"}>{selected ? "✓" : "○"}</span>}
+			{selectionMode && (
+				<span
+					className="chat-message-selection-check"
+					aria-label={selected ? "Selected" : "Not selected"}
+				>
+					{selected ? "✓" : "○"}
+				</span>
+			)}
 			<div className="chat-bubble-header">
 				<span className="chat-bubble-role">
 					{message.role === "user"
@@ -363,12 +403,25 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
 			{/* Content: inline parts or legacy single block */}
 			{useLegacyRender ? (
-				<LegacyContent content={message.content} app={app} renderMarkdown={renderMarkdown} messageId={message.id} contextItems={message.contextItems} />
+				<LegacyContent
+					content={message.content}
+					app={app}
+					renderMarkdown={renderMarkdown}
+					messageId={message.id}
+					contextItems={message.contextItems}
+				/>
 			) : (
 				<div className="chat-bubble-content-inline">
 					{renderParts!.map((part, i) =>
 						part.type === "text" ? (
-							<TextSegment key={i} content={part.content} app={app} renderMarkdown={renderMarkdown} showThinking={showThinking} contextItems={message.contextItems} />
+							<TextSegment
+								key={i}
+								content={part.content}
+								app={app}
+								renderMarkdown={renderMarkdown}
+								showThinking={showThinking}
+								contextItems={message.contextItems}
+							/>
 						) : (
 							<ToolCallNotification
 								key={i}
@@ -383,47 +436,72 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 			)}
 
 			{/* Context tracking for user messages */}
-			{message.role === "user" && message.contextItems && message.contextItems.length > 0 && (
-				<div className="chat-message-context-footer">
-					<span className="chat-message-context-label">Context:</span>
-					<span className="chat-message-context-items">
-						{formatContextItems(message.contextItems)}
-					</span>
-				</div>
-			)}
+			{message.role === "user" &&
+				message.contextItems &&
+				message.contextItems.length > 0 && (
+					<div className="chat-message-context-footer">
+						<span className="chat-message-context-label">
+							Context:
+						</span>
+						<span className="chat-message-context-items">
+							{formatContextItems(message.contextItems)}
+						</span>
+					</div>
+				)}
 
 			{/* Attachments for user messages */}
-			{message.role === "user" && message.attachments && message.attachments.length > 0 && (
-				<div className="chat-message-attachments">
-					{message.attachments.map((att) => (
-						<div key={att.id} className="chat-attachment-chip chat-attachment-chip-readonly">
-							<span className="chat-attachment-icon">
-								{att.type === "image" ? "🖼️" : att.type === "pdf" ? "📑" : "📄"}
-							</span>
-							<span className="chat-attachment-name">{att.name}</span>
-						</div>
-					))}
-				</div>
-			)}
+			{message.role === "user" &&
+				message.attachments &&
+				message.attachments.length > 0 && (
+					<div className="chat-message-attachments">
+						{message.attachments.map((att) => (
+							<div
+								key={att.id}
+								className="chat-attachment-chip chat-attachment-chip-readonly"
+							>
+								<span className="chat-attachment-icon">
+									{att.type === "image"
+										? "🖼️"
+										: att.type === "pdf"
+											? "📑"
+											: "📄"}
+								</span>
+								<span className="chat-attachment-name">
+									{att.name}
+								</span>
+							</div>
+						))}
+					</div>
+				)}
 
 			{/* Token count + metadata */}
-			{(message.estimatedTokens !== undefined || message.modelName || message.responseTimeMs) && (
+			{(message.estimatedTokens !== undefined ||
+				message.modelName ||
+				message.responseTimeMs) && (
 				<div className="chat-message-metadata">
 					{message.modelName && (
-						<span className="chat-message-model">{message.modelName}</span>
+						<span className="chat-message-model">
+							{message.modelName}
+						</span>
 					)}
 					{message.responseTimeMs !== undefined && (
-						<span className="chat-message-timing">{message.responseTimeMs}ms</span>
+						<span className="chat-message-timing">
+							{message.responseTimeMs}ms
+						</span>
 					)}
 					{message.estimatedTokens !== undefined && (
-						<span className="chat-message-tokens">~{message.estimatedTokens} tokens</span>
+						<span className="chat-message-tokens">
+							~{message.estimatedTokens} tokens
+						</span>
 					)}
 				</div>
 			)}
 
 			{/* Message actions — visible on hover OR when active */}
 			{message.role === "assistant" && !message.isError && (
-				<div className={`message-actions-wrapper${isActive ? " is-active" : ""}`}>
+				<div
+					className={`message-actions-wrapper${isActive ? " is-active" : ""}`}
+				>
 					<MessageActions
 						onCopy={handleCopy}
 						onRetry={onRetry}
@@ -431,11 +509,41 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 						// commands. Ordinary assistant replies should retain the
 						// standard Copy/Retry actions only.
 						onApply={undefined}
-						onInsertAtCursor={() => onInsertAtCursor(message.content)}
-						onAppend={!message.command ? () => onAppend(message.content) : undefined}
-						onApplyToTarget={message.command?.type === "edit" ? () => onApplyToTarget(message.content, message.command!.target) : undefined}
-						onCreateNote={message.command?.type === "create" ? () => onCreateNote(message.content, message.command!.target) : undefined}
-						onAppendToTarget={message.command?.type === "append" ? () => onAppendToTarget(message.content, message.command!.target) : undefined}
+						onInsertAtCursor={() =>
+							onInsertAtCursor(message.content)
+						}
+						onAppend={
+							!message.command
+								? () => onAppend(message.content)
+								: undefined
+						}
+						onApplyToTarget={
+							message.command?.type === "edit"
+								? () =>
+										onApplyToTarget(
+											message.content,
+											message.command!.target,
+										)
+								: undefined
+						}
+						onCreateNote={
+							message.command?.type === "create"
+								? () =>
+										onCreateNote(
+											message.content,
+											message.command!.target,
+										)
+								: undefined
+						}
+						onAppendToTarget={
+							message.command?.type === "append"
+								? () =>
+										onAppendToTarget(
+											message.content,
+											message.command!.target,
+										)
+								: undefined
+						}
 						commandType={message.command?.type}
 					/>
 				</div>
@@ -443,7 +551,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
 			{/* User message actions */}
 			{message.role === "user" && (
-				<div className={`message-actions-wrapper${isActive ? " is-active" : ""}`}>
+				<div
+					className={`message-actions-wrapper${isActive ? " is-active" : ""}`}
+				>
 					<MessageActions
 						isUser={true}
 						onCopy={handleCopy}
@@ -465,7 +575,11 @@ function LegacyContent({
 }: {
 	content: string;
 	app: App;
-	renderMarkdown: (markdown: string, target: HTMLElement, sourcePath?: string) => Promise<void>;
+	renderMarkdown: (
+		markdown: string,
+		target: HTMLElement,
+		sourcePath?: string,
+	) => Promise<void>;
 	messageId: string;
 	contextItems?: ContextItem[];
 }): React.ReactElement {
@@ -487,21 +601,23 @@ function LegacyContent({
 				sanitizeHtmlForRenderer(displayContent),
 				contentRef.current,
 				"",
-			).catch((err: any) => {
-				if (unmounted || !contentRef.current) return;
-				contentRef.current.replaceChildren();
-				contentRef.current.createEl("pre", {
-					text: displayContent,
-					cls: "chat-plaintext-fallback",
-				});
-			}).then(() => {
-				if (!unmounted && contentRef.current) {
-					if (contextItems) {
-						highlightMentions(contentRef.current, contextItems);
+			)
+				.catch((err: any) => {
+					if (unmounted || !contentRef.current) return;
+					contentRef.current.replaceChildren();
+					contentRef.current.createEl("pre", {
+						text: displayContent,
+						cls: "chat-plaintext-fallback",
+					});
+				})
+				.then(() => {
+					if (!unmounted && contentRef.current) {
+						if (contextItems) {
+							highlightMentions(contentRef.current, contextItems);
+						}
+						setupLinkInterception(contentRef.current, app);
 					}
-					setupLinkInterception(contentRef.current, app);
-				}
-			});
+				});
 		} catch (err: any) {
 			if (!contentRef.current) return;
 			contentRef.current.replaceChildren();

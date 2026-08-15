@@ -28,16 +28,17 @@ export async function buildSystemPrompt(
 	if (identityContext) {
 		prompt = identityContext + "\n\n";
 	}
-	prompt += "You are a helpful assistant integrated into an Obsidian note-taking app.";
+	prompt +=
+		"You are a helpful assistant integrated into an Obsidian note-taking app.";
 
 	// ── System Context (date, time, platform) ──
 	const now = new Date();
 	const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 	const platformInfo = `Platform: ${Platform.isMobile ? "mobile" : "desktop"}`;
-	
+
 	prompt += `\n\n[System Context]`;
-	prompt += `\n- Current date: ${now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
-	prompt += `\n- Current time: ${now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+	prompt += `\n- Current date: ${now.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}`;
+	prompt += `\n- Current time: ${now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
 	prompt += `\n- Timezone: ${tz}`;
 	if (platformInfo) prompt += `\n- ${platformInfo}`;
 	prompt += `\n- Locale: ${typeof navigator !== "undefined" ? navigator.language : "unknown"}`;
@@ -103,7 +104,8 @@ export async function buildSystemPrompt(
 		if (remotes.length > 0) {
 			prompt += `\n- Remote users: ${remotes.map((r) => r.name).join(", ")}`;
 		}
-		prompt += "\n\nMessages from other participants will be prefixed with their name.";
+		prompt +=
+			"\n\nMessages from other participants will be prefixed with their name.";
 	}
 
 	return prompt;

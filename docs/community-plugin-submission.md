@@ -15,14 +15,14 @@ Obsidian community plugins require review before being listed. This checklist tr
 
 ```json
 {
-  "id": "obsidian-ai",
-  "name": "Obsidian AI",
-  "version": "1.2.5",
-  "minAppVersion": "1.4.5",
-  "description": "AI-powered suggestions, contextual edits, and advanced text transformations directly into your editor.",
-  "author": "space-cadet",
-  "authorUrl": "https://github.com/space-cadet/",
-  "isDesktopOnly": false
+	"id": "obsidian-ai",
+	"name": "Obsidian AI",
+	"version": "1.2.5",
+	"minAppVersion": "1.4.5",
+	"description": "AI-powered suggestions, contextual edits, and advanced text transformations directly into your editor.",
+	"author": "space-cadet",
+	"authorUrl": "https://github.com/space-cadet/",
+	"isDesktopOnly": false
 }
 ```
 
@@ -65,15 +65,15 @@ Obsidian community plugins require review before being listed. This checklist tr
 
 1. **Fork** `obsidianmd/obsidian-releases`
 2. **Add plugin** to `community-plugins.json`:
-   ```json
-   {
-     "id": "obsidian-ai",
-     "name": "Obsidian AI",
-     "author": "space-cadet",
-     "description": "AI-powered chat with multi-device sync, agentic tools, and collaborative conversation",
-     "repo": "space-cadet/obsidian-ai"
-   }
-   ```
+    ```json
+    {
+    "id": "obsidian-ai",
+    "name": "Obsidian AI",
+    "author": "space-cadet",
+    "description": "AI-powered chat with multi-device sync, agentic tools, and collaborative conversation",
+    "repo": "space-cadet/obsidian-ai"
+    }
+    ```
 3. **Create PR** with plugin added alphabetically
 4. **Wait for review** — Obsidian team reviews within days to weeks
 

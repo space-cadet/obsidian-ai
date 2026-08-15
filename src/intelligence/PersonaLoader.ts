@@ -68,12 +68,18 @@ export class PersonaLoader {
 		const personaPath = `${this.intelligenceDir}/persona.md`;
 		if (!(await adapter.exists(personaPath))) {
 			await adapter.write(personaPath, DEFAULT_PERSONA);
-			this.deps.logger?.log("info", `Created default persona at ${personaPath}`);
+			this.deps.logger?.log(
+				"info",
+				`Created default persona at ${personaPath}`,
+			);
 		}
 
 		// Migrate legacy markdown memory if needed
 		await this.memoryStore.migrateFromMarkdown();
-		this.deps.logger?.log("info", `MemoryStore initialized at ${this.intelligenceDir}`);
+		this.deps.logger?.log(
+			"info",
+			`MemoryStore initialized at ${this.intelligenceDir}`,
+		);
 	}
 
 	/** Read persona.md — returns content or empty string if disabled/missing. */
@@ -102,12 +108,25 @@ export class PersonaLoader {
 		// Truncate from the top (keep newest)
 		const truncated = md.slice(-maxChars + 3);
 		const firstNewline = truncated.indexOf("\n");
-		return "..." + (firstNewline > 0 ? truncated.slice(firstNewline + 1) : truncated);
+		return (
+			"..." +
+			(firstNewline > 0 ? truncated.slice(firstNewline + 1) : truncated)
+		);
 	}
 
 	/** Append a memory entry (delegates to MemoryStore). */
-	async appendMemory(category: string, content: string, tags?: string[]): Promise<string> {
-		const validCategories = ["user_fact", "project", "preference", "insight", "reference"] as const;
+	async appendMemory(
+		category: string,
+		content: string,
+		tags?: string[],
+	): Promise<string> {
+		const validCategories = [
+			"user_fact",
+			"project",
+			"preference",
+			"insight",
+			"reference",
+		] as const;
 		if (!validCategories.includes(category as any)) {
 			throw new Error(`Invalid memory category: ${category}`);
 		}
@@ -137,8 +156,6 @@ export class PersonaLoader {
 
 		return parts.join("\n\n---\n\n");
 	}
-
-
 
 	private async _readFile(path: string): Promise<string> {
 		try {

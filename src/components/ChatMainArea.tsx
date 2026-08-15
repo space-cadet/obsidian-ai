@@ -1,6 +1,11 @@
 import React from "react";
 import type { App } from "obsidian";
-import type { ChatMessage, ContentPart, ContextItem, Attachment } from "../types";
+import type {
+	ChatMessage,
+	ContentPart,
+	ContextItem,
+	Attachment,
+} from "../types";
 import type { ToolCall } from "../agent/types";
 import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
@@ -9,7 +14,11 @@ import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 
 interface ChatMainAreaProps {
 	app: App;
-	renderMarkdown: (markdown: string, target: HTMLElement, sourcePath?: string) => Promise<void>;
+	renderMarkdown: (
+		markdown: string,
+		target: HTMLElement,
+		sourcePath?: string,
+	) => Promise<void>;
 	plugin: ChatPluginLike;
 	sessionId: string | null;
 	messages: ChatMessage[];
@@ -22,7 +31,11 @@ interface ChatMainAreaProps {
 	scrollToMessageId?: string;
 	restoreScrollTop?: number;
 	pendingToolCall: ToolCall | null;
-	pendingToolDisplay: { providerName: string; title: string; risk: string } | null;
+	pendingToolDisplay: {
+		providerName: string;
+		title: string;
+		risk: string;
+	} | null;
 	typingUsers: string[];
 	onSend: (text: string, attachments?: Attachment[]) => void;
 	onStop: () => void;

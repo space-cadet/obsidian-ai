@@ -63,7 +63,10 @@ function fuzzyScore(text: string, query: string): number {
  * Compute highlight regions for a fuzzy match.
  * Returns sorted, non-overlapping ranges of matched characters.
  */
-function computeHighlights(text: string, query: string): Array<{ start: number; end: number }> {
+function computeHighlights(
+	text: string,
+	query: string,
+): Array<{ start: number; end: number }> {
 	const highlights: Array<{ start: number; end: number }> = [];
 	let ti = 0;
 	let qi = 0;
@@ -98,7 +101,11 @@ function computeHighlights(text: string, query: string): Array<{ start: number; 
  * Extract a snippet around the first highlight, centered and clamped to
  * a maximum length. If no highlights, returns the start of the text.
  */
-function extractSnippet(text: string, highlights: Array<{ start: number; end: number }>, maxLen = 160): string {
+function extractSnippet(
+	text: string,
+	highlights: Array<{ start: number; end: number }>,
+	maxLen = 160,
+): string {
 	if (!text) return "";
 	if (text.length <= maxLen) return text;
 
@@ -166,7 +173,10 @@ export class FuzzySearcher {
 		for (const item of items) {
 			const score = fuzzyScore(item.text, normalizedQuery);
 			if (score >= 0.4) {
-				const highlights = computeHighlights(item.text, normalizedQuery);
+				const highlights = computeHighlights(
+					item.text,
+					normalizedQuery,
+				);
 				const snippet = extractSnippet(item.text, highlights);
 				const adjustedHighlights = adjustHighlights(
 					highlights,

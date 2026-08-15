@@ -35,8 +35,14 @@ export class FileLogger {
 		this.setupErrorHandlers();
 
 		this.writeDirect("info", "=== Obsidian AI debug log started ===");
-		this.writeDirect("info", `Platform: ${Platform.isMobile ? "mobile" : "desktop"}`);
-		this.writeDirect("info", `Obsidian version: ${(window as any).app?.version || "unknown"}`);
+		this.writeDirect(
+			"info",
+			`Platform: ${Platform.isMobile ? "mobile" : "desktop"}`,
+		);
+		this.writeDirect(
+			"info",
+			`Obsidian version: ${(window as any).app?.version || "unknown"}`,
+		);
 
 		// Defer size enforcement so it does not block plugin startup.
 		// If the file is already huge, reading it all could hang the UI.
@@ -215,7 +221,10 @@ export class FileLogger {
 			await Promise.race([
 				this._truncateIfNeededCore(),
 				new Promise((_, reject) =>
-					setTimeout(() => reject(new Error("truncate timeout")), 2000),
+					setTimeout(
+						() => reject(new Error("truncate timeout")),
+						2000,
+					),
 				),
 			]);
 		} catch (e) {

@@ -99,14 +99,18 @@ describe("useChatUI", () => {
 		it("toggles a profile on", () => {
 			const { result } = renderHook(() => useChatUI());
 			act(() => result.current.toggleProfile("profile-1"));
-			expect(result.current.selectedProfileIds.has("profile-1")).toBe(true);
+			expect(result.current.selectedProfileIds.has("profile-1")).toBe(
+				true,
+			);
 		});
 
 		it("toggles a profile off when already selected", () => {
 			const { result } = renderHook(() => useChatUI());
 			act(() => result.current.toggleProfile("profile-1"));
 			act(() => result.current.toggleProfile("profile-1"));
-			expect(result.current.selectedProfileIds.has("profile-1")).toBe(false);
+			expect(result.current.selectedProfileIds.has("profile-1")).toBe(
+				false,
+			);
 		});
 
 		it("selects multiple profiles independently", () => {
@@ -121,7 +125,9 @@ describe("useChatUI", () => {
 		it("replaces selection via setSelectedProfileIds", () => {
 			const { result } = renderHook(() => useChatUI());
 			act(() => result.current.toggleProfile("p1"));
-			act(() => result.current.setSelectedProfileIds(new Set(["p3", "p4"])));
+			act(() =>
+				result.current.setSelectedProfileIds(new Set(["p3", "p4"])),
+			);
 			expect(result.current.selectedProfileIds.size).toBe(2);
 			expect(result.current.selectedProfileIds.has("p3")).toBe(true);
 			expect(result.current.selectedProfileIds.has("p4")).toBe(true);
@@ -228,7 +234,14 @@ describe("useChatUI", () => {
 
 		it("sets attachments", () => {
 			const { result } = renderHook(() => useChatUI());
-			const attachments = [{ id: "1", type: "markdown" as const, path: "note.md", name: "Note" }];
+			const attachments = [
+				{
+					id: "1",
+					type: "markdown" as const,
+					path: "note.md",
+					name: "Note",
+				},
+			];
 			act(() => result.current.setMessageAttachments(attachments));
 			expect(result.current.messageAttachments).toEqual(attachments);
 		});
@@ -241,7 +254,9 @@ describe("useChatUI", () => {
 			expect(result.current.selectionMode).toBe(true);
 			expect(result.current.selectedMessageIds.has("m1")).toBe(true);
 			act(() => result.current.toggleMessageSelection("m2"));
-			expect(result.current.selectedMessageIds).toEqual(new Set(["m1", "m2"]));
+			expect(result.current.selectedMessageIds).toEqual(
+				new Set(["m1", "m2"]),
+			);
 			act(() => result.current.toggleMessageSelection("m1"));
 			expect(result.current.selectedMessageIds).toEqual(new Set(["m2"]));
 		});
@@ -285,7 +300,9 @@ describe("useChatUI", () => {
 				result.current.addTypingAgent("Agent");
 				result.current.startEditing("text");
 				result.current.toggleAutoApprove();
-				result.current.setMessageAttachments([{ id: "1", type: "markdown", path: "n.md", name: "N" }]);
+				result.current.setMessageAttachments([
+					{ id: "1", type: "markdown", path: "n.md", name: "N" },
+				]);
 			});
 
 			// Reset

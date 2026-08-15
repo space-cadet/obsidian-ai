@@ -19,5 +19,8 @@ export function pruneSessions(
 }
 
 export function getSessionTotalTokens(session: ChatSession): number {
-	return session.messages.reduce((sum, m) => sum + (m.estimatedTokens || 0), 0);
+	return session.messages.reduce(
+		(sum, m) => sum + (m.estimatedTokens || 0),
+		0,
+	);
 }

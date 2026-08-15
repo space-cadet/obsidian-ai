@@ -90,7 +90,9 @@ async function resolveSingleItem(
 			const fileList = files
 				.map((f) => {
 					const created = new Date(f.stat.ctime).toLocaleDateString();
-					const modified = new Date(f.stat.mtime).toLocaleDateString();
+					const modified = new Date(
+						f.stat.mtime,
+					).toLocaleDateString();
 					return `- ${f.basename} (created: ${created}, modified: ${modified})`;
 				})
 				.join("\n");
@@ -105,7 +107,13 @@ async function resolveSingleItem(
 				`You can also:\n` +
 				`- Use read_note(path) to read any file\n` +
 				`- Use search_notes(query, folder="${item.path}", limit=100) to find specific files`;
-			return [{ name: item.name || item.path || "Folder", path: item.path, content }];
+			return [
+				{
+					name: item.name || item.path || "Folder",
+					path: item.path,
+					content,
+				},
+			];
 		}
 		case "tag": {
 			const files = getFilesForTag(app, item.tag);
@@ -118,7 +126,9 @@ async function resolveSingleItem(
 				`- Use read_note(path) to read any file\n` +
 				`- Use search_notes(query, limit=100) to find more files\n` +
 				`- Use list_notes(sort_by="modified", limit=100) to browse all notes`;
-			return [{ name: `Tag: #${item.tag}`, path: `#${item.tag}`, content }];
+			return [
+				{ name: `Tag: #${item.tag}`, path: `#${item.tag}`, content },
+			];
 		}
 		case "active-note": {
 			const file = app.workspace.getActiveFile();

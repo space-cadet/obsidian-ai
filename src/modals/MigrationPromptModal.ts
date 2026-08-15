@@ -32,7 +32,9 @@ export class MigrationPromptModal extends Modal {
 
 		new Setting(contentEl)
 			.setName("Migrate now")
-			.setDesc("Convert chat history to JSONL format. Settings stay in data.json.")
+			.setDesc(
+				"Convert chat history to JSONL format. Settings stay in data.json.",
+			)
 			.addButton((btn) =>
 				btn
 					.setButtonText("Migrate")
@@ -57,7 +59,9 @@ export class MigrationPromptModal extends Modal {
 
 		new Setting(contentEl)
 			.setName("Keep using legacy")
-			.setDesc("Continue with the old format. You can migrate later in Settings.")
+			.setDesc(
+				"Continue with the old format. You can migrate later in Settings.",
+			)
 			.addButton((btn) =>
 				btn.setButtonText("Keep Legacy").onClick(() => {
 					this.onKeepLegacy();
@@ -65,14 +69,12 @@ export class MigrationPromptModal extends Modal {
 				}),
 			);
 
-		new Setting(contentEl)
-			.setName("Remind me later")
-			.addButton((btn) =>
-				btn.setButtonText("Later").onClick(() => {
-					this.onRemindLater();
-					this.close();
-				}),
-			);
+		new Setting(contentEl).setName("Remind me later").addButton((btn) =>
+			btn.setButtonText("Later").onClick(() => {
+				this.onRemindLater();
+				this.close();
+			}),
+		);
 	}
 
 	onClose() {

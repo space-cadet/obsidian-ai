@@ -12,7 +12,10 @@ export class ChatStorageMigration {
 	constructor(private deps: StorageDeps) {}
 
 	async migrate(): Promise<MigrationResult> {
-		this.deps.logger?.log("info", "Migration: starting legacy → JSONL migration");
+		this.deps.logger?.log(
+			"info",
+			"Migration: starting legacy → JSONL migration",
+		);
 
 		try {
 			// 1. Load legacy data
@@ -21,7 +24,10 @@ export class ChatStorageMigration {
 
 			if (data?.chatData && Array.isArray(data.chatData.sessions)) {
 				chatData = data.chatData as StoredChatData;
-			} else if (Array.isArray(data?.chatMessages) && data.chatMessages.length > 0) {
+			} else if (
+				Array.isArray(data?.chatMessages) &&
+				data.chatMessages.length > 0
+			) {
 				chatData = {
 					sessions: [
 						{
@@ -57,8 +63,10 @@ export class ChatStorageMigration {
 			const indexEntries = chatData.sessions.map((session) => {
 				const filePath = `sessions/${session.id}.jsonl`;
 				const fullPath = `${pluginDir}/${filePath}`;
-				const content = session.messages.map((m) => JSON.stringify(m)).join("\n");
-				
+				const content = session.messages
+					.map((m) => JSON.stringify(m))
+					.join("\n");
+
 				adapter.write(fullPath, content ? content + "\n" : "");
 				totalMessages += session.messages.length;
 
@@ -84,7 +92,10 @@ export class ChatStorageMigration {
 				sessions: indexEntries,
 				activeSessionId: chatData.activeSessionId,
 			};
-			await adapter.write(`${sessionsDir}/index.json`, JSON.stringify(index, null, 2));
+			await adapter.write(
+				`${sessionsDir}/index.json`,
+				JSON.stringify(index, null, 2),
+			);
 
 			// 5. Strip chatData from data.json, keep only settings
 			const { chatData: _, chatMessages: __, ...settingsOnly } = data;

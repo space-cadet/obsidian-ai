@@ -32,7 +32,10 @@ export function buildTestProfile(
 ): ProviderProfile {
 	const apiKey = KEY_ENV_MAP[provider] ?? "";
 	const modelEnvVar = `${provider.toUpperCase().replace(/-/g, "_")}_TEST_MODEL`;
-	const model = process.env[modelEnvVar] ?? overrides.model ?? getDefaultTestModel(provider);
+	const model =
+		process.env[modelEnvVar] ??
+		overrides.model ??
+		getDefaultTestModel(provider);
 
 	return createProviderProfile({
 		provider: provider as any,
@@ -108,7 +111,10 @@ export function describeIfProvider(
 	if (shouldRun) {
 		describe(title, fn);
 	} else {
-		describe.skip(`${title} [skipped: no ${provider.toUpperCase()} key]`, fn);
+		describe.skip(
+			`${title} [skipped: no ${provider.toUpperCase()} key]`,
+			fn,
+		);
 	}
 }
 
@@ -123,6 +129,10 @@ export function itIfProvider(
 	if (shouldRun) {
 		it(title, fn, timeout);
 	} else {
-		it.skip(`${title} [skipped: no ${provider.toUpperCase()} key]`, fn, timeout);
+		it.skip(
+			`${title} [skipped: no ${provider.toUpperCase()} key]`,
+			fn,
+			timeout,
+		);
 	}
 }

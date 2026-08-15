@@ -4,10 +4,7 @@ export const INTEGRATION_PROVIDER_API_VERSION = 1 as const;
 
 export type ProviderRisk = "read" | "write" | "remote-write" | "destructive";
 
-export type ProviderAvailability =
-	| "available"
-	| "disabled"
-	| "misconfigured";
+export type ProviderAvailability = "available" | "disabled" | "misconfigured";
 
 /**
  * This is intentionally structural. Provider plugins are independently built,
@@ -21,7 +18,10 @@ export interface ProviderCapability {
 	inputSchema: unknown;
 	risk: ProviderRisk;
 	availability?: ProviderAvailability;
-	execute: (args: Record<string, unknown>, context: ProviderExecutionContext) => Promise<ToolResult>;
+	execute: (
+		args: Record<string, unknown>,
+		context: ProviderExecutionContext,
+	) => Promise<ToolResult>;
 }
 
 export interface IntegrationProvider {

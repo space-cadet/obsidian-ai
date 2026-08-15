@@ -16,13 +16,79 @@ interface IndexEntry {
 }
 
 const STOP_WORDS = new Set([
-	"a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has", "he",
-	"in", "is", "it", "its", "of", "on", "that", "the", "to", "was", "will", "with",
-	"you", "your", "i", "me", "my", "we", "our", "us", "they", "them", "their",
-	"this", "these", "those", "or", "but", "not", "no", "yes", "if", "then", "else",
-	"when", "where", "what", "who", "how", "why", "which", "than", "so", "too",
-	"can", "could", "would", "should", "may", "might", "must", "shall", "will",
-	"do", "does", "did", "done", "doing", "have", "had", "having",
+	"a",
+	"an",
+	"and",
+	"are",
+	"as",
+	"at",
+	"be",
+	"by",
+	"for",
+	"from",
+	"has",
+	"he",
+	"in",
+	"is",
+	"it",
+	"its",
+	"of",
+	"on",
+	"that",
+	"the",
+	"to",
+	"was",
+	"will",
+	"with",
+	"you",
+	"your",
+	"i",
+	"me",
+	"my",
+	"we",
+	"our",
+	"us",
+	"they",
+	"them",
+	"their",
+	"this",
+	"these",
+	"those",
+	"or",
+	"but",
+	"not",
+	"no",
+	"yes",
+	"if",
+	"then",
+	"else",
+	"when",
+	"where",
+	"what",
+	"who",
+	"how",
+	"why",
+	"which",
+	"than",
+	"so",
+	"too",
+	"can",
+	"could",
+	"would",
+	"should",
+	"may",
+	"might",
+	"must",
+	"shall",
+	"will",
+	"do",
+	"does",
+	"did",
+	"done",
+	"doing",
+	"have",
+	"had",
+	"having",
 ]);
 
 /** Lightweight inverted index for searching across session JSONL files. */
@@ -48,7 +114,9 @@ export class SearchIndex {
 		// ── JSONL format ──
 		if (await adapter.exists(sessionsDir)) {
 			const entries = await adapter.list(sessionsDir);
-			const jsonlFiles = entries.files.filter((f) => f.endsWith(".jsonl"));
+			const jsonlFiles = entries.files.filter((f) =>
+				f.endsWith(".jsonl"),
+			);
 
 			for (const fileName of jsonlFiles) {
 				// Obsidian returns vault-relative paths here, while tests and some
@@ -56,7 +124,11 @@ export class SearchIndex {
 				const path = fileName.startsWith(`${sessionsDir}/`)
 					? fileName
 					: `${sessionsDir}/${fileName}`;
-				const sessionId = path.split("/").pop()?.replace(/\.jsonl$/, "") ?? "";
+				const sessionId =
+					path
+						.split("/")
+						.pop()
+						?.replace(/\.jsonl$/, "") ?? "";
 				if (!sessionId) continue;
 				let raw = "";
 				try {
@@ -92,7 +164,11 @@ export class SearchIndex {
 					for (const session of sessions) {
 						if (!Array.isArray(session.messages)) continue;
 						for (const message of session.messages) {
-							this._indexMessage(newIndex, session.id, message as ChatMessage);
+							this._indexMessage(
+								newIndex,
+								session.id,
+								message as ChatMessage,
+							);
 						}
 					}
 				} catch {
@@ -106,8 +182,15 @@ export class SearchIndex {
 	}
 
 	/** Rebuild the index if it is older than maxAgeMs (default 5 min). */
-	async search(query: string, maxAgeMs = 5 * 60 * 1000): Promise<SearchResult[]> {
-		if (!this.index || this.index.size === 0 || Date.now() - this.lastBuildTime > maxAgeMs) {
+	async search(
+		query: string,
+		maxAgeMs = 5 * 60 * 1000,
+	): Promise<SearchResult[]> {
+		if (
+			!this.index ||
+			this.index.size === 0 ||
+			Date.now() - this.lastBuildTime > maxAgeMs
+		) {
 			await this.buildIndex();
 		}
 
@@ -143,7 +226,9 @@ export class SearchIndex {
 
 		if (!results || results.size === 0) return [];
 
-		const sorted = Array.from(results.values()).sort((a, b) => b.timestamp - a.timestamp);
+		const sorted = Array.from(results.values()).sort(
+			(a, b) => b.timestamp - a.timestamp,
+		);
 		return sorted.map((e) => ({
 			sessionId: e.sessionId,
 			messageId: e.messageId,
@@ -166,7 +251,8 @@ export class SearchIndex {
 	private tokenize(text: string): string[] {
 		const normalized = text.toLowerCase();
 		// Include underscore and hyphen as separators so "self-improvement" → ["self","improvement"]
-		const words = normalized.match(/\b[a-z0-9]+(?:[\-_][a-z0-9]+)*\b/g) ?? [];
+		const words =
+			normalized.match(/\b[a-z0-9]+(?:[\-_][a-z0-9]+)*\b/g) ?? [];
 		return words.filter((w) => w.length > 1 && !STOP_WORDS.has(w));
 	}
 

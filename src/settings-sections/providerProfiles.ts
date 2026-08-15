@@ -19,7 +19,9 @@ export function renderProviderProfilesSection(
 	});
 
 	const { ProfileList } = require("../components/ProfileCard");
-	const { ChatErrorBoundary } = require("../components/presentational/ErrorBoundary");
+	const {
+		ChatErrorBoundary,
+	} = require("../components/presentational/ErrorBoundary");
 
 	const root = createRoot(reactContainer);
 	root.render(

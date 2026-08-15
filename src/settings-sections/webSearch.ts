@@ -6,7 +6,10 @@ import { createSection } from "./helpers";
 export function renderWebSearchSection(
 	containerEl: HTMLElement,
 	plugin: ObsidianAIPlugin,
-	saveSettings: (options?: { refresh?: boolean; quiet?: boolean }) => Promise<void>,
+	saveSettings: (options?: {
+		refresh?: boolean;
+		quiet?: boolean;
+	}) => Promise<void>,
 ): void {
 	const sectionEl = createSection(
 		containerEl,
@@ -26,7 +29,8 @@ export function renderWebSearchSection(
 				.addOption("searxng", "SearXNG (self-hosted)")
 				.setValue(plugin.settings.webSearchProvider)
 				.onChange(async (value) => {
-					plugin.settings.webSearchProvider = value as WebSearchProvider;
+					plugin.settings.webSearchProvider =
+						value as WebSearchProvider;
 					await saveSettings({ refresh: true, quiet: true });
 				}),
 		);
@@ -96,7 +100,10 @@ export function renderWebSearchSection(
 				text.setPlaceholder("https://...")
 					.setValue(plugin.settings.searxngUrl)
 					.inputEl.addEventListener("blur", async () => {
-						plugin.settings.searxngUrl = text.getValue().trim().replace(/\/$/, "");
+						plugin.settings.searxngUrl = text
+							.getValue()
+							.trim()
+							.replace(/\/$/, "");
 						await saveSettings();
 					});
 			});

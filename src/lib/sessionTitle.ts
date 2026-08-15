@@ -35,17 +35,37 @@ export function generateSessionTitle(messages: ChatMessage[]): string {
 		}
 	}
 
-	if (candidateTexts.length === 0) return `Chat ${new Date().toLocaleDateString()}`;
+	if (candidateTexts.length === 0)
+		return `Chat ${new Date().toLocaleDateString()}`;
 
 	// Generic words that make bad titles — check AFTER stripping punctuation
 	const genericWords = new Set([
-		"hello", "hi", "hey", "help", "please", "thanks", "thank you",
-		"ok", "okay", "sure", "yes", "no", "what", "how", "why", "when", "where", "who",
-		"good morning", "good afternoon", "good evening",
+		"hello",
+		"hi",
+		"hey",
+		"help",
+		"please",
+		"thanks",
+		"thank you",
+		"ok",
+		"okay",
+		"sure",
+		"yes",
+		"no",
+		"what",
+		"how",
+		"why",
+		"when",
+		"where",
+		"who",
+		"good morning",
+		"good afternoon",
+		"good evening",
 	]);
 
 	// Stop words to strip from the START of text (with optional punctuation)
-	const stopWords = /^(please\s+|can\s+you\s+|could\s+you\s+|hey[.!?\s]*|hi[.!?\s]*|hello[.!?\s]*|so\s+|um\s+|uh\s+|okay\s+|ok\s+|well\s+|now\s+|then\s+)/i;
+	const stopWords =
+		/^(please\s+|can\s+you\s+|could\s+you\s+|hey[.!?\s]*|hi[.!?\s]*|hello[.!?\s]*|so\s+|um\s+|uh\s+|okay\s+|ok\s+|well\s+|now\s+|then\s+)/i;
 
 	for (let text of candidateTexts) {
 		// Extract first sentence-ish chunk
@@ -59,7 +79,10 @@ export function generateSessionTitle(messages: ChatMessage[]): string {
 		if (title.length < 3) continue;
 
 		// Check if remaining title is just generic words (strip punctuation for check)
-		const cleanForCheck = title.replace(/[.!?,;:"'\-]+$/, "").trim().toLowerCase();
+		const cleanForCheck = title
+			.replace(/[.!?,;:"'\-]+$/, "")
+			.trim()
+			.toLowerCase();
 		if (genericWords.has(cleanForCheck)) continue;
 
 		// Capitalize first letter

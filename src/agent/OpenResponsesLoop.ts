@@ -59,7 +59,10 @@ export class OpenResponsesLoop {
 	 * 4. Repeat until no more function_calls or maxSteps reached
 	 */
 	public async run(
-		messages: Array<{ role: "user" | "assistant" | "system"; content: string }>,
+		messages: Array<{
+			role: "user" | "assistant" | "system";
+			content: string;
+		}>,
 		tools: OpenResponsesTool[],
 		signal?: AbortSignal,
 	): Promise<string> {
@@ -144,14 +147,17 @@ export class OpenResponsesLoop {
 			}
 
 			// Tool call detected — count args only (text already counted incrementally)
-			const stepArgsTokens = Array.from(this.pendingFunctionCalls.values())
-				.reduce((sum, fc) => sum + estimateTokens(fc.arguments || ""), 0);
+			const stepArgsTokens = Array.from(
+				this.pendingFunctionCalls.values(),
+			).reduce((sum, fc) => sum + estimateTokens(fc.arguments || ""), 0);
 			runningTotal += stepArgsTokens;
 			this.onTokenUpdate?.(runningTotal);
 
 			// Execute pending function calls
-			const functionCallOutputs: Array<{ call_id: string; output: string }> =
-				[];
+			const functionCallOutputs: Array<{
+				call_id: string;
+				output: string;
+			}> = [];
 
 			for (const [call_id, fc] of this.pendingFunctionCalls) {
 				let args: Record<string, unknown>;
@@ -206,8 +212,10 @@ export class OpenResponsesLoop {
 			);
 
 			// Count tool results
-			const stepResultTokens = functionCallOutputs
-				.reduce((sum, output) => sum + estimateTokens(output.output), 0);
+			const stepResultTokens = functionCallOutputs.reduce(
+				(sum, output) => sum + estimateTokens(output.output),
+				0,
+			);
 			runningTotal += stepResultTokens;
 			this.onTokenUpdate?.(runningTotal);
 
@@ -250,7 +258,8 @@ export class OpenResponsesLoop {
 			);
 		}
 
-		const totalTokens = runningTotal > 0 ? runningTotal : estimateTokens(finalText);
+		const totalTokens =
+			runningTotal > 0 ? runningTotal : estimateTokens(finalText);
 		this.onTokenUpdate?.(totalTokens);
 
 		return finalText;

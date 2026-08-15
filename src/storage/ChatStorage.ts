@@ -1,5 +1,10 @@
 import type { App } from "obsidian";
-import type { StoredChatData, ChatSession, ChatMessage, ContextItem } from "../types";
+import type {
+	StoredChatData,
+	ChatSession,
+	ChatMessage,
+	ContextItem,
+} from "../types";
 import type { ObsidianAISettings } from "../settings";
 
 export interface StorageDeps {
@@ -17,7 +22,10 @@ export interface ChatStorage {
 	detectLegacyFormat(): Promise<boolean>;
 }
 
-export function createStorage(deps: StorageDeps, format: "legacy" | "jsonl"): ChatStorage {
+export function createStorage(
+	deps: StorageDeps,
+	format: "legacy" | "jsonl",
+): ChatStorage {
 	if (format === "jsonl") {
 		return new JsonlStorage(deps);
 	}
@@ -32,7 +40,10 @@ class LegacyStorage implements ChatStorage {
 	constructor(private deps: StorageDeps) {}
 
 	async loadChatData(): Promise<StoredChatData> {
-		this.deps.logger?.log("info", "LegacyStorage: loadChatData reading data.json");
+		this.deps.logger?.log(
+			"info",
+			"LegacyStorage: loadChatData reading data.json",
+		);
 		const data = await this.deps.loadData();
 
 		if (data?.chatData && Array.isArray(data.chatData.sessions)) {
@@ -66,11 +77,17 @@ class LegacyStorage implements ChatStorage {
 	}
 
 	async saveChatData(data: StoredChatData): Promise<void> {
-		this.deps.logger?.log("info", "LegacyStorage: saveChatData writing data.json");
+		this.deps.logger?.log(
+			"info",
+			"LegacyStorage: saveChatData writing data.json",
+		);
 		const existing = (await this.deps.loadData()) ?? {};
 		const payload = { ...existing, chatData: data };
 		await this.deps.saveData(payload);
-		this.deps.logger?.log("info", "LegacyStorage: data.json written successfully");
+		this.deps.logger?.log(
+			"info",
+			"LegacyStorage: data.json written successfully",
+		);
 	}
 
 	async detectLegacyFormat(): Promise<boolean> {
@@ -92,7 +109,13 @@ interface SessionIndexEntry {
 	filePath: string;
 	profileId?: string;
 	isGroupChat?: boolean;
-	participants?: { id: string; name: string; profileId: string; color: string; icon?: string }[];
+	participants?: {
+		id: string;
+		name: string;
+		profileId: string;
+		color: string;
+		icon?: string;
+	}[];
 	selectedProfileIds?: string[];
 	thinkingEnabled?: boolean;
 	contextItems?: ContextItem[];
@@ -144,7 +167,9 @@ class JsonlStorage implements ChatStorage {
 
 		const sessions: ChatSession[] = await Promise.all(
 			index.sessions.map(async (entry) => {
-				const messages = await this._loadMessages(`${pluginDir}/${entry.filePath}`);
+				const messages = await this._loadMessages(
+					`${pluginDir}/${entry.filePath}`,
+				);
 				return {
 					id: entry.id,
 					title: entry.title,
@@ -164,7 +189,13 @@ class JsonlStorage implements ChatStorage {
 
 		this.lastSavedState = {
 			sessions: new Map(
-				sessions.map((s) => [s.id, { messageIds: s.messages.map((m) => m.id), updatedAt: s.updatedAt }]),
+				sessions.map((s) => [
+					s.id,
+					{
+						messageIds: s.messages.map((m) => m.id),
+						updatedAt: s.updatedAt,
+					},
+				]),
 			),
 			activeSessionId: index.activeSessionId,
 		};
@@ -194,7 +225,11 @@ class JsonlStorage implements ChatStorage {
 			const previous = this.lastSavedState?.sessions.get(session.id);
 			const previousMessageIds = previous?.messageIds ?? null;
 
-			await this._writeMessages(fullPath, session.messages, previousMessageIds);
+			await this._writeMessages(
+				fullPath,
+				session.messages,
+				previousMessageIds,
+			);
 
 			indexEntries.push({
 				id: session.id,
@@ -220,11 +255,20 @@ class JsonlStorage implements ChatStorage {
 			openSessionIds: data.openSessionIds,
 		};
 
-		await adapter.write(`${sessionsDir}/index.json`, JSON.stringify(index, null, 2));
+		await adapter.write(
+			`${sessionsDir}/index.json`,
+			JSON.stringify(index, null, 2),
+		);
 
 		this.lastSavedState = {
 			sessions: new Map(
-				data.sessions.map((s) => [s.id, { messageIds: s.messages.map((m) => m.id), updatedAt: s.updatedAt }]),
+				data.sessions.map((s) => [
+					s.id,
+					{
+						messageIds: s.messages.map((m) => m.id),
+						updatedAt: s.updatedAt,
+					},
+				]),
 			),
 			activeSessionId: data.activeSessionId,
 		};
@@ -252,10 +296,16 @@ class JsonlStorage implements ChatStorage {
 				) {
 					messages.push(parsed as ChatMessage);
 				} else {
-					this.deps.logger?.log("warn", `ChatStorage: skipping malformed message line in ${path}`);
+					this.deps.logger?.log(
+						"warn",
+						`ChatStorage: skipping malformed message line in ${path}`,
+					);
 				}
 			} catch {
-				this.deps.logger?.log("warn", `ChatStorage: failed to parse message line in ${path}`);
+				this.deps.logger?.log(
+					"warn",
+					`ChatStorage: failed to parse message line in ${path}`,
+				);
 			}
 		}
 		return messages;
@@ -271,12 +321,15 @@ class JsonlStorage implements ChatStorage {
 		const canAppend =
 			previousMessageIds !== null &&
 			messages.length >= previousMessageIds.length &&
-			messages.slice(0, previousMessageIds.length).every((m, i) => m.id === previousMessageIds[i]);
+			messages
+				.slice(0, previousMessageIds.length)
+				.every((m, i) => m.id === previousMessageIds[i]);
 
 		if (canAppend) {
 			const newMessages = messages.slice(previousMessageIds.length);
 			if (newMessages.length > 0) {
-				const lines = newMessages.map((m) => JSON.stringify(m)).join("\n") + "\n";
+				const lines =
+					newMessages.map((m) => JSON.stringify(m)).join("\n") + "\n";
 				await adapter.append(path, lines);
 			}
 		} else {

@@ -43,10 +43,13 @@ export function summarizeLlmUsage(sessions: ChatSession[]): LlmUsageStats {
 		inputEstimatedTokens,
 		outputEstimatedTokens,
 		completedResponses,
-		averageResponseTimeMs: measuredResponseCount > 0
-			? Math.round(responseTimeTotal / measuredResponseCount)
-			: null,
-		modelEstimatedTokens: Array.from(modelTokens, ([model, tokens]) => ({ model, tokens }))
-			.sort((a, b) => b.tokens - a.tokens),
+		averageResponseTimeMs:
+			measuredResponseCount > 0
+				? Math.round(responseTimeTotal / measuredResponseCount)
+				: null,
+		modelEstimatedTokens: Array.from(modelTokens, ([model, tokens]) => ({
+			model,
+			tokens,
+		})).sort((a, b) => b.tokens - a.tokens),
 	};
 }

@@ -101,11 +101,17 @@ export function useChatUI(): UseChatUIResult {
 	const [showContextPicker, setShowContextPicker] = useState(false);
 
 	const openSessionPicker = useCallback(() => setShowSessionPicker(true), []);
-	const closeSessionPicker = useCallback(() => setShowSessionPicker(false), []);
+	const closeSessionPicker = useCallback(
+		() => setShowSessionPicker(false),
+		[],
+	);
 	const openExportModal = useCallback(() => setShowExportModal(true), []);
 	const closeExportModal = useCallback(() => setShowExportModal(false), []);
 	const openContextPicker = useCallback(() => setShowContextPicker(true), []);
-	const closeContextPicker = useCallback(() => setShowContextPicker(false), []);
+	const closeContextPicker = useCallback(
+		() => setShowContextPicker(false),
+		[],
+	);
 
 	// --- Zen / Debate ---
 	const [zenMode, setZenMode] = useState(false);
@@ -116,7 +122,10 @@ export function useChatUI(): UseChatUIResult {
 
 	// --- Thinking display ---
 	const [showThinking, setShowThinking] = useState(false);
-	const toggleShowThinking = useCallback(() => setShowThinking((t) => !t), []);
+	const toggleShowThinking = useCallback(
+		() => setShowThinking((t) => !t),
+		[],
+	);
 
 	// --- Participants ---
 	const [selectedProfileIds, setSelectedProfileIds] = useState<Set<string>>(
@@ -134,7 +143,8 @@ export function useChatUI(): UseChatUIResult {
 		});
 	}, []);
 
-	const [showParticipantDropdown, setShowParticipantDropdown] = useState(false);
+	const [showParticipantDropdown, setShowParticipantDropdown] =
+		useState(false);
 	const toggleParticipantDropdown = useCallback(
 		() => setShowParticipantDropdown((s) => !s),
 		[],
@@ -163,7 +173,9 @@ export function useChatUI(): UseChatUIResult {
 
 	// --- Remote users ---
 	const [connectedUsers, setConnectedUsers] = useState<string[]>([]);
-	const [selectedRemoteUserIds, setSelectedRemoteUserIds] = useState<Set<string>>(new Set());
+	const [selectedRemoteUserIds, setSelectedRemoteUserIds] = useState<
+		Set<string>
+	>(new Set());
 	const toggleRemoteUser = useCallback((userId: string) => {
 		setSelectedRemoteUserIds((prev) => {
 			const next = new Set(prev);
@@ -247,10 +259,13 @@ export function useChatUI(): UseChatUIResult {
 
 	// --- Message selection ---
 	const [selectionMode, setSelectionMode] = useState(false);
-	const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
+	const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(
+		new Set(),
+	);
 	const enterSelectionMode = useCallback((messageId?: string) => {
 		setSelectionMode(true);
-		if (messageId) setSelectedMessageIds((prev) => new Set(prev).add(messageId));
+		if (messageId)
+			setSelectedMessageIds((prev) => new Set(prev).add(messageId));
 	}, []);
 	const toggleMessageSelection = useCallback((messageId: string) => {
 		setSelectedMessageIds((prev) => {

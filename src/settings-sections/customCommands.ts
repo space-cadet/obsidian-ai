@@ -5,7 +5,10 @@ import { createSection } from "./helpers";
 export function renderCustomCommandsSection(
 	containerEl: HTMLElement,
 	plugin: ObsidianAIPlugin,
-	saveSettings: (options?: { refresh?: boolean; quiet?: boolean }) => Promise<void>,
+	saveSettings: (options?: {
+		refresh?: boolean;
+		quiet?: boolean;
+	}) => Promise<void>,
 ): void {
 	const sectionEl = createSection(
 		containerEl,
@@ -54,10 +57,7 @@ export function renderCustomCommandsSection(
 					.setIcon("trash")
 					.setTooltip("Delete this command")
 					.onClick(async () => {
-						plugin.settings.customCommands.splice(
-							index,
-							1,
-						);
+						plugin.settings.customCommands.splice(index, 1);
 						await saveSettings({
 							refresh: true,
 							quiet: true,

@@ -13,7 +13,7 @@ async function servePreview(): Promise<{ url: string; stop: () => void }> {
 		try {
 			const filePath = join(
 				PREVIEW_DIR,
-				req.url === "/" ? "index.html" : req.url!
+				req.url === "/" ? "index.html" : req.url!,
 			);
 			const data = await readFile(filePath);
 			const ext = filePath.split(".").pop();
@@ -31,7 +31,9 @@ async function servePreview(): Promise<{ url: string; stop: () => void }> {
 		}
 	});
 
-	await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+	await new Promise<void>((resolve) =>
+		server.listen(0, "127.0.0.1", resolve),
+	);
 	const addr = server.address();
 	const port = typeof addr === "object" && addr ? addr.port : 0;
 	const url = `http://127.0.0.1:${port}`;
@@ -83,10 +85,10 @@ test.describe("Preview: mobile viewport", () => {
 
 		// Check that the transcript container has scrollable overflow
 		const scrollHeight = await transcript.evaluate(
-			(el: HTMLElement) => el.scrollHeight
+			(el: HTMLElement) => el.scrollHeight,
 		);
 		const clientHeight = await transcript.evaluate(
-			(el: HTMLElement) => el.clientHeight
+			(el: HTMLElement) => el.clientHeight,
 		);
 
 		// If there are enough messages to overflow, verify scrolling works
@@ -95,7 +97,7 @@ test.describe("Preview: mobile viewport", () => {
 				el.scrollTop = el.scrollHeight;
 			});
 			const scrollTop = await transcript.evaluate(
-				(el: HTMLElement) => el.scrollTop
+				(el: HTMLElement) => el.scrollTop,
 			);
 			expect(scrollTop).toBeGreaterThan(0);
 		}
@@ -140,11 +142,15 @@ test.describe("Preview: desktop viewport", () => {
 			timeout: 5000,
 		});
 
-		await expect(page.locator('[data-testid="chat-toolbar"]')).toBeVisible();
 		await expect(
-			page.locator('[data-testid="chat-transcript"]')
+			page.locator('[data-testid="chat-toolbar"]'),
 		).toBeVisible();
-		await expect(page.locator('[data-testid="chat-composer"]')).toBeVisible();
+		await expect(
+			page.locator('[data-testid="chat-transcript"]'),
+		).toBeVisible();
+		await expect(
+			page.locator('[data-testid="chat-composer"]'),
+		).toBeVisible();
 	});
 
 	test("session picker modal opens and closes", async ({ page }) => {
@@ -158,13 +164,13 @@ test.describe("Preview: desktop viewport", () => {
 		// Click history button (🕐 icon in toolbar)
 		await page.click('[data-testid="history-button"]');
 		await expect(
-			page.locator('[data-testid="session-picker-modal"]')
+			page.locator('[data-testid="session-picker-modal"]'),
 		).toBeVisible();
 
 		// Close modal by clicking the × button
-		await page.click('.chat-modal-close');
+		await page.click(".chat-modal-close");
 		await expect(
-			page.locator('[data-testid="session-picker-modal"]')
+			page.locator('[data-testid="session-picker-modal"]'),
 		).not.toBeVisible();
 	});
 });

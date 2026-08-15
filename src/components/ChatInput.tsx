@@ -1,13 +1,25 @@
-import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import React, {
+	useState,
+	useRef,
+	useCallback,
+	useEffect,
+	useMemo,
+} from "react";
 import { App, Notice, TFile, TFolder } from "obsidian";
 import { ContextItem } from "../types";
-import { createAttachment, createExternalAttachment } from "../context/AttachmentEngine";
+import {
+	createAttachment,
+	createExternalAttachment,
+} from "../context/AttachmentEngine";
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
 
 interface ChatInputProps {
 	app: App;
 	plugin: ChatPluginLike;
-	onSend: (text: string, attachments?: import("../types").Attachment[]) => void;
+	onSend: (
+		text: string,
+		attachments?: import("../types").Attachment[],
+	) => void;
 	onStop: () => void;
 	onAddMention: (item: ContextItem) => void;
 	isStreaming: boolean;
@@ -21,7 +33,9 @@ interface ChatInputProps {
 	/** Current attachments (for rendering chips) */
 	attachments?: import("../types").Attachment[];
 	/** Callback when attachments change */
-	onAttachmentsChange?: (attachments: import("../types").Attachment[]) => void;
+	onAttachmentsChange?: (
+		attachments: import("../types").Attachment[],
+	) => void;
 	/** Whether pressing Enter sends the message (Shift+Enter for newline) */
 	pressEnterToSend?: boolean;
 	/** Optional token total string to display next to toggles */
@@ -91,9 +105,24 @@ function detectAutocomplete(
 }
 
 const SLASH_COMMANDS: AutoCandidate[] = [
-	{ key: "slash:edit", label: "/edit [[Note]] prompt", icon: "✏️", type: "slash" },
-	{ key: "slash:create", label: "/create [[Note]] prompt", icon: "📝", type: "slash" },
-	{ key: "slash:append", label: "/append [[Note]] prompt", icon: "➕", type: "slash" },
+	{
+		key: "slash:edit",
+		label: "/edit [[Note]] prompt",
+		icon: "✏️",
+		type: "slash",
+	},
+	{
+		key: "slash:create",
+		label: "/create [[Note]] prompt",
+		icon: "📝",
+		type: "slash",
+	},
+	{
+		key: "slash:append",
+		label: "/append [[Note]] prompt",
+		icon: "➕",
+		type: "slash",
+	},
 ];
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -140,72 +169,99 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		return () => document.removeEventListener("mousedown", handleClick);
 	}, [showAttachDropdown]);
 
-	const handleAttachFile = useCallback((type: "note" | "image" | "pdf") => {
-		setShowAttachDropdown(false);
-		const files = app.vault.getAllLoadedFiles().filter((f) => {
-			if (!(f instanceof TFile)) return false;
-			if (type === "note") return f.extension === "md";
-			if (type === "image") return ["png", "jpg", "jpeg", "gif", "webp", "bmp"].includes(f.extension);
-			if (type === "pdf") return f.extension === "pdf";
-			return false;
-		}) as TFile[];
+	const handleAttachFile = useCallback(
+		(type: "note" | "image" | "pdf") => {
+			setShowAttachDropdown(false);
+			const files = app.vault.getAllLoadedFiles().filter((f) => {
+				if (!(f instanceof TFile)) return false;
+				if (type === "note") return f.extension === "md";
+				if (type === "image")
+					return [
+						"png",
+						"jpg",
+						"jpeg",
+						"gif",
+						"webp",
+						"bmp",
+					].includes(f.extension);
+				if (type === "pdf") return f.extension === "pdf";
+				return false;
+			}) as TFile[];
 
-		if (files.length === 0) {
-			new Notice(`No ${type} files found in vault.`);
-			return;
-		}
-
-		const modal = document.body.createEl("div", { cls: "chat-attach-modal" });
-		const content = modal.createEl("div", { cls: "chat-attach-modal-content" });
-		content.createEl("h4", {
-			text: `Select ${type === "note" ? "Note" : type === "image" ? "Image" : "PDF"}`,
-		});
-		const list = content.createEl("div", { cls: "chat-attach-list" });
-		const cancelButton = content.createEl("button", {
-			text: "Cancel",
-			cls: "chat-btn chat-attach-cancel",
-		});
-		files.forEach((file) => {
-			const item = list.createEl("div", {
-				text: file.path,
-				cls: "chat-attach-item",
-			});
-			item.addEventListener("click", () => {
-				const att = createAttachment(file.path);
-				onAttachmentsChange?.([...attachments, att]);
-				modal.remove();
-			});
-		});
-		cancelButton.addEventListener("click", () => modal.remove());
-	}, [app, attachments, onAttachmentsChange]);
-
-	const handleRemoveAttachment = useCallback((id: string) => {
-		onAttachmentsChange?.(attachments.filter((a) => a.id !== id));
-	}, [attachments, onAttachmentsChange]);
-
-	const handleFiles = useCallback(async (files: FileList | null) => {
-		if (!files || files.length === 0) return;
-		const newAttachments: import("../types").Attachment[] = [];
-		for (const file of Array.from(files)) {
-			try {
-				const att = await createExternalAttachment(file);
-				newAttachments.push(att);
-			} catch (e) {
-				new Notice(`Failed to attach file: ${file.name}`);
-				console.error("[ChatInput] Failed to attach external file:", e);
+			if (files.length === 0) {
+				new Notice(`No ${type} files found in vault.`);
+				return;
 			}
-		}
-		if (newAttachments.length > 0) {
-			onAttachmentsChange?.([...attachments, ...newAttachments]);
-		}
-	}, [attachments, onAttachmentsChange]);
 
-	const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-		handleFiles(e.target.files);
-		if (fileInputRef.current) {
-			fileInputRef.current.value = "";
-		}
-	}, [handleFiles]);
+			const modal = document.body.createEl("div", {
+				cls: "chat-attach-modal",
+			});
+			const content = modal.createEl("div", {
+				cls: "chat-attach-modal-content",
+			});
+			content.createEl("h4", {
+				text: `Select ${type === "note" ? "Note" : type === "image" ? "Image" : "PDF"}`,
+			});
+			const list = content.createEl("div", { cls: "chat-attach-list" });
+			const cancelButton = content.createEl("button", {
+				text: "Cancel",
+				cls: "chat-btn chat-attach-cancel",
+			});
+			files.forEach((file) => {
+				const item = list.createEl("div", {
+					text: file.path,
+					cls: "chat-attach-item",
+				});
+				item.addEventListener("click", () => {
+					const att = createAttachment(file.path);
+					onAttachmentsChange?.([...attachments, att]);
+					modal.remove();
+				});
+			});
+			cancelButton.addEventListener("click", () => modal.remove());
+		},
+		[app, attachments, onAttachmentsChange],
+	);
+
+	const handleRemoveAttachment = useCallback(
+		(id: string) => {
+			onAttachmentsChange?.(attachments.filter((a) => a.id !== id));
+		},
+		[attachments, onAttachmentsChange],
+	);
+
+	const handleFiles = useCallback(
+		async (files: FileList | null) => {
+			if (!files || files.length === 0) return;
+			const newAttachments: import("../types").Attachment[] = [];
+			for (const file of Array.from(files)) {
+				try {
+					const att = await createExternalAttachment(file);
+					newAttachments.push(att);
+				} catch (e) {
+					new Notice(`Failed to attach file: ${file.name}`);
+					console.error(
+						"[ChatInput] Failed to attach external file:",
+						e,
+					);
+				}
+			}
+			if (newAttachments.length > 0) {
+				onAttachmentsChange?.([...attachments, ...newAttachments]);
+			}
+		},
+		[attachments, onAttachmentsChange],
+	);
+
+	const handleFileInputChange = useCallback(
+		(e: React.ChangeEvent<HTMLInputElement>) => {
+			handleFiles(e.target.files);
+			if (fileInputRef.current) {
+				fileInputRef.current.value = "";
+			}
+		},
+		[handleFiles],
+	);
 
 	const handleAttachExternal = useCallback(() => {
 		setShowAttachDropdown(false);
@@ -240,9 +296,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
 		const candidates: AutoCandidate[] = [];
 
-		for (const file of app.vault.getMarkdownFiles().sort(
-			(a, b) => b.stat.mtime - a.stat.mtime,
-		)) {
+		for (const file of app.vault
+			.getMarkdownFiles()
+			.sort((a, b) => b.stat.mtime - a.stat.mtime)) {
 			candidates.push({
 				key: `note:${file.path}`,
 				label: file.basename,
@@ -259,7 +315,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		const basenameCounts = new Map<string, number>();
 		for (const c of candidates) {
 			if (c.contextType === "note") {
-				basenameCounts.set(c.label, (basenameCounts.get(c.label) || 0) + 1);
+				basenameCounts.set(
+					c.label,
+					(basenameCounts.get(c.label) || 0) + 1,
+				);
 			}
 		}
 		const getParentFolder = (filePath: string): string => {
@@ -271,7 +330,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
 			if (c.contextType !== "note" || !c.path) continue;
 			if (pathDisplay === "always") {
 				c.folderPath = getParentFolder(c.path);
-			} else if (pathDisplay === "duplicates" && basenameCounts.get(c.label)! > 1) {
+			} else if (
+				pathDisplay === "duplicates" &&
+				basenameCounts.get(c.label)! > 1
+			) {
 				c.folderPath = getParentFolder(c.path);
 			}
 		}
@@ -318,27 +380,29 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		if (!q) return allCandidates;
 
 		// Score each candidate by match quality
-		const scored = allCandidates.map((c) => {
-			const label = c.label.toLowerCase();
-			const path = (c.path || "").toLowerCase();
-			let score = 0;
+		const scored = allCandidates
+			.map((c) => {
+				const label = c.label.toLowerCase();
+				const path = (c.path || "").toLowerCase();
+				let score = 0;
 
-			if (label === q || path === q) score = 100;
-			else if (label.startsWith(q)) score = 80;
-			else if (path.startsWith(q)) score = 70;
-			else if (label.includes(q)) score = 60;
-			else if (path.includes(q)) score = 50;
-			else {
-				// Check if all query words appear in label or path
-				const words = q.split(/\s+/).filter(Boolean);
-				const allInLabel = words.every((w) => label.includes(w));
-				const allInPath = words.every((w) => path.includes(w));
-				if (allInLabel) score = 40;
-				else if (allInPath) score = 30;
-			}
+				if (label === q || path === q) score = 100;
+				else if (label.startsWith(q)) score = 80;
+				else if (path.startsWith(q)) score = 70;
+				else if (label.includes(q)) score = 60;
+				else if (path.includes(q)) score = 50;
+				else {
+					// Check if all query words appear in label or path
+					const words = q.split(/\s+/).filter(Boolean);
+					const allInLabel = words.every((w) => label.includes(w));
+					const allInPath = words.every((w) => path.includes(w));
+					if (allInLabel) score = 40;
+					else if (allInPath) score = 30;
+				}
 
-			return { candidate: c, score };
-		}).filter((s) => s.score > 0);
+				return { candidate: c, score };
+			})
+			.filter((s) => s.score > 0);
 
 		scored.sort((a, b) => b.score - a.score);
 		return scored.map((s) => s.candidate);
@@ -500,7 +564,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
 					e.preventDefault();
 					const trimmed = value.trim();
 					if ((trimmed || attachments.length > 0) && !isStreaming) {
-						onSend(trimmed, attachments.length > 0 ? attachments : undefined);
+						onSend(
+							trimmed,
+							attachments.length > 0 ? attachments : undefined,
+						);
 						setValue("");
 						onDraftChange?.("");
 						setAuto(null);
@@ -537,12 +604,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		setIsDragOver(false);
 	}, []);
 
-	const handleDrop = useCallback((e: React.DragEvent) => {
-		e.preventDefault();
-		e.stopPropagation();
-		setIsDragOver(false);
-		handleFiles(e.dataTransfer.files);
-	}, [handleFiles]);
+	const handleDrop = useCallback(
+		(e: React.DragEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			setIsDragOver(false);
+			handleFiles(e.dataTransfer.files);
+		},
+		[handleFiles],
+	);
 
 	/** Parse text and wrap @mentions and [[wikilinks]] in pill spans for the overlay */
 	const renderMentionOverlay = (text: string): React.ReactNode[] => {
@@ -553,14 +623,29 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		// Find all @mentions and [[wikilinks]] in the text
 		const mentionRegex = /@([^\s]+)/g;
 		const wikilinkRegex = /\[\[([^\]]+)\]\]/g;
-		const matches: { start: number; end: number; text: string; type: "mention" | "wikilink" }[] = [];
+		const matches: {
+			start: number;
+			end: number;
+			text: string;
+			type: "mention" | "wikilink";
+		}[] = [];
 
 		let m;
 		while ((m = mentionRegex.exec(text)) !== null) {
-			matches.push({ start: m.index, end: m.index + m[0].length, text: m[0], type: "mention" });
+			matches.push({
+				start: m.index,
+				end: m.index + m[0].length,
+				text: m[0],
+				type: "mention",
+			});
 		}
 		while ((m = wikilinkRegex.exec(text)) !== null) {
-			matches.push({ start: m.index, end: m.index + m[0].length, text: m[0], type: "wikilink" });
+			matches.push({
+				start: m.index,
+				end: m.index + m[0].length,
+				text: m[0],
+				type: "wikilink",
+			});
 		}
 
 		matches.sort((a, b) => a.start - b.start);
@@ -625,9 +710,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
 					))}
 				</div>
 			)}
-			<div className={`chat-input-wrapper${isDragOver ? " drag-over" : ""}`}>
+			<div
+				className={`chat-input-wrapper${isDragOver ? " drag-over" : ""}`}
+			>
 				{/* Row 1: Textarea + send button */}
-				<div className="chat-input-row" style={{ position: "relative" }}>
+				<div
+					className="chat-input-row"
+					style={{ position: "relative" }}
+				>
 					<div className="chat-textarea-overlay" aria-hidden="true">
 						{renderMentionOverlay(value)}
 					</div>
@@ -657,15 +747,27 @@ const ChatInput: React.FC<ChatInputProps> = ({
 									className="chat-btn chat-send-btn chat-send-icon"
 									onClick={() => {
 										const trimmed = value.trim();
-										if ((trimmed || attachments.length > 0) && !isStreaming) {
-											onSend(trimmed, attachments.length > 0 ? attachments : undefined);
+										if (
+											(trimmed ||
+												attachments.length > 0) &&
+											!isStreaming
+										) {
+											onSend(
+												trimmed,
+												attachments.length > 0
+													? attachments
+													: undefined,
+											);
 											setValue("");
 											setAuto(null);
 											onDraftChange?.("");
 											onAttachmentsChange?.([]);
 										}
 									}}
-									disabled={!value.trim() && attachments.length === 0}
+									disabled={
+										!value.trim() &&
+										attachments.length === 0
+									}
 									title="Resubmit"
 								>
 									▶
@@ -688,15 +790,25 @@ const ChatInput: React.FC<ChatInputProps> = ({
 								className="chat-btn chat-send-btn chat-send-icon"
 								onClick={() => {
 									const trimmed = value.trim();
-									if ((trimmed || attachments.length > 0) && !isStreaming) {
-										onSend(trimmed, attachments.length > 0 ? attachments : undefined);
+									if (
+										(trimmed || attachments.length > 0) &&
+										!isStreaming
+									) {
+										onSend(
+											trimmed,
+											attachments.length > 0
+												? attachments
+												: undefined,
+										);
 										setValue("");
 										setAuto(null);
 										onDraftChange?.("");
 										onAttachmentsChange?.([]);
 									}
 								}}
-								disabled={!value.trim() && attachments.length === 0}
+								disabled={
+									!value.trim() && attachments.length === 0
+								}
 								title="Send"
 							>
 								▶
@@ -711,12 +823,20 @@ const ChatInput: React.FC<ChatInputProps> = ({
 						{attachments.map((att) => (
 							<div key={att.id} className="chat-attachment-chip">
 								<span className="chat-attachment-icon">
-									{att.type === "image" ? "🖼️" : att.type === "pdf" ? "📑" : "📄"}
+									{att.type === "image"
+										? "🖼️"
+										: att.type === "pdf"
+											? "📑"
+											: "📄"}
 								</span>
-								<span className="chat-attachment-name">{att.name}</span>
+								<span className="chat-attachment-name">
+									{att.name}
+								</span>
 								<button
 									className="chat-attachment-remove"
-									onClick={() => handleRemoveAttachment(att.id)}
+									onClick={() =>
+										handleRemoveAttachment(att.id)
+									}
 									title="Remove attachment"
 									type="button"
 								>
@@ -724,7 +844,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
 								</button>
 							</div>
 						))}
-						<div style={{ position: "relative" }} ref={attachDropdownRef}>
+						<div
+							style={{ position: "relative" }}
+							ref={attachDropdownRef}
+						>
 							<button
 								className="chat-input-attach"
 								onClick={() => setShowAttachDropdown((v) => !v)}
@@ -783,14 +906,20 @@ const ChatInput: React.FC<ChatInputProps> = ({
 							<button
 								className={`chat-input-thinking${thinkingEnabled ? " is-active" : ""}`}
 								onClick={onToggleThinking}
-								title={thinkingEnabled ? "Thinking mode ON — Click to disable" : "Thinking mode OFF — Click to enable"}
+								title={
+									thinkingEnabled
+										? "Thinking mode ON — Click to disable"
+										: "Thinking mode OFF — Click to enable"
+								}
 								type="button"
 							>
 								{thinkingEnabled ? "🧠" : "💤"}
 							</button>
 						)}
 						{tokenTotal && (
-							<span className="chat-input-token-total">{tokenTotal}</span>
+							<span className="chat-input-token-total">
+								{tokenTotal}
+							</span>
 						)}
 					</div>
 				</div>

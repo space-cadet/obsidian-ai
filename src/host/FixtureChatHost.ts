@@ -75,7 +75,8 @@ export class FixtureChatHost implements ChatHost {
 	): void {
 		// Simple alert for preview
 		const choice = window.prompt(
-			"Context menu:\n" + items.map((i, idx) => `${idx}: ${i.label}`).join("\n"),
+			"Context menu:\n" +
+				items.map((i, idx) => `${idx}: ${i.label}`).join("\n"),
 		);
 		const idx = parseInt(choice ?? "", 10);
 		if (!isNaN(idx) && items[idx]) {

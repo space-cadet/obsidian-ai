@@ -12,7 +12,9 @@ interface UseSessionActionsOptions {
 	activeSessionIdRef: React.MutableRefObject<string | null>;
 	setSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>;
 	setActiveSessionId: React.Dispatch<React.SetStateAction<string | null>>;
-	setScrollToMessageId: React.Dispatch<React.SetStateAction<string | undefined>>;
+	setScrollToMessageId: React.Dispatch<
+		React.SetStateAction<string | undefined>
+	>;
 	createNewSession: (opts?: {
 		includeActiveNote?: boolean;
 		selectedProfileIds?: string[];
@@ -62,7 +64,6 @@ export function useSessionActions({
 	openSessionIds,
 	setOpenSessionIds,
 }: UseSessionActionsOptions): UseSessionActionsResult {
-
 	const openSessionInTab = useCallback(
 		(sessionId: string, messageId?: string) => {
 			setOpenSessionIds((current) =>
@@ -90,7 +91,9 @@ export function useSessionActions({
 	// Keep openSessionIds in sync with active session and session list
 	useEffect(() => {
 		const knownIds = new Set(sessionsRef.current.map((s) => s.id));
-		setOpenSessionIds((current) => current.filter((id) => knownIds.has(id)));
+		setOpenSessionIds((current) =>
+			current.filter((id) => knownIds.has(id)),
+		);
 	}, [sessionsRef]);
 
 	const handleNewChat = useCallback(() => {
@@ -124,15 +127,34 @@ export function useSessionActions({
 		}
 		setDebateMode(false);
 		setWasTruncated(false);
-	}, [isStreaming, plugin, createNewSession, setSelectedProfileIds, getSelectedProfileIds, setDebateMode, setWasTruncated, abortActiveRuntime, activeSessionIdRef, sessionsRef]);
+	}, [
+		isStreaming,
+		plugin,
+		createNewSession,
+		setSelectedProfileIds,
+		getSelectedProfileIds,
+		setDebateMode,
+		setWasTruncated,
+		abortActiveRuntime,
+		activeSessionIdRef,
+		sessionsRef,
+	]);
 
 	const handleLoadSession = useCallback(
 		(sessionId: string) => {
 			const session = sessionsRef.current.find((s) => s.id === sessionId);
-			if (session?.selectedProfileIds && session.selectedProfileIds.length > 0) {
+			if (
+				session?.selectedProfileIds &&
+				session.selectedProfileIds.length > 0
+			) {
 				setSelectedProfileIds(new Set(session.selectedProfileIds));
-			} else if (session?.participants && session.participants.length > 0) {
-				setSelectedProfileIds(new Set(session.participants.map((p) => p.id)));
+			} else if (
+				session?.participants &&
+				session.participants.length > 0
+			) {
+				setSelectedProfileIds(
+					new Set(session.participants.map((p) => p.id)),
+				);
 			} else {
 				setSelectedProfileIds(new Set());
 			}
@@ -145,10 +167,13 @@ export function useSessionActions({
 	const handleCloseTab = useCallback(
 		(sessionId: string) => {
 			clearSessionRuntime(sessionId);
-			const isDraft = sessionsRef.current.find((session) => session.id === sessionId)
-				?.messages.length === 0;
+			const isDraft =
+				sessionsRef.current.find((session) => session.id === sessionId)
+					?.messages.length === 0;
 			if (isDraft) {
-				setSessions((current) => current.filter((session) => session.id !== sessionId));
+				setSessions((current) =>
+					current.filter((session) => session.id !== sessionId),
+				);
 			}
 			setOpenSessionIds((current) => {
 				if (current.length <= 1) {
@@ -170,7 +195,16 @@ export function useSessionActions({
 				return remaining;
 			});
 		},
-		[createNewSession, plugin.settings, setSessions, setActiveSessionId, setScrollToMessageId, activeSessionIdRef, sessionsRef, clearSessionRuntime],
+		[
+			createNewSession,
+			plugin.settings,
+			setSessions,
+			setActiveSessionId,
+			setScrollToMessageId,
+			activeSessionIdRef,
+			sessionsRef,
+			clearSessionRuntime,
+		],
 	);
 
 	const handleCloseOtherTabs = useCallback(
@@ -186,7 +220,12 @@ export function useSessionActions({
 				return [sessionId];
 			});
 		},
-		[setActiveSessionId, setScrollToMessageId, activeSessionIdRef, clearSessionRuntime],
+		[
+			setActiveSessionId,
+			setScrollToMessageId,
+			activeSessionIdRef,
+			clearSessionRuntime,
+		],
 	);
 
 	const handleCloseTabsToRight = useCallback(
@@ -203,7 +242,12 @@ export function useSessionActions({
 				return remaining;
 			});
 		},
-		[setActiveSessionId, setScrollToMessageId, activeSessionIdRef, clearSessionRuntime],
+		[
+			setActiveSessionId,
+			setScrollToMessageId,
+			activeSessionIdRef,
+			clearSessionRuntime,
+		],
 	);
 
 	const handleDeleteSession = useCallback(
@@ -216,10 +260,22 @@ export function useSessionActions({
 						(a, b) => b.updatedAt - a.updatedAt,
 					)[0];
 					if (mostRecent) {
-						if (mostRecent.selectedProfileIds && mostRecent.selectedProfileIds.length > 0) {
-							setSelectedProfileIds(new Set(mostRecent.selectedProfileIds));
-						} else if (mostRecent.participants && mostRecent.participants.length > 0) {
-							setSelectedProfileIds(new Set(mostRecent.participants.map((p) => p.id)));
+						if (
+							mostRecent.selectedProfileIds &&
+							mostRecent.selectedProfileIds.length > 0
+						) {
+							setSelectedProfileIds(
+								new Set(mostRecent.selectedProfileIds),
+							);
+						} else if (
+							mostRecent.participants &&
+							mostRecent.participants.length > 0
+						) {
+							setSelectedProfileIds(
+								new Set(
+									mostRecent.participants.map((p) => p.id),
+								),
+							);
 						} else {
 							setSelectedProfileIds(new Set());
 						}
@@ -245,7 +301,16 @@ export function useSessionActions({
 				return filtered;
 			});
 		},
-		[setSessions, setActiveSessionId, setSelectedProfileIds, setDebateMode, activeSessionIdRef, plugin.settings.includeActiveNote, profileId, clearSessionRuntime],
+		[
+			setSessions,
+			setActiveSessionId,
+			setSelectedProfileIds,
+			setDebateMode,
+			activeSessionIdRef,
+			plugin.settings.includeActiveNote,
+			profileId,
+			clearSessionRuntime,
+		],
 	);
 
 	const handleRenameSession = useCallback(

@@ -63,17 +63,26 @@ export function messageToMarkdown(msg: ChatMessage, index: number): string {
 
 /** Serialize an ordered subset of messages using the same Markdown format as chat exports. */
 export function serializeMessagesToMarkdown(messages: ChatMessage[]): string {
-	return messages.map((message, index) => messageToMarkdown(message, index)).join("\n---\n\n") + "\n";
+	return (
+		messages
+			.map((message, index) => messageToMarkdown(message, index))
+			.join("\n---\n\n") + "\n"
+	);
 }
 
 function sessionToMarkdown(session: ChatSession): string {
 	const title = session.title || `Chat ${formatDate(session.createdAt)}`;
 	const header = `# ${title}\n\n*Created:* ${formatDate(session.createdAt)}  \n*Updated:* ${formatDate(session.updatedAt)}  \n*Messages:* ${session.messages.length}\n\n---\n\n`;
-	const body = session.messages.map((m, i) => messageToMarkdown(m, i)).join("\n---\n\n");
+	const body = session.messages
+		.map((m, i) => messageToMarkdown(m, i))
+		.join("\n---\n\n");
 	return header + body + "\n";
 }
 
-export function serializeToMarkdown(sessions: ChatSession[], scope: ExportScope): string {
+export function serializeToMarkdown(
+	sessions: ChatSession[],
+	scope: ExportScope,
+): string {
 	if (scope === "single" && sessions.length === 1) {
 		return sessionToMarkdown(sessions[0]);
 	}
@@ -81,7 +90,8 @@ export function serializeToMarkdown(sessions: ChatSession[], scope: ExportScope)
 	const header = `# Exported Chat Sessions\n\n*Exported:* ${formatDate(Date.now())}  \n*Total sessions:* ${sessions.length}  \n*Total messages:* ${sessions.reduce((sum, s) => sum + s.messages.length, 0)}\n\n---\n\n`;
 	const body = sessions
 		.map((session, idx) => {
-			const title = session.title || `Chat ${formatDate(session.createdAt)}`;
+			const title =
+				session.title || `Chat ${formatDate(session.createdAt)}`;
 			return `## Session ${idx + 1}: ${title}\n\n*Created:* ${formatDate(session.createdAt)}  \n*Messages:* ${session.messages.length}\n\n${session.messages.map((m, i) => messageToMarkdown(m, i)).join("\n---\n\n")}`;
 		})
 		.join("\n\n---\n\n");
@@ -90,7 +100,10 @@ export function serializeToMarkdown(sessions: ChatSession[], scope: ExportScope)
 
 /** --- JSON export --- */
 
-export function serializeToJSON(sessions: ChatSession[], scope: ExportScope): string {
+export function serializeToJSON(
+	sessions: ChatSession[],
+	scope: ExportScope,
+): string {
 	if (scope === "single" && sessions.length === 1) {
 		return JSON.stringify(sessions[0], null, 2);
 	}
@@ -99,7 +112,10 @@ export function serializeToJSON(sessions: ChatSession[], scope: ExportScope): st
 			_exportedAt: new Date().toISOString(),
 			_exportVersion: "1.0",
 			count: sessions.length,
-			totalMessages: sessions.reduce((sum, s) => sum + s.messages.length, 0),
+			totalMessages: sessions.reduce(
+				(sum, s) => sum + s.messages.length,
+				0,
+			),
 			sessions,
 		},
 		null,
@@ -109,10 +125,15 @@ export function serializeToJSON(sessions: ChatSession[], scope: ExportScope): st
 
 /** --- JSONL export --- */
 
-export function serializeToJSONL(sessions: ChatSession[], scope: ExportScope): string {
+export function serializeToJSONL(
+	sessions: ChatSession[],
+	scope: ExportScope,
+): string {
 	if (scope === "single" && sessions.length === 1) {
 		// For a single session, each line is one message
-		return sessions[0].messages.map((m) => JSON.stringify(m)).join("\n") + "\n";
+		return (
+			sessions[0].messages.map((m) => JSON.stringify(m)).join("\n") + "\n"
+		);
 	}
 
 	// For multiple/all sessions, each line is one session (with messages nested)
@@ -140,10 +161,12 @@ export function generateFilename(
 }
 
 function sanitizeFilename(name: string): string {
-	return name
-		.replace(/[<>:"/\\|?*\x00-\x1f]/g, "-")
-		.replace(/\s+/g, "_")
-		.replace(/_+/g, "_")
-		.replace(/^-+|-+$/g, "")
-		.slice(0, 80) || "chat";
+	return (
+		name
+			.replace(/[<>:"/\\|?*\x00-\x1f]/g, "-")
+			.replace(/\s+/g, "_")
+			.replace(/_+/g, "_")
+			.replace(/^-+|-+$/g, "")
+			.slice(0, 80) || "chat"
+	);
 }

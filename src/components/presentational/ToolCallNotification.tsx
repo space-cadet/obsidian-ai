@@ -11,7 +11,13 @@ interface ToolCallNotificationProps {
 }
 
 /** Summarizes a tool call for inline display in the message area */
-function ToolCallSummary({ toolCall, result }: { toolCall: ToolCall; result?: ToolResult }): React.ReactElement {
+function ToolCallSummary({
+	toolCall,
+	result,
+}: {
+	toolCall: ToolCall;
+	result?: ToolResult;
+}): React.ReactElement {
 	const { toolName, args } = toolCall;
 	const path = (args as any).path ?? (args as any).noteName ?? "—";
 
@@ -24,21 +30,36 @@ function ToolCallSummary({ toolCall, result }: { toolCall: ToolCall; result?: To
 	const getActionLabel = () => {
 		if (result?.capabilityTitle) return result.capabilityTitle;
 		switch (toolName) {
-			case "read_note": return "Read note";
-			case "edit_note": return "Edited note";
-			case "create_note": return "Created note";
-			case "create_notes": return "Created notes";
-			case "append_to_note": return "Appended to note";
-			case "patch_note": return "Patched note";
-			case "edit_section": return "Edited section";
-			case "search_notes": return "Searched notes";
-			case "list_notes": return "Listed notes";
-			case "get_note_metadata": return "Got metadata";
-			case "create_folder": return "Created folder";
-			case "move_note": return "Moved note";
-			case "delete_note": return "Deleted note";
-			case "list_folders": return "Listed folders";
-			default: return toolName.replace(/[_.]/g, " ");
+			case "read_note":
+				return "Read note";
+			case "edit_note":
+				return "Edited note";
+			case "create_note":
+				return "Created note";
+			case "create_notes":
+				return "Created notes";
+			case "append_to_note":
+				return "Appended to note";
+			case "patch_note":
+				return "Patched note";
+			case "edit_section":
+				return "Edited section";
+			case "search_notes":
+				return "Searched notes";
+			case "list_notes":
+				return "Listed notes";
+			case "get_note_metadata":
+				return "Got metadata";
+			case "create_folder":
+				return "Created folder";
+			case "move_note":
+				return "Moved note";
+			case "delete_note":
+				return "Deleted note";
+			case "list_folders":
+				return "Listed folders";
+			default:
+				return toolName.replace(/[_.]/g, " ");
 		}
 	};
 
@@ -58,7 +79,9 @@ function ToolCallSummary({ toolCall, result }: { toolCall: ToolCall; result?: To
 			return `${path} — "${heading}"`;
 		}
 		if (toolName === "create_notes") {
-			const requested = Array.isArray((args as any).notes) ? (args as any).notes.length : 0;
+			const requested = Array.isArray((args as any).notes)
+				? (args as any).notes.length
+				: 0;
 			const created = result?.createdPaths?.length ?? result?.count;
 			const skipped = result?.skippedPaths?.length ?? 0;
 			return created === undefined
@@ -81,7 +104,15 @@ function ToolCallSummary({ toolCall, result }: { toolCall: ToolCall; result?: To
 }
 
 /** Expandable detail view for a tool call result */
-function ToolCallDetail({ toolCall, result, onOpenPastSession }: { toolCall: ToolCall; result?: ToolResult; onOpenPastSession?: (sessionId: string, messageId: string) => void }): React.ReactElement | null {
+function ToolCallDetail({
+	toolCall,
+	result,
+	onOpenPastSession,
+}: {
+	toolCall: ToolCall;
+	result?: ToolResult;
+	onOpenPastSession?: (sessionId: string, messageId: string) => void;
+}): React.ReactElement | null {
 	if (!result) return null;
 
 	const { toolName } = toolCall;
@@ -97,7 +128,10 @@ function ToolCallDetail({ toolCall, result, onOpenPastSession }: { toolCall: Too
 	if (toolName === "read_note" && result.content) {
 		return (
 			<div className="tool-call-detail-content">
-				<pre className="tool-call-preview">{result.content.slice(0, 500)}{result.content.length > 500 ? "…" : ""}</pre>
+				<pre className="tool-call-preview">
+					{result.content.slice(0, 500)}
+					{result.content.length > 500 ? "…" : ""}
+				</pre>
 			</div>
 		);
 	}
@@ -108,8 +142,12 @@ function ToolCallDetail({ toolCall, result, onOpenPastSession }: { toolCall: Too
 				<div className="tool-call-result-table">
 					{result.matches.map((m: any, i: number) => (
 						<div key={i} className="tool-call-result-row">
-							<span className="tool-call-result-name">[[{m.basename}]]</span>
-							<span className="tool-call-result-meta">{m.size ? `${m.size} bytes` : ""}</span>
+							<span className="tool-call-result-name">
+								[[{m.basename}]]
+							</span>
+							<span className="tool-call-result-meta">
+								{m.size ? `${m.size} bytes` : ""}
+							</span>
 						</div>
 					))}
 				</div>
@@ -123,8 +161,12 @@ function ToolCallDetail({ toolCall, result, onOpenPastSession }: { toolCall: Too
 				<div className="tool-call-result-table">
 					{result.notes.map((n: any, i: number) => (
 						<div key={i} className="tool-call-result-row">
-							<span className="tool-call-result-name">[[{n.basename}]]</span>
-							<span className="tool-call-result-meta">{n.size ? `${n.size} bytes` : ""}</span>
+							<span className="tool-call-result-name">
+								[[{n.basename}]]
+							</span>
+							<span className="tool-call-result-meta">
+								{n.size ? `${n.size} bytes` : ""}
+							</span>
 						</div>
 					))}
 				</div>
@@ -150,8 +192,18 @@ function ToolCallDetail({ toolCall, result, onOpenPastSession }: { toolCall: Too
 				<div className="tool-call-metadata">
 					<div>Size: {result.size ?? "—"} bytes</div>
 					<div>Words: {result.wordCount ?? "—"}</div>
-					<div>Created: {result.created ? new Date(result.created).toLocaleString() : "—"}</div>
-					<div>Modified: {result.modified ? new Date(result.modified).toLocaleString() : "—"}</div>
+					<div>
+						Created:{" "}
+						{result.created
+							? new Date(result.created).toLocaleString()
+							: "—"}
+					</div>
+					<div>
+						Modified:{" "}
+						{result.modified
+							? new Date(result.modified).toLocaleString()
+							: "—"}
+					</div>
 				</div>
 			</div>
 		);
@@ -162,15 +214,25 @@ function ToolCallDetail({ toolCall, result, onOpenPastSession }: { toolCall: Too
 		const skipped = result.skippedPaths ?? [];
 		return (
 			<div className="tool-call-detail-content">
-				<div className="tool-call-success">Created {created.length} new note{created.length === 1 ? "" : "s"}.</div>
-				{skipped.length > 0 && <div className="tool-call-result-list">Skipped {skipped.length} already-existing note{skipped.length === 1 ? "" : "s"}: {skipped.join(", ")}</div>}
+				<div className="tool-call-success">
+					Created {created.length} new note
+					{created.length === 1 ? "" : "s"}.
+				</div>
+				{skipped.length > 0 && (
+					<div className="tool-call-result-list">
+						Skipped {skipped.length} already-existing note
+						{skipped.length === 1 ? "" : "s"}: {skipped.join(", ")}
+					</div>
+				)}
 			</div>
 		);
 	}
 
 	return (
 		<div className="tool-call-detail-content">
-			<span className="tool-call-success">{toolName.replace(/_/g, " ")} completed successfully</span>
+			<span className="tool-call-success">
+				{toolName.replace(/_/g, " ")} completed successfully
+			</span>
 		</div>
 	);
 }
@@ -186,25 +248,37 @@ const ToolCallNotification: React.FC<ToolCallNotificationProps> = ({
 	const [expanded, setExpanded] = useState(false);
 
 	return (
-		<div className={`tool-call-notification${isPending ? " tool-call-pending" : ""}${result?.error ? " tool-call-error" : ""}`}>
+		<div
+			className={`tool-call-notification${isPending ? " tool-call-pending" : ""}${result?.error ? " tool-call-error" : ""}`}
+		>
 			<button
 				className="tool-call-header"
 				onClick={() => setExpanded(!expanded)}
 				type="button"
 			>
 				<ToolCallSummary toolCall={toolCall} result={result} />
-				<span className={`tool-call-chevron${expanded ? " is-expanded" : ""}`}>›</span>
+				<span
+					className={`tool-call-chevron${expanded ? " is-expanded" : ""}`}
+				>
+					›
+				</span>
 			</button>
 
 			{expanded && (
 				<div className="tool-call-body">
-					<ToolCallDetail toolCall={toolCall} result={result} onOpenPastSession={onOpenPastSession} />
+					<ToolCallDetail
+						toolCall={toolCall}
+						result={result}
+						onOpenPastSession={onOpenPastSession}
+					/>
 				</div>
 			)}
 
 			{isPending && onApprove && onReject && (
 				<div className="tool-call-actions">
-					<button className="mod-cta" onClick={onApprove}>Approve</button>
+					<button className="mod-cta" onClick={onApprove}>
+						Approve
+					</button>
 					<button onClick={onReject}>Reject</button>
 				</div>
 			)}

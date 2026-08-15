@@ -47,17 +47,21 @@ const AIPruneModal: React.FC<AIPruneModalProps> = ({
 		addLog("Starting AI-powered memory optimization...");
 
 		optimizer
-			.aiPrune((update) => {
-				setStage(update.stage);
-				setCurrent(update.current);
-				setTotal(update.total);
-				setEta(update.etaSeconds);
-				addLog(update.message);
-			}, {
-				onBeforeSave: (removed, groups) => window.confirm(
-					`AI proposes removing ${removed} entries in ${groups} duplicate groups. A backup will be created first. Apply these changes?`,
-				),
-			})
+			.aiPrune(
+				(update) => {
+					setStage(update.stage);
+					setCurrent(update.current);
+					setTotal(update.total);
+					setEta(update.etaSeconds);
+					addLog(update.message);
+				},
+				{
+					onBeforeSave: (removed, groups) =>
+						window.confirm(
+							`AI proposes removing ${removed} entries in ${groups} duplicate groups. A backup will be created first. Apply these changes?`,
+						),
+				},
+			)
 			.then((pruneResult) => {
 				const savedKb = (
 					(pruneResult.bytesBefore - pruneResult.bytesAfter) /
@@ -103,10 +107,13 @@ const AIPruneModal: React.FC<AIPruneModalProps> = ({
 	};
 
 	const handleRestore = async () => {
-		const restoredSnapshot = await optimizerRef.current?.restoreLastSnapshot();
+		const restoredSnapshot =
+			await optimizerRef.current?.restoreLastSnapshot();
 		if (restoredSnapshot) {
 			setRestored(true);
-			setResult("The memory was restored from the backup created before pruning.");
+			setResult(
+				"The memory was restored from the backup created before pruning.",
+			);
 			addLog("Restored the pre-prune memory snapshot.");
 		} else {
 			setError("No memory backup is available to restore.");
@@ -284,11 +291,19 @@ const AIPruneModal: React.FC<AIPruneModalProps> = ({
 						) : (
 							<>
 								{result && !restored && (
-									<button className="chat-btn" onClick={() => void handleRestore()}>
+									<button
+										className="chat-btn"
+										onClick={() => void handleRestore()}
+									>
 										Restore previous memory
 									</button>
 								)}
-								<button className="chat-btn chat-btn-primary" onClick={onClose}>Close</button>
+								<button
+									className="chat-btn chat-btn-primary"
+									onClick={onClose}
+								>
+									Close
+								</button>
 							</>
 						)}
 					</div>

@@ -22,7 +22,10 @@ export function parseMentions(text: string): ParsedMention {
 	}
 
 	// Remove mentions from text for clean display
-	const cleanText = text.replace(mentionRegex, "").replace(/\s+/g, " ").trim();
+	const cleanText = text
+		.replace(mentionRegex, "")
+		.replace(/\s+/g, " ")
+		.trim();
 
 	return { cleanText, mentions };
 }

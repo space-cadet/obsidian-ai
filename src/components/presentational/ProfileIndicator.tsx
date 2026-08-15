@@ -29,7 +29,10 @@ export const ProfileIndicator: React.FC<ProfileIndicatorProps> = ({
 	const color = providerColors[profile.provider] ?? "#888888";
 
 	return (
-		<div className="chat-profile-chip" title={`${profile.name} — ${profile.provider} / ${profile.model}`}>
+		<div
+			className="chat-profile-chip"
+			title={`${profile.name} — ${profile.provider} / ${profile.model}`}
+		>
 			<span
 				className="chat-profile-chip-dot"
 				style={{ background: color }}

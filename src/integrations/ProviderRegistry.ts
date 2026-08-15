@@ -21,19 +21,28 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isCapability(value: unknown): value is ProviderCapability {
 	if (!isRecord(value)) return false;
-	return typeof value.id === "string"
-		&& typeof value.title === "string"
-		&& typeof value.description === "string"
-		&& typeof value.execute === "function"
-		&& ["read", "write", "remote-write", "destructive"].includes(value.risk as string)
-		&& "inputSchema" in value;
+	return (
+		typeof value.id === "string" &&
+		typeof value.title === "string" &&
+		typeof value.description === "string" &&
+		typeof value.execute === "function" &&
+		["read", "write", "remote-write", "destructive"].includes(
+			value.risk as string,
+		) &&
+		"inputSchema" in value
+	);
 }
 
 function readProvider(value: unknown): IntegrationProvider | null {
 	if (!isRecord(value)) return null;
 	if (typeof value.id !== "string" || !value.id.trim()) return null;
-	if (typeof value.displayName !== "string" || !value.displayName.trim()) return null;
-	if (typeof value.apiVersion !== "number" || !Array.isArray(value.capabilities)) return null;
+	if (typeof value.displayName !== "string" || !value.displayName.trim())
+		return null;
+	if (
+		typeof value.apiVersion !== "number" ||
+		!Array.isArray(value.capabilities)
+	)
+		return null;
 	if (!value.capabilities.every(isCapability)) return null;
 	return value as unknown as IntegrationProvider;
 }
@@ -57,11 +66,16 @@ export class ProviderRegistry {
 		this.statuses.clear();
 
 		const installedPlugins = Object.values(
-			((this.app as any).plugins?.plugins ?? {}) as Record<string, unknown>,
+			((this.app as any).plugins?.plugins ?? {}) as Record<
+				string,
+				unknown
+			>,
 		);
 
 		for (const plugin of installedPlugins) {
-			const container = (plugin as { api?: IntegrationProviderApiContainer })?.api;
+			const container = (
+				plugin as { api?: IntegrationProviderApiContainer }
+			)?.api;
 			const provider = readProvider(container?.integrationProvider);
 			if (!provider) continue;
 
@@ -84,7 +98,8 @@ export class ProviderRegistry {
 					displayName: provider.displayName,
 					status: "invalid",
 					apiVersion: provider.apiVersion,
-					message: "More than one plugin registered this provider ID.",
+					message:
+						"More than one plugin registered this provider ID.",
 					capabilityCount: 0,
 					enabled: false,
 				});
@@ -92,7 +107,10 @@ export class ProviderRegistry {
 			}
 
 			this.providers.set(provider.id, provider);
-			const enabled = this.settings.enabledIntegrationProviderIds.includes(provider.id);
+			const enabled =
+				this.settings.enabledIntegrationProviderIds.includes(
+					provider.id,
+				);
 			this.statuses.set(provider.id, {
 				id: provider.id,
 				displayName: provider.displayName,
@@ -101,7 +119,9 @@ export class ProviderRegistry {
 				message: enabled
 					? "Available to Obsidian AI."
 					: "Installed but disabled for Obsidian AI.",
-				capabilityCount: provider.capabilities.filter((capability) => capability.risk === "read").length,
+				capabilityCount: provider.capabilities.filter(
+					(capability) => capability.risk === "read",
+				).length,
 				enabled,
 			});
 		}
@@ -142,14 +162,21 @@ export class ProviderRegistry {
 		if (!capability) return null;
 
 		const provider = this.getProviderForCapability(call.toolName);
-		if (!provider) return { error: `Integration provider for ${call.toolName} is unavailable.` };
-		if (!this.settings.enabledIntegrationProviderIds.includes(provider.id)) {
+		if (!provider)
+			return {
+				error: `Integration provider for ${call.toolName} is unavailable.`,
+			};
+		if (
+			!this.settings.enabledIntegrationProviderIds.includes(provider.id)
+		) {
 			return {
 				error: `${provider.displayName} is disabled. Re-enable it in Settings → Agent Tools → Integrations.`,
 			};
 		}
 		if (capability.risk !== "read") {
-			return { error: `${capability.title} is unavailable until the Tool Safety & Approval policy is implemented.` };
+			return {
+				error: `${capability.title} is unavailable until the Tool Safety & Approval policy is implemented.`,
+			};
 		}
 
 		try {
@@ -176,36 +203,60 @@ export class ProviderRegistry {
 	}
 
 	getCapability(toolName: string): ProviderCapability | null {
-		return this.getEnabledReadCapabilities().find((capability) => capability.id === toolName)
-			?? this.getAllCapabilities().find((capability) => capability.id === toolName)
-			?? null;
+		return (
+			this.getEnabledReadCapabilities().find(
+				(capability) => capability.id === toolName,
+			) ??
+			this.getAllCapabilities().find(
+				(capability) => capability.id === toolName,
+			) ??
+			null
+		);
 	}
 
-	getCapabilityDisplay(toolName: string): { providerName: string; title: string; risk: string } | null {
+	getCapabilityDisplay(
+		toolName: string,
+	): { providerName: string; title: string; risk: string } | null {
 		const capability = this.getCapability(toolName);
 		const provider = this.getProviderForCapability(toolName);
 		if (!capability || !provider) return null;
-		return { providerName: provider.displayName, title: capability.title, risk: capability.risk };
+		return {
+			providerName: provider.displayName,
+			title: capability.title,
+			risk: capability.risk,
+		};
 	}
 
 	private getEnabledReadCapabilities(): ProviderCapability[] {
 		return this.getAllCapabilities().filter((capability) => {
 			const provider = this.getProviderForCapability(capability.id);
-			return provider !== null
-				&& this.settings.enabledIntegrationProviderIds.includes(provider.id)
-				&& capability.risk === "read"
-				&& capability.availability !== "disabled"
-				&& capability.availability !== "misconfigured";
+			return (
+				provider !== null &&
+				this.settings.enabledIntegrationProviderIds.includes(
+					provider.id,
+				) &&
+				capability.risk === "read" &&
+				capability.availability !== "disabled" &&
+				capability.availability !== "misconfigured"
+			);
 		});
 	}
 
 	private getAllCapabilities(): ProviderCapability[] {
-		return Array.from(this.providers.values()).flatMap((provider) => provider.capabilities);
+		return Array.from(this.providers.values()).flatMap(
+			(provider) => provider.capabilities,
+		);
 	}
 
-	private getProviderForCapability(toolName: string): IntegrationProvider | null {
-		return Array.from(this.providers.values()).find((provider) =>
-			provider.capabilities.some((capability) => capability.id === toolName),
-		) ?? null;
+	private getProviderForCapability(
+		toolName: string,
+	): IntegrationProvider | null {
+		return (
+			Array.from(this.providers.values()).find((provider) =>
+				provider.capabilities.some(
+					(capability) => capability.id === toolName,
+				),
+			) ?? null
+		);
 	}
 }

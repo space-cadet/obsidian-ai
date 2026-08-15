@@ -10,7 +10,10 @@ function isSameLocalDay(a: Date, b: Date): boolean {
  * Show an unambiguous local time today, and retain the calendar date for
  * messages from an earlier day.
  */
-export function formatMessageTimestamp(timestamp: number, now = new Date()): string {
+export function formatMessageTimestamp(
+	timestamp: number,
+	now = new Date(),
+): string {
 	const date = new Date(timestamp);
 	if (Number.isNaN(date.getTime())) return "Unknown time";
 

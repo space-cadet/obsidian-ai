@@ -3,19 +3,27 @@ import { z } from "zod";
 import { ProviderRegistry } from "../ProviderRegistry";
 import type { IntegrationProvider } from "../types";
 
-const builtInTools = { built_in: { description: "Built in", inputSchema: z.object({}) } };
+const builtInTools = {
+	built_in: { description: "Built in", inputSchema: z.object({}) },
+};
 
 function makeApp(provider?: IntegrationProvider) {
 	return {
 		plugins: {
 			plugins: provider
-				? { "example-provider": { api: { integrationProvider: provider } } }
+				? {
+						"example-provider": {
+							api: { integrationProvider: provider },
+						},
+					}
 				: {},
 		},
 	} as any;
 }
 
-function makeProvider(overrides: Partial<IntegrationProvider> = {}): IntegrationProvider {
+function makeProvider(
+	overrides: Partial<IntegrationProvider> = {},
+): IntegrationProvider {
 	return {
 		id: "example-provider",
 		displayName: "Example Provider",
@@ -51,11 +59,18 @@ describe("ProviderRegistry", () => {
 	});
 
 	it("adds enabled read-only capabilities to the agent tool registry and executes them", async () => {
-		const settings = { enabledIntegrationProviderIds: ["example-provider"] };
-		const registry = new ProviderRegistry(makeApp(makeProvider()), settings);
+		const settings = {
+			enabledIntegrationProviderIds: ["example-provider"],
+		};
+		const registry = new ProviderRegistry(
+			makeApp(makeProvider()),
+			settings,
+		);
 		registry.discover();
 
-		expect(registry.getToolRegistry(builtInTools)).toHaveProperty("example.status");
+		expect(registry.getToolRegistry(builtInTools)).toHaveProperty(
+			"example.status",
+		);
 		const result = await registry.execute({
 			toolCallId: "call-1",
 			toolName: "example.status",

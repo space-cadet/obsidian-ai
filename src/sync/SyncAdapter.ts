@@ -38,7 +38,9 @@ export interface SyncAdapter {
 	 * Register a callback for presence events (join/leave).
 	 * Called when a user joins or leaves the room.
 	 */
-	onPresence(callback: (event: { type: "join" | "leave"; userId: string }) => void): void;
+	onPresence(
+		callback: (event: { type: "join" | "leave"; userId: string }) => void,
+	): void;
 
 	/**
 	 * Send a typing indicator to other participants.

@@ -81,7 +81,13 @@ export function useSettingsActions({
 		if (title) {
 			new Notice(`Session renamed to: "${title}"`, 2500);
 		}
-	}, [resolvedProfile, plugin.chatapi, manualRenameActiveSession, activeSessionIdRef, sessionsRef]);
+	}, [
+		resolvedProfile,
+		plugin.chatapi,
+		manualRenameActiveSession,
+		activeSessionIdRef,
+		sessionsRef,
+	]);
 
 	return {
 		autoApprove,

@@ -269,7 +269,10 @@ export class AgentApiManager {
 				message: `${this.profile.name} is connected and responding.`,
 			};
 		} catch (e: any) {
-			if (e.message?.includes("ENOTFOUND") || e.message?.includes("ECONNREFUSED")) {
+			if (
+				e.message?.includes("ENOTFOUND") ||
+				e.message?.includes("ECONNREFUSED")
+			) {
 				return {
 					ok: false,
 					message:
@@ -291,7 +294,9 @@ export class AgentApiManager {
 /**
  * Validate an agent profile.
  */
-export function validateAgentProfile(profile: AgentProviderProfile): string | null {
+export function validateAgentProfile(
+	profile: AgentProviderProfile,
+): string | null {
 	if (!profile.endpointUrl) {
 		return "Agent endpoint URL is required (e.g. http://ember:18789/v1/responses).";
 	}
@@ -314,22 +319,25 @@ const SSRF_BLOCK_PATTERNS = [
 
 /** Private IP ranges that should not be accessible */
 const PRIVATE_IP_RANGES = [
-	/^127\./,                       // loopback
-	/^10\./,                        // private A
-	/^172\.(1[6-9]|2\d|3[01])\./,  // private B
-	/^192\.168\./,                  // private C
-	/^169\.254\./,                  // link-local
-	/^0\./,                         // current network
-	/^::1$/,                        // IPv6 loopback
-	/^fc00:/i,                      // IPv6 unique local
-	/^fe80:/i,                      // IPv6 link-local
+	/^127\./, // loopback
+	/^10\./, // private A
+	/^172\.(1[6-9]|2\d|3[01])\./, // private B
+	/^192\.168\./, // private C
+	/^169\.254\./, // link-local
+	/^0\./, // current network
+	/^::1$/, // IPv6 loopback
+	/^fc00:/i, // IPv6 unique local
+	/^fe80:/i, // IPv6 link-local
 ];
 
 /**
  * Validates an agent endpoint URL to prevent SSRF attacks.
  * Blocks: non-HTTP(S) schemes, private IPs, localhost, file URLs.
  */
-export function validateAgentUrl(urlStr: string): { ok: boolean; error?: string } {
+export function validateAgentUrl(urlStr: string): {
+	ok: boolean;
+	error?: string;
+} {
 	let url: URL;
 	try {
 		url = new URL(urlStr);
@@ -339,7 +347,10 @@ export function validateAgentUrl(urlStr: string): { ok: boolean; error?: string 
 
 	// Scheme check
 	if (url.protocol !== "http:" && url.protocol !== "https:") {
-		return { ok: false, error: `Unsupported scheme: ${url.protocol}. Only http:// and https:// are allowed.` };
+		return {
+			ok: false,
+			error: `Unsupported scheme: ${url.protocol}. Only http:// and https:// are allowed.`,
+		};
 	}
 
 	// Blocked patterns
@@ -351,11 +362,17 @@ export function validateAgentUrl(urlStr: string): { ok: boolean; error?: string 
 	const hostname = url.hostname.toLowerCase();
 
 	if (hostname === "localhost" || hostname === "[::1]") {
-		return { ok: false, error: "localhost is not allowed as an agent endpoint." };
+		return {
+			ok: false,
+			error: "localhost is not allowed as an agent endpoint.",
+		};
 	}
 
 	if (PRIVATE_IP_RANGES.some((re) => re.test(hostname))) {
-		return { ok: false, error: "Private IP addresses are not allowed as agent endpoints." };
+		return {
+			ok: false,
+			error: "Private IP addresses are not allowed as agent endpoints.",
+		};
 	}
 
 	return { ok: true };

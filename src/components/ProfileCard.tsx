@@ -13,11 +13,9 @@ import { Notice } from "obsidian";
 
 // ─── Provider metadata ─────────────────────────────────────────────
 
-
-const PROVIDER_META: Partial<Record<
-	ProviderType,
-	{ label: string; color: string; icon: string }
->> = {
+const PROVIDER_META: Partial<
+	Record<ProviderType, { label: string; color: string; icon: string }>
+> = {
 	openai: { label: "OpenAI", color: "#10A37F", icon: "O" },
 	anthropic: { label: "Anthropic", color: "#D97757", icon: "A" },
 	deepseek: { label: "DeepSeek", color: "#4D6BFA", icon: "D" },
@@ -30,7 +28,9 @@ const PROVIDER_META: Partial<Record<
 };
 
 function getProviderMeta(provider: ProviderType) {
-	return PROVIDER_META[provider] ?? { label: provider, color: "#888", icon: "?" };
+	return (
+		PROVIDER_META[provider] ?? { label: provider, color: "#888", icon: "?" }
+	);
 }
 
 function maskKey(key?: string): string {
@@ -38,7 +38,10 @@ function maskKey(key?: string): string {
 	return `${key.slice(0, 4)}…${key.slice(-4)}`;
 }
 
-function validateProfileQuick(profile: ProviderProfile): { ok: boolean; hint?: string } {
+function validateProfileQuick(profile: ProviderProfile): {
+	ok: boolean;
+	hint?: string;
+} {
 	switch (profile.provider) {
 		case "openai":
 		case "anthropic":
@@ -46,7 +49,9 @@ function validateProfileQuick(profile: ProviderProfile): { ok: boolean; hint?: s
 		case "kimi":
 		case "gemini":
 		case "openrouter":
-			return profile.apiKey ? { ok: true } : { ok: false, hint: "API key missing" };
+			return profile.apiKey
+				? { ok: true }
+				: { ok: false, hint: "API key missing" };
 		case "azure":
 			return profile.apiKey && profile.azureEndpoint
 				? { ok: true }
@@ -56,7 +61,9 @@ function validateProfileQuick(profile: ProviderProfile): { ok: boolean; hint?: s
 				? { ok: true }
 				: { ok: false, hint: "API key or URL missing" };
 		case "agent":
-			return profile.endpointUrl ? { ok: true } : { ok: false, hint: "Endpoint missing" };
+			return profile.endpointUrl
+				? { ok: true }
+				: { ok: false, hint: "Endpoint missing" };
 		default:
 			return { ok: true };
 	}
@@ -93,15 +100,25 @@ function ProfileEditForm({
 }) {
 	const [draft, setDraft] = useState<ProviderProfile>({ ...profile });
 	const [fetching, setFetching] = useState(false);
-	const [models, setModels] = useState<string[]>(profile.modelCache?.models ?? []);
+	const [models, setModels] = useState<string[]>(
+		profile.modelCache?.models ?? [],
+	);
 	const [modelSearch, setModelSearch] = useState("");
-	const [testStatus, setTestStatus] = useState<
-		null | { ok: boolean; message: string }
-	>(null);
+	const [testStatus, setTestStatus] = useState<null | {
+		ok: boolean;
+		message: string;
+	}>(null);
 
 	const updateDraft = useCallback(
-		<K extends keyof ProviderProfile>(key: K, value: ProviderProfile[K]) => {
-			setDraft((prev) => ({ ...prev, [key]: value, updatedAt: Date.now() }));
+		<K extends keyof ProviderProfile>(
+			key: K,
+			value: ProviderProfile[K],
+		) => {
+			setDraft((prev) => ({
+				...prev,
+				[key]: value,
+				updatedAt: Date.now(),
+			}));
 		},
 		[],
 	);
@@ -136,7 +153,10 @@ function ProfileEditForm({
 			const chatApi = new ChatApiManager(plugin.settings, plugin.app);
 			const fetched = await chatApi.fetchModels(draft);
 			setModels(fetched);
-			updateDraft("modelCache", { models: fetched, fetchedAt: Date.now() });
+			updateDraft("modelCache", {
+				models: fetched,
+				fetchedAt: Date.now(),
+			});
 			new Notice(`Fetched ${fetched.length} models`, 2000);
 		} catch (err: any) {
 			new Notice(`Failed to fetch models: ${err.message}`, 4000);
@@ -157,7 +177,8 @@ function ProfileEditForm({
 		// For agent, we use AgentApiManager.
 		if (draft.provider === "agent") {
 			try {
-				const { AgentApiManager } = await import("../api/AgentApiManager");
+				const { AgentApiManager } =
+					await import("../api/AgentApiManager");
 				const agentApi = new AgentApiManager(
 					{
 						id: draft.id,
@@ -187,7 +208,9 @@ function ProfileEditForm({
 	}, [draft]);
 
 	const filteredModels = modelSearch.trim()
-		? models.filter((m) => m.toLowerCase().includes(modelSearch.trim().toLowerCase()))
+		? models.filter((m) =>
+				m.toLowerCase().includes(modelSearch.trim().toLowerCase()),
+			)
 		: models;
 
 	const meta = getProviderMeta(draft.provider);
@@ -208,7 +231,9 @@ function ProfileEditForm({
 				<label>Provider</label>
 				<select
 					value={draft.provider}
-					onChange={(e) => handleProviderChange(e.target.value as ProviderType)}
+					onChange={(e) =>
+						handleProviderChange(e.target.value as ProviderType)
+					}
 				>
 					<option value="openai">OpenAI</option>
 					<option value="anthropic">Anthropic</option>
@@ -237,7 +262,11 @@ function ProfileEditForm({
 						disabled={fetching}
 						type="button"
 					>
-						{fetching ? "Fetching…" : models.length > 0 ? "Refresh" : "Fetch"}
+						{fetching
+							? "Fetching…"
+							: models.length > 0
+								? "Refresh"
+								: "Fetch"}
 					</button>
 				</div>
 				{models.length > 0 && (
@@ -282,7 +311,9 @@ function ProfileEditForm({
 						value={draft.apiKey || ""}
 						onChange={(e) => updateDraft("apiKey", e.target.value)}
 						placeholder={
-							draft.provider === "agent" ? "Bearer token…" : "sk-…"
+							draft.provider === "agent"
+								? "Bearer token…"
+								: "sk-…"
 						}
 					/>
 				</div>
@@ -296,13 +327,15 @@ function ProfileEditForm({
 						draft.provider === "azure"
 							? draft.azureEndpoint || ""
 							: draft.provider === "agent"
-							? draft.endpointUrl || ""
-							: draft.customURL || ""
+								? draft.endpointUrl || ""
+								: draft.customURL || ""
 					}
 					onChange={(e) => {
 						const v = e.target.value;
-						if (draft.provider === "azure") updateDraft("azureEndpoint", v);
-						else if (draft.provider === "agent") updateDraft("endpointUrl", v);
+						if (draft.provider === "azure")
+							updateDraft("azureEndpoint", v);
+						else if (draft.provider === "agent")
+							updateDraft("endpointUrl", v);
 						else updateDraft("customURL", v);
 					}}
 					placeholder={getDefaultEndpoint(draft.provider)}
@@ -315,7 +348,9 @@ function ProfileEditForm({
 					<input
 						type="text"
 						value={draft.azureApiVersion || "2024-02-15-preview"}
-						onChange={(e) => updateDraft("azureApiVersion", e.target.value)}
+						onChange={(e) =>
+							updateDraft("azureApiVersion", e.target.value)
+						}
 						placeholder="2024-02-15-preview"
 					/>
 				</div>
@@ -328,7 +363,9 @@ function ProfileEditForm({
 						<input
 							type="text"
 							value={draft.agentId || "main"}
-							onChange={(e) => updateDraft("agentId", e.target.value || "main")}
+							onChange={(e) =>
+								updateDraft("agentId", e.target.value || "main")
+							}
 							placeholder="main"
 						/>
 					</div>
@@ -337,7 +374,9 @@ function ProfileEditForm({
 						<input
 							type="text"
 							value={draft.sessionKey || ""}
-							onChange={(e) => updateDraft("sessionKey", e.target.value)}
+							onChange={(e) =>
+								updateDraft("sessionKey", e.target.value)
+							}
 							placeholder="Optional session key"
 						/>
 					</div>
@@ -346,7 +385,9 @@ function ProfileEditForm({
 							<input
 								type="checkbox"
 								checked={draft.autoApprove ?? false}
-								onChange={(e) => updateDraft("autoApprove", e.target.checked)}
+								onChange={(e) =>
+									updateDraft("autoApprove", e.target.checked)
+								}
 							/>
 							Auto-approve tools
 						</label>
@@ -358,7 +399,12 @@ function ProfileEditForm({
 							min={1}
 							max={50}
 							value={draft.maxSteps ?? 10}
-							onChange={(e) => updateDraft("maxSteps", parseInt(e.target.value, 10))}
+							onChange={(e) =>
+								updateDraft(
+									"maxSteps",
+									parseInt(e.target.value, 10),
+								)
+							}
 						/>
 						<span className="obsidian-ai-profile-edit-step-value">
 							{draft.maxSteps ?? 10}
@@ -378,7 +424,8 @@ function ProfileEditForm({
 									testStatus.ok ? " is-ok" : " is-error"
 								}`}
 							>
-								{testStatus.ok ? "✅" : "❌"} {testStatus.message}
+								{testStatus.ok ? "✅" : "❌"}{" "}
+								{testStatus.message}
 							</span>
 						)}
 					</div>
@@ -386,7 +433,11 @@ function ProfileEditForm({
 			)}
 
 			<div className="obsidian-ai-profile-edit-actions">
-				<button className="mod-cta" onClick={() => onSave(draft)} type="button">
+				<button
+					className="mod-cta"
+					onClick={() => onSave(draft)}
+					type="button"
+				>
 					Save
 				</button>
 				<button onClick={onCancel} type="button">
@@ -418,13 +469,20 @@ export function ProfileCard({
 	if (isEditing) {
 		return (
 			<div className="obsidian-ai-profile-row is-editing">
-				<ProfileEditForm profile={profile} onSave={onSave} onCancel={onCancel} plugin={plugin} />
+				<ProfileEditForm
+					profile={profile}
+					onSave={onSave}
+					onCancel={onCancel}
+					plugin={plugin}
+				/>
 			</div>
 		);
 	}
 
 	return (
-		<div className={`obsidian-ai-profile-row${isActive ? " is-active" : ""}`}>
+		<div
+			className={`obsidian-ai-profile-row${isActive ? " is-active" : ""}`}
+		>
 			{/* Icon + Name */}
 			<div className="obsidian-ai-profile-col obsidian-ai-profile-col-name">
 				<div className="obsidian-ai-profile-name-wrap">
@@ -437,42 +495,69 @@ export function ProfileCard({
 					</div>
 					<div className="obsidian-ai-profile-name-stack">
 						<div className="obsidian-ai-profile-name-row">
-							<span className="obsidian-ai-profile-name">{profile.name}</span>
+							<span className="obsidian-ai-profile-name">
+								{profile.name}
+							</span>
 							{isActive && (
-								<span className="obsidian-ai-profile-badge">Default</span>
+								<span className="obsidian-ai-profile-badge">
+									Default
+								</span>
 							)}
 						</div>
-						<div className="obsidian-ai-profile-provider">{meta.label}</div>
+						<div className="obsidian-ai-profile-provider">
+							{meta.label}
+						</div>
 					</div>
 				</div>
 			</div>
 
 			{/* Model */}
 			<div className="obsidian-ai-profile-col obsidian-ai-profile-col-model">
-				<span className="obsidian-ai-profile-mono" title={profile.model}>{profile.model}</span>
+				<span
+					className="obsidian-ai-profile-mono"
+					title={profile.model}
+				>
+					{profile.model}
+				</span>
 			</div>
 
 			{/* Endpoint */}
 			<div className="obsidian-ai-profile-col obsidian-ai-profile-col-endpoint">
-				<span className="obsidian-ai-profile-mono" title={
-					profile.provider === "azure"
-						? profile.azureEndpoint || getDefaultEndpoint("azure")
-						: profile.provider === "agent"
-							? profile.endpointUrl || getDefaultEndpoint("agent")
-							: profile.customURL || getDefaultEndpoint(profile.provider)
-				}>
-					{profile.provider === "azure"
-						? (profile.azureEndpoint || getDefaultEndpoint("azure")).replace(/^https?:\/\//, "")
-						: profile.provider === "agent"
-							? (profile.endpointUrl || getDefaultEndpoint("agent")).replace(/^https?:\/\//, "")
-							: (profile.customURL || getDefaultEndpoint(profile.provider)).replace(/^https?:\/\//, "")
+				<span
+					className="obsidian-ai-profile-mono"
+					title={
+						profile.provider === "azure"
+							? profile.azureEndpoint ||
+								getDefaultEndpoint("azure")
+							: profile.provider === "agent"
+								? profile.endpointUrl ||
+									getDefaultEndpoint("agent")
+								: profile.customURL ||
+									getDefaultEndpoint(profile.provider)
 					}
+				>
+					{profile.provider === "azure"
+						? (
+								profile.azureEndpoint ||
+								getDefaultEndpoint("azure")
+							).replace(/^https?:\/\//, "")
+						: profile.provider === "agent"
+							? (
+									profile.endpointUrl ||
+									getDefaultEndpoint("agent")
+								).replace(/^https?:\/\//, "")
+							: (
+									profile.customURL ||
+									getDefaultEndpoint(profile.provider)
+								).replace(/^https?:\/\//, "")}
 				</span>
 			</div>
 
 			{/* Key */}
 			<div className="obsidian-ai-profile-col obsidian-ai-profile-col-key">
-				<span className={`obsidian-ai-profile-key${!auth.ok ? " is-missing" : ""}`}>
+				<span
+					className={`obsidian-ai-profile-key${!auth.ok ? " is-missing" : ""}`}
+				>
 					{maskKey(profile.apiKey)}
 				</span>
 			</div>
@@ -487,11 +572,41 @@ export function ProfileCard({
 
 			{/* Actions */}
 			<div className="obsidian-ai-profile-col obsidian-ai-profile-col-actions">
-				<button className="obsidian-ai-icon-btn-sm" title="Edit" onClick={onEdit}>✏️</button>
-				<button className="obsidian-ai-icon-btn-sm" title="Duplicate" onClick={onDuplicate}>📋</button>
-				<button className="obsidian-ai-icon-btn-sm" title="Test connection" onClick={onTest}>🔌</button>
-				<button className={`obsidian-ai-icon-btn-sm${isActive ? " is-active" : ""}`} title="Set as default" onClick={onSetDefault}>⭐</button>
-				<button className="obsidian-ai-icon-btn-sm is-danger" title="Delete" onClick={onDelete}>🗑️</button>
+				<button
+					className="obsidian-ai-icon-btn-sm"
+					title="Edit"
+					onClick={onEdit}
+				>
+					✏️
+				</button>
+				<button
+					className="obsidian-ai-icon-btn-sm"
+					title="Duplicate"
+					onClick={onDuplicate}
+				>
+					📋
+				</button>
+				<button
+					className="obsidian-ai-icon-btn-sm"
+					title="Test connection"
+					onClick={onTest}
+				>
+					🔌
+				</button>
+				<button
+					className={`obsidian-ai-icon-btn-sm${isActive ? " is-active" : ""}`}
+					title="Set as default"
+					onClick={onSetDefault}
+				>
+					⭐
+				</button>
+				<button
+					className="obsidian-ai-icon-btn-sm is-danger"
+					title="Delete"
+					onClick={onDelete}
+				>
+					🗑️
+				</button>
 			</div>
 		</div>
 	);
@@ -517,7 +632,10 @@ export function ProfileList({ plugin }: ProfileListProps) {
 	useEffect(() => {
 		setProfiles(plugin.settings.providerProfiles);
 		setActiveId(plugin.settings.activeProviderProfileId);
-	}, [plugin.settings.providerProfiles, plugin.settings.activeProviderProfileId]);
+	}, [
+		plugin.settings.providerProfiles,
+		plugin.settings.activeProviderProfileId,
+	]);
 
 	const saveSettings = useCallback(async () => {
 		plugin.settings.providerProfiles = profiles;
@@ -613,7 +731,8 @@ export function ProfileList({ plugin }: ProfileListProps) {
 
 			try {
 				if (profile.provider === "agent") {
-					const { AgentApiManager } = await import("../api/AgentApiManager");
+					const { AgentApiManager } =
+						await import("../api/AgentApiManager");
 					const agentApi = new AgentApiManager(
 						{
 							id: profile.id,
@@ -631,14 +750,17 @@ export function ProfileList({ plugin }: ProfileListProps) {
 					);
 					const result = await agentApi.testConnection();
 					new Notice(
-						result.ok ? `✅ ${result.message}` : `❌ ${result.message}`,
+						result.ok
+							? `✅ ${result.message}`
+							: `❌ ${result.message}`,
 						6000,
 					);
 				} else {
 					// For standard providers, we need to use the ChatApiManager.
 					// The existing testApiConnection only tests the *active* profile.
 					// We temporarily swap, test, and restore.
-					const originalActive = plugin.settings.activeProviderProfileId;
+					const originalActive =
+						plugin.settings.activeProviderProfileId;
 					plugin.settings.activeProviderProfileId = profile.id;
 					plugin.chatapi.updateSettings(plugin.settings);
 					const result = await plugin.chatapi.testApiConnection();
@@ -646,7 +768,9 @@ export function ProfileList({ plugin }: ProfileListProps) {
 					plugin.settings.activeProviderProfileId = originalActive;
 					plugin.chatapi.updateSettings(plugin.settings);
 					new Notice(
-						result.ok ? `✅ ${result.message}` : `❌ ${result.message}`,
+						result.ok
+							? `✅ ${result.message}`
+							: `❌ ${result.message}`,
 						6000,
 					);
 				}
@@ -662,7 +786,7 @@ export function ProfileList({ plugin }: ProfileListProps) {
 	return (
 		<div className="obsidian-ai-profile-list">
 			<div className="obsidian-ai-profile-list-header">
-      <button className="mod-cta" onClick={handleAdd} type="button">
+				<button className="mod-cta" onClick={handleAdd} type="button">
 					+ New Profile
 				</button>
 			</div>
@@ -686,8 +810,7 @@ export function ProfileList({ plugin }: ProfileListProps) {
 			</div>
 			{testingId && (
 				<div className="obsidian-ai-profile-testing-toast">
-					Testing{" "}
-					{profiles.find((p) => p.id === testingId)?.name}…
+					Testing {profiles.find((p) => p.id === testingId)?.name}…
 				</div>
 			)}
 		</div>

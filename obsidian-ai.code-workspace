@@ -1,11 +1,11 @@
 {
 	"folders": [
 		{
-			"path": "."
+			"path": ".",
 		},
 		{
-			"path": "../../.kimi_openclaw/workspace/code/obsidian-ai"
-		}
+			"path": "../../.kimi_openclaw/workspace/code/obsidian-ai",
+		},
 	],
-	"settings": {}
+	"settings": {},
 }

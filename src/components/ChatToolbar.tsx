@@ -125,7 +125,9 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 						className="chat-participant-dropdown"
 					>
 						{profiles.map((profile) => {
-							const isSelected = selectedProfileIds.has(profile.id);
+							const isSelected = selectedProfileIds.has(
+								profile.id,
+							);
 							return (
 								<label
 									key={profile.id}
@@ -134,11 +136,15 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 									<input
 										type="checkbox"
 										checked={isSelected}
-										onChange={() => onToggleProfile(profile.id)}
+										onChange={() =>
+											onToggleProfile(profile.id)
+										}
 									/>
 									<span
 										style={{
-											color: getAgentColor(profile.provider),
+											color: getAgentColor(
+												profile.provider,
+											),
 										}}
 									>
 										●
@@ -178,7 +184,8 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 							</div>
 						) : (
 							connectedUsers.map((user) => {
-								const isSelected = selectedRemoteUserIds.has(user);
+								const isSelected =
+									selectedRemoteUserIds.has(user);
 								return (
 									<label
 										key={user}
@@ -221,7 +228,9 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 							key={user}
 							className="chat-participant-chip chat-participant-chip-remote"
 						>
-							<span className="chat-participant-dot-online">●</span>{" "}
+							<span className="chat-participant-dot-online">
+								●
+							</span>{" "}
 							{user}
 						</span>
 					))}

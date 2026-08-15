@@ -12,7 +12,9 @@ export const readNoteTool = t({
 	inputSchema: z.object({
 		path: z
 			.string()
-			.describe('Note name or path, e.g. "Project Notes" or "Folder/Project Notes"'),
+			.describe(
+				'Note name or path, e.g. "Project Notes" or "Folder/Project Notes"',
+			),
 	}),
 });
 
@@ -44,9 +46,7 @@ export const createNoteTool = t({
 	inputSchema: z.object({
 		path: z
 			.string()
-			.describe(
-				'Note name or path, e.g. "Meeting Summaries/2026-05-03"',
-			),
+			.describe('Note name or path, e.g. "Meeting Summaries/2026-05-03"'),
 		content: z.string().describe("Initial note content"),
 	}),
 });
@@ -59,8 +59,12 @@ export const createNotesTool = t({
 		notes: z
 			.array(
 				z.object({
-					path: z.string().describe('New note path, e.g. "Chinese/Verbs/ai.md"'),
-					content: z.string().describe("Initial content for this note"),
+					path: z
+						.string()
+						.describe('New note path, e.g. "Chinese/Verbs/ai.md"'),
+					content: z
+						.string()
+						.describe("Initial content for this note"),
 				}),
 			)
 			.min(2)
@@ -76,8 +80,14 @@ export const patchNoteTool = t({
 		"Only replaces the first match unless replace_all is true.",
 	inputSchema: z.object({
 		path: z.string().describe('Note name or path, e.g. "Project Notes"'),
-		search: z.string().describe("Exact text to find. Must match literally (case-sensitive)."),
-		replace: z.string().describe("Text to insert in place of the search string."),
+		search: z
+			.string()
+			.describe(
+				"Exact text to find. Must match literally (case-sensitive).",
+			),
+		replace: z
+			.string()
+			.describe("Text to insert in place of the search string."),
 		replace_all: z
 			.boolean()
 			.optional()
@@ -120,16 +130,20 @@ export const searchNotesTool = t({
 			.enum(["name", "modified", "created"])
 			.optional()
 			.default("name")
-			.describe('Sort results by name, modified date, or created date.'),
+			.describe("Sort results by name, modified date, or created date."),
 		limit: z
 			.number()
 			.optional()
 			.default(20)
-			.describe('Maximum number of results to return (default 20, max 100).'),
+			.describe(
+				"Maximum number of results to return (default 20, max 100).",
+			),
 		folder: z
 			.string()
 			.optional()
-			.describe('Restrict search to a specific folder path, e.g. "Meeting Notes"'),
+			.describe(
+				'Restrict search to a specific folder path, e.g. "Meeting Notes"',
+			),
 	}),
 });
 
@@ -142,27 +156,35 @@ export const listNotesTool = t({
 		folder: z
 			.string()
 			.optional()
-			.describe('Folder path to list notes from. Omit to list all notes in the vault.'),
+			.describe(
+				"Folder path to list notes from. Omit to list all notes in the vault.",
+			),
 		sort_by: z
 			.enum(["name", "modified", "created"])
 			.optional()
 			.default("name")
-			.describe('Sort results by name, modified date, or created date.'),
+			.describe("Sort results by name, modified date, or created date."),
 		limit: z
 			.number()
 			.optional()
 			.default(30)
-			.describe('Maximum number of results to return (default 30, max 100).'),
+			.describe(
+				"Maximum number of results to return (default 30, max 100).",
+			),
 		include_subfolders: z
 			.boolean()
 			.optional()
 			.default(true)
-			.describe('Whether to include subfolder names in the result (default true).'),
+			.describe(
+				"Whether to include subfolder names in the result (default true).",
+			),
 		depth: z
 			.number()
 			.optional()
 			.default(1)
-			.describe('How many levels of subfolders to show (default 1, max 3).'),
+			.describe(
+				"How many levels of subfolders to show (default 1, max 3).",
+			),
 	}),
 });
 
@@ -171,9 +193,7 @@ export const getNoteMetadataTool = t({
 		"Get detailed metadata about a specific note — file size, creation date, modification date, word count, etc. " +
 		"Use this when the user asks about note properties, recent changes, or file statistics.",
 	inputSchema: z.object({
-		path: z
-			.string()
-			.describe('Note name or path, e.g. "Project Notes"'),
+		path: z.string().describe('Note name or path, e.g. "Project Notes"'),
 	}),
 });
 
@@ -184,7 +204,9 @@ export const createFolderTool = t({
 	inputSchema: z.object({
 		path: z
 			.string()
-			.describe('Folder path to create, e.g. "Research/Papers" or "Meeting Notes/2026"'),
+			.describe(
+				'Folder path to create, e.g. "Research/Papers" or "Meeting Notes/2026"',
+			),
 	}),
 });
 
@@ -194,10 +216,16 @@ export const moveNoteTool = t({
 		"Use when the user asks to move a note to a different folder, or rename it. " +
 		"If the destination folder does not exist, it will be created automatically.",
 	inputSchema: z.object({
-		path: z.string().describe('Current note name or path, e.g. "Project Notes" or "Old/Project Notes"'),
+		path: z
+			.string()
+			.describe(
+				'Current note name or path, e.g. "Project Notes" or "Old/Project Notes"',
+			),
 		new_path: z
 			.string()
-			.describe('New destination path, e.g. "Research/Project Notes" or "Project Notes v2"'),
+			.describe(
+				'New destination path, e.g. "Research/Project Notes" or "Project Notes v2"',
+			),
 	}),
 });
 
@@ -207,7 +235,9 @@ export const deleteNoteTool = t({
 		"Use when the user explicitly asks to delete, remove, or trash a note. " +
 		"Returns an error if the note does not exist.",
 	inputSchema: z.object({
-		path: z.string().describe('Note name or path to delete, e.g. "Draft Notes"'),
+		path: z
+			.string()
+			.describe('Note name or path to delete, e.g. "Draft Notes"'),
 	}),
 });
 
@@ -220,7 +250,9 @@ export const countNotesTool = t({
 		folder: z
 			.string()
 			.optional()
-			.describe('Folder path to count notes in. Omit to count all notes in the vault.'),
+			.describe(
+				"Folder path to count notes in. Omit to count all notes in the vault.",
+			),
 	}),
 });
 
@@ -233,7 +265,9 @@ export const listFoldersTool = t({
 		path: z
 			.string()
 			.optional()
-			.describe('Optional parent folder to list subfolders from. Omit to list top-level folders.'),
+			.describe(
+				"Optional parent folder to list subfolders from. Omit to list top-level folders.",
+			),
 	}),
 });
 
@@ -245,12 +279,16 @@ export const searchWebTool = t({
 	inputSchema: z.object({
 		query: z
 			.string()
-			.describe('The search query string. Be specific and include key terms for better results.'),
+			.describe(
+				"The search query string. Be specific and include key terms for better results.",
+			),
 		limit: z
 			.number()
 			.optional()
 			.default(5)
-			.describe('Maximum number of results to return (default 5, max 20).'),
+			.describe(
+				"Maximum number of results to return (default 5, max 20).",
+			),
 	}),
 });
 
@@ -264,17 +302,25 @@ export const createMemoryTool = t({
 		"Be specific and concise. Include dates when relevant.",
 	inputSchema: z.object({
 		category: z
-			.enum(["user_fact", "project", "preference", "insight", "reference"])
+			.enum([
+				"user_fact",
+				"project",
+				"preference",
+				"insight",
+				"reference",
+			])
 			.describe(
 				"user_fact = personal info about user; " +
-				"project = ongoing work/project; " +
-				"preference = likes/dislikes/work style; " +
-				"insight = interesting realization; " +
-				"reference = paper/book/link worth remembering",
+					"project = ongoing work/project; " +
+					"preference = likes/dislikes/work style; " +
+					"insight = interesting realization; " +
+					"reference = paper/book/link worth remembering",
 			),
 		content: z
 			.string()
-			.describe("The memory content — specific, concise, future-readable"),
+			.describe(
+				"The memory content — specific, concise, future-readable",
+			),
 		tags: z
 			.array(z.string())
 			.optional()
@@ -290,13 +336,16 @@ export const updateMemoryTool = t({
 	inputSchema: z.object({
 		id: z.string().describe("The memory entry ID, e.g. 'a1b2c3d4'"),
 		category: z
-			.enum(["user_fact", "project", "preference", "insight", "reference"])
+			.enum([
+				"user_fact",
+				"project",
+				"preference",
+				"insight",
+				"reference",
+			])
 			.optional()
 			.describe("New category, if changing"),
-		content: z
-			.string()
-			.optional()
-			.describe("New content, if changing"),
+		content: z.string().optional().describe("New content, if changing"),
 		tags: z
 			.array(z.string())
 			.optional()
@@ -319,7 +368,13 @@ export const listMemoriesTool = t({
 		"Use when the user asks 'what do you remember about me' or wants to review memories.",
 	inputSchema: z.object({
 		category: z
-			.enum(["user_fact", "project", "preference", "insight", "reference"])
+			.enum([
+				"user_fact",
+				"project",
+				"preference",
+				"insight",
+				"reference",
+			])
 			.optional()
 			.describe("Filter by category"),
 		tag: z.string().optional().describe("Filter by tag (e.g. 'physics')"),
@@ -336,7 +391,9 @@ export const searchMemoriesTool = t({
 		"Search memories by keyword across content and tags. " +
 		"Use when the user asks about something specific they may have told you before.",
 	inputSchema: z.object({
-		query: z.string().describe("Search query — keywords to find in memories"),
+		query: z
+			.string()
+			.describe("Search query — keywords to find in memories"),
 		limit: z
 			.number()
 			.optional()
@@ -365,7 +422,11 @@ export const searchPastSessionsTool = t({
 		"Use when the user references something from a previous conversation, " +
 		"asks 'what did we discuss about X', or when you need historical context.",
 	inputSchema: z.object({
-		query: z.string().describe("Search query — keywords or topic to find in past sessions"),
+		query: z
+			.string()
+			.describe(
+				"Search query — keywords or topic to find in past sessions",
+			),
 		limit: z
 			.number()
 			.optional()

@@ -22,7 +22,10 @@ export interface ProgressUpdate {
 }
 
 export interface AiPruneOptions {
-	onBeforeSave?: (removed: number, groups: number) => Promise<boolean> | boolean;
+	onBeforeSave?: (
+		removed: number,
+		groups: number,
+	) => Promise<boolean> | boolean;
 }
 
 const SYSTEM_PROMPT = `You are a memory deduplication assistant. Your job is to group memory entries that represent the SAME underlying fact, even if worded differently.
@@ -179,7 +182,10 @@ export class MemoryOptimizer {
 		// Preserve original order
 		const idSet = new Set(kept.map((e) => e.id));
 		const finalEntries = entries.filter((e) => idSet.has(e.id));
-		if (options?.onBeforeSave && !(await options.onBeforeSave(removed, groups))) {
+		if (
+			options?.onBeforeSave &&
+			!(await options.onBeforeSave(removed, groups))
+		) {
 			throw new Error("Prune declined by user");
 		}
 

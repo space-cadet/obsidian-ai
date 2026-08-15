@@ -60,18 +60,27 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 				<button
 					key={`${result.sessionId}-${result.messageId ?? "title"}`}
 					className="chat-search-result-item"
-					onClick={() => handleClick(result.sessionId, result.messageId)}
-					title={result.isTitleMatch ? "Session title" : "Message match"}
+					onClick={() =>
+						handleClick(result.sessionId, result.messageId)
+					}
+					title={
+						result.isTitleMatch ? "Session title" : "Message match"
+					}
 				>
 					<div className="chat-search-result-title">
 						<ObsidianIcon icon="message-square" size={12} />
 						<span>{result.sessionTitle}</span>
 						{result.isTitleMatch && (
-							<span className="chat-search-result-badge">title</span>
+							<span className="chat-search-result-badge">
+								title
+							</span>
 						)}
 					</div>
 					<div className="chat-search-result-snippet">
-						{renderHighlightedSnippet(result.snippet, result.highlights)}
+						{renderHighlightedSnippet(
+							result.snippet,
+							result.highlights,
+						)}
 					</div>
 				</button>
 			))}
@@ -97,7 +106,9 @@ function renderHighlightedSnippet(
 	for (const { start, end } of highlights) {
 		if (start > cursor) {
 			nodes.push(
-				<span key={`text-${cursor}`}>{snippet.slice(cursor, start)}</span>,
+				<span key={`text-${cursor}`}>
+					{snippet.slice(cursor, start)}
+				</span>,
 			);
 		}
 		nodes.push(

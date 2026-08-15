@@ -9,7 +9,10 @@ export interface UseSearchResult {
 	searchLoading: boolean;
 	searchVisible: boolean;
 	toggleSearch: () => void;
-	handleSelectSearchResult: (sessionId: string, messageId: string | null) => void;
+	handleSelectSearchResult: (
+		sessionId: string,
+		messageId: string | null,
+	) => void;
 }
 
 export function useSearch(

@@ -68,7 +68,8 @@ export function parseSseEvent(
 				if (item?.type === "function_call") {
 					return {
 						type: "function_call",
-						call_id: item.call_id || item.id || `call_${Date.now()}`,
+						call_id:
+							item.call_id || item.id || `call_${Date.now()}`,
 						name: item.name,
 						arguments: item.arguments || "",
 					};
@@ -156,7 +157,10 @@ export async function* parseOpenResponsesStream(
 	const remaining = decoder.decode();
 	if (remaining) {
 		buffer += remaining;
-		const lines = buffer.split("\n").map((l) => l.trim()).filter(Boolean);
+		const lines = buffer
+			.split("\n")
+			.map((l) => l.trim())
+			.filter(Boolean);
 		for (let i = 0; i < lines.length; i++) {
 			if (lines[i].startsWith("event: ")) {
 				const eventType = lines[i].slice(7).trim();

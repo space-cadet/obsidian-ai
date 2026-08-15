@@ -10,7 +10,8 @@ export default defineConfig({
 	},
 	resolve: {
 		alias: {
-			obsidian: "/Users/sage/.openclaw/workspace/code/obsidian-ai/__mocks__/obsidian.ts",
+			obsidian:
+				"/Users/sage/.openclaw/workspace/code/obsidian-ai/__mocks__/obsidian.ts",
 		},
 	},
 });

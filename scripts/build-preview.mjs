@@ -9,7 +9,10 @@ await build({
 	platform: "browser",
 	outfile: "preview-dist/preview.js",
 	loader: { ".tsx": "tsx", ".ts": "ts" },
-	alias: { obsidian: new URL("../src/preview/obsidianStub.ts", import.meta.url).pathname },
+	alias: {
+		obsidian: new URL("../src/preview/obsidianStub.ts", import.meta.url)
+			.pathname,
+	},
 	sourcemap: true,
 });
 await cp("preview/index.html", "preview-dist/index.html");

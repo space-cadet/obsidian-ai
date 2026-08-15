@@ -40,7 +40,10 @@ const ContextPickerModal: React.FC<ContextPickerModalProps> = ({
 	}, [app]);
 
 	const allTags = useMemo(() => {
-		const tagMap = (app.metadataCache as any).getTags() as Record<string, number>;
+		const tagMap = (app.metadataCache as any).getTags() as Record<
+			string,
+			number
+		>;
 		return Object.entries(tagMap)
 			.map(([tag, count]) => ({ tag, count }))
 			.sort((a, b) => b.count - a.count);
@@ -49,9 +52,10 @@ const ContextPickerModal: React.FC<ContextPickerModalProps> = ({
 	const filteredNotes = useMemo(() => {
 		const q = searchQuery.toLowerCase();
 		if (!q) return allNotes;
-		return allNotes.filter((f) =>
-			f.basename.toLowerCase().includes(q) ||
-			f.path.toLowerCase().includes(q),
+		return allNotes.filter(
+			(f) =>
+				f.basename.toLowerCase().includes(q) ||
+				f.path.toLowerCase().includes(q),
 		);
 	}, [allNotes, searchQuery]);
 
@@ -217,7 +221,8 @@ const ContextPickerModal: React.FC<ContextPickerModalProps> = ({
 									return (
 										<label
 											key={key}
-											className={`chat-picker-item${checked ? " chat-picker-item-selected" : ""}`} title={file.path}
+											className={`chat-picker-item${checked ? " chat-picker-item-selected" : ""}`}
+											title={file.path}
 										>
 											<input
 												type="checkbox"
@@ -228,11 +233,13 @@ const ContextPickerModal: React.FC<ContextPickerModalProps> = ({
 											/>
 											<span className="chat-picker-item-name">
 												{file.basename}
-	{shouldShowPath(file) && (
-		<span className="chat-picker-item-folder">
-			{getParentFolder(file.path)}
-		</span>
-	)}
+												{shouldShowPath(file) && (
+													<span className="chat-picker-item-folder">
+														{getParentFolder(
+															file.path,
+														)}
+													</span>
+												)}
 											</span>
 											<span className="chat-picker-item-meta">
 												{file.extension}

@@ -14,7 +14,11 @@ vi.mock("obsidian", () => {
 	return {
 		App: class {},
 		TFile,
-		Notice: class { constructor(message: string) { notices(message); } },
+		Notice: class {
+			constructor(message: string) {
+				notices(message);
+			}
+		},
 		normalizePath: (path: string) => path.replace(/\\/g, "/"),
 	};
 });
@@ -31,14 +35,18 @@ const makeFile = (path: string): TFile =>
 describe("ToolExecutor create_notes", () => {
 	it("skips existing notes and creates the remaining batch", async () => {
 		const files = new Map<string, TFile>([
-			["Learning Chinese/Verbs/chi.md", makeFile("Learning Chinese/Verbs/chi.md")],
+			[
+				"Learning Chinese/Verbs/chi.md",
+				makeFile("Learning Chinese/Verbs/chi.md"),
+			],
 		]);
 		const create = vi.fn(async (path: string) => {
 			files.set(path, makeFile(path));
 		});
 		const app = {
 			vault: {
-				getAbstractFileByPath: (path: string) => files.get(path) ?? null,
+				getAbstractFileByPath: (path: string) =>
+					files.get(path) ?? null,
 				create,
 			},
 			metadataCache: { getFirstLinkpathDest: () => null },

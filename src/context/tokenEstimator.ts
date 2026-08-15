@@ -19,7 +19,11 @@ const PDF_PAGE_TOKEN_ESTIMATE = 500;
 /** Estimate tokens for an Attachment object without full resolution.
  *  Uses inline data size when available, with a size-based fallback for large files.
  */
-export function estimateAttachmentTokens(attachment: { type: string; data?: string; name: string }): number {
+export function estimateAttachmentTokens(attachment: {
+	type: string;
+	data?: string;
+	name: string;
+}): number {
 	// Images: fixed estimate regardless of size (APIs tokenize by dimensions)
 	if (attachment.type === "image") {
 		return IMAGE_TOKEN_ESTIMATE;
@@ -90,5 +94,8 @@ export function estimateContentPartsTokens(
 		| { type: "file"; data: string; mimeType: string }
 	>,
 ): number {
-	return parts.reduce((sum, part) => sum + estimateContentPartTokens(part), 0);
+	return parts.reduce(
+		(sum, part) => sum + estimateContentPartTokens(part),
+		0,
+	);
 }

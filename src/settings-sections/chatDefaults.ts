@@ -5,7 +5,10 @@ import { createSection } from "./helpers";
 export function renderChatDefaultsSection(
 	containerEl: HTMLElement,
 	plugin: ObsidianAIPlugin,
-	saveSettings: (options?: { refresh?: boolean; quiet?: boolean }) => Promise<void>,
+	saveSettings: (options?: {
+		refresh?: boolean;
+		quiet?: boolean;
+	}) => Promise<void>,
 ): void {
 	const sectionEl = createSection(
 		containerEl,
@@ -25,7 +28,10 @@ export function renderChatDefaultsSection(
 				.addOption("duplicates", "When duplicates")
 				.setValue(plugin.settings.contextPickerPathDisplay)
 				.onChange(async (value) => {
-					plugin.settings.contextPickerPathDisplay = value as "never" | "always" | "duplicates";
+					plugin.settings.contextPickerPathDisplay = value as
+						| "never"
+						| "always"
+						| "duplicates";
 					await saveSettings();
 				});
 		});
@@ -86,12 +92,14 @@ export function renderChatDefaultsSection(
 						? Math.min(360, Math.max(120, value))
 						: 160;
 					text.setValue(String(plugin.settings.chatTabTitleWidth));
-					document.querySelectorAll<HTMLElement>(".chat-session-tabs").forEach((tabStrip) => {
-						tabStrip.style.setProperty(
-							"--chat-tab-title-width",
-							`${plugin.settings.chatTabTitleWidth}px`,
-						);
-					});
+					document
+						.querySelectorAll<HTMLElement>(".chat-session-tabs")
+						.forEach((tabStrip) => {
+							tabStrip.style.setProperty(
+								"--chat-tab-title-width",
+								`${plugin.settings.chatTabTitleWidth}px`,
+							);
+						});
 					await saveSettings();
 				});
 		});
@@ -117,9 +125,7 @@ export function renderChatDefaultsSection(
 		)
 		.addText((text) => {
 			text.setPlaceholder("20")
-				.setValue(
-					String(plugin.settings.maxSavedConversations),
-				)
+				.setValue(String(plugin.settings.maxSavedConversations))
 				.inputEl.addEventListener("blur", async () => {
 					const value = Number.parseInt(text.getValue(), 10);
 					plugin.settings.maxSavedConversations =

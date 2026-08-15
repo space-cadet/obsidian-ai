@@ -64,16 +64,14 @@ async function resizeImage(
 			ctx.drawImage(img, 0, 0, width, height);
 			resolve(canvas.toDataURL("image/jpeg", 0.85));
 		};
-		img.onerror = () => reject(new Error("Failed to load image for resizing"));
+		img.onerror = () =>
+			reject(new Error("Failed to load image for resizing"));
 		img.src = dataUrl;
 	});
 }
 
 /** Convert ArrayBuffer to base64 data URL */
-function arrayBufferToDataUrl(
-	buffer: ArrayBuffer,
-	mimeType: string,
-): string {
+function arrayBufferToDataUrl(buffer: ArrayBuffer, mimeType: string): string {
 	const bytes = new Uint8Array(buffer);
 	let binary = "";
 	for (let i = 0; i < bytes.byteLength; i++) {
@@ -110,7 +108,9 @@ async function readMarkdownFile(app: App, path: string): Promise<string> {
 }
 
 /** Convert a File (from file input or drag-and-drop) to an Attachment with inline data. */
-export async function createExternalAttachment(file: File): Promise<Attachment> {
+export async function createExternalAttachment(
+	file: File,
+): Promise<Attachment> {
 	const arrayBuffer = await file.arrayBuffer();
 	const base64 = arrayBufferToBase64(arrayBuffer);
 	const name = file.name;
@@ -179,18 +179,38 @@ export async function resolveAttachment(
 		}
 		// PDF with inline data
 		if (type === "pdf") {
-			if (provider === "gemini" || provider === "openai" || provider === "anthropic" || provider === "openrouter") {
+			if (
+				provider === "gemini" ||
+				provider === "openai" ||
+				provider === "anthropic" ||
+				provider === "openrouter"
+			) {
 				return [{ type: "file", data, mimeType: "application/pdf" }];
 			}
-			return [{ type: "text", text: `[PDF attached: ${name}]\n\nNote: PDF content extraction is not yet supported for ${provider}.` }];
+			return [
+				{
+					type: "text",
+					text: `[PDF attached: ${name}]\n\nNote: PDF content extraction is not yet supported for ${provider}.`,
+				},
+			];
 		}
 		// Markdown/text with inline data
 		if (type === "markdown" || type === "file") {
 			try {
 				const text = atob(data);
-				return [{ type: "text", text: `---\nFile: ${name}\n---\n\n${text}` }];
+				return [
+					{
+						type: "text",
+						text: `---\nFile: ${name}\n---\n\n${text}`,
+					},
+				];
 			} catch {
-				return [{ type: "text", text: `[Attached file: ${name}]\n\nNote: Could not decode file content.` }];
+				return [
+					{
+						type: "text",
+						text: `[Attached file: ${name}]\n\nNote: Could not decode file content.`,
+					},
+				];
 			}
 		}
 	}
@@ -213,7 +233,10 @@ export async function resolveAttachment(
 		try {
 			dataUrl = await resizeImage(dataUrl, MAX_IMAGE_DIMENSION);
 		} catch (e) {
-			console.warn(`[AttachmentEngine] Image resize failed for ${path}:`, e);
+			console.warn(
+				`[AttachmentEngine] Image resize failed for ${path}:`,
+				e,
+			);
 		}
 
 		const base64 = extractBase64FromDataUrl(dataUrl);
@@ -223,10 +246,16 @@ export async function resolveAttachment(
 	// ─── PDF (vault file) ───
 	if (type === "pdf" || isPdfFile(path)) {
 		const buffer = await readFileAsArrayBuffer(app, path);
-		const base64 = arrayBufferToDataUrl(buffer, "application/pdf").split(",")[1] ?? "";
+		const base64 =
+			arrayBufferToDataUrl(buffer, "application/pdf").split(",")[1] ?? "";
 
 		// Providers with native FilePart support
-		if (provider === "gemini" || provider === "openai" || provider === "anthropic" || provider === "openrouter") {
+		if (
+			provider === "gemini" ||
+			provider === "openai" ||
+			provider === "anthropic" ||
+			provider === "openrouter"
+		) {
 			return [
 				{
 					type: "file",
@@ -279,7 +308,10 @@ export async function resolveAttachments(
 			const resolved = await resolveAttachment(att, app, provider);
 			parts.push(...resolved);
 		} catch (e: any) {
-			console.error(`[AttachmentEngine] Failed to resolve ${att.path}:`, e);
+			console.error(
+				`[AttachmentEngine] Failed to resolve ${att.path}:`,
+				e,
+			);
 			parts.push({
 				type: "text",
 				text: `⚠️ Failed to load attachment: ${att.name} (${e.message})`,

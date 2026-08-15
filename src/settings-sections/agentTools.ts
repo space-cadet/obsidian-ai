@@ -5,7 +5,10 @@ import { createSection } from "./helpers";
 export function renderAgentToolsSection(
 	containerEl: HTMLElement,
 	plugin: ObsidianAIPlugin,
-	saveSettings: (options?: { refresh?: boolean; quiet?: boolean }) => Promise<void>,
+	saveSettings: (options?: {
+		refresh?: boolean;
+		quiet?: boolean;
+	}) => Promise<void>,
 ): void {
 	const sectionEl = createSection(
 		containerEl,

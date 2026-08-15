@@ -53,7 +53,8 @@ function broadcast(roomId, sender, message) {
 	const room = rooms.get(roomId);
 	if (!room) return;
 
-	const data = typeof message === "string" ? message : JSON.stringify(message);
+	const data =
+		typeof message === "string" ? message : JSON.stringify(message);
 
 	for (const [client] of room) {
 		if (client !== sender && client.readyState === WebSocket.OPEN) {
@@ -64,7 +65,9 @@ function broadcast(roomId, sender, message) {
 
 function send(ws, message) {
 	if (ws.readyState === WebSocket.OPEN) {
-		ws.send(typeof message === "string" ? message : JSON.stringify(message));
+		ws.send(
+			typeof message === "string" ? message : JSON.stringify(message),
+		);
 	}
 }
 
@@ -137,12 +140,16 @@ wss.on("connection", (ws, req) => {
 			const msg = JSON.parse(raw);
 
 			// Handle presence messages internally, don't broadcast them as chat
-			if (msg.type === "join" || msg.type === "leave" || msg.type === "roster") {
+			if (
+				msg.type === "join" ||
+				msg.type === "leave" ||
+				msg.type === "roster"
+			) {
 				return;
 			}
 
 			console.log(
-				`[relay] ${roomId}: ${msg.agentName || msg.agentId || userId}: ${msg.content?.slice(0, 50) || ""}`
+				`[relay] ${roomId}: ${msg.agentName || msg.agentId || userId}: ${msg.content?.slice(0, 50) || ""}`,
 			);
 			broadcast(roomId, ws, raw.toString());
 		} catch {
@@ -170,10 +177,18 @@ wss.on("connection", (ws, req) => {
 
 server.listen(PORT, () => {
 	console.log(`[relay] WebSocket relay running on port ${PORT}`);
-	console.log(`[relay] For same-device testing: ws://localhost:${PORT}/ws/:roomId?userId=Alice`);
-	console.log(`[relay] For cross-device: find this device's local IP, then use:`);
-	console.log(`[relay]   ws://<this-device-ip>:${PORT}/ws/:roomId?userId=Alice`);
-	console.log(`[relay] Find your IP: ipconfig getifaddr en0  (macOS) or ip addr  (Linux)`);
+	console.log(
+		`[relay] For same-device testing: ws://localhost:${PORT}/ws/:roomId?userId=Alice`,
+	);
+	console.log(
+		`[relay] For cross-device: find this device's local IP, then use:`,
+	);
+	console.log(
+		`[relay]   ws://<this-device-ip>:${PORT}/ws/:roomId?userId=Alice`,
+	);
+	console.log(
+		`[relay] Find your IP: ipconfig getifaddr en0  (macOS) or ip addr  (Linux)`,
+	);
 });
 
 // Graceful shutdown

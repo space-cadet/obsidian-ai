@@ -9,14 +9,20 @@ import { sanitizeHtmlForRenderer } from "../lib/sanitizeHtml";
 const StreamingBubble: React.FC<{
 	content: string;
 	contentParts?: ContentPart[];
-	renderMarkdown: (markdown: string, target: HTMLElement, sourcePath?: string) => Promise<void>;
+	renderMarkdown: (
+		markdown: string,
+		target: HTMLElement,
+		sourcePath?: string,
+	) => Promise<void>;
 	onOpenPastSession?: (sessionId: string, messageId: string) => void;
 }> = ({ content, contentParts, renderMarkdown, onOpenPastSession }) => {
 	const contentRef = useRef<HTMLDivElement>(null);
 	const renderedCountRef = useRef(0);
 	const lastTextRef = useRef("");
 	const wasPartsModeRef = useRef(false);
-	const toolRootsRef = useRef<Map<number, ReturnType<typeof createRoot>>>(new Map());
+	const toolRootsRef = useRef<Map<number, ReturnType<typeof createRoot>>>(
+		new Map(),
+	);
 
 	useEffect(() => {
 		if (!contentRef.current) return;
@@ -29,7 +35,9 @@ const StreamingBubble: React.FC<{
 		);
 
 		try {
-			const isPartsMode = Boolean(contentParts && contentParts.length > 0);
+			const isPartsMode = Boolean(
+				contentParts && contentParts.length > 0,
+			);
 
 			// If we just switched from text-only to parts mode, clear the DOM to avoid
 			// duplication — the text-only path may have already rendered content directly
@@ -52,11 +60,17 @@ const StreamingBubble: React.FC<{
 
 				// Remove old remaining-text div before rendering new parts to avoid
 				// duplication when prior remaining text becomes a formal text part.
-				const oldRemainDiv = contentRef.current.querySelector(".chat-bubble-remain");
+				const oldRemainDiv = contentRef.current.querySelector(
+					".chat-bubble-remain",
+				);
 				if (oldRemainDiv) oldRemainDiv.remove();
 
 				// Update already-rendered tool calls when their results arrive (hourglass → checkmark)
-				for (let i = 0; i < Math.min(currentCount, contentParts.length); i++) {
+				for (
+					let i = 0;
+					i < Math.min(currentCount, contentParts.length);
+					i++
+				) {
 					const part = contentParts[i];
 					if (part.type === "tool_call") {
 						const root = toolRootsRef.current.get(i);
@@ -67,7 +81,7 @@ const StreamingBubble: React.FC<{
 									result={part.result}
 									isPending={!part.result}
 									onOpenPastSession={onOpenPastSession}
-								/>
+								/>,
 							);
 						}
 					}
@@ -78,19 +92,27 @@ const StreamingBubble: React.FC<{
 					const part = newParts[i];
 					const partIndex = currentCount + i;
 					if (part.type === "text") {
-						const textDiv = contentRef.current.createDiv({ cls: "chat-bubble-text" });
-						renderMarkdown(sanitizeHtmlForRenderer(part.content), textDiv, "");
+						const textDiv = contentRef.current.createDiv({
+							cls: "chat-bubble-text",
+						});
+						renderMarkdown(
+							sanitizeHtmlForRenderer(part.content),
+							textDiv,
+							"",
+						);
 					} else if (part.type === "tool_call") {
-						const toolDiv = contentRef.current.createDiv({ cls: "chat-bubble-tool" });
+						const toolDiv = contentRef.current.createDiv({
+							cls: "chat-bubble-tool",
+						});
 						const root = createRoot(toolDiv);
 						toolRootsRef.current.set(partIndex, root);
 						root.render(
 							<ToolCallNotification
-							toolCall={part.call}
-							result={part.result}
-							isPending={!part.result}
-							onOpenPastSession={onOpenPastSession}
-							/>
+								toolCall={part.call}
+								result={part.result}
+								isPending={!part.result}
+								onOpenPastSession={onOpenPastSession}
+							/>,
 						);
 					}
 				}
@@ -100,7 +122,10 @@ const StreamingBubble: React.FC<{
 				// Use prefix match instead of lastIndexOf to avoid wrong offsets when
 				// the model repeats phrases.
 				const committedTexts = contentParts
-					.filter((p): p is Extract<typeof p, { type: "text" }> => p.type === "text")
+					.filter(
+						(p): p is Extract<typeof p, { type: "text" }> =>
+							p.type === "text",
+					)
 					.map((p) => p.content);
 				const committedConcat = committedTexts.join("");
 				let remainingText = "";
@@ -110,22 +135,39 @@ const StreamingBubble: React.FC<{
 					// Fallback: committed text doesn't match prefix (can happen if
 					// stripThinkingTags behaves differently on slices). Use first
 					// occurrence of last text part.
-					const lastTextPart = contentParts.filter((p) => p.type === "text").pop();
+					const lastTextPart = contentParts
+						.filter((p) => p.type === "text")
+						.pop();
 					if (lastTextPart && lastTextPart.type === "text") {
 						const idx = content.indexOf(lastTextPart.content);
-						remainingText = idx >= 0 ? content.slice(idx + lastTextPart.content.length) : content;
+						remainingText =
+							idx >= 0
+								? content.slice(
+										idx + lastTextPart.content.length,
+									)
+								: content;
 					}
 				}
 				if (remainingText.trim()) {
-					let remainDiv = contentRef.current.querySelector(".chat-bubble-remain") as HTMLDivElement | null;
+					let remainDiv = contentRef.current.querySelector(
+						".chat-bubble-remain",
+					) as HTMLDivElement | null;
 					if (!remainDiv) {
-						remainDiv = contentRef.current.createDiv({ cls: "chat-bubble-remain" });
+						remainDiv = contentRef.current.createDiv({
+							cls: "chat-bubble-remain",
+						});
 					} else {
 						remainDiv.empty();
 					}
-					renderMarkdown(sanitizeHtmlForRenderer(remainingText), remainDiv, "");
+					renderMarkdown(
+						sanitizeHtmlForRenderer(remainingText),
+						remainDiv,
+						"",
+					);
 				} else {
-					const remainDiv = contentRef.current.querySelector(".chat-bubble-remain");
+					const remainDiv = contentRef.current.querySelector(
+						".chat-bubble-remain",
+					);
 					if (remainDiv) remainDiv.remove();
 				}
 			} else {
@@ -141,27 +183,29 @@ const StreamingBubble: React.FC<{
 						sanitizeHtmlForRenderer(content),
 						contentRef.current,
 						"",
-					).then(() => {
-						if (unmounted) return;
-						logger?.writeDirect?.(
-							"debug",
-							`[StreamingBubble] renderMarkdown resolved`,
-						);
-					}).catch((err: any) => {
-						if (unmounted) return;
-						logger?.writeDirect?.(
-							"error",
-							`[StreamingBubble] renderMarkdown rejected:`,
-							err,
-						);
-						if (contentRef.current) {
-							contentRef.current.empty();
-							contentRef.current.createEl("pre", {
-								text: content,
-								cls: "chat-plaintext-fallback",
-							});
-						}
-					});
+					)
+						.then(() => {
+							if (unmounted) return;
+							logger?.writeDirect?.(
+								"debug",
+								`[StreamingBubble] renderMarkdown resolved`,
+							);
+						})
+						.catch((err: any) => {
+							if (unmounted) return;
+							logger?.writeDirect?.(
+								"error",
+								`[StreamingBubble] renderMarkdown rejected:`,
+								err,
+							);
+							if (contentRef.current) {
+								contentRef.current.empty();
+								contentRef.current.createEl("pre", {
+									text: content,
+									cls: "chat-plaintext-fallback",
+								});
+							}
+						});
 				}
 			}
 		} catch (err: any) {
@@ -196,7 +240,10 @@ const StreamingBubble: React.FC<{
 		<div className="chat-bubble chat-bubble-assistant chat-bubble-streaming">
 			<div className="chat-bubble-header">
 				<span className="chat-bubble-role">Obsidian AI</span>
-				<span className="chat-streaming-indicator" title="Generating response...">
+				<span
+					className="chat-streaming-indicator"
+					title="Generating response..."
+				>
 					<span className="chat-streaming-dot" />
 					<span className="chat-streaming-label">Generating</span>
 				</span>
@@ -216,7 +263,11 @@ interface ChatMessagesProps {
 	isStreaming: boolean;
 	isEditing: boolean;
 	app: App;
-	renderMarkdown: (markdown: string, target: HTMLElement, sourcePath?: string) => Promise<void>;
+	renderMarkdown: (
+		markdown: string,
+		target: HTMLElement,
+		sourcePath?: string,
+	) => Promise<void>;
 	onAppend: (content: string) => void;
 	onInsertAtCursor: (content: string) => void;
 	onApply: (content: string) => void;
@@ -276,7 +327,9 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		if (!container) return;
 		const threshold = 80;
 		const distanceFromBottom =
-			container.scrollHeight - container.scrollTop - container.clientHeight;
+			container.scrollHeight -
+			container.scrollTop -
+			container.clientHeight;
 		const atBottom = distanceFromBottom < threshold;
 		isNearBottomRef.current = atBottom;
 		setShowScrollBottom(!atBottom && messages.length > 0);
@@ -289,7 +342,8 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		if (!container) return;
 		const onScroll = () => {
 			checkScrollPosition();
-			if (sessionId) onScrollPositionChange?.(sessionId, container.scrollTop);
+			if (sessionId)
+				onScrollPositionChange?.(sessionId, container.scrollTop);
 		};
 		container.addEventListener("scroll", onScroll, { passive: true });
 		checkScrollPosition();
@@ -330,21 +384,31 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 
 	useEffect(() => {
 		if (!scrollToMessageId) return;
-		const target = scrollRef.current?.querySelector<HTMLElement>(`[data-message-id="${scrollToMessageId}"]`);
+		const target = scrollRef.current?.querySelector<HTMLElement>(
+			`[data-message-id="${scrollToMessageId}"]`,
+		);
 		if (!target) return;
 		target.scrollIntoView({ behavior: "smooth", block: "center" });
 		target.classList.add("chat-message-highlight");
-		const timer = window.setTimeout(() => target.classList.remove("chat-message-highlight"), 2000);
+		const timer = window.setTimeout(
+			() => target.classList.remove("chat-message-highlight"),
+			2000,
+		);
 		return () => window.clearTimeout(timer);
 	}, [scrollToMessageId, messages]);
 
 	useEffect(() => {
 		if (!scrollToMessageId) return;
-		const target = scrollRef.current?.querySelector<HTMLElement>(`[data-message-id="${scrollToMessageId}"]`);
+		const target = scrollRef.current?.querySelector<HTMLElement>(
+			`[data-message-id="${scrollToMessageId}"]`,
+		);
 		if (!target) return;
 		target.scrollIntoView({ behavior: "smooth", block: "center" });
 		target.classList.add("chat-message-highlight");
-		const timer = window.setTimeout(() => target.classList.remove("chat-message-highlight"), 2000);
+		const timer = window.setTimeout(
+			() => target.classList.remove("chat-message-highlight"),
+			2000,
+		);
 		return () => window.clearTimeout(timer);
 	}, [scrollToMessageId, messages]);
 
@@ -359,7 +423,10 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	}, []);
 
 	return (
-		<div className="chat-messages-scroll-wrapper" data-testid="chat-transcript">
+		<div
+			className="chat-messages-scroll-wrapper"
+			data-testid="chat-transcript"
+		>
 			<div className="chat-messages" ref={scrollRef}>
 				{messages.length === 0 && (
 					<div className="chat-empty-state">
@@ -381,7 +448,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 							onEdit={() => onEdit(msg.id)}
 							onApplyToTarget={onApplyToTarget}
 							onCreateNote={onCreateNote}
-							 onAppendToTarget={onAppendToTarget}
+							onAppendToTarget={onAppendToTarget}
 							selectionMode={selectionMode}
 							selected={selectedMessageIds?.has(msg.id)}
 							onLongPress={onLongPress}
@@ -390,7 +457,12 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 					</div>
 				))}
 				{isStreaming && currentAiMessage && (
-					<StreamingBubble content={currentAiMessage} contentParts={currentContentParts} renderMarkdown={renderMarkdown} onOpenPastSession={onOpenPastSession} />
+					<StreamingBubble
+						content={currentAiMessage}
+						contentParts={currentContentParts}
+						renderMarkdown={renderMarkdown}
+						onOpenPastSession={onOpenPastSession}
+					/>
 				)}
 				{isStreaming && !currentAiMessage && (
 					<div className="chat-typing-indicator">
@@ -402,7 +474,8 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 				{typingUsers && typingUsers.length > 0 && (
 					<div className="chat-typing-indicator-remote">
 						<span className="chat-typing-indicator-remote-label">
-							{typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"} typing…
+							{typingUsers.join(", ")}{" "}
+							{typingUsers.length === 1 ? "is" : "are"} typing…
 						</span>
 						<span className="chat-typing-dot" />
 						<span className="chat-typing-dot" />

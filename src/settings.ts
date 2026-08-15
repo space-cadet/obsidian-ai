@@ -26,7 +26,12 @@ export type ProviderType =
 	| "openrouter"
 	| "agent";
 
-export type WebSearchProvider = "brave" | "duckduckgo" | "searxng" | "tavily" | "exa";
+export type WebSearchProvider =
+	| "brave"
+	| "duckduckgo"
+	| "searxng"
+	| "tavily"
+	| "exa";
 
 export interface ModelCache {
 	models: string[];
@@ -45,11 +50,11 @@ export interface ProviderProfile {
 	azureApiVersion?: string;
 	modelCache?: ModelCache;
 	// Agent provider fields
-	endpointUrl?: string;    // Agent: OpenResponses endpoint URL
-	agentId?: string;        // Agent: x-openclaw-agent-id header
-	sessionKey?: string;     // Agent: stable session key
-	autoApprove?: boolean;   // Agent: auto-execute tool calls
-	maxSteps?: number;       // Agent: max tool iterations
+	endpointUrl?: string; // Agent: OpenResponses endpoint URL
+	agentId?: string; // Agent: x-openclaw-agent-id header
+	sessionKey?: string; // Agent: stable session key
+	autoApprove?: boolean; // Agent: auto-execute tool calls
+	maxSteps?: number; // Agent: max tool iterations
 	createdAt: number;
 	updatedAt: number;
 }
@@ -341,10 +346,12 @@ export const normalizeSettings = (
 		? (loadedSettings?.activeProviderProfileId as string)
 		: providerProfiles[0].id;
 
-	const selectedProfileIds: string[] = Array.isArray(loadedSettings?.selectedProfileIds)
+	const selectedProfileIds: string[] = Array.isArray(
+		loadedSettings?.selectedProfileIds,
+	)
 		? loadedSettings.selectedProfileIds.filter((id) =>
-			providerProfiles.some((p) => p.id === id),
-		)
+				providerProfiles.some((p) => p.id === id),
+			)
 		: [];
 
 	return {
@@ -361,7 +368,8 @@ export const normalizeSettings = (
 		maxContextMessages: merged.maxContextMessages ?? 10,
 		maxSavedConversations: merged.maxSavedConversations ?? 20,
 		autoNameSessions: Boolean(merged.autoNameSessions),
-		chatStorageFormat: (merged.chatStorageFormat as "legacy" | "jsonl") ?? "legacy",
+		chatStorageFormat:
+			(merged.chatStorageFormat as "legacy" | "jsonl") ?? "legacy",
 		maxSessionsInSidebar: merged.maxSessionsInSidebar ?? 50,
 		sessionBackupCount: merged.sessionBackupCount ?? 3,
 		debugLogLevel: merged.debugLogLevel ?? "error",
@@ -369,34 +377,58 @@ export const normalizeSettings = (
 		debugLogMaxSizeMB: merged.debugLogMaxSizeMB ?? 5,
 		enableAgentTools: Boolean(merged.enableAgentTools ?? true),
 		autoApply: Boolean(merged.autoApply ?? false),
-		enabledIntegrationProviderIds: Array.isArray(merged.enabledIntegrationProviderIds)
-			? merged.enabledIntegrationProviderIds.filter((id): id is string => typeof id === "string")
+		enabledIntegrationProviderIds: Array.isArray(
+			merged.enabledIntegrationProviderIds,
+		)
+			? merged.enabledIntegrationProviderIds.filter(
+					(id): id is string => typeof id === "string",
+				)
 			: [],
 		maxAgentSteps: merged.maxAgentSteps ?? 5,
 		pressEnterToSend: Boolean(merged.pressEnterToSend ?? true),
 		chatTabTitleWidth: Math.min(
 			360,
-			Math.max(120, Number.isFinite(merged.chatTabTitleWidth) ? merged.chatTabTitleWidth : 160),
+			Math.max(
+				120,
+				Number.isFinite(merged.chatTabTitleWidth)
+					? merged.chatTabTitleWidth
+					: 160,
+			),
 		),
 		restoreChatTabs: Boolean(merged.restoreChatTabs ?? true),
-		contextPickerPathDisplay: (merged.contextPickerPathDisplay as "never" | "always" | "duplicates") ?? "duplicates",
-		webSearchProvider: (merged.webSearchProvider as WebSearchProvider) ?? "duckduckgo",
+		contextPickerPathDisplay:
+			(merged.contextPickerPathDisplay as
+				| "never"
+				| "always"
+				| "duplicates") ?? "duplicates",
+		webSearchProvider:
+			(merged.webSearchProvider as WebSearchProvider) ?? "duckduckgo",
 		braveApiKey: merged.braveApiKey ?? "",
 		searxngUrl: merged.searxngUrl ?? "",
 		tavilyApiKey: merged.tavilyApiKey ?? "",
 		exaApiKey: merged.exaApiKey ?? "",
 		intelligence: {
-			enableIntelligence: Boolean(merged.intelligence?.enableIntelligence ?? false),
-			personaPath: merged.intelligence?.personaPath ?? "intelligence/persona.md",
-			memoryPath: merged.intelligence?.memoryPath ?? "intelligence/memory.md",
-			identityContextBudget: merged.intelligence?.identityContextBudget ?? 2000,
+			enableIntelligence: Boolean(
+				merged.intelligence?.enableIntelligence ?? false,
+			),
+			personaPath:
+				merged.intelligence?.personaPath ?? "intelligence/persona.md",
+			memoryPath:
+				merged.intelligence?.memoryPath ?? "intelligence/memory.md",
+			identityContextBudget:
+				merged.intelligence?.identityContextBudget ?? 2000,
 			autoSummarize: Boolean(merged.intelligence?.autoSummarize ?? false),
-			autoSummarizeMinMessages: merged.intelligence?.autoSummarizeMinMessages ?? 4,
-			enableMemoryAuditTool: Boolean(merged.intelligence?.enableMemoryAuditTool ?? false),
+			autoSummarizeMinMessages:
+				merged.intelligence?.autoSummarizeMinMessages ?? 4,
+			enableMemoryAuditTool: Boolean(
+				merged.intelligence?.enableMemoryAuditTool ?? false,
+			),
 		},
 		syncRelayUrl: merged.syncRelayUrl ?? "ws://localhost:8080",
 		syncRelayUrlHistory: Array.isArray(merged.syncRelayUrlHistory)
-			? merged.syncRelayUrlHistory.filter((u): u is string => typeof u === "string")
+			? merged.syncRelayUrlHistory.filter(
+					(u): u is string => typeof u === "string",
+				)
 			: [],
 		syncRoomId: merged.syncRoomId ?? "obsidian-ai-chat",
 		syncUserName: merged.syncUserName ?? "User",
@@ -420,7 +452,10 @@ export const getActiveProviderProfile = (
 const createProfileFromLegacySettings = (
 	settings: LegacySettings | null | undefined,
 ): ProviderProfile => {
-	const provider = settings?.provider === "ollama" ? "custom" : (settings?.provider ?? "openai");
+	const provider =
+		settings?.provider === "ollama"
+			? "custom"
+			: (settings?.provider ?? "openai");
 	return createProviderProfile({
 		id: DEFAULT_PROFILE_ID,
 		name: getDefaultProfileName(provider),
@@ -436,7 +471,10 @@ const createProfileFromLegacySettings = (
 const normalizeProviderProfile = (
 	profile: ProviderProfile,
 ): ProviderProfile => {
-	const provider = profile.provider === "ollama" ? "custom" : (profile.provider ?? "openai");
+	const provider =
+		profile.provider === "ollama"
+			? "custom"
+			: (profile.provider ?? "openai");
 	return createProviderProfile({
 		...profile,
 		provider,

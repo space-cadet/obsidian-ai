@@ -73,7 +73,9 @@ describe("validateAgentUrl (SSRF protection)", () => {
 	});
 
 	it("blocks data:// URLs", () => {
-		expect(validateAgentUrl("data:text/html,<script>alert(1)</script>").ok).toBe(false);
+		expect(
+			validateAgentUrl("data:text/html,<script>alert(1)</script>").ok,
+		).toBe(false);
 	});
 
 	it("blocks javascript:// URLs", () => {

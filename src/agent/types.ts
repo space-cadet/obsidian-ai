@@ -18,7 +18,13 @@ export interface ToolResult {
 	path?: string;
 	oldPath?: string;
 	entry?: string;
-	matches?: Array<{ path: string; basename: string; modified?: number; created?: number; size?: number }>;
+	matches?: Array<{
+		path: string;
+		basename: string;
+		modified?: number;
+		created?: number;
+		size?: number;
+	}>;
 	count?: number;
 	totalCount?: number;
 	markdownCount?: number;
@@ -28,7 +34,13 @@ export interface ToolResult {
 	subfolders?: string[];
 	query?: string;
 	folder?: string;
-	notes?: Array<{ path: string; basename: string; modified?: number; created?: number; size?: number }>;
+	notes?: Array<{
+		path: string;
+		basename: string;
+		modified?: number;
+		created?: number;
+		size?: number;
+	}>;
 	folders?: string[];
 	parent?: string;
 	basename?: string;

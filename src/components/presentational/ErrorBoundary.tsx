@@ -9,7 +9,10 @@ interface State {
 	hasError: boolean;
 }
 
-function getLogger(): { log: (level: string, ...args: any[]) => void; flushNow: () => void } | null {
+function getLogger(): {
+	log: (level: string, ...args: any[]) => void;
+	flushNow: () => void;
+} | null {
 	return (window as any).__obsidianAiLogger ?? null;
 }
 
@@ -39,15 +42,17 @@ export class ChatErrorBoundary extends Component<Props, State> {
 		if (this.state.hasError) {
 			return (
 				this.props.fallback ?? (
-					<div style={{ padding: "1rem", color: "var(--text-error)" }}>
+					<div
+						style={{ padding: "1rem", color: "var(--text-error)" }}
+					>
 						<h3>Obsidian AI Chat crashed</h3>
 						<p>
-							The chat panel encountered a rendering error. Check the
-							debug log for details.
+							The chat panel encountered a rendering error. Check
+							the debug log for details.
 						</p>
 						<p>
 							<code>
-						.vault/.obsidian/plugins/chat-lab/debug.log
+								.vault/.obsidian/plugins/chat-lab/debug.log
 							</code>
 						</p>
 					</div>

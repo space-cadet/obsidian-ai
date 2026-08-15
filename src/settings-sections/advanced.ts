@@ -6,7 +6,10 @@ import { ChatStorageMigration } from "../storage/Migration";
 export function renderAdvancedSection(
 	containerEl: HTMLElement,
 	plugin: ObsidianAIPlugin,
-	saveSettings: (options?: { refresh?: boolean; quiet?: boolean }) => Promise<void>,
+	saveSettings: (options?: {
+		refresh?: boolean;
+		quiet?: boolean;
+	}) => Promise<void>,
 ): void {
 	const sectionEl = createSection(
 		containerEl,
@@ -24,8 +27,7 @@ export function renderAdvancedSection(
 				.setPlaceholder("e.g., Summarize the selected text.")
 				.setValue(plugin.settings.selectionPrompt)
 				.inputEl.addEventListener("blur", async () => {
-					plugin.settings.selectionPrompt =
-						textarea.getValue();
+					plugin.settings.selectionPrompt = textarea.getValue();
 					await saveSettings();
 				});
 			textarea.inputEl.classList.add("wide-text-settings");
@@ -38,9 +40,7 @@ export function renderAdvancedSection(
 		)
 		.addTextArea((textarea) => {
 			textarea
-				.setPlaceholder(
-					"e.g., Generate text based on cursor position.",
-				)
+				.setPlaceholder("e.g., Generate text based on cursor position.")
 				.setValue(plugin.settings.cursorPrompt)
 				.inputEl.addEventListener("blur", async () => {
 					plugin.settings.cursorPrompt = textarea.getValue();
@@ -66,21 +66,27 @@ export function renderAdvancedSection(
 	// ─── Storage settings ───
 	new Setting(sectionEl)
 		.setName("Chat storage format")
-		.setDesc("Legacy = single data.json (old). JSONL = split sessions (fast, searchable, corruption-isolated).")
+		.setDesc(
+			"Legacy = single data.json (old). JSONL = split sessions (fast, searchable, corruption-isolated).",
+		)
 		.addDropdown((dropdown) => {
 			dropdown
 				.addOption("legacy", "Legacy (data.json)")
 				.addOption("jsonl", "JSONL (split sessions)")
 				.setValue(plugin.settings.chatStorageFormat)
 				.onChange(async (value) => {
-					plugin.settings.chatStorageFormat = value as "legacy" | "jsonl";
+					plugin.settings.chatStorageFormat = value as
+						| "legacy"
+						| "jsonl";
 					await saveSettings({ refresh: true });
 				});
 		});
 
 	new Setting(sectionEl)
 		.setName("Max sessions in sidebar")
-		.setDesc("Number of sessions shown in the sidebar before pagination. Not a hard cap on total sessions.")
+		.setDesc(
+			"Number of sessions shown in the sidebar before pagination. Not a hard cap on total sessions.",
+		)
 		.addSlider((slider) => {
 			slider
 				.setLimits(10, 200, 10)
@@ -94,7 +100,9 @@ export function renderAdvancedSection(
 
 	new Setting(sectionEl)
 		.setName("Session backup count")
-		.setDesc("Number of rolling backups to keep of data.json before writes.")
+		.setDesc(
+			"Number of rolling backups to keep of data.json before writes.",
+		)
 		.addSlider((slider) => {
 			slider
 				.setLimits(1, 10, 1)
@@ -120,10 +128,11 @@ export function renderAdvancedSection(
 		if (canMigrate) {
 			new Setting(sectionEl)
 				.setName("Migrate chat data")
-				.setDesc("Convert legacy chat data in data.json to the new JSONL format.")
+				.setDesc(
+					"Convert legacy chat data in data.json to the new JSONL format.",
+				)
 				.addButton((btn) => {
-					btn
-						.setButtonText("Migrate now")
+					btn.setButtonText("Migrate now")
 						.setCta()
 						.onClick(async () => {
 							btn.setDisabled(true);

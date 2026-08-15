@@ -10,7 +10,8 @@ export function appendPendingText(
 	contentParts: ContentPart[],
 ): { parts: ContentPart[]; checkpoint: number } {
 	const pendingText = fullText.slice(textCheckpoint);
-	if (!pendingText) return { parts: contentParts, checkpoint: textCheckpoint };
+	if (!pendingText)
+		return { parts: contentParts, checkpoint: textCheckpoint };
 	return {
 		parts: [...contentParts, { type: "text", content: pendingText }],
 		checkpoint: fullText.length,

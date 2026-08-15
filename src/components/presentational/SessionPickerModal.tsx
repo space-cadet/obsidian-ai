@@ -3,7 +3,6 @@ import { ChatSession } from "../../types";
 import { getSessionTotalTokens } from "../../lib/sessionUtils";
 import type { ExportFormat } from "./ExportModal";
 
-
 interface SessionPickerModalProps {
 	sessions: ChatSession[];
 	activeSessionId: string | null;
@@ -41,7 +40,9 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 }) => {
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editValue, setEditValue] = useState("");
-	const [deleteCandidate, setDeleteCandidate] = useState<ChatSession | null>(null);
+	const [deleteCandidate, setDeleteCandidate] = useState<ChatSession | null>(
+		null,
+	);
 
 	// Sort by updatedAt descending (newest first)
 	const sorted = sessions
@@ -72,7 +73,11 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 	};
 
 	return (
-		<div className="chat-modal-overlay" data-testid="session-picker-modal" onClick={onClose}>
+		<div
+			className="chat-modal-overlay"
+			data-testid="session-picker-modal"
+			onClick={onClose}
+		>
 			<div className="chat-modal" onClick={(e) => e.stopPropagation()}>
 				<div className="chat-modal-header">
 					<h3>Chat History</h3>
@@ -101,14 +106,18 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 								);
 								const preview = firstUserMsg
 									? firstUserMsg.content.slice(0, 60) +
-										(firstUserMsg.content.length > 60 ? "…" : "")
+										(firstUserMsg.content.length > 60
+											? "…"
+											: "")
 									: "No messages";
 								const displayTitle =
 									session.title ||
 									(firstUserMsg
 										? firstUserMsg.content.slice(0, 40) +
-											(firstUserMsg.content.length > 40 ? "…" : "")
-									: `Chat ${new Date(session.createdAt).toLocaleDateString()}`);
+											(firstUserMsg.content.length > 40
+												? "…"
+												: "")
+										: `Chat ${new Date(session.createdAt).toLocaleDateString()}`);
 
 								return (
 									<div
@@ -120,15 +129,23 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 												<input
 													className="chat-session-rename-input"
 													value={editValue}
-													onChange={(e) => setEditValue(e.target.value)}
-													onKeyDown={handleRenameKeyDown}
+													onChange={(e) =>
+														setEditValue(
+															e.target.value,
+														)
+													}
+													onKeyDown={
+														handleRenameKeyDown
+													}
 													onBlur={commitRename}
 													autoFocus
 												/>
 											) : (
 												<div
 													className="chat-session-title"
-													onDoubleClick={() => startRename(session)}
+													onDoubleClick={() =>
+														startRename(session)
+													}
 													title="Double-click to rename"
 												>
 													{displayTitle}
@@ -140,11 +157,20 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 												</div>
 											)}
 											<div className="chat-session-meta">
-												{session.messages.length} messages ·{" "}
-												{formatRelativeTime(session.updatedAt)}
-												{getSessionTotalTokens(session) > 0 && (
+												{session.messages.length}{" "}
+												messages ·{" "}
+												{formatRelativeTime(
+													session.updatedAt,
+												)}
+												{getSessionTotalTokens(
+													session,
+												) > 0 && (
 													<span className="chat-session-tokens">
-														 · ~{getSessionTotalTokens(session).toLocaleString()} tokens
+														· ~
+														{getSessionTotalTokens(
+															session,
+														).toLocaleString()}{" "}
+														tokens
 													</span>
 												)}
 											</div>
@@ -152,64 +178,125 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 												{preview}
 											</div>
 										</div>
-										<div className="chat-session-actions" aria-label={`Actions for ${displayTitle}`}>
+										<div
+											className="chat-session-actions"
+											aria-label={`Actions for ${displayTitle}`}
+										>
 											<button
-													className="chat-btn-small chat-session-load"
-												onClick={() => onLoad(session.id)}
+												className="chat-btn-small chat-session-load"
+												onClick={() =>
+													onLoad(session.id)
+												}
 												disabled={isActive}
-												title={isActive ? "Current session" : "Load session"}
-												aria-label={isActive ? "Current session" : `Load ${displayTitle}`}
+												title={
+													isActive
+														? "Current session"
+														: "Load session"
+												}
+												aria-label={
+													isActive
+														? "Current session"
+														: `Load ${displayTitle}`
+												}
 											>
-												<span aria-hidden="true">↪</span>
+												<span aria-hidden="true">
+													↪
+												</span>
 											</button>
-										<label className="chat-session-copy-menu" onClick={(e) => e.stopPropagation()}>
-												<span className="sr-only">Copy session</span>
+											<label
+												className="chat-session-copy-menu"
+												onClick={(e) =>
+													e.stopPropagation()
+												}
+											>
+												<span className="sr-only">
+													Copy session
+												</span>
 												<select
 													className="chat-btn-small chat-session-copy-select"
 													defaultValue=""
 													aria-label={`Copy ${displayTitle}`}
 													title="Copy session"
-												onChange={(e) => {
-													const format = e.target.value as ExportFormat;
-													if (format) onCopy?.(session, format);
-													e.target.value = "";
-												}}
+													onChange={(e) => {
+														const format = e.target
+															.value as ExportFormat;
+														if (format)
+															onCopy?.(
+																session,
+																format,
+															);
+														e.target.value = "";
+													}}
+												>
+													<option value="" disabled>
+														📋
+													</option>
+													<option value="md">
+														Copy Markdown
+													</option>
+													<option value="json">
+														Copy JSON
+													</option>
+													<option value="jsonl">
+														Copy JSONL
+													</option>
+												</select>
+											</label>
+											<label
+												className="chat-session-copy-menu"
+												onClick={(e) =>
+													e.stopPropagation()
+												}
 											>
-														<option value="" disabled>📋</option>
-												<option value="md">Copy Markdown</option>
-												<option value="json">Copy JSON</option>
-												<option value="jsonl">Copy JSONL</option>
-											</select>
-										</label>
-										<label className="chat-session-copy-menu" onClick={(e) => e.stopPropagation()}>
-											<span className="sr-only">Export session</span>
-											<select
-												className="chat-btn-small chat-session-copy-select chat-session-export-select"
-												defaultValue=""
-												aria-label={`Export ${displayTitle}`}
-												title="Export session"
-												onChange={(e) => {
-													const format = e.target.value as ExportFormat;
-													if (format) onExport?.(session, format);
-													e.target.value = "";
-												}}
-											>
-												<option value="" disabled>↥</option>
-												<option value="md">Export Markdown</option>
-												<option value="json">Export JSON</option>
-												<option value="jsonl">Export JSONL</option>
-											</select>
-										</label>
+												<span className="sr-only">
+													Export session
+												</span>
+												<select
+													className="chat-btn-small chat-session-copy-select chat-session-export-select"
+													defaultValue=""
+													aria-label={`Export ${displayTitle}`}
+													title="Export session"
+													onChange={(e) => {
+														const format = e.target
+															.value as ExportFormat;
+														if (format)
+															onExport?.(
+																session,
+																format,
+															);
+														e.target.value = "";
+													}}
+												>
+													<option value="" disabled>
+														↥
+													</option>
+													<option value="md">
+														Export Markdown
+													</option>
+													<option value="json">
+														Export JSON
+													</option>
+													<option value="jsonl">
+														Export JSONL
+													</option>
+												</select>
+											</label>
 											<button
 												className="chat-btn-small"
-												onClick={(e) => { e.stopPropagation(); startRename(session); }}
+												onClick={(e) => {
+													e.stopPropagation();
+													startRename(session);
+												}}
 												title="Rename session"
 											>
 												✎
 											</button>
 											<button
 												className="chat-btn-small chat-btn-danger"
-												onClick={(e) => { e.stopPropagation(); setDeleteCandidate(session); }}
+												onClick={(e) => {
+													e.stopPropagation();
+													setDeleteCandidate(session);
+												}}
 												title="Delete session"
 											>
 												×
@@ -217,21 +304,39 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 										</div>
 									</div>
 								);
-								})}
-					</div>
-				)}
+							})}
+						</div>
+					)}
 				</div>
 				{deleteCandidate && (
-					<div className="chat-session-delete-confirm" role="alertdialog" aria-modal="true" aria-labelledby="chat-delete-session-title">
+					<div
+						className="chat-session-delete-confirm"
+						role="alertdialog"
+						aria-modal="true"
+						aria-labelledby="chat-delete-session-title"
+					>
 						<div className="chat-session-delete-confirm-card">
-							<h4 id="chat-delete-session-title">Delete this chat session?</h4>
-							<p>This permanently deletes “{deleteCandidate.title || "Untitled chat"}” and its messages. This cannot be undone.</p>
+							<h4 id="chat-delete-session-title">
+								Delete this chat session?
+							</h4>
+							<p>
+								This permanently deletes “
+								{deleteCandidate.title || "Untitled chat"}” and
+								its messages. This cannot be undone.
+							</p>
 							<div className="chat-session-delete-confirm-actions">
-								<button onClick={() => setDeleteCandidate(null)}>Cancel</button>
-								<button className="mod-warning" onClick={() => {
-									onDelete(deleteCandidate.id);
-									setDeleteCandidate(null);
-								}}>
+								<button
+									onClick={() => setDeleteCandidate(null)}
+								>
+									Cancel
+								</button>
+								<button
+									className="mod-warning"
+									onClick={() => {
+										onDelete(deleteCandidate.id);
+										setDeleteCandidate(null);
+									}}
+								>
 									Delete session
 								</button>
 							</div>
@@ -239,8 +344,8 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 					</div>
 				)}
 			</div>
-			</div>
-		);
-	};
+		</div>
+	);
+};
 
 export default SessionPickerModal;

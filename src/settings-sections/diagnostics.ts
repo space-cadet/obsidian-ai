@@ -21,10 +21,14 @@ async function calculatePluginDiskUsage(
 		// Node modules are loaded only after the desktop guard; mobile never evaluates them.
 		const [fs, path] = await Promise.all([import("fs"), import("path")]);
 
-		const walk = async (dir: string): Promise<{ size: number; files: Map<string, number> }> => {
+		const walk = async (
+			dir: string,
+		): Promise<{ size: number; files: Map<string, number> }> => {
 			let total = 0;
 			const files = new Map<string, number>();
-			const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+			const entries = await fs.promises.readdir(dir, {
+				withFileTypes: true,
+			});
 			for (const entry of entries) {
 				const fullPath = path.join(dir, entry.name);
 				if (entry.isDirectory()) {
@@ -56,7 +60,9 @@ async function calculatePluginDiskUsage(
 			} else if (basename === "data.json" || basename.endsWith(".json")) {
 				settings += size;
 			} else if (
-				/\.(png|jpe?g|gif|webp|bmp|svg|mp4|webm|mp3|wav|ogg|pdf|docx?|zip)$/i.test(basename)
+				/\.(png|jpe?g|gif|webp|bmp|svg|mp4|webm|mp3|wav|ogg|pdf|docx?|zip)$/i.test(
+					basename,
+				)
 			) {
 				attachments += size;
 			} else {
@@ -82,7 +88,10 @@ export function renderDiagnosticsSection(
 	containerEl: HTMLElement,
 	plugin: ObsidianAIPlugin,
 	app: App,
-	saveSettings: (options?: { refresh?: boolean; quiet?: boolean }) => Promise<void>,
+	saveSettings: (options?: {
+		refresh?: boolean;
+		quiet?: boolean;
+	}) => Promise<void>,
 ): void {
 	const sectionEl = createSection(
 		containerEl,
@@ -112,7 +121,9 @@ export function renderDiagnosticsSection(
 
 	new Setting(sectionEl)
 		.setName("Debug log max size (MB)")
-		.setDesc("Maximum size for the debug log file. When exceeded, the file is truncated to keep the most recent entries.")
+		.setDesc(
+			"Maximum size for the debug log file. When exceeded, the file is truncated to keep the most recent entries.",
+		)
 		.addText((text) => {
 			text.setPlaceholder("5")
 				.setValue(String(plugin.settings.debugLogMaxSizeMB))
@@ -138,7 +149,9 @@ export function renderDiagnosticsSection(
 				});
 		});
 
-	const metricsEl = sectionEl.createDiv({ cls: "obsidian-ai-settings-metrics" });
+	const metricsEl = sectionEl.createDiv({
+		cls: "obsidian-ai-settings-metrics",
+	});
 
 	const createMetric = (label: string, value: string) => {
 		const wrapper = metricsEl.createDiv({
@@ -164,7 +177,9 @@ export function renderDiagnosticsSection(
 	const usageTotalEl = createMetric("LLM Usage (estimated)", "—");
 	const usageSplitEl = createMetric("Estimated input / output", "—");
 	const responseStatsEl = createMetric("Completed responses", "—");
-	const modelUsageEl = sectionEl.createDiv({ cls: "obsidian-ai-model-usage" });
+	const modelUsageEl = sectionEl.createDiv({
+		cls: "obsidian-ai-model-usage",
+	});
 	modelUsageEl.createEl("h4", { text: "Estimated usage by model" });
 	const diskTotalEl = createMetric("Plugin Storage", "—");
 	const diskBreakdownEl = createMetric("Storage Breakdown", "—");
@@ -197,23 +212,46 @@ export function renderDiagnosticsSection(
 			const usage = summarizeLlmUsage(chatData.sessions);
 			usageTotalEl.textContent = `~${usage.totalEstimatedTokens.toLocaleString()} tokens`;
 			usageSplitEl.textContent = `~${usage.inputEstimatedTokens.toLocaleString()} / ~${usage.outputEstimatedTokens.toLocaleString()} tokens`;
-			responseStatsEl.textContent = usage.averageResponseTimeMs === null
-				? String(usage.completedResponses)
-				: `${usage.completedResponses} · ${(usage.averageResponseTimeMs / 1000).toFixed(1)}s avg`;
-			modelUsageEl.querySelector(".obsidian-ai-model-usage-content")?.remove();
-			const modelUsageContent = modelUsageEl.createDiv({ cls: "obsidian-ai-model-usage-content" });
+			responseStatsEl.textContent =
+				usage.averageResponseTimeMs === null
+					? String(usage.completedResponses)
+					: `${usage.completedResponses} · ${(usage.averageResponseTimeMs / 1000).toFixed(1)}s avg`;
+			modelUsageEl
+				.querySelector(".obsidian-ai-model-usage-content")
+				?.remove();
+			const modelUsageContent = modelUsageEl.createDiv({
+				cls: "obsidian-ai-model-usage-content",
+			});
 			if (usage.modelEstimatedTokens.length === 0) {
-				modelUsageContent.createEl("p", { text: "No saved estimates yet.", cls: "setting-item-description" });
+				modelUsageContent.createEl("p", {
+					text: "No saved estimates yet.",
+					cls: "setting-item-description",
+				});
 			} else {
-				const maxTokens = Math.max(...usage.modelEstimatedTokens.map((u) => u.tokens));
+				const maxTokens = Math.max(
+					...usage.modelEstimatedTokens.map((u) => u.tokens),
+				);
 				for (const { model, tokens } of usage.modelEstimatedTokens) {
 					const pct = maxTokens > 0 ? (tokens / maxTokens) * 100 : 0;
-					const row = modelUsageContent.createDiv({ cls: "obsidian-ai-usage-bar-row" });
-					row.createEl("span", { text: model, cls: "obsidian-ai-usage-bar-label", attr: { title: model } });
-					const track = row.createDiv({ cls: "obsidian-ai-usage-bar-track" });
-					const fill = track.createDiv({ cls: "obsidian-ai-usage-bar-fill" });
+					const row = modelUsageContent.createDiv({
+						cls: "obsidian-ai-usage-bar-row",
+					});
+					row.createEl("span", {
+						text: model,
+						cls: "obsidian-ai-usage-bar-label",
+						attr: { title: model },
+					});
+					const track = row.createDiv({
+						cls: "obsidian-ai-usage-bar-track",
+					});
+					const fill = track.createDiv({
+						cls: "obsidian-ai-usage-bar-fill",
+					});
 					fill.setCssStyles({ width: `${pct}%` });
-					row.createEl("span", { text: `~${tokens.toLocaleString()}`, cls: "obsidian-ai-usage-bar-value" });
+					row.createEl("span", {
+						text: `~${tokens.toLocaleString()}`,
+						cls: "obsidian-ai-usage-bar-value",
+					});
 				}
 			}
 		} catch {
@@ -222,8 +260,13 @@ export function renderDiagnosticsSection(
 			usageTotalEl.textContent = "?";
 			usageSplitEl.textContent = "?";
 			responseStatsEl.textContent = "?";
-			modelUsageEl.querySelector(".obsidian-ai-model-usage-content")?.remove();
-			modelUsageEl.createEl("p", { text: "Usage data unavailable.", cls: "obsidian-ai-model-usage-content setting-item-description" });
+			modelUsageEl
+				.querySelector(".obsidian-ai-model-usage-content")
+				?.remove();
+			modelUsageEl.createEl("p", {
+				text: "Usage data unavailable.",
+				cls: "obsidian-ai-model-usage-content setting-item-description",
+			});
 		}
 
 		// Disk usage
@@ -233,10 +276,14 @@ export function renderDiagnosticsSection(
 			if (usage) {
 				diskTotalEl.textContent = formatBytes(usage.total);
 				const parts: string[] = [];
-				if (usage.chats > 0) parts.push(`${formatBytes(usage.chats)} chats`);
-				if (usage.attachments > 0) parts.push(`${formatBytes(usage.attachments)} attachments`);
-				if (usage.settings > 0) parts.push(`${formatBytes(usage.settings)} settings`);
-				if (usage.other > 0) parts.push(`${formatBytes(usage.other)} other`);
+				if (usage.chats > 0)
+					parts.push(`${formatBytes(usage.chats)} chats`);
+				if (usage.attachments > 0)
+					parts.push(`${formatBytes(usage.attachments)} attachments`);
+				if (usage.settings > 0)
+					parts.push(`${formatBytes(usage.settings)} settings`);
+				if (usage.other > 0)
+					parts.push(`${formatBytes(usage.other)} other`);
 				diskBreakdownEl.textContent = parts.join(", ") || "Empty";
 			} else {
 				diskTotalEl.textContent = "N/A";
@@ -279,7 +326,11 @@ export function renderDiagnosticsSection(
 						text: "This will permanently delete all chat sessions. This action cannot be undone.",
 					});
 					const btnContainer = modal.contentEl.createEl("div");
-					btnContainer.setCssStyles({ display: "flex", gap: "8px", marginTop: "12px" });
+					btnContainer.setCssStyles({
+						display: "flex",
+						gap: "8px",
+						marginTop: "12px",
+					});
 
 					const cancelBtn = btnContainer.createEl("button", {
 						text: "Cancel",

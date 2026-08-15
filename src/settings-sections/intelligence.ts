@@ -9,7 +9,10 @@ import { MemoryOptimizer } from "../intelligence/MemoryOptimizer";
 export function renderIntelligenceSection(
 	containerEl: HTMLElement,
 	plugin: ObsidianAIPlugin,
-	saveSettings: (options?: { refresh?: boolean; quiet?: boolean }) => Promise<void>,
+	saveSettings: (options?: {
+		refresh?: boolean;
+		quiet?: boolean;
+	}) => Promise<void>,
 ): void {
 	const sectionEl = createSection(
 		containerEl,
@@ -21,7 +24,7 @@ export function renderIntelligenceSection(
 		.setName("Enable intelligence layer")
 		.setDesc(
 			"When enabled, the AI loads a persistent persona and memory on every session. " +
-			"It can create memories and search past conversations.",
+				"It can create memories and search past conversations.",
 		)
 		.addToggle((toggle) => {
 			toggle
@@ -40,7 +43,10 @@ export function renderIntelligenceSection(
 		const hint = sectionEl.createEl("div", {
 			cls: "setting-item-description",
 		});
-	hint.setCssStyles({ padding: "0 16px 12px", color: "var(--text-muted)" });
+		hint.setCssStyles({
+			padding: "0 16px 12px",
+			color: "var(--text-muted)",
+		});
 		hint.textContent =
 			"Turn this on to unlock memory creation, persona loading, and cross-session search. " +
 			"All data stays in the plugin directory — never in your vault.";
@@ -51,11 +57,13 @@ export function renderIntelligenceSection(
 		.setName("Identity context budget")
 		.setDesc(
 			"Max tokens for persona + memory injected into the system prompt. " +
-			"Higher values = more context but consume more of your model's window.",
+				"Higher values = more context but consume more of your model's window.",
 		)
 		.addText((text) => {
 			text.setPlaceholder("2000")
-				.setValue(String(plugin.settings.intelligence.identityContextBudget))
+				.setValue(
+					String(plugin.settings.intelligence.identityContextBudget),
+				)
 				.inputEl.addEventListener("blur", async () => {
 					const value = Number.parseInt(text.getValue(), 10);
 					plugin.settings.intelligence.identityContextBudget =
@@ -68,13 +76,14 @@ export function renderIntelligenceSection(
 		.setName("Persona file path")
 		.setDesc(
 			"Path to the AI's static identity file, relative to the plugin folder. " +
-			"Edit this to customize how the AI behaves.",
+				"Edit this to customize how the AI behaves.",
 		)
 		.addText((text) => {
 			text.setPlaceholder("intelligence/persona.md")
 				.setValue(plugin.settings.intelligence.personaPath)
 				.onChange(async (value) => {
-					plugin.settings.intelligence.personaPath = value || "intelligence/persona.md";
+					plugin.settings.intelligence.personaPath =
+						value || "intelligence/persona.md";
 					await saveSettings();
 				});
 		});
@@ -88,7 +97,8 @@ export function renderIntelligenceSection(
 			text.setPlaceholder("intelligence/memory.md")
 				.setValue(plugin.settings.intelligence.memoryPath)
 				.onChange(async (value) => {
-					plugin.settings.intelligence.memoryPath = value || "intelligence/memory.md";
+					plugin.settings.intelligence.memoryPath =
+						value || "intelligence/memory.md";
 					await saveSettings();
 				});
 		});
@@ -97,7 +107,7 @@ export function renderIntelligenceSection(
 		.setName("Auto-summarize sessions")
 		.setDesc(
 			"When enabled, the AI automatically summarizes ended sessions and saves key points to memory. " +
-			"Triggered when you start a new chat session.",
+				"Triggered when you start a new chat session.",
 		)
 		.addToggle((toggle) => {
 			toggle
@@ -113,15 +123,18 @@ export function renderIntelligenceSection(
 			.setName("Min messages before summarizing")
 			.setDesc(
 				"Sessions with fewer messages than this will be skipped. " +
-				"Prevents summarizing trivial conversations.",
+					"Prevents summarizing trivial conversations.",
 			)
 			.addSlider((slider) => {
 				slider
 					.setLimits(2, 20, 1)
-					.setValue(plugin.settings.intelligence.autoSummarizeMinMessages)
+					.setValue(
+						plugin.settings.intelligence.autoSummarizeMinMessages,
+					)
 					.setDynamicTooltip()
 					.onChange(async (value) => {
-						plugin.settings.intelligence.autoSummarizeMinMessages = value;
+						plugin.settings.intelligence.autoSummarizeMinMessages =
+							value;
 						await saveSettings();
 					});
 			});
@@ -131,7 +144,7 @@ export function renderIntelligenceSection(
 		.setName("Enable memory audit tool")
 		.setDesc(
 			"When enabled, the AI can query the memory audit log via the read_memory_audit tool. " +
-			"Useful for debugging memory issues. Off by default to prevent context bloat.",
+				"Useful for debugging memory issues. Off by default to prevent context bloat.",
 		)
 		.addToggle((toggle) => {
 			toggle
@@ -143,16 +156,24 @@ export function renderIntelligenceSection(
 		});
 
 	// ── Memory Stats & Export ──
-	const statsEl = sectionEl.createEl("div", { cls: "obsidian-ai-memory-stats" });
+	const statsEl = sectionEl.createEl("div", {
+		cls: "obsidian-ai-memory-stats",
+	});
 
-	const statsHeader = statsEl.createEl("div", { cls: "obsidian-ai-memory-stats-header" });
+	const statsHeader = statsEl.createEl("div", {
+		cls: "obsidian-ai-memory-stats-header",
+	});
 
-	const statsContent = statsEl.createEl("div", { cls: "obsidian-ai-memory-categories" });
+	const statsContent = statsEl.createEl("div", {
+		cls: "obsidian-ai-memory-categories",
+	});
 
 	async function refreshStats() {
 		if (!plugin.personaLoader) {
 			statsHeader.empty();
-			statsHeader.createEl("span", { text: "Intelligence layer not initialized." });
+			statsHeader.createEl("span", {
+				text: "Intelligence layer not initialized.",
+			});
 			return;
 		}
 		try {
@@ -168,20 +189,25 @@ export function renderIntelligenceSection(
 					const stat = await adapter.stat(jsonPath);
 					jsonSize = stat?.size ?? 0;
 				}
-			} catch { /* ignore */ }
+			} catch {
+				/* ignore */
+			}
 			try {
 				if (await adapter.exists(mdPath)) {
 					const stat = await adapter.stat(mdPath);
 					mdSize = stat?.size ?? 0;
 				}
-			} catch { /* ignore */ }
+			} catch {
+				/* ignore */
+			}
 
 			const totalSize = jsonSize + mdSize;
-			const sizeStr = totalSize < 1024
-				? `${totalSize} B`
-				: totalSize < 1024 * 1024
-					? `${(totalSize / 1024).toFixed(1)} KB`
-					: `${(totalSize / (1024 * 1024)).toFixed(1)} MB`;
+			const sizeStr =
+				totalSize < 1024
+					? `${totalSize} B`
+					: totalSize < 1024 * 1024
+						? `${(totalSize / 1024).toFixed(1)} KB`
+						: `${(totalSize / (1024 * 1024)).toFixed(1)} MB`;
 
 			statsHeader.empty();
 			statsHeader.createEl("strong", { text: String(entries.length) });
@@ -195,7 +221,9 @@ export function renderIntelligenceSection(
 			}
 
 			statsContent.empty();
-			for (const [cat, count] of Object.entries(categories).sort((a, b) => b[1] - a[1])) {
+			for (const [cat, count] of Object.entries(categories).sort(
+				(a, b) => b[1] - a[1],
+			)) {
 				statsContent.createEl("span", {
 					text: `${cat}: ${count}`,
 					cls: "obsidian-ai-memory-chip",
@@ -210,14 +238,21 @@ export function renderIntelligenceSection(
 			}
 		} catch (e) {
 			statsHeader.empty();
-			statsHeader.createEl("span", { text: "Unable to read memory statistics." });
+			statsHeader.createEl("span", {
+				text: "Unable to read memory statistics.",
+			});
 		}
 	}
 	void refreshStats();
 
 	// Export buttons row
 	const exportRow = statsEl.createEl("div");
-	exportRow.setCssStyles({ display: "flex", gap: "8px", marginTop: "10px", flexWrap: "wrap" });
+	exportRow.setCssStyles({
+		display: "flex",
+		gap: "8px",
+		marginTop: "10px",
+		flexWrap: "wrap",
+	});
 
 	const exportJsonBtn = exportRow.createEl("button", { text: "Export JSON" });
 	exportJsonBtn.addClass("mod-cta");
@@ -228,7 +263,9 @@ export function renderIntelligenceSection(
 		}
 		try {
 			const entries = await plugin.personaLoader.memoryStore.list();
-			const blob = new Blob([JSON.stringify(entries, null, 2)], { type: "application/json" });
+			const blob = new Blob([JSON.stringify(entries, null, 2)], {
+				type: "application/json",
+			});
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement("a");
 			a.href = url;
@@ -241,7 +278,9 @@ export function renderIntelligenceSection(
 		}
 	});
 
-	const exportMdBtn = exportRow.createEl("button", { text: "Export Markdown" });
+	const exportMdBtn = exportRow.createEl("button", {
+		text: "Export Markdown",
+	});
 	exportMdBtn.addEventListener("click", async () => {
 		if (!plugin.personaLoader) {
 			new Notice("Intelligence layer not initialized.");
@@ -259,11 +298,17 @@ export function renderIntelligenceSection(
 				"",
 			];
 			for (const e of entries) {
-				const tagStr = e.tags.length ? " " + e.tags.map((t) => `#${t}`).join(" ") : "";
-				lines.push(`- [${e.timestamp}] **${e.category}**: ${e.content}${tagStr} [id:${e.id}]`);
+				const tagStr = e.tags.length
+					? " " + e.tags.map((t) => `#${t}`).join(" ")
+					: "";
+				lines.push(
+					`- [${e.timestamp}] **${e.category}**: ${e.content}${tagStr} [id:${e.id}]`,
+				);
 			}
 			lines.push("");
-			const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+			const blob = new Blob([lines.join("\n")], {
+				type: "text/markdown",
+			});
 			const url = URL.createObjectURL(blob);
 			const a = document.createElement("a");
 			a.href = url;
@@ -281,20 +326,34 @@ export function renderIntelligenceSection(
 
 	// ── Memory Optimization ──
 	const optimizeRow = statsEl.createEl("div");
-	optimizeRow.setCssStyles({ marginTop: "12px", padding: "10px", border: "1px solid var(--background-modifier-border)", borderRadius: "6px", background: "var(--background-secondary)" });
+	optimizeRow.setCssStyles({
+		marginTop: "12px",
+		padding: "10px",
+		border: "1px solid var(--background-modifier-border)",
+		borderRadius: "6px",
+		background: "var(--background-secondary)",
+	});
 
-	const optimizeHeader = optimizeRow.createEl("div", { text: "Memory Optimization" });
+	const optimizeHeader = optimizeRow.createEl("div", {
+		text: "Memory Optimization",
+	});
 	optimizeHeader.setCssStyles({ fontWeight: "600", marginBottom: "6px" });
 
 	const optimizeDesc = optimizeRow.createEl("div", {
 		text: "Remove duplicate entries from historical data. This does not affect new writes — deduplication already happens automatically there.",
 	});
-	optimizeDesc.setCssStyles({ fontSize: "0.9em", color: "var(--text-muted)", marginBottom: "8px" });
+	optimizeDesc.setCssStyles({
+		fontSize: "0.9em",
+		color: "var(--text-muted)",
+		marginBottom: "8px",
+	});
 
 	const optimizeResult = optimizeRow.createEl("div");
 	optimizeResult.setCssStyles({ fontSize: "0.9em", minHeight: "1.5em" });
 
-	const optimizeBtn = optimizeRow.createEl("button", { text: "🧹 Prune Duplicates" });
+	const optimizeBtn = optimizeRow.createEl("button", {
+		text: "🧹 Prune Duplicates",
+	});
 	optimizeBtn.addClass("mod-warning");
 	optimizeBtn.addEventListener("click", async () => {
 		if (!plugin.personaLoader) {
@@ -304,14 +363,20 @@ export function renderIntelligenceSection(
 		optimizeBtn.disabled = true;
 		optimizeBtn.textContent = "Pruning...";
 		try {
-			const result = await plugin.personaLoader.memoryStore.pruneDuplicates(0.7);
-			const savedKb = ((result.bytesBefore - result.bytesAfter) / 1024).toFixed(1);
+			const result =
+				await plugin.personaLoader.memoryStore.pruneDuplicates(0.7);
+			const savedKb = (
+				(result.bytesBefore - result.bytesAfter) /
+				1024
+			).toFixed(1);
 			optimizeResult.empty();
 			optimizeResult.createEl("span", {
 				text: `✅ Removed ${result.removed} duplicates (${result.groups} groups). Kept ${result.kept} unique entries. Saved ~${savedKb} KB.`,
 				attr: { style: "color: var(--text-success);" },
 			});
-			new Notice(`Memory pruned: ${result.removed} duplicates removed, ~${savedKb} KB saved.`);
+			new Notice(
+				`Memory pruned: ${result.removed} duplicates removed, ~${savedKb} KB saved.`,
+			);
 			void refreshStats();
 		} catch (e: any) {
 			optimizeResult.empty();
@@ -329,9 +394,15 @@ export function renderIntelligenceSection(
 	const aiPruneDesc = optimizeRow.createEl("div", {
 		text: "AI-powered: uses your configured LLM to judge semantic similarity. Slower but catches paraphrased duplicates (e.g., 'User is studying Chinese' vs 'User is learning Mandarin'). Costs a few API calls.",
 	});
-	aiPruneDesc.setCssStyles({ fontSize: "0.85em", color: "var(--text-muted)", marginBottom: "8px" });
+	aiPruneDesc.setCssStyles({
+		fontSize: "0.85em",
+		color: "var(--text-muted)",
+		marginBottom: "8px",
+	});
 
-	const aiOptimizeBtn = optimizeRow.createEl("button", { text: "🤖 AI-Powered Prune" });
+	const aiOptimizeBtn = optimizeRow.createEl("button", {
+		text: "🤖 AI-Powered Prune",
+	});
 	aiOptimizeBtn.addClass("mod-cta");
 	aiOptimizeBtn.addEventListener("click", () => {
 		if (!plugin.personaLoader || !plugin.chatapi) {
@@ -363,9 +434,13 @@ export function renderIntelligenceSection(
 	});
 
 	// ── Audit Log ──
-	const auditEl = sectionEl.createEl("details", { cls: "obsidian-ai-settings-details" });
+	const auditEl = sectionEl.createEl("details", {
+		cls: "obsidian-ai-settings-details",
+	});
 
-	const auditSummary = auditEl.createEl("summary", { text: "Memory Audit Log" });
+	const auditSummary = auditEl.createEl("summary", {
+		text: "Memory Audit Log",
+	});
 
 	const auditContent = auditEl.createEl("div", { cls: "details-content" });
 
@@ -375,21 +450,43 @@ export function renderIntelligenceSection(
 			return;
 		}
 		try {
-			const entries = await plugin.personaLoader.memoryStore.readAudit(20);
+			const entries =
+				await plugin.personaLoader.memoryStore.readAudit(20);
 			if (entries.length === 0) {
-				auditContent.textContent = "No audit entries yet. Memory operations will be logged here.";
+				auditContent.textContent =
+					"No audit entries yet. Memory operations will be logged here.";
 				return;
 			}
 			auditContent.empty();
 			for (const e of entries) {
 				const time = new Date(e.timestamp).toLocaleString();
-				const icon = e.operation === "create" ? "+" : e.operation === "update" ? "✎" : "−";
-				const color = e.operation === "create" ? "var(--interactive-accent)" : e.operation === "update" ? "var(--text-normal)" : "var(--text-error)";
-				const preview = e.content ? `"${e.content.slice(0, 60)}${e.content.length > 60 ? "…" : ""}"` : "";
-				const line = auditContent.createEl("div", { cls: "obsidian-ai-audit-entry" });
-				line.createEl("span", { text: time, attr: { style: "color: var(--text-muted);" } });
+				const icon =
+					e.operation === "create"
+						? "+"
+						: e.operation === "update"
+							? "✎"
+							: "−";
+				const color =
+					e.operation === "create"
+						? "var(--interactive-accent)"
+						: e.operation === "update"
+							? "var(--text-normal)"
+							: "var(--text-error)";
+				const preview = e.content
+					? `"${e.content.slice(0, 60)}${e.content.length > 60 ? "…" : ""}"`
+					: "";
+				const line = auditContent.createEl("div", {
+					cls: "obsidian-ai-audit-entry",
+				});
+				line.createEl("span", {
+					text: time,
+					attr: { style: "color: var(--text-muted);" },
+				});
 				line.appendText(" ");
-				line.createEl("strong", { text: `${icon} ${e.operation}`, attr: { style: `color: ${color};` } });
+				line.createEl("strong", {
+					text: `${icon} ${e.operation}`,
+					attr: { style: `color: ${color};` },
+				});
 				line.appendText(` [${e.entryId}] ${preview}`);
 			}
 		} catch (e) {
@@ -402,7 +499,9 @@ export function renderIntelligenceSection(
 		if (auditEl.open) void refreshAudit();
 	});
 
-	const auditRefreshBtn = auditEl.createEl("button", { text: "Refresh Audit" });
+	const auditRefreshBtn = auditEl.createEl("button", {
+		text: "Refresh Audit",
+	});
 	auditRefreshBtn.setCssStyles({ marginTop: "8px", fontSize: "0.85em" });
 	auditRefreshBtn.addEventListener("click", () => void refreshAudit());
 

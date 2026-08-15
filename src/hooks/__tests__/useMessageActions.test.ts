@@ -136,8 +136,7 @@ function makeDeps(
 	const patchRuntime = vi.fn((sessionId, patch) => {
 		if (!sessionId) return;
 		const previous = runtimeStore[sessionId] ?? emptyChatRuntime;
-		const nextPatch =
-			typeof patch === "function" ? patch(previous) : patch;
+		const nextPatch = typeof patch === "function" ? patch(previous) : patch;
 		runtimeStore[sessionId] = { ...previous, ...nextPatch };
 	});
 	const clearRuntime = vi.fn((sessionId) => {
@@ -231,9 +230,7 @@ describe("useMessageActions", () => {
 				getRuntime: vi.fn(() => emptyChatRuntime),
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
-			expect(() =>
-				act(() => result.current.handleStop()),
-			).not.toThrow();
+			expect(() => act(() => result.current.handleStop())).not.toThrow();
 		});
 	});
 
@@ -260,7 +257,9 @@ describe("useMessageActions", () => {
 			act(() => {
 				result.current.handleEditMessage("m3");
 			});
-			expect(ui.setOriginalMessages).toHaveBeenCalledWith(session.messages);
+			expect(ui.setOriginalMessages).toHaveBeenCalledWith(
+				session.messages,
+			);
 			expect(ui.setIsEditing).toHaveBeenCalledWith(true);
 			expect(ui.setEditMessageText).toHaveBeenCalledWith("retry me");
 			expect(setSessions).toHaveBeenCalled();
@@ -273,7 +272,12 @@ describe("useMessageActions", () => {
 				id: "session-1",
 				messages: [
 					{ id: "m1", role: "user", content: "hello", timestamp: 1 },
-					{ id: "m2", role: "assistant", content: "hi", timestamp: 2 },
+					{
+						id: "m2",
+						role: "assistant",
+						content: "hi",
+						timestamp: 2,
+					},
 				],
 				title: "Test",
 				createdAt: 1,
@@ -360,9 +364,19 @@ describe("useMessageActions", () => {
 				id: "session-1",
 				messages: [
 					{ id: "m1", role: "user", content: "hello", timestamp: 1 },
-					{ id: "m2", role: "assistant", content: "hi", timestamp: 2 },
+					{
+						id: "m2",
+						role: "assistant",
+						content: "hi",
+						timestamp: 2,
+					},
 					{ id: "m3", role: "user", content: "world", timestamp: 3 },
-					{ id: "m4", role: "assistant", content: "earth", timestamp: 4 },
+					{
+						id: "m4",
+						role: "assistant",
+						content: "earth",
+						timestamp: 4,
+					},
 				],
 				title: "Test",
 				createdAt: 1,
@@ -386,7 +400,12 @@ describe("useMessageActions", () => {
 			const session = {
 				id: "session-1",
 				messages: [
-					{ id: "m1", role: "assistant", content: "hi", timestamp: 1 },
+					{
+						id: "m1",
+						role: "assistant",
+						content: "hi",
+						timestamp: 1,
+					},
 				],
 				title: "Test",
 				createdAt: 1,
@@ -614,7 +633,12 @@ describe("useMessageActions", () => {
 				yield "response";
 			});
 			const messages = [
-				{ id: "m1", role: "user" as const, content: "Hello", timestamp: 1 },
+				{
+					id: "m1",
+					role: "user" as const,
+					content: "Hello",
+					timestamp: 1,
+				},
 				{
 					id: "m2",
 					role: "user" as const,
@@ -671,7 +695,12 @@ describe("useMessageActions", () => {
 				yield "response";
 			});
 			const messages = [
-				{ id: "m1", role: "user" as const, content: "Local msg", timestamp: 1 },
+				{
+					id: "m1",
+					role: "user" as const,
+					content: "Local msg",
+					timestamp: 1,
+				},
 			];
 			const deps = makeDeps({
 				plugin: {

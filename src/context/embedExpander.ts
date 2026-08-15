@@ -30,7 +30,8 @@ export async function expandEmbeds(
 
 		// Parse file path and optional heading fragment
 		const pipeIndex = inner.indexOf("|");
-		let linkPart = pipeIndex >= 0 ? inner.slice(0, pipeIndex).trim() : inner;
+		let linkPart =
+			pipeIndex >= 0 ? inner.slice(0, pipeIndex).trim() : inner;
 
 		const hashIndex = linkPart.indexOf("#");
 		const filePath =

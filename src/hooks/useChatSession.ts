@@ -5,7 +5,10 @@ import type { ProviderProfile } from "../settings";
 import type { ChatApiManager } from "../api";
 import { getActiveProviderProfile } from "../settings";
 import { makeId, pruneSessions } from "../lib/sessionUtils";
-import { generateSessionTitle, generateSessionTitleLLM } from "../lib/sessionTitle";
+import {
+	generateSessionTitle,
+	generateSessionTitleLLM,
+} from "../lib/sessionTitle";
 
 interface UseChatSessionOptions {
 	plugin: ChatPluginLike;
@@ -36,7 +39,10 @@ export interface UseChatSessionResult {
 	/** Update a session's messages. */
 	updateSessionMessages: (sessionId: string, messages: ChatMessage[]) => void;
 	/** Update a session's context items. */
-	updateSessionContextItems: (sessionId: string, contextItems: ContextItem[]) => void;
+	updateSessionContextItems: (
+		sessionId: string,
+		contextItems: ContextItem[],
+	) => void;
 	/** Manually rename the active session via LLM + heuristic fallback. */
 	manualRenameActiveSession: (
 		resolvedProfile: ProviderProfile,
@@ -75,16 +81,22 @@ export function useChatSession({
 			if (savedSessions.length > 0) {
 				// Preserve the loaded storage untouched unless this also removes legacy
 				// zero-message entries; those should be cleaned up on the next autosave.
-				skipNextAutosaveRef.current = savedSessions.length === data.sessions.length;
+				skipNextAutosaveRef.current =
+					savedSessions.length === data.sessions.length;
 				setSessions(savedSessions);
-				const restoredActiveId =
-					savedSessions.some((session) => session.id === data.activeSessionId)
-						? data.activeSessionId
-						: savedSessions[0].id;
+				const restoredActiveId = savedSessions.some(
+					(session) => session.id === data.activeSessionId,
+				)
+					? data.activeSessionId
+					: savedSessions[0].id;
 				setActiveSessionId(restoredActiveId);
-				const knownIds = new Set(savedSessions.map((session) => session.id));
+				const knownIds = new Set(
+					savedSessions.map((session) => session.id),
+				);
 				const restoredOpenIds = plugin.settings.restoreChatTabs
-					? (data.openSessionIds ?? []).filter((id) => knownIds.has(id))
+					? (data.openSessionIds ?? []).filter((id) =>
+							knownIds.has(id),
+						)
 					: [];
 				setOpenSessionIds(
 					restoredOpenIds.length > 0
@@ -146,14 +158,16 @@ export function useChatSession({
 					(session) => session.id === activeSessionId,
 				)
 					? activeSessionId
-					: persistedSessions[0]?.id ?? null;
+					: (persistedSessions[0]?.id ?? null);
 				void plugin.saveChatData({
 					sessions: persistedSessions,
 					activeSessionId: persistedActiveSessionId,
 					openSessionIds: plugin.settings.restoreChatTabs
 						? openSessionIds.filter((id) =>
-							persistedSessions.some((session) => session.id === id),
-						)
+								persistedSessions.some(
+									(session) => session.id === id,
+								),
+							)
 						: [],
 				});
 				saveTimerRef.current = null;
@@ -213,7 +227,13 @@ export function useChatSession({
 			})();
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- autosave dependencies are intentionally limited to session state and settings.
-	}, [sessions, activeSessionId, autoNameSessions, plugin.settings, plugin.chatapi]);
+	}, [
+		sessions,
+		activeSessionId,
+		autoNameSessions,
+		plugin.settings,
+		plugin.chatapi,
+	]);
 
 	// ─── Create a new session ───
 	const createNewSession = useCallback(
@@ -231,7 +251,8 @@ export function useChatSession({
 				updatedAt: Date.now(),
 				messages: [],
 				contextItems:
-					opts?.includeActiveNote ?? plugin.settings.includeActiveNote
+					(opts?.includeActiveNote ??
+					plugin.settings.includeActiveNote)
 						? [{ type: "active-note", id: makeId() }]
 						: [],
 				profileId:
@@ -239,10 +260,9 @@ export function useChatSession({
 					(opts?.selectedProfileIds?.length === 1
 						? opts.selectedProfileIds[0]
 						: getActiveProviderProfile(plugin.settings).id),
-				selectedProfileIds:
-					opts?.selectedProfileIds?.length
-						? opts.selectedProfileIds
-						: [getActiveProviderProfile(plugin.settings).id],
+				selectedProfileIds: opts?.selectedProfileIds?.length
+					? opts.selectedProfileIds
+					: [getActiveProviderProfile(plugin.settings).id],
 				remoteUsers: [],
 				selectedRemoteUserIds: [],
 			};
@@ -253,24 +273,32 @@ export function useChatSession({
 						? {
 								...s,
 								title:
-									opts?.autoNameSessions ?? plugin.settings.autoNameSessions
-										? s.title || generateSessionTitle(s.messages)
+									(opts?.autoNameSessions ??
+									plugin.settings.autoNameSessions)
+										? s.title ||
+											generateSessionTitle(s.messages)
 										: s.title,
 								updatedAt: Date.now(),
 							}
-							: s,
+						: s,
 				);
 
 				// Trigger auto-summarization for the ending session (fire-and-forget)
-				const endingSession = prev.find((s) => s.id === currentActiveId);
+				const endingSession = prev.find(
+					(s) => s.id === currentActiveId,
+				);
 				if (endingSession && plugin.onSessionEnd) {
 					void plugin.onSessionEnd(endingSession);
 				}
 
 				const withNew = [...updated, newSession];
 				const max = plugin.settings.maxSavedConversations || 20;
-				const savedSessions = withNew.filter((session) => session.messages.length > 0);
-				const draftSessions = withNew.filter((session) => session.messages.length === 0);
+				const savedSessions = withNew.filter(
+					(session) => session.messages.length > 0,
+				);
+				const draftSessions = withNew.filter(
+					(session) => session.messages.length === 0,
+				);
 				return [
 					...pruneSessions(savedSessions, max, currentActiveId),
 					...draftSessions,
@@ -320,16 +348,13 @@ export function useChatSession({
 	);
 
 	// ─── Rename a session ───
-	const renameSession = useCallback(
-		(sessionId: string, newTitle: string) => {
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === sessionId ? { ...s, title: newTitle.trim() } : s,
-				),
-			);
-		},
-		[],
-	);
+	const renameSession = useCallback((sessionId: string, newTitle: string) => {
+		setSessions((prev) =>
+			prev.map((s) =>
+				s.id === sessionId ? { ...s, title: newTitle.trim() } : s,
+			),
+		);
+	}, []);
 
 	// ─── Update session messages ───
 	const updateSessionMessages = useCallback(
@@ -358,43 +383,40 @@ export function useChatSession({
 	);
 
 	// ─── Manual LLM rename of active session ───
-	const manualRenameActiveSession = useCallback(
-		async function(
-			resolvedProfile: ProviderProfile,
-			chatapi: ChatApiManager,
-		): Promise<string | null> {
-			const currentActiveId = activeSessionIdRef.current;
-			if (!currentActiveId) return null;
-			const session = sessionsRef.current.find(
-				(s) => s.id === currentActiveId,
+	const manualRenameActiveSession = useCallback(async function (
+		resolvedProfile: ProviderProfile,
+		chatapi: ChatApiManager,
+	): Promise<string | null> {
+		const currentActiveId = activeSessionIdRef.current;
+		if (!currentActiveId) return null;
+		const session = sessionsRef.current.find(
+			(s) => s.id === currentActiveId,
+		);
+		if (!session || session.messages.length === 0) {
+			return null;
+		}
+		const title = await generateSessionTitleLLM(
+			session.messages,
+			resolvedProfile,
+			chatapi,
+		);
+		if (title) {
+			setSessions((prev) =>
+				prev.map((s) =>
+					s.id === currentActiveId ? { ...s, title } : s,
+				),
 			);
-			if (!session || session.messages.length === 0) {
-				return null;
-			}
-			const title = await generateSessionTitleLLM(
-				session.messages,
-				resolvedProfile,
-				chatapi,
+			return title;
+		} else {
+			const fallback = generateSessionTitle(session.messages);
+			setSessions((prev) =>
+				prev.map((s) =>
+					s.id === currentActiveId ? { ...s, title: fallback } : s,
+				),
 			);
-			if (title) {
-				setSessions((prev) =>
-					prev.map((s) =>
-						s.id === currentActiveId ? { ...s, title } : s,
-					),
-				);
-				return title;
-			} else {
-				const fallback = generateSessionTitle(session.messages);
-				setSessions((prev) =>
-					prev.map((s) =>
-						s.id === currentActiveId ? { ...s, title: fallback } : s,
-					),
-				);
-				return fallback;
-			}
-		},
-		[],
-	);
+			return fallback;
+		}
+	}, []);
 
 	return {
 		sessions,

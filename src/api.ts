@@ -223,7 +223,10 @@ function createLanguageModel(profile: ProviderProfile): LanguageModelV4 | null {
 async function fetchProviderModels(
 	profile: ProviderProfile,
 ): Promise<string[]> {
-	const requestJson = async (url: string, headers?: Record<string, string>): Promise<any> => {
+	const requestJson = async (
+		url: string,
+		headers?: Record<string, string>,
+	): Promise<any> => {
 		const response = await requestUrl({ url, method: "GET", headers });
 		return JSON.parse(response.text);
 	};
@@ -232,7 +235,9 @@ async function fetchProviderModels(
 			case "openai": {
 				const baseURL =
 					profile.customURL?.trim() || getDefaultEndpoint("openai");
-				const data = await requestJson(`${baseURL}/models`, { Authorization: `Bearer ${profile.apiKey}` });
+				const data = await requestJson(`${baseURL}/models`, {
+					Authorization: `Bearer ${profile.apiKey}`,
+				});
 				return (data.data ?? [])
 					.map((m: any) => m.id)
 					.filter((id: string) => id.includes("gpt"));
@@ -255,7 +260,9 @@ async function fetchProviderModels(
 			case "gemini": {
 				const baseURL =
 					profile.customURL?.trim() || getDefaultEndpoint("gemini");
-				const data = await requestJson(`${baseURL}/models?key=${profile.apiKey}`);
+				const data = await requestJson(
+					`${baseURL}/models?key=${profile.apiKey}`,
+				);
 				return (data.models ?? [])
 					.map((m: any) => m.name.replace("models/", ""))
 					.filter((id: string) => id.startsWith("gemini"));
@@ -264,7 +271,9 @@ async function fetchProviderModels(
 			case "deepseek": {
 				const baseURL =
 					profile.customURL?.trim() || getDefaultEndpoint("deepseek");
-				const data = await requestJson(`${baseURL}/models`, { Authorization: `Bearer ${profile.apiKey}` });
+				const data = await requestJson(`${baseURL}/models`, {
+					Authorization: `Bearer ${profile.apiKey}`,
+				});
 				return (data.data ?? []).map((m: any) => m.id);
 			}
 
@@ -279,7 +288,9 @@ async function fetchProviderModels(
 			case "kimi": {
 				const baseURL =
 					profile.customURL?.trim() || getDefaultEndpoint("kimi");
-				const data = await requestJson(`${baseURL}/models`, { Authorization: `Bearer ${profile.apiKey}` });
+				const data = await requestJson(`${baseURL}/models`, {
+					Authorization: `Bearer ${profile.apiKey}`,
+				});
 				return (data.data ?? [])
 					.map((m: any) => m.id)
 					.filter((id: string) => id.includes("kimi"));
@@ -288,13 +299,17 @@ async function fetchProviderModels(
 			case "ollama": {
 				const baseURL =
 					profile.customURL?.trim() || getDefaultEndpoint("ollama");
-				const data = await requestJson(`${baseURL.replace("/v1", "")}/api/tags`);
+				const data = await requestJson(
+					`${baseURL.replace("/v1", "")}/api/tags`,
+				);
 				return (data.models ?? []).map((m: any) => m.name);
 			}
 
 			case "custom": {
 				const baseURL = profile.customURL!.trim();
-				const data = await requestJson(`${baseURL}/models`, { Authorization: `Bearer ${profile.apiKey}` });
+				const data = await requestJson(`${baseURL}/models`, {
+					Authorization: `Bearer ${profile.apiKey}`,
+				});
 				return (data.data ?? []).map((m: any) => m.id);
 			}
 

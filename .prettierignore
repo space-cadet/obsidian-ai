@@ -5,3 +5,6 @@ main.js
 memory-bank
 pnpm-lock.yaml
 package-lock.json
+AGENTS.md
+CLAUDE.md
+docs/community-plugin-submission.md

@@ -34,7 +34,9 @@ describe("ChatTabBar", () => {
 
 		const tab = screen.getByRole("tab", { name: longTitle });
 		expect(tab.getAttribute("title")).toBe(longTitle);
-		expect(screen.getByRole("tablist").hasAttribute("aria-label")).toBe(false);
+		expect(screen.getByRole("tablist").hasAttribute("aria-label")).toBe(
+			false,
+		);
 	});
 
 	it("keeps a close control when there is only one tab", () => {

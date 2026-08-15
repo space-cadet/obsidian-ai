@@ -13,7 +13,9 @@ describe("estimateTokens", () => {
 	});
 
 	it("estimates ceil(length / 4) for ASCII text", () => {
-		expect(estimateTokens("hello")).toBe(Math.ceil(5 / TOKEN_ESTIMATE_RATIO));
+		expect(estimateTokens("hello")).toBe(
+			Math.ceil(5 / TOKEN_ESTIMATE_RATIO),
+		);
 		expect(estimateTokens("hello world")).toBe(
 			Math.ceil(11 / TOKEN_ESTIMATE_RATIO),
 		);
@@ -21,12 +23,16 @@ describe("estimateTokens", () => {
 
 	it("handles unicode characters (counts as 1 char each)", () => {
 		const unicode = "你好世界"; // 4 chars
-		expect(estimateTokens(unicode)).toBe(Math.ceil(4 / TOKEN_ESTIMATE_RATIO));
+		expect(estimateTokens(unicode)).toBe(
+			Math.ceil(4 / TOKEN_ESTIMATE_RATIO),
+		);
 	});
 
 	it("handles long text", () => {
 		const long = "a".repeat(1000);
-		expect(estimateTokens(long)).toBe(Math.ceil(1000 / TOKEN_ESTIMATE_RATIO));
+		expect(estimateTokens(long)).toBe(
+			Math.ceil(1000 / TOKEN_ESTIMATE_RATIO),
+		);
 	});
 });
 
@@ -36,7 +42,11 @@ describe("estimateAttachmentTokens", () => {
 			estimateAttachmentTokens({ type: "image", name: "test.png" }),
 		).toBe(255);
 		expect(
-			estimateAttachmentTokens({ type: "image", name: "test.jpg", data: "abc" }),
+			estimateAttachmentTokens({
+				type: "image",
+				name: "test.jpg",
+				data: "abc",
+			}),
 		).toBe(255);
 	});
 
@@ -48,13 +58,15 @@ describe("estimateAttachmentTokens", () => {
 			data: base64,
 		});
 		// base64Len * 0.75 / 4
-		expect(tokens).toBe(Math.ceil(base64.length * 0.75 / TOKEN_ESTIMATE_RATIO));
+		expect(tokens).toBe(
+			Math.ceil((base64.length * 0.75) / TOKEN_ESTIMATE_RATIO),
+		);
 	});
 
 	it("falls back to 500 for PDF without data", () => {
-		expect(
-			estimateAttachmentTokens({ type: "pdf", name: "doc.pdf" }),
-		).toBe(500);
+		expect(estimateAttachmentTokens({ type: "pdf", name: "doc.pdf" })).toBe(
+			500,
+		);
 	});
 
 	it("estimates text files from decoded content", () => {
@@ -79,7 +91,7 @@ describe("estimateAttachmentTokens", () => {
 				name: "large.txt",
 				data: base64,
 			}),
-		).toBe(Math.ceil(base64.length * 0.75 / TOKEN_ESTIMATE_RATIO));
+		).toBe(Math.ceil((base64.length * 0.75) / TOKEN_ESTIMATE_RATIO));
 	});
 
 	it("handles binary data that cannot be decoded as text", () => {
@@ -92,7 +104,7 @@ describe("estimateAttachmentTokens", () => {
 				name: "file.bin",
 				data: binaryBase64,
 			}),
-		).toBe(Math.ceil(3 * 0.75 / TOKEN_ESTIMATE_RATIO));
+		).toBe(Math.ceil((3 * 0.75) / TOKEN_ESTIMATE_RATIO));
 	});
 
 	it("estimates from name when no data provided", () => {
@@ -110,9 +122,12 @@ describe("estimateContentPartTokens", () => {
 	});
 
 	it("handles content field alias", () => {
-		expect(estimateContentPartTokens({ type: "text", content: "world" } as any)).toBe(
-			estimateTokens("world"),
-		);
+		expect(
+			estimateContentPartTokens({
+				type: "text",
+				content: "world",
+			} as any),
+		).toBe(estimateTokens("world"));
 	});
 
 	it("returns 255 for image parts", () => {
@@ -129,7 +144,7 @@ describe("estimateContentPartTokens", () => {
 				data: base64,
 				mimeType: "application/pdf",
 			}),
-		).toBe(Math.ceil(base64.length * 0.75 / TOKEN_ESTIMATE_RATIO));
+		).toBe(Math.ceil((base64.length * 0.75) / TOKEN_ESTIMATE_RATIO));
 	});
 
 	it("returns 0 for unknown types", () => {

@@ -5,7 +5,10 @@ import { createSection } from "./helpers";
 export function renderIntegrationsSection(
 	containerEl: HTMLElement,
 	plugin: ObsidianAIPlugin,
-	saveSettings: (options?: { refresh?: boolean; quiet?: boolean }) => Promise<void>,
+	saveSettings: (options?: {
+		refresh?: boolean;
+		quiet?: boolean;
+	}) => Promise<void>,
 ): void {
 	const sectionEl = createSection(
 		containerEl,
@@ -32,16 +35,22 @@ export function renderIntegrationsSection(
 	}
 
 	for (const provider of providers) {
-		const isToggleable = provider.status === "available" || provider.status === "disabled";
+		const isToggleable =
+			provider.status === "available" || provider.status === "disabled";
 		new Setting(sectionEl)
 			.setName(provider.displayName)
-			.setDesc(`${provider.message} ${provider.capabilityCount} read-only tool${provider.capabilityCount === 1 ? "" : "s"} available.`)
+			.setDesc(
+				`${provider.message} ${provider.capabilityCount} read-only tool${provider.capabilityCount === 1 ? "" : "s"} available.`,
+			)
 			.addToggle((toggle) => {
 				toggle
 					.setValue(provider.enabled)
 					.setDisabled(!isToggleable)
 					.onChange(async (enabled) => {
-						plugin.integrationRegistry.setEnabled(provider.id, enabled);
+						plugin.integrationRegistry.setEnabled(
+							provider.id,
+							enabled,
+						);
 						await saveSettings({ refresh: true, quiet: true });
 					});
 			});

@@ -6,13 +6,24 @@ export const setIcon = (target: HTMLElement, icon: string): void => {
 };
 
 export class Menu {
-	addItem(callback: (item: any) => void): this { callback({ setTitle: () => this, setIcon: () => this, onClick: () => this }); return this; }
-	addSeparator(): this { return this; }
+	addItem(callback: (item: any) => void): this {
+		callback({
+			setTitle: () => this,
+			setIcon: () => this,
+			onClick: () => this,
+		});
+		return this;
+	}
+	addSeparator(): this {
+		return this;
+	}
 	showAtMouseEvent(): void {}
 }
 
 export class Notice {
-	constructor(public message: string) { console.info("[Preview notice]", message); }
+	constructor(public message: string) {
+		console.info("[Preview notice]", message);
+	}
 }
 
 export class TFile {
