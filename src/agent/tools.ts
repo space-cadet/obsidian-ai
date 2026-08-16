@@ -292,6 +292,28 @@ export const searchWebTool = t({
 	}),
 });
 
+export const readPdfTool = t({
+	description:
+		"Read and extract text from a PDF file. " +
+		"Use when the user references a PDF, wants to analyze a paper, or needs content from a PDF document. " +
+		"Works with URLs (online PDFs) or vault file paths. " +
+		"Returns the extracted text content with page breakdown and metadata.",
+	inputSchema: z.object({
+		source: z
+			.string()
+			.describe(
+				"PDF URL or vault file path, e.g. 'https://arxiv.org/pdf/2301.00001.pdf' or 'Papers/quantum-gravity.pdf'",
+			),
+		max_pages: z
+			.number()
+			.optional()
+			.default(50)
+			.describe(
+				"Maximum pages to extract (default 50). Use lower for large PDFs to save tokens.",
+			),
+	}),
+});
+
 export const createMemoryTool = t({
 	description:
 		"Create a persistent memory about the user, their preferences, " +
@@ -452,6 +474,7 @@ export const noteTools = {
 	delete_note: deleteNoteTool,
 	list_folders: listFoldersTool,
 	search_web: searchWebTool,
+	read_pdf: readPdfTool,
 	create_memory: createMemoryTool,
 	update_memory: updateMemoryTool,
 	delete_memory: deleteMemoryTool,

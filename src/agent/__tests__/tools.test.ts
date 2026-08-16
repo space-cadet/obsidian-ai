@@ -19,6 +19,7 @@ const EXPECTED_TOOLS = [
 	"delete_note",
 	"list_folders",
 	"search_web",
+	"read_pdf",
 	"create_memory",
 	"update_memory",
 	"delete_memory",

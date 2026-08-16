@@ -112,6 +112,10 @@ export class ToolExecutor {
 					return await this.searchWeb(
 						call.args as { query: string; limit?: number },
 					);
+				case "read_pdf":
+					return await this.readPdf(
+						call.args as { source: string; max_pages?: number },
+					);
 				case "create_memory":
 					return await this.createMemory(
 						call.args as {
@@ -827,6 +831,64 @@ export class ToolExecutor {
 		} catch (e: any) {
 			return {
 				error: `Web search failed (${provider}): ${e.message || String(e)}`,
+			};
+		}
+	}
+
+	private async readPdf(args: {
+		source: string;
+		max_pages?: number;
+	}): Promise<ToolResult> {
+		const { extractPdfFromUrl, extractPdfFromBuffer } = await import(
+			"../utils/PdfExtractor"
+		);
+
+		const maxPages = args.max_pages ?? 50;
+		const source = args.source;
+
+		try {
+			let result;
+
+			if (source.startsWith("http://") || source.startsWith("https://")) {
+				// Online PDF
+				result = await extractPdfFromUrl(source, {
+					maxPages,
+					method:
+						(this.settings as any)?.pdfExtractionMethod || "auto",
+					serverUrl: (this.settings as any)?.pdfExtractionServerUrl,
+				});
+			} else {
+				// Vault file path
+				const file = this.app.vault.getAbstractFileByPath(source);
+				if (!file || !(file instanceof TFile)) {
+					return { error: `PDF not found in vault: ${source}` };
+				}
+				const buffer = await this.app.vault.readBinary(file);
+				result = await extractPdfFromBuffer(buffer, { maxPages });
+			}
+
+			if (!result.success) {
+				return { error: result.error || "PDF extraction failed" };
+			}
+
+			// Format as markdown for the LLM
+			const meta = result.metadata;
+			let header = `## PDF: ${source}\n\n`;
+			if (meta?.title) header += `**Title:** ${meta.title}\n`;
+			if (meta?.author) header += `**Author:** ${meta.author}\n`;
+			if (meta?.totalPages) {
+				header += `**Pages:** ${meta.extractedPages ?? "?"} of ${meta.totalPages} extracted\n`;
+			}
+			header += `**Word count:** ~${result.totalWordCount ?? "?"}\n\n---\n\n`;
+
+			const body = result.fullText || "(No text extracted)";
+
+			return {
+				content: header + body,
+			};
+		} catch (e: any) {
+			return {
+				error: `PDF read failed: ${e.message || String(e)}`,
 			};
 		}
 	}

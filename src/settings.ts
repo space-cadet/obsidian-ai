@@ -102,6 +102,11 @@ export interface ObsidianAISettings {
 	tavilyApiKey: string;
 	exaApiKey: string;
 
+	// PDF extraction settings
+	pdfExtractionMethod: "auto" | "server" | "client";
+	pdfExtractionServerUrl: string;
+	pdfMaxPages: number;
+
 	// Intelligence Layer settings (T26)
 	intelligence: IntelligenceSettings;
 
@@ -303,6 +308,9 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	searxngUrl: "",
 	tavilyApiKey: "",
 	exaApiKey: "",
+	pdfExtractionMethod: "auto",
+	pdfExtractionServerUrl: "https://quantumofgravity.com/relay/pdf-extract/",
+	pdfMaxPages: 50,
 	intelligence: {
 		enableIntelligence: false,
 		personaPath: "intelligence/persona.md",
@@ -407,6 +415,15 @@ export const normalizeSettings = (
 		searxngUrl: merged.searxngUrl ?? "",
 		tavilyApiKey: merged.tavilyApiKey ?? "",
 		exaApiKey: merged.exaApiKey ?? "",
+		pdfExtractionMethod:
+			(merged.pdfExtractionMethod as "auto" | "server" | "client") ??
+			"auto",
+		pdfExtractionServerUrl:
+			merged.pdfExtractionServerUrl ??
+			"https://quantumofgravity.com/relay/pdf-extract/",
+		pdfMaxPages: Number.isFinite(merged.pdfMaxPages)
+			? (merged.pdfMaxPages as number)
+			: 50,
 		intelligence: {
 			enableIntelligence: Boolean(
 				merged.intelligence?.enableIntelligence ?? false,
