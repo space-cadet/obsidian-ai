@@ -123,7 +123,7 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		if (!this.config) {
 			throw new Error("WebDAV adapter not initialized");
 		}
-		return "***" + btoa(this.config.username + ":" + this.config.password);
+		return "Basic " + btoa(this.config.username + ":" + this.config.password);
 	}
 
 	private async request(
