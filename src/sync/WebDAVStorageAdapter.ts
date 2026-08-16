@@ -41,6 +41,9 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 
 		// Verify connection by listing (probing the root directory)
 		await this.propfind("", 0);
+
+		// Ensure prefix directory exists (creates if missing, no-op if exists)
+		await this.mkcol(this.prefix);
 	}
 
 	async disconnect(): Promise<void> {
@@ -95,7 +98,8 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 	}
 
 	async putSession(session: EncryptedSession): Promise<void> {
-		// Ensure sessions directory exists
+		// Ensure prefix and sessions directories exist
+		await this.mkcol(this.prefix);
 		await this.mkcol(this.prefix + "sessions/");
 
 		const path = this.prefix + "sessions/" + session.id + ".json";
@@ -120,6 +124,7 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 	}
 
 	async setLastSyncTime(time: number): Promise<void> {
+		await this.mkcol(this.prefix);
 		const path = this.prefix + "last-sync-time.txt";
 		await this.put(path, String(time), "text/plain");
 	}
@@ -213,9 +218,20 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 			await this.request("MKCOL", path);
 		} catch (err: any) {
 			// 405 = Method Not Allowed = directory already exists
-			if (err.status !== 405) {
-				throw err;
+			if (err.status === 405) {
+				return;
 			}
+			// 409 = Conflict = parent directory doesn't exist
+			// Try creating parent directories recursively
+			if (err.status === 409) {
+				const parent = path.replace(/\/$/, "").split("/").slice(0, -1).join("/") + "/";
+				if (parent && parent !== "/" && parent !== path) {
+					await this.mkcol(parent);
+					await this.request("MKCOL", path);
+					return;
+				}
+			}
+			throw err;
 		}
 	}
 
