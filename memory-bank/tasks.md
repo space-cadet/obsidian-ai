@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-15 14:53:44 IST*
+*Last Updated: 2026-08-16 19:05 IST*
 
 ## Overview
 
@@ -18,7 +18,6 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
 | T40 | Multi-User Chat with LaTeX Support | 🔄 | HIGH | 2026-08-08 | T16 | [Details](tasks/T40.md) |
 | T42 | Remote Chat Storage & Sync | 🔄 | HIGH | 2026-08-10 | T40 | [Details](tasks/T42.md) |
-| T22 | ChatApp.tsx Component Decomposition | ✅ | HIGH | 2026-05-28 | T1, T15 | [Details](tasks/T22.md) |
 | T44 | Standalone UI Preview and Obsidian Host Boundary | 🔄 | MEDIUM | 2026-08-12 | T1, T22 | [Details](tasks/T44.md) |
 | T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
 | T8a | Community Directory Review Remediation | 🔄 | HIGH | 2026-08-15 | T8, T7 | [Details](tasks/T8a.md) |
@@ -46,6 +45,8 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T43 | Multi-User and Agent Chat with LaTeX Support | ✅ | HIGH | 2026-08-10 | 2026-08-12 | T40 | [Details](tasks/T43.md) |
 | T19a | Group-Chat Attachment Full Replay | ✅ | HIGH | 2026-08-14 | 2026-08-14 | T19, T16, T43 | [Details](tasks/T19a.md) |
 | T20 | Message Selection and Chat History Exports | ✅ | HIGH | 2026-08-14 | 2026-08-14 | T2, T5, T19 | [Details](tasks/T20.md) |
+| T13a | Tool Call Context Persistence Bug Fix | ✅ | HIGH | 2026-08-16 | 2026-08-16 | T13 | [Details](tasks/T13a.md) |
+| T45 | PDF Text Extraction Tool | ✅ | HIGH | 2026-08-16 | 2026-08-16 | T13, T19 | [Details](tasks/T45.md) |
 
 ## Task Relationships
 
@@ -64,6 +65,8 @@ T13: Agentic Tool Calling for Note Editing
   └── T3
   └── T5
   └── T9
+T13a: Tool Call Context Persistence Bug Fix
+  └── T13
 T14: Remote Agent Connectivity (OpenResponses)
   └── T1
   └── T13
@@ -92,6 +95,9 @@ T2: Conversation Chain & Memory
 T20: Message Selection and Chat History Exports
   └── T2
   └── T5
+  └── T19
+T45: PDF Text Extraction Tool
+  └── T13
   └── T19
 T21: CLI Test Harness for AI Features
   └── T13

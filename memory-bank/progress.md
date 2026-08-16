@@ -1,5 +1,25 @@
 # Implementation Progress
-*Last Updated: 2026-08-15 13:45:00 IST*
+*Last Updated: 2026-08-16 19:05 IST*
+
+### 2026-08-16 — T45: PDF Text Extraction Tool (COMPLETE)
+
+- Server-side: PyMuPDF + Flask extraction service on VPS port 8082, proxied through `/relay/pdf-extract/`
+- Client-side: pdfjs-dist for offline extraction in Obsidian Electron
+- Agent tool: `readPdfTool` with URL/path support, max_pages parameter
+- Settings UI: extraction method dropdown, server URL, max pages slider (0-200)
+- MessageBubble: PDF attachment cards with Save to Vault / Open buttons
+- Files: `src/utils/PdfExtractor.ts`, `src/agent/tools.ts`, `src/agent/ToolExecutor.ts`, `src/settings.ts`, `src/settings-sections/pdfExtraction.ts`, `src/components/MessageBubble.tsx`
+- Verification: 236 tests, production build, diff check pass
+- User confirmed working
+
+### 2026-08-16 — T13a: Tool Call Context Persistence Bug Fix (COMPLETE)
+
+- **Bug**: Tool call results stripped from conversation history — LLM forgot prior tool executions
+- **Root cause**: `useMessageActions.ts` `buildReplayContent()` only included text, ignoring `contentParts`/`toolCalls`
+- **Fix**: `buildHistoryWithTools()` reconstructs Vercel AI SDK message shapes (assistant + tool messages)
+- Files: `src/hooks/useMessageActions.ts` (+159 lines, -9 lines)
+- Verification: 236 tests, production build pass
+- User confirmed working
 
 ### 2026-08-15 T8a Implementation Batch
 

@@ -1,6 +1,30 @@
 # Active Context
 
-*Last Updated: 2026-08-15 13:19:00 IST*
+*Last Updated: 2026-08-16 19:05 IST*
+
+### 2026-08-16 — T45: PDF Text Extraction Tool ✅
+
+- Added `read_pdf` agent tool for extracting text from PDFs (URLs or vault paths)
+- Dual extraction backends: server-side PyMuPDF (default) and client-side pdfjs-dist (offline fallback)
+- Server endpoint: `https://quantumofgravity.com/relay/pdf-extract/` (Flask + PyMuPDF on VPS port 8082)
+- Plugin settings: extraction method (auto/server/client), server URL, max pages slider
+- UI: PDF attachment cards with Save to Vault and Open buttons
+- Build passes, all 236 tests pass
+- **User confirmed: "The read pdf skill works!"**
+- Commits: `b4296e7` (v1.3.6-dev)
+- Task: `memory-bank/tasks/T45.md`
+- Implementation doc: `memory-bank/implementation-details/pdf-text-extraction.md`
+
+### 2026-08-16 — T13a: Tool Call Context Persistence Bug Fix ✅
+
+- **Critical bug**: Tool call results were not passed as conversation context in multi-turn chats
+- Root cause: `useMessageActions.ts` history builder only included text content, stripping `toolCalls` and `contentParts`
+- Fix: `buildHistoryWithTools()` reconstructs Vercel AI SDK-compatible message shapes (assistant with tool-call parts + tool-result messages)
+- Build passes, all 236 tests pass
+- **User confirmed: "The tool context fix works!"**
+- Commits: `88dff94`
+- Task: `memory-bank/tasks/T13a.md`
+- Updated doc: `memory-bank/implementation-details/agentic-tool-calling.md`
 
 ### 2026-08-15 Community Directory Review — T8a
 

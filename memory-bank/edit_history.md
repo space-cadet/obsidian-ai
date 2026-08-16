@@ -1,5 +1,17 @@
 # Edit History
 
+*Last Updated: 2026-08-16 19:05 IST*
+
+#### 19:05 IST - T45, T13a: PDF extraction and tool context fix
+- Created `memory-bank/tasks/T45.md` - PDF Text Extraction Tool task record.
+- Created `memory-bank/tasks/T13a.md` - Tool Call Context Persistence Bug Fix task record.
+- Created `memory-bank/implementation-details/pdf-text-extraction.md` - Full technical doc for PDF extraction feature.
+- Modified `memory-bank/implementation-details/agentic-tool-calling.md` - Added Tool Call Context Persistence Bug Fix section.
+- Modified `memory-bank/tasks.md` - Added T45 and T13a to Completed Tasks; added task relationships.
+- Modified `memory-bank/activeContext.md` - Recorded T45 and T13a completion.
+- Modified `memory-bank/progress.md` - Recorded T45 and T13a implementation details.
+- Modified `memory-bank/session_cache.md` - Updated session handoff with T45 and T13a.
+
 *Last Updated: 2026-08-14 16:42:00 IST*
 
 #### 21:28:00 IST - T8: README branding, version bump, security audit, submission prep

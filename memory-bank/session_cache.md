@@ -1,40 +1,42 @@
 # Session Cache
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-15 13:19:00 IST*
+*Last Updated: 2026-08-16 19:05 IST*
 
-**Started**: 2026-08-14 20:32:00 IST
-**Ended**: 2026-08-14 21:28:00 IST
-**Focus Task**: T8a: Community Directory Review Remediation
+**Started**: 2026-08-16 18:44 UTC
+**Ended**: 2026-08-16 19:05 UTC
+**Focus Tasks**: T45: PDF Text Extraction Tool, T13a: Tool Call Context Persistence Bug Fix
 
-## 2026-08-15 Session Handoff
+## 2026-08-16 Session Handoff
 
-- **Task**: T8a Community Directory Review Remediation
-- **Completed**: review fixes, 1.3.4 stable release, sidebar command discoverability, Chat Lab AI sidebar branding, README/CI polish, regression coverage.
-- **Latest commit**: `cac9688` on `main`; `latest-dev` workflow passed as `31876440415`.
-- **Verification**: 25 test files, 236 tests, build/typecheck, and diff check passed.
-- **Open item**: manual desktop/mobile smoke tests against `latest-dev`.
-- **Session state**: closed 2026-08-15 14:53 IST.
-**Session File**: `sessions/2026-08-14-evening.md`
-**Status**: 🔄 In progress — findings documented; implementation pending
+- **Task**: T45 PDF Text Extraction — IMPLEMENTED and TESTED (user confirmed works)
+- **Task**: T13a Tool Context Fix — IMPLEMENTED and TESTED (user confirmed works)
+- **Latest commits**: `b4296e7` (T45), `88dff94` (T13a) on `main`
+- **Verification**: 236 tests, build/typecheck, diff check passed for both
+- **New files created**:
+  - `memory-bank/tasks/T45.md`
+  - `memory-bank/tasks/T13a.md`
+  - `memory-bank/implementation-details/pdf-text-extraction.md`
+- **Updated docs**:
+  - `memory-bank/implementation-details/agentic-tool-calling.md` (added T13a section)
+  - `memory-bank/tasks.md` (added T45, T13a)
+  - `memory-bank/activeContext.md`
+  - `memory-bank/progress.md`
+- **Session state**: open
 
 ## Overview
 
-- Active: 9 | Paused: 0 | Completed: 19
-- Last Session: 2026-08-12
-- Current Period: afternoon
-
-### 2026-08-15 Review Follow-up
-- Created T8a under T8 for the failed Community Directory checks.
-- Implementation findings: [Community review remediation](implementation-details/community-review-remediation.md)
+- Active: 9 | Paused: 0 | Completed: 21
+- Last Session: 2026-08-16
+- Current Period: evening
 
 ## Session History (Last 5)
 
-### 2026-08-14 Afternoon
-- Completed T19a group-chat attachment replay documentation closeout.
-- Created and completed T20 for message selection and Chat History exports.
-- Updated T41 with updater commit metadata details.
-- Working tree and remote were clean at session close.
+### 2026-08-16 Evening
+- Implemented T45: PDF text extraction tool with dual backend (server PyMuPDF + client pdfjs-dist)
+- Implemented T13a: Fixed tool call context not persisting in conversation history
+- Created memory bank documentation for both tasks
+- User confirmed both features work correctly
 
 ## Active Tasks
 
