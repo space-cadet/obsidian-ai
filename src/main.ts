@@ -23,7 +23,7 @@ import {
 import { diffExtension } from "./modules/diffExtension";
 import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/ObsidianAIChatView";
 import { PluginUpdater, UpdateAvailableModal } from "./updater/PluginUpdater";
-import { GIT_COMMIT_HASH } from "./version-info";
+import { GIT_COMMIT_HASH, GIT_BRANCH } from "./version-info";
 import { StoredChatData, ChatSession } from "./types";
 import { createFileLogger, FileLogger } from "./logger";
 import { createStorage, ChatStorage, StorageDeps } from "./storage/ChatStorage";
@@ -36,6 +36,10 @@ import { SessionStorage } from "./storage/session-storage";
 import { PersonaLoader } from "./intelligence/PersonaLoader";
 import { SearchIndex } from "./search/index";
 import { SessionSummarizer } from "./intelligence/SessionSummarizer";
+import { SyncEngine } from "./sync/SyncEngine";
+import { LocalCache } from "./sync/LocalCache";
+import { EncryptionLayer } from "./sync/EncryptionLayer";
+import { WebDAVStorageAdapter } from "./sync/WebDAVStorageAdapter";
 import { ProviderRegistry } from "./integrations/ProviderRegistry";
 
 export const OPEN_CHAT_COMMAND_ID = "open-chat-lab-sidebar";
@@ -52,6 +56,7 @@ export default class ObsidianAIPlugin extends Plugin {
 	searchIndex: SearchIndex | null = null;
 	sessionSummarizer: SessionSummarizer | null = null;
 	integrationRegistry!: ProviderRegistry;
+	syncEngine: SyncEngine | null = null;
 
 	// Data integrity guards
 	private _backupCreated = false;
@@ -287,6 +292,9 @@ export default class ObsidianAIPlugin extends Plugin {
 		// Add settings tab
 		this.addSettingTab(new ObsidianAISettingsTab(this.app, this));
 
+		// Initialize remote sync engine if configured
+		await this._initSyncEngine();
+
 		// Command to clear debug log
 		this.addCommand({
 			id: "clear-debug-log",
@@ -482,6 +490,7 @@ export default class ObsidianAIPlugin extends Plugin {
 				this.manifest.version,
 				this.settings.updateChannel === "dev",
 				GIT_COMMIT_HASH,
+				GIT_BRANCH,
 			);
 
 			this.settings.lastUpdateCheck = Date.now();
@@ -533,7 +542,68 @@ export default class ObsidianAIPlugin extends Plugin {
 		this.logger.flushNow();
 	}
 
-	/** Build the storage dependency bag */
+	/** Initialize SyncEngine for remote storage sync */
+	private async _initSyncEngine(): Promise<void> {
+		const rs = this.settings.remoteStorage;
+		if (!rs.enabled || rs.backend === "none") return;
+
+		try {
+			const adapter = new WebDAVStorageAdapter();
+			const cache = new LocalCache();
+			const crypto = new EncryptionLayer();
+
+			this.syncEngine = new SyncEngine({
+				adapter,
+				cache,
+				crypto,
+				passphrase: rs.passphrase,
+				conflictStrategy: rs.conflictStrategy,
+				logger: {
+					log: (level: string, msg: string) => {
+						this.logger?.log(level as any, `[SyncEngine] ${msg}`);
+					},
+				},
+			});
+
+			if (rs.backend === "webdav" && rs.webdav) {
+				await this.syncEngine.initialize({
+					url: rs.webdav.url,
+					username: rs.webdav.username,
+					password: rs.webdav.password,
+					prefix: rs.webdav.prefix,
+				});
+				this.logger?.log("info", "SyncEngine initialized (WebDAV)");
+			}
+			// TODO: S3 and custom backends
+		} catch (err: any) {
+			this.logger?.log("error", `SyncEngine init failed: ${err.message}`);
+			console.error("[ObsidianAI] SyncEngine init failed:", err);
+		}
+	}
+
+	/** Trigger a manual sync and update settings */
+	async triggerSync(): Promise<{ ok: boolean; message: string }> {
+		if (!this.syncEngine) {
+			return { ok: false, message: "Sync not configured. Check Remote Storage settings." };
+		}
+
+		try {
+			const result = await this.syncEngine.sync();
+			this.settings.remoteStorage.lastSyncTime = Date.now();
+			await this.saveSettings();
+
+			const parts: string[] = [];
+			if (result.uploaded > 0) parts.push(`↑${result.uploaded}`);
+			if (result.downloaded > 0) parts.push(`↓${result.downloaded}`);
+			if (result.conflicts > 0) parts.push(`⚡${result.conflicts}`);
+			if (result.errors.length > 0) parts.push(`⊘${result.errors.length}`);
+
+			const msg = parts.length > 0 ? parts.join(" ") : "Nothing to sync";
+			return { ok: result.errors.length === 0, message: msg };
+		} catch (err: any) {
+			return { ok: false, message: `Sync failed: ${err.message}` };
+		}
+	}
 	private _storageDeps(): StorageDeps {
 		return {
 			app: this.app,

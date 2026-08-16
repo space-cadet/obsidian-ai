@@ -337,8 +337,19 @@ export function renderRemoteStorageSection(
 					new Notice("Enable remote storage first.");
 					return;
 				}
-				// TODO: Trigger sync via plugin.syncEngine.sync()
-				new Notice("Sync triggered — engine wiring in progress.");
+				button.setButtonText("Syncing…");
+				button.setDisabled(true);
+
+				const result = await plugin.triggerSync();
+
+				button.setButtonText("🔄 Sync Now");
+				button.setDisabled(false);
+
+				if (result.ok) {
+					new Notice(`✅ Sync complete: ${result.message}`);
+				} else {
+					new Notice(`❌ ${result.message}`, 8000);
+				}
 			}),
 	);
 

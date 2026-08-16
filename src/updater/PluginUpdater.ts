@@ -144,18 +144,19 @@ export class PluginUpdater {
 		}
 	}
 
-	/** Check if an update is available */
+	/** Check if an update is available. For dev channel, prefers branch-specific releases. */
 	async checkForUpdate(
 		currentVersion: string,
 		includePrerelease: boolean,
 		currentCommitHash?: string,
+		currentBranch?: string,
 	): Promise<UpdateCheckResult> {
 		try {
 			let release: ReleaseInfo;
 
 			if (includePrerelease) {
 				const releases = (await fetchJson(
-					`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=20`,
+					`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=30`,
 				)) as ReleaseInfo[];
 				if (!releases || releases.length === 0) {
 					return {
@@ -166,9 +167,16 @@ export class PluginUpdater {
 						isPrerelease: false,
 					};
 				}
-				// Find the latest pre-release, or fall back to latest release if none
-				const prerelease = releases.find((r) => r.prerelease);
-				release = prerelease ?? releases[0];
+
+				// For dev channel: try branch-specific release first, then fall back to latest-dev (main)
+				let branchRelease: ReleaseInfo | undefined;
+				if (currentBranch && currentBranch !== "main") {
+					const branchTag = `latest-dev-${currentBranch}`;
+					branchRelease = releases.find((r) => r.tag_name === branchTag);
+				}
+
+				// Use branch release if found, otherwise fall back to latest-dev or any pre-release
+				release = branchRelease ?? releases.find((r) => r.tag_name === "latest-dev") ?? releases.find((r) => r.prerelease) ?? releases[0];
 			} else {
 				release = await fetchJson(
 					`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
