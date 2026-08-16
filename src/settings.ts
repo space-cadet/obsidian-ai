@@ -33,6 +33,40 @@ export type WebSearchProvider =
 	| "tavily"
 	| "exa";
 
+export type StorageBackendType = "none" | "webdav" | "s3" | "custom";
+
+export interface WebDAVStorageConfig {
+	type: "webdav";
+	url: string;
+	username: string;
+	password: string;
+	prefix: string;
+	enabled: boolean;
+}
+
+export interface S3StorageConfig {
+	type: "s3";
+	endpoint: string;
+	region: string;
+	bucket: string;
+	prefix: string;
+	accessKeyId: string;
+	secretAccessKey: string;
+	enabled: boolean;
+}
+
+export interface RemoteStorageConfig {
+	enabled: boolean;
+	backend: StorageBackendType;
+	passphrase: string;
+	autoSync: boolean;
+	syncIntervalMinutes: number;
+	conflictStrategy: "last-write-wins" | "keep-both" | "manual";
+	webdav?: WebDAVStorageConfig;
+	s3?: S3StorageConfig;
+	lastSyncTime: number;
+}
+
 export interface ModelCache {
 	models: string[];
 	fetchedAt: number;
@@ -121,6 +155,9 @@ export interface ObsidianAISettings {
 	updateChannel: "stable" | "dev";
 	lastUpdateCheck: number;
 	autoUpdate: boolean;
+
+	// Remote storage / sync settings (T42)
+	remoteStorage: RemoteStorageConfig;
 }
 
 type LegacySettings = Partial<ObsidianAISettings> & {
@@ -332,6 +369,35 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	updateChannel: "stable",
 	lastUpdateCheck: 0,
 	autoUpdate: false,
+
+	// Remote storage defaults (T42)
+	remoteStorage: {
+		enabled: false,
+		backend: "none",
+		passphrase: "",
+		autoSync: false,
+		syncIntervalMinutes: 30,
+		conflictStrategy: "last-write-wins",
+		webdav: {
+			type: "webdav",
+			url: "",
+			username: "",
+			password: "",
+			prefix: "obsidian-ai-sync/",
+			enabled: false,
+		},
+		s3: {
+			type: "s3",
+			endpoint: "",
+			region: "us-east-1",
+			bucket: "",
+			prefix: "obsidian-ai-sync/",
+			accessKeyId: "",
+			secretAccessKey: "",
+			enabled: false,
+		},
+		lastSyncTime: 0,
+	},
 };
 
 export const normalizeSettings = (
@@ -453,6 +519,39 @@ export const normalizeSettings = (
 		updateChannel: (merged.updateChannel as "stable" | "dev") ?? "stable",
 		lastUpdateCheck: merged.lastUpdateCheck ?? 0,
 		autoUpdate: Boolean(merged.autoUpdate ?? false),
+		remoteStorage: {
+			enabled: Boolean(merged.remoteStorage?.enabled ?? false),
+			backend: (merged.remoteStorage?.backend as StorageBackendType) ?? "none",
+			passphrase: merged.remoteStorage?.passphrase ?? "",
+			autoSync: Boolean(merged.remoteStorage?.autoSync ?? false),
+			syncIntervalMinutes: Number.isFinite(merged.remoteStorage?.syncIntervalMinutes)
+				? (merged.remoteStorage?.syncIntervalMinutes as number)
+				: 30,
+			conflictStrategy:
+				(merged.remoteStorage?.conflictStrategy as
+					| "last-write-wins"
+					| "keep-both"
+					| "manual") ?? "last-write-wins",
+			webdav: {
+				type: "webdav" as const,
+				url: merged.remoteStorage?.webdav?.url ?? "",
+				username: merged.remoteStorage?.webdav?.username ?? "",
+				password: merged.remoteStorage?.webdav?.password ?? "",
+				prefix: merged.remoteStorage?.webdav?.prefix ?? "obsidian-ai-sync/",
+				enabled: Boolean(merged.remoteStorage?.webdav?.enabled ?? false),
+			},
+			s3: {
+				type: "s3" as const,
+				endpoint: merged.remoteStorage?.s3?.endpoint ?? "",
+				region: merged.remoteStorage?.s3?.region ?? "us-east-1",
+				bucket: merged.remoteStorage?.s3?.bucket ?? "",
+				prefix: merged.remoteStorage?.s3?.prefix ?? "obsidian-ai-sync/",
+				accessKeyId: merged.remoteStorage?.s3?.accessKeyId ?? "",
+				secretAccessKey: merged.remoteStorage?.s3?.secretAccessKey ?? "",
+				enabled: Boolean(merged.remoteStorage?.s3?.enabled ?? false),
+			},
+			lastSyncTime: merged.remoteStorage?.lastSyncTime ?? 0,
+		},
 	};
 };
 

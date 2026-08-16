@@ -110,6 +110,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Intelligence", "AI Intelligence Layer"],
 				["Web Search", "Web Search"],
 				["Sync", "Multi-User Sync"],
+				["Remote Storage", "Remote Storage"],
 				["Updates", "Updates"],
 				["Advanced", "Advanced"],
 				["Custom Commands", "Custom Commands"],
@@ -174,6 +175,11 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				this.saveSettings.bind(this),
 			);
 			renderSyncSection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
+			renderRemoteStorageSection(
 				containerEl,
 				this.plugin,
 				this.saveSettings.bind(this),
