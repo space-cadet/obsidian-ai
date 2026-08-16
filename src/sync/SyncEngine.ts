@@ -306,6 +306,14 @@ export class SyncEngine {
 		}
 	}
 
+	/** Populate the local cache with sessions from Obsidian's storage. */
+	async populateCache(sessions: ChatSession[]): Promise<void> {
+		for (const session of sessions) {
+			await this.cache.putSession(session);
+		}
+		this.log("info", `SyncEngine: cache populated with ${sessions.length} sessions`);
+	}
+
 	/** Disconnect adapter and clear crypto key. */
 	async disconnect(): Promise<void> {
 		this.crypto.clear();

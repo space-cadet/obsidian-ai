@@ -50,27 +50,34 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 
 	async listSessions(): Promise<RemoteSessionMeta[]> {
 		const prefixPath = this.prefix + "sessions/";
-		const responses = await this.propfind(prefixPath, 1);
+		try {
+			const responses = await this.propfind(prefixPath, 1);
+			const results: RemoteSessionMeta[] = [];
+			for (const item of responses) {
+				// Skip the directory itself
+				if (item.href.endsWith("/sessions/") || item.href.endsWith("/" + prefixPath)) {
+					continue;
+				}
+				// Extract session ID from filename (e.g., "session-abc.json" -> "session-abc")
+				const filename = item.href.split("/").pop() || "";
+				const id = filename.replace(/\.json$/, "");
+				if (!id) continue;
 
-		const results: RemoteSessionMeta[] = [];
-		for (const item of responses) {
-			// Skip the directory itself
-			if (item.href.endsWith("/sessions/") || item.href.endsWith("/" + prefixPath)) {
-				continue;
+				results.push({
+					id,
+					modifiedAt: item.lastModified ? new Date(item.lastModified).getTime() : Date.now(),
+					etag: item.etag,
+					size: item.contentLength,
+				});
 			}
-			// Extract session ID from filename (e.g., "session-abc.json" -> "session-abc")
-			const filename = item.href.split("/").pop() || "";
-			const id = filename.replace(/\.json$/, "");
-			if (!id) continue;
-
-			results.push({
-				id,
-				modifiedAt: item.lastModified ? new Date(item.lastModified).getTime() : Date.now(),
-				etag: item.etag,
-				size: item.contentLength,
-			});
+			return results;
+		} catch (err: any) {
+			// 404 = sessions directory doesn't exist yet (first sync) → empty list
+			if (err.status === 404 || err.message?.includes("404")) {
+				return [];
+			}
+			throw err;
 		}
-		return results;
 	}
 
 	async getSession(id: string): Promise<EncryptedSession | null> {
@@ -150,9 +157,6 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 			// Use dynamic import to avoid bundling issues
 			const { requestUrl } = await import("obsidian");
 			
-			// Debug logging for auth issues
-			console.log("[WebDAV] Request:", { url, method, headers: { ...headers, Authorization: headers.Authorization ? "Basic ***" : "none" } });
-			
 			const res = await requestUrl({
 				url,
 				method,
@@ -160,8 +164,6 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 				body: options.body,
 				throw: false,
 			});
-
-			console.log("[WebDAV] Response:", { status: res.status, statusText: res.status, headers: res.headers });
 
 			const responseHeaders: Record<string, string> = {};
 			if (res.headers) {

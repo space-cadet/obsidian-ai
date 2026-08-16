@@ -583,11 +583,18 @@ export default class ObsidianAIPlugin extends Plugin {
 
 	/** Trigger a manual sync and update settings */
 	async triggerSync(): Promise<{ ok: boolean; message: string }> {
+		// Lazy-init sync engine if not already initialized (e.g., user enabled sync after plugin load)
 		if (!this.syncEngine) {
-			return { ok: false, message: "Sync not configured. Check Remote Storage settings." };
+			await this._initSyncEngine();
+		}
+		if (!this.syncEngine) {
+			return { ok: false, message: "Sync not configured. Enable Remote Storage and enter credentials." };
 		}
 
 		try {
+			// Populate local cache from Obsidian's actual chat storage before syncing
+			await this._populateSyncCache();
+
 			const result = await this.syncEngine.sync();
 			this.settings.remoteStorage.lastSyncTime = Date.now();
 			await this.saveSettings();
@@ -596,12 +603,25 @@ export default class ObsidianAIPlugin extends Plugin {
 			if (result.uploaded > 0) parts.push(`↑${result.uploaded}`);
 			if (result.downloaded > 0) parts.push(`↓${result.downloaded}`);
 			if (result.conflicts > 0) parts.push(`⚡${result.conflicts}`);
-			if (result.errors.length > 0) parts.push(`⊘${result.errors.length}`);
+			if (result.skipped > 0) parts.push(`⊘${result.skipped}`);
+			if (result.errors.length > 0) parts.push(`⚠️ ${result.errors.length}`);
 
 			const msg = parts.length > 0 ? parts.join(" ") : "Nothing to sync";
 			return { ok: result.errors.length === 0, message: msg };
 		} catch (err: any) {
 			return { ok: false, message: `Sync failed: ${err.message}` };
+		}
+	}
+
+	/** Copy current chat sessions from Obsidian storage into the sync cache */
+	private async _populateSyncCache(): Promise<void> {
+		if (!this.syncEngine) return;
+		try {
+			const chatData = await this.loadChatData();
+			const sessions = chatData.sessions || [];
+			await this.syncEngine.populateCache(sessions);
+		} catch (err: any) {
+			this.logger?.log("warn", `SyncEngine: failed to populate cache: ${err.message}`);
 		}
 	}
 	private _storageDeps(): StorageDeps {
