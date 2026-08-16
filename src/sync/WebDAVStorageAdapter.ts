@@ -149,6 +149,10 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		try {
 			// Use dynamic import to avoid bundling issues
 			const { requestUrl } = await import("obsidian");
+			
+			// Debug logging for auth issues
+			console.log("[WebDAV] Request:", { url, method, headers: { ...headers, Authorization: headers.Authorization ? "Basic ***" : "none" } });
+			
 			const res = await requestUrl({
 				url,
 				method,
@@ -156,6 +160,8 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 				body: options.body,
 				throw: false,
 			});
+
+			console.log("[WebDAV] Response:", { status: res.status, statusText: res.status, headers: res.headers });
 
 			const responseHeaders: Record<string, string> = {};
 			if (res.headers) {
@@ -167,8 +173,9 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 			if (res.status >= 400) {
 				const err = new Error(
 					`WebDAV ${method} failed: ${res.status} — ${res.text.slice(0, 200)}`,
-				) as Error & { status: number };
+				) as Error & { status: number; debugInfo?: string };
 				err.status = res.status;
+				err.debugInfo = JSON.stringify({ url, method, status: res.status, responseText: res.text.slice(0, 500) });
 				throw err;
 			}
 

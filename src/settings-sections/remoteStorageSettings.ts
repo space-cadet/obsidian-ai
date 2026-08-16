@@ -10,7 +10,7 @@ async function testWebDAVConnection(
 	url: string,
 	username: string,
 	password: string,
-): Promise<{ ok: boolean; error?: string; detail?: string }> {
+): Promise<{ ok: boolean; error?: string; detail?: string; debugInfo?: string }> {
 	if (!url.trim()) {
 		return { ok: false, error: "WebDAV URL is required." };
 	}
@@ -27,7 +27,7 @@ async function testWebDAVConnection(
 		baseUrl += "/";
 	}
 
-	const authHeader = "***" + btoa(username.trim() + ":" + password);
+	const authHeader = "Basic " + btoa(username.trim() + ":" + password);
 
 	try {
 		// Try a PROPFIND on the root to verify auth + connectivity
@@ -66,7 +66,15 @@ async function testWebDAVConnection(
 			error = "CORS blocked. Try using the full WebDAV URL.";
 		}
 
-		return { ok: false, error, detail };
+		// Build debug info for mobile troubleshooting (no console access)
+		const debugInfo = JSON.stringify({
+			status,
+			message: err.message,
+			url: baseUrl,
+			headersSent: { Authorization: "Basic ***", "Content-Type": "application/xml", Depth: "0" },
+		});
+
+		return { ok: false, error, detail, debugInfo };
 	}
 }
 
@@ -313,7 +321,10 @@ export function renderRemoteStorageSection(
 					if (result.detail) {
 						msg += `\n${result.detail}`;
 					}
-					new Notice(msg, 8000);
+					if (result.debugInfo) {
+						msg += `\n\nDebug: ${result.debugInfo}`;
+					}
+					new Notice(msg, 10000);
 				}
 			}),
 	);
