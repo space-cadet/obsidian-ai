@@ -186,7 +186,7 @@ export class PluginUpdater {
 			const latestVersion = release.tag_name.replace(/^v/, "");
 
 			const latestCommit = await fetchLatestCommit(
-				includePrerelease ? "main" : release.tag_name,
+				includePrerelease && currentBranch ? currentBranch : "main",
 			);
 			// For dev channel: compare commit hashes to detect if already on latest
 			let commitMatch = false;

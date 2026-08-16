@@ -40,6 +40,7 @@ import { SyncEngine } from "./sync/SyncEngine";
 import { LocalCache } from "./sync/LocalCache";
 import { EncryptionLayer } from "./sync/EncryptionLayer";
 import { WebDAVStorageAdapter } from "./sync/WebDAVStorageAdapter";
+import { SyncProgressModal } from "./modals/SyncProgressModal";
 import { ProviderRegistry } from "./integrations/ProviderRegistry";
 
 export const OPEN_CHAT_COMMAND_ID = "open-chat-lab-sidebar";
@@ -47,6 +48,7 @@ export const OPEN_CHAT_COMMAND_NAME = "Open Chat Lab AI sidebar";
 
 export default class ObsidianAIPlugin extends Plugin {
 	private static readonly LEGACY_PLUGIN_ID = "obsidian-ai";
+	private static readonly LS_WEBDAV_PASSWORD = "obsidian-ai:webdav-password";
 	settings: ObsidianAISettings = DEFAULT_SETTINGS;
 	chatapi!: ChatApiManager;
 	agentapi: AgentApiManager | null = null;
@@ -588,13 +590,20 @@ export default class ObsidianAIPlugin extends Plugin {
 			await this._initSyncEngine();
 		}
 		if (!this.syncEngine) {
-			return { ok: false, message: "Sync not configured. Enable Remote Storage and enter credentials." };
+			const msg = "Sync not configured. Enable Remote Storage and enter credentials.";
+			new Notice(msg);
+			return { ok: false, message: msg };
 		}
+
+		const modal = new SyncProgressModal(this.app);
+		modal.open();
 
 		try {
 			// Populate local cache from Obsidian's actual chat storage before syncing
+			modal.updateProgress("Reading local sessions...");
 			await this._populateSyncCache();
 
+			modal.updateProgress("Syncing with remote...");
 			const result = await this.syncEngine.sync();
 			this.settings.remoteStorage.lastSyncTime = Date.now();
 			await this.saveSettings();
@@ -607,9 +616,30 @@ export default class ObsidianAIPlugin extends Plugin {
 			if (result.errors.length > 0) parts.push(`⚠️ ${result.errors.length}`);
 
 			const msg = parts.length > 0 ? parts.join(" ") : "Nothing to sync";
-			return { ok: result.errors.length === 0, message: msg };
+			const ok = result.errors.length === 0;
+
+			modal.finish({ ...result, message: msg });
+
+			// Toast notification
+			if (ok) {
+				new Notice(`✅ Sync complete: ${msg}`, 6000);
+			} else {
+				new Notice(`⚠️ Sync finished with errors: ${msg}`, 8000);
+			}
+
+			return { ok, message: msg };
 		} catch (err: any) {
-			return { ok: false, message: `Sync failed: ${err.message}` };
+			const msg = `Sync failed: ${err.message}`;
+			modal.finish({
+				uploaded: 0,
+				downloaded: 0,
+				conflicts: 0,
+				skipped: 0,
+				errors: [err.message],
+				message: msg,
+			});
+			new Notice(`❌ ${msg}`, 8000);
+			return { ok: false, message: msg };
 		}
 	}
 
@@ -648,6 +678,15 @@ export default class ObsidianAIPlugin extends Plugin {
 			`loadSettings: _settingsLoadedFromFile=${this._settingsLoadedFromFile}, raw=${raw ? "exists" : "null"}`,
 		);
 		this.settings = normalizeSettings(raw);
+
+		// Restore WebDAV password from localStorage (not synced, not in data.json)
+		const savedPassword = this.app.loadLocalStorage(
+			ObsidianAIPlugin.LS_WEBDAV_PASSWORD,
+		);
+		if (savedPassword && this.settings.remoteStorage.webdav) {
+			this.settings.remoteStorage.webdav.password = savedPassword;
+		}
+
 		this.logger?.setMaxSize(this.settings.debugLogMaxSizeMB * 1024 * 1024);
 	}
 
@@ -666,8 +705,22 @@ export default class ObsidianAIPlugin extends Plugin {
 			return;
 		}
 
+		// Save password to localStorage and strip from payload
+		const webdavPassword = this.settings.remoteStorage.webdav?.password;
+		if (webdavPassword) {
+			this.app.saveLocalStorage(
+				ObsidianAIPlugin.LS_WEBDAV_PASSWORD,
+				webdavPassword,
+			);
+		}
+
 		const existing = (await this.loadData()) ?? {};
 		let payload: Record<string, any> = { ...existing, ...this.settings };
+
+		// Strip password from persisted data.json
+		if (payload.remoteStorage?.webdav?.password) {
+			payload.remoteStorage.webdav.password = "";
+		}
 
 		// When using JSONL storage, strip legacy chat data keys from data.json
 		// to avoid accidentally re-introducing legacy format after migration
