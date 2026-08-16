@@ -2,15 +2,18 @@ import type { ChatSession } from "../types";
 
 /**
  * Encrypted session payload stored on remote backends.
- * The server never sees plaintext.
+ * The server never sees plaintext (unless encryption is disabled for testing).
  */
 export interface EncryptedSession {
 	id: string;
-	iv: string; // Base64 nonce
-	ciphertext: string; // Base64 encrypted data
-	tag: string; // Base64 auth tag
-	/** Base64 salt used for PBKDF2 key derivation (stored with ciphertext). */
-	salt: string;
+	/** Base64 nonce. Omitted if data is unencrypted (test mode). */
+	iv?: string;
+	/** Base64 encrypted data — or plaintext JSON if unencrypted. */
+	ciphertext: string;
+	/** Base64 auth tag. Omitted if unencrypted. */
+	tag?: string;
+	/** Base64 salt for PBKDF2. Omitted if unencrypted. */
+	salt?: string;
 	checksum: string; // SHA-256 of plaintext
 	modifiedAt: number;
 	version: number; // For conflict detection

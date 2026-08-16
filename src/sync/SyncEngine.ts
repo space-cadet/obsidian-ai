@@ -54,9 +54,13 @@ export class SyncEngine {
 		await this.adapter.initialize(config);
 		await this.cache.init();
 
-		// Derive key from passphrase (new random salt)
+		// Derive key from passphrase (plaintext mode if empty)
 		const salt = await this.crypto.deriveKey(this.passphrase);
-		this.log("info", `SyncEngine: key derived (salt: ${btoa(String.fromCharCode(...salt)).slice(0, 8)}...)`);
+		if (salt) {
+			this.log("info", `SyncEngine: key derived (salt: ${btoa(String.fromCharCode(...salt)).slice(0, 8)}...)`);
+		} else {
+			this.log("warn", "SyncEngine: encryption disabled (plaintext mode)");
+		}
 	}
 
 	/** Perform a full sync: upload local changes, download remote changes, resolve conflicts. */
@@ -198,14 +202,17 @@ export class SyncEngine {
 
 		const payload: EncryptedSession = {
 			id: session.id,
-			iv: encrypted.iv,
 			ciphertext: encrypted.ciphertext,
-			tag: encrypted.tag,
-			salt: encrypted.salt,
 			checksum: sessionChecksum,
 			modifiedAt: session.updatedAt,
 			version: ((session as unknown as Record<string, unknown>)._version as number) ?? 1,
 		};
+		// Only include encryption fields if actually encrypted
+		if (!encrypted.unencrypted) {
+			payload.iv = encrypted.iv;
+			payload.tag = encrypted.tag;
+			payload.salt = encrypted.salt;
+		}
 
 		await this.adapter.putSession(payload);
 		await this.cache.markSynced(session.id);
@@ -224,7 +231,8 @@ export class SyncEngine {
 			iv: encrypted.iv,
 			ciphertext: encrypted.ciphertext,
 			tag: encrypted.tag,
-			salt: encrypted.iv, // salt is stored separately in EncryptedSession; we need to thread it through
+			salt: encrypted.salt,
+			unencrypted: !encrypted.iv, // plaintext if no IV
 		};
 
 		// Decrypt using passphrase (key may not be in memory if session restarted)
@@ -272,7 +280,8 @@ export class SyncEngine {
 						iv: encrypted.iv,
 						ciphertext: encrypted.ciphertext,
 						tag: encrypted.tag,
-						salt: encrypted.iv,
+						salt: encrypted.salt,
+						unencrypted: !encrypted.iv,
 					};
 					const plaintext = await this.crypto.decrypt(payload, this.passphrase);
 					const remoteSession: ChatSession = JSON.parse(plaintext);

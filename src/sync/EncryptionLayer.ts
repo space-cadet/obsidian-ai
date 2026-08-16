@@ -3,13 +3,17 @@
  *
  * Uses AES-256-GCM with a key derived from a user passphrase via PBKDF2.
  * The passphrase is never persisted — only kept in memory while sync is active.
+ *
+ * If passphrase is empty, encryption is skipped (plaintext mode for testing).
  */
 
 export interface EncryptedPayload {
-	iv: string; // Base64
-	ciphertext: string; // Base64
-	tag: string; // Base64 (GCM auth tag)
-	salt: string; // Base64 (PBKDF2 salt)
+	iv?: string; // Base64 — omitted in plaintext mode
+	ciphertext: string; // Base64 encrypted — or plaintext JSON
+	tag?: string; // Base64 — omitted in plaintext mode
+	salt?: string; // Base64 — omitted in plaintext mode
+	/** If true, ciphertext contains plaintext JSON (no encryption). */
+	unencrypted?: boolean;
 }
 
 /** SHA-256 checksum of plaintext (hex string). */
@@ -25,21 +29,32 @@ export async function checksum(plaintext: string): Promise<string> {
 export class EncryptionLayer {
 	private key: CryptoKey | null = null;
 	private salt: Uint8Array | null = null;
+	private passphrase: string = "";
 
 	/** True if a key has been derived and is ready for use. */
 	get isReady(): boolean {
-		return this.key !== null;
+		return this.key !== null || this.passphrase === "";
 	}
 
 	/**
 	 * Derive an AES-256-GCM key from a passphrase.
+	 * If passphrase is empty, encryption is disabled (plaintext mode).
 	 * @param passphrase User-provided passphrase
 	 * @param existingSalt Optional existing salt (for decryption). If omitted, a new random salt is generated.
 	 */
 	async deriveKey(
 		passphrase: string,
 		existingSalt?: Uint8Array,
-	): Promise<Uint8Array> {
+	): Promise<Uint8Array | null> {
+		this.passphrase = passphrase;
+
+		// Plaintext mode: no key derivation needed
+		if (!passphrase) {
+			this.key = null;
+			this.salt = null;
+			return null;
+		}
+
 		const salt = existingSalt ?? crypto.getRandomValues(new Uint8Array(16));
 		this.salt = salt;
 
@@ -68,19 +83,29 @@ export class EncryptionLayer {
 		return salt;
 	}
 
+	/** True if encryption is enabled (passphrase was provided). */
+	get encryptionEnabled(): boolean {
+		return this.passphrase !== "";
+	}
+
 	/** Forget the derived key (e.g., on lock/logout). */
 	clear(): void {
 		this.key = null;
 		this.salt = null;
+		this.passphrase = "";
 	}
 
 	/**
 	 * Encrypt a plaintext string.
-	 * @returns The encrypted payload + base64 salt for storage.
+	 * If encryption is disabled (empty passphrase), returns plaintext with unencrypted flag.
 	 */
 	async encrypt(plaintext: string): Promise<EncryptedPayload> {
-		if (!this.key) {
-			throw new Error("Encryption key not derived. Call deriveKey() first.");
+		// Plaintext mode: skip encryption
+		if (!this.encryptionEnabled || !this.key) {
+			return {
+				ciphertext: plaintext,
+				unencrypted: true,
+			};
 		}
 
 		const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -108,6 +133,7 @@ export class EncryptionLayer {
 
 	/**
 	 * Decrypt an encrypted payload.
+	 * If payload is marked unencrypted, returns plaintext directly.
 	 * @param payload The encrypted data + IV + tag + salt.
 	 * @param passphrase Required if key not already derived.
 	 */
@@ -115,6 +141,11 @@ export class EncryptionLayer {
 		payload: EncryptedPayload,
 		passphrase?: string,
 	): Promise<string> {
+		// Plaintext mode: return directly
+		if (payload.unencrypted) {
+			return payload.ciphertext;
+		}
+
 		// If no key in memory, derive it from passphrase + stored salt
 		if (!this.key) {
 			if (!passphrase) {
@@ -122,10 +153,17 @@ export class EncryptionLayer {
 					"Passphrase required when key is not in memory.",
 				);
 			}
+			if (!payload.salt) {
+				throw new Error("Salt missing in encrypted payload.");
+			}
 			const salt = new Uint8Array(
 				Array.from(atob(payload.salt), (c) => c.charCodeAt(0)),
 			);
 			await this.deriveKey(passphrase, salt);
+		}
+
+		if (!payload.iv || !payload.tag) {
+			throw new Error("IV or tag missing in encrypted payload.");
 		}
 
 		const iv = new Uint8Array(

@@ -5,7 +5,7 @@ import type {
 } from "./StorageAdapter";
 
 export interface WebDAVConfig {
-	url: string; // e.g. https://nextcloud.example.com/remote.php/dav/files/username/
+	url: string;
 	username: string;
 	password: string;
 	/** Path prefix for storing sessions (default: obsidian-ai-sync/) */
@@ -17,6 +17,7 @@ export interface WebDAVConfig {
 /**
  * WebDAV storage adapter for Nextcloud, ownCloud, and generic WebDAV servers.
  *
+ * Uses Obsidian's requestUrl for reliable network requests in the Electron sandbox.
  * Stores encrypted sessions as JSON files in a configurable prefix directory.
  */
 export class WebDAVStorageAdapter implements StorageAdapter {
@@ -118,6 +119,13 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 
 	// ─── Internal WebDAV operations ───
 
+	private getAuthHeader(): string {
+		if (!this.config) {
+			throw new Error("WebDAV adapter not initialized");
+		}
+		return "***" + btoa(this.config.username + ":" + this.config.password);
+	}
+
 	private async request(
 		method: string,
 		path: string,
@@ -133,35 +141,49 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 
 		const url = this.baseUrl + path;
 		const headers: Record<string, string> = {
-			Authorization:
-				"Basic " +
-				btoa(this.config.username + ":" + this.config.password),
+			Authorization: this.getAuthHeader(),
 			...(options.contentType ? { "Content-Type": options.contentType } : {}),
 			...options.headers,
 		};
 
-		const response = await fetch(url, {
-			method,
-			headers,
-			body: options.body,
-			signal: AbortSignal.timeout(this.timeout),
-		});
+		try {
+			// Use dynamic import to avoid bundling issues
+			const { requestUrl } = await import("obsidian");
+			const res = await requestUrl({
+				url,
+				method,
+				headers,
+				body: options.body,
+				throw: false,
+			});
 
-		const text = await response.text();
-		const responseHeaders: Record<string, string> = {};
-		response.headers.forEach((value, key) => {
-			responseHeaders[key] = value;
-		});
+			const responseHeaders: Record<string, string> = {};
+			if (res.headers) {
+				for (const [key, value] of Object.entries(res.headers)) {
+					responseHeaders[key] = String(value);
+				}
+			}
 
-		if (!response.ok) {
-			const err = new Error(
-				`WebDAV ${method} failed: ${response.status} ${response.statusText} — ${text.slice(0, 200)}`,
-			) as Error & { status: number };
-			err.status = response.status;
+			if (res.status >= 400) {
+				const err = new Error(
+					`WebDAV ${method} failed: ${res.status} — ${res.text.slice(0, 200)}`,
+				) as Error & { status: number };
+				err.status = res.status;
+				throw err;
+			}
+
+			return { status: res.status, text: res.text, headers: responseHeaders };
+		} catch (err: any) {
+			// If requestUrl itself fails (network error), wrap it
+			if (!err.status) {
+				const wrapped = new Error(
+					`WebDAV ${method} network error: ${err.message}`,
+				) as Error & { status: number };
+				wrapped.status = 0;
+				throw wrapped;
+			}
 			throw err;
 		}
-
-		return { status: response.status, text, headers: responseHeaders };
 	}
 
 	private async get(path: string): Promise<string> {

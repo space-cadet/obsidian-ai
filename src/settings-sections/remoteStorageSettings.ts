@@ -1,26 +1,72 @@
-import { Notice } from "obsidian";
+import { Notice, Setting, requestUrl } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { WebDAVStorageAdapter } from "../sync/WebDAVStorageAdapter";
 
-/** Test WebDAV connection */
+/**
+ * Test WebDAV connection using Obsidian's requestUrl for reliable
+ * error diagnostics.
+ */
 async function testWebDAVConnection(
 	url: string,
 	username: string,
 	password: string,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; detail?: string }> {
+	if (!url.trim()) {
+		return { ok: false, error: "WebDAV URL is required." };
+	}
+	if (!username.trim()) {
+		return { ok: false, error: "Username is required." };
+	}
+	if (!password) {
+		return { ok: false, error: "Password / app token is required." };
+	}
+
+	// Normalize URL: ensure trailing slash
+	let baseUrl = url.trim();
+	if (!baseUrl.endsWith("/")) {
+		baseUrl += "/";
+	}
+
+	const authHeader = "***" + btoa(username.trim() + ":" + password);
+
 	try {
-		const adapter = new WebDAVStorageAdapter();
-		await adapter.initialize({
-			url,
-			username,
-			password,
-			prefix: "obsidian-ai-sync/",
-			timeout: 10000,
+		// Try a PROPFIND on the root to verify auth + connectivity
+		const xml = `<?xml version="1.0" encoding="utf-8"?>
+<D:propfind xmlns:D="DAV:"><D:prop><D:resourcetype/></D:prop></D:propfind>`;
+
+		await requestUrl({
+			url: baseUrl,
+			method: "PROPFIND",
+			headers: {
+				Authorization: authHeader,
+				"Content-Type": "application/xml; charset=utf-8",
+				Depth: "0",
+			},
+			body: xml,
+			throw: true,
 		});
-		await adapter.disconnect();
+
 		return { ok: true };
 	} catch (err: any) {
-		return { ok: false, error: err.message };
+		const status = err.status;
+		let error = err.message || String(err);
+		let detail = "";
+
+		if (status === 401) {
+			error = "Authentication failed. Check username / app token.";
+			detail = "Nextcloud: Use an app-specific password, not your login password.";
+		} else if (status === 404) {
+			error = "URL not found. Check the WebDAV endpoint path.";
+			detail = "Typical Nextcloud URL: https://cloud.example.com/remote.php/dav/files/username/";
+		} else if (status === 403) {
+			error = "Access forbidden. Check permissions or WebDAV app is enabled.";
+		} else if (status === 0 || error.includes("net::ERR")) {
+			error = "Cannot reach server. Check URL and network.";
+		} else if (error.includes("CORS")) {
+			error = "CORS blocked. Try using the full WebDAV URL.";
+		}
+
+		return { ok: false, error, detail };
 	}
 }
 
@@ -37,120 +83,101 @@ export function renderRemoteStorageSection(
 
 	section.createEl("h2", { text: "Remote Storage" });
 
-	const desc = section.createEl("p", { cls: "setting-item-description" });
-	desc.textContent =
-		"Sync your chat sessions to remote storage for cross-device access and backup. " +
-		"All data is encrypted end-to-end before leaving your device.";
+	section.createEl("p", {
+		cls: "setting-item-description",
+		text: "Sync your chat sessions to remote storage for cross-device access and backup. " +
+			"All data is encrypted end-to-end before leaving your device.",
+	});
+
+	const rs = plugin.settings.remoteStorage;
 
 	// ── Enable toggle ──
-	const enableRow = section.createEl("div", { cls: "setting-item" });
-	const enableInfo = enableRow.createEl("div", { cls: "setting-item-info" });
-	enableInfo.createEl("div", { text: "Enable Remote Storage" });
-	enableInfo.createEl("div", {
-		cls: "setting-item-description",
-		text: "Turn on to sync chat sessions to a remote backend.",
-	});
-	const enableControl = enableRow.createEl("div", {
-		cls: "setting-item-control",
-	});
-	const enableToggle = enableControl.createEl("input", {
-		type: "checkbox",
-	});
-	enableToggle.checked = plugin.settings.remoteStorage.enabled;
-	enableToggle.addEventListener("change", async () => {
-		plugin.settings.remoteStorage.enabled = enableToggle.checked;
-		await saveSettings({ quiet: true });
-		updateVisibility();
-	});
+	new Setting(section)
+		.setName("Enable Remote Storage")
+		.setDesc("Turn on to sync chat sessions to a remote backend.")
+		.addToggle((toggle) =>
+			toggle.setValue(rs.enabled).onChange(async (value) => {
+				rs.enabled = value;
+				await saveSettings({ quiet: true });
+				updateVisibility();
+			}),
+		);
 
 	// ── Backend selector ──
-	const backendRow = section.createEl("div", { cls: "setting-item" });
-	backendRow.createEl("div", { cls: "setting-item-info", text: "Storage Backend" });
-	const backendControl = backendRow.createEl("div", {
-		cls: "setting-item-control",
-	});
-	const backendSelect = backendControl.createEl("select", { cls: "dropdown" });
-	const backends: Array<{ value: string; label: string }> = [
-		{ value: "none", label: "— Select backend —" },
-		{ value: "webdav", label: "WebDAV (Nextcloud, ownCloud, generic)" },
-		{ value: "s3", label: "S3-compatible (AWS, MinIO, Backblaze) — coming soon" },
-		{ value: "custom", label: "Custom REST API — coming soon" },
-	];
-	for (const { value, label } of backends) {
-		backendSelect.createEl("option", { text: label, value });
-	}
-	backendSelect.value = plugin.settings.remoteStorage.backend;
-	backendSelect.addEventListener("change", async () => {
-		plugin.settings.remoteStorage.backend = backendSelect.value as any;
-		await saveSettings({ quiet: true });
-		updateVisibility();
-	});
+	const backendSetting = new Setting(section)
+		.setName("Storage Backend")
+		.addDropdown((dropdown) => {
+			dropdown
+				.addOption("none", "— Select backend —")
+				.addOption("webdav", "WebDAV (Nextcloud, ownCloud, generic)")
+				.addOption("s3", "S3-compatible — coming soon")
+				.addOption("custom", "Custom REST API — coming soon")
+				.setValue(rs.backend)
+				.onChange(async (value) => {
+					rs.backend = value as any;
+					await saveSettings({ quiet: true });
+					updateVisibility();
+				});
+		});
+
+	// ── Encryption toggle ──
+	let passphraseSetting: Setting;
+	new Setting(section)
+		.setName("Encrypt Data")
+		.setDesc("Encrypt sessions before uploading. Strongly recommended.")
+		.addToggle((toggle) =>
+			toggle
+				.setValue(rs.passphrase !== "")
+				.onChange(async (value) => {
+					if (!value) {
+						rs.passphrase = "";
+						await saveSettings({ quiet: true });
+					}
+					updateVisibility();
+				}),
+		);
 
 	// ── Passphrase ──
-	const passphraseRow = section.createEl("div", { cls: "setting-item" });
-	const passphraseInfo = passphraseRow.createEl("div", { cls: "setting-item-info" });
-	passphraseInfo.createEl("div", { text: "Encryption Passphrase" });
-	passphraseInfo.createEl("div", {
-		cls: "setting-item-description",
-		text: "Used to encrypt/decrypt your data. Never stored on the server. Required on every device.",
-	});
-	const passphraseControl = passphraseRow.createEl("div", {
-		cls: "setting-item-control",
-	});
-	const passphraseInput = passphraseControl.createEl("input", {
-		type: "password",
-		cls: "obsidian-ai-settings-input",
-		value: plugin.settings.remoteStorage.passphrase,
-		placeholder: "Enter a strong passphrase",
-	});
-	passphraseInput.setCssStyles({ minWidth: "200px" });
-	passphraseInput.addEventListener("change", async () => {
-		plugin.settings.remoteStorage.passphrase = passphraseInput.value;
-		await saveSettings({ quiet: true });
-	});
+	passphraseSetting = new Setting(section)
+		.setName("Encryption Passphrase")
+		.setDesc("Used to encrypt/decrypt your data. Never stored on the server. Required on every device.")
+		.addText((text) =>
+			text
+				.setPlaceholder("Enter a strong passphrase")
+				.setValue(rs.passphrase)
+				.onChange(async (value) => {
+					rs.passphrase = value;
+					await saveSettings({ quiet: true });
+				}),
+		);
+	passphraseSetting.controlEl.querySelector("input")!.type = "password";
 
 	// ── Auto-sync toggle ──
-	const autoSyncRow = section.createEl("div", { cls: "setting-item" });
-	autoSyncRow.createEl("div", {
-		cls: "setting-item-info",
-		text: "Auto-sync",
-	});
-	autoSyncRow.createEl("div", {
-		cls: "setting-item-description",
-		text: "Automatically sync when sessions change.",
-	});
-	const autoSyncControl = autoSyncRow.createEl("div", {
-		cls: "setting-item-control",
-	});
-	const autoSyncToggle = autoSyncControl.createEl("input", {
-		type: "checkbox",
-	});
-	autoSyncToggle.checked = plugin.settings.remoteStorage.autoSync;
-	autoSyncToggle.addEventListener("change", async () => {
-		plugin.settings.remoteStorage.autoSync = autoSyncToggle.checked;
-		await saveSettings({ quiet: true });
-	});
+	new Setting(section)
+		.setName("Auto-sync")
+		.setDesc("Automatically sync when sessions change.")
+		.addToggle((toggle) =>
+			toggle.setValue(rs.autoSync).onChange(async (value) => {
+				rs.autoSync = value;
+				await saveSettings({ quiet: true });
+			}),
+		);
 
 	// ── Conflict strategy ──
-	const conflictRow = section.createEl("div", { cls: "setting-item" });
-	conflictRow.createEl("div", { cls: "setting-item-info", text: "Conflict Resolution" });
-	const conflictControl = conflictRow.createEl("div", {
-		cls: "setting-item-control",
-	});
-	const conflictSelect = conflictControl.createEl("select", { cls: "dropdown" });
-	const strategies = [
-		{ value: "last-write-wins", label: "Last write wins" },
-		{ value: "keep-both", label: "Keep both copies" },
-		{ value: "manual", label: "Manual resolution" },
-	];
-	for (const { value, label } of strategies) {
-		conflictSelect.createEl("option", { text: label, value });
-	}
-	conflictSelect.value = plugin.settings.remoteStorage.conflictStrategy;
-	conflictSelect.addEventListener("change", async () => {
-		plugin.settings.remoteStorage.conflictStrategy = conflictSelect.value as any;
-		await saveSettings({ quiet: true });
-	});
+	new Setting(section)
+		.setName("Conflict Resolution")
+		.setDesc("How to resolve when the same session is edited on multiple devices.")
+		.addDropdown((dropdown) => {
+			dropdown
+				.addOption("last-write-wins", "Last write wins (newest version)")
+				.addOption("keep-both", "Keep both copies")
+				.addOption("manual", "Manual resolution")
+				.setValue(rs.conflictStrategy)
+				.onChange(async (value) => {
+					rs.conflictStrategy = value as any;
+					await saveSettings({ quiet: true });
+				});
+		});
 
 	// ═══════════════════════════════════════════════════
 	// WebDAV-specific settings
@@ -158,194 +185,176 @@ export function renderRemoteStorageSection(
 	const webdavSection = section.createEl("div", {
 		cls: "obsidian-ai-webdav-settings",
 	});
-
 	webdavSection.createEl("h3", { text: "WebDAV Configuration" });
 
 	// URL
-	const urlRow = webdavSection.createEl("div", { cls: "setting-item" });
-	urlRow.createEl("div", { cls: "setting-item-info", text: "WebDAV URL" });
-	const urlControl = urlRow.createEl("div", { cls: "setting-item-control" });
-	const urlInput = urlControl.createEl("input", {
-		type: "text",
-		cls: "obsidian-ai-settings-input",
-		value: plugin.settings.remoteStorage.webdav?.url ?? "",
-		placeholder: "https://nextcloud.example.com/remote.php/dav/files/username/",
-	});
-	urlInput.setCssStyles({ minWidth: "300px" });
-	urlInput.addEventListener("change", async () => {
-		plugin.settings.remoteStorage.webdav ??= {
-			type: "webdav",
-			url: "",
-			username: "",
-			password: "",
-			prefix: "obsidian-ai-sync/",
-			enabled: false,
-		};
-		plugin.settings.remoteStorage.webdav.url = urlInput.value.trim();
-		await saveSettings({ quiet: true });
-	});
+	new Setting(webdavSection)
+		.setName("WebDAV URL")
+		.setDesc("Your Nextcloud/ownCloud WebDAV endpoint.")
+		.addText((text) =>
+			text
+				.setPlaceholder("https://cloud.example.com/remote.php/dav/files/username/")
+				.setValue(rs.webdav?.url ?? "")
+				.onChange(async (value) => {
+					rs.webdav ??= {
+						type: "webdav",
+						url: "",
+						username: "",
+						password: "",
+						prefix: "obsidian-ai-sync/",
+						enabled: false,
+					};
+					rs.webdav.url = value.trim();
+					await saveSettings({ quiet: true });
+				}),
+		);
 
 	// Username
-	const userRow = webdavSection.createEl("div", { cls: "setting-item" });
-	userRow.createEl("div", { cls: "setting-item-info", text: "Username" });
-	const userControl = userRow.createEl("div", { cls: "setting-item-control" });
-	const userInput = userControl.createEl("input", {
-		type: "text",
-		cls: "obsidian-ai-settings-input",
-		value: plugin.settings.remoteStorage.webdav?.username ?? "",
-		placeholder: "Username",
-	});
-	userInput.addEventListener("change", async () => {
-		plugin.settings.remoteStorage.webdav ??= {
-			type: "webdav",
-			url: "",
-			username: "",
-			password: "",
-			prefix: "obsidian-ai-sync/",
-			enabled: false,
-		};
-		plugin.settings.remoteStorage.webdav.username = userInput.value.trim();
-		await saveSettings({ quiet: true });
-	});
+	new Setting(webdavSection)
+		.setName("Username")
+		.addText((text) =>
+			text
+				.setPlaceholder("Username")
+				.setValue(rs.webdav?.username ?? "")
+				.onChange(async (value) => {
+					rs.webdav ??= {
+						type: "webdav",
+						url: "",
+						username: "",
+						password: "",
+						prefix: "obsidian-ai-sync/",
+						enabled: false,
+					};
+					rs.webdav.username = value.trim();
+					await saveSettings({ quiet: true });
+				}),
+		);
 
 	// Password
-	const passRow = webdavSection.createEl("div", { cls: "setting-item" });
-	passRow.createEl("div", { cls: "setting-item-info", text: "Password / App Token" });
-	const passControl = passRow.createEl("div", { cls: "setting-item-control" });
-	const passInput = passControl.createEl("input", {
-		type: "password",
-		cls: "obsidian-ai-settings-input",
-		value: plugin.settings.remoteStorage.webdav?.password ?? "",
-		placeholder: "Password or app-specific token",
-	});
-	passInput.addEventListener("change", async () => {
-		plugin.settings.remoteStorage.webdav ??= {
-			type: "webdav",
-			url: "",
-			username: "",
-			password: "",
-			prefix: "obsidian-ai-sync/",
-			enabled: false,
-		};
-		plugin.settings.remoteStorage.webdav.password = passInput.value;
-		await saveSettings({ quiet: true });
-	});
+	const passSetting = new Setting(webdavSection)
+		.setName("Password / App Token")
+		.setDesc("For Nextcloud, generate an app-specific token in Settings → Security.")
+		.addText((text) =>
+			text
+				.setPlaceholder("Password or app-specific token")
+				.setValue(rs.webdav?.password ?? "")
+				.onChange(async (value) => {
+					rs.webdav ??= {
+						type: "webdav",
+						url: "",
+						username: "",
+						password: "",
+						prefix: "obsidian-ai-sync/",
+						enabled: false,
+					};
+					rs.webdav.password = value;
+					await saveSettings({ quiet: true });
+				}),
+		);
+	passSetting.controlEl.querySelector("input")!.type = "password";
 
 	// Prefix
-	const prefixRow = webdavSection.createEl("div", { cls: "setting-item" });
-	const prefixInfo = prefixRow.createEl("div", { cls: "setting-item-info" });
-	prefixInfo.createEl("div", { text: "Path Prefix" });
-	prefixInfo.createEl("div", {
-		cls: "setting-item-description",
-		text: "Directory under which sessions are stored.",
-	});
-	const prefixControl = prefixRow.createEl("div", { cls: "setting-item-control" });
-	const prefixInput = prefixControl.createEl("input", {
-		type: "text",
-		cls: "obsidian-ai-settings-input",
-		value: plugin.settings.remoteStorage.webdav?.prefix ?? "obsidian-ai-sync/",
-	});
-	prefixInput.addEventListener("change", async () => {
-		plugin.settings.remoteStorage.webdav ??= {
-			type: "webdav",
-			url: "",
-			username: "",
-			password: "",
-			prefix: "obsidian-ai-sync/",
-			enabled: false,
-		};
-		plugin.settings.remoteStorage.webdav.prefix = prefixInput.value.trim() || "obsidian-ai-sync/";
-		await saveSettings({ quiet: true });
-	});
-
-	// ── Test + Save buttons ──
-	const btnRow = webdavSection.createEl("div", { cls: "setting-item" });
-	btnRow.setCssStyles({ borderTop: "none", paddingTop: "0" });
-	const btnControl = btnRow.createEl("div", { cls: "setting-item-control" });
-	btnControl.setCssStyles({ display: "flex", gap: "8px" });
-
-	const testBtn = btnControl.createEl("button", {
-		text: "🧪 Test Connection",
-		cls: "mod-cta",
-	});
-
-	testBtn.addEventListener("click", async () => {
-		testBtn.disabled = true;
-		testBtn.textContent = "Testing…";
-		const result = await testWebDAVConnection(
-			urlInput.value.trim(),
-			userInput.value.trim(),
-			passInput.value,
+	new Setting(webdavSection)
+		.setName("Path Prefix")
+		.setDesc("Directory under which sessions are stored.")
+		.addText((text) =>
+			text
+				.setValue(rs.webdav?.prefix ?? "obsidian-ai-sync/")
+				.onChange(async (value) => {
+					rs.webdav ??= {
+						type: "webdav",
+						url: "",
+						username: "",
+						password: "",
+						prefix: "obsidian-ai-sync/",
+						enabled: false,
+					};
+					rs.webdav.prefix = value.trim() || "obsidian-ai-sync/";
+					await saveSettings({ quiet: true });
+				}),
 		);
-		testBtn.disabled = false;
-		testBtn.textContent = "🧪 Test Connection";
 
-		if (result.ok) {
-			new Notice("✅ WebDAV connection successful!");
-			plugin.settings.remoteStorage.webdav ??= {
-				type: "webdav",
-				url: "",
-				username: "",
-				password: "",
-				prefix: "obsidian-ai-sync/",
-				enabled: false,
-			};
-			plugin.settings.remoteStorage.webdav.enabled = true;
-			await saveSettings({ quiet: true });
-		} else {
-			new Notice(`❌ WebDAV connection failed: ${result.error}`);
-		}
-	});
+	// ── Test + Sync buttons ──
+	const btnSetting = new Setting(webdavSection)
+		.setName("Connection")
+		.setDesc("Test your WebDAV configuration before syncing.");
 
-	// ── Manual sync button ──
-	const syncBtn = btnControl.createEl("button", {
-		text: "🔄 Sync Now",
-		cls: "mod-cta",
-	});
-	syncBtn.setCssStyles({ backgroundColor: "var(--interactive-accent)" });
+	btnSetting.addButton((button) =>
+		button
+			.setButtonText("🧪 Test Connection")
+			.setCta()
+			.onClick(async () => {
+				const url = rs.webdav?.url ?? "";
+				const user = rs.webdav?.username ?? "";
+				const pass = rs.webdav?.password ?? "";
 
-	syncBtn.addEventListener("click", async () => {
-		if (!plugin.settings.remoteStorage.enabled) {
-			new Notice("Enable remote storage first.");
-			return;
-		}
-		if (!plugin.settings.remoteStorage.passphrase) {
-			new Notice("Enter an encryption passphrase first.");
-			return;
-		}
-		// TODO: Trigger sync via plugin.syncEngine.sync()
-		new Notice("Sync triggered — not yet wired to engine.");
-	});
+				button.setButtonText("Testing…");
+				button.setDisabled(true);
+
+				const result = await testWebDAVConnection(url, user, pass);
+
+				button.setButtonText("🧪 Test Connection");
+				button.setDisabled(false);
+
+				if (result.ok) {
+					new Notice("✅ WebDAV connection successful!");
+					rs.webdav ??= {
+						type: "webdav",
+						url: "",
+						username: "",
+						password: "",
+						prefix: "obsidian-ai-sync/",
+						enabled: false,
+					};
+					rs.webdav.enabled = true;
+					await saveSettings({ quiet: true });
+				} else {
+					let msg = `❌ ${result.error}`;
+					if (result.detail) {
+						msg += `\n${result.detail}`;
+					}
+					new Notice(msg, 8000);
+				}
+			}),
+	);
+
+	btnSetting.addButton((button) =>
+		button
+			.setButtonText("🔄 Sync Now")
+			.onClick(async () => {
+				if (!rs.enabled) {
+					new Notice("Enable remote storage first.");
+					return;
+				}
+				// TODO: Trigger sync via plugin.syncEngine.sync()
+				new Notice("Sync triggered — engine wiring in progress.");
+			}),
+	);
 
 	// ── Last sync info ──
-	const infoRow = section.createEl("div", { cls: "setting-item" });
-	infoRow.setCssStyles({ borderTop: "none", paddingTop: "0" });
-	const infoEl = infoRow.createEl("div", {
+	const infoEl = section.createEl("div", {
 		cls: "setting-item-description",
+		text: rs.lastSyncTime > 0
+			? `Last sync: ${new Date(rs.lastSyncTime).toLocaleString()}`
+			: "Never synced.",
 	});
-	function updateInfo() {
-		const lastSync = plugin.settings.remoteStorage.lastSyncTime;
-		if (lastSync > 0) {
-			const date = new Date(lastSync).toLocaleString();
-			infoEl.textContent = `Last sync: ${date}`;
-		} else {
-			infoEl.textContent = "Never synced.";
-		}
-	}
-	updateInfo();
+	infoEl.style.marginTop = "12px";
 
 	// ── Visibility toggling ──
 	function updateVisibility() {
-		const enabled = plugin.settings.remoteStorage.enabled;
-		const backend = plugin.settings.remoteStorage.backend;
+		const enabled = rs.enabled;
+		const backend = rs.backend;
+		const encryptEnabled = rs.passphrase !== "";
 
-		passphraseRow.style.display = enabled ? "" : "none";
-		autoSyncRow.style.display = enabled ? "" : "none";
-		conflictRow.style.display = enabled ? "" : "none";
+		passphraseSetting.settingEl.style.display = enabled ? "" : "none";
+		passphraseSetting.setDesc(
+			enabled && !encryptEnabled
+				? "⚠️ Warning: No passphrase set. Data will be stored unencrypted on the remote server."
+				: "Used to encrypt/decrypt your data. Never stored on the server. Required on every device.",
+		);
+
 		webdavSection.style.display =
 			enabled && backend === "webdav" ? "" : "none";
-		syncBtn.style.display = enabled ? "" : "none";
-		infoRow.style.display = enabled ? "" : "none";
 	}
 
 	updateVisibility();
