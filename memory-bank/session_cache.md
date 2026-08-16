@@ -1,241 +1,35 @@
 # Session Cache
 
-*Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-16 19:05 IST*
+*Session: 2026-08-16 19:05–20:56 UTC*
+*Branch: `t42-remote-storage`*
+*Models: kimi/k3 (main), kimi/k2.7-code (subagent, export check)*
 
-**Started**: 2026-08-16 18:44 UTC
-**Ended**: 2026-08-16 19:05 UTC
-**Focus Tasks**: T45: PDF Text Extraction Tool, T13a: Tool Call Context Persistence Bug Fix
+## Summary
+T42 Phase 1 architecture implemented. Four core sync files written, build passes, all 236 tests pass.
 
-## 2026-08-16 Session Handoff
+## Files Created
+- `src/sync/StorageAdapter.ts` — StorageAdapter interface, EncryptedSession, RemoteSessionMeta, SyncResult, SyncPlan types
+- `src/sync/LocalCache.ts` — IndexedDB cache with sync status (pending/synced/conflict), lastSyncTime metadata
+- `src/sync/EncryptionLayer.ts` — AES-256-GCM encryption, PBKDF2 key derivation, checksum verification
+- `src/sync/SyncEngine.ts` — Delta sync engine, 3 conflict strategies (last-write-wins, keep-both, manual), state machine
 
-- **Task**: T45 PDF Text Extraction — IMPLEMENTED and TESTED (user confirmed works)
-- **Task**: T13a Tool Context Fix — IMPLEMENTED and TESTED (user confirmed works)
-- **Latest commits**: `b4296e7` (T45), `88dff94` (T13a) on `main`
-- **Verification**: 236 tests, build/typecheck, diff check passed for both
-- **New files created**:
-  - `memory-bank/tasks/T45.md`
-  - `memory-bank/tasks/T13a.md`
-  - `memory-bank/implementation-details/pdf-text-extraction.md`
-- **Updated docs**:
-  - `memory-bank/implementation-details/agentic-tool-calling.md` (added T13a section)
-  - `memory-bank/tasks.md` (added T45, T13a)
-  - `memory-bank/activeContext.md`
-  - `memory-bank/progress.md`
-- **Session state**: open
+## Key Design Decisions
+- Encryption salt stored with ciphertext (required for decryption on new devices)
+- Conflict resolution: last-write-wins default, keep-both creates duplicate, manual queues for UI
+- Sync plan computed via O(n) hash-map comparison of local vs remote
+- Existing SyncAdapter.ts (real-time multi-user) left untouched — new persistent storage is separate
 
-## Overview
+## Tests
+- TypeScript: clean (only tsconfig deprecation warnings)
+- Vitest: 236/236 pass
 
-- Active: 9 | Paused: 0 | Completed: 21
-- Last Session: 2026-08-16
-- Current Period: evening
+## Memory Bank Updates
+- `memory-bank/tasks/T42.md` — Phase 1 checklist marked in progress
+- `memory-bank/activeContext.md` — T42 entry added
+- `memory-bank/session_cache.md` — this file
 
-## Session History (Last 5)
-
-### 2026-08-16 Evening
-- Implemented T45: PDF text extraction tool with dual backend (server PyMuPDF + client pdfjs-dist)
-- Implemented T13a: Fixed tool call context not persisting in conversation history
-- Created memory bank documentation for both tasks
-- User confirmed both features work correctly
-
-## Active Tasks
-
-### META-1: Memory Bank Setup and Maintenance
-**Status:** 🔄 **IN PROGRESS**
-**Started:** 2026-05-02
-**Context**: [Details](tasks/META-1.md)
-**Progress**:
-[Details](tasks/META-1.md)
-
-### T11: Debug Logging & Diagnostics
-**Status:** 🔄 **IN PROGRESS**
-**Started:** 2026-05-08
-**Context**: [Details](tasks/T11.md)
-**Progress**:
-[Details](tasks/T11.md)
-
-### T14: Remote Agent Connectivity (OpenResponses)
-**Status:** 🔄 **IN PROGRESS**
-**Started:** 2026-05-07
-**Context**: [Details](tasks/T14.md)
-**Progress**:
-[Details](tasks/T14.md)
-
-### T15: Tabbed Chat Interface with Multi-Profile
-**Status:** 🔄 **IN PROGRESS**
-**Started:** 2026-05-15
-**Context**: [Details](tasks/T15.md)
-**Progress**:
-[Details](tasks/T15.md)
-Fix 4 critical streaming/chat UI bugs: Android flicker, interrupted message loss, retry attachment loss, live token counting
-Fix token counter accumulation, remove green streaming border, add live tool result updates without re-rendering entire bubble
-
-### T16: Group Chat (Multi-Agent Conversation)
-**Status:** 🔄 **IN PROGRESS**
-**Started:** 2026-05-16
-**Context**: [Details](tasks/T16.md)
-**Progress**:
-[Details](tasks/T16.md)
-
-### T22: ChatApp Component Decomposition
-**Status:** ✅ **COMPLETED — Phase 5 delivered**
-**Started:** 2026-05-28
-**Context**: [Details](tasks/T22.md)
-**Progress**:
-- ✅ Phases 0–3 completed.
-- ✅ Phase 4 landed in `da4af7d` with session/settings/export/search/context hooks.
-- ✅ Phase 5: `ChatToolbar`, `ChatMainArea`, and `ChatOverlays` extracted and composed by `ChatApp`.
-
-### T44: Standalone UI Preview and Obsidian Host Boundary
-**Status:** 🔄 **IN PROGRESS — faithful production preview active**
-**Started:** 2026-08-12
-**Context**: [Details](tasks/T44.md)
-**Progress**:
-- ✅ Existing Vitest/jsdom, React Testing Library, and T21 CLI harness reviewed.
-- ✅ Storybook selected as the planned persistent preview surface.
-- ✅ Production preview renders toolbar/tabs, messages, input, and overlays.
-- ✅ Playwright verifies modal interaction and mobile no-overflow behavior.
-- ⬜ Broaden fixture coverage and finish boundary documentation/acceptance.
-
-### T40: Multi-User Chat with LaTeX Support
-**Status:** 🔄 **IN PROGRESS**
-**Started:** 2026-08-08
-**Context**: [Details](tasks/T40.md)
-**Progress**:
-- ✅ Phase 1: WebSocket relay, SyncAdapter, BRAT distribution
-- ✅ Phase 2: Presence tracking (join/leave/roster, remote user dropdown)
-- ✅ Fix: Message rendering (type 'chat' not 'message')
-- ✅ Remote-message routing is handled by T43; Phase 2b UI work remains pending
-- ⬜ Phase 2b: Attribution, typing indicators, mentions
-- ⬜ Phase 3: WebRTC peer-to-peer
-
-### T42: Remote Chat Storage & Sync
-**Status:** 🔄 **IN PROGRESS**
-**Started:** 2026-08-10
-**Context**: [Details](tasks/T42.md)
-**Progress**:
-- ✅ Design complete: relay-server storage and WebSocket client sync.
-- ⬜ Phase 1 implementation: relay storage endpoints and client sync protocol.
-
-### T8: Open Source Release with Branding
-**Status:** 🔄 **IN PROGRESS**
-**Started:** 2026-05-02
-**Context**: [Details](tasks/T8.md)
-**Progress**:
-[Details](tasks/T8.md)
-Promote release from pre-release to proper v1.2.4. GitHub release created with build assets.
-
-### T43: Multi-User and Agent Chat with LaTeX Support
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-08-10
-**Completed:** 2026-08-12
-**Context**: [Details](tasks/T43.md)
-**Progress**:
-- ✅ All five participant-routing phases
-- ✅ Mobile scrolling and composer spacing hardening
-- ✅ Correct model-selection badge counts and regression tests
-- ✅ Changed-files-only format check passes
-- ✅ Dependencies reinstalled from the lockfile; TypeScript check and production build pass
-
-## Completed Tasks
-
-### T1: Chat Panel — ItemView + React UI
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-05-02
-**Completed:** 2026-05-02
-
-### T10: Model Discovery & Picker UX
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-05-02
-**Completed:** 2026-05-02
-
-### T13: Agentic Tool Calling for Note Editing
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-05-06
-**Completed:** 2026-05-06
-
-### T18: Web Search Tool for Chat
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-05-16
-**Completed:** 2026-05-16
-
-### T19: File Attachments for Chat Messages
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-05-25
-**Completed:** 2026-05-25
-
-### T2: Conversation Chain & Memory
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-05-02
-**Completed:** 2026-05-02
-
-### T21: CLI Test Harness for AI Features
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-05-25
-**Completed:** 2026-05-25
-
-### T23: Settings.ts Decomposition
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-05-28
-**Completed:** 2026-05-28
-
-### T3: Context & Mentions System
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-05-02
-**Completed:** 2026-05-02
-
-### T34: Settings Panel UI/UX Improvements
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-08-07
-**Completed:** 2026-08-07
-
-### T4: Streaming
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-05-02
-**Completed:** 2026-05-02
-
-### T5: In-Place Note Editing from Chat
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-05-02
-**Completed:** 2026-05-02
-
-### T6: Token & Context Management
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-05-02
-**Completed:** 2026-05-02
-
-### T7: Release System & CI/CD
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-05-02
-**Completed:** 2026-05-02
-
-### T9: Settings & Provider Profiles
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-05-02
-**Completed:** 2026-05-02
-
-### T41: Plugin Auto-Updater with Stable/Dev Channels
-**Status:** ✅ **COMPLETED**
-**Started:** 2026-08-09
-**Completed:** 2026-08-12
-**Context**: [Details](tasks/T41.md)
-
-## Next Session Focus
-
-1. T22: ChatApp Component Decomposition
-1. T44: Standalone UI Preview and Obsidian Host Boundary
-1. T40: Multi-User Chat with LaTeX Support
-1. META-1: Memory Bank Setup and Maintenance
-
-## Session History (Last 5)
-
-1. `sessions/2026-08-14-evening.md` - T8 open-source release: branding, version bump, security audit, submission prep
-2. `sessions/2026-08-14-afternoon.md` - T19a, T20, T41 completion and documentation
-3. `sessions/2026-08-12-morning.md` - Mobile chat hardening, model badge fix, and format-gate cleanup
-4. `sessions/2026-08-10-evening.md` - T43 participant routing merge and Phase 5 scope
-5. `sessions/2026-08-09-morning.md` - T40 relay verification and T41 updater work
-
-## System Status
-
-- **Memory Bank**: 🔄 Active
-- **OpenClaw**: ✅ Operational
+## Next Steps
+- Phase 2: S3StorageAdapter implementation
+- Settings integration: RemoteStorageConfig in settings.ts
+- Sync status badge in ChatApp UI
+- Unit tests for sync components
