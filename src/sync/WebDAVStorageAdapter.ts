@@ -3,6 +3,7 @@ import type {
 	EncryptedSession,
 	RemoteSessionMeta,
 } from "./StorageAdapter";
+import { requestUrl } from "obsidian";
 
 export interface WebDAVConfig {
 	url: string;
@@ -159,9 +160,6 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		};
 
 		try {
-			// Use dynamic import to avoid bundling issues
-			const { requestUrl } = await import("obsidian");
-			
 			const res = await requestUrl({
 				url,
 				method,
