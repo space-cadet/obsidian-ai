@@ -2,16 +2,17 @@
 
 *Last Updated: 2026-08-17 02:27 IST*
 
-### 2026-08-16 — T42: Remote Chat Storage & Sync 🔄 Phase 1
+### 2026-08-16 — T42: Remote Chat Storage & Sync ✅ Phase 2
 
-- **Feature branch**: `t42-remote-storage` (from `main` at `db6db7f`)
-- **Phase 1 core architecture implemented**:
-  - `src/sync/StorageAdapter.ts` — Pluggable storage interface + types
-  - `src/sync/LocalCache.ts` — IndexedDB offline cache with sync status tracking
-  - `src/sync/EncryptionLayer.ts` — AES-256-GCM via PBKDF2, zero-knowledge
-  - `src/sync/SyncEngine.ts` — Delta sync, 3 conflict resolution strategies, state machine
+- **Feature branch**: `t42-remote-storage` (commits: `ac24ced`, `b9e4949`)
+- **Phase 1 (Architecture)**: StorageAdapter, LocalCache, EncryptionLayer, SyncEngine
+- **Phase 2 (WebDAV + Settings)**: 
+  - `WebDAVStorageAdapter.ts` — PROPFIND, GET, PUT, MKCOL, DELETE for Nextcloud/ownCloud/generic WebDAV
+  - Settings types: `RemoteStorageConfig`, `WebDAVStorageConfig`, `S3StorageConfig`, `StorageBackendType`
+  - Settings UI: enable toggle, backend selector, passphrase, auto-sync, conflict strategy, WebDAV credentials, test connection button, manual sync button
+  - Wired into `SettingsTab` navigation and render pipeline
 - **Build**: Passes TypeScript check, all 236 tests pass
-- **Next**: Phase 2 (S3 backend), settings integration, sync status UI
+- **Next**: Wire SyncEngine into ChatApp lifecycle (init on plugin load, auto-sync on session changes), sync status badge UI
 - **Task**: `memory-bank/tasks/T42.md` (updated)
 - **Design doc**: `memory-bank/implementation-details/remote-chat-storage.md`
 
