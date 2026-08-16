@@ -15,6 +15,7 @@ import { renderSyncSection } from "./syncSettings";
 import { renderUpdaterSection } from "./updaterSettings";
 import { renderWebSearchSection } from "./webSearch";
 import { renderPdfExtractionSection } from "./pdfExtraction";
+import { renderRemoteStorageSection } from "./remoteStorageSettings";
 
 function debounce(fn: () => void, ms: number): () => void {
 	let timeout: ReturnType<typeof setTimeout> | null = null;

@@ -44,15 +44,11 @@ export function renderRemoteStorageSection(
 
 	// ── Enable toggle ──
 	const enableRow = section.createEl("div", { cls: "setting-item" });
-	enableRow.createEl("div", {
-		cls: "setting-item-info",
-		childNodes: [
-			enableRow.createEl("div", { text: "Enable Remote Storage" }),
-			enableRow.createEl("div", {
-				cls: "setting-item-description",
-				text: "Turn on to sync chat sessions to a remote backend.",
-			}),
-		] as Node[],
+	const enableInfo = enableRow.createEl("div", { cls: "setting-item-info" });
+	enableInfo.createEl("div", { text: "Enable Remote Storage" });
+	enableInfo.createEl("div", {
+		cls: "setting-item-description",
+		text: "Turn on to sync chat sessions to a remote backend.",
 	});
 	const enableControl = enableRow.createEl("div", {
 		cls: "setting-item-control",
@@ -92,15 +88,11 @@ export function renderRemoteStorageSection(
 
 	// ── Passphrase ──
 	const passphraseRow = section.createEl("div", { cls: "setting-item" });
-	passphraseRow.createEl("div", {
-		cls: "setting-item-info",
-		childNodes: [
-			passphraseRow.createEl("div", { text: "Encryption Passphrase" }),
-			passphraseRow.createEl("div", {
-				cls: "setting-item-description",
-				text: "Used to encrypt/decrypt your data. Never stored on the server. Required on every device.",
-			}),
-		] as Node[],
+	const passphraseInfo = passphraseRow.createEl("div", { cls: "setting-item-info" });
+	passphraseInfo.createEl("div", { text: "Encryption Passphrase" });
+	passphraseInfo.createEl("div", {
+		cls: "setting-item-description",
+		text: "Used to encrypt/decrypt your data. Never stored on the server. Required on every device.",
 	});
 	const passphraseControl = passphraseRow.createEl("div", {
 		cls: "setting-item-control",
@@ -241,15 +233,11 @@ export function renderRemoteStorageSection(
 
 	// Prefix
 	const prefixRow = webdavSection.createEl("div", { cls: "setting-item" });
-	prefixRow.createEl("div", {
-		cls: "setting-item-info",
-		childNodes: [
-			prefixRow.createEl("div", { text: "Path Prefix" }),
-			prefixRow.createEl("div", {
-				cls: "setting-item-description",
-				text: "Directory under which sessions are stored.",
-			}),
-		] as Node[],
+	const prefixInfo = prefixRow.createEl("div", { cls: "setting-item-info" });
+	prefixInfo.createEl("div", { text: "Path Prefix" });
+	prefixInfo.createEl("div", {
+		cls: "setting-item-description",
+		text: "Directory under which sessions are stored.",
 	});
 	const prefixControl = prefixRow.createEl("div", { cls: "setting-item-control" });
 	const prefixInput = prefixControl.createEl("input", {

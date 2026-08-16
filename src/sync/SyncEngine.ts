@@ -201,9 +201,10 @@ export class SyncEngine {
 			iv: encrypted.iv,
 			ciphertext: encrypted.ciphertext,
 			tag: encrypted.tag,
+			salt: encrypted.salt,
 			checksum: sessionChecksum,
 			modifiedAt: session.updatedAt,
-			version: (session as any)._version ?? 1,
+			version: ((session as unknown as Record<string, unknown>)._version as number) ?? 1,
 		};
 
 		await this.adapter.putSession(payload);

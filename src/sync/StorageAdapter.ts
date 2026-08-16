@@ -23,6 +23,7 @@ export interface RemoteSessionMeta {
 	id: string;
 	modifiedAt: number;
 	etag?: string; // Backend-specific version identifier
+	size?: number; // Content length in bytes
 }
 
 /**

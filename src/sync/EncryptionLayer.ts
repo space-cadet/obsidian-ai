@@ -55,7 +55,7 @@ export class EncryptionLayer {
 		this.key = await crypto.subtle.deriveKey(
 			{
 				name: "PBKDF2",
-				salt,
+				salt: salt as BufferSource,
 				iterations: 100_000,
 				hash: "SHA-256",
 			},
@@ -145,7 +145,7 @@ export class EncryptionLayer {
 
 		const decrypted = await crypto.subtle.decrypt(
 			{ name: "AES-GCM", iv },
-			this.key,
+			this.key!,
 			combined,
 		);
 
