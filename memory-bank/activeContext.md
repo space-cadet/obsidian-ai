@@ -2,16 +2,18 @@
 
 *Last Updated: 2026-08-17 02:27 IST*
 
-### 2026-08-16 — T42: Remote Chat Storage & Sync ✅ Phase 2
+### 2026-08-16 — T42: Remote Chat Storage & Sync ✅ Phase 1 & 2 Complete
 
-- **Feature branch**: `t42-remote-storage` (commits: `ac24ced`, `b9e4949`)
-- **Phase 1 (Architecture)**: StorageAdapter, LocalCache, EncryptionLayer, SyncEngine
-- **Phase 2 (WebDAV + Settings)**: 
-  - `WebDAVStorageAdapter.ts` — PROPFIND, GET, PUT, MKCOL, DELETE for Nextcloud/ownCloud/generic WebDAV
+- **Commits**: `ac24ced` → `b9a4c949` → `31d9158` → `7ab9614` → `e96b703`
+- **Phase 1 (Architecture)**: StorageAdapter interface, LocalCache (IndexedDB), EncryptionLayer (AES-256-GCM via PBKDF2), SyncEngine (delta sync + 3 conflict strategies + state machine)
+- **Phase 2 (WebDAV + Settings)**:
+  - `WebDAVStorageAdapter.ts` — PROPFIND, GET, PUT, MKCOL, DELETE using Obsidian's `requestUrl()` for Electron sandbox compatibility
   - Settings types: `RemoteStorageConfig`, `WebDAVStorageConfig`, `S3StorageConfig`, `StorageBackendType`
   - Settings UI: enable toggle, backend selector, passphrase, auto-sync, conflict strategy, WebDAV credentials, test connection button, manual sync button
   - Wired into `SettingsTab` navigation and render pipeline
-- **Build**: Passes TypeScript check, all 236 tests pass
+- **Build**: TypeScript clean, all 236 tests pass
+- **What's Working**: Settings UI renders correctly; WebDAV config form with test connection; optional encryption (plaintext mode for testing); settings persist to plugin data
+- **What's Not Wired Yet**: "Sync Now" button is placeholder; SyncEngine not initialized on plugin load; no auto-sync on session changes; no sync status badge in chat UI
 - **Next**: Wire SyncEngine into ChatApp lifecycle (init on plugin load, auto-sync on session changes), sync status badge UI
 - **Task**: `memory-bank/tasks/T42.md` (updated)
 - **Design doc**: `memory-bank/implementation-details/remote-chat-storage.md`

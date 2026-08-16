@@ -1,35 +1,64 @@
 # Session Cache
 
-*Session: 2026-08-16 19:05–20:56 UTC*
+*Session: 2026-08-16 20:56–22:29 UTC*
 *Branch: `t42-remote-storage`*
-*Models: kimi/k3 (main), kimi/k2.7-code (subagent, export check)*
+*Models: kimi/k3 (main), kimi/k2.7-code (subagent)*
 
 ## Summary
-T42 Phase 1 architecture implemented. Four core sync files written, build passes, all 236 tests pass.
+T42 Phase 2 completed. WebDAV backend, settings UI, and integration wired. Build passes, all 236 tests pass. 5 commits pushed.
 
-## Files Created
-- `src/sync/StorageAdapter.ts` — StorageAdapter interface, EncryptedSession, RemoteSessionMeta, SyncResult, SyncPlan types
-- `src/sync/LocalCache.ts` — IndexedDB cache with sync status (pending/synced/conflict), lastSyncTime metadata
-- `src/sync/EncryptionLayer.ts` — AES-256-GCM encryption, PBKDF2 key derivation, checksum verification
-- `src/sync/SyncEngine.ts` — Delta sync engine, 3 conflict strategies (last-write-wins, keep-both, manual), state machine
+## Phase 1 Recap (from earlier session)
+- `src/sync/StorageAdapter.ts` — interface, EncryptedSession, RemoteSessionMeta, SyncResult, SyncPlan types
+- `src/sync/LocalCache.ts` — IndexedDB cache with sync status (pending/synced/conflict)
+- `src/sync/EncryptionLayer.ts` — AES-256-GCM, PBKDF2 key derivation, checksum verification
+- `src/sync/SyncEngine.ts` — delta sync, 3 conflict strategies, state machine
 
-## Key Design Decisions
-- Encryption salt stored with ciphertext (required for decryption on new devices)
-- Conflict resolution: last-write-wins default, keep-both creates duplicate, manual queues for UI
-- Sync plan computed via O(n) hash-map comparison of local vs remote
-- Existing SyncAdapter.ts (real-time multi-user) left untouched — new persistent storage is separate
+## Phase 2 Completed
 
-## Tests
-- TypeScript: clean (only tsconfig deprecation warnings)
-- Vitest: 236/236 pass
+### Files Created/Modified
+- `src/sync/WebDAVStorageAdapter.ts` — PROPFIND, GET, PUT, MKCOL, DELETE via `requestUrl()`
+- `src/settings.ts` — added RemoteStorageConfig, WebDAVStorageConfig, S3StorageConfig, StorageBackendType
+- `src/settings-sections/remoteStorageSettings.ts` — full settings UI (Toggle, Dropdown, Setting)
+- `src/views/SettingsTab.ts` — wired "Remote Storage" into nav and render pipeline
 
-## Memory Bank Updates
-- `memory-bank/tasks/T42.md` — Phase 1 checklist marked in progress
-- `memory-bank/activeContext.md` — T42 entry added
-- `memory-bank/session_cache.md` — this file
+### Fixes Applied
+| Issue | Fix |
+|-------|-----|
+| Missing import | Added `renderRemoteStorageSection` import |
+| Checkbox rendering | Replaced raw `<input>` with Obsidian `ToggleComponent` |
+| childNodes API | Rewrote as vanilla `createEl` calls |
+| Web Crypto types | Cast `Uint8Array` to `BufferSource` |
+| Null safety | Added non-null option for `CryptoKey` |
+| Missing salt | Added to `EncryptSession` payload |
+| Missing size | Added `size?: number` to `SyncSessionMeta` |
+| 'Fetch' failed | Switched from `fetch()` to `requestUrl()` |
+| Passphrase required | Made optional with 'Encrypt Data' toggle |
+
+### Build Status
+- TypeScript: clean
+- Tests: 236/236 pass
+- Committed and pushed to `t42-remote-storage`
+
+### What's Working
+- ✅ Settings UI renders correctly
+- ✅ WebDAV config form with test connection
+- ✅ Optional encryption (plaintext mode for testing)
+- ✅ Settings persist to plugin data
+
+### What's Not Wired Yet
+- ⚠️ "Sync Now" button is a placeholder
+- ⚠️ SyncEngine not initialized on plugin load
+- ⚠️ No auto-sync on session changes
+- ⚠️ No sync status badge in chat UI
 
 ## Next Steps
-- Phase 2: S3StorageAdapter implementation
-- Settings integration: RemoteStorageConfig in settings.ts
-- Sync status badge in ChatApp UI
-- Unit tests for sync components
+- Wire SyncEngine into plugin lifecycle (init on load, run on session save)
+- Add sync status indicator to chat UI
+- End-to-end sync test
+
+## Memory Bank Updates
+- `memory-bank/tasks/T42.md` — Phase 1 & 2 marked complete
+- `memory-bank/activeContext.md` — T42 entry updated
+- `memory-bank/session_cache.md` — this file
+- `memory-bank/sessions/2026-08-16-evening.md` — session log
+- `memory-bank/edit_history.md` — edit history updated
