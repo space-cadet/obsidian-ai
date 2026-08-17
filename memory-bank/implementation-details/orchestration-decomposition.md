@@ -1,7 +1,7 @@
 # Orchestration Decomposition Design
 *Created: 2026-08-17 06:07 IST*
 *Last Updated: 2026-08-17 06:07 IST*
-*Applies to: obsidian-ai plugin codebase — T45*
+*Applies to: obsidian-ai plugin codebase — T46*
 
 ## Overview
 

@@ -15,6 +15,7 @@ import { renderSyncSection } from "./syncSettings";
 import { renderUpdaterSection } from "./updaterSettings";
 import { renderWebSearchSection } from "./webSearch";
 import { renderPdfExtractionSection } from "./pdfExtraction";
+import { renderRemoteStorageSection } from "./remoteStorageSettings";
 
 function debounce(fn: () => void, ms: number): () => void {
 	let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -110,6 +111,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Intelligence", "AI Intelligence Layer"],
 				["Web Search", "Web Search"],
 				["Sync", "Multi-User Sync"],
+				["Remote Storage", "Remote Storage"],
 				["Updates", "Updates"],
 				["Advanced", "Advanced"],
 				["Custom Commands", "Custom Commands"],
@@ -174,6 +176,11 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				this.saveSettings.bind(this),
 			);
 			renderSyncSection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
+			renderRemoteStorageSection(
 				containerEl,
 				this.plugin,
 				this.saveSettings.bind(this),

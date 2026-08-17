@@ -961,6 +961,84 @@ This prevents the LLM from being misled by large recursive counts when asking ab
 
 ---
 
+## Tool Call Context Persistence Bug Fix (2026-08-16)
+
+### Problem
+
+When the agent used tool calls in multi-turn conversations, the **results of those tool calls were not passed as context** to subsequent API calls. The LLM would completely forget that a tool had executed and what it returned.
+
+**Symptoms**:
+- Agent asking to search again after already searching
+- Agent being unaware of note contents it just read
+- Broken multi-turn agent conversations
+
+### Root Cause
+
+In `src/hooks/useMessageActions.ts`, the message history was built by only including text content:
+
+```typescript
+const history = messagesRef.current
+    .slice(-maxContextMessages)
+    .map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: buildReplayContent(m),  // ← ONLY text, no tool context
+    }));
+```
+
+The `buildReplayContent()` function stripped all `toolCalls` and `contentParts` from prior assistant messages. The LLM received only plain text like "I'll search your notes" with zero awareness that `search_notes` had already executed and returned results.
+
+### Why This Matters
+
+The Vercel AI SDK requires tool calls and results to be passed as **separate messages** in a specific shape:
+
+```
+Assistant: [text part, tool-call part, text part, tool-call part]
+Tool:      [tool-result part, tool-result part]
+User:      "summarize what you found"
+```
+
+Without the tool-result messages, the LLM has no context about prior tool executions.
+
+### The Fix
+
+Created `buildHistoryWithTools()` that reconstructs the full SDK message shape from persisted `ChatMessage` data:
+
+**For assistant messages with tool calls**:
+1. Creates `role: "assistant"` message with `[text, tool-call, text, tool-call, ...]` parts
+2. Creates `role: "tool"` message with `[tool-result, tool-result, ...]` parts
+
+**Fallback handling**:
+- Uses `contentParts` (interleaved format) when available
+- Falls back to `toolCalls` array for older messages
+- Plain text messages pass through unchanged
+
+**Key code**:
+```typescript
+function buildHistoryWithTools(
+    messages: ChatMessage[],
+    maxMessages: number,
+): Array<{ role: "user" | "assistant" | "tool"; content: any }> {
+    // Reconstructs Vercel AI SDK-compatible messages
+    // from ChatMessage.contentParts / ChatMessage.toolCalls
+}
+```
+
+### Files Changed
+
+- `src/hooks/useMessageActions.ts` — Replaced history building (+159 lines, -9 lines)
+
+### Verification
+
+- Build passes
+- All 236 tests pass
+- User confirmed fix works in practice
+
+### Lesson Learned
+
+When building message history for API calls, **always include full tool execution context**. The LLM needs to know *what* tools were called and *what they returned*, not just the final text output. Persisting `contentParts` (interleaved text + tool calls with results) enables accurate history reconstruction.
+
+---
+
 ## Planned External Tool Providers (2026-08-05)
 
 External Obsidian-plugin capabilities will not be registered by directly

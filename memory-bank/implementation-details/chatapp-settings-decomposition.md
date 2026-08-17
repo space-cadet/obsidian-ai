@@ -48,7 +48,7 @@ subsequent T43/T44 surface growth:
 
 **Note**: The "Critical" files from the pre-refactor report (ChatApp.tsx,
 settings.ts) have been addressed. The new critical files are the orchestration
-monoliths: ToolExecutor.ts, api.ts, main.ts. These are tracked under **T45**.
+monoliths: ToolExecutor.ts, api.ts, main.ts. These are tracked under **T46**.
 
 ### Build Artifacts (expected)
 | File | Size | Notes |
