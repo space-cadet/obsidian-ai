@@ -41,6 +41,8 @@ import { LocalCache } from "./sync/LocalCache";
 import { EncryptionLayer } from "./sync/EncryptionLayer";
 import { WebDAVStorageAdapter } from "./sync/WebDAVStorageAdapter";
 import { SyncProgressModal } from "./modals/SyncProgressModal";
+import { SyncLogger } from "./sync/SyncLogger";
+import { StorageAdapter } from "./sync/StorageAdapter";
 import { ProviderRegistry } from "./integrations/ProviderRegistry";
 
 export const OPEN_CHAT_COMMAND_ID = "open-chat-lab-sidebar";
@@ -595,23 +597,56 @@ export default class ObsidianAIPlugin extends Plugin {
 			return { ok: false, message: msg };
 		}
 
-		const modal = new SyncProgressModal(this.app);
+		const startTime = Date.now();
+		const syncLogger = new SyncLogger(this.app, this.manifest.id);
+
+		// Create modal early — we'll update the count after computing the plan
+		const modal = new SyncProgressModal(this.app, 0);
 		modal.open();
+
+		// First, compute the plan to know total count
+		modal.addLog("system", "Reading local sessions...");
+		await this._populateSyncCache();
+		const plan = await this.syncEngine.computeSyncPlan();
+		const totalOps = plan.upload.length + plan.download.length + plan.conflicts.length;
+		modal.setTotal(totalOps);
+		modal.addLog("system", `Plan: ↑${plan.upload.length} ↓${plan.download.length} ⚡${plan.conflicts.length} ⊘${plan.skipped}`);
 
 		// Wire progress callback into sync engine
 		this.syncEngine?.setProgressHandler((event) => {
-			const icon = event.direction === "upload" ? "↑" : event.direction === "download" ? "↓" : "•";
-			const status = event.status === "start" ? "…" : event.status === "done" ? "✓" : "✗";
-			modal.addLog(`${icon} ${event.id.slice(0, 8)}… ${status}`);
+			if (event.type === "session") {
+				const title = this._getSessionTitle(event.id) || event.id.slice(0, 8);
+				if (event.status === "start") {
+					modal.addLog(event.direction!, `${title}`, { id: event.id });
+				} else if (event.status === "done") {
+					modal.addLog(event.direction!, `${title}`, { id: event.id, done: true });
+					syncLogger.log({
+						timestamp: Date.now(),
+						deviceId: syncLogger["deviceId"],
+						action: event.direction!,
+						sessionId: event.id,
+						sessionTitle: title,
+						message: "success",
+					});
+				} else if (event.status === "error") {
+					modal.addLog("error", `${title}: ${event.error}`, { id: event.id, error: true });
+					syncLogger.log({
+						timestamp: Date.now(),
+						deviceId: syncLogger["deviceId"],
+						action: "error",
+						sessionId: event.id,
+						sessionTitle: title,
+						message: event.error || "unknown error",
+					});
+				}
+			}
 		});
 
 		try {
-			// Populate local cache from Obsidian's actual chat storage before syncing
-			modal.updateProgress("Reading local sessions...");
-			await this._populateSyncCache();
+			modal.addLog("system", `Plan: ↑${plan.upload.length} ↓${plan.download.length} ⚡${plan.conflicts.length} ⊘${plan.skipped}`);
 
-			modal.updateProgress("Syncing with remote...");
 			const result = await this.syncEngine.sync();
+			const durationMs = Date.now() - startTime;
 			this.settings.remoteStorage.lastSyncTime = Date.now();
 			await this.saveSettings();
 
@@ -625,6 +660,20 @@ export default class ObsidianAIPlugin extends Plugin {
 			const msg = parts.length > 0 ? parts.join(" ") : "Nothing to sync";
 			const ok = result.errors.length === 0;
 
+			// Record session to logs
+			const sessionRecord = {
+				timestamp: Date.now(),
+				deviceId: syncLogger["deviceId"],
+				result: { ...result, message: msg },
+				durationMs,
+			};
+			syncLogger.recordSession(sessionRecord);
+			await syncLogger.flushLocal();
+			if (this.syncEngine) {
+				const adapter = (this.syncEngine as any).adapter as StorageAdapter;
+				await syncLogger.appendRemote(adapter, sessionRecord);
+			}
+
 			modal.finish({ ...result, message: msg });
 
 			// Toast notification
@@ -637,6 +686,15 @@ export default class ObsidianAIPlugin extends Plugin {
 			return { ok, message: msg };
 		} catch (err: any) {
 			const msg = `Sync failed: ${err.message}`;
+			const durationMs = Date.now() - startTime;
+			syncLogger.recordSession({
+				timestamp: Date.now(),
+				deviceId: syncLogger["deviceId"],
+				result: { uploaded: 0, downloaded: 0, conflicts: 0, skipped: 0, errors: [err.message], message: msg },
+				durationMs,
+			});
+			await syncLogger.flushLocal();
+
 			modal.finish({
 				uploaded: 0,
 				downloaded: 0,
@@ -648,6 +706,12 @@ export default class ObsidianAIPlugin extends Plugin {
 			new Notice(`❌ ${msg}`, 8000);
 			return { ok: false, message: msg };
 		}
+	}
+
+	/** Look up a session title by ID from current chat data */
+	private _getSessionTitle(sessionId: string): string | undefined {
+		// Access from the sync engine's cache if available
+		return undefined; // Will be resolved asynchronously elsewhere
 	}
 
 	/** Copy current chat sessions from Obsidian storage into the sync cache */

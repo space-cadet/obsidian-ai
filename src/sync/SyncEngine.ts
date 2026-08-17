@@ -142,7 +142,7 @@ export class SyncEngine {
 	}
 
 	/** Compute the sync plan by comparing local and remote state. */
-	private async computeSyncPlan(): Promise<SyncPlan> {
+	async computeSyncPlan(): Promise<SyncPlan> {
 		const localSessions = await this.cache.getAllSessions();
 		const remoteMetas = await this.adapter.listSessions();
 

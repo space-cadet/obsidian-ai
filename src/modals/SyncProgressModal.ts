@@ -1,138 +1,229 @@
-import { Modal, App, Setting, Notice } from "obsidian";
+import { Modal, App } from "obsidian";
 import type { SyncResult } from "../sync/StorageAdapter";
+
+interface LogEntry {
+	time: number;
+	icon: string;
+	text: string;
+	done?: boolean;
+	error?: boolean;
+}
 
 export class SyncProgressModal extends Modal {
 	private onCancel?: () => void;
-	private resultEl: HTMLElement | null = null;
-	private spinnerEl: HTMLElement | null = null;
-	private countsEl: HTMLElement | null = null;
-	private logEl: HTMLElement | null = null;
-	private logContainer: HTMLElement | null = null;
-	private cancelBtn: HTMLElement | null = null;
-	private backgroundBtn: HTMLElement | null = null;
-	private doneBtn: HTMLElement | null = null;
+	private startTime: number;
+	private totalSessions = 0;
+	private completedCount = 0;
+	private logEntries: LogEntry[] = [];
+
+	// DOM refs
+	private headerEl!: HTMLElement;
+	private progressBarEl!: HTMLElement;
+	private progressFillEl!: HTMLElement;
+	private progressTextEl!: HTMLElement;
+	private logEl!: HTMLElement;
+	private summaryEl!: HTMLElement;
+	private btnRow!: HTMLElement;
+	private cancelBtn!: HTMLElement;
+	private backgroundBtn!: HTMLElement;
+	private doneBtn!: HTMLElement;
 	private isDone = false;
 
-	constructor(app: App, options?: { onCancel?: () => void }) {
+	constructor(app: App, totalSessions: number, options?: { onCancel?: () => void }) {
 		super(app);
+		this.startTime = Date.now();
+		this.totalSessions = totalSessions;
 		this.onCancel = options?.onCancel;
+	}
+
+	/** Update total session count after plan is computed */
+	setTotal(total: number) {
+		this.totalSessions = total;
+		this.progressTextEl.setText(`0/${this.totalSessions} (0%)`);
 	}
 
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
+		contentEl.addClass("sync-progress-modal");
 
-		contentEl.createEl("h2", { text: "Syncing Sessions" });
+		// Header with progress
+		this.headerEl = contentEl.createDiv("sync-header");
+		this.headerEl.style.display = "flex";
+		this.headerEl.style.justifyContent = "space-between";
+		this.headerEl.style.alignItems = "center";
+		this.headerEl.style.marginBottom = "0.5em";
 
-		// Spinner
-		this.spinnerEl = contentEl.createDiv("sync-spinner");
-		this.spinnerEl.setText("⏳ Sync in progress...");
+		const title = this.headerEl.createEl("span");
+		title.style.fontWeight = "600";
+		title.setText(`🔄 Syncing ${this.totalSessions} sessions`);
 
-		// Counts
-		this.countsEl = contentEl.createDiv("sync-counts");
-		this.countsEl.setText("Starting...");
-		this.countsEl.style.marginTop = "0.5em";
-		this.countsEl.style.color = "var(--text-muted)";
+		this.progressTextEl = this.headerEl.createEl("span");
+		this.progressTextEl.style.color = "var(--text-muted)";
+		this.progressTextEl.setText(`0/${this.totalSessions}`);
 
-		// Scrolling log
-		this.logContainer = contentEl.createDiv("sync-log-container");
-		this.logContainer.style.marginTop = "1em";
-		this.logContainer.style.maxHeight = "200px";
-		this.logContainer.style.overflowY = "auto";
-		this.logContainer.style.border = "1px solid var(--background-modifier-border)";
-		this.logContainer.style.borderRadius = "4px";
-		this.logContainer.style.padding = "8px";
-		this.logContainer.style.fontSize = "0.85em";
-		this.logContainer.style.fontFamily = "var(--font-monospace)";
-		this.logContainer.style.backgroundColor = "var(--background-primary-alt)";
+		// Progress bar
+		const progressContainer = contentEl.createDiv("sync-progress-bar");
+		progressContainer.style.height = "6px";
+		progressContainer.style.background = "var(--background-modifier-border)";
+		progressContainer.style.borderRadius = "3px";
+		progressContainer.style.marginBottom = "1em";
+		progressContainer.style.overflow = "hidden";
 
-		this.logEl = this.logContainer.createDiv("sync-log");
+		this.progressFillEl = progressContainer.createDiv("sync-progress-fill");
+		this.progressFillEl.style.height = "100%";
+		this.progressFillEl.style.width = "0%";
+		this.progressFillEl.style.background = "var(--interactive-accent)";
+		this.progressFillEl.style.transition = "width 0.2s ease";
+		this.progressFillEl.style.borderRadius = "3px";
 
-		// Result area (hidden until done)
-		this.resultEl = contentEl.createDiv("sync-result");
-		this.resultEl.style.marginTop = "1em";
-		this.resultEl.style.display = "none";
+		// Log container (terminal style)
+		this.logEl = contentEl.createDiv("sync-log");
+		this.logEl.style.maxHeight = "300px";
+		this.logEl.style.overflowY = "auto";
+		this.logEl.style.fontFamily = "var(--font-monospace)";
+		this.logEl.style.fontSize = "0.85em";
+		this.logEl.style.lineHeight = "1.6";
+		this.logEl.style.background = "var(--background-primary-alt)";
+		this.logEl.style.padding = "8px 10px";
+		this.logEl.style.borderRadius = "4px";
+		this.logEl.style.border = "1px solid var(--background-modifier-border)";
+
+		// Summary line
+		this.summaryEl = contentEl.createDiv("sync-summary");
+		this.summaryEl.style.marginTop = "0.75em";
+		this.summaryEl.style.color = "var(--text-muted)";
+		this.summaryEl.style.fontSize = "0.85em";
+		this.summaryEl.setText("⏱️ Starting...");
 
 		// Buttons
-		const btnRow = contentEl.createDiv("sync-btn-row");
-		btnRow.style.marginTop = "1.5em";
-		btnRow.style.display = "flex";
-		btnRow.style.gap = "0.5em";
-		btnRow.style.justifyContent = "flex-end";
+		this.btnRow = contentEl.createDiv("sync-btn-row");
+		this.btnRow.style.marginTop = "1em";
+		this.btnRow.style.display = "flex";
+		this.btnRow.style.gap = "0.5em";
+		this.btnRow.style.justifyContent = "flex-end";
 
-		this.cancelBtn = btnRow.createEl("button", { text: "Cancel" });
+		this.cancelBtn = this.btnRow.createEl("button", { text: "Cancel" });
 		this.cancelBtn.addEventListener("click", () => {
 			this.onCancel?.();
 			this.close();
 		});
 
-		this.backgroundBtn = btnRow.createEl("button", { text: "Background" });
+		this.backgroundBtn = this.btnRow.createEl("button", { text: "Background" });
 		this.backgroundBtn.addEventListener("click", () => {
 			this.close();
 		});
 
-		this.doneBtn = btnRow.createEl("button", { text: "Done" });
+		this.doneBtn = this.btnRow.createEl("button", { text: "Done" });
 		this.doneBtn.style.display = "none";
 		this.doneBtn.addEventListener("click", () => {
 			this.close();
 		});
+
+		this.addLog("system", "Starting sync...");
 	}
 
-	updateProgress(label: string) {
-		if (this.countsEl) {
-			this.countsEl.setText(label);
+	/** Add a log entry. Auto-updates progress if it's a session operation. */
+	addLog(
+		type: "upload" | "download" | "conflict" | "skip" | "error" | "system",
+		message: string,
+		meta?: { id?: string; done?: boolean; error?: boolean },
+	) {
+		const icons: Record<string, string> = {
+			upload: "↑",
+			download: "↓",
+			conflict: "⚡",
+			skip: "⊘",
+			error: "✗",
+			system: "•",
+		};
+
+		const entry: LogEntry = {
+			time: Date.now(),
+			icon: icons[type] || "•",
+			text: message,
+			done: meta?.done,
+			error: meta?.error,
+		};
+		this.logEntries.push(entry);
+
+		// Render the entry
+		const line = this.logEl.createDiv("sync-log-line");
+		line.style.display = "flex";
+		line.style.gap = "6px";
+		line.style.opacity = meta?.done ? "0.6" : "1";
+		if (meta?.error) line.style.color = "var(--text-error)";
+
+		const icon = line.createEl("span");
+		icon.style.minWidth = "1em";
+		icon.setText(entry.icon);
+
+		const text = line.createEl("span");
+		text.style.flex = "1";
+		text.setText(message);
+
+		if (meta?.done) {
+			const done = line.createEl("span");
+			done.setText("✓");
+			done.style.color = "var(--text-success)";
+		}
+
+		// Auto-scroll
+		this.logEl.scrollTop = this.logEl.scrollHeight;
+
+		// Update progress for session operations
+		if ((type === "upload" || type === "download") && meta?.done) {
+			this.completedCount++;
+			this.updateProgress();
 		}
 	}
 
-	addLog(line: string) {
-		if (!this.logEl) return;
-		const entry = this.logEl.createDiv("sync-log-entry");
-		entry.style.marginBottom = "2px";
-		entry.style.whiteSpace = "pre-wrap";
-		entry.style.wordBreak = "break-all";
-		entry.setText(line);
-		// Auto-scroll to bottom
-		if (this.logContainer) {
-			this.logContainer.scrollTop = this.logContainer.scrollHeight;
-		}
+	updateProgress() {
+		const pct = this.totalSessions > 0
+			? Math.round((this.completedCount / this.totalSessions) * 100)
+			: 0;
+		this.progressTextEl.setText(`${this.completedCount}/${this.totalSessions} (${pct}%)`);
+		this.progressFillEl.style.width = `${pct}%`;
+		this.updateSummary();
+	}
+
+	updateSummary() {
+		const elapsed = ((Date.now() - this.startTime) / 1000).toFixed(1);
+		this.summaryEl.setText(`⏱️ ${elapsed}s elapsed  ·  ${this.completedCount} done`);
 	}
 
 	finish(result: SyncResult & { message: string }) {
 		this.isDone = true;
+		const elapsed = ((Date.now() - this.startTime) / 1000).toFixed(1);
 
-		if (this.spinnerEl) {
-			this.spinnerEl.setText("✅ Sync complete");
-		}
+		this.headerEl.empty();
+		const title = this.headerEl.createEl("span");
+		title.style.fontWeight = "600";
+		const ok = result.errors.length === 0;
+		title.setText(ok ? "✅ Sync complete" : "⚠️ Sync finished with errors");
+		if (!ok) title.style.color = "var(--text-error)";
 
-		if (this.countsEl) {
-			this.countsEl.setText(result.message);
-			this.countsEl.style.color = result.errors.length > 0
-				? "var(--text-error)"
-				: "var(--text-success)";
-		}
+		this.progressTextEl.setText(result.message);
+		this.progressFillEl.style.width = "100%";
 
-		if (this.resultEl) {
-			this.resultEl.style.display = "block";
-			if (result.errors.length > 0) {
-				this.resultEl.createEl("div", {
-					text: `⚠️ ${result.errors.length} error(s)`,
-					cls: "sync-error-count",
-				});
-				const details = this.resultEl.createEl("details");
-				details.createEl("summary", { text: "Error details" });
-				for (const err of result.errors) {
-					details.createEl("div", {
-						text: err,
-						cls: "sync-error-detail",
-					});
-				}
+		this.addLog("system", `Done in ${elapsed}s — ${result.message}`);
+
+		if (result.errors.length > 0) {
+			this.addLog("error", `${result.errors.length} error(s):`);
+			for (const err of result.errors.slice(0, 5)) {
+				this.addLog("error", `  ${err}`);
+			}
+			if (result.errors.length > 5) {
+				this.addLog("system", `  ... and ${result.errors.length - 5} more`);
 			}
 		}
 
+		this.summaryEl.setText(`⏱️ ${elapsed}s  ·  ↑${result.uploaded} ↓${result.downloaded} ⚡${result.conflicts} ⊘${result.skipped}`);
+
 		// Swap buttons
-		if (this.cancelBtn) this.cancelBtn.style.display = "none";
-		if (this.backgroundBtn) this.backgroundBtn.style.display = "none";
-		if (this.doneBtn) this.doneBtn.style.display = "inline-block";
+		this.cancelBtn.style.display = "none";
+		this.backgroundBtn.style.display = "none";
+		this.doneBtn.style.display = "inline-block";
 	}
 
 	onClose() {

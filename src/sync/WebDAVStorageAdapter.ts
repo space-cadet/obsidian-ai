@@ -134,6 +134,16 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		await this.put(path, String(time), "text/plain");
 	}
 
+	async writeText(path: string, content: string): Promise<void> {
+		const fullPath = this.prefix + path;
+		// Ensure parent directory exists
+		const parent = fullPath.split("/").slice(0, -1).join("/") + "/";
+		if (parent && parent !== "/") {
+			await this.mkcol(parent);
+		}
+		await this.put(fullPath, content, "text/plain");
+	}
+
 	// ─── Internal WebDAV operations ───
 
 	private getAuthHeader(): string {
