@@ -60,8 +60,8 @@ export interface StorageAdapter {
 	/** Fetch a single encrypted session by ID. */
 	getSession(id: string): Promise<EncryptedSession | null>;
 
-	/** Upload an encrypted session. */
-	putSession(session: EncryptedSession): Promise<void>;
+/** Upload an encrypted session. Returns server metadata (etag, etc.). */
+	putSession(session: EncryptedSession): Promise<{ etag?: string; modifiedAt?: number }>;
 
 	/** Delete a remote session. */
 	deleteSession(id: string): Promise<void>;
@@ -81,6 +81,8 @@ export interface CachedSession extends ChatSession {
 	_localModifiedAt: number;
 	_remoteModifiedAt?: number;
 	_version: number;
+	/** Server ETag at time of last sync — used to detect remote changes */
+	_etag?: string;
 }
 
 /**

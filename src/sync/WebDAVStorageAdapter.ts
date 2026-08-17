@@ -98,14 +98,18 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		}
 	}
 
-	async putSession(session: EncryptedSession): Promise<void> {
+	async putSession(session: EncryptedSession): Promise<{ etag?: string; modifiedAt?: number }> {
 		// Ensure prefix and sessions directories exist
 		await this.mkcol(this.prefix);
 		await this.mkcol(this.prefix + "sessions/");
 
 		const path = this.prefix + "sessions/" + session.id + ".json";
 		const body = JSON.stringify(session);
-		await this.put(path, body, "application/json");
+		const res = await this.put(path, body, "application/json");
+
+		// Extract ETag from response headers (Nextcloud returns it on PUT)
+		const etag = res.headers.etag || res.headers.ETag;
+		return { etag, modifiedAt: session.modifiedAt };
 	}
 
 	async deleteSession(id: string): Promise<void> {
@@ -203,8 +207,8 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		return res.text;
 	}
 
-	private async put(path: string, body: string, contentType: string): Promise<void> {
-		await this.request("PUT", path, { body, contentType });
+	private async put(path: string, body: string, contentType: string): Promise<{ status: number; headers: Record<string, string> }> {
+		return await this.request("PUT", path, { body, contentType });
 	}
 
 	private async del(path: string): Promise<void> {

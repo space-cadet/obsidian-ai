@@ -97,8 +97,10 @@ export class LocalCache {
 		});
 	}
 
-	/** Mark a session as synced (after successful remote upload). */
-	async markSynced(id: string): Promise<void> {
+	/** Mark a session as synced (after successful remote upload).
+	 *  @param remoteModifiedAt Server timestamp (optional)
+	 *  @param etag Server ETag (optional) */
+	async markSynced(id: string, remoteModifiedAt?: number, etag?: string): Promise<void> {
 		await this.init();
 		const db = this.db!;
 		return new Promise((resolve, reject) => {
@@ -109,6 +111,12 @@ export class LocalCache {
 				const session = getReq.result;
 				if (session) {
 					session._syncStatus = "synced";
+					if (remoteModifiedAt !== undefined) {
+						session._remoteModifiedAt = remoteModifiedAt;
+					}
+					if (etag !== undefined) {
+						session._etag = etag;
+					}
 					const putReq = store.put(session);
 					putReq.onsuccess = () => resolve();
 					putReq.onerror = () => reject(putReq.error);

@@ -171,15 +171,20 @@ export class SyncEngine {
 				}
 			} else if (local._syncStatus === "synced") {
 				// Both exist, local unchanged since last sync
-				if (remote.modifiedAt > (local._remoteModifiedAt ?? 0)) {
-					// Remote is newer: download
+				// Use ETag comparison if available (most reliable), fallback to timestamp
+				const etagChanged = local._etag && remote.etag && local._etag !== remote.etag;
+				const timestampChanged = remote.modifiedAt > (local._remoteModifiedAt ?? 0);
+				if (etagChanged || (!local._etag && timestampChanged)) {
+					// Remote changed: download
 					download.push(remote);
 				} else {
 					skipped++;
 				}
 			} else {
 				// Local has pending changes
-				if (remote.modifiedAt > (local._remoteModifiedAt ?? 0)) {
+				const etagChanged = local._etag && remote.etag && local._etag !== remote.etag;
+				const timestampChanged = remote.modifiedAt > (local._remoteModifiedAt ?? 0);
+				if (etagChanged || (!local._etag && timestampChanged)) {
 					// Both changed: conflict
 					conflicts.push({ local, remote });
 				} else {
@@ -218,8 +223,8 @@ export class SyncEngine {
 			payload.salt = encrypted.salt;
 		}
 
-		await this.adapter.putSession(payload);
-		await this.cache.markSynced(session.id);
+		const result = await this.adapter.putSession(payload);
+		await this.cache.markSynced(session.id, session.updatedAt, result.etag);
 		this.progress?.({ type: "session", id: session.id, direction: "upload", status: "done" });
 		this.log("debug", `SyncEngine: uploaded ${session.id}`);
 	}
@@ -259,7 +264,7 @@ export class SyncEngine {
 		};
 
 		await this.cache.putSession(cached);
-		await this.cache.markSynced(meta.id);
+		await this.cache.markSynced(meta.id, meta.modifiedAt, meta.etag);
 		this.progress?.({ type: "session", id: meta.id, direction: "download", status: "done" });
 		this.log("debug", `SyncEngine: downloaded ${meta.id}`);
 	}
@@ -302,6 +307,8 @@ export class SyncEngine {
 						updatedAt: Date.now(),
 					};
 					await this.cache.putSession(newSession);
+					await this.cache.markSynced(newSession.id, remote.modifiedAt, remote.etag);
+					await this.cache.markSynced(newSession.id, remote.modifiedAt);
 				}
 				// Keep local as-is (re-mark as pending so it uploads)
 				await this.cache.putSession(local);
