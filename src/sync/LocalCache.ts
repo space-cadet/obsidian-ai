@@ -86,22 +86,32 @@ export class LocalCache {
 		});
 	}
 
-	/** Put (insert or update) a session. Marks as pending sync. */
+	/** Put (insert or update) a session. Marks as pending sync.
+	 *  Preserves existing remote metadata (_etag, _remoteModifiedAt) if present. */
 	async putSession(session: ChatSession): Promise<void> {
 		await this.init();
 		const db = this.db!;
-		const cached: CachedSession = {
-			...session,
-			_syncStatus: "pending",
-			_localModifiedAt: Date.now(),
-			_version: (session as CachedSession)._version ?? 1,
-		};
+
 		return new Promise((resolve, reject) => {
 			const tx = db.transaction("sessions", "readwrite");
 			const store = tx.objectStore("sessions");
-			const request = store.put(cached);
-			request.onsuccess = () => resolve();
-			request.onerror = () => reject(request.error);
+			const getReq = store.get(session.id);
+			getReq.onsuccess = () => {
+				const existing = getReq.result as CachedSession | undefined;
+				const cached: CachedSession = {
+					...session,
+					_syncStatus: "pending",
+					_localModifiedAt: Date.now(),
+					_version: (session as CachedSession)._version ?? 1,
+					// Preserve remote metadata from existing cache entry
+					_etag: existing?._etag,
+					_remoteModifiedAt: existing?._remoteModifiedAt,
+				};
+				const putReq = store.put(cached);
+				putReq.onsuccess = () => resolve();
+				putReq.onerror = () => reject(putReq.error);
+			};
+			getReq.onerror = () => reject(getReq.error);
 		});
 	}
 

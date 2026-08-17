@@ -283,7 +283,8 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 	}> {
 		const parser = new DOMParser();
 		const doc = parser.parseFromString(xml, "application/xml");
-		const responses = doc.querySelectorAll("response");
+		// Use namespace-aware lookup for DAV: responses
+		const responses = doc.getElementsByTagNameNS("DAV:", "response");
 
 		const results: Array<{
 			href: string;
@@ -293,13 +294,15 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		}> = [];
 
 		for (const response of Array.from(responses)) {
-			const href = response.querySelector("href")?.textContent || "";
-			const prop = response.querySelector("propstat prop");
+			const href = response.getElementsByTagNameNS("DAV:", "href")[0]?.textContent || "";
+			const propstat = response.getElementsByTagNameNS("DAV:", "propstat")[0];
+			if (!propstat) continue;
+			const prop = propstat.getElementsByTagNameNS("DAV:", "prop")[0];
 			if (!prop) continue;
 
-			const lastModified = prop.querySelector("getlastmodified")?.textContent || undefined;
-			const etag = prop.querySelector("getetag")?.textContent || undefined;
-			const contentLengthStr = prop.querySelector("getcontentlength")?.textContent;
+			const lastModified = prop.getElementsByTagNameNS("DAV:", "getlastmodified")[0]?.textContent || undefined;
+			const etag = prop.getElementsByTagNameNS("DAV:", "getetag")[0]?.textContent || undefined;
+			const contentLengthStr = prop.getElementsByTagNameNS("DAV:", "getcontentlength")[0]?.textContent;
 			const contentLength = contentLengthStr ? parseInt(contentLengthStr, 10) : undefined;
 
 			results.push({

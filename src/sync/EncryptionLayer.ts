@@ -156,7 +156,11 @@ export class EncryptionLayer {
 		}
 
 		// Derive key from payload salt + passphrase (ensures cross-device/restart compatibility)
-		if (!this.key || !this.salt) {
+		// Re-derive if salt differs from cached key's salt
+		const needsDerivation = !this.key || !this.salt ||
+			(payload.salt && this.salt && !this._saltEquals(payload.salt, this.salt));
+
+		if (needsDerivation) {
 			if (!passphrase) {
 				throw new Error(
 					"Passphrase required when key is not in memory.",
@@ -198,5 +202,17 @@ export class EncryptionLayer {
 
 		const decoder = new TextDecoder();
 		return decoder.decode(decrypted);
+	}
+
+	/** Compare two salts for equality (base64 string vs Uint8Array). */
+	private _saltEquals(b64Salt: string, uint8Salt: Uint8Array): boolean {
+		const decoded = new Uint8Array(
+			Array.from(atob(b64Salt), (c) => c.charCodeAt(0)),
+		);
+		if (decoded.length !== uint8Salt.length) return false;
+		for (let i = 0; i < decoded.length; i++) {
+			if (decoded[i] !== uint8Salt[i]) return false;
+		}
+		return true;
 	}
 }
