@@ -20,6 +20,8 @@ export interface SyncEngineConfig {
 	conflictStrategy?: ConflictStrategy;
 	logger?: { log(level: string, msg: string): void };
 	progress?: (event: { type: string; id: string; direction?: "upload" | "download"; status: "start" | "done" | "error"; error?: string }) => void;
+	/** Called when a session is downloaded from remote. Implementor should save to app storage. */
+	onSessionDownloaded?: (session: ChatSession) => Promise<void>;
 }
 
 /**
@@ -36,6 +38,7 @@ export class SyncEngine {
 	private conflictStrategy: ConflictStrategy;
 	private logger?: { log(level: string, msg: string): void };
 	private progress?: (event: { type: string; id: string; direction?: "upload" | "download"; status: "start" | "done" | "error"; error?: string }) => void;
+	private onSessionDownloaded?: (session: ChatSession) => Promise<void>;
 	private _cancelled = false;
 
 	constructor(config: SyncEngineConfig) {
@@ -46,6 +49,7 @@ export class SyncEngine {
 		this.conflictStrategy = config.conflictStrategy ?? "last-write-wins";
 		this.logger = config.logger;
 		this.progress = config.progress;
+		this.onSessionDownloaded = config.onSessionDownloaded;
 	}
 
 	get currentState(): SyncState {
@@ -68,16 +72,14 @@ export class SyncEngine {
 		this._cancelled = false;
 	}
 
-	/** Initialize adapter and derive encryption key. */
+	/** Initialize adapter. Key is derived lazily on first encrypt/decrypt. */
 	async initialize(config: unknown): Promise<void> {
 		this.log("info", "SyncEngine: initializing...");
 		await this.adapter.initialize(config);
 		await this.cache.init();
-
-		// Derive key from passphrase (plaintext mode if empty)
-		const salt = await this.crypto.deriveKey(this.passphrase);
-		if (salt) {
-			this.log("info", `SyncEngine: key derived (salt: ${btoa(String.fromCharCode(...salt)).slice(0, 8)}...)`);
+		// Key is NOT derived here — deriveKey uses payload salt on decrypt
+		if (this.passphrase) {
+			this.log("info", "SyncEngine: encryption enabled (key derived per-payload)");
 		} else {
 			this.log("warn", "SyncEngine: encryption disabled (plaintext mode)");
 		}
@@ -302,6 +304,12 @@ export class SyncEngine {
 
 		await this.cache.putSession(cached);
 		await this.cache.markSynced(meta.id, meta.modifiedAt, meta.etag);
+
+		// Persist to app storage so the session appears in the chat UI
+		if (this.onSessionDownloaded) {
+			await this.onSessionDownloaded(cached);
+		}
+
 		this.progress?.({ type: "session", id: meta.id, direction: "download", status: "done" });
 		this.log("debug", `SyncEngine: downloaded ${meta.id}`);
 	}

@@ -146,8 +146,8 @@ export class EncryptionLayer {
 			return payload.ciphertext;
 		}
 
-		// If no key in memory, derive it from passphrase + stored salt
-		if (!this.key) {
+		// Derive key from payload salt + passphrase (ensures cross-device/restart compatibility)
+		if (!this.key || !this.salt) {
 			if (!passphrase) {
 				throw new Error(
 					"Passphrase required when key is not in memory.",

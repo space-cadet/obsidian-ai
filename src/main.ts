@@ -567,6 +567,23 @@ export default class ObsidianAIPlugin extends Plugin {
 						this.logger?.log(level as any, `[SyncEngine] ${msg}`);
 					},
 				},
+				onSessionDownloaded: async (session) => {
+					// Merge downloaded session into app storage
+					try {
+						const chatData = await this.loadChatData();
+						const sessions = chatData.sessions || [];
+						const idx = sessions.findIndex((s) => s.id === session.id);
+						if (idx >= 0) {
+							sessions[idx] = session;
+						} else {
+							sessions.push(session);
+						}
+						await this.saveChatData({ ...chatData, sessions });
+						this.logger?.log("info", `[SyncEngine] Downloaded session ${session.id} merged into storage`);
+					} catch (err: any) {
+						this.logger?.log("error", `[SyncEngine] Failed to persist downloaded session: ${err.message}`);
+					}
+				},
 			});
 
 			if (rs.backend === "webdav" && rs.webdav) {
@@ -608,14 +625,6 @@ export default class ObsidianAIPlugin extends Plugin {
 		});
 		modal.open();
 
-		// First, compute the plan to know total count
-		modal.addLog("system", "Reading local sessions...");
-		await this._populateSyncCache();
-		const plan = await this.syncEngine.computeSyncPlan();
-		const totalOps = plan.upload.length + plan.download.length + plan.conflicts.length;
-		modal.setTotal(totalOps);
-		modal.addLog("system", `Plan: ↑${plan.upload.length} ↓${plan.download.length} ⚡${plan.conflicts.length} ⊘${plan.skipped}`);
-
 		// Wire progress callback into sync engine
 		this.syncEngine?.setProgressHandler((event) => {
 			if (event.type === "session") {
@@ -647,6 +656,12 @@ export default class ObsidianAIPlugin extends Plugin {
 		});
 
 		try {
+			// Compute sync plan (may fail if offline, bad credentials, etc.)
+			modal.addLog("system", "Reading local sessions...");
+			await this._populateSyncCache();
+			const plan = await this.syncEngine.computeSyncPlan();
+			const totalOps = plan.upload.length + plan.download.length + plan.conflicts.length;
+			modal.setTotal(totalOps);
 			modal.addLog("system", `Plan: ↑${plan.upload.length} ↓${plan.download.length} ⚡${plan.conflicts.length} ⊘${plan.skipped}`);
 
 			const result = await this.syncEngine.sync();
@@ -729,6 +744,21 @@ export default class ObsidianAIPlugin extends Plugin {
 			this.logger?.log("warn", `SyncEngine: failed to populate cache: ${err.message}`);
 		}
 	}
+
+	/** Debounced auto-sync trigger. Waits 3s of inactivity before syncing. */
+	private _autoSyncTimeout: number | null = null;
+	private _scheduleAutoSync(): void {
+		if (this._autoSyncTimeout) {
+			window.clearTimeout(this._autoSyncTimeout);
+		}
+		this._autoSyncTimeout = window.setTimeout(() => {
+			this._autoSyncTimeout = null;
+			this.triggerSync().catch((err) => {
+				this.logger?.log("warn", `Auto-sync failed: ${err.message}`);
+			});
+		}, 3000);
+	}
+
 	private _storageDeps(): StorageDeps {
 		return {
 			app: this.app,
@@ -860,6 +890,11 @@ export default class ObsidianAIPlugin extends Plugin {
 					"info",
 					"saveChatData: storage layer wrote successfully",
 				);
+
+				// Auto-sync to remote if enabled (debounced)
+				if (this.settings.remoteStorage?.enabled && this.settings.remoteStorage?.autoSync) {
+					this._scheduleAutoSync();
+				}
 
 				// Invalidate search index so next search picks up new messages
 				this.searchIndex?.invalidate();
