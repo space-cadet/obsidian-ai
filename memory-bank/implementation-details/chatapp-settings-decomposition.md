@@ -19,7 +19,7 @@ historical 551-line Phase 4 result. T44 separately tracks the host boundary
 and standalone browser preview; it should consume the extracted layout rather
 than force the entire controller into a browser fixture.
 
-## File Size Report
+## File Size Report (Pre-Refactor — Historical)
 
 ### Source Code (prioritized by pain)
 | File | Lines | Size | Verdict |
@@ -31,6 +31,24 @@ than force the entire controller into a browser fixture.
 | `src/api.ts` | 689 | 19 KB | ⚠️ Large — broad API surface |
 | `src/components/ChatInput.tsx` | 616 | 16 KB | ⚠️ Large |
 | `src/modules/WidgetExtension.ts` | 577 | 15 KB | ⚠️ Large — inline tooltip + widget |
+
+## Post-Refactor Measurements (2026-08-17)
+
+After T22 (ChatApp.tsx decomposition), T23 (Settings.ts decomposition), and
+subsequent T43/T44 surface growth:
+
+| File | Lines | Status |
+|------|-------|--------|
+| `src/components/ChatApp.tsx` | **1,002** | 🔄 Decomposed from 1,948 → ~550 → regrew to 1,002 after T43/T44 additions |
+| `src/settings.ts` | **341** | ✅ Decomposed from 1,187 |
+| `src/hooks/useMessageActions.ts` | **1,309** | ⚠️ Grew during agentic work; deferred from T22 scope |
+| `src/agent/ToolExecutor.ts` | **1,383** | ❌ Grew 60% during agentic tool calling (T43/T44) |
+| `src/api.ts` | **740** | ⚠️ Grew ~7% during provider additions |
+| `src/main.ts` | **695** | ⚠️ Plugin entry point; never decomposed |
+
+**Note**: The "Critical" files from the pre-refactor report (ChatApp.tsx,
+settings.ts) have been addressed. The new critical files are the orchestration
+monoliths: ToolExecutor.ts, api.ts, main.ts. These are tracked under **T45**.
 
 ### Build Artifacts (expected)
 | File | Size | Notes |

@@ -1,8 +1,13 @@
-# Current Architecture: Obsidian AI Plugin (v1.2.4)
+# Current Architecture: Obsidian AI Plugin (v1.2.4) — HISTORICAL
 *Created: 2026-05-02 08:13:57 IST*
 *Last Updated: 2026-05-02 12:09:43 IST*
+*Status: ARCHIVED — Superseded by refactored architecture (T22/T23) and subsequent evolution*
 
-## Overview
+> ⚠️ **This document describes the v1.2.4 architecture as of May 2026.** The codebase has evolved significantly since then. Chat panel, vault-aware tools, agentic tool calling, T43/T44 surface work, and other major features were added after this snapshot. For the current architecture, see `refactored-architecture.md` and `agentic-tool-calling.md`.
+
+---
+
+# Original Document (v1.2.4)
 
 Obsidian AI v1.2.4 is a pure inline-editing plugin. The entire interaction surface is a transient CodeMirror widget anchored to the cursor/selection inside the active markdown editor. There is no persistent view, no chat panel, and no vault awareness.
 

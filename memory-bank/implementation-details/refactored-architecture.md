@@ -9,8 +9,7 @@
 This document describes the refactored codebase architecture after T22 (ChatApp.tsx decomposition) and T23 (Settings.ts decomposition). It serves as the canonical reference for where code lives, how modules relate, and what conventions to follow when adding new features.
 
 Current measurements and follow-up boundaries are maintained here after later
-T15, T34, T40, and T43 work. T22 remains active for its layout extraction
-phase. T44 tracks the separate browser preview and Obsidian host boundary.
+T15, T34, T40, T43, and T44 work. **T22 Phase 5 layout extraction and T44 host-boundary work have been absorbed by later surface growth. The next decomposition priority is T45: Core Orchestration Decomposition (ToolExecutor, api.ts, main.ts).**
 
 ## Guiding Principles
 
@@ -24,7 +23,7 @@ phase. T44 tracks the separate browser preview and Obsidian host boundary.
 
 ```
 src/
-├── settings.ts                    # Pure config: types, defaults, normalizeSettings
+├── settings.ts                    # Pure config: types, defaults, normalizeSettings (341 lines)
 ├── settings-sections/             # Settings tab UI (T23)
 │   ├── SettingsTab.ts             # Orchestrator: display() method
 │   ├── helpers.ts                 # Shared: createSection, getProviderLabel
@@ -38,7 +37,7 @@ src/
 │   └── diagnostics.ts             # Metrics, debug level, clear history
 │
 ├── components/                    # React UI components
-│   ├── ChatApp.tsx                # Controller/composition root (1,022 lines)
+│   ├── ChatApp.tsx                # Controller/composition root (1,002 lines)
 │   ├── ChatMessages.tsx           # Message list rendering
 │   ├── MessageBubble.tsx          # Individual message bubble
 │   ├── ChatInput.tsx              # Input bar with attachments
@@ -49,10 +48,10 @@ src/
 │   ├── ToolResultCard.tsx         # Tool result display
 │   ├── ContextPickerModal.tsx     # Note selection modal
 │   ├── GroupChatApp.tsx           # Group chat variant
-│   ├── ChatLayout.tsx             # T22 Phase 5: planned layout shell
-│   ├── ChatToolbar.tsx            # T22 Phase 5: planned toolbar/participants
-│   ├── ChatMainArea.tsx           # T22 Phase 5: planned messages/composer
-│   └── ChatOverlays.tsx           # T22 Phase 5: planned modal composition
+│   ├── ChatLayout.tsx             # Layout shell (extracted)
+│   ├── ChatToolbar.tsx            # Toolbar/participants (extracted)
+│   ├── ChatMainArea.tsx           # Messages/composer (extracted)
+│   └── ChatOverlays.tsx           # Modal composition (extracted)
 │
 ├── hooks/                         # React hooks
 │   ├── useChatSession.ts          # Session CRUD, persistence, auto-naming
@@ -73,23 +72,34 @@ src/
 │
 ├── agent/                         # Agentic logic
 │   ├── AgentLoop.ts               # Tool calling loop
-│   ├── ToolExecutor.ts            # Tool execution engine (865 lines)
-│   ├── Orchestrator.ts            # Multi-agent dispatch
+│   ├── ToolExecutor.ts            # Tool execution engine (1,383 lines)
+│   ├── tools.ts                   # Tool definitions (Zod schemas)
 │   └── MentionParser.ts           # @AgentName parsing
 │
-├── api.ts                         # LLM API abstraction (689 lines)
+├── api.ts                         # LLM API abstraction (740 lines)
+│
+├── storage/                       # Persistence layer
+│   ├── ChatStorage.ts             # Interface + factory (ChatStorage, createStorage)
+│   ├── LegacyStorage.ts           # JSON file storage
+│   └── JsonlStorage.ts            # JSONL line storage
+│
+├── search/                        # Search/indexing
+│   └── index.ts                   # Full-text search engine
+│
+├── context/                       # Context management
+│   ├── ContextEngine.ts           # Folder/tag/note resolution
+│   └── ChatContext.ts             # Chat context building
+│
+├── utils/                         # Utilities
+│   └── PdfExtractor.ts            # PDF text extraction
 │
 ├── modules/                       # Obsidian integrations
 │   ├── WidgetExtension.ts         # Inline tooltip (577 lines)
 │   └── commands/                  # Slash commands
 │       └── source.ts
 │
-├── context/                       # Context management
-│   ├── AttachmentEngine.ts        # File attachment resolution
-│   └── ChatContext.ts             # Chat context building
-│
 ├── types.ts                       # Shared TypeScript types
-├── main.ts                        # Plugin entry point
+├── main.ts                        # Plugin entry point (695 lines)
 └── default_prompts.ts             # Default prompt templates
 ```
 
@@ -203,13 +213,14 @@ import { buildContext } from "../lib/contextUtils";
 |----------|-----------|------------|-----------------|
 | Settings config | 400 lines | 500 | settings.ts: 341 ✅ |
 | Settings sections | 200 lines | 300 | diagnostics.ts: 189 ✅ |
-| React components | 500 lines | 700 | ChatApp.tsx: 1,022 ⚠️ |
-| Hooks | 400 lines | 600 | useMessageActions.ts: 1,309 ⚠️ |
+| React components | 500 lines | 700 | ChatApp.tsx: 1,002 ⚠️ |
+| Hooks | 400 lines | 600 | useMessageActions.ts: 1,309 ❌ |
 | Utilities | 150 lines | 200 | sessionTitle.ts: 137 ✅ |
-| Agent logic | 500 lines | 700 | ToolExecutor.ts: 865 ⚠️ |
-| API layer | 400 lines | 500 | api.ts: 689 ⚠️ |
+| Agent logic | 500 lines | 700 | ToolExecutor.ts: 1,383 ❌ |
+| API layer | 400 lines | 500 | api.ts: 740 ⚠️ |
+| Plugin entry | 400 lines | 500 | main.ts: 695 ⚠️ |
 
-**Note**: `useMessageActions.ts` (1,111), `ToolExecutor.ts` (865), `api.ts` (689), and `ProfileCard.tsx` (698) are the next candidates for decomposition if the user wants to continue.
+**Note**: `useMessageActions.ts` (1,309), `ToolExecutor.ts` (1,383), `api.ts` (740), and `main.ts` (695) are the next candidates for decomposition. **T45: Core Orchestration Decomposition** tracks this work.
 
 ## Testing
 
@@ -249,5 +260,6 @@ When a file grows beyond its target size:
 - **2026-05-28**: T22 Phase 2 — Extracted `useChatUI` hook + 31 tests. ChatApp.tsx: 1,533 → 1,269 lines.
 - **2026-05-28**: T22 Phase 3 — Extracted `useMessageActions` hook + 21 tests. ChatApp.tsx: 1,269 → 636 lines.
 - **2026-05-29**: T23 — Extracted `ObsidianAISettingsTab` + decomposed into 8 section files. settings.ts: 1,187 → 341 lines. No files >1,000 lines remain.
-- **2026-07-30**: T22 Phase 4 — Extracted session, settings, export, search, and context hooks. ChatApp.tsx: 636 → 551 lines at that point.
-- **2026-08-12**: T43 and related tab/relay work increased the composition surface. T22 Phase 5 and T44 now track the remaining layout and host-boundary work.
+- **2026-07-30**: T22 Phase 4 — Extracted session, settings, export, search, and context hooks. ChatApp.tsx: 636 → ~550 lines at that point.
+- **2026-08-12**: T43 and related tab/relay work increased the composition surface. ChatApp.tsx grew back to ~1,002 lines.
+- **2026-08-17**: **T45 created** — Core orchestration decomposition identified as next priority. ToolExecutor (1,383), api.ts (740), main.ts (695) are the remaining monoliths. T22 layout extraction and T44 host boundary work are now secondary to these.
