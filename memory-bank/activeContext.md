@@ -1,6 +1,49 @@
 # Active Context
 
-*Last Updated: 2026-08-15 13:19:00 IST*
+*Last Updated: 2026-08-17 02:27 IST*
+
+### 2026-08-17 — T42: Remote Chat Storage & Sync ✅ Phase 2 Complete + ETag + Progress + Logs + Cancel
+
+- **Commits**: `ac24ced` → ... → `e96b703` → `be3c3bb` → `29ad150` → `deff496`
+- **Phase 1 (Architecture)**: StorageAdapter interface, LocalCache (IndexedDB), EncryptionLayer (AES-256-GCM via PBKDF2), SyncEngine (delta sync + 3 conflict strategies + state machine)
+- **Phase 2 (WebDAV + Settings + Polish)**:
+  - `WebDAVStorageAdapter.ts` — PROPFIND, GET, PUT, MKCOL, DELETE using Obsidian's `requestUrl()` for Electron sandbox compatibility
+  - Settings types: `RemoteStorageConfig`, `WebDAVStorageConfig`, `S3StorageConfig`, `StorageBackendType`
+  - Settings UI: enable toggle, backend selector, passphrase, auto-sync, conflict strategy, WebDAV credentials, test connection button, manual sync button
+  - Wired into `SettingsTab` navigation and render pipeline
+  - **ETag comparison** — replaced timestamp comparison to stop false re-downloads due to clock skew (`be3c3bb`)
+  - **Terminal-style progress modal** — progress bar, per-session log, elapsed time, session titles instead of ID hashes (`29ad150`)
+  - **Sync log files** — local (`sync.log`) + remote (`sync.log`) recording every operation (`29ad150`)
+  - **Cancel support** — `_cancelled` flag checked between sessions, finishes current then stops (`deff496`)
+- **Build**: TypeScript clean, all 236 tests pass
+- **What's Working**: Full end-to-end sync with WebDAV (Nextcloud); 96 sessions populated; ETag prevents re-downloads; logs written locally and remotely; cancel stops sync between sessions
+- **What's Next**: S3 backend, conflict resolution UI, sync status badge in chat UI, auto-sync on session changes
+- **Task**: `memory-bank/tasks/T42.md` (updated)
+- **Design doc**: `memory-bank/implementation-details/remote-chat-storage.md`
+
+### 2026-08-16 — T45: PDF Text Extraction Tool ✅
+
+- Added `read_pdf` agent tool for extracting text from PDFs (URLs or vault paths)
+- Dual extraction backends: server-side PyMuPDF (default) and client-side pdfjs-dist (offline fallback)
+- Server endpoint: `https://quantumofgravity.com/relay/pdf-extract/` (Flask + PyMuPDF on VPS port 8082)
+- Plugin settings: extraction method (auto/server/client), server URL, max pages slider
+- UI: PDF attachment cards with Save to Vault and Open buttons
+- Build passes, all 236 tests pass
+- **User confirmed: "The read pdf skill works!"**
+- Commits: `b4296e7` (v1.3.6-dev)
+- Task: `memory-bank/tasks/T45.md`
+- Implementation doc: `memory-bank/implementation-details/pdf-text-extraction.md`
+
+### 2026-08-16 — T13a: Tool Call Context Persistence Bug Fix ✅
+
+- **Critical bug**: Tool call results were not passed as conversation context in multi-turn chats
+- Root cause: `useMessageActions.ts` history builder only included text content, stripping `toolCalls` and `contentParts`
+- Fix: `buildHistoryWithTools()` reconstructs Vercel AI SDK-compatible message shapes (assistant with tool-call parts + tool-result messages)
+- Build passes, all 236 tests pass
+- **User confirmed: "The tool context fix works!"**
+- Commits: `88dff94`
+- Task: `memory-bank/tasks/T13a.md`
+- Updated doc: `memory-bank/implementation-details/agentic-tool-calling.md`
 
 ### 2026-08-15 Community Directory Review — T8a
 

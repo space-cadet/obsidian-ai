@@ -9,7 +9,7 @@
 This document describes the refactored codebase architecture after T22 (ChatApp.tsx decomposition) and T23 (Settings.ts decomposition). It serves as the canonical reference for where code lives, how modules relate, and what conventions to follow when adding new features.
 
 Current measurements and follow-up boundaries are maintained here after later
-T15, T34, T40, T43, and T44 work. **T22 Phase 5 layout extraction and T44 host-boundary work have been absorbed by later surface growth. The next decomposition priority is T45: Core Orchestration Decomposition (ToolExecutor, api.ts, main.ts).**
+T15, T34, T40, T43, and T44 work. **T22 Phase 5 layout extraction and T44 host-boundary work have been absorbed by later surface growth. The next decomposition priority is T46: Core Orchestration Decomposition (ToolExecutor, api.ts, main.ts).**
 
 ## Guiding Principles
 
@@ -220,7 +220,7 @@ import { buildContext } from "../lib/contextUtils";
 | API layer | 400 lines | 500 | api.ts: 740 ⚠️ |
 | Plugin entry | 400 lines | 500 | main.ts: 695 ⚠️ |
 
-**Note**: `useMessageActions.ts` (1,309), `ToolExecutor.ts` (1,383), `api.ts` (740), and `main.ts` (695) are the next candidates for decomposition. **T45: Core Orchestration Decomposition** tracks this work.
+**Note**: `useMessageActions.ts` (1,309), `ToolExecutor.ts` (1,383), `api.ts` (740), and `main.ts` (695) are the next candidates for decomposition. **T46: Core Orchestration Decomposition** tracks this work.
 
 ## Testing
 
@@ -262,4 +262,4 @@ When a file grows beyond its target size:
 - **2026-05-29**: T23 — Extracted `ObsidianAISettingsTab` + decomposed into 8 section files. settings.ts: 1,187 → 341 lines. No files >1,000 lines remain.
 - **2026-07-30**: T22 Phase 4 — Extracted session, settings, export, search, and context hooks. ChatApp.tsx: 636 → ~550 lines at that point.
 - **2026-08-12**: T43 and related tab/relay work increased the composition surface. ChatApp.tsx grew back to ~1,002 lines.
-- **2026-08-17**: **T45 created** — Core orchestration decomposition identified as next priority. ToolExecutor (1,383), api.ts (740), main.ts (695) are the remaining monoliths. T22 layout extraction and T44 host boundary work are now secondary to these.
+- **2026-08-17**: **T46 created** — Core orchestration decomposition identified as next priority. ToolExecutor (1,383), api.ts (740), main.ts (695) are the remaining monoliths. T22 layout extraction and T44 host boundary work are now secondary to these.

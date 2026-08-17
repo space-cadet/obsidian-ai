@@ -1,5 +1,54 @@
 # Edit History
 
+*Last Updated: 2026-08-17 01:04 UTC*
+
+#### 01:04 UTC - T42: ETag comparison, terminal-style progress modal, sync log files, cancel support
+- Modified `src/sync/StorageAdapter.ts` — Added `_etag` to `CachedSession`, added `writeText()` method to interface
+- Modified `src/sync/LocalCache.ts` — `markSynced()` now accepts and stores ETag
+- Modified `src/sync/SyncEngine.ts` — ETag comparison instead of timestamps, public `computeSyncPlan()`, `_cancelled` flag with `cancel()` method
+- Modified `src/sync/WebDAVStorageAdapter.ts` — Extracts ETag from PUT response, implements `writeText()` with MKCOL
+- Created `src/sync/SyncLogger.ts` — Dual logging: local (`sync.log`) + remote (`sync.log`) via `StorageAdapter.writeText()`
+- Rewrote `src/modals/SyncProgressModal.ts` — Terminal-style UI: progress bar, per-session log, elapsed time, session titles
+- Modified `src/main.ts` — Integrated `SyncLogger`, new modal flow with plan computation, cancel wiring
+- Modified `memory-bank/tasks/T42.md` — Updated with ETag, progress modal, sync logs, cancel support
+- Commits: `be3c3bb` → `29ad150` → `deff496`
+
+---
+
+*Last Updated: 2026-08-16 22:29 UTC*
+
+#### 22:29 UTC - T42: Phase 2 Complete — WebDAV Backend, Settings UI, Integration
+- Modified `src/sync/WebDAVStorageAdapter.ts` — Created PROPFIND, GET, PUT, MKCOL, DELETE via `requestUrl()` for Electron sandbox compatibility
+- Modified `src/settings.ts` — Added RemoteStorageConfig, WebDAVStorageConfig, S3StorageConfig, StorageBackendType
+- Created `src/settings-sections/remoteStorageSettings.ts` — Full settings UI with Obsidian native components (Toggle, Dropdown, Setting)
+- Modified `src/views/SettingsTab.ts` — Wired "Remote Storage" into nav and render pipeline
+- Fixed missing import — added `renderRemoteStorageSection` import
+- Fixed checkbox rendering — replaced raw `<input>` with Obsidian `ToggleComponent`
+- Fixed childNodes API — rewrote as vanilla `createEl` calls
+- Fixed Web Crypto types — cast `Uint8Array` to `BufferSource`
+- Fixed null safety — added non-null option for `CryptoKey`
+- Fixed missing salt — added to `EncryptSession` payload
+- Fixed missing size — added `size?: number` to `SyncSessionMeta`
+- Fixed 'Fetch' failed — switched from `fetch()` to `requestUrl()`
+- Fixed passphrase required — made optional with 'Encrypt Data' toggle
+- Modified `memory-bank/tasks/T42.md` — Marked Phase 1 & 2 complete, added fixes and "not wired yet" checklist
+- Modified `memory-bank/activeContext.md` — Updated T42 entry with full Phase 2 details
+- Created `memory-bank/sessions/2026-08-16-evening.md` — Session log for T42 Phase 2 completion
+- **Build**: TypeScript clean, 236/236 tests pass
+- **Commits**: `ac24ced` → `b9a4c949` → `31d9158` → `7ab9614` → `e96b703`
+
+*Last Updated: 2026-08-16 19:05 IST*
+
+#### 19:05 IST - T45, T13a: PDF extraction and tool context fix
+- Created `memory-bank/tasks/T45.md` - PDF Text Extraction Tool task record.
+- Created `memory-bank/tasks/T13a.md` - Tool Call Context Persistence Bug Fix task record.
+- Created `memory-bank/implementation-details/pdf-text-extraction.md` - Full technical doc for PDF extraction feature.
+- Modified `memory-bank/implementation-details/agentic-tool-calling.md` - Added Tool Call Context Persistence Bug Fix section.
+- Modified `memory-bank/tasks.md` - Added T45 and T13a to Completed Tasks; added task relationships.
+- Modified `memory-bank/activeContext.md` - Recorded T45 and T13a completion.
+- Modified `memory-bank/progress.md` - Recorded T45 and T13a implementation details.
+- Modified `memory-bank/session_cache.md` - Updated session handoff with T45 and T13a.
+
 *Last Updated: 2026-08-14 16:42:00 IST*
 
 #### 21:28:00 IST - T8: README branding, version bump, security audit, submission prep
