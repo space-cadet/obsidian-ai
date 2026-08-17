@@ -600,8 +600,12 @@ export default class ObsidianAIPlugin extends Plugin {
 		const startTime = Date.now();
 		const syncLogger = new SyncLogger(this.app, this.manifest.id);
 
-		// Create modal early — we'll update the count after computing the plan
-		const modal = new SyncProgressModal(this.app, 0);
+		// Create modal with cancel handler wired to sync engine
+		const modal = new SyncProgressModal(this.app, 0, {
+			onCancel: () => {
+				this.syncEngine?.cancel();
+			},
+		});
 		modal.open();
 
 		// First, compute the plan to know total count

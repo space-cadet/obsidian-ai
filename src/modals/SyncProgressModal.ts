@@ -106,7 +106,9 @@ export class SyncProgressModal extends Modal {
 		this.cancelBtn = this.btnRow.createEl("button", { text: "Cancel" });
 		this.cancelBtn.addEventListener("click", () => {
 			this.onCancel?.();
-			this.close();
+			// Don't close immediately — let sync finish current session, then it will stop
+			this.cancelBtn.setText("Cancelling...");
+			(this.cancelBtn as HTMLButtonElement).disabled = true;
 		});
 
 		this.backgroundBtn = this.btnRow.createEl("button", { text: "Background" });

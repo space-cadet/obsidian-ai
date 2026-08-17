@@ -36,6 +36,7 @@ export class SyncEngine {
 	private conflictStrategy: ConflictStrategy;
 	private logger?: { log(level: string, msg: string): void };
 	private progress?: (event: { type: string; id: string; direction?: "upload" | "download"; status: "start" | "done" | "error"; error?: string }) => void;
+	private _cancelled = false;
 
 	constructor(config: SyncEngineConfig) {
 		this.adapter = config.adapter;
@@ -49,6 +50,22 @@ export class SyncEngine {
 
 	get currentState(): SyncState {
 		return this.state;
+	}
+
+	/** Request cancellation of the current sync. Checked between sessions. */
+	cancel(): void {
+		this._cancelled = true;
+		this.log("info", "SyncEngine: cancellation requested");
+	}
+
+	/** Check if cancellation was requested. */
+	get isCancelled(): boolean {
+		return this._cancelled;
+	}
+
+	/** Reset cancellation flag. Call before starting a new sync. */
+	resetCancellation(): void {
+		this._cancelled = false;
 	}
 
 	/** Initialize adapter and derive encryption key. */
@@ -74,6 +91,7 @@ export class SyncEngine {
 		}
 
 		this.state = "syncing";
+		this._cancelled = false;
 		this.log("info", "SyncEngine: starting sync...");
 
 		const errors: string[] = [];
@@ -83,6 +101,11 @@ export class SyncEngine {
 
 			// Upload local changes
 			for (const session of plan.upload) {
+				if (this._cancelled) {
+					this.log("warn", "SyncEngine: cancelled during upload");
+					errors.push("Cancelled by user");
+					break;
+				}
 				try {
 					await this.uploadSession(session);
 				} catch (err: any) {
@@ -92,26 +115,40 @@ export class SyncEngine {
 				}
 			}
 
-			// Download remote changes
-			for (const meta of plan.download) {
-				try {
-					await this.downloadSession(meta);
-				} catch (err: any) {
-					const msg = `Download failed for ${meta.id}: ${err.message}`;
-					this.log("error", msg);
-					errors.push(msg);
+			// Download remote changes (skip if cancelled)
+			if (!this._cancelled) {
+				for (const meta of plan.download) {
+					if (this._cancelled) {
+						this.log("warn", "SyncEngine: cancelled during download");
+						errors.push("Cancelled by user");
+						break;
+					}
+					try {
+						await this.downloadSession(meta);
+					} catch (err: any) {
+						const msg = `Download failed for ${meta.id}: ${err.message}`;
+						this.log("error", msg);
+						errors.push(msg);
+					}
 				}
 			}
 
-			// Handle conflicts
-			for (const conflict of plan.conflicts) {
-				try {
-					await this.resolveConflict(conflict.local, conflict.remote);
-				} catch (err: any) {
-					const msg = `Conflict resolution failed for ${conflict.local.id}: ${err.message}`;
-					this.log("error", msg);
-					errors.push(msg);
-					await this.cache.markConflict(conflict.local.id);
+			// Handle conflicts (skip if cancelled)
+			if (!this._cancelled) {
+				for (const conflict of plan.conflicts) {
+					if (this._cancelled) {
+						this.log("warn", "SyncEngine: cancelled during conflict resolution");
+						errors.push("Cancelled by user");
+						break;
+					}
+					try {
+						await this.resolveConflict(conflict.local, conflict.remote);
+					} catch (err: any) {
+						const msg = `Conflict resolution failed for ${conflict.local.id}: ${err.message}`;
+						this.log("error", msg);
+						errors.push(msg);
+						await this.cache.markConflict(conflict.local.id);
+					}
 				}
 			}
 
