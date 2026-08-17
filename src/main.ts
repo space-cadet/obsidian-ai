@@ -546,10 +546,37 @@ export default class ObsidianAIPlugin extends Plugin {
 		this.logger.flushNow();
 	}
 
-	/** Initialize SyncEngine for remote storage sync */
+	private _lastSyncConfigHash: string = "";
+
+	/** Initialize SyncEngine for remote storage sync. Recreates if settings changed. */
 	private async _initSyncEngine(): Promise<void> {
 		const rs = this.settings.remoteStorage;
-		if (!rs.enabled || rs.backend === "none") return;
+		if (!rs.enabled || rs.backend === "none") {
+			this.syncEngine = null;
+			return;
+		}
+
+		// Build a config hash to detect changes
+		const configHash = JSON.stringify({
+			backend: rs.backend,
+			url: rs.webdav?.url,
+			prefix: rs.webdav?.prefix,
+			username: rs.webdav?.username,
+			passphrase: rs.passphrase,
+			conflictStrategy: rs.conflictStrategy,
+		});
+
+		// Skip re-init if config unchanged and engine exists
+		if (this.syncEngine && configHash === this._lastSyncConfigHash) {
+			return;
+		}
+
+		this._lastSyncConfigHash = configHash;
+
+		// Dispose old engine if exists
+		if (this.syncEngine) {
+			this.logger?.log("info", "SyncEngine: reconfiguring with new settings");
+		}
 
 		try {
 			const adapter = new WebDAVStorageAdapter();
@@ -569,20 +596,16 @@ export default class ObsidianAIPlugin extends Plugin {
 				},
 				onSessionDownloaded: async (session) => {
 					// Merge downloaded session into app storage
-					try {
-						const chatData = await this.loadChatData();
-						const sessions = chatData.sessions || [];
-						const idx = sessions.findIndex((s) => s.id === session.id);
-						if (idx >= 0) {
-							sessions[idx] = session;
-						} else {
-							sessions.push(session);
-						}
-						await this.saveChatData({ ...chatData, sessions });
-						this.logger?.log("info", `[SyncEngine] Downloaded session ${session.id} merged into storage`);
-					} catch (err: any) {
-						this.logger?.log("error", `[SyncEngine] Failed to persist downloaded session: ${err.message}`);
+					const chatData = await this.loadChatData();
+					const sessions = chatData.sessions || [];
+					const idx = sessions.findIndex((s) => s.id === session.id);
+					if (idx >= 0) {
+						sessions[idx] = session;
+					} else {
+						sessions.push(session);
 					}
+					await this.saveChatData({ ...chatData, sessions });
+					this.logger?.log("info", `[SyncEngine] Downloaded session ${session.id} merged into storage`);
 				},
 			});
 
@@ -599,6 +622,7 @@ export default class ObsidianAIPlugin extends Plugin {
 		} catch (err: any) {
 			this.logger?.log("error", `SyncEngine init failed: ${err.message}`);
 			console.error("[ObsidianAI] SyncEngine init failed:", err);
+			this.syncEngine = null;
 		}
 	}
 
@@ -820,7 +844,9 @@ export default class ObsidianAIPlugin extends Plugin {
 		}
 
 		const existing = (await this.loadData()) ?? {};
-		let payload: Record<string, any> = { ...existing, ...this.settings };
+		// Deep-clone settings to avoid mutating live config when stripping secrets
+		let payload: Record<string, any> = JSON.parse(JSON.stringify(this.settings));
+		payload = { ...existing, ...payload };
 
 		// Strip password from persisted data.json
 		if (payload.remoteStorage?.webdav?.password) {

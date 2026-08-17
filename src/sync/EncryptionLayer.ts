@@ -101,11 +101,20 @@ export class EncryptionLayer {
 	 */
 	async encrypt(plaintext: string): Promise<EncryptedPayload> {
 		// Plaintext mode: skip encryption
-		if (!this.encryptionEnabled || !this.key) {
+		if (!this.encryptionEnabled) {
 			return {
 				ciphertext: plaintext,
 				unencrypted: true,
 			};
+		}
+
+		// Derive key on first encrypt if not already available
+		if (!this.key) {
+			await this.deriveKey(this.passphrase);
+		}
+
+		if (!this.key) {
+			throw new Error("Encryption key derivation failed");
 		}
 
 		const iv = crypto.getRandomValues(new Uint8Array(12));

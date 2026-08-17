@@ -303,13 +303,13 @@ export class SyncEngine {
 		};
 
 		await this.cache.putSession(cached);
-		await this.cache.markSynced(meta.id, meta.modifiedAt, meta.etag);
 
-		// Persist to app storage so the session appears in the chat UI
+		// Persist to app storage BEFORE marking synced so failures are retryable
 		if (this.onSessionDownloaded) {
 			await this.onSessionDownloaded(cached);
 		}
 
+		await this.cache.markSynced(meta.id, meta.modifiedAt, meta.etag);
 		this.progress?.({ type: "session", id: meta.id, direction: "download", status: "done" });
 		this.log("debug", `SyncEngine: downloaded ${meta.id}`);
 	}
@@ -352,8 +352,13 @@ export class SyncEngine {
 						updatedAt: Date.now(),
 					};
 					await this.cache.putSession(newSession);
+
+					// Persist conflict copy to app storage
+					if (this.onSessionDownloaded) {
+						await this.onSessionDownloaded(newSession);
+					}
+
 					await this.cache.markSynced(newSession.id, remote.modifiedAt, remote.etag);
-					await this.cache.markSynced(newSession.id, remote.modifiedAt);
 				}
 				// Keep local as-is (re-mark as pending so it uploads)
 				await this.cache.putSession(local);
