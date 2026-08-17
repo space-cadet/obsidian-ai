@@ -1,16 +1,24 @@
 import type { ChatSession } from "../types";
 import type { CachedSession } from "./StorageAdapter";
 
-const DB_NAME = "obsidian-ai-sync";
 const DB_VERSION = 1;
 
 /**
  * Offline-first local cache using IndexedDB.
  * Stores session data with sync status metadata.
+ * DB name is scoped to the remote destination to avoid stale sync state
+ * when the user changes servers.
  */
 export class LocalCache {
 	private db: IDBDatabase | null = null;
 	private initPromise: Promise<void> | null = null;
+	private dbName: string;
+
+	constructor(namespace = "default") {
+		// Sanitize namespace for use in DB name
+		const safe = namespace.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 50);
+		this.dbName = `obsidian-ai-sync-${safe}`;
+	}
 
 	/** Initialize the IndexedDB connection. Idempotent. */
 	async init(): Promise<void> {
@@ -23,7 +31,7 @@ export class LocalCache {
 
 	private doInit(): Promise<void> {
 		return new Promise((resolve, reject) => {
-			const request = indexedDB.open(DB_NAME, DB_VERSION);
+			const request = indexedDB.open(this.dbName, DB_VERSION);
 
 			request.onerror = () => reject(request.error);
 			request.onsuccess = () => {

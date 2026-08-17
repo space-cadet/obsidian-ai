@@ -150,7 +150,13 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		if (!this.config) {
 			throw new Error("WebDAV adapter not initialized");
 		}
-		return "Basic " + btoa(this.config.username + ":" + this.config.password);
+		// UTF-8 safe base64 encoding for non-Latin-1 credentials
+		const encoder = new TextEncoder();
+		const bytes = encoder.encode(this.config.username + ":" + this.config.password);
+		const base64 = Array.from(bytes)
+			.map((b) => String.fromCharCode(b))
+			.join("");
+		return "Basic " + btoa(base64);
 	}
 
 	private async request(

@@ -97,6 +97,7 @@ export class SyncEngine {
 		this.log("info", "SyncEngine: starting sync...");
 
 		const errors: string[] = [];
+		let uploaded = 0, downloaded = 0, conflicts = 0;
 
 		try {
 			const plan = await this.computeSyncPlan();
@@ -110,6 +111,7 @@ export class SyncEngine {
 				}
 				try {
 					await this.uploadSession(session);
+					uploaded++;
 				} catch (err: any) {
 					const msg = `Upload failed for ${session.id}: ${err.message}`;
 					this.log("error", msg);
@@ -127,6 +129,7 @@ export class SyncEngine {
 					}
 					try {
 						await this.downloadSession(meta);
+						downloaded++;
 					} catch (err: any) {
 						const msg = `Download failed for ${meta.id}: ${err.message}`;
 						this.log("error", msg);
@@ -145,6 +148,7 @@ export class SyncEngine {
 					}
 					try {
 						await this.resolveConflict(conflict.local, conflict.remote);
+						conflicts++;
 					} catch (err: any) {
 						const msg = `Conflict resolution failed for ${conflict.local.id}: ${err.message}`;
 						this.log("error", msg);
@@ -161,13 +165,13 @@ export class SyncEngine {
 			this.state = errors.length > 0 ? "error" : "idle";
 			this.log(
 				"info",
-				`SyncEngine: sync complete. ↑${plan.upload.length} ↓${plan.download.length} ⚡${plan.conflicts.length} ⊘${plan.skipped}`,
+				`SyncEngine: sync complete. ↑${uploaded} ↓${downloaded} ⚡${conflicts} ⊘${plan.skipped}`,
 			);
 
 			return {
-				uploaded: plan.upload.length,
-				downloaded: plan.download.length,
-				conflicts: plan.conflicts.length,
+				uploaded,
+				downloaded,
+				conflicts,
 				skipped: plan.skipped,
 				errors,
 			};

@@ -580,7 +580,8 @@ export default class ObsidianAIPlugin extends Plugin {
 
 		try {
 			const adapter = new WebDAVStorageAdapter();
-			const cache = new LocalCache();
+			const cacheNamespace = rs.webdav ? `${rs.webdav.url}:${rs.webdav.prefix || ""}` : "default";
+			const cache = new LocalCache(cacheNamespace);
 			const crypto = new EncryptionLayer();
 
 			this.syncEngine = new SyncEngine({
@@ -834,13 +835,15 @@ export default class ObsidianAIPlugin extends Plugin {
 			return;
 		}
 
-		// Save password to localStorage and strip from payload
+		// Save password to localStorage (or clear if empty)
 		const webdavPassword = this.settings.remoteStorage.webdav?.password;
 		if (webdavPassword) {
 			this.app.saveLocalStorage(
 				ObsidianAIPlugin.LS_WEBDAV_PASSWORD,
 				webdavPassword,
 			);
+		} else {
+			this.app.removeLocalStorage(ObsidianAIPlugin.LS_WEBDAV_PASSWORD);
 		}
 
 		const existing = (await this.loadData()) ?? {};
