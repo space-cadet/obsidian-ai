@@ -1,5 +1,15 @@
 # Implementation Progress
-*Last Updated: 2026-08-16 19:05 IST*
+*Last Updated: 2026-08-17 01:04 UTC*
+
+### 2026-08-17 — T42: Remote Chat Storage & Sync — ETag, Progress Modal, Logs, Cancel
+
+- **ETag comparison**: Replaced timestamp-based sync with ETag comparison to eliminate false re-downloads caused by server/client clock skew. `StorageAdapter.putSession()` returns `{ etag?: string; modifiedAt?: number }`, `LocalCache.markSynced()` stores `_etag`, `SyncEngine.computeSyncPlan()` compares ETags with timestamp fallback.
+- **Terminal-style progress modal**: Rewrote `SyncProgressModal` with progress bar, per-session log lines with titles, elapsed time counter, and status icons. Shows upload/download/conflict operations in a scrollable terminal-like view.
+- **Sync log files**: Created `SyncLogger` class that writes every sync operation to both local file (`.obsidian/plugins/obsidian-ai/sync.log`) and remote (`obsidian-ai-sync/sync.log` via `StorageAdapter.writeText()`). Logs include timestamp, device ID, action, session ID/title, and result.
+- **Cancel support**: Added `_cancelled` flag to `SyncEngine` with `cancel()` method. Checked between sessions (not mid-upload) to avoid half-written files. Modal cancel button calls `syncEngine.cancel()` and shows "Cancelling..." state.
+- **Files modified**: `src/sync/StorageAdapter.ts`, `src/sync/LocalCache.ts`, `src/sync/SyncEngine.ts`, `src/sync/WebDAVStorageAdapter.ts`, `src/sync/SyncLogger.ts` (new), `src/modals/SyncProgressModal.ts`, `src/main.ts`
+- **Commits**: `be3c3bb` → `29ad150` → `deff496`
+- **Build**: TypeScript clean, production build passes
 
 ### 2026-08-16 — T45: PDF Text Extraction Tool (COMPLETE)
 

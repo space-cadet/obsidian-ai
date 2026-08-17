@@ -1,5 +1,20 @@
 # Edit History
 
+*Last Updated: 2026-08-17 01:04 UTC*
+
+#### 01:04 UTC - T42: ETag comparison, terminal-style progress modal, sync log files, cancel support
+- Modified `src/sync/StorageAdapter.ts` — Added `_etag` to `CachedSession`, added `writeText()` method to interface
+- Modified `src/sync/LocalCache.ts` — `markSynced()` now accepts and stores ETag
+- Modified `src/sync/SyncEngine.ts` — ETag comparison instead of timestamps, public `computeSyncPlan()`, `_cancelled` flag with `cancel()` method
+- Modified `src/sync/WebDAVStorageAdapter.ts` — Extracts ETag from PUT response, implements `writeText()` with MKCOL
+- Created `src/sync/SyncLogger.ts` — Dual logging: local (`sync.log`) + remote (`sync.log`) via `StorageAdapter.writeText()`
+- Rewrote `src/modals/SyncProgressModal.ts` — Terminal-style UI: progress bar, per-session log, elapsed time, session titles
+- Modified `src/main.ts` — Integrated `SyncLogger`, new modal flow with plan computation, cancel wiring
+- Modified `memory-bank/tasks/T42.md` — Updated with ETag, progress modal, sync logs, cancel support
+- Commits: `be3c3bb` → `29ad150` → `deff496`
+
+---
+
 *Last Updated: 2026-08-16 22:29 UTC*
 
 #### 22:29 UTC - T42: Phase 2 Complete — WebDAV Backend, Settings UI, Integration

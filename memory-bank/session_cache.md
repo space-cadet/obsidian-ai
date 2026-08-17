@@ -1,64 +1,77 @@
 # Session Cache
 
-*Session: 2026-08-16 20:56–22:29 UTC*
+*Session: 2026-08-17 00:16–01:04 UTC*
 *Branch: `t42-remote-storage`*
 *Models: kimi/k3 (main), kimi/k2.7-code (subagent)*
 
 ## Summary
-T42 Phase 2 completed. WebDAV backend, settings UI, and integration wired. Build passes, all 236 tests pass. 5 commits pushed.
+T42 sync polish: ETag comparison, terminal-style progress modal, sync log files (local + remote), and cancel support. 3 commits pushed.
 
-## Phase 1 Recap (from earlier session)
-- `src/sync/StorageAdapter.ts` — interface, EncryptedSession, RemoteSessionMeta, SyncResult, SyncPlan types
-- `src/sync/LocalCache.ts` — IndexedDB cache with sync status (pending/synced/conflict)
-- `src/sync/EncryptionLayer.ts` — AES-256-GCM, PBKDF2 key derivation, checksum verification
-- `src/sync/SyncEngine.ts` — delta sync, 3 conflict strategies, state machine
+## Context
+Continued from 2026-08-16 session. Sync was working end-to-end but had issues: false re-downloads due to timestamp comparison, sparse progress display, no log files, cancel button didn't work.
 
-## Phase 2 Completed
+## Work Completed
 
-### Files Created/Modified
-- `src/sync/WebDAVStorageAdapter.ts` — PROPFIND, GET, PUT, MKCOL, DELETE via `requestUrl()`
-- `src/settings.ts` — added RemoteStorageConfig, WebDAVStorageConfig, S3StorageConfig, StorageBackendType
-- `src/settings-sections/remoteStorageSettings.ts` — full settings UI (Toggle, Dropdown, Setting)
-- `src/views/SettingsTab.ts` — wired "Remote Storage" into nav and render pipeline
+### 1. ETag Comparison (`be3c3bb`)
+- **Problem**: Sessions re-downloaded every sync due to server/client clock skew
+- **Fix**: Compare by ETag instead of `modifiedAt`
+- `StorageAdapter.putSession()` returns `{ etag?: string; modifiedAt?: number }`
+- `LocalCache.markSynced()` stores `_etag`
+- `SyncEngine.computeSyncPlan()` compares ETags, falls back to timestamp
 
-### Fixes Applied
-| Issue | Fix |
-|-------|-----|
-| Missing import | Added `renderRemoteStorageSection` import |
-| Checkbox rendering | Replaced raw `<input>` with Obsidian `ToggleComponent` |
-| childNodes API | Rewrote as vanilla `createEl` calls |
-| Web Crypto types | Cast `Uint8Array` to `BufferSource` |
-| Null safety | Added non-null option for `CryptoKey` |
-| Missing salt | Added to `EncryptSession` payload |
-| Missing size | Added `size?: number` to `SyncSessionMeta` |
-| 'Fetch' failed | Switched from `fetch()` to `requestUrl()` |
-| Passphrase required | Made optional with 'Encrypt Data' toggle |
+### 2. Terminal-Style Progress Modal (`29ad150`)
+- Rewrote `SyncProgressModal` with:
+  - Progress bar with count + percentage
+  - Per-session log lines with titles (not ID hashes)
+  - Status icons: `↑` upload, `↓` download, `⚡` conflict, `✓` done, `✗` error
+  - Elapsed time counter
+  - Background / Cancel / Done buttons
 
-### Build Status
+### 3. Sync Log Files (`29ad150`)
+- Created `SyncLogger` class:
+  - **Local log**: `.obsidian/plugins/obsidian-ai/sync.log`
+  - **Remote log**: `obsidian-ai-sync/sync.log` via `StorageAdapter.writeText()`
+- Added `writeText()` to `StorageAdapter` interface and `WebDAVStorageAdapter`
+- Logs every sync operation: timestamp, device ID, action, session ID/title, result
+
+### 4. Cancel Support (`deff496`)
+- Added `_cancelled` flag to `SyncEngine`
+- `cancel()` method sets flag
+- Checked between sessions (not mid-upload, to avoid half-written files)
+- Modal cancel button calls `syncEngine.cancel()`, shows "Cancelling..." state
+- Modal stays open to show partial results
+
+## Files Modified
+- `src/sync/StorageAdapter.ts` — `_etag` field, `writeText()` method
+- `src/sync/LocalCache.ts` — `markSynced()` stores ETag
+- `src/sync/SyncEngine.ts` — ETag comparison, public `computeSyncPlan()`, cancellation
+- `src/sync/WebDAVStorageAdapter.ts` — ETag extraction, `writeText()`
+- `src/sync/SyncLogger.ts` — new file
+- `src/modals/SyncProgressModal.ts` — rewritten with terminal UI
+- `src/main.ts` — integrated logger, new modal flow, cancel wiring
+
+## Build Status
 - TypeScript: clean
 - Tests: 236/236 pass
 - Committed and pushed to `t42-remote-storage`
 
-### What's Working
-- ✅ Settings UI renders correctly
-- ✅ WebDAV config form with test connection
-- ✅ Optional encryption (plaintext mode for testing)
-- ✅ Settings persist to plugin data
-
-### What's Not Wired Yet
-- ⚠️ "Sync Now" button is a placeholder
-- ⚠️ SyncEngine not initialized on plugin load
-- ⚠️ No auto-sync on session changes
-- ⚠️ No sync status badge in chat UI
+## What's Working Now
+- ✅ Full end-to-end sync with WebDAV (Nextcloud)
+- ✅ 96 sessions populated
+- ✅ ETag prevents false re-downloads
+- ✅ Terminal-style progress with session titles
+- ✅ Sync logs written locally and remotely
+- ✅ Cancel stops sync between sessions
 
 ## Next Steps
-- Wire SyncEngine into plugin lifecycle (init on load, run on session save)
-- Add sync status indicator to chat UI
-- End-to-end sync test
+- S3 backend
+- Conflict resolution UI
+- Sync status badge in chat UI
+- Auto-sync on session changes
 
 ## Memory Bank Updates
-- `memory-bank/tasks/T42.md` — Phase 1 & 2 marked complete
+- `memory-bank/tasks/T42.md` — Updated with ETag, progress modal, logs, cancel
 - `memory-bank/activeContext.md` — T42 entry updated
+- `memory-bank/progress.md` — Added 2026-08-17 entry
+- `memory-bank/edit_history.md` — Added session edit history
 - `memory-bank/session_cache.md` — this file
-- `memory-bank/sessions/2026-08-16-evening.md` — session log
-- `memory-bank/edit_history.md` — edit history updated

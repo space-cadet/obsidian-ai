@@ -2,19 +2,22 @@
 
 *Last Updated: 2026-08-17 02:27 IST*
 
-### 2026-08-16 — T42: Remote Chat Storage & Sync ✅ Phase 1 & 2 Complete
+### 2026-08-17 — T42: Remote Chat Storage & Sync ✅ Phase 2 Complete + ETag + Progress + Logs + Cancel
 
-- **Commits**: `ac24ced` → `b9a4c949` → `31d9158` → `7ab9614` → `e96b703`
+- **Commits**: `ac24ced` → ... → `e96b703` → `be3c3bb` → `29ad150` → `deff496`
 - **Phase 1 (Architecture)**: StorageAdapter interface, LocalCache (IndexedDB), EncryptionLayer (AES-256-GCM via PBKDF2), SyncEngine (delta sync + 3 conflict strategies + state machine)
-- **Phase 2 (WebDAV + Settings)**:
+- **Phase 2 (WebDAV + Settings + Polish)**:
   - `WebDAVStorageAdapter.ts` — PROPFIND, GET, PUT, MKCOL, DELETE using Obsidian's `requestUrl()` for Electron sandbox compatibility
   - Settings types: `RemoteStorageConfig`, `WebDAVStorageConfig`, `S3StorageConfig`, `StorageBackendType`
   - Settings UI: enable toggle, backend selector, passphrase, auto-sync, conflict strategy, WebDAV credentials, test connection button, manual sync button
   - Wired into `SettingsTab` navigation and render pipeline
+  - **ETag comparison** — replaced timestamp comparison to stop false re-downloads due to clock skew (`be3c3bb`)
+  - **Terminal-style progress modal** — progress bar, per-session log, elapsed time, session titles instead of ID hashes (`29ad150`)
+  - **Sync log files** — local (`sync.log`) + remote (`sync.log`) recording every operation (`29ad150`)
+  - **Cancel support** — `_cancelled` flag checked between sessions, finishes current then stops (`deff496`)
 - **Build**: TypeScript clean, all 236 tests pass
-- **What's Working**: Settings UI renders correctly; WebDAV config form with test connection; optional encryption (plaintext mode for testing); settings persist to plugin data
-- **What's Not Wired Yet**: "Sync Now" button is placeholder; SyncEngine not initialized on plugin load; no auto-sync on session changes; no sync status badge in chat UI
-- **Next**: Wire SyncEngine into ChatApp lifecycle (init on plugin load, auto-sync on session changes), sync status badge UI
+- **What's Working**: Full end-to-end sync with WebDAV (Nextcloud); 96 sessions populated; ETag prevents re-downloads; logs written locally and remotely; cancel stops sync between sessions
+- **What's Next**: S3 backend, conflict resolution UI, sync status badge in chat UI, auto-sync on session changes
 - **Task**: `memory-bank/tasks/T42.md` (updated)
 - **Design doc**: `memory-bank/implementation-details/remote-chat-storage.md`
 
