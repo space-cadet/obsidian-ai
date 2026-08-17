@@ -19,6 +19,7 @@ export interface SyncEngineConfig {
 	passphrase: string;
 	conflictStrategy?: ConflictStrategy;
 	logger?: { log(level: string, msg: string): void };
+	progress?: (event: { type: string; id: string; direction?: "upload" | "download"; status: "start" | "done" | "error"; error?: string }) => void;
 }
 
 /**
@@ -34,6 +35,7 @@ export class SyncEngine {
 	private passphrase: string;
 	private conflictStrategy: ConflictStrategy;
 	private logger?: { log(level: string, msg: string): void };
+	private progress?: (event: { type: string; id: string; direction?: "upload" | "download"; status: "start" | "done" | "error"; error?: string }) => void;
 
 	constructor(config: SyncEngineConfig) {
 		this.adapter = config.adapter;
@@ -42,6 +44,7 @@ export class SyncEngine {
 		this.passphrase = config.passphrase;
 		this.conflictStrategy = config.conflictStrategy ?? "last-write-wins";
 		this.logger = config.logger;
+		this.progress = config.progress;
 	}
 
 	get currentState(): SyncState {
@@ -196,6 +199,7 @@ export class SyncEngine {
 
 	/** Upload a single session to remote storage. */
 	private async uploadSession(session: ChatSession): Promise<void> {
+		this.progress?.({ type: "session", id: session.id, direction: "upload", status: "start" });
 		const plaintext = JSON.stringify(session);
 		const sessionChecksum = await checksum(plaintext);
 		const encrypted = await this.crypto.encrypt(plaintext);
@@ -216,13 +220,16 @@ export class SyncEngine {
 
 		await this.adapter.putSession(payload);
 		await this.cache.markSynced(session.id);
+		this.progress?.({ type: "session", id: session.id, direction: "upload", status: "done" });
 		this.log("debug", `SyncEngine: uploaded ${session.id}`);
 	}
 
 	/** Download and decrypt a single session from remote storage. */
 	private async downloadSession(meta: RemoteSessionMeta): Promise<void> {
+		this.progress?.({ type: "session", id: meta.id, direction: "download", status: "start" });
 		const encrypted = await this.adapter.getSession(meta.id);
 		if (!encrypted) {
+			this.progress?.({ type: "session", id: meta.id, direction: "download", status: "error", error: "Disappeared during sync" });
 			this.log("warn", `SyncEngine: remote session ${meta.id} disappeared during sync`);
 			return;
 		}
@@ -241,6 +248,7 @@ export class SyncEngine {
 		// Verify checksum
 		const expectedChecksum = await checksum(plaintext);
 		if (expectedChecksum !== encrypted.checksum) {
+			this.progress?.({ type: "session", id: meta.id, direction: "download", status: "error", error: "Checksum mismatch" });
 			throw new Error(`Checksum mismatch for session ${meta.id}`);
 		}
 
@@ -252,6 +260,7 @@ export class SyncEngine {
 
 		await this.cache.putSession(cached);
 		await this.cache.markSynced(meta.id);
+		this.progress?.({ type: "session", id: meta.id, direction: "download", status: "done" });
 		this.log("debug", `SyncEngine: downloaded ${meta.id}`);
 	}
 
@@ -306,12 +315,30 @@ export class SyncEngine {
 		}
 	}
 
-	/** Populate the local cache with sessions from Obsidian's storage. */
+	/** Populate the local cache with sessions from Obsidian's storage.
+	 *  Preserves synced status for sessions that haven't changed. */
 	async populateCache(sessions: ChatSession[]): Promise<void> {
 		for (const session of sessions) {
+			// Check if already cached and synced — if so, preserve sync status
+			const existing = await this.cache.getSession(session.id);
+			if (
+				existing &&
+				existing._syncStatus === "synced" &&
+				existing.updatedAt === session.updatedAt
+			) {
+				// Unchanged synced session — skip
+				continue;
+			}
 			await this.cache.putSession(session);
 		}
 		this.log("info", `SyncEngine: cache populated with ${sessions.length} sessions`);
+	}
+
+	/** Set a progress callback for per-session sync events. */
+	setProgressHandler(
+		handler: (event: { type: string; id: string; direction?: "upload" | "download"; status: "start" | "done" | "error"; error?: string }) => void,
+	): void {
+		this.progress = handler;
 	}
 
 	/** Disconnect adapter and clear crypto key. */

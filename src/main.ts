@@ -598,6 +598,13 @@ export default class ObsidianAIPlugin extends Plugin {
 		const modal = new SyncProgressModal(this.app);
 		modal.open();
 
+		// Wire progress callback into sync engine
+		this.syncEngine?.setProgressHandler((event) => {
+			const icon = event.direction === "upload" ? "↑" : event.direction === "download" ? "↓" : "•";
+			const status = event.status === "start" ? "…" : event.status === "done" ? "✓" : "✗";
+			modal.addLog(`${icon} ${event.id.slice(0, 8)}… ${status}`);
+		});
+
 		try {
 			// Populate local cache from Obsidian's actual chat storage before syncing
 			modal.updateProgress("Reading local sessions...");

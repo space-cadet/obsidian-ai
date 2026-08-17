@@ -6,6 +6,8 @@ export class SyncProgressModal extends Modal {
 	private resultEl: HTMLElement | null = null;
 	private spinnerEl: HTMLElement | null = null;
 	private countsEl: HTMLElement | null = null;
+	private logEl: HTMLElement | null = null;
+	private logContainer: HTMLElement | null = null;
 	private cancelBtn: HTMLElement | null = null;
 	private backgroundBtn: HTMLElement | null = null;
 	private doneBtn: HTMLElement | null = null;
@@ -29,8 +31,22 @@ export class SyncProgressModal extends Modal {
 		// Counts
 		this.countsEl = contentEl.createDiv("sync-counts");
 		this.countsEl.setText("Starting...");
-		this.countsEl.style.marginTop = "1em";
+		this.countsEl.style.marginTop = "0.5em";
 		this.countsEl.style.color = "var(--text-muted)";
+
+		// Scrolling log
+		this.logContainer = contentEl.createDiv("sync-log-container");
+		this.logContainer.style.marginTop = "1em";
+		this.logContainer.style.maxHeight = "200px";
+		this.logContainer.style.overflowY = "auto";
+		this.logContainer.style.border = "1px solid var(--background-modifier-border)";
+		this.logContainer.style.borderRadius = "4px";
+		this.logContainer.style.padding = "8px";
+		this.logContainer.style.fontSize = "0.85em";
+		this.logContainer.style.fontFamily = "var(--font-monospace)";
+		this.logContainer.style.backgroundColor = "var(--background-primary-alt)";
+
+		this.logEl = this.logContainer.createDiv("sync-log");
 
 		// Result area (hidden until done)
 		this.resultEl = contentEl.createDiv("sync-result");
@@ -65,6 +81,19 @@ export class SyncProgressModal extends Modal {
 	updateProgress(label: string) {
 		if (this.countsEl) {
 			this.countsEl.setText(label);
+		}
+	}
+
+	addLog(line: string) {
+		if (!this.logEl) return;
+		const entry = this.logEl.createDiv("sync-log-entry");
+		entry.style.marginBottom = "2px";
+		entry.style.whiteSpace = "pre-wrap";
+		entry.style.wordBreak = "break-all";
+		entry.setText(line);
+		// Auto-scroll to bottom
+		if (this.logContainer) {
+			this.logContainer.scrollTop = this.logContainer.scrollHeight;
 		}
 	}
 
