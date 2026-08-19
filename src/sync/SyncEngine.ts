@@ -8,6 +8,8 @@ import type {
 } from "./StorageAdapter";
 import { LocalCache } from "./LocalCache";
 import { EncryptionLayer, checksum } from "./EncryptionLayer";
+import { SyncIndexManager } from "./SyncIndexManager";
+import type { SyncIndex } from "./SyncIndex";
 
 export type SyncState = "idle" | "syncing" | "error" | "locked";
 export type ConflictStrategy = "last-write-wins" | "keep-both" | "manual";
@@ -28,6 +30,8 @@ export interface SyncEngineConfig {
 	}) => void;
 	/** Called when a session is downloaded from remote. Implementor should save to app storage. */
 	onSessionDownloaded?: (session: ChatSession) => Promise<void>;
+	/** Optional sync index manager for skipping unchanged sessions (T42a). */
+	indexManager?: SyncIndexManager;
 }
 
 /**
@@ -52,6 +56,8 @@ export class SyncEngine {
 	}) => void;
 	private onSessionDownloaded?: (session: ChatSession) => Promise<void>;
 	private _cancelled = false;
+	private indexManager?: SyncIndexManager;
+	private serverConfig?: { url: string; username: string; prefix?: string };
 
 	constructor(config: SyncEngineConfig) {
 		this.adapter = config.adapter;
@@ -62,6 +68,7 @@ export class SyncEngine {
 		this.logger = config.logger;
 		this.progress = config.progress;
 		this.onSessionDownloaded = config.onSessionDownloaded;
+		this.indexManager = config.indexManager;
 	}
 
 	get currentState(): SyncState {
@@ -89,6 +96,17 @@ export class SyncEngine {
 		this.log("info", "SyncEngine: initializing...");
 		await this.adapter.initialize(config);
 		await this.cache.init();
+
+		// Store normalized server config for sync index signature (T42a)
+		const cfg = config as Record<string, unknown>;
+		if (cfg.url && cfg.username) {
+			this.serverConfig = {
+				url: String(cfg.url),
+				username: String(cfg.username),
+				prefix: cfg.prefix ? String(cfg.prefix) : undefined,
+			};
+		}
+
 		// Key is NOT derived here — deriveKey uses payload salt on decrypt
 		if (this.passphrase) {
 			this.log(
@@ -125,8 +143,28 @@ export class SyncEngine {
 			downloaded = 0,
 			conflicts = 0;
 
+		// T42a: Load sync index
+		let index: SyncIndex | null = null;
+		let serverSignature = "";
+		if (this.indexManager && this.serverConfig) {
+			serverSignature = SyncIndexManager.makeServerSignature(this.serverConfig);
+			index = await this.indexManager.load(serverSignature);
+			if (index) {
+				this.log(
+					"info",
+					`SyncEngine: loaded sync index (${Object.keys(index.entries).length} entries)`,
+				);
+			} else {
+				this.log("info", "SyncEngine: no valid sync index, starting fresh");
+			}
+		}
+
+		// Track successfully synced sessions for index update
+		const syncedLocals: ChatSession[] = [];
+		const syncedRemotes: RemoteSessionMeta[] = [];
+
 		try {
-			const plan = await this.computeSyncPlan();
+			const plan = await this.computeSyncPlan(index);
 
 			// Upload local changes
 			for (const session of plan.upload) {
@@ -136,8 +174,10 @@ export class SyncEngine {
 					break;
 				}
 				try {
-					await this.uploadSession(session);
+					const remoteMeta = await this.uploadSession(session);
 					uploaded++;
+					syncedLocals.push(session);
+					if (remoteMeta) syncedRemotes.push(remoteMeta);
 				} catch (err: any) {
 					const msg = `Upload failed for ${session.id}: ${err.message}`;
 					this.log("error", msg);
@@ -157,8 +197,10 @@ export class SyncEngine {
 						break;
 					}
 					try {
-						await this.downloadSession(meta);
+						const localSession = await this.downloadSession(meta);
 						downloaded++;
+						if (localSession) syncedLocals.push(localSession);
+						syncedRemotes.push(meta);
 					} catch (err: any) {
 						const msg = `Download failed for ${meta.id}: ${err.message}`;
 						this.log("error", msg);
@@ -179,11 +221,15 @@ export class SyncEngine {
 						break;
 					}
 					try {
-						await this.resolveConflict(
+						const resolved = await this.resolveConflict(
 							conflict.local,
 							conflict.remote,
 						);
 						conflicts++;
+						if (resolved) {
+							syncedLocals.push(resolved.local);
+							syncedRemotes.push(resolved.remote);
+						}
 					} catch (err: any) {
 						const msg = `Conflict resolution failed for ${conflict.local.id}: ${err.message}`;
 						this.log("error", msg);
@@ -196,6 +242,25 @@ export class SyncEngine {
 			const lastSyncTime = Date.now();
 			await this.adapter.setLastSyncTime(lastSyncTime);
 			await this.cache.setLastSyncTime(lastSyncTime);
+
+			// T42a: Update sync index after successful operations
+			if (!this._cancelled && this.indexManager && serverSignature) {
+				try {
+					const updatedIndex = await this.indexManager.patchIndex(
+						index,
+						syncedLocals,
+						syncedRemotes,
+						serverSignature,
+					);
+					await this.indexManager.save(updatedIndex);
+					this.log(
+						"info",
+						`SyncEngine: updated sync index (${Object.keys(updatedIndex.entries).length} entries)`,
+					);
+				} catch (idxErr: any) {
+					this.log("warn", `SyncEngine: failed to update sync index: ${idxErr.message}`);
+				}
+			}
 
 			this.state = errors.length > 0 ? "error" : "idle";
 			this.log(
@@ -225,8 +290,9 @@ export class SyncEngine {
 		}
 	}
 
-	/** Compute the sync plan by comparing local and remote state. */
-	async computeSyncPlan(): Promise<SyncPlan> {
+	/** Compute the sync plan by comparing local and remote state.
+	 *  @param index Optional sync index for skipping unchanged sessions (T42a). */
+	async computeSyncPlan(index?: SyncIndex | null): Promise<SyncPlan> {
 		const localSessions = await this.cache.getAllSessions();
 		const remoteMetas = await this.adapter.listSessions();
 
@@ -256,31 +322,43 @@ export class SyncEngine {
 					// For now, skip — user can manually delete if desired
 					skipped++;
 				}
-			} else if (local._syncStatus === "synced") {
-				// Both exist, local unchanged since last sync
-				// Use ETag comparison if available (most reliable), fallback to timestamp
-				const etagChanged =
-					local._etag && remote.etag && local._etag !== remote.etag;
-				const timestampChanged =
-					remote.modifiedAt > (local._remoteModifiedAt ?? 0);
-				if (etagChanged || (!local._etag && timestampChanged)) {
-					// Remote changed: download
-					download.push(remote);
-				} else {
-					skipped++;
-				}
 			} else {
-				// Local has pending changes
-				const etagChanged =
-					local._etag && remote.etag && local._etag !== remote.etag;
-				const timestampChanged =
-					remote.modifiedAt > (local._remoteModifiedAt ?? 0);
-				if (etagChanged || (!local._etag && timestampChanged)) {
-					// Both changed: conflict
-					conflicts.push({ local, remote });
+				// T42a: Check sync index first — skip if both sides unchanged since last sync
+				if (
+					this.indexManager &&
+					index &&
+					this.indexManager.isUnchanged(local, remote, index)
+				) {
+					skipped++;
+					continue;
+				}
+
+				if (local._syncStatus === "synced") {
+					// Both exist, local unchanged since last sync
+					// Use ETag comparison if available (most reliable), fallback to timestamp
+					const etagChanged =
+						local._etag && remote.etag && local._etag !== remote.etag;
+					const timestampChanged =
+						remote.modifiedAt > (local._remoteModifiedAt ?? 0);
+					if (etagChanged || (!local._etag && timestampChanged)) {
+						// Remote changed: download
+						download.push(remote);
+					} else {
+						skipped++;
+					}
 				} else {
-					// Local newer: upload
-					upload.push(local);
+					// Local has pending changes
+					const etagChanged =
+						local._etag && remote.etag && local._etag !== remote.etag;
+					const timestampChanged =
+						remote.modifiedAt > (local._remoteModifiedAt ?? 0);
+					if (etagChanged || (!local._etag && timestampChanged)) {
+						// Both changed: conflict
+						conflicts.push({ local, remote });
+					} else {
+						// Local newer: upload
+						upload.push(local);
+					}
 				}
 			}
 		}
@@ -293,8 +371,9 @@ export class SyncEngine {
 		return { upload, download, conflicts, skipped };
 	}
 
-	/** Upload a single session to remote storage. */
-	private async uploadSession(session: ChatSession): Promise<void> {
+	/** Upload a single session to remote storage.
+	 *  @returns Remote session metadata if upload succeeded. */
+	private async uploadSession(session: ChatSession): Promise<RemoteSessionMeta | undefined> {
 		this.progress?.({
 			type: "session",
 			id: session.id,
@@ -330,10 +409,18 @@ export class SyncEngine {
 			status: "done",
 		});
 		this.log("debug", `SyncEngine: uploaded ${session.id}`);
+
+		return {
+			id: session.id,
+			modifiedAt: result.modifiedAt ?? session.updatedAt,
+			etag: result.etag,
+			size: new TextEncoder().encode(JSON.stringify(payload)).length,
+		};
 	}
 
-	/** Download and decrypt a single session from remote storage. */
-	private async downloadSession(meta: RemoteSessionMeta): Promise<void> {
+	/** Download and decrypt a single session from remote storage.
+	 *  @returns The downloaded local session if successful. */
+	private async downloadSession(meta: RemoteSessionMeta): Promise<ChatSession | undefined> {
 		this.progress?.({
 			type: "session",
 			id: meta.id,
@@ -353,7 +440,7 @@ export class SyncEngine {
 				"warn",
 				`SyncEngine: remote session ${meta.id} disappeared during sync`,
 			);
-			return;
+			return undefined;
 		}
 
 		const payload = {
@@ -401,21 +488,26 @@ export class SyncEngine {
 			status: "done",
 		});
 		this.log("debug", `SyncEngine: downloaded ${meta.id}`);
+
+		return cached;
 	}
 
-	/** Resolve a conflict between local and remote versions. */
+	/** Resolve a conflict between local and remote versions.
+	 *  @returns The resolved local and remote metadata if a sync occurred. */
 	private async resolveConflict(
 		local: ChatSession,
 		remote: RemoteSessionMeta,
-	): Promise<void> {
+	): Promise<{ local: ChatSession; remote: RemoteSessionMeta } | undefined> {
 		switch (this.conflictStrategy) {
 			case "last-write-wins": {
 				if (local.updatedAt > remote.modifiedAt) {
 					this.log("info", `Conflict: local wins for ${local.id}`);
-					await this.uploadSession(local);
+					const result = await this.uploadSession(local);
+					if (result) return { local, remote: result };
 				} else {
 					this.log("info", `Conflict: remote wins for ${local.id}`);
-					await this.downloadSession(remote);
+					const downloaded = await this.downloadSession(remote);
+					if (downloaded) return { local: downloaded, remote };
 				}
 				break;
 			}
@@ -469,6 +561,7 @@ export class SyncEngine {
 				break;
 			}
 		}
+		return undefined;
 	}
 
 	/** Populate the local cache with sessions from Obsidian's storage.

@@ -43,6 +43,8 @@ import { WebDAVStorageAdapter } from "./sync/WebDAVStorageAdapter";
 import { SyncProgressModal } from "./modals/SyncProgressModal";
 import { SyncLogger } from "./sync/SyncLogger";
 import { StorageAdapter } from "./sync/StorageAdapter";
+import { SyncIndexManager } from "./sync/SyncIndexManager";
+import { createPluginIndexStorage } from "./sync/SyncIndex";
 import { ProviderRegistry } from "./integrations/ProviderRegistry";
 
 export const OPEN_CHAT_COMMAND_ID = "open-chat-lab-sidebar";
@@ -622,12 +624,17 @@ export default class ObsidianAIPlugin extends Plugin {
 			const cache = new LocalCache(cacheNamespace);
 			const crypto = new EncryptionLayer();
 
+			// T42a: Create sync index manager backed by plugin data
+			const indexStorage = createPluginIndexStorage(this, "syncIndex");
+			const indexManager = new SyncIndexManager(indexStorage);
+
 			this.syncEngine = new SyncEngine({
 				adapter,
 				cache,
 				crypto,
 				passphrase: rs.passphrase,
 				conflictStrategy: rs.conflictStrategy,
+				indexManager,
 				logger: {
 					log: (level: string, msg: string) => {
 						this.logger?.log(level as any, `[SyncEngine] ${msg}`);
