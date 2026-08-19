@@ -1,4 +1,4 @@
-import { Notice, Setting } from "obsidian";
+import { Notice, Setting, TFile, FuzzySuggestModal } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection } from "./helpers";
 import { DEFAULT_SETTINGS, type ObsidianAISettings } from "../settings";
@@ -57,16 +57,16 @@ function exportSettings(plugin: ObsidianAIPlugin, includeSecrets: boolean): Expo
 	};
 }
 
-function triggerDownload(filename: string, data: string, mimeType: string): void {
-	const blob = new Blob([data], { type: mimeType });
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement("a");
-	a.href = url;
-	a.download = filename;
-	document.body.appendChild(a);
-	a.click();
-	document.body.removeChild(a);
-	URL.revokeObjectURL(url);
+async function saveExportToVault(plugin: ObsidianAIPlugin, filename: string, data: string): Promise<void> {
+	// Save to vault root so user can see it immediately (works on desktop + mobile)
+	await plugin.app.vault.adapter.write(filename, data);
+}
+
+function getExportFilename(includeSecrets: boolean): string {
+	const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+	return includeSecrets
+		? `chat-lab-settings-${timestamp}-full.json`
+		: `chat-lab-settings-${timestamp}.json`;
 }
 
 function validateImportedSettings(data: any): { valid: boolean; error?: string; settings?: ObsidianAISettings } {
@@ -133,14 +133,18 @@ export function renderExportImportSection(
 
 	new Setting(sectionEl)
 		.setName("Export settings")
-		.setDesc("Download your settings as a JSON file. API keys and passwords are redacted by default.")
+		.setDesc("Save your settings as a JSON file in the vault config folder. API keys and passwords are redacted by default.")
 		.addButton((button) => {
-			button.setButtonText("Export").onClick(() => {
-				const exported = exportSettings(plugin, false);
-				const json = JSON.stringify(exported, null, 2);
-				const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-				triggerDownload(`chat-lab-settings-${timestamp}.json`, json, "application/json");
-				new Notice("Settings exported with sensitive values redacted", 3000);
+			button.setButtonText("Export").onClick(async () => {
+				try {
+					const exported = exportSettings(plugin, false);
+					const json = JSON.stringify(exported, null, 2);
+					const filename = getExportFilename(false);
+					await saveExportToVault(plugin, filename, json);
+					new Notice(`Settings exported to ${filename}`, 3000);
+				} catch (e: any) {
+					new Notice(`Export failed: ${e.message}`, 5000);
+				}
 			});
 		});
 
@@ -148,56 +152,77 @@ export function renderExportImportSection(
 		.setName("Export with secrets")
 		.setDesc("⚠️ Export including API keys and passwords. Only use this for personal backups — never share this file.")
 		.addButton((button) => {
-			button.setButtonText("Export with secrets").setWarning().onClick(() => {
-				const exported = exportSettings(plugin, true);
-				const json = JSON.stringify(exported, null, 2);
-				const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-				triggerDownload(`chat-lab-settings-${timestamp}-full.json`, json, "application/json");
-				new Notice("Settings exported with secrets included", 3000);
+			button.setButtonText("Export with secrets").setWarning().onClick(async () => {
+				try {
+					const exported = exportSettings(plugin, true);
+					const json = JSON.stringify(exported, null, 2);
+					const filename = getExportFilename(true);
+					await saveExportToVault(plugin, filename, json);
+					new Notice(`Settings exported (with secrets) to ${filename}`, 3000);
+				} catch (e: any) {
+					new Notice(`Export failed: ${e.message}`, 5000);
+				}
 			});
 		});
 
 	new Setting(sectionEl)
 		.setName("Import settings")
-		.setDesc("Load settings from a previously exported JSON file. Existing profiles are merged by ID.")
+		.setDesc("Load settings from a previously exported JSON file in your vault.")
 		.addButton((button) => {
-			button.setButtonText("Import…").onClick(() => {
-				const input = document.createElement("input");
-				input.type = "file";
-				input.accept = ".json,application/json";
-				input.onchange = async (event) => {
-					const file = (event.target as HTMLInputElement).files?.[0];
-					if (!file) return;
+			button.setButtonText("Import…").onClick(async () => {
+				// Find all JSON files in vault that look like exports
+				const jsonFiles = plugin.app.vault.getFiles().filter((f: TFile) =>
+					f.extension === "json" && f.basename.startsWith("chat-lab-settings")
+				);
 
-					try {
-						const text = await file.text();
-						const data = JSON.parse(text);
-						const validation = validateImportedSettings(data);
-						if (!validation.valid) {
-							new Notice(`Import failed: ${validation.error}`, 5000);
-							return;
-						}
+				if (jsonFiles.length === 0) {
+					new Notice("No export files found. Look for 'chat-lab-settings-*.json' in your vault.", 5000);
+					return;
+				}
 
-						const imported = validation.settings!;
-						const current = plugin.settings;
-
-						// Count changes for user feedback
-						const importedProfileIds = new Set(imported.providerProfiles?.map((p: any) => p.id) ?? []);
-						const currentProfileIds = new Set(current.providerProfiles.map((p) => p.id));
-						const newProfiles = imported.providerProfiles?.filter((p: any) => !currentProfileIds.has(p.id)).length ?? 0;
-						const updatedProfiles = imported.providerProfiles?.filter((p: any) => currentProfileIds.has(p.id)).length ?? 0;
-
-						plugin.settings = mergeSettings(current, imported);
-						await saveSettings({ refresh: true });
-						new Notice(
-							`Settings imported: ${newProfiles} new profile(s), ${updatedProfiles} updated.`,
-							4000,
-						);
-					} catch (e: any) {
-						new Notice(`Import failed: ${e.message}`, 5000);
+				// Show fuzzy finder for JSON files
+				class ExportFileSuggester extends FuzzySuggestModal<TFile> {
+					getItems(): TFile[] { return jsonFiles; }
+					getItemText(item: TFile): string { return item.path; }
+					onChooseItem(file: TFile): void {
+						void importFromFile(plugin, file, saveSettings);
 					}
-				};
-				input.click();
+				}
+				new ExportFileSuggester(plugin.app).open();
 			});
 		});
+}
+
+async function importFromFile(
+	plugin: ObsidianAIPlugin,
+	file: TFile,
+	saveSettings: (options?: { refresh?: boolean; quiet?: boolean }) => Promise<void>,
+): Promise<void> {
+	try {
+		const text = await plugin.app.vault.read(file);
+		const data = JSON.parse(text);
+		const validation = validateImportedSettings(data);
+		if (!validation.valid) {
+			new Notice(`Import failed: ${validation.error}`, 5000);
+			return;
+		}
+
+		const imported = validation.settings!;
+		const current = plugin.settings;
+
+		// Count changes for user feedback
+		const importedProfileIds = new Set(imported.providerProfiles?.map((p: any) => p.id) ?? []);
+		const currentProfileIds = new Set(current.providerProfiles.map((p) => p.id));
+		const newProfiles = imported.providerProfiles?.filter((p: any) => !currentProfileIds.has(p.id)).length ?? 0;
+		const updatedProfiles = imported.providerProfiles?.filter((p: any) => currentProfileIds.has(p.id)).length ?? 0;
+
+		plugin.settings = mergeSettings(current, imported);
+		await saveSettings({ refresh: true });
+		new Notice(
+			`Settings imported: ${newProfiles} new profile(s), ${updatedProfiles} updated.`,
+			4000,
+		);
+	} catch (e: any) {
+		new Notice(`Import failed: ${e.message}`, 5000);
+	}
 }
