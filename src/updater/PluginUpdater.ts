@@ -1,5 +1,10 @@
 import { App, Notice, Modal, Setting, requestUrl } from "obsidian";
 
+/** Simple logger interface for PluginUpdater diagnostics */
+export interface UpdaterLogger {
+	log(level: string, ...args: any[]): void;
+}
+
 export interface ReleaseInfo {
 	tag_name: string;
 	name: string;
@@ -111,11 +116,23 @@ async function downloadFile(
 export class PluginUpdater {
 	private app: App;
 	private pluginDir: string;
+	private logger: UpdaterLogger | null = null;
 
-	constructor(app: App, pluginId: string) {
+	constructor(app: App, pluginId: string, logger?: UpdaterLogger) {
 		this.app = app;
 		// Vault-relative path to plugin directory
 		this.pluginDir = `.obsidian/plugins/${pluginId}`;
+		this.logger = logger ?? null;
+	}
+
+	private log(level: string, ...args: any[]): void {
+		if (this.logger) {
+			this.logger.log(level, "[PluginUpdater]", ...args);
+		} else {
+			// Fallback to console if no logger attached (shouldn't happen in practice)
+			const fn = level === "error" ? console.error : console.log;
+			fn("[PluginUpdater]", ...args);
+		}
 	}
 
 	private async ensureDir(dirPath: string): Promise<void> {
@@ -158,7 +175,7 @@ export class PluginUpdater {
 		currentCommitHash?: string,
 		currentBranch?: string,
 	): Promise<UpdateCheckResult> {
-		console.log("[PluginUpdater] checkForUpdate:", {
+		this.log("info", "checkForUpdate:", {
 			currentVersion,
 			includePrerelease,
 			currentCommitHash: currentCommitHash?.slice(0, 7),
@@ -171,9 +188,9 @@ export class PluginUpdater {
 				const releases = (await fetchJson(
 					`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=30&_cb=${Date.now()}`,
 				)) as ReleaseInfo[];
-				console.log("[PluginUpdater] fetched releases:", releases.length);
+				this.log("info", "fetched releases:", releases.length);
 				if (!releases || releases.length === 0) {
-					console.log("[PluginUpdater] no releases found");
+					this.log("info", "no releases found");
 					return {
 						hasUpdate: false,
 						currentVersion,
@@ -198,12 +215,12 @@ export class PluginUpdater {
 					releases.find((r) => r.tag_name === "latest-dev") ??
 					releases.find((r) => r.prerelease) ??
 					releases[0];
-				console.log("[PluginUpdater] selected release:", release?.tag_name, "prerelease:", release?.prerelease);
+				this.log("info", "selected release:", release?.tag_name, "prerelease:", release?.prerelease);
 			} else {
 				release = await fetchJson(
 					`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
 				);
-				console.log("[PluginUpdater] fetched latest release:", release?.tag_name);
+				this.log("info", "fetched latest release:", release?.tag_name);
 			}
 
 			const latestVersion = release.tag_name.replace(/^v/, "");
@@ -211,16 +228,16 @@ export class PluginUpdater {
 			const latestCommit = await fetchLatestCommit(
 				includePrerelease && currentBranch ? currentBranch : "main",
 			);
-			console.log("[PluginUpdater] latestCommit:", latestCommit?.sha?.slice(0, 7));
+			this.log("info", "latestCommit:", latestCommit?.sha?.slice(0, 7));
 			// For dev channel: compare commit hashes to detect if already on latest
 			let commitMatch = false;
 			if (includePrerelease && currentCommitHash && latestCommit) {
 				const shortLocal = currentCommitHash.slice(0, 7);
 				const shortRemote = latestCommit.sha.slice(0, 7);
 				commitMatch = shortLocal === shortRemote;
-				console.log("[PluginUpdater] commit compare:", shortLocal, "vs", shortRemote, "match:", commitMatch);
+				this.log("info", "commit compare:", shortLocal, "vs", shortRemote, "match:", commitMatch);
 				if (commitMatch) {
-					console.log("[PluginUpdater] commits match - no update");
+					this.log("info", "commits match - no update");
 					return {
 						hasUpdate: false,
 						currentVersion,
@@ -235,7 +252,7 @@ export class PluginUpdater {
 
 			const hasUpdate =
 				compareVersions(latestVersion, currentVersion) > 0;
-			console.log("[PluginUpdater] version compare:", latestVersion, "vs", currentVersion, "hasUpdate:", hasUpdate);
+			this.log("info", "version compare:", latestVersion, "vs", currentVersion, "hasUpdate:", hasUpdate);
 
 			return {
 				hasUpdate,
@@ -247,7 +264,7 @@ export class PluginUpdater {
 				latestCommit,
 			};
 		} catch (error) {
-			console.error("[PluginUpdater] Check failed:", error);
+			this.log("error", "Check failed:", error);
 			return {
 				hasUpdate: false,
 				currentVersion,
@@ -262,7 +279,7 @@ export class PluginUpdater {
 	async downloadUpdate(release: ReleaseInfo): Promise<string> {
 		const tempDir = `${this.pluginDir}/.update-tmp`;
 		await this.ensureDir(tempDir);
-		console.log("[PluginUpdater] downloading to", tempDir, "assets:", release.assets.map((a) => a.name));
+		this.log("info", "downloading to", tempDir, "assets:", release.assets.map((a) => a.name));
 
 		// Download each required file
 		for (const filename of RELEASE_FILES) {
@@ -271,10 +288,10 @@ export class PluginUpdater {
 				throw new Error(`Release missing required file: ${filename}`);
 			}
 			const destPath = `${tempDir}/${filename}`;
-			console.log("[PluginUpdater] downloading", filename, "from", asset.browser_download_url);
+			this.log("info", "downloading", filename, "from", asset.browser_download_url);
 			await downloadFile(this.app, asset.browser_download_url, destPath);
 			const stat = await this.app.vault.adapter.stat(destPath);
-			console.log("[PluginUpdater] downloaded", filename, "size:", stat?.size ?? "unknown");
+			this.log("info", "downloaded", filename, "size:", stat?.size ?? "unknown");
 		}
 
 		return tempDir;
@@ -284,7 +301,7 @@ export class PluginUpdater {
 	async installUpdate(tempDir: string): Promise<void> {
 		const backupDir = `${this.pluginDir}/.backup`;
 		await this.ensureDir(backupDir);
-		console.log("[PluginUpdater] installing from", tempDir, "backing up to", backupDir);
+		this.log("info", "installing from", tempDir, "backing up to", backupDir);
 
 		// Backup current files
 		for (const filename of RELEASE_FILES) {
@@ -293,7 +310,7 @@ export class PluginUpdater {
 			if (await this.fileExists(currentPath)) {
 				const content = await this.readFile(currentPath);
 				await this.writeFile(backupPath, content);
-				console.log("[PluginUpdater] backed up", filename);
+				this.log("info", "backed up", filename);
 			}
 		}
 
@@ -303,7 +320,7 @@ export class PluginUpdater {
 			const dest = `${this.pluginDir}/${filename}`;
 			const content = await this.readFile(src);
 			await this.writeFile(dest, content);
-			console.log("[PluginUpdater] installed", filename, "(" + content.length + " chars)");
+			this.log("info", "installed", filename, "(" + content.length + " chars)");
 		}
 	}
 

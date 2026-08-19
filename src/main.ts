@@ -295,8 +295,8 @@ export default class ObsidianAIPlugin extends Plugin {
 			},
 		});
 
-		// Initialize auto-updater
-		this._updater = new PluginUpdater(this.app, this.manifest.id);
+		// Initialize auto-updater (pass file logger so diagnostics go to debug.log)
+		this._updater = new PluginUpdater(this.app, this.manifest.id, this.logger);
 
 		// Add manual update check command
 		this.addCommand({
