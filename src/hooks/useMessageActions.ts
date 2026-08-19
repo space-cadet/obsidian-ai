@@ -176,8 +176,11 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 
 			// Assistant message — check for tool calls
 			const toolCalls = m.contentParts?.filter(
-				(p): p is import("../types").ContentPart & { type: "tool_call" } =>
-					p.type === "tool_call",
+				(
+					p,
+				): p is import("../types").ContentPart & {
+					type: "tool_call";
+				} => p.type === "tool_call",
 			);
 
 			if (toolCalls && toolCalls.length > 0) {
@@ -630,8 +633,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			});
 			const streamStartTime = Date.now();
 
-			const maxContextMessages =
-				plugin.settings.maxContextMessages || 10;
+			const maxContextMessages = plugin.settings.maxContextMessages || 10;
 			const history = buildHistoryWithTools(
 				messagesRef.current,
 				maxContextMessages,

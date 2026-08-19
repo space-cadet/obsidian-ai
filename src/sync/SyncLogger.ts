@@ -81,16 +81,23 @@ export class SyncLogger {
 			// Keep last 500 lines
 			const lines = existing.split("\n").filter(Boolean);
 			const trimmed = lines.slice(-400);
-			const newContent = [...trimmed, ...this.logBuffer].join("\n") + "\n";
+			const newContent =
+				[...trimmed, ...this.logBuffer].join("\n") + "\n";
 			await this.app.vault.adapter.write(logPath, newContent);
 			this.logBuffer = [];
 		} catch (err: any) {
-			console.error("[SyncLogger] Failed to write local log:", err.message);
+			console.error(
+				"[SyncLogger] Failed to write local log:",
+				err.message,
+			);
 		}
 	}
 
 	/** Append a session record to remote sync log */
-	async appendRemote(adapter: StorageAdapter, record: SyncSessionRecord): Promise<void> {
+	async appendRemote(
+		adapter: StorageAdapter,
+		record: SyncSessionRecord,
+	): Promise<void> {
 		try {
 			const ts = new Date(record.timestamp).toISOString();
 			const device = record.deviceId.slice(0, 6);
@@ -98,7 +105,10 @@ export class SyncLogger {
 			const line = `${ts} [${device}] ↑${result.uploaded} ↓${result.downloaded} ⚡${result.conflicts} ⊘${result.skipped} ⚠️${result.errors.length} | ${result.message} | ${durationMs}ms\n`;
 			await adapter.writeText("sync.log", line);
 		} catch (err: any) {
-			console.error("[SyncLogger] Failed to write remote log:", err.message);
+			console.error(
+				"[SyncLogger] Failed to write remote log:",
+				err.message,
+			);
 		}
 	}
 }

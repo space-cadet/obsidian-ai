@@ -30,7 +30,8 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 
 	async initialize(config: WebDAVConfig): Promise<void> {
 		this.config = config;
-		this.prefix = (config.prefix || "obsidian-ai-sync/").replace(/\/$/, "") + "/";
+		this.prefix =
+			(config.prefix || "obsidian-ai-sync/").replace(/\/$/, "") + "/";
 		this.timeout = config.timeout ?? 30000;
 
 		// Normalize base URL: ensure trailing slash on the WebDAV root
@@ -59,7 +60,10 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 			const results: RemoteSessionMeta[] = [];
 			for (const item of responses) {
 				// Skip the directory itself
-				if (item.href.endsWith("/sessions/") || item.href.endsWith("/" + prefixPath)) {
+				if (
+					item.href.endsWith("/sessions/") ||
+					item.href.endsWith("/" + prefixPath)
+				) {
 					continue;
 				}
 				// Extract session ID from filename (e.g., "session-abc.json" -> "session-abc")
@@ -69,7 +73,9 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 
 				results.push({
 					id,
-					modifiedAt: item.lastModified ? new Date(item.lastModified).getTime() : Date.now(),
+					modifiedAt: item.lastModified
+						? new Date(item.lastModified).getTime()
+						: Date.now(),
 					etag: item.etag,
 					size: item.contentLength,
 				});
@@ -98,7 +104,9 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		}
 	}
 
-	async putSession(session: EncryptedSession): Promise<{ etag?: string; modifiedAt?: number }> {
+	async putSession(
+		session: EncryptedSession,
+	): Promise<{ etag?: string; modifiedAt?: number }> {
 		// Ensure prefix and sessions directories exist
 		await this.mkcol(this.prefix);
 		await this.mkcol(this.prefix + "sessions/");
@@ -152,7 +160,9 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		}
 		// UTF-8 safe base64 encoding for non-Latin-1 credentials
 		const encoder = new TextEncoder();
-		const bytes = encoder.encode(this.config.username + ":" + this.config.password);
+		const bytes = encoder.encode(
+			this.config.username + ":" + this.config.password,
+		);
 		const base64 = Array.from(bytes)
 			.map((b) => String.fromCharCode(b))
 			.join("");
@@ -167,7 +177,11 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 			contentType?: string;
 			headers?: Record<string, string>;
 		} = {},
-	): Promise<{ status: number; text: string; headers: Record<string, string> }> {
+	): Promise<{
+		status: number;
+		text: string;
+		headers: Record<string, string>;
+	}> {
 		if (!this.config) {
 			throw new Error("WebDAV adapter not initialized");
 		}
@@ -175,7 +189,9 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		const url = this.baseUrl + path;
 		const headers: Record<string, string> = {
 			Authorization: this.getAuthHeader(),
-			...(options.contentType ? { "Content-Type": options.contentType } : {}),
+			...(options.contentType
+				? { "Content-Type": options.contentType }
+				: {}),
 			...options.headers,
 		};
 
@@ -200,11 +216,20 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 					`WebDAV ${method} failed: ${res.status} — ${res.text.slice(0, 200)}`,
 				) as Error & { status: number; debugInfo?: string };
 				err.status = res.status;
-				err.debugInfo = JSON.stringify({ url, method, status: res.status, responseText: res.text.slice(0, 500) });
+				err.debugInfo = JSON.stringify({
+					url,
+					method,
+					status: res.status,
+					responseText: res.text.slice(0, 500),
+				});
 				throw err;
 			}
 
-			return { status: res.status, text: res.text, headers: responseHeaders };
+			return {
+				status: res.status,
+				text: res.text,
+				headers: responseHeaders,
+			};
 		} catch (err: any) {
 			// If requestUrl itself fails (network error), wrap it
 			if (!err.status) {
@@ -223,7 +248,11 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		return res.text;
 	}
 
-	private async put(path: string, body: string, contentType: string): Promise<{ status: number; headers: Record<string, string> }> {
+	private async put(
+		path: string,
+		body: string,
+		contentType: string,
+	): Promise<{ status: number; headers: Record<string, string> }> {
 		return await this.request("PUT", path, { body, contentType });
 	}
 
@@ -242,7 +271,9 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 			// 409 = Conflict = parent directory doesn't exist
 			// Try creating parent directories recursively
 			if (err.status === 409) {
-				const parent = path.replace(/\/$/, "").split("/").slice(0, -1).join("/") + "/";
+				const parent =
+					path.replace(/\/$/, "").split("/").slice(0, -1).join("/") +
+					"/";
 				if (parent && parent !== "/" && parent !== path) {
 					await this.mkcol(parent);
 					await this.request("MKCOL", path);
@@ -256,7 +287,14 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 	private async propfind(
 		path: string,
 		depth: number,
-	): Promise<Array<{ href: string; lastModified?: string; etag?: string; contentLength?: number }>> {
+	): Promise<
+		Array<{
+			href: string;
+			lastModified?: string;
+			etag?: string;
+			contentLength?: number;
+		}>
+	> {
 		const xml = `<?xml version="1.0" encoding="utf-8"?>
 <D:propfind xmlns:D="DAV:">
   <D:prop>
@@ -294,16 +332,30 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		}> = [];
 
 		for (const response of Array.from(responses)) {
-			const href = response.getElementsByTagNameNS("DAV:", "href")[0]?.textContent || "";
-			const propstat = response.getElementsByTagNameNS("DAV:", "propstat")[0];
+			const href =
+				response.getElementsByTagNameNS("DAV:", "href")[0]
+					?.textContent || "";
+			const propstat = response.getElementsByTagNameNS(
+				"DAV:",
+				"propstat",
+			)[0];
 			if (!propstat) continue;
 			const prop = propstat.getElementsByTagNameNS("DAV:", "prop")[0];
 			if (!prop) continue;
 
-			const lastModified = prop.getElementsByTagNameNS("DAV:", "getlastmodified")[0]?.textContent || undefined;
-			const etag = prop.getElementsByTagNameNS("DAV:", "getetag")[0]?.textContent || undefined;
-			const contentLengthStr = prop.getElementsByTagNameNS("DAV:", "getcontentlength")[0]?.textContent;
-			const contentLength = contentLengthStr ? parseInt(contentLengthStr, 10) : undefined;
+			const lastModified =
+				prop.getElementsByTagNameNS("DAV:", "getlastmodified")[0]
+					?.textContent || undefined;
+			const etag =
+				prop.getElementsByTagNameNS("DAV:", "getetag")[0]
+					?.textContent || undefined;
+			const contentLengthStr = prop.getElementsByTagNameNS(
+				"DAV:",
+				"getcontentlength",
+			)[0]?.textContent;
+			const contentLength = contentLengthStr
+				? parseInt(contentLengthStr, 10)
+				: undefined;
 
 			results.push({
 				href,

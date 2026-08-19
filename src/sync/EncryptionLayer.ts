@@ -157,8 +157,12 @@ export class EncryptionLayer {
 
 		// Derive key from payload salt + passphrase (ensures cross-device/restart compatibility)
 		// Re-derive if salt differs from cached key's salt
-		const needsDerivation = !this.key || !this.salt ||
-			(payload.salt && this.salt && !this._saltEquals(payload.salt, this.salt));
+		const needsDerivation =
+			!this.key ||
+			!this.salt ||
+			(payload.salt &&
+				this.salt &&
+				!this._saltEquals(payload.salt, this.salt));
 
 		if (needsDerivation) {
 			if (!passphrase) {

@@ -839,9 +839,8 @@ export class ToolExecutor {
 		source: string;
 		max_pages?: number;
 	}): Promise<ToolResult> {
-		const { extractPdfFromUrl, extractPdfFromBuffer } = await import(
-			"../utils/PdfExtractor"
-		);
+		const { extractPdfFromUrl, extractPdfFromBuffer } =
+			await import("../utils/PdfExtractor");
 
 		const maxPages = args.max_pages ?? 50;
 		const source = args.source;

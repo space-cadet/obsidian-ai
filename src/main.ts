@@ -575,12 +575,17 @@ export default class ObsidianAIPlugin extends Plugin {
 
 		// Dispose old engine if exists
 		if (this.syncEngine) {
-			this.logger?.log("info", "SyncEngine: reconfiguring with new settings");
+			this.logger?.log(
+				"info",
+				"SyncEngine: reconfiguring with new settings",
+			);
 		}
 
 		try {
 			const adapter = new WebDAVStorageAdapter();
-			const cacheNamespace = rs.webdav ? `${rs.webdav.url}:${rs.webdav.prefix || ""}` : "default";
+			const cacheNamespace = rs.webdav
+				? `${rs.webdav.url}:${rs.webdav.prefix || ""}`
+				: "default";
 			const cache = new LocalCache(cacheNamespace);
 			const crypto = new EncryptionLayer();
 
@@ -606,7 +611,10 @@ export default class ObsidianAIPlugin extends Plugin {
 						sessions.push(session);
 					}
 					await this.saveChatData({ ...chatData, sessions });
-					this.logger?.log("info", `[SyncEngine] Downloaded session ${session.id} merged into storage`);
+					this.logger?.log(
+						"info",
+						`[SyncEngine] Downloaded session ${session.id} merged into storage`,
+					);
 				},
 			});
 
@@ -634,7 +642,8 @@ export default class ObsidianAIPlugin extends Plugin {
 			await this._initSyncEngine();
 		}
 		if (!this.syncEngine) {
-			const msg = "Sync not configured. Enable Remote Storage and enter credentials.";
+			const msg =
+				"Sync not configured. Enable Remote Storage and enter credentials.";
 			new Notice(msg);
 			return { ok: false, message: msg };
 		}
@@ -653,11 +662,17 @@ export default class ObsidianAIPlugin extends Plugin {
 		// Wire progress callback into sync engine
 		this.syncEngine?.setProgressHandler((event) => {
 			if (event.type === "session") {
-				const title = this._getSessionTitle(event.id) || event.id.slice(0, 8);
+				const title =
+					this._getSessionTitle(event.id) || event.id.slice(0, 8);
 				if (event.status === "start") {
-					modal.addLog(event.direction!, `${title}`, { id: event.id });
+					modal.addLog(event.direction!, `${title}`, {
+						id: event.id,
+					});
 				} else if (event.status === "done") {
-					modal.addLog(event.direction!, `${title}`, { id: event.id, done: true });
+					modal.addLog(event.direction!, `${title}`, {
+						id: event.id,
+						done: true,
+					});
 					syncLogger.log({
 						timestamp: Date.now(),
 						deviceId: syncLogger["deviceId"],
@@ -667,7 +682,10 @@ export default class ObsidianAIPlugin extends Plugin {
 						message: "success",
 					});
 				} else if (event.status === "error") {
-					modal.addLog("error", `${title}: ${event.error}`, { id: event.id, error: true });
+					modal.addLog("error", `${title}: ${event.error}`, {
+						id: event.id,
+						error: true,
+					});
 					syncLogger.log({
 						timestamp: Date.now(),
 						deviceId: syncLogger["deviceId"],
@@ -685,9 +703,15 @@ export default class ObsidianAIPlugin extends Plugin {
 			modal.addLog("system", "Reading local sessions...");
 			await this._populateSyncCache();
 			const plan = await this.syncEngine.computeSyncPlan();
-			const totalOps = plan.upload.length + plan.download.length + plan.conflicts.length;
+			const totalOps =
+				plan.upload.length +
+				plan.download.length +
+				plan.conflicts.length;
 			modal.setTotal(totalOps);
-			modal.addLog("system", `Plan: ↑${plan.upload.length} ↓${plan.download.length} ⚡${plan.conflicts.length} ⊘${plan.skipped}`);
+			modal.addLog(
+				"system",
+				`Plan: ↑${plan.upload.length} ↓${plan.download.length} ⚡${plan.conflicts.length} ⊘${plan.skipped}`,
+			);
 
 			const result = await this.syncEngine.sync();
 			const durationMs = Date.now() - startTime;
@@ -699,7 +723,8 @@ export default class ObsidianAIPlugin extends Plugin {
 			if (result.downloaded > 0) parts.push(`↓${result.downloaded}`);
 			if (result.conflicts > 0) parts.push(`⚡${result.conflicts}`);
 			if (result.skipped > 0) parts.push(`⊘${result.skipped}`);
-			if (result.errors.length > 0) parts.push(`⚠️ ${result.errors.length}`);
+			if (result.errors.length > 0)
+				parts.push(`⚠️ ${result.errors.length}`);
 
 			const msg = parts.length > 0 ? parts.join(" ") : "Nothing to sync";
 			const ok = result.errors.length === 0;
@@ -714,7 +739,8 @@ export default class ObsidianAIPlugin extends Plugin {
 			syncLogger.recordSession(sessionRecord);
 			await syncLogger.flushLocal();
 			if (this.syncEngine) {
-				const adapter = (this.syncEngine as any).adapter as StorageAdapter;
+				const adapter = (this.syncEngine as any)
+					.adapter as StorageAdapter;
 				await syncLogger.appendRemote(adapter, sessionRecord);
 			}
 
@@ -734,7 +760,14 @@ export default class ObsidianAIPlugin extends Plugin {
 			syncLogger.recordSession({
 				timestamp: Date.now(),
 				deviceId: syncLogger["deviceId"],
-				result: { uploaded: 0, downloaded: 0, conflicts: 0, skipped: 0, errors: [err.message], message: msg },
+				result: {
+					uploaded: 0,
+					downloaded: 0,
+					conflicts: 0,
+					skipped: 0,
+					errors: [err.message],
+					message: msg,
+				},
 				durationMs,
 			});
 			await syncLogger.flushLocal();
@@ -766,7 +799,10 @@ export default class ObsidianAIPlugin extends Plugin {
 			const sessions = chatData.sessions || [];
 			await this.syncEngine.populateCache(sessions);
 		} catch (err: any) {
-			this.logger?.log("warn", `SyncEngine: failed to populate cache: ${err.message}`);
+			this.logger?.log(
+				"warn",
+				`SyncEngine: failed to populate cache: ${err.message}`,
+			);
 		}
 	}
 
@@ -848,7 +884,9 @@ export default class ObsidianAIPlugin extends Plugin {
 
 		const existing = (await this.loadData()) ?? {};
 		// Deep-clone settings to avoid mutating live config when stripping secrets
-		let payload: Record<string, any> = JSON.parse(JSON.stringify(this.settings));
+		let payload: Record<string, any> = JSON.parse(
+			JSON.stringify(this.settings),
+		);
 		payload = { ...existing, ...payload };
 
 		// Strip password from persisted data.json
@@ -921,7 +959,10 @@ export default class ObsidianAIPlugin extends Plugin {
 				);
 
 				// Auto-sync to remote if enabled (debounced)
-				if (this.settings.remoteStorage?.enabled && this.settings.remoteStorage?.autoSync) {
+				if (
+					this.settings.remoteStorage?.enabled &&
+					this.settings.remoteStorage?.autoSync
+				) {
 					this._scheduleAutoSync();
 				}
 

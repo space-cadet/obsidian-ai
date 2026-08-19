@@ -172,11 +172,17 @@ export class PluginUpdater {
 				let branchRelease: ReleaseInfo | undefined;
 				if (currentBranch && currentBranch !== "main") {
 					const branchTag = `latest-dev-${currentBranch}`;
-					branchRelease = releases.find((r) => r.tag_name === branchTag);
+					branchRelease = releases.find(
+						(r) => r.tag_name === branchTag,
+					);
 				}
 
 				// Use branch release if found, otherwise fall back to latest-dev or any pre-release
-				release = branchRelease ?? releases.find((r) => r.tag_name === "latest-dev") ?? releases.find((r) => r.prerelease) ?? releases[0];
+				release =
+					branchRelease ??
+					releases.find((r) => r.tag_name === "latest-dev") ??
+					releases.find((r) => r.prerelease) ??
+					releases[0];
 			} else {
 				release = await fetchJson(
 					`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,

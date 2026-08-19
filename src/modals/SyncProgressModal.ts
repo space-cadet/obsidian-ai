@@ -29,7 +29,11 @@ export class SyncProgressModal extends Modal {
 	private doneBtn!: HTMLElement;
 	private isDone = false;
 
-	constructor(app: App, totalSessions: number, options?: { onCancel?: () => void }) {
+	constructor(
+		app: App,
+		totalSessions: number,
+		options?: { onCancel?: () => void },
+	) {
 		super(app);
 		this.startTime = Date.now();
 		this.totalSessions = totalSessions;
@@ -65,7 +69,8 @@ export class SyncProgressModal extends Modal {
 		// Progress bar
 		const progressContainer = contentEl.createDiv("sync-progress-bar");
 		progressContainer.style.height = "6px";
-		progressContainer.style.background = "var(--background-modifier-border)";
+		progressContainer.style.background =
+			"var(--background-modifier-border)";
 		progressContainer.style.borderRadius = "3px";
 		progressContainer.style.marginBottom = "1em";
 		progressContainer.style.overflow = "hidden";
@@ -111,7 +116,9 @@ export class SyncProgressModal extends Modal {
 			(this.cancelBtn as HTMLButtonElement).disabled = true;
 		});
 
-		this.backgroundBtn = this.btnRow.createEl("button", { text: "Background" });
+		this.backgroundBtn = this.btnRow.createEl("button", {
+			text: "Background",
+		});
 		this.backgroundBtn.addEventListener("click", () => {
 			this.close();
 		});
@@ -181,17 +188,22 @@ export class SyncProgressModal extends Modal {
 	}
 
 	updateProgress() {
-		const pct = this.totalSessions > 0
-			? Math.round((this.completedCount / this.totalSessions) * 100)
-			: 0;
-		this.progressTextEl.setText(`${this.completedCount}/${this.totalSessions} (${pct}%)`);
+		const pct =
+			this.totalSessions > 0
+				? Math.round((this.completedCount / this.totalSessions) * 100)
+				: 0;
+		this.progressTextEl.setText(
+			`${this.completedCount}/${this.totalSessions} (${pct}%)`,
+		);
 		this.progressFillEl.style.width = `${pct}%`;
 		this.updateSummary();
 	}
 
 	updateSummary() {
 		const elapsed = ((Date.now() - this.startTime) / 1000).toFixed(1);
-		this.summaryEl.setText(`⏱️ ${elapsed}s elapsed  ·  ${this.completedCount} done`);
+		this.summaryEl.setText(
+			`⏱️ ${elapsed}s elapsed  ·  ${this.completedCount} done`,
+		);
 	}
 
 	finish(result: SyncResult & { message: string }) {
@@ -216,11 +228,16 @@ export class SyncProgressModal extends Modal {
 				this.addLog("error", `  ${err}`);
 			}
 			if (result.errors.length > 5) {
-				this.addLog("system", `  ... and ${result.errors.length - 5} more`);
+				this.addLog(
+					"system",
+					`  ... and ${result.errors.length - 5} more`,
+				);
 			}
 		}
 
-		this.summaryEl.setText(`⏱️ ${elapsed}s  ·  ↑${result.uploaded} ↓${result.downloaded} ⚡${result.conflicts} ⊘${result.skipped}`);
+		this.summaryEl.setText(
+			`⏱️ ${elapsed}s  ·  ↑${result.uploaded} ↓${result.downloaded} ⚡${result.conflicts} ⊘${result.skipped}`,
+		);
 
 		// Swap buttons
 		this.cancelBtn.style.display = "none";

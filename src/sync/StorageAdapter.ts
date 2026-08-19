@@ -61,7 +61,9 @@ export interface StorageAdapter {
 	getSession(id: string): Promise<EncryptedSession | null>;
 
 	/** Upload an encrypted session. Returns server metadata (etag, etc.). */
-	putSession(session: EncryptedSession): Promise<{ etag?: string; modifiedAt?: number }>;
+	putSession(
+		session: EncryptedSession,
+	): Promise<{ etag?: string; modifiedAt?: number }>;
 
 	/** Write raw text to a file at the given path (for logs, metadata). */
 	writeText(path: string, content: string): Promise<void>;

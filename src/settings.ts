@@ -521,10 +521,13 @@ export const normalizeSettings = (
 		autoUpdate: Boolean(merged.autoUpdate ?? false),
 		remoteStorage: {
 			enabled: Boolean(merged.remoteStorage?.enabled ?? false),
-			backend: (merged.remoteStorage?.backend as StorageBackendType) ?? "none",
+			backend:
+				(merged.remoteStorage?.backend as StorageBackendType) ?? "none",
 			passphrase: merged.remoteStorage?.passphrase ?? "",
 			autoSync: Boolean(merged.remoteStorage?.autoSync ?? false),
-			syncIntervalMinutes: Number.isFinite(merged.remoteStorage?.syncIntervalMinutes)
+			syncIntervalMinutes: Number.isFinite(
+				merged.remoteStorage?.syncIntervalMinutes,
+			)
 				? (merged.remoteStorage?.syncIntervalMinutes as number)
 				: 30,
 			conflictStrategy:
@@ -537,8 +540,11 @@ export const normalizeSettings = (
 				url: merged.remoteStorage?.webdav?.url ?? "",
 				username: merged.remoteStorage?.webdav?.username ?? "",
 				password: merged.remoteStorage?.webdav?.password ?? "",
-				prefix: merged.remoteStorage?.webdav?.prefix ?? "obsidian-ai-sync/",
-				enabled: Boolean(merged.remoteStorage?.webdav?.enabled ?? false),
+				prefix:
+					merged.remoteStorage?.webdav?.prefix ?? "obsidian-ai-sync/",
+				enabled: Boolean(
+					merged.remoteStorage?.webdav?.enabled ?? false,
+				),
 			},
 			s3: {
 				type: "s3" as const,
@@ -547,7 +553,8 @@ export const normalizeSettings = (
 				bucket: merged.remoteStorage?.s3?.bucket ?? "",
 				prefix: merged.remoteStorage?.s3?.prefix ?? "obsidian-ai-sync/",
 				accessKeyId: merged.remoteStorage?.s3?.accessKeyId ?? "",
-				secretAccessKey: merged.remoteStorage?.s3?.secretAccessKey ?? "",
+				secretAccessKey:
+					merged.remoteStorage?.s3?.secretAccessKey ?? "",
 				enabled: Boolean(merged.remoteStorage?.s3?.enabled ?? false),
 			},
 			lastSyncTime: merged.remoteStorage?.lastSyncTime ?? 0,

@@ -19,7 +19,13 @@ export interface SyncEngineConfig {
 	passphrase: string;
 	conflictStrategy?: ConflictStrategy;
 	logger?: { log(level: string, msg: string): void };
-	progress?: (event: { type: string; id: string; direction?: "upload" | "download"; status: "start" | "done" | "error"; error?: string }) => void;
+	progress?: (event: {
+		type: string;
+		id: string;
+		direction?: "upload" | "download";
+		status: "start" | "done" | "error";
+		error?: string;
+	}) => void;
 	/** Called when a session is downloaded from remote. Implementor should save to app storage. */
 	onSessionDownloaded?: (session: ChatSession) => Promise<void>;
 }
@@ -37,7 +43,13 @@ export class SyncEngine {
 	private passphrase: string;
 	private conflictStrategy: ConflictStrategy;
 	private logger?: { log(level: string, msg: string): void };
-	private progress?: (event: { type: string; id: string; direction?: "upload" | "download"; status: "start" | "done" | "error"; error?: string }) => void;
+	private progress?: (event: {
+		type: string;
+		id: string;
+		direction?: "upload" | "download";
+		status: "start" | "done" | "error";
+		error?: string;
+	}) => void;
 	private onSessionDownloaded?: (session: ChatSession) => Promise<void>;
 	private _cancelled = false;
 
@@ -79,9 +91,15 @@ export class SyncEngine {
 		await this.cache.init();
 		// Key is NOT derived here — deriveKey uses payload salt on decrypt
 		if (this.passphrase) {
-			this.log("info", "SyncEngine: encryption enabled (key derived per-payload)");
+			this.log(
+				"info",
+				"SyncEngine: encryption enabled (key derived per-payload)",
+			);
 		} else {
-			this.log("warn", "SyncEngine: encryption disabled (plaintext mode)");
+			this.log(
+				"warn",
+				"SyncEngine: encryption disabled (plaintext mode)",
+			);
 		}
 	}
 
@@ -89,7 +107,13 @@ export class SyncEngine {
 	async sync(): Promise<SyncResult> {
 		if (this.state === "syncing") {
 			this.log("warn", "SyncEngine: sync already in progress, skipping");
-			return { uploaded: 0, downloaded: 0, conflicts: 0, skipped: 0, errors: ["Sync already in progress"] };
+			return {
+				uploaded: 0,
+				downloaded: 0,
+				conflicts: 0,
+				skipped: 0,
+				errors: ["Sync already in progress"],
+			};
 		}
 
 		this.state = "syncing";
@@ -97,7 +121,9 @@ export class SyncEngine {
 		this.log("info", "SyncEngine: starting sync...");
 
 		const errors: string[] = [];
-		let uploaded = 0, downloaded = 0, conflicts = 0;
+		let uploaded = 0,
+			downloaded = 0,
+			conflicts = 0;
 
 		try {
 			const plan = await this.computeSyncPlan();
@@ -123,7 +149,10 @@ export class SyncEngine {
 			if (!this._cancelled) {
 				for (const meta of plan.download) {
 					if (this._cancelled) {
-						this.log("warn", "SyncEngine: cancelled during download");
+						this.log(
+							"warn",
+							"SyncEngine: cancelled during download",
+						);
 						errors.push("Cancelled by user");
 						break;
 					}
@@ -142,12 +171,18 @@ export class SyncEngine {
 			if (!this._cancelled) {
 				for (const conflict of plan.conflicts) {
 					if (this._cancelled) {
-						this.log("warn", "SyncEngine: cancelled during conflict resolution");
+						this.log(
+							"warn",
+							"SyncEngine: cancelled during conflict resolution",
+						);
 						errors.push("Cancelled by user");
 						break;
 					}
 					try {
-						await this.resolveConflict(conflict.local, conflict.remote);
+						await this.resolveConflict(
+							conflict.local,
+							conflict.remote,
+						);
 						conflicts++;
 					} catch (err: any) {
 						const msg = `Conflict resolution failed for ${conflict.local.id}: ${err.message}`;
@@ -180,7 +215,13 @@ export class SyncEngine {
 			const msg = `SyncEngine: fatal error: ${err.message}`;
 			this.log("error", msg);
 			errors.push(msg);
-			return { uploaded: 0, downloaded: 0, conflicts: 0, skipped: 0, errors };
+			return {
+				uploaded: 0,
+				downloaded: 0,
+				conflicts: 0,
+				skipped: 0,
+				errors,
+			};
 		}
 	}
 
@@ -196,7 +237,10 @@ export class SyncEngine {
 
 		const upload: ChatSession[] = [];
 		const download: RemoteSessionMeta[] = [];
-		const conflicts: Array<{ local: ChatSession; remote: RemoteSessionMeta }> = [];
+		const conflicts: Array<{
+			local: ChatSession;
+			remote: RemoteSessionMeta;
+		}> = [];
 		let skipped = 0;
 
 		for (const local of localSessions) {
@@ -215,8 +259,10 @@ export class SyncEngine {
 			} else if (local._syncStatus === "synced") {
 				// Both exist, local unchanged since last sync
 				// Use ETag comparison if available (most reliable), fallback to timestamp
-				const etagChanged = local._etag && remote.etag && local._etag !== remote.etag;
-				const timestampChanged = remote.modifiedAt > (local._remoteModifiedAt ?? 0);
+				const etagChanged =
+					local._etag && remote.etag && local._etag !== remote.etag;
+				const timestampChanged =
+					remote.modifiedAt > (local._remoteModifiedAt ?? 0);
 				if (etagChanged || (!local._etag && timestampChanged)) {
 					// Remote changed: download
 					download.push(remote);
@@ -225,8 +271,10 @@ export class SyncEngine {
 				}
 			} else {
 				// Local has pending changes
-				const etagChanged = local._etag && remote.etag && local._etag !== remote.etag;
-				const timestampChanged = remote.modifiedAt > (local._remoteModifiedAt ?? 0);
+				const etagChanged =
+					local._etag && remote.etag && local._etag !== remote.etag;
+				const timestampChanged =
+					remote.modifiedAt > (local._remoteModifiedAt ?? 0);
 				if (etagChanged || (!local._etag && timestampChanged)) {
 					// Both changed: conflict
 					conflicts.push({ local, remote });
@@ -247,7 +295,12 @@ export class SyncEngine {
 
 	/** Upload a single session to remote storage. */
 	private async uploadSession(session: ChatSession): Promise<void> {
-		this.progress?.({ type: "session", id: session.id, direction: "upload", status: "start" });
+		this.progress?.({
+			type: "session",
+			id: session.id,
+			direction: "upload",
+			status: "start",
+		});
 		const plaintext = JSON.stringify(session);
 		const sessionChecksum = await checksum(plaintext);
 		const encrypted = await this.crypto.encrypt(plaintext);
@@ -257,7 +310,9 @@ export class SyncEngine {
 			ciphertext: encrypted.ciphertext,
 			checksum: sessionChecksum,
 			modifiedAt: session.updatedAt,
-			version: ((session as unknown as Record<string, unknown>)._version as number) ?? 1,
+			version:
+				((session as unknown as Record<string, unknown>)
+					._version as number) ?? 1,
 		};
 		// Only include encryption fields if actually encrypted
 		if (!encrypted.unencrypted) {
@@ -268,17 +323,36 @@ export class SyncEngine {
 
 		const result = await this.adapter.putSession(payload);
 		await this.cache.markSynced(session.id, session.updatedAt, result.etag);
-		this.progress?.({ type: "session", id: session.id, direction: "upload", status: "done" });
+		this.progress?.({
+			type: "session",
+			id: session.id,
+			direction: "upload",
+			status: "done",
+		});
 		this.log("debug", `SyncEngine: uploaded ${session.id}`);
 	}
 
 	/** Download and decrypt a single session from remote storage. */
 	private async downloadSession(meta: RemoteSessionMeta): Promise<void> {
-		this.progress?.({ type: "session", id: meta.id, direction: "download", status: "start" });
+		this.progress?.({
+			type: "session",
+			id: meta.id,
+			direction: "download",
+			status: "start",
+		});
 		const encrypted = await this.adapter.getSession(meta.id);
 		if (!encrypted) {
-			this.progress?.({ type: "session", id: meta.id, direction: "download", status: "error", error: "Disappeared during sync" });
-			this.log("warn", `SyncEngine: remote session ${meta.id} disappeared during sync`);
+			this.progress?.({
+				type: "session",
+				id: meta.id,
+				direction: "download",
+				status: "error",
+				error: "Disappeared during sync",
+			});
+			this.log(
+				"warn",
+				`SyncEngine: remote session ${meta.id} disappeared during sync`,
+			);
 			return;
 		}
 
@@ -296,7 +370,13 @@ export class SyncEngine {
 		// Verify checksum
 		const expectedChecksum = await checksum(plaintext);
 		if (expectedChecksum !== encrypted.checksum) {
-			this.progress?.({ type: "session", id: meta.id, direction: "download", status: "error", error: "Checksum mismatch" });
+			this.progress?.({
+				type: "session",
+				id: meta.id,
+				direction: "download",
+				status: "error",
+				error: "Checksum mismatch",
+			});
 			throw new Error(`Checksum mismatch for session ${meta.id}`);
 		}
 
@@ -314,7 +394,12 @@ export class SyncEngine {
 		}
 
 		await this.cache.markSynced(meta.id, meta.modifiedAt, meta.etag);
-		this.progress?.({ type: "session", id: meta.id, direction: "download", status: "done" });
+		this.progress?.({
+			type: "session",
+			id: meta.id,
+			direction: "download",
+			status: "done",
+		});
 		this.log("debug", `SyncEngine: downloaded ${meta.id}`);
 	}
 
@@ -346,7 +431,10 @@ export class SyncEngine {
 						salt: encrypted.salt,
 						unencrypted: !encrypted.iv,
 					};
-					const plaintext = await this.crypto.decrypt(payload, this.passphrase);
+					const plaintext = await this.crypto.decrypt(
+						payload,
+						this.passphrase,
+					);
 					const remoteSession: ChatSession = JSON.parse(plaintext);
 					const newSession: ChatSession = {
 						...remoteSession,
@@ -362,14 +450,21 @@ export class SyncEngine {
 						await this.onSessionDownloaded(newSession);
 					}
 
-					await this.cache.markSynced(newSession.id, remote.modifiedAt, remote.etag);
+					await this.cache.markSynced(
+						newSession.id,
+						remote.modifiedAt,
+						remote.etag,
+					);
 				}
 				// Keep local as-is (re-mark as pending so it uploads)
 				await this.cache.putSession(local);
 				break;
 			}
 			case "manual": {
-				this.log("info", `Conflict: queuing manual resolution for ${local.id}`);
+				this.log(
+					"info",
+					`Conflict: queuing manual resolution for ${local.id}`,
+				);
 				await this.cache.markConflict(local.id);
 				break;
 			}
@@ -392,12 +487,21 @@ export class SyncEngine {
 			}
 			await this.cache.putSession(session);
 		}
-		this.log("info", `SyncEngine: cache populated with ${sessions.length} sessions`);
+		this.log(
+			"info",
+			`SyncEngine: cache populated with ${sessions.length} sessions`,
+		);
 	}
 
 	/** Set a progress callback for per-session sync events. */
 	setProgressHandler(
-		handler: (event: { type: string; id: string; direction?: "upload" | "download"; status: "start" | "done" | "error"; error?: string }) => void,
+		handler: (event: {
+			type: string;
+			id: string;
+			direction?: "upload" | "download";
+			status: "start" | "done" | "error";
+			error?: string;
+		}) => void,
 	): void {
 		this.progress = handler;
 	}

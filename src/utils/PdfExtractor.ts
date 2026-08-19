@@ -72,7 +72,10 @@ async function extractFromServer(
 		const data = await response.json();
 
 		if (!data.success) {
-			return { success: false, error: data.error || "Unknown server error" };
+			return {
+				success: false,
+				error: data.error || "Unknown server error",
+			};
 		}
 
 		return {
@@ -119,8 +122,11 @@ async function extractFromClient(
 		const totalPages = pdf.numPages;
 		const pagesToExtract = Math.min(maxPages, totalPages);
 
-		const pages: Array<{ pageNumber: number; text: string; wordCount: number }> =
-			[];
+		const pages: Array<{
+			pageNumber: number;
+			text: string;
+			wordCount: number;
+		}> = [];
 
 		for (let i = 1; i <= pagesToExtract; i++) {
 			const page = await pdf.getPage(i);

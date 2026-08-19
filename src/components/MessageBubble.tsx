@@ -467,9 +467,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 									className="chat-attachment-chip chat-attachment-chip-readonly"
 								>
 									<span className="chat-attachment-icon">
-										{att.type === "image"
-											? "🖼️"
-											: "📄"}
+										{att.type === "image" ? "🖼️" : "📄"}
 									</span>
 									<span className="chat-attachment-name">
 										{att.name}
