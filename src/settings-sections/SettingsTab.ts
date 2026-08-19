@@ -16,6 +16,7 @@ import { renderUpdaterSection } from "./updaterSettings";
 import { renderWebSearchSection } from "./webSearch";
 import { renderPdfExtractionSection } from "./pdfExtraction";
 import { renderRemoteStorageSection } from "./remoteStorageSettings";
+import { renderExportImportSection } from "./exportImport";
 
 function debounce(fn: () => void, ms: number): () => void {
 	let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -115,7 +116,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Updates", "Updates"],
 				["Advanced", "Advanced"],
 				["Custom Commands", "Custom Commands"],
-				["Diagnostics", "Diagnostics"],
+				["Backup & Restore", "Backup & Restore"],
 			].forEach(([label, sectionTitle]) => {
 				const id = `obsidian-ai-settings-${sectionTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 				const button = nav.createEl("button", {
@@ -200,7 +201,12 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				this.plugin,
 				this.saveSettings.bind(this),
 			);
-			renderDiagnosticsSection(
+			renderExportImportSection(
+			containerEl,
+			this.plugin,
+			this.saveSettings.bind(this),
+		);
+		renderDiagnosticsSection(
 				containerEl,
 				this.plugin,
 				this.app,
