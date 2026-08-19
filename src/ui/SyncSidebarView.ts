@@ -8,6 +8,7 @@ interface LogEntry {
 	time: number;
 	icon: string;
 	text: string;
+	id?: string;
 	done?: boolean;
 	error?: boolean;
 }
@@ -281,7 +282,7 @@ export class SyncSidebarView extends ItemView {
 	addLog(
 		type: "upload" | "download" | "conflict" | "skip" | "error" | "system",
 		message: string,
-		meta?: { done?: boolean; error?: boolean },
+		meta?: { id?: string; done?: boolean; error?: boolean },
 	) {
 		const icons: Record<string, string> = {
 			upload: "↑",
@@ -296,6 +297,7 @@ export class SyncSidebarView extends ItemView {
 			time: Date.now(),
 			icon: icons[type] || "•",
 			text: message,
+			id: meta?.id,
 			done: meta?.done,
 			error: meta?.error,
 		};

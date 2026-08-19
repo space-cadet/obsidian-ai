@@ -730,8 +730,9 @@ export default class ObsidianAIPlugin extends Plugin {
 		}
 	}
 
-	/** Trigger a manual sync and update settings */
-	async triggerSync(dryRun = false): Promise<{ ok: boolean; message: string }> {
+	/** Trigger a manual sync and update settings.
+	 *  Sidebar is the primary UI; pass `{ useModal: true }` to also show the modal. */
+	async triggerSync(dryRun = false, options?: { useModal?: boolean }): Promise<{ ok: boolean; message: string }> {
 		// Lazy-init sync engine if not already initialized (e.g., user enabled sync after plugin load)
 		if (!this.syncEngine) {
 			await this._initSyncEngine();
@@ -747,28 +748,35 @@ export default class ObsidianAIPlugin extends Plugin {
 		const startTime = Date.now();
 		const syncLogger = new SyncLogger(this.app, this.manifest.id);
 
-		// Create modal with cancel handler wired to sync engine
-		const modal = new SyncProgressModal(this.app, 0, {
-			onCancel: () => {
-				this.syncEngine?.cancel();
-			},
-		});
-		modal.open();
+		// ── Sidebar: reveal and get reference ──
+		await this.activateSyncSidebar();
+		const sidebar = this.getSyncSidebarView();
 
-		// Wire progress callback into sync engine
+		// ── Modal: optional fallback ──
+		let modal: SyncProgressModal | null = null;
+		if (options?.useModal) {
+			modal = new SyncProgressModal(this.app, 0, {
+				onCancel: () => {
+					this.syncEngine?.cancel();
+				},
+			});
+			modal.open();
+		}
+
+		// Wire progress callback into sync engine → sidebar + modal
+		let completedOps = 0;
 		this.syncEngine?.setProgressHandler((event) => {
 			if (event.type === "session") {
 				const title =
 					this._getSessionTitle(event.id) || event.id.slice(0, 8);
 				if (event.status === "start") {
-					modal.addLog(event.direction!, `${title}`, {
-						id: event.id,
-					});
+					sidebar?.addLog(event.direction!, `${title}`, { id: event.id });
+					modal?.addLog(event.direction!, `${title}`, { id: event.id });
 				} else if (event.status === "done") {
-					modal.addLog(event.direction!, `${title}`, {
-						id: event.id,
-						done: true,
-					});
+					completedOps++;
+					sidebar?.updateProgress(completedOps, 0, event.direction!, title);
+					sidebar?.addLog(event.direction!, `${title}`, { id: event.id, done: true });
+					modal?.addLog(event.direction!, `${title}`, { id: event.id, done: true });
 					syncLogger.log({
 						timestamp: Date.now(),
 						deviceId: syncLogger["deviceId"],
@@ -778,10 +786,8 @@ export default class ObsidianAIPlugin extends Plugin {
 						message: "success",
 					});
 				} else if (event.status === "error") {
-					modal.addLog("error", `${title}: ${event.error}`, {
-						id: event.id,
-						error: true,
-					});
+					sidebar?.addLog("error", `${title}: ${event.error}`, { id: event.id, error: true });
+					modal?.addLog("error", `${title}: ${event.error}`, { id: event.id, error: true });
 					syncLogger.log({
 						timestamp: Date.now(),
 						deviceId: syncLogger["deviceId"],
@@ -794,17 +800,24 @@ export default class ObsidianAIPlugin extends Plugin {
 			}
 		});
 
+		// Wire live logs → sidebar
+		this.syncEngine?.setLogHandler((level, msg) => {
+			sidebar?.addLog(level as any, msg);
+		});
+
 		try {
 			// Compute sync plan (may fail if offline, bad credentials, etc.)
-			modal.addLog("system", "Reading local sessions...");
+			sidebar?.addLog("system", "Reading local sessions...");
+			modal?.addLog("system", "Reading local sessions...");
 			await this._populateSyncCache();
 			const plan = await this.syncEngine.computeSyncPlan();
 			const totalOps =
 				plan.upload.length +
 				plan.download.length +
 				plan.conflicts.length;
-			modal.setTotal(totalOps);
-			modal.addLog(
+			modal?.setTotal(totalOps);
+			sidebar?.setPlan(plan);
+			modal?.addLog(
 				"system",
 				`Plan: ↑${plan.upload.length} ↓${plan.download.length} ⚡${plan.conflicts.length} ⊘${plan.skipped}`,
 			);
@@ -842,7 +855,8 @@ export default class ObsidianAIPlugin extends Plugin {
 				await syncLogger.appendRemote(adapter, sessionRecord);
 			}
 
-			modal.finish({ ...result, message: msg });
+			sidebar?.finish({ ...result, message: msg });
+			modal?.finish({ ...result, message: msg });
 
 			// Toast notification
 			if (ok) {
@@ -873,7 +887,8 @@ export default class ObsidianAIPlugin extends Plugin {
 			});
 			await syncLogger.flushLocal();
 
-			modal.finish({
+			sidebar?.setError(msg);
+			modal?.finish({
 				uploaded: 0,
 				downloaded: 0,
 				conflicts: 0,
