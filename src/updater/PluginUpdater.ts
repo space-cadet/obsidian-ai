@@ -218,7 +218,7 @@ export class PluginUpdater {
 				this.log("info", "selected release:", release?.tag_name, "prerelease:", release?.prerelease);
 			} else {
 				release = await fetchJson(
-					`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
+					`https://api.github.com/repos/${GITHUB_REPO}/releases/latest?_cb=${Date.now()}`,
 				);
 				this.log("info", "fetched latest release:", release?.tag_name);
 			}
