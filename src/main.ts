@@ -46,6 +46,7 @@ import { StorageAdapter } from "./sync/StorageAdapter";
 import { SyncIndexManager } from "./sync/SyncIndexManager";
 import { createPluginIndexStorage } from "./sync/SyncIndex";
 import { ProviderRegistry } from "./integrations/ProviderRegistry";
+import { SyncSidebarView, SYNC_SIDEBAR_VIEW_TYPE } from "./ui/SyncSidebarView";
 
 export const OPEN_CHAT_COMMAND_ID = "open-chat-lab-sidebar";
 export const OPEN_CHAT_COMMAND_NAME = "Open Chat Lab AI sidebar";
@@ -181,6 +182,11 @@ export default class ObsidianAIPlugin extends Plugin {
 			(leaf) => new ObsidianAIChatView(leaf, this, {}),
 		);
 
+		this.registerView(
+			SYNC_SIDEBAR_VIEW_TYPE,
+			(leaf) => new SyncSidebarView(leaf, this),
+		);
+
 		// A previous desktop race could have persisted more than one chat leaf in
 		// the workspace. Reconcile restored layouts once they are fully available.
 		this.app.workspace.onLayoutReady(() => {
@@ -192,10 +198,20 @@ export default class ObsidianAIPlugin extends Plugin {
 			this.activateChatView();
 		});
 
+		this.addRibbonIcon("sync", "Open Chat Sync", () => {
+			this.activateSyncSidebar();
+		});
+
 		this.addCommand({
 			id: "open-obsidian-ai-chat",
 			name: "Open Chat Lab",
 			callback: () => this.activateChatView(),
+		});
+
+		this.addCommand({
+			id: "open-chat-sync-sidebar",
+			name: "Open Chat Sync sidebar",
+			callback: () => this.activateSyncSidebar(),
 		});
 
 		this.registerEditorExtension([
@@ -323,6 +339,13 @@ export default class ObsidianAIPlugin extends Plugin {
 		// Initialize remote sync engine if configured
 		await this._initSyncEngine();
 
+		// T42e: Dry run command
+		this.addCommand({
+			id: "chat-sync-dry-run",
+			name: "Chat Sync: Dry Run",
+			callback: () => this.triggerSync(true),
+		});
+
 		// Command to clear debug log
 		this.addCommand({
 			id: "clear-debug-log",
@@ -442,6 +465,36 @@ export default class ObsidianAIPlugin extends Plugin {
 		}
 
 		return canonicalLeaf;
+	}
+
+	/** Open or reveal the Chat Sync sidebar leaf. */
+	async activateSyncSidebar(): Promise<void> {
+		const { workspace } = this.app;
+		const leaves = workspace.getLeavesOfType(SYNC_SIDEBAR_VIEW_TYPE);
+		let leaf: WorkspaceLeaf | null | undefined = leaves[0];
+
+		if (!leaf) {
+			leaf = workspace.getRightLeaf(false);
+			if (!leaf) {
+				leaf = workspace.getLeaf(true);
+			}
+			await leaf.setViewState({ type: SYNC_SIDEBAR_VIEW_TYPE, active: true });
+		} else {
+			workspace.revealLeaf(leaf);
+		}
+		workspace.setActiveLeaf(leaf, { focus: true });
+	}
+
+	/** Get the sync sidebar view instance if it exists. */
+	getSyncSidebarView(): SyncSidebarView | null {
+		const leaves = this.app.workspace.getLeavesOfType(SYNC_SIDEBAR_VIEW_TYPE);
+		for (const leaf of leaves) {
+			const view = leaf.view;
+			if (view instanceof SyncSidebarView) {
+				return view;
+			}
+		}
+		return null;
 	}
 
 	async openSessionInNewTab(
@@ -678,7 +731,7 @@ export default class ObsidianAIPlugin extends Plugin {
 	}
 
 	/** Trigger a manual sync and update settings */
-	async triggerSync(): Promise<{ ok: boolean; message: string }> {
+	async triggerSync(dryRun = false): Promise<{ ok: boolean; message: string }> {
 		// Lazy-init sync engine if not already initialized (e.g., user enabled sync after plugin load)
 		if (!this.syncEngine) {
 			await this._initSyncEngine();
@@ -690,6 +743,7 @@ export default class ObsidianAIPlugin extends Plugin {
 			return { ok: false, message: msg };
 		}
 
+		this.syncEngine.dryRun = dryRun;
 		const startTime = Date.now();
 		const syncLogger = new SyncLogger(this.app, this.manifest.id);
 
@@ -757,8 +811,10 @@ export default class ObsidianAIPlugin extends Plugin {
 
 			const result = await this.syncEngine.sync();
 			const durationMs = Date.now() - startTime;
-			this.settings.remoteStorage.lastSyncTime = Date.now();
-			await this.saveSettings();
+			if (!dryRun) {
+				this.settings.remoteStorage.lastSyncTime = Date.now();
+				await this.saveSettings();
+			}
 
 			const parts: string[] = [];
 			if (result.uploaded > 0) parts.push(`↑${result.uploaded}`);
@@ -780,7 +836,7 @@ export default class ObsidianAIPlugin extends Plugin {
 			};
 			syncLogger.recordSession(sessionRecord);
 			await syncLogger.flushLocal();
-			if (this.syncEngine) {
+			if (this.syncEngine && !dryRun) {
 				const adapter = (this.syncEngine as any)
 					.adapter as StorageAdapter;
 				await syncLogger.appendRemote(adapter, sessionRecord);
@@ -790,7 +846,10 @@ export default class ObsidianAIPlugin extends Plugin {
 
 			// Toast notification
 			if (ok) {
-				new Notice(`✅ Sync complete: ${msg}`, 6000);
+				new Notice(
+					dryRun ? `🔍 Dry run complete: ${msg}` : `✅ Sync complete: ${msg}`,
+					6000,
+				);
 			} else {
 				new Notice(`⚠️ Sync finished with errors: ${msg}`, 8000);
 			}
@@ -824,6 +883,8 @@ export default class ObsidianAIPlugin extends Plugin {
 			});
 			new Notice(`❌ ${msg}`, 8000);
 			return { ok: false, message: msg };
+		} finally {
+			this.syncEngine.dryRun = false;
 		}
 	}
 

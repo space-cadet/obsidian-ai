@@ -35,6 +35,8 @@ export interface SyncEngineConfig {
 	indexManager?: SyncIndexManager;
 	/** Max parallel upload/download operations (T42c). */
 	concurrencyLimit?: number;
+	/** Dry run mode: compute plan but do not transfer anything (T42e). */
+	dryRun?: boolean;
 }
 
 /**
@@ -57,11 +59,13 @@ export class SyncEngine {
 		status: "start" | "done" | "error";
 		error?: string;
 	}) => void;
+	private logHandler?: (level: string, msg: string) => void;
 	private onSessionDownloaded?: (session: ChatSession) => Promise<void>;
 	private _cancelled = false;
 	private indexManager?: SyncIndexManager;
 	private serverConfig?: { url: string; username: string; prefix?: string };
 	private concurrencyLimit: number;
+	dryRun: boolean;
 
 	constructor(config: SyncEngineConfig) {
 		this.adapter = config.adapter;
@@ -74,6 +78,7 @@ export class SyncEngine {
 		this.onSessionDownloaded = config.onSessionDownloaded;
 		this.indexManager = config.indexManager;
 		this.concurrencyLimit = config.concurrencyLimit ?? 3;
+		this.dryRun = config.dryRun ?? false;
 	}
 
 	get currentState(): SyncState {
@@ -170,6 +175,81 @@ export class SyncEngine {
 
 		try {
 			const plan = await this.computeSyncPlan(index);
+
+			// T42e: Dry run mode — compute plan but do not transfer anything
+			if (this.dryRun) {
+				this.log(
+					"info",
+					`Dry run: would upload ${plan.upload.length}, download ${plan.download.length}, skip ${plan.skipped}`,
+				);
+
+				for (const session of plan.upload) {
+					if (this._cancelled) {
+						errors.push("Cancelled by user");
+						break;
+					}
+					this.progress?.({
+						type: "session",
+						id: session.id,
+						direction: "upload",
+						status: "start",
+					});
+					this.progress?.({
+						type: "session",
+						id: session.id,
+						direction: "upload",
+						status: "done",
+					});
+					uploaded++;
+				}
+
+				for (const meta of plan.download) {
+					if (this._cancelled) {
+						errors.push("Cancelled by user");
+						break;
+					}
+					this.progress?.({
+						type: "session",
+						id: meta.id,
+						direction: "download",
+						status: "start",
+					});
+					this.progress?.({
+						type: "session",
+						id: meta.id,
+						direction: "download",
+						status: "done",
+					});
+					downloaded++;
+				}
+
+				for (const conflict of plan.conflicts) {
+					if (this._cancelled) {
+						errors.push("Cancelled by user");
+						break;
+					}
+					this.progress?.({
+						type: "session",
+						id: conflict.local.id,
+						status: "start",
+					});
+					this.progress?.({
+						type: "session",
+						id: conflict.local.id,
+						status: "done",
+					});
+					conflicts++;
+				}
+
+				this.state = errors.length > 0 ? "error" : "idle";
+				return {
+					uploaded,
+					downloaded,
+					conflicts,
+					skipped: plan.skipped,
+					errors,
+				};
+			}
 
 			// Upload local changes
 			if (!this._cancelled) {
@@ -599,6 +679,11 @@ export class SyncEngine {
 		);
 	}
 
+	/** Set a log callback for live log streaming (e.g. to sidebar). */
+	setLogHandler(handler: (level: string, msg: string) => void): void {
+		this.logHandler = handler;
+	}
+
 	/** Set a progress callback for per-session sync events. */
 	setProgressHandler(
 		handler: (event: {
@@ -622,5 +707,6 @@ export class SyncEngine {
 
 	private log(level: string, msg: string): void {
 		this.logger?.log(level, msg);
+		this.logHandler?.(level, msg);
 	}
 }
