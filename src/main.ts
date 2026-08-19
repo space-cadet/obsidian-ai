@@ -843,7 +843,7 @@ export default class ObsidianAIPlugin extends Plugin {
 				webdavPassword,
 			);
 		} else {
-			this.app.removeLocalStorage(ObsidianAIPlugin.LS_WEBDAV_PASSWORD);
+			localStorage.removeItem(ObsidianAIPlugin.LS_WEBDAV_PASSWORD);
 		}
 
 		const existing = (await this.loadData()) ?? {};
