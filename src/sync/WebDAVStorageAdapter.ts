@@ -4,6 +4,7 @@ import type {
 	RemoteSessionMeta,
 } from "./StorageAdapter";
 import { requestUrl } from "obsidian";
+import { createTempPath, isTempPath } from "./AtomicWrite";
 
 export interface WebDAVConfig {
 	url: string;
@@ -68,6 +69,8 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 				}
 				// Extract session ID from filename (e.g., "session-abc.json" -> "session-abc")
 				const filename = item.href.split("/").pop() || "";
+				// Skip temporary files from atomic writes
+				if (isTempPath(filename)) continue;
 				const id = filename.replace(/\.json$/, "");
 				if (!id) continue;
 
@@ -113,11 +116,28 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 
 		const path = this.prefix + "sessions/" + session.id + ".json";
 		const body = JSON.stringify(session);
-		const res = await this.put(path, body, "application/json");
+		const tempPath = createTempPath(path);
 
-		// Extract ETag from response headers (Nextcloud returns it on PUT)
-		const etag = res.headers.etag || res.headers.ETag;
-		return { etag, modifiedAt: session.modifiedAt };
+		try {
+			const putRes = await this.put(tempPath, body, "application/json");
+			const moveRes = await this.move(tempPath, path);
+
+			// Extract ETag from response headers (Nextcloud returns it on MOVE or PUT)
+			const etag =
+				moveRes.headers.etag ||
+				moveRes.headers.ETag ||
+				putRes.headers.etag ||
+				putRes.headers.ETag;
+			return { etag, modifiedAt: session.modifiedAt };
+		} catch (err) {
+			// Clean up temp file on failure; ignore cleanup errors
+			try {
+				await this.del(tempPath);
+			} catch {
+				// no-op
+			}
+			throw err;
+		}
 	}
 
 	async deleteSession(id: string): Promise<void> {
@@ -254,6 +274,17 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		contentType: string,
 	): Promise<{ status: number; headers: Record<string, string> }> {
 		return await this.request("PUT", path, { body, contentType });
+	}
+
+	private async move(
+		from: string,
+		to: string,
+	): Promise<{ status: number; headers: Record<string, string> }> {
+		const destinationUrl = this.baseUrl + to;
+		const res = await this.request("MOVE", from, {
+			headers: { Destination: destinationUrl },
+		});
+		return { status: res.status, headers: res.headers };
 	}
 
 	private async del(path: string): Promise<void> {
