@@ -19,6 +19,9 @@ const SENSITIVE_KEYS = [
 	"password",
 	"secretAccessKey",
 	"accessKeyId",
+	"tavilyApiKey",
+	"exaApiKey",
+	"braveApiKey",
 ];
 
 function redactSensitiveValues(obj: any): any {
