@@ -1,4 +1,5 @@
-// main.ts
+// main.ts - Chat Lab AI Plugin
+// Test commit 2 for updater diagnosis
 import { Plugin, MarkdownView, App, Notice, WorkspaceLeaf } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import {
