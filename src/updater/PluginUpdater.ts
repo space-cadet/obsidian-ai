@@ -64,7 +64,7 @@ async function fetchLatestCommit(
 ): Promise<CommitInfo | null> {
 	try {
 		const data = await fetchJson(
-			`https://api.github.com/repos/${GITHUB_REPO}/commits/${branch}`,
+			`https://api.github.com/repos/${GITHUB_REPO}/commits/${branch}?_cb=${Date.now()}`,
 		);
 		if (!data?.sha) return null;
 		return {
@@ -84,6 +84,13 @@ async function fetchJson(url: string): Promise<any> {
 		method: "GET",
 		headers: { "User-Agent": "obsidian-ai-updater" },
 	});
+	if (response.status < 200 || response.status >= 300) {
+		const info = response.text ? JSON.parse(response.text) : {};
+		const msg = info?.message || `HTTP ${response.status}`;
+		const err: any = new Error(msg);
+		err.status = response.status;
+		throw err;
+	}
 	return JSON.parse(response.text);
 }
 
@@ -151,14 +158,22 @@ export class PluginUpdater {
 		currentCommitHash?: string,
 		currentBranch?: string,
 	): Promise<UpdateCheckResult> {
+		console.log("[PluginUpdater] checkForUpdate:", {
+			currentVersion,
+			includePrerelease,
+			currentCommitHash: currentCommitHash?.slice(0, 7),
+			currentBranch,
+		});
 		try {
 			let release: ReleaseInfo;
 
 			if (includePrerelease) {
 				const releases = (await fetchJson(
-					`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=30`,
+					`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=30&_cb=${Date.now()}`,
 				)) as ReleaseInfo[];
+				console.log("[PluginUpdater] fetched releases:", releases.length);
 				if (!releases || releases.length === 0) {
+					console.log("[PluginUpdater] no releases found");
 					return {
 						hasUpdate: false,
 						currentVersion,
@@ -183,10 +198,12 @@ export class PluginUpdater {
 					releases.find((r) => r.tag_name === "latest-dev") ??
 					releases.find((r) => r.prerelease) ??
 					releases[0];
+				console.log("[PluginUpdater] selected release:", release?.tag_name, "prerelease:", release?.prerelease);
 			} else {
 				release = await fetchJson(
 					`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
 				);
+				console.log("[PluginUpdater] fetched latest release:", release?.tag_name);
 			}
 
 			const latestVersion = release.tag_name.replace(/^v/, "");
@@ -194,13 +211,16 @@ export class PluginUpdater {
 			const latestCommit = await fetchLatestCommit(
 				includePrerelease && currentBranch ? currentBranch : "main",
 			);
+			console.log("[PluginUpdater] latestCommit:", latestCommit?.sha?.slice(0, 7));
 			// For dev channel: compare commit hashes to detect if already on latest
 			let commitMatch = false;
 			if (includePrerelease && currentCommitHash && latestCommit) {
 				const shortLocal = currentCommitHash.slice(0, 7);
 				const shortRemote = latestCommit.sha.slice(0, 7);
 				commitMatch = shortLocal === shortRemote;
+				console.log("[PluginUpdater] commit compare:", shortLocal, "vs", shortRemote, "match:", commitMatch);
 				if (commitMatch) {
+					console.log("[PluginUpdater] commits match - no update");
 					return {
 						hasUpdate: false,
 						currentVersion,
@@ -215,6 +235,7 @@ export class PluginUpdater {
 
 			const hasUpdate =
 				compareVersions(latestVersion, currentVersion) > 0;
+			console.log("[PluginUpdater] version compare:", latestVersion, "vs", currentVersion, "hasUpdate:", hasUpdate);
 
 			return {
 				hasUpdate,
@@ -241,6 +262,7 @@ export class PluginUpdater {
 	async downloadUpdate(release: ReleaseInfo): Promise<string> {
 		const tempDir = `${this.pluginDir}/.update-tmp`;
 		await this.ensureDir(tempDir);
+		console.log("[PluginUpdater] downloading to", tempDir, "assets:", release.assets.map((a) => a.name));
 
 		// Download each required file
 		for (const filename of RELEASE_FILES) {
@@ -249,7 +271,10 @@ export class PluginUpdater {
 				throw new Error(`Release missing required file: ${filename}`);
 			}
 			const destPath = `${tempDir}/${filename}`;
+			console.log("[PluginUpdater] downloading", filename, "from", asset.browser_download_url);
 			await downloadFile(this.app, asset.browser_download_url, destPath);
+			const stat = await this.app.vault.adapter.stat(destPath);
+			console.log("[PluginUpdater] downloaded", filename, "size:", stat?.size ?? "unknown");
 		}
 
 		return tempDir;
@@ -259,6 +284,7 @@ export class PluginUpdater {
 	async installUpdate(tempDir: string): Promise<void> {
 		const backupDir = `${this.pluginDir}/.backup`;
 		await this.ensureDir(backupDir);
+		console.log("[PluginUpdater] installing from", tempDir, "backing up to", backupDir);
 
 		// Backup current files
 		for (const filename of RELEASE_FILES) {
@@ -267,6 +293,7 @@ export class PluginUpdater {
 			if (await this.fileExists(currentPath)) {
 				const content = await this.readFile(currentPath);
 				await this.writeFile(backupPath, content);
+				console.log("[PluginUpdater] backed up", filename);
 			}
 		}
 
@@ -276,6 +303,7 @@ export class PluginUpdater {
 			const dest = `${this.pluginDir}/${filename}`;
 			const content = await this.readFile(src);
 			await this.writeFile(dest, content);
+			console.log("[PluginUpdater] installed", filename, "(" + content.length + " chars)");
 		}
 	}
 

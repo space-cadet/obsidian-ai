@@ -556,8 +556,15 @@ export default class ObsidianAIPlugin extends Plugin {
 			}
 		} catch (error: any) {
 			console.error("[ObsidianAI] Update check failed:", error);
+			const isRateLimit = error?.status === 403 ||
+				error?.message?.includes("rate limit") ||
+				error?.message?.includes("API rate limit");
 			if (manual) {
-				new Notice(`❌ Update check failed: ${error.message}`);
+				if (isRateLimit) {
+					new Notice("❌ GitHub API rate limit exceeded. Try again in a few minutes.", 6000);
+				} else {
+					new Notice(`❌ Update check failed: ${error.message}`, 5000);
+				}
 			}
 		}
 	}
