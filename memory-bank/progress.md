@@ -1,4 +1,34 @@
 # Implementation Progress
+*Last Updated: 2026-08-19 17:50 IST*
+
+### 2026-08-19 — T6a, T49, T51 Complete + Updater Cache-Busting Fix
+
+- **T6a: Token Counter Accuracy Fix** — COMPLETE (`161fee3`)
+  - Settings toggle `showFullRequestTokens` (default true) in Chat Defaults
+  - Full payload count = system prompt + history + message + response
+  - Backward compatible: toggle allows old message-only behavior
+  - Limitation: full count only for active streaming; loaded sessions show message sums
+
+- **T49: Settings Export/Import** — COMPLETE (`0061937`, `966e8fe`, `c68faa9`)
+  - Export: saves JSON to vault root via `vault.adapter.write()` (desktop + mobile)
+  - Import: `FuzzySuggestModal` picks from vault JSON files
+  - API keys redacted by default; optional secrets export with warning
+  - Security fix: added `tavilyApiKey`, `exaApiKey`, `braveApiKey` to redaction list
+
+- **T51: Opt-in Telemetry** — COMPLETE (`05c53c8`)
+  - Strictly opt-in, disabled by default
+  - First-run dialog with full disclosure
+  - Events: `chat_started`, `tool_used`
+  - Endpoint: `https://quantumofgravity.com/telemetry`
+  - Mobile-visible diagnostics via file logger
+
+- **T41 Updater Fix** — Intermittent "works once then fails" bug fixed
+  - Root cause: GitHub API CDN caching without cache-busting
+  - Fix: `&_cb=${Date.now()}` on all API calls + HTTP status checking
+  - Diagnostics: all updater logs go to `debug.log` (mobile-accessible)
+  - Commits: `b582dfa`, `8ae8650`, `dc0f173`
+
+# Implementation Progress
 *Last Updated: 2026-08-17 01:04 UTC*
 
 ### 2026-08-17 — T42: Remote Chat Storage & Sync — ETag, Progress Modal, Logs, Cancel

@@ -1,5 +1,24 @@
 # Active Context
 
+*Last Updated: 2026-08-19 17:50 IST*
+
+### 2026-08-19 — Session Closeout: T6a, T49, T51 Complete; T41 Intermittent Bug Fixed
+
+**Completed today:**
+- **T6a** (`161fee3`): Token counter accuracy fix with settings toggle
+- **T49** (`0061937`, `966e8fe`, `c68faa9`): Settings export/import with vault-native file ops
+- **T51** (`05c53c8`): Opt-in telemetry with first-run dialog
+- **T41 fix** (`b582dfa`, `8ae8650`, `dc0f173`): Updater cache-busting + mobile diagnostics
+
+**Key decisions:**
+- Export/import uses vault-native operations (works on mobile + desktop)
+- Telemetry endpoint at `quantumofgravity.com/telemetry` (backend TBD)
+- Updater diagnostics go to `debug.log` (mobile-accessible via Settings → Diagnostics)
+
+---
+
+# Active Context
+
 *Last Updated: 2026-08-19 13:31:15 IST*
 
 ### 2026-08-19 — DeepSeek V4 Pricing Investigation + New Task Batch (T6a, T48, T49, T50, T51)
