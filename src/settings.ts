@@ -65,6 +65,8 @@ export interface RemoteStorageConfig {
 	webdav?: WebDAVStorageConfig;
 	s3?: S3StorageConfig;
 	lastSyncTime: number;
+	/** Max parallel upload/download operations (T42c). */
+	concurrencyLimit?: number;
 }
 
 export interface ModelCache {
@@ -391,6 +393,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 		autoSync: false,
 		syncIntervalMinutes: 30,
 		conflictStrategy: "last-write-wins",
+		concurrencyLimit: 3,
 		webdav: {
 			type: "webdav",
 			url: "",
@@ -555,6 +558,11 @@ export const normalizeSettings = (
 					| "last-write-wins"
 					| "keep-both"
 					| "manual") ?? "last-write-wins",
+			concurrencyLimit: Number.isFinite(
+				merged.remoteStorage?.concurrencyLimit,
+			)
+				? (merged.remoteStorage?.concurrencyLimit as number)
+				: 3,
 			webdav: {
 				type: "webdav" as const,
 				url: merged.remoteStorage?.webdav?.url ?? "",

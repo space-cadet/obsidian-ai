@@ -9,6 +9,7 @@ import type {
 import { LocalCache } from "./LocalCache";
 import { EncryptionLayer, checksum } from "./EncryptionLayer";
 import { SyncIndexManager } from "./SyncIndexManager";
+import { runWithConcurrency } from "./ConcurrencyLimiter";
 import type { SyncIndex } from "./SyncIndex";
 
 export type SyncState = "idle" | "syncing" | "error" | "locked";
@@ -32,6 +33,8 @@ export interface SyncEngineConfig {
 	onSessionDownloaded?: (session: ChatSession) => Promise<void>;
 	/** Optional sync index manager for skipping unchanged sessions (T42a). */
 	indexManager?: SyncIndexManager;
+	/** Max parallel upload/download operations (T42c). */
+	concurrencyLimit?: number;
 }
 
 /**
@@ -58,6 +61,7 @@ export class SyncEngine {
 	private _cancelled = false;
 	private indexManager?: SyncIndexManager;
 	private serverConfig?: { url: string; username: string; prefix?: string };
+	private concurrencyLimit: number;
 
 	constructor(config: SyncEngineConfig) {
 		this.adapter = config.adapter;
@@ -69,6 +73,7 @@ export class SyncEngine {
 		this.progress = config.progress;
 		this.onSessionDownloaded = config.onSessionDownloaded;
 		this.indexManager = config.indexManager;
+		this.concurrencyLimit = config.concurrencyLimit ?? 3;
 	}
 
 	get currentState(): SyncState {
@@ -167,34 +172,41 @@ export class SyncEngine {
 			const plan = await this.computeSyncPlan(index);
 
 			// Upload local changes
-			for (const session of plan.upload) {
-				if (this._cancelled) {
-					this.log("warn", "SyncEngine: cancelled during upload");
-					errors.push("Cancelled by user");
-					break;
-				}
-				try {
-					const remoteMeta = await this.uploadSession(session);
-					uploaded++;
-					syncedLocals.push(session);
-					if (remoteMeta) syncedRemotes.push(remoteMeta);
-				} catch (err: any) {
-					const msg = `Upload failed for ${session.id}: ${err.message}`;
-					this.log("error", msg);
-					errors.push(msg);
-				}
+			if (!this._cancelled) {
+				let uploadCancelledReported = false;
+				await runWithConcurrency(plan.upload, this.concurrencyLimit, async (session) => {
+					if (this._cancelled) {
+						if (!uploadCancelledReported) {
+							uploadCancelledReported = true;
+							this.log("warn", "SyncEngine: cancelled during upload");
+							errors.push("Cancelled by user");
+						}
+						return;
+					}
+					try {
+						const remoteMeta = await this.uploadSession(session);
+						uploaded++;
+						syncedLocals.push(session);
+						if (remoteMeta) syncedRemotes.push(remoteMeta);
+					} catch (err: any) {
+						const msg = `Upload failed for ${session.id}: ${err.message}`;
+						this.log("error", msg);
+						errors.push(msg);
+					}
+				});
 			}
 
 			// Download remote changes (skip if cancelled)
 			if (!this._cancelled) {
-				for (const meta of plan.download) {
+				let downloadCancelledReported = false;
+				await runWithConcurrency(plan.download, this.concurrencyLimit, async (meta) => {
 					if (this._cancelled) {
-						this.log(
-							"warn",
-							"SyncEngine: cancelled during download",
-						);
-						errors.push("Cancelled by user");
-						break;
+						if (!downloadCancelledReported) {
+							downloadCancelledReported = true;
+							this.log("warn", "SyncEngine: cancelled during download");
+							errors.push("Cancelled by user");
+						}
+						return;
 					}
 					try {
 						const localSession = await this.downloadSession(meta);
@@ -206,19 +218,20 @@ export class SyncEngine {
 						this.log("error", msg);
 						errors.push(msg);
 					}
-				}
+				});
 			}
 
 			// Handle conflicts (skip if cancelled)
 			if (!this._cancelled) {
-				for (const conflict of plan.conflicts) {
+				let conflictCancelledReported = false;
+				await runWithConcurrency(plan.conflicts, this.concurrencyLimit, async (conflict) => {
 					if (this._cancelled) {
-						this.log(
-							"warn",
-							"SyncEngine: cancelled during conflict resolution",
-						);
-						errors.push("Cancelled by user");
-						break;
+						if (!conflictCancelledReported) {
+							conflictCancelledReported = true;
+							this.log("warn", "SyncEngine: cancelled during conflict resolution");
+							errors.push("Cancelled by user");
+						}
+						return;
 					}
 					try {
 						const resolved = await this.resolveConflict(
@@ -236,7 +249,7 @@ export class SyncEngine {
 						errors.push(msg);
 						await this.cache.markConflict(conflict.local.id);
 					}
-				}
+				});
 			}
 
 			const lastSyncTime = Date.now();

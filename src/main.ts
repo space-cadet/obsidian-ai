@@ -599,6 +599,7 @@ export default class ObsidianAIPlugin extends Plugin {
 			username: rs.webdav?.username,
 			passphrase: rs.passphrase,
 			conflictStrategy: rs.conflictStrategy,
+			concurrencyLimit: rs.concurrencyLimit,
 		});
 
 		// Skip re-init if config unchanged and engine exists
@@ -634,6 +635,7 @@ export default class ObsidianAIPlugin extends Plugin {
 				crypto,
 				passphrase: rs.passphrase,
 				conflictStrategy: rs.conflictStrategy,
+				concurrencyLimit: rs.concurrencyLimit ?? 3,
 				indexManager,
 				logger: {
 					log: (level: string, msg: string) => {
