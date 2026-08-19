@@ -87,6 +87,27 @@ export default class ObsidianAIPlugin extends Plugin {
 		await this.logger.init();
 
 		await this.loadSettings();
+
+		// Initialize telemetry (T51) — must be after loadSettings
+		const { telemetry, getOrCreateTelemetryId, showTelemetryOptInDialog } = await import("./lib/telemetry");
+		if (!this.settings.telemetryId) {
+			this.settings.telemetryId = getOrCreateTelemetryId();
+		}
+		telemetry.init(this);
+		// First-run telemetry opt-in (strictly opt-in, asked once)
+		if (!this.settings.telemetryAsked) {
+			// Defer dialog slightly so Obsidian UI is ready
+			window.setTimeout(async () => {
+				const enabled = await showTelemetryOptInDialog(this);
+				this.settings.telemetryEnabled = enabled;
+				this.settings.telemetryAsked = true;
+				await this.saveSettings();
+				telemetry.setEnabled(enabled);
+			}, 2000);
+		} else {
+			telemetry.setEnabled(this.settings.telemetryEnabled);
+		}
+
 		this.integrationRegistry = new ProviderRegistry(
 			this.app,
 			this.settings,
@@ -544,6 +565,10 @@ export default class ObsidianAIPlugin extends Plugin {
 	onunload() {
 		this.logger.stopMemoryLogging();
 		this.logger.flushNow();
+		// Flush any pending telemetry events (T51)
+		import("./lib/telemetry").then(({ telemetry }) => {
+			telemetry.destroy();
+		}).catch(() => {});
 	}
 
 	private _lastSyncConfigHash: string = "";

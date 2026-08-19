@@ -3,6 +3,7 @@ import { ToolExecutor } from "./ToolExecutor";
 import type { ToolCall, ToolResult, StreamEvent } from "./types";
 import { estimateTokens } from "../context/tokenEstimator";
 import type { ProviderProfile } from "../settings";
+import { telemetry } from "../lib/telemetry";
 
 export interface AgentLoopOptions {
 	chatApi: ChatApiManager;
@@ -256,6 +257,12 @@ export class AgentLoop {
 				`[AgentLoop] step ${step} tool-result:`,
 				result.error ?? "success",
 			);
+			// Telemetry: tool usage
+			telemetry.log({
+				event: "tool_used",
+				feature: pendingCall.toolName,
+				value: result.error ? 0 : 1,
+			});
 			this.opts.onToolResult?.(pendingCall, result);
 
 			// Build assistant message (text + tool call only — reasoning is NOT included

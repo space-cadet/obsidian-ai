@@ -28,6 +28,7 @@ import { ParticipantRouter } from "../agent/ParticipantRouter";
 import { parseMentions } from "../agent/MentionParser";
 import { getAgentColor, getAgentIcon } from "../lib/agentVisuals";
 import { contextItemKey, sameContextItems } from "../lib/contextUtils";
+import { telemetry } from "../lib/telemetry";
 import { parseSlashCommand, SlashCommand } from "../lib/slashCommand";
 import { makeId, getSessionTotalTokens } from "../lib/sessionUtils";
 import { buildSystemPrompt } from "../lib/systemPrompt";
@@ -556,7 +557,13 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	// Wrap handleSend to also sync to relay (only if ParticipantRouter is not handling it)
 	const handleSendWithSync = useCallback(
 		async (text: string, attachments?: import("../types").Attachment[]) => {
-			await actions.handleSend(text, attachments);
+		await actions.handleSend(text, attachments);
+		// Telemetry: chat started
+		telemetry.log({
+			event: "chat_started",
+			provider: resolvedProfile.provider,
+			feature: participantRouter ? "group_chat" : "single_chat",
+		});
 			// Only do legacy relay sync if ParticipantRouter is not active
 			if (
 				!participantRouter &&

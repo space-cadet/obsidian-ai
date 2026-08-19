@@ -17,6 +17,7 @@ import { renderWebSearchSection } from "./webSearch";
 import { renderPdfExtractionSection } from "./pdfExtraction";
 import { renderRemoteStorageSection } from "./remoteStorageSettings";
 import { renderExportImportSection } from "./exportImport";
+import { renderTelemetrySection } from "./telemetry";
 
 function debounce(fn: () => void, ms: number): () => void {
 	let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -114,9 +115,11 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Sync", "Multi-User Sync"],
 				["Remote Storage", "Remote Storage"],
 				["Updates", "Updates"],
+				["Telemetry & Privacy", "Telemetry & Privacy"],
 				["Advanced", "Advanced"],
 				["Custom Commands", "Custom Commands"],
 				["Backup & Restore", "Backup & Restore"],
+				["Diagnostics", "Diagnostics"],
 			].forEach(([label, sectionTitle]) => {
 				const id = `obsidian-ai-settings-${sectionTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 				const button = nav.createEl("button", {
@@ -191,6 +194,11 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				this.plugin,
 				this.saveSettings.bind(this),
 			);
+			renderTelemetrySection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
 			renderAdvancedSection(
 				containerEl,
 				this.plugin,
@@ -202,11 +210,11 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				this.saveSettings.bind(this),
 			);
 			renderExportImportSection(
-			containerEl,
-			this.plugin,
-			this.saveSettings.bind(this),
-		);
-		renderDiagnosticsSection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
+			renderDiagnosticsSection(
 				containerEl,
 				this.plugin,
 				this.app,
