@@ -119,6 +119,8 @@ export interface ObsidianAISettings {
 	pressEnterToSend: boolean;
 	/** Preferred fixed width for each title in the shared chat tab strip. */
 	chatTabTitleWidth: number;
+	/** Show full request payload token count (system + history + message) instead of message-only */
+	showFullRequestTokens: boolean;
 	/** Restore saved internal chat tabs and their positions after a plugin reload. */
 	restoreChatTabs: boolean;
 	/** Chat storage format: 'legacy' = single data.json, 'jsonl' = split sessions */
@@ -339,6 +341,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	pressEnterToSend: true,
 	chatTabTitleWidth: 160,
 	restoreChatTabs: true,
+	showFullRequestTokens: true,
 	contextPickerPathDisplay: "duplicates",
 	webSearchProvider: "duckduckgo",
 	braveApiKey: "",
@@ -470,6 +473,9 @@ export const normalizeSettings = (
 			),
 		),
 		restoreChatTabs: Boolean(merged.restoreChatTabs ?? true),
+		showFullRequestTokens: Boolean(
+			merged.showFullRequestTokens ?? true,
+		),
 		contextPickerPathDisplay:
 			(merged.contextPickerPathDisplay as
 				| "never"

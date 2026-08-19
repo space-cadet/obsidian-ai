@@ -680,6 +680,15 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				},
 			];
 
+			const fullPayloadTokenEstimate = plugin.settings.showFullRequestTokens
+				? estimateTokens(JSON.stringify(chatMessages))
+				: userTokenEstimate;
+
+			// Update runtime with full payload estimate so UI shows correct starting count
+			patchRuntime(currentActiveId, {
+				runningTokenTotal: fullPayloadTokenEstimate,
+			});
+
 			let fullText = "";
 			let toolCallsLog: Array<{ call: ToolCall; result?: ToolResult }> =
 				[];
@@ -818,7 +827,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						},
 						onTokenUpdate: (total) => {
 							patchRuntime(currentActiveId, {
-								runningTokenTotal: userTokenEstimate + total,
+								runningTokenTotal: fullPayloadTokenEstimate + total,
 							});
 						},
 					});
@@ -952,7 +961,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						},
 						onTokenUpdate: (total) => {
 							patchRuntime(currentActiveId, {
-								runningTokenTotal: userTokenEstimate + total,
+								runningTokenTotal: fullPayloadTokenEstimate + total,
 							});
 						},
 					});
@@ -992,7 +1001,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						}
 						// Update running token total incrementally for standard stream
 						streamTokenTotal =
-							userTokenEstimate + estimateTokens(fullText);
+							fullPayloadTokenEstimate + estimateTokens(fullText);
 						patchRuntime(currentActiveId, {
 							runningTokenTotal: streamTokenTotal,
 						});

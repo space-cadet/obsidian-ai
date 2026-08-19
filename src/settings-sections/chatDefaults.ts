@@ -37,6 +37,20 @@ export function renderChatDefaultsSection(
 		});
 
 	new Setting(sectionEl)
+		.setName("Show full request token count")
+		.setDesc(
+			"When enabled, the token counter shows the complete API request payload (system prompt + conversation history + message). When disabled, it shows only the current message tokens.",
+		)
+		.addToggle((toggle) => {
+			toggle
+				.setValue(plugin.settings.showFullRequestTokens)
+				.onChange(async (value) => {
+					plugin.settings.showFullRequestTokens = value;
+					await saveSettings();
+				});
+		});
+
+	new Setting(sectionEl)
 		.setName("Press Enter to send")
 		.setDesc(
 			"When enabled, pressing Enter sends the message and Shift+Enter inserts a new line. When disabled, Enter inserts a new line and you must click the send button.",

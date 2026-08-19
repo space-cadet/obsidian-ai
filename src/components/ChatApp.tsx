@@ -947,11 +947,19 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					const sessionTotal = session
 						? getSessionTotalTokens(session)
 						: 0;
+					const showFullRequest =
+						plugin.settings.showFullRequestTokens;
 					if (
 						activeRuntime.isStreaming &&
 						activeRuntime.runningTokenTotal > 0
 					) {
-						return `~${(sessionTotal + activeRuntime.runningTokenTotal).toLocaleString()} tokens`;
+						// When full payload mode is on, runningTokenTotal already
+						// includes system + history + user + response tokens.
+						// Show just that to avoid double-counting history.
+						const displayTotal = showFullRequest
+							? activeRuntime.runningTokenTotal
+							: sessionTotal + activeRuntime.runningTokenTotal;
+						return `~${displayTotal.toLocaleString()} tokens`;
 					}
 					if (sessionTotal > 0) {
 						return `~${sessionTotal.toLocaleString()} tokens`;
