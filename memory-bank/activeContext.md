@@ -1,8 +1,47 @@
 # Active Context
 
-*Last Updated: 2026-08-17 02:27 IST*
+*Last Updated: 2026-08-19 13:31:15 IST*
 
-### 2026-08-17 — T42: Remote Chat Storage & Sync ✅ Phase 2 Complete + ETag + Progress + Logs + Cancel
+### 2026-08-19 — DeepSeek V4 Pricing Investigation + New Task Batch (T6a, T48, T49, T50, T51)
+
+- **Context**: User noticed DeepSeek V4 pricing was higher than expected. Investigation revealed
+  the plugin's token counter significantly undercounts actual API usage — showing only the
+  current user message tokens (~8K) while the full request payload includes system prompt +
+  10 turns of history (~850K tokens, 842K cached).
+- **Root cause**: `estimateTokens()` in `tokenEstimator.ts` only counts `text.length / 4` for
+  the user message text. It ignores system prompt, conversation history, and tool call context.
+- **DeepSeek Responses API**: Confirmed stateless (`previous_response_id` not supported per
+  official compatibility docs). Cache hit pricing is cheap ($0.007/M) but the UI lies about
+  actual usage.
+
+**New tasks created:**
+
+| Task | Title | Priority | Status |
+|------|-------|----------|--------|
+| **T6a** | Token Counter Accuracy Fix — Full Request Payload Counting | HIGH | 🔄 Active |
+| **T48** | Conversation Compaction Mechanism | HIGH | 🔄 Active |
+| **T49** | Settings Export and Import | MEDIUM | 🔄 Active |
+| **T50** | OpenAI Responses API / Threads Support (Stateful Sessions) | MEDIUM | 🔄 Active |
+| **T51** | Opt-in Telemetry and Usage Data Collection | MEDIUM | 🔄 Active |
+
+- **T6a**: 20-line fix. Show full payload tokens (system + history + message) instead of
+  message-only count. Settings toggle for backward compatibility.
+- **T48**: Auto-summarize old conversation turns after N turns to reduce per-request payload.
+  Estimated ~80% token savings on long conversations. Provider-agnostic (works with DeepSeek).
+- **T49**: JSON export/import for plugin settings. API keys redacted by default. Schema versioning.
+- **T50**: OpenAI stateful sessions via Responses API. Deprioritized for DeepSeek users (their
+  Responses API is stateless). Only benefits OpenAI power users.
+- **T51**: Opt-in anonymized telemetry. Strictly disabled by default. Full disclosure. Collects
+  provider type, feature usage, error rates — never message content or API keys.
+
+**Implementation docs created/updated:**
+- Updated `context-system-design.md` (T6a) — token counting behavior section
+- Created `conversation-compaction-design.md` (T48)
+- Created `settings-export-schema.md` (T49)
+- Updated `openresponses-implementation.md` (T50) — provider compatibility matrix
+- Created `telemetry-privacy-design.md` (T51)
+
+---
 
 - **Commits**: `ac24ced` → ... → `e96b703` → `be3c3bb` → `29ad150` → `deff496`
 - **Phase 1 (Architecture)**: StorageAdapter interface, LocalCache (IndexedDB), EncryptionLayer (AES-256-GCM via PBKDF2), SyncEngine (delta sync + 3 conflict strategies + state machine)

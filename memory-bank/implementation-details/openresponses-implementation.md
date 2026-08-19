@@ -295,3 +295,45 @@ async testConnection(): Promise<{ ok: boolean; error?: string }> {
 - T14a: Network Infrastructure (prerequisite)
 - T13: Agentic Tool Calling (tool definitions reused)
 - T9: Settings & Provider Profiles (settings schema extended)
+
+---
+
+## Provider Compatibility Matrix (Added 2026-08-19 — T50)
+
+The OpenResponses API format is supported by multiple providers, but stateful
+session support (`previous_response_id`) varies:
+
+| Provider | Stateful | `previous_response_id` | Notes |
+|---|---|---|---|
+| **OpenAI** | ✅ Yes | ✅ Supported | Full stateful Responses API |
+| **DeepSeek** | ❌ No | ❌ Not supported | Format-compatible, but stateless |
+| **Anthropic** | ❌ No | ❌ Not supported | Uses Messages API, not Responses |
+| **Gemini** | ⚠️ Partial | ⚠️ Sessions API | Different API shape entirely |
+
+### DeepSeek Specifics
+
+DeepSeek's [official compatibility docs](https://api-docs.deepseek.com/guides/responses_api)
+confirm:
+
+> `previous_response_id`: Not supported (stateless API)
+> `conversation`: Not supported (stateless API)
+> `store`: Not supported. The response always carries `store: false`
+
+This means even though DeepSeek accepts the OpenResponses request format, every
+request must still include the full conversation history. There is no server-side
+state persistence.
+
+### Implications for Plugin Architecture
+
+The plugin must continue using the **Chat Completions** path for DeepSeek, as
+switching to Responses API format provides no benefit (and may add complexity).
+
+For OpenAI users, a future T50 implementation could add a **stateful mode** that:
+1. Stores `response.id` from each turn
+2. Sends only the new message with `previous_response_id`
+3. Skips local history management for that session
+
+### References
+
+- Task: [T50 — OpenAI Responses API / Threads Support](../tasks/T50.md)
+- DeepSeek Docs: [Responses API Compatibility](https://api-docs.deepseek.com/guides/responses_api)

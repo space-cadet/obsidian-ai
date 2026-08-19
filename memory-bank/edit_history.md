@@ -1,6 +1,20 @@
 # Edit History
 
-*Last Updated: 2026-08-17 01:04 UTC*
+*Last Updated: 2026-08-19 13:31:15 IST*
+
+#### 13:31 IST - T6a, T48, T49, T50, T51: Created new task batch from DeepSeek pricing investigation
+- Created `memory-bank/tasks/T6a.md` — Token Counter Accuracy Fix (subtask of T6)
+- Created `memory-bank/tasks/T48.md` — Conversation Compaction Mechanism
+- Created `memory-bank/tasks/T49.md` — Settings Export and Import
+- Created `memory-bank/tasks/T50.md` — OpenAI Responses API / Threads Support
+- Created `memory-bank/tasks/T51.md` — Opt-in Telemetry and Usage Data Collection
+- Modified `memory-bank/tasks.md` — Added T6a, T48, T49, T50, T51 to active task registry
+- Modified `memory-bank/activeContext.md` — Added DeepSeek investigation context and new task batch
+- Created `memory-bank/implementation-details/conversation-compaction-design.md` (T48)
+- Created `memory-bank/implementation-details/settings-export-schema.md` (T49)
+- Created `memory-bank/implementation-details/telemetry-privacy-design.md` (T51)
+- Modified `memory-bank/implementation-details/context-system-design.md` (T6a) — Added token counting section
+- Modified `memory-bank/implementation-details/openresponses-implementation.md` (T50) — Added provider compatibility matrix
 
 #### 01:04 UTC - T42: ETag comparison, terminal-style progress modal, sync log files, cancel support
 - Modified `src/sync/StorageAdapter.ts` — Added `_etag` to `CachedSession`, added `writeText()` method to interface

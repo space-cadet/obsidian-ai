@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-16 19:05 IST*
+*Last Updated: 2026-08-19 13:31:15 IST*
 
 ## Overview
 
@@ -19,6 +19,11 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T40 | Multi-User Chat with LaTeX Support | 🔄 | HIGH | 2026-08-08 | T16 | [Details](tasks/T40.md) |
 | T42 | Remote Chat Storage & Sync | 🔄 | HIGH | 2026-08-10 | T40 | [Details](tasks/T42.md) |
 | T44 | Standalone UI Preview and Obsidian Host Boundary | 🔄 | MEDIUM | 2026-08-12 | T1, T22 | [Details](tasks/T44.md) |
+| T6a | Token Counter Accuracy Fix | 🔄 | HIGH | — | T6 | [Details](tasks/T6a.md) |
+| T48 | Conversation Compaction Mechanism | 🔄 | HIGH | — | T6a | [Details](tasks/T48.md) |
+| T49 | Settings Export and Import | 🔄 | MEDIUM | — | T23 | [Details](tasks/T49.md) |
+| T50 | OpenAI Responses API / Threads Support | 🔄 | MEDIUM | — | T14 | [Details](tasks/T50.md) |
+| T51 | Opt-in Telemetry and Usage Data Collection | 🔄 | MEDIUM | — | T38 | [Details](tasks/T51.md) |
 | T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
 | T8a | Community Directory Review Remediation | 🔄 | HIGH | 2026-08-15 | T8, T7 | [Details](tasks/T8a.md) |
 

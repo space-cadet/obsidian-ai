@@ -249,3 +249,77 @@ ContextEngine ──────────────────────
 - `ContextEngine.ts` for multi-note resolution
 - `embedExpander.ts` for `![[]]` inline embeds
 - Token estimation and truncation
+
+---
+
+## Token Counting Behavior (Added 2026-08-19 — T6a)
+
+### Current Behavior
+
+The `estimateTokens()` function in `tokenEstimator.ts` uses a simple heuristic:
+
+```typescript
+export const TOKEN_ESTIMATE_RATIO = 4;
+
+export function estimateTokens(text: string): number {
+    return Math.ceil(text.length / TOKEN_ESTIMATE_RATIO);
+}
+```
+
+This is applied to:
+- The user's current message text
+- Attached context items (notes, folders, active note)
+- Attachments (images, PDFs)
+
+### What's Missing from the Count
+
+The actual API request payload includes **much more** than what the plugin counts:
+
+| Component | Counted? | Typical Size |
+|---|---|---|
+| User message text | ✅ Yes | 100–2,000 tokens |
+| Attached context items | ✅ Yes | 500–50,000 tokens |
+| System prompt (`buildSystemPrompt`) | ❌ No | 2,000–5,000 tokens |
+| Conversation history (up to 10 turns) | ❌ No | 10,000–100,000+ tokens |
+| Previous tool calls + results | ❌ No | 5,000–50,000 tokens |
+| Message structure overhead | ❌ No | ~100–500 tokens |
+
+### The Discrepancy
+
+In a typical long conversation with DeepSeek V4:
+- Plugin shows: **~8,000 tokens** (user message only)
+- DeepSeek bills: **~850,000 tokens** (842K cache hit + 8K new)
+
+The plugin undercounts by **100× or more** because it ignores:
+1. The system prompt (persona, tool descriptions, system context)
+2. All previous conversation turns
+3. Tool call arguments and results
+
+### Why Cache Hits Are Still Counted
+
+DeepSeek's KV cache "hit" means they don't recompute attention for those tokens,
+but they **still bill for them** as input tokens. The discount is significant
+($0.007/M for cache hits vs $0.22/M for cache misses on V4-Flash off-peak),
+but the tokens are still part of the bill.
+
+### The Fix (T6a)
+
+The token counter should optionally show the **full request payload** estimate:
+
+```typescript
+const chatMessages = [
+    { role: "system", content: systemPrompt },
+    ...history,  // up to maxContextMessages
+    { role: "user", content: userMessage },
+];
+
+const fullPayloadTokens = estimateTokens(JSON.stringify(chatMessages));
+```
+
+A settings toggle (`showFullRequestTokens`, default `true`) controls whether
+the UI shows the honest count or the legacy message-only count.
+
+### References
+
+- Task: [T6a — Token Counter Accuracy Fix](../tasks/T6a.md)
+- Source: `src/context/tokenEstimator.ts`, `src/hooks/useMessageActions.ts`
