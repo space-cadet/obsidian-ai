@@ -22,6 +22,7 @@ export interface ChatPluginLike {
 	loadChatData(): Promise<StoredChatData>;
 	saveChatData(data: StoredChatData): Promise<void>;
 	saveSettings(): Promise<void>;
+	openRemoteStorageSettings?(): void;
 	onSessionEnd?(session: import("../types").ChatSession): Promise<void>;
 }
 

@@ -4474,7 +4474,8 @@
 .sync-v2-substatus { color: var(--text-muted); font-size: var(--font-ui-smaller); }
 .sync-v2-controls {
 	order: 0;
-	padding: 0;
+	padding: 2px 4px;
+	min-height: 32px;
 	border: 0;
 	margin-top: 2px;
 }
@@ -4509,7 +4510,7 @@
 	padding: 0;
 	background: transparent;
 }
-.sync-v2-pill-count { font-size: 1.25em; line-height: 1.05; }
+.sync-v2-pill-count { font-size: 1.05em; line-height: 1; }
 .sync-v2-pill-label { font-size: var(--font-ui-smaller); color: var(--text-muted); text-transform: lowercase; }
 .sync-v2-pill.upload .sync-v2-pill-count { color: var(--text-success); }
 .sync-v2-pill.download .sync-v2-pill-count { color: var(--text-accent); }
@@ -4531,8 +4532,8 @@
 	margin-bottom: 2px;
 }
 .sync-v2-item {
-	min-height: 40px;
-	padding: 9px 12px;
+	min-height: 36px;
+	padding: 6px 10px;
 	border-left: 0;
 	border-radius: 7px;
 	background: var(--background-secondary);
@@ -4544,13 +4545,15 @@
 	padding: 0;
 	border: 0;
 }
-.sync-v2-btn { width: 100%; min-height: 38px; border-radius: 8px; font-size: var(--font-ui-small); }
+.sync-v2-btn { width: auto; min-width: 150px; min-height: 34px; border-radius: 8px; font-size: var(--font-ui-small); }
 .sync-v2-btn.cancel { background: var(--background-secondary); color: var(--text-error); }
 .sync-v2-settings-action {
 	order: 6;
 	flex: 0 0 auto;
-	width: 100%;
-	min-height: 36px;
+	width: auto;
+	align-self: center;
+	padding: 0 24px;
+	min-height: 32px;
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 8px;
 	background: var(--background-secondary);
@@ -4562,5 +4565,5 @@
 @media (max-width: 520px) {
 	.chat-sync-panel-v2 { padding: 12px; }
 	.sync-v2-counters { grid-template-columns: repeat(3, 1fr); row-gap: 14px; }
-	.sync-v2-pill-count { font-size: 1.65em; }
+	.sync-v2-pill-count { font-size: 1.05em; }
 }

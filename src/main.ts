@@ -927,6 +927,7 @@ export default class ObsidianAIPlugin extends Plugin {
 		if (!this.syncEngine) return;
 		try {
 			const chatData = await this.loadChatData();
+			(this as any)._chatData = chatData;
 			const sessions = chatData.sessions || [];
 			await this.syncEngine.populateCache(sessions);
 		} catch (err: any) {
@@ -935,6 +936,32 @@ export default class ObsidianAIPlugin extends Plugin {
 				`SyncEngine: failed to populate cache: ${err.message}`,
 			);
 		}
+	}
+
+	/** Open this plugin's settings directly at the Remote Storage section. */
+	openRemoteStorageSettings(): void {
+		const setting = (this.app as any).setting;
+		setting.open();
+		setting.openTabById(this.manifest.id);
+		const reveal = () => {
+			const section = document.querySelector<HTMLElement>(
+				"#obsidian-ai-settings-remote-storage",
+			);
+			if (!section) return;
+			const scrollContainer = section.parentElement?.closest<HTMLElement>(
+				".vertical-tab-content, .setting-tab-content",
+			);
+			if (scrollContainer) {
+				const top = section.getBoundingClientRect().top -
+					scrollContainer.getBoundingClientRect().top +
+					scrollContainer.scrollTop - 12;
+				scrollContainer.scrollTo({ top, behavior: "smooth" });
+			} else {
+				section.scrollIntoView({ behavior: "smooth", block: "start" });
+			}
+		};
+		window.setTimeout(reveal, 50);
+		window.setTimeout(reveal, 250);
 	}
 
 	/** Debounced auto-sync trigger. Waits 3s of inactivity before syncing. */

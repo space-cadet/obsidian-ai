@@ -118,10 +118,15 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 	}, [plugin]);
 
 	const handleOpenSettings = useCallback(() => {
+		if (plugin.openRemoteStorageSettings) {
+			plugin.openRemoteStorageSettings();
+			return;
+		}
+		// Fallback for lightweight hosts and previews.
 		// @ts-ignore
 		plugin.app.setting.open();
 		// @ts-ignore
-		plugin.app.setting.openTabById("obsidian-ai");
+		plugin.app.setting.openTabById(plugin.manifest.id);
 	}, [plugin]);
 
 	// ── Derived state ──────────────────────────────────────────────────────
