@@ -59,6 +59,14 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		elapsedMs: number;
 	} | null>(null);
 	const [error, setError] = useState<string | null>(null);
+	const [showRebuildChoices, setShowRebuildChoices] = useState(false);
+	const [isRebuilding, setIsRebuilding] = useState(false);
+	const [rebuildReport, setRebuildReport] = useState<{
+		uploaded: number;
+		downloaded: number;
+		conflicts: number;
+		skipped: number;
+	} | null>(null);
 	const logsEndRef = useRef<HTMLDivElement>(null);
 	const startTimeRef = useRef<number>(0);
 
@@ -129,6 +137,21 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		plugin.app.setting.openTabById(plugin.manifest.id);
 	}, [plugin]);
 
+	const handleRebuild = useCallback(async (choice: "remote" | "local" | "compare") => {
+		if (!plugin.rebuildSyncIndex) return;
+		setIsRebuilding(true);
+		setError(null);
+		try {
+			const report = await plugin.rebuildSyncIndex(choice);
+			setRebuildReport(report);
+			setShowRebuildChoices(false);
+		} catch (err: any) {
+			setError(err?.message || String(err));
+		} finally {
+			setIsRebuilding(false);
+		}
+	}, [plugin]);
+
 	// ── Derived state ──────────────────────────────────────────────────────
 	const lastSyncText = rs.lastSyncTime
 		? new Date(rs.lastSyncTime).toLocaleString()
@@ -190,10 +213,33 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 					/>
 					Dry run
 				</label>
-				<button className="sync-v2-settings-btn" onClick={handleOpenSettings}>
-					⚙
+				<button className="sync-v2-settings-btn" onClick={handleOpenSettings} aria-label="Open settings" title="Open settings">
+					⚙️
 				</button>
 			</div>
+
+			{showRebuildChoices && (
+				<div className="sync-v2-rebuild-panel">
+					<strong>Rebuild sync record</strong>
+					<p>The app needs to decide which copies to trust.</p>
+					<div className="sync-v2-rebuild-options">
+						<button onClick={() => void handleRebuild("remote")} disabled={isRebuilding}>Trust remote copies</button>
+						<button onClick={() => void handleRebuild("local")} disabled={isRebuilding}>Trust local copies</button>
+						<button onClick={() => void handleRebuild("compare")} disabled={isRebuilding}>Compare copies</button>
+						<button onClick={() => setShowRebuildChoices(false)} disabled={isRebuilding}>Cancel</button>
+					</div>
+				</div>
+			)}
+			{rebuildReport && !showRebuildChoices && (
+				<div className="sync-v2-rebuild-report">
+					<strong>Rebuild finished</strong>
+					<span>Uploaded: {rebuildReport.uploaded}</span>
+					<span>Downloaded: {rebuildReport.downloaded}</span>
+					<span>Needs attention: {rebuildReport.conflicts}</span>
+					<span>Already matched: {rebuildReport.skipped}</span>
+					<button onClick={() => setRebuildReport(null)}>Dismiss</button>
+				</div>
+			)}
 
 			{/* ── Progress Section (SyncIt-style) ──────────────────────── */}
 			{isSyncing && (
@@ -265,8 +311,12 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 						{dryRun ? "Start dry run" : "Start sync"}
 					</button>
 				)}
+				{!isSyncing && (
+					<button className="sync-v2-btn rebuild" onClick={() => setShowRebuildChoices(true)} disabled={isRebuilding}>
+						{isRebuilding ? "Rebuilding…" : "Rebuild"}
+					</button>
+				)}
 			</div>
-			<button className="sync-v2-settings-action" onClick={handleOpenSettings}>Settings</button>
 		</div>
 	);
 };

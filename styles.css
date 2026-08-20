@@ -4450,6 +4450,76 @@
 	background: color-mix(in srgb, var(--text-error) 20%, var(--background-modifier-error));
 }
 
+.sync-v2-btn.rebuild {
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.sync-v2-btn.rebuild:hover {
+	background: var(--background-modifier-hover);
+}
+
+.sync-v2-rebuild-panel {
+	flex: 0 0 auto;
+	padding: 10px 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background: var(--background-secondary);
+}
+
+.sync-v2-rebuild-panel p {
+	margin: 4px 0 10px;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.sync-v2-rebuild-options {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.sync-v2-rebuild-options button {
+	padding: 5px 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-smaller);
+	cursor: pointer;
+}
+
+.sync-v2-rebuild-options button:hover {
+	background: var(--background-modifier-hover);
+}
+
+.sync-v2-rebuild-report {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 12px;
+	padding: 8px 10px;
+	border-radius: 8px;
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.sync-v2-rebuild-report strong {
+	color: var(--text-normal);
+}
+
+.sync-v2-rebuild-report button {
+	margin-left: auto;
+	padding: 3px 7px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 5px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	cursor: pointer;
+}
+
 /* SyncIt status-screen layout */
 .chat-sync-panel-v2 {
 	padding: 16px;
@@ -4519,8 +4589,8 @@
 .sync-v2-pill.error .sync-v2-pill-count { color: var(--text-error); }
 .sync-v2-list {
 	flex: 1 1 180px;
-	min-height: 140px;
-	max-height: 42vh;
+	min-height: 180px;
+	max-height: 55vh;
 	gap: 6px;
 	border-top: 1px solid var(--background-modifier-border);
 	padding-top: 12px;
@@ -4542,16 +4612,18 @@
 .sync-v2-item-status { font-size: 0.85em; border-radius: 6px; text-transform: none; }
 .sync-v2-actions {
 	order: 5;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
 	padding: 0;
 	border: 0;
 }
-.sync-v2-btn { width: auto; min-width: 150px; min-height: 34px; border-radius: 8px; font-size: var(--font-ui-small); }
+.sync-v2-btn { width: auto; min-width: 130px; min-height: 34px; border-radius: 8px; font-size: var(--font-ui-small); }
 .sync-v2-btn.cancel { background: var(--background-secondary); color: var(--text-error); }
 .sync-v2-settings-action {
-	order: 6;
 	flex: 0 0 auto;
 	width: auto;
-	align-self: center;
 	padding: 0 24px;
 	min-height: 32px;
 	border: 1px solid var(--background-modifier-border);

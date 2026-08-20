@@ -687,6 +687,19 @@ export default class ObsidianAIPlugin extends Plugin {
 
 	/** Trigger a manual sync and update settings.
 	 *  Sidebar is the primary UI; pass `{ useModal: true }` to also show the modal. */
+	async rebuildSyncIndex(choice: "remote" | "local" | "compare"): Promise<{ uploaded: number; downloaded: number; conflicts: number; skipped: number }> {
+		if (!this.syncEngine) await this._initSyncEngine();
+		if (!this.syncEngine) throw new Error("Sync is not configured");
+		const result = await this.syncEngine.rebuildIndex(choice);
+		new Notice("Sync record rebuilt.");
+		return {
+			uploaded: result.uploaded,
+			downloaded: result.downloaded,
+			conflicts: result.conflicts,
+			skipped: result.skipped,
+		};
+	}
+
 	async triggerSync(
 		dryRun = false,
 		options?: {

@@ -23,6 +23,12 @@ export interface ChatPluginLike {
 	saveChatData(data: StoredChatData): Promise<void>;
 	saveSettings(): Promise<void>;
 	openRemoteStorageSettings?(): void;
+	rebuildSyncIndex?(choice: "remote" | "local" | "compare"): Promise<{
+		uploaded: number;
+		downloaded: number;
+		conflicts: number;
+		skipped: number;
+	}>;
 	onSessionEnd?(session: import("../types").ChatSession): Promise<void>;
 }
 

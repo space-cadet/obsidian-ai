@@ -466,6 +466,60 @@ export class SyncEngine {
 		return { upload, download, conflicts, skipped };
 	}
 
+	/** Rebuild sync state using the user's chosen rule for conflicts. */
+	async rebuildIndex(choice: "remote" | "local" | "compare"): Promise<SyncResult> {
+		if (choice === "compare") {
+			const previousStrategy = this.conflictStrategy;
+			this.conflictStrategy = "manual";
+			try {
+				return await this.sync();
+			} finally {
+				this.conflictStrategy = previousStrategy;
+			}
+			return { uploaded: 0, downloaded: 0, conflicts: 0, skipped: 0, errors: [] };
+		}
+
+		if (this.state === "syncing") throw new Error("A sync is already running");
+		this.state = "syncing";
+		try {
+			const locals = await this.cache.getAllSessions();
+			const remotes = await this.adapter.listSessions();
+			const remoteById = new Map(remotes.map((remote) => [remote.id, remote]));
+			const plan = await this.computeSyncPlan();
+			const targets = new Set(plan.conflicts.map((item) => item.local.id));
+			let uploaded = 0;
+			let downloaded = 0;
+
+			if (choice === "remote") {
+				for (const remote of remotes) {
+					if (targets.has(remote.id) || !locals.some((local) => local.id === remote.id)) {
+						await this.downloadSession(remote);
+						downloaded++;
+					}
+				}
+			} else {
+				for (const local of locals) {
+					if (targets.has(local.id) || !remoteById.has(local.id)) {
+						await this.uploadSession(local);
+						uploaded++;
+					}
+				}
+			}
+
+			if (this.indexManager && this.serverConfig) {
+				const signature = SyncIndexManager.makeServerSignature(this.serverConfig);
+				const refreshedLocals = await this.cache.getAllSessions();
+				const refreshedRemotes = await this.adapter.listSessions();
+				await this.indexManager.save(
+					await this.indexManager.buildIndex(refreshedLocals, refreshedRemotes, signature),
+				);
+			}
+			return { uploaded, downloaded, conflicts: plan.conflicts.length, skipped: plan.skipped, errors: [] };
+		} finally {
+			this.state = "idle";
+		}
+	}
+
 	/** Upload a single session to remote storage.
 	 *  @returns Remote session metadata if upload succeeded. */
 	private async uploadSession(session: ChatSession): Promise<RemoteSessionMeta | undefined> {
