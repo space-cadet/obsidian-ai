@@ -2,6 +2,19 @@
 
 *Last Updated: 2026-08-19 19:44 IST*
 
+### 2026-08-20 — T43: Integrated Sync UI (In Progress)
+
+**New task:** T43 — Integrate Sync UI into Chat Lab
+- Replaces standalone `SyncSidebarView` with integrated sync tab inside Chat Lab
+- Export button becomes dropdown with Export + Sync options
+- Sync opens as non-session tab (`__sync__`) with rich progress UI
+- Direction control: Two-way / Upload only / Download only
+- T42f superseded by T43
+
+**Status:** 🔄 IN PROGRESS — Implementation pending user approval
+
+---
+
 ### 2026-08-19 — Session Closeout: T6a, T49, T51 Complete; T41 Intermittent Bug Fixed
 
 **Completed today:**

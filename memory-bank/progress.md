@@ -1,3 +1,27 @@
+### 2026-08-20 — T43: Integrated Sync UI — Task and Design Doc Created
+
+**Task created:** `memory-bank/tasks/T43.md`
+**Design doc created:** `memory-bank/implementation-details/integrated-sync-ui-design.md`
+
+**Scope:** Replace standalone sync sidebar with integrated sync tab in Chat Lab
+- Remove `SYNC_SIDEBAR_VIEW_TYPE` (separate sidebar)
+- Export button → dropdown with Export + Sync options
+- Sync opens as `__sync__` tab in ChatTabBar
+- Rich progress UI: direction selector, dry run, per-session logs, completion cards
+- Settings: `syncDirection` default ("both" | "upload" | "download")
+
+**6 Implementation Phases:**
+1. Remove 2nd sidebar (SyncSidebarView, ribbon icon, commands)
+2. Add `syncDirection` setting
+3. Export dropdown + sync tab in ChatTabBar
+4. ChatSyncPanel with rich progress UI
+5. SyncEngine direction parameter
+6. Integration & testing
+
+**T42f superseded by T43.**
+
+---
+
 ### 2026-08-19 — T42 Phase 6: SyncIt Feature Port — Subtasks and Design Docs Created
 
 **Phase 6 subtasks created (T42a–T42f):**

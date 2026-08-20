@@ -46,7 +46,6 @@ import { StorageAdapter } from "./sync/StorageAdapter";
 import { SyncIndexManager } from "./sync/SyncIndexManager";
 import { createPluginIndexStorage } from "./sync/SyncIndex";
 import { ProviderRegistry } from "./integrations/ProviderRegistry";
-import { SyncSidebarView, SYNC_SIDEBAR_VIEW_TYPE } from "./ui/SyncSidebarView";
 
 export const OPEN_CHAT_COMMAND_ID = "open-chat-lab-sidebar";
 export const OPEN_CHAT_COMMAND_NAME = "Open Chat Lab AI sidebar";
@@ -182,11 +181,6 @@ export default class ObsidianAIPlugin extends Plugin {
 			(leaf) => new ObsidianAIChatView(leaf, this, {}),
 		);
 
-		this.registerView(
-			SYNC_SIDEBAR_VIEW_TYPE,
-			(leaf) => new SyncSidebarView(leaf, this),
-		);
-
 		// A previous desktop race could have persisted more than one chat leaf in
 		// the workspace. Reconcile restored layouts once they are fully available.
 		this.app.workspace.onLayoutReady(() => {
@@ -198,20 +192,10 @@ export default class ObsidianAIPlugin extends Plugin {
 			this.activateChatView();
 		});
 
-		this.addRibbonIcon("sync", "Open Chat Sync", () => {
-			this.activateSyncSidebar();
-		});
-
 		this.addCommand({
 			id: "open-obsidian-ai-chat",
 			name: "Open Chat Lab",
 			callback: () => this.activateChatView(),
-		});
-
-		this.addCommand({
-			id: "open-chat-sync-sidebar",
-			name: "Open Chat Sync sidebar",
-			callback: () => this.activateSyncSidebar(),
 		});
 
 		this.registerEditorExtension([
@@ -467,36 +451,6 @@ export default class ObsidianAIPlugin extends Plugin {
 		return canonicalLeaf;
 	}
 
-	/** Open or reveal the Chat Sync sidebar leaf. */
-	async activateSyncSidebar(): Promise<void> {
-		const { workspace } = this.app;
-		const leaves = workspace.getLeavesOfType(SYNC_SIDEBAR_VIEW_TYPE);
-		let leaf: WorkspaceLeaf | null | undefined = leaves[0];
-
-		if (!leaf) {
-			leaf = workspace.getRightLeaf(false);
-			if (!leaf) {
-				leaf = workspace.getLeaf(true);
-			}
-			await leaf.setViewState({ type: SYNC_SIDEBAR_VIEW_TYPE, active: true });
-		} else {
-			workspace.revealLeaf(leaf);
-		}
-		workspace.setActiveLeaf(leaf, { focus: true });
-	}
-
-	/** Get the sync sidebar view instance if it exists. */
-	getSyncSidebarView(): SyncSidebarView | null {
-		const leaves = this.app.workspace.getLeavesOfType(SYNC_SIDEBAR_VIEW_TYPE);
-		for (const leaf of leaves) {
-			const view = leaf.view;
-			if (view instanceof SyncSidebarView) {
-				return view;
-			}
-		}
-		return null;
-	}
-
 	async openSessionInNewTab(
 		sessionId: string,
 		messageId: string,
@@ -748,11 +702,7 @@ export default class ObsidianAIPlugin extends Plugin {
 		const startTime = Date.now();
 		const syncLogger = new SyncLogger(this.app, this.manifest.id);
 
-		// ── Sidebar: reveal and get reference ──
-		await this.activateSyncSidebar();
-		const sidebar = this.getSyncSidebarView();
-
-		// ── Modal: optional fallback ──
+		// ── Modal: primary progress UI ──
 		let modal: SyncProgressModal | null = null;
 		if (options?.useModal) {
 			modal = new SyncProgressModal(this.app, 0, {
@@ -763,19 +713,16 @@ export default class ObsidianAIPlugin extends Plugin {
 			modal.open();
 		}
 
-		// Wire progress callback into sync engine → sidebar + modal
+		// Wire progress callback into sync engine → modal
 		let completedOps = 0;
 		this.syncEngine?.setProgressHandler((event) => {
 			if (event.type === "session") {
 				const title =
 					this._getSessionTitle(event.id) || event.id.slice(0, 8);
 				if (event.status === "start") {
-					sidebar?.addLog(event.direction!, `${title}`, { id: event.id });
 					modal?.addLog(event.direction!, `${title}`, { id: event.id });
 				} else if (event.status === "done") {
 					completedOps++;
-					sidebar?.updateProgress(completedOps, 0, event.direction!, title);
-					sidebar?.addLog(event.direction!, `${title}`, { id: event.id, done: true });
 					modal?.addLog(event.direction!, `${title}`, { id: event.id, done: true });
 					syncLogger.log({
 						timestamp: Date.now(),
@@ -786,7 +733,6 @@ export default class ObsidianAIPlugin extends Plugin {
 						message: "success",
 					});
 				} else if (event.status === "error") {
-					sidebar?.addLog("error", `${title}: ${event.error}`, { id: event.id, error: true });
 					modal?.addLog("error", `${title}: ${event.error}`, { id: event.id, error: true });
 					syncLogger.log({
 						timestamp: Date.now(),
@@ -800,14 +746,8 @@ export default class ObsidianAIPlugin extends Plugin {
 			}
 		});
 
-		// Wire live logs → sidebar
-		this.syncEngine?.setLogHandler((level, msg) => {
-			sidebar?.addLog(level as any, msg);
-		});
-
 		try {
 			// Compute sync plan (may fail if offline, bad credentials, etc.)
-			sidebar?.addLog("system", "Reading local sessions...");
 			modal?.addLog("system", "Reading local sessions...");
 			await this._populateSyncCache();
 			const plan = await this.syncEngine.computeSyncPlan();
@@ -816,7 +756,6 @@ export default class ObsidianAIPlugin extends Plugin {
 				plan.download.length +
 				plan.conflicts.length;
 			modal?.setTotal(totalOps);
-			sidebar?.setPlan(plan);
 			modal?.addLog(
 				"system",
 				`Plan: ↑${plan.upload.length} ↓${plan.download.length} ⚡${plan.conflicts.length} ⊘${plan.skipped}`,
@@ -855,7 +794,6 @@ export default class ObsidianAIPlugin extends Plugin {
 				await syncLogger.appendRemote(adapter, sessionRecord);
 			}
 
-			sidebar?.finish({ ...result, message: msg });
 			modal?.finish({ ...result, message: msg });
 
 			// Toast notification
@@ -887,7 +825,6 @@ export default class ObsidianAIPlugin extends Plugin {
 			});
 			await syncLogger.flushLocal();
 
-			sidebar?.setError(msg);
 			modal?.finish({
 				uploaded: 0,
 				downloaded: 0,
