@@ -142,8 +142,12 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		setIsRebuilding(true);
 		setShowRebuildChoices(false);
 		setError(null);
+		setRebuildReport(null);
+		setLogs([]);
 		try {
-			const report = await plugin.rebuildSyncIndex(choice);
+			const report = await plugin.rebuildSyncIndex(choice, {
+				onLog: updateLog,
+			});
 			setRebuildReport(report);
 		} catch (err: any) {
 			setError(err?.message || String(err));

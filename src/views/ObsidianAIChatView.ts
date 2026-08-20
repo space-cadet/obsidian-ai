@@ -23,7 +23,9 @@ export interface ChatPluginLike {
 	saveChatData(data: StoredChatData): Promise<void>;
 	saveSettings(): Promise<void>;
 	openRemoteStorageSettings?(): void;
-	rebuildSyncIndex?(choice: "remote" | "local" | "compare"): Promise<{
+	rebuildSyncIndex?(choice: "remote" | "local" | "compare", options?: {
+		onLog?: (entry: { id: string; operation: "upload" | "download" | "conflict" | "error"; title: string; status: "pending" | "done" | "error"; message?: string; timestamp: number }) => void;
+	}): Promise<{
 		uploaded: number;
 		downloaded: number;
 		conflicts: number;
