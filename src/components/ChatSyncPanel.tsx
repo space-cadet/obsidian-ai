@@ -140,17 +140,19 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 	const handleRebuild = useCallback(async (choice: "remote" | "local" | "compare") => {
 		if (!plugin.rebuildSyncIndex) return;
 		setIsRebuilding(true);
+		setShowRebuildChoices(false);
 		setError(null);
 		try {
 			const report = await plugin.rebuildSyncIndex(choice);
 			setRebuildReport(report);
-			setShowRebuildChoices(false);
 		} catch (err: any) {
 			setError(err?.message || String(err));
 		} finally {
 			setIsRebuilding(false);
 		}
 	}, [plugin]);
+
+	const isBusy = isSyncing || isRebuilding;
 
 	// ── Derived state ──────────────────────────────────────────────────────
 	const lastSyncText = rs.lastSyncTime
@@ -218,9 +220,10 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 				</button>
 			</div>
 
-			{showRebuildChoices && (
-				<div className="sync-v2-rebuild-panel">
-					<strong>Rebuild sync record</strong>
+			{showRebuildChoices && !isBusy && (
+				<div className="sync-v2-rebuild-backdrop" role="presentation">
+				<div className="sync-v2-rebuild-panel" role="dialog" aria-modal="true" aria-labelledby="sync-v2-rebuild-title">
+					<h3 id="sync-v2-rebuild-title">Rebuild sync record</h3>
 					<p>The app needs to decide which copies to trust.</p>
 					<div className="sync-v2-rebuild-options">
 						<button onClick={() => void handleRebuild("remote")} disabled={isRebuilding}>Trust remote copies</button>
@@ -228,6 +231,7 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 						<button onClick={() => void handleRebuild("compare")} disabled={isRebuilding}>Compare copies</button>
 						<button onClick={() => setShowRebuildChoices(false)} disabled={isRebuilding}>Cancel</button>
 					</div>
+				</div>
 				</div>
 			)}
 			{rebuildReport && !showRebuildChoices && (
@@ -298,7 +302,7 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 
 			{/* ── Action Bar ───────────────────────────────────────────── */}
 			<div className="sync-v2-actions">
-				{isSyncing ? (
+				{isBusy ? (
 					<button className="sync-v2-btn cancel" onClick={handleCancel}>
 						Cancel
 					</button>
@@ -311,7 +315,7 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 						{dryRun ? "Start dry run" : "Start sync"}
 					</button>
 				)}
-				{!isSyncing && (
+				{!isBusy && (
 					<button className="sync-v2-btn rebuild" onClick={() => setShowRebuildChoices(true)} disabled={isRebuilding}>
 						{isRebuilding ? "Rebuilding…" : "Rebuild"}
 					</button>

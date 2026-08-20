@@ -481,6 +481,7 @@ export class SyncEngine {
 
 		if (this.state === "syncing") throw new Error("A sync is already running");
 		this.state = "syncing";
+		this._cancelled = false;
 		try {
 			const locals = await this.cache.getAllSessions();
 			const remotes = await this.adapter.listSessions();
@@ -492,6 +493,7 @@ export class SyncEngine {
 
 			if (choice === "remote") {
 				for (const remote of remotes) {
+					if (this._cancelled) break;
 					if (targets.has(remote.id) || !locals.some((local) => local.id === remote.id)) {
 						await this.downloadSession(remote);
 						downloaded++;
@@ -499,6 +501,7 @@ export class SyncEngine {
 				}
 			} else {
 				for (const local of locals) {
+					if (this._cancelled) break;
 					if (targets.has(local.id) || !remoteById.has(local.id)) {
 						await this.uploadSession(local);
 						uploaded++;
@@ -506,7 +509,7 @@ export class SyncEngine {
 				}
 			}
 
-			if (this.indexManager && this.serverConfig) {
+			if (!this._cancelled && this.indexManager && this.serverConfig) {
 				const signature = SyncIndexManager.makeServerSignature(this.serverConfig);
 				const refreshedLocals = await this.cache.getAllSessions();
 				const refreshedRemotes = await this.adapter.listSessions();
@@ -514,7 +517,13 @@ export class SyncEngine {
 					await this.indexManager.buildIndex(refreshedLocals, refreshedRemotes, signature),
 				);
 			}
-			return { uploaded, downloaded, conflicts: plan.conflicts.length, skipped: plan.skipped, errors: [] };
+			return {
+				uploaded,
+				downloaded,
+				conflicts: plan.conflicts.length,
+				skipped: plan.skipped,
+				errors: this._cancelled ? ["Cancelled by user"] : [],
+			};
 		} finally {
 			this.state = "idle";
 		}
