@@ -4024,9 +4024,9 @@
 	color: #4caf50;
 }
 
-/* ── Chat Sync Panel (v2 — rich progress UI) ─────────────────────────────── */
+/* ── Chat Sync Panel v2 (syncit-inspired) ───────────────────────────────── */
 
-.chat-sync-panel {
+.chat-sync-panel-v2 {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
@@ -4034,75 +4034,68 @@
 	padding: 16px;
 	gap: 12px;
 	background: var(--background-primary);
+	font-size: var(--font-ui-small);
 }
 
-.chat-sync-header {
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.sync-v2-header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding-bottom: 8px;
-	border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.chat-sync-header h3 {
+.sync-v2-header h2 {
 	margin: 0;
-	font-size: var(--font-ui-medium);
+	font-size: var(--font-ui-large);
+	font-weight: 600;
 	color: var(--text-normal);
 }
 
-.chat-sync-status {
+.sync-v2-status {
 	font-size: var(--font-ui-small);
-	font-weight: 500;
-	padding: 2px 10px;
+	font-weight: 600;
+	padding: 4px 12px;
 	border-radius: 6px;
 }
 
-.chat-sync-status-idle {
+.sync-v2-status.idle {
 	color: var(--text-muted);
 	background: var(--background-secondary);
 }
 
-.chat-sync-status-syncing {
+.sync-v2-status.syncing {
 	color: var(--text-accent);
 	background: color-mix(in srgb, var(--text-accent) 15%, transparent);
-	animation: chat-sync-pulse 2s infinite;
+	animation: sync-v2-pulse 2s infinite;
 }
 
-.chat-sync-status-success {
+.sync-v2-status.success {
 	color: var(--text-success);
 	background: color-mix(in srgb, var(--text-success) 15%, transparent);
 }
 
-.chat-sync-status-error {
+.sync-v2-status.error {
 	color: var(--text-error);
 	background: color-mix(in srgb, var(--text-error) 15%, transparent);
 }
 
-@keyframes chat-sync-pulse {
+@keyframes sync-v2-pulse {
 	0%, 100% { opacity: 1; }
 	50% { opacity: 0.6; }
 }
 
-.chat-sync-controls {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
+/* ── Controls ───────────────────────────────────────────────────────────── */
 
-.chat-sync-control-row {
+.sync-v2-controls {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	flex-wrap: wrap;
+	gap: 10px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.chat-sync-label {
-	font-size: var(--font-ui-small);
-	color: var(--text-muted);
-	min-width: 70px;
-}
-
-.chat-sync-select {
+.sync-v2-controls select {
 	padding: 4px 8px;
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 6px;
@@ -4111,194 +4104,241 @@
 	font-size: var(--font-ui-small);
 }
 
-.chat-sync-meta {
+.sync-v2-dryrun {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	font-size: var(--font-ui-smaller);
-	color: var(--text-muted);
-	padding: 4px 0;
-}
-
-.chat-sync-backend {
-	padding: 1px 6px;
-	border-radius: 4px;
-	background: var(--background-secondary);
-	font-family: var(--font-monospace);
-	font-size: 10px;
-	font-weight: 600;
-	letter-spacing: 0.3px;
-	text-transform: uppercase;
-}
-
-/* ── Progress Bar ───────────────────────────────────────────────────────── */
-
-.chat-sync-progress {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	padding: 10px 12px;
-	border-radius: 8px;
-	background: var(--background-secondary);
-}
-
-.chat-sync-progress-top {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-}
-
-.chat-sync-progress-percent {
-	font-size: var(--font-ui-large);
-	font-weight: 700;
-	color: var(--text-accent);
-}
-
-.chat-sync-progress-elapsed {
+	gap: 4px;
 	font-size: var(--font-ui-small);
 	color: var(--text-muted);
+	cursor: pointer;
 }
 
-.chat-sync-progress-bar {
-	height: 8px;
+.sync-v2-settings-btn {
+	margin-left: auto;
+	padding: 4px 8px;
+	border-radius: 6px;
+	border: 1px solid var(--background-modifier-border);
 	background: var(--background-primary);
-	border-radius: 4px;
+	color: var(--text-muted);
+	cursor: pointer;
+	font-size: var(--font-ui-small);
+}
+
+.sync-v2-settings-btn:hover {
+	background: var(--background-modifier-hover);
+}
+
+/* ── Progress Bar (syncit-style) ────────────────────────────────────────── */
+
+.sync-v2-progress {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 12px 16px;
+	border-radius: 10px;
+	background: var(--background-secondary);
+}
+
+.sync-v2-progress-main {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.sync-v2-progress-bar-wrap {
+	flex: 1;
+}
+
+.sync-v2-progress-track {
+	height: 10px;
+	background: var(--background-primary);
+	border-radius: 5px;
 	overflow: hidden;
 }
 
-.chat-sync-progress-fill {
+.sync-v2-progress-fill {
 	height: 100%;
 	background: var(--interactive-accent);
-	border-radius: 4px;
+	border-radius: 5px;
 	transition: width 300ms ease;
 }
 
-.chat-sync-progress-stats {
+.sync-v2-progress-percent {
+	font-size: 20px;
+	font-weight: 700;
+	color: var(--text-accent);
+	min-width: 48px;
+	text-align: right;
+}
+
+.sync-v2-progress-meta {
+	display: flex;
+	justify-content: space-between;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+/* ── Category Counters (syncit-style pills) ─────────────────────────────── */
+
+.sync-v2-counters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.sync-v2-pill {
 	display: flex;
 	align-items: center;
-	gap: 16px;
-	font-size: var(--font-ui-small);
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: 6px;
+	background: var(--background-secondary);
+	font-size: var(--font-ui-smaller);
 }
 
-/* Stat pills */
-.sync-stat {
-	display: inline-flex;
-	align-items: center;
-	gap: 3px;
+.sync-v2-pill-label {
+	color: var(--text-muted);
 }
 
-.sync-stat-icon {
-	font-size: 11px;
-}
-
-.sync-stat-num {
+.sync-v2-pill-count {
 	font-weight: 600;
 	color: var(--text-normal);
 }
 
-.sync-stat-label {
-	color: var(--text-muted);
+.sync-v2-pill.upload {
+	background: color-mix(in srgb, var(--text-success) 12%, var(--background-secondary));
+}
+.sync-v2-pill.upload .sync-v2-pill-count {
+	color: var(--text-success);
 }
 
-.sync-stat-up   .sync-stat-icon { color: var(--text-success); }
-.sync-stat-down .sync-stat-icon { color: var(--text-accent); }
-.sync-stat-conflict .sync-stat-icon { color: var(--text-warning); }
-.sync-stat-skip .sync-stat-icon { color: var(--text-muted); }
-.sync-stat-error .sync-stat-icon { color: var(--text-error); }
+.sync-v2-pill.download {
+	background: color-mix(in srgb, var(--text-accent) 12%, var(--background-secondary));
+}
+.sync-v2-pill.download .sync-v2-pill-count {
+	color: var(--text-accent);
+}
+
+.sync-v2-pill.conflict {
+	background: color-mix(in srgb, var(--text-warning) 12%, var(--background-secondary));
+}
+.sync-v2-pill.conflict .sync-v2-pill-count {
+	color: var(--text-warning);
+}
+
+.sync-v2-pill.error {
+	background: color-mix(in srgb, var(--text-error) 12%, var(--background-secondary));
+}
+.sync-v2-pill.error .sync-v2-pill-count {
+	color: var(--text-error);
+}
 
 /* ── Result ─────────────────────────────────────────────────────────────── */
 
-.chat-sync-result {
-	padding: 10px 12px;
+.sync-v2-result {
+	padding: 10px 14px;
 	border-radius: 8px;
-	font-size: var(--font-ui-small);
 }
 
-.chat-sync-result.is-success {
+.sync-v2-result.success {
 	background: color-mix(in srgb, var(--text-success) 10%, transparent);
-	border: 1px solid color-mix(in srgb, var(--text-success) 30%, transparent);
+	border: 1px solid color-mix(in srgb, var(--text-success) 25%, transparent);
 }
 
-.chat-sync-result.is-error {
+.sync-v2-result.error {
 	background: color-mix(in srgb, var(--text-error) 10%, transparent);
-	border: 1px solid color-mix(in srgb, var(--text-error) 30%, transparent);
+	border: 1px solid color-mix(in srgb, var(--text-error) 25%, transparent);
 }
 
-.chat-sync-result-message {
+.sync-v2-result-text {
 	font-weight: 500;
-	margin-bottom: 6px;
+	margin-bottom: 4px;
 }
 
-.chat-sync-result-stats {
+.sync-v2-result-meta {
 	display: flex;
 	gap: 14px;
-	font-size: var(--font-ui-small);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
 }
 
-.chat-sync-error {
-	padding: 10px 12px;
+.sync-v2-error {
+	padding: 10px 14px;
 	border-radius: 8px;
 	background: color-mix(in srgb, var(--text-error) 10%, transparent);
-	border: 1px solid color-mix(in srgb, var(--text-error) 30%, transparent);
+	border: 1px solid color-mix(in srgb, var(--text-error) 25%, transparent);
 	color: var(--text-error);
-	font-size: var(--font-ui-small);
 }
 
-/* ── Log list — rich items ──────────────────────────────────────────────── */
+/* ── Per-item List (syncit-style cards) ─────────────────────────────────── */
 
-.chat-sync-logs {
+.sync-v2-list {
 	flex: 1;
 	overflow-y: auto;
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
-	padding: 8px;
+	min-height: 0;
+}
+
+.sync-v2-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 40px 20px;
+	color: var(--text-muted);
+	text-align: center;
+}
+
+.sync-v2-empty-icon {
+	font-size: 32px;
+	opacity: 0.5;
+}
+
+.sync-v2-empty-sub {
+	font-size: var(--font-ui-smaller);
+}
+
+/* Individual item card */
+.sync-v2-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 8px 12px;
 	border-radius: 8px;
 	background: var(--background-secondary);
-	font-size: var(--font-ui-small);
-}
-
-.chat-sync-empty {
-	color: var(--text-muted);
-	font-size: var(--font-ui-small);
-	text-align: center;
-	padding: 20px;
-}
-
-.chat-sync-item {
-	display: flex;
-	align-items: flex-start;
-	gap: 8px;
-	padding: 6px 8px;
-	border-radius: 6px;
-	background: var(--background-primary);
+	border-left: 3px solid transparent;
 	transition: background 150ms ease;
 }
 
-.chat-sync-item:hover {
+.sync-v2-item:hover {
 	background: var(--background-modifier-hover);
 }
 
-.chat-sync-item-icon {
-	flex-shrink: 0;
-	width: 20px;
-	height: 20px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	border-radius: 4px;
-	font-size: 12px;
-	margin-top: 1px;
+.sync-v2-item--upload {
+	border-left-color: var(--text-success);
 }
 
-.chat-sync-item--upload   .chat-sync-item-icon { background: color-mix(in srgb, var(--text-success) 15%, transparent); color: var(--text-success); }
-.chat-sync-item--download .chat-sync-item-icon { background: color-mix(in srgb, var(--text-accent)  15%, transparent); color: var(--text-accent);  }
-.chat-sync-item--conflict .chat-sync-item-icon { background: color-mix(in srgb, var(--text-warning) 15%, transparent); color: var(--text-warning); }
-.chat-sync-item--skip     .chat-sync-item-icon { background: color-mix(in srgb, var(--text-muted)   15%, transparent); color: var(--text-muted);   }
-.chat-sync-item--error    .chat-sync-item-icon { background: color-mix(in srgb, var(--text-error)   15%, transparent); color: var(--text-error);   }
-.chat-sync-item--system   .chat-sync-item-icon { background: var(--background-secondary); color: var(--text-muted); }
+.sync-v2-item--download {
+	border-left-color: var(--text-accent);
+}
 
-.chat-sync-item-body {
+.sync-v2-item--conflict {
+	border-left-color: var(--text-warning);
+}
+
+.sync-v2-item--skip {
+	border-left-color: var(--text-muted);
+}
+
+.sync-v2-item--error {
+	border-left-color: var(--text-error);
+}
+
+.sync-v2-item-main {
 	flex: 1;
 	min-width: 0;
 	display: flex;
@@ -4306,14 +4346,7 @@
 	gap: 2px;
 }
 
-.chat-sync-item-title-row {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	min-width: 0;
-}
-
-.chat-sync-item-title {
+.sync-v2-item-title {
 	font-weight: 500;
 	color: var(--text-normal);
 	white-space: nowrap;
@@ -4321,7 +4354,7 @@
 	text-overflow: ellipsis;
 }
 
-.chat-sync-item-message {
+.sync-v2-item-message {
 	font-size: var(--font-ui-smaller);
 	color: var(--text-muted);
 	white-space: nowrap;
@@ -4329,48 +4362,90 @@
 	text-overflow: ellipsis;
 }
 
-.chat-sync-item-op {
+.sync-v2-item-meta {
+	display: flex;
+	align-items: center;
+	gap: 8px;
 	flex-shrink: 0;
-	font-size: var(--font-ui-smaller);
-	color: var(--text-muted);
-	font-family: var(--font-monospace);
 }
 
-/* Status badges */
-.sync-badge {
+.sync-v2-item-action {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.sync-v2-item-status {
 	font-size: 10px;
 	font-weight: 600;
-	padding: 1px 6px;
+	padding: 2px 8px;
 	border-radius: 4px;
 	text-transform: uppercase;
 	letter-spacing: 0.3px;
-	flex-shrink: 0;
 }
 
-.sync-badge-pending  { color: var(--text-muted);    background: var(--background-secondary); }
-.sync-badge-active   { color: var(--text-accent);   background: color-mix(in srgb, var(--text-accent)  15%, transparent); }
-.sync-badge-done     { color: var(--text-success);  background: color-mix(in srgb, var(--text-success) 15%, transparent); }
-.sync-badge-error    { color: var(--text-error);    background: color-mix(in srgb, var(--text-error)   15%, transparent); }
-.sync-badge-skipped  { color: var(--text-muted);    background: var(--background-secondary); }
+.sync-v2-item-status--pending {
+	color: var(--text-muted);
+	background: var(--background-primary);
+}
+
+.sync-v2-item-status--active {
+	color: var(--text-accent);
+	background: color-mix(in srgb, var(--text-accent) 15%, transparent);
+}
+
+.sync-v2-item-status--done {
+	color: var(--text-success);
+	background: color-mix(in srgb, var(--text-success) 15%, transparent);
+}
+
+.sync-v2-item-status--error {
+	color: var(--text-error);
+	background: color-mix(in srgb, var(--text-error) 15%, transparent);
+}
+
+.sync-v2-item-status--skipped {
+	color: var(--text-muted);
+	background: var(--background-primary);
+}
 
 /* ── Actions ────────────────────────────────────────────────────────────── */
 
-.chat-sync-actions {
+.sync-v2-actions {
 	display: flex;
 	justify-content: center;
 	padding-top: 8px;
 	border-top: 1px solid var(--background-modifier-border);
 }
 
-.chat-sync-actions .chat-btn {
-	min-width: 120px;
+.sync-v2-btn {
+	padding: 8px 24px;
+	border-radius: 8px;
+	font-size: var(--font-ui-small);
+	font-weight: 500;
+	cursor: pointer;
+	border: none;
+	transition: background 150ms ease;
 }
 
-.chat-sync-actions .chat-stop-btn {
+.sync-v2-btn.primary {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.sync-v2-btn.primary:hover {
+	background: var(--interactive-accent-hover);
+}
+
+.sync-v2-btn.primary:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.sync-v2-btn.cancel {
 	background: var(--background-modifier-error);
 	color: var(--text-error);
 }
 
-.chat-sync-actions .chat-stop-btn:hover {
+.sync-v2-btn.cancel:hover {
 	background: color-mix(in srgb, var(--text-error) 20%, var(--background-modifier-error));
 }

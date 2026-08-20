@@ -907,8 +907,19 @@ export default class ObsidianAIPlugin extends Plugin {
 
 	/** Look up a session title by ID from current chat data */
 	private _getSessionTitle(sessionId: string): string | undefined {
-		// Access from the sync engine's cache if available
-		return undefined; // Will be resolved asynchronously elsewhere
+		// Look up from loaded chat data
+		const chatData = (this as any)._chatData;
+		if (chatData?.sessions) {
+			const session = chatData.sessions.find((s: any) => s.id === sessionId);
+			if (session?.title) return session.title;
+		}
+		// Fallback to sync engine cache if available
+		const cache = (this.syncEngine as any)?.cache;
+		if (cache?.sessions) {
+			const session = cache.sessions.find((s: any) => s.id === sessionId);
+			if (session?.title) return session.title;
+		}
+		return undefined;
 	}
 
 	/** Copy current chat sessions from Obsidian storage into the sync cache */

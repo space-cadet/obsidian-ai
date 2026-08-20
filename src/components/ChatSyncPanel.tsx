@@ -2,17 +2,13 @@ import React, { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 
 export type SyncDirection = "both" | "upload" | "download";
-
 export type SyncStatus = "pending" | "active" | "done" | "error" | "skipped";
 
 export interface SyncLogEntry {
 	id: string;
 	operation: "upload" | "download" | "conflict" | "skip" | "error" | "system";
-	/** Human-readable session title */
 	title: string;
-	/** Status badge for this entry */
 	status: SyncStatus;
-	/** Optional detail message */
 	message?: string;
 	timestamp: number;
 }
@@ -31,33 +27,6 @@ interface ChatSyncPanelProps {
 	plugin: ChatPluginLike;
 }
 
-// ── Icon map ─────────────────────────────────────────────────────────────
-const OP_ICON: Record<string, string> = {
-	upload: "↑",
-	download: "↓",
-	conflict: "⚡",
-	skip: "⊘",
-	error: "✗",
-	system: "•",
-};
-
-const OP_LABEL: Record<string, string> = {
-	upload: "Upload",
-	download: "Download",
-	conflict: "Conflict",
-	skip: "Skip",
-	error: "Error",
-	system: "",
-};
-
-const STATUS_BADGE: Record<SyncStatus, { text: string; cls: string }> = {
-	pending: { text: "Pending", cls: "sync-badge-pending" },
-	active:  { text: "Active",  cls: "sync-badge-active" },
-	done:    { text: "Done",    cls: "sync-badge-done" },
-	error:   { text: "Error",   cls: "sync-badge-error" },
-	skipped: { text: "Skipped", cls: "sync-badge-skipped" },
-};
-
 // ── Utilities ────────────────────────────────────────────────────────────
 function formatDuration(ms: number): string {
 	if (ms < 1000) return `${ms}ms`;
@@ -74,9 +43,7 @@ function formatDuration(ms: number): string {
 const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 	const rs = plugin.settings.remoteStorage;
 
-	const [direction, setDirection] = useState<SyncDirection>(
-		rs.syncDirection ?? "both",
-	);
+	const [direction, setDirection] = useState<SyncDirection>(rs.syncDirection ?? "both");
 	const [dryRun, setDryRun] = useState(false);
 	const [isSyncing, setIsSyncing] = useState(false);
 	const [progress, setProgress] = useState<SyncProgress | null>(null);
@@ -95,12 +62,11 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 	const logsEndRef = useRef<HTMLDivElement>(null);
 	const startTimeRef = useRef<number>(0);
 
-	// Auto-scroll logs to bottom
 	useEffect(() => {
 		logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	}, [logs]);
 
-	const addOrUpdateLog = useCallback((entry: SyncLogEntry) => {
+	const updateLog = useCallback((entry: SyncLogEntry) => {
 		setLogs((prev) => {
 			const idx = prev.findIndex((l) => l.id === entry.id);
 			if (idx >= 0) {
@@ -120,40 +86,21 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		setLogs([]);
 		startTimeRef.current = Date.now();
 
-		addOrUpdateLog({
-			id: "__start__",
-			operation: "system",
-			title: dryRun ? "Dry run starting…" : "Sync starting…",
-			status: "active",
-			timestamp: Date.now(),
-		});
-
 		try {
 			const syncResult = await (plugin as any).triggerSync?.(dryRun, {
 				direction,
 				onProgress: (p: SyncProgress) => setProgress(p),
-				onLog: (entry: SyncLogEntry) => addOrUpdateLog(entry),
+				onLog: (entry: SyncLogEntry) => updateLog(entry),
 			});
 
 			if (syncResult) {
 				const elapsedMs = Date.now() - startTimeRef.current;
-				setResult({
-					...syncResult,
-					elapsedMs,
-				});
-				addOrUpdateLog({
-					id: "__done__",
-					operation: "system",
-					title: `${dryRun ? "Dry run" : "Sync"} complete`,
-					status: syncResult.ok ? "done" : "error",
-					message: syncResult.message,
-					timestamp: Date.now(),
-				});
+				setResult({ ...syncResult, elapsedMs });
 			}
 		} catch (err: any) {
 			const msg = err?.message || String(err);
 			setError(msg);
-			addOrUpdateLog({
+			updateLog({
 				id: "__error__",
 				operation: "error",
 				title: "Sync failed",
@@ -164,18 +111,11 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		} finally {
 			setIsSyncing(false);
 		}
-	}, [plugin, direction, dryRun, addOrUpdateLog]);
+	}, [plugin, direction, dryRun, updateLog]);
 
 	const handleCancel = useCallback(() => {
 		(plugin as any).syncEngine?.cancel?.();
-		addOrUpdateLog({
-			id: "__cancel__",
-			operation: "system",
-			title: "Cancelling…",
-			status: "active",
-			timestamp: Date.now(),
-		});
-	}, [plugin, addOrUpdateLog]);
+	}, [plugin]);
 
 	const handleOpenSettings = useCallback(() => {
 		// @ts-ignore
@@ -200,213 +140,202 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		return "0s";
 	}, [progress, result]);
 
-	const pendingCount = useMemo(
-		() => logs.filter((l) => l.status === "pending" || l.status === "active").length,
-		[logs],
-	);
-	const doneCount = useMemo(
-		() => logs.filter((l) => l.status === "done").length,
-		[logs],
-	);
-	const errorCount = useMemo(
-		() => logs.filter((l) => l.status === "error").length,
-		[logs],
-	);
+	const counts = useMemo(() => {
+		return {
+			upload: logs.filter((l) => l.operation === "upload").length,
+			download: logs.filter((l) => l.operation === "download").length,
+			skip: logs.filter((l) => l.operation === "skip").length,
+			conflict: logs.filter((l) => l.operation === "conflict").length,
+			error: logs.filter((l) => l.operation === "error").length,
+			done: logs.filter((l) => l.status === "done").length,
+		};
+	}, [logs]);
 
 	// ── Render ─────────────────────────────────────────────────────────────
 	return (
-		<div className="chat-sync-panel">
-			{/* Header */}
-			<div className="chat-sync-header">
-				<h3>🔄 Chat Sync</h3>
-				<div className="chat-sync-status">
-					{isSyncing ? (
-						<span className="chat-sync-status-syncing">Syncing…</span>
-					) : result ? (
-						<span className={result.ok ? "chat-sync-status-success" : "chat-sync-status-error"}>
-							{result.ok ? "✅ Complete" : "⚠️ Errors"}
-						</span>
-					) : error ? (
-						<span className="chat-sync-status-error">❌ Failed</span>
-					) : (
-						<span className="chat-sync-status-idle">Ready</span>
-					)}
-				</div>
+		<div className="chat-sync-panel-v2">
+			{/* ── Header Row ───────────────────────────────────────────── */}
+			<div className="sync-v2-header">
+				<h2>🔄 Chat Sync</h2>
+				{isSyncing ? (
+					<span className="sync-v2-status syncing">Syncing…</span>
+				) : result ? (
+					<span className={`sync-v2-status ${result.ok ? "success" : "error"}`}>
+						{result.ok ? "Complete" : "Errors"}
+					</span>
+				) : error ? (
+					<span className="sync-v2-status error">Failed</span>
+				) : (
+					<span className="sync-v2-status idle">Ready</span>
+				)}
 			</div>
 
-			{/* Controls */}
-			<div className="chat-sync-controls">
-				<div className="chat-sync-control-row">
-					<label className="chat-sync-label">Direction</label>
-					<select
-						className="chat-sync-select"
-						value={direction}
-						onChange={(e) => setDirection(e.target.value as SyncDirection)}
+			{/* ── Controls Row ─────────────────────────────────────────── */}
+			<div className="sync-v2-controls">
+				<select
+					value={direction}
+					onChange={(e) => setDirection(e.target.value as SyncDirection)}
+					disabled={isSyncing}
+				>
+					<option value="both">Both directions</option>
+					<option value="upload">Upload only</option>
+					<option value="download">Download only</option>
+				</select>
+				<label className="sync-v2-dryrun">
+					<input
+						type="checkbox"
+						checked={dryRun}
+						onChange={(e) => setDryRun(e.target.checked)}
 						disabled={isSyncing}
-					>
-						<option value="both">Both directions</option>
-						<option value="upload">Upload only</option>
-						<option value="download">Download only</option>
-					</select>
-				</div>
-				<div className="chat-sync-control-row">
-					<label className="chat-sync-label">
-						<input
-							type="checkbox"
-							checked={dryRun}
-							onChange={(e) => setDryRun(e.target.checked)}
-							disabled={isSyncing}
-						/>
-						Dry run
-					</label>
-					<button
-						className="chat-btn-small"
-						onClick={handleOpenSettings}
-						title="Open sync settings"
-					>
-						⚙ Settings
-					</button>
-				</div>
+					/>
+					Dry run
+				</label>
+				<button className="sync-v2-settings-btn" onClick={handleOpenSettings}>
+					⚙
+				</button>
 			</div>
 
-			{/* Meta */}
-			<div className="chat-sync-meta">
-				<span>Last sync: {lastSyncText}</span>
-				{rs.backend !== "none" && rs.enabled && (
-					<span className="chat-sync-backend">{rs.backend.toUpperCase()}</span>
-				)}
-			</div>
-
-			{/* Progress Bar (always visible during sync) */}
+			{/* ── Progress Section (syncit-style) ──────────────────────── */}
 			{isSyncing && progress && (
-				<div className="chat-sync-progress">
-					<div className="chat-sync-progress-top">
-						<span className="chat-sync-progress-percent">{progressPercent}%</span>
-						<span className="chat-sync-progress-elapsed">⏱ {elapsedText}</span>
-					</div>
-					<div className="chat-sync-progress-bar">
-						<div
-							className="chat-sync-progress-fill"
-							style={{ width: `${progressPercent}%` }}
-						/>
-					</div>
-					<div className="chat-sync-progress-stats">
-						<span className="sync-stat">
-							<span className="sync-stat-num">{progress.completed}</span>
-							<span className="sync-stat-label">/ {progress.total}</span>
-						</span>
-						<span className="sync-stat sync-stat-up">
-							<span className="sync-stat-icon">↑</span>
-							<span className="sync-stat-num">{progress.uploaded}</span>
-						</span>
-						<span className="sync-stat sync-stat-down">
-							<span className="sync-stat-icon">↓</span>
-							<span className="sync-stat-num">{progress.downloaded}</span>
-						</span>
-						<span className="sync-stat sync-stat-conflict">
-							<span className="sync-stat-icon">⚡</span>
-							<span className="sync-stat-num">{progress.conflicts}</span>
-						</span>
-						<span className="sync-stat sync-stat-skip">
-							<span className="sync-stat-icon">⊘</span>
-							<span className="sync-stat-num">{progress.skipped}</span>
-						</span>
-					</div>
-				</div>
-			)}
-
-			{/* Result summary */}
-			{result && !isSyncing && (
-				<div className={`chat-sync-result ${result.ok ? "is-success" : "is-error"}`}>
-					<div className="chat-sync-result-message">
-						{result.ok ? "✅" : "⚠️"} {result.message}
-					</div>
-					<div className="chat-sync-result-stats">
-						<span className="sync-stat sync-stat-up">
-							<span className="sync-stat-icon">↑</span>
-							<span className="sync-stat-num">{result.uploaded}</span>
-						</span>
-						<span className="sync-stat sync-stat-down">
-							<span className="sync-stat-icon">↓</span>
-							<span className="sync-stat-num">{result.downloaded}</span>
-						</span>
-						<span className="sync-stat sync-stat-conflict">
-							<span className="sync-stat-icon">⚡</span>
-							<span className="sync-stat-num">{result.conflicts}</span>
-						</span>
-						<span className="sync-stat sync-stat-skip">
-							<span className="sync-stat-icon">⊘</span>
-							<span className="sync-stat-num">{result.skipped}</span>
-						</span>
-						{result.errors.length > 0 && (
-							<span className="sync-stat sync-stat-error">
-								<span className="sync-stat-icon">⚠️</span>
-								<span className="sync-stat-num">{result.errors.length}</span>
-							</span>
-						)}
-						<span className="sync-stat">
-							<span className="sync-stat-icon">⏱</span>
-							<span className="sync-stat-num">{elapsedText}</span>
-						</span>
-					</div>
-				</div>
-			)}
-
-			{/* Error banner */}
-			{error && !isSyncing && (
-				<div className="chat-sync-error">❌ {error}</div>
-			)}
-
-			{/* Log list — rich items */}
-			<div className="chat-sync-logs">
-				{logs.length === 0 && !isSyncing && (
-					<div className="chat-sync-empty">No sync activity yet</div>
-				)}
-				{logs.map((log) => {
-					const badge = STATUS_BADGE[log.status];
-					return (
-						<div
-							key={log.id}
-							className={`chat-sync-item chat-sync-item--${log.operation} chat-sync-item--${log.status}`}
-						>
-							<div className="chat-sync-item-icon">
-								{OP_ICON[log.operation] || "•"}
-							</div>
-							<div className="chat-sync-item-body">
-								<div className="chat-sync-item-title-row">
-									<span className="chat-sync-item-title" title={log.title}>
-										{log.title}
-									</span>
-									<span className={`sync-badge ${badge.cls}`}>{badge.text}</span>
-								</div>
-								{log.message && (
-									<div className="chat-sync-item-message">{log.message}</div>
-								)}
-							</div>
-							<div className="chat-sync-item-op">
-								{OP_LABEL[log.operation]}
+				<div className="sync-v2-progress">
+					<div className="sync-v2-progress-main">
+						<div className="sync-v2-progress-bar-wrap">
+							<div className="sync-v2-progress-track">
+								<div
+									className="sync-v2-progress-fill"
+									style={{ width: `${progressPercent}%` }}
+								/>
 							</div>
 						</div>
-					);
-				})}
+						<div className="sync-v2-progress-percent">{progressPercent}%</div>
+					</div>
+					<div className="sync-v2-progress-meta">
+						<span>{progress.completed} / {progress.total} sessions</span>
+						<span>⏱ {elapsedText}</span>
+					</div>
+				</div>
+			)}
+
+			{/* ── Category Counters (syncit-style pills) ───────────────── */}
+			{(isSyncing || logs.length > 0) && (
+				<div className="sync-v2-counters">
+					<div className="sync-v2-pill">
+						<span className="sync-v2-pill-label">Scanned</span>
+						<span className="sync-v2-pill-count">{logs.length}</span>
+					</div>
+					<div className="sync-v2-pill upload">
+						<span className="sync-v2-pill-label">Upload</span>
+						<span className="sync-v2-pill-count">{counts.upload}</span>
+					</div>
+					<div className="sync-v2-pill download">
+						<span className="sync-v2-pill-label">Download</span>
+						<span className="sync-v2-pill-count">{counts.download}</span>
+					</div>
+					<div className="sync-v2-pill skip">
+						<span className="sync-v2-pill-label">Skip</span>
+						<span className="sync-v2-pill-count">{counts.skip}</span>
+					</div>
+					<div className="sync-v2-pill conflict">
+						<span className="sync-v2-pill-label">Conflict</span>
+						<span className="sync-v2-pill-count">{counts.conflict}</span>
+					</div>
+					<div className="sync-v2-pill error">
+						<span className="sync-v2-pill-label">Error</span>
+						<span className="sync-v2-pill-count">{counts.error}</span>
+					</div>
+				</div>
+			)}
+
+			{/* ── Result Summary ───────────────────────────────────────── */}
+			{result && !isSyncing && (
+				<div className={`sync-v2-result ${result.ok ? "success" : "error"}`}>
+					<div className="sync-v2-result-text">
+						{result.ok ? "✅" : "⚠️"} {result.message}
+					</div>
+					<div className="sync-v2-result-meta">
+						<span>↑ {result.uploaded}</span>
+						<span>↓ {result.downloaded}</span>
+						<span>⚡ {result.conflicts}</span>
+						<span>⊘ {result.skipped}</span>
+						{result.errors.length > 0 && <span>⚠️ {result.errors.length}</span>}
+						<span>⏱ {elapsedText}</span>
+					</div>
+				</div>
+			)}
+
+			{error && !isSyncing && (
+				<div className="sync-v2-error">❌ {error}</div>
+			)}
+
+			{/* ── Per-item List (syncit-style cards) ───────────────────── */}
+			<div className="sync-v2-list">
+				{logs.length === 0 && !isSyncing && (
+					<div className="sync-v2-empty">
+						<div className="sync-v2-empty-icon">📂</div>
+						<div>No sync activity yet</div>
+						<div className="sync-v2-empty-sub">Last sync: {lastSyncText}</div>
+					</div>
+				)}
+				{logs.map((log) => (
+					<SyncItem key={log.id + log.timestamp} entry={log} />
+				))}
 				<div ref={logsEndRef} />
 			</div>
 
-			{/* Action bar */}
-			<div className="chat-sync-actions">
+			{/* ── Action Bar ───────────────────────────────────────────── */}
+			<div className="sync-v2-actions">
 				{isSyncing ? (
-					<button className="chat-btn chat-stop-btn" onClick={handleCancel}>
-						🛑 Cancel
+					<button className="sync-v2-btn cancel" onClick={handleCancel}>
+						🛑 Cancel Sync
 					</button>
 				) : (
 					<button
-						className="chat-btn chat-send-btn"
+						className="sync-v2-btn primary"
 						onClick={handleSync}
 						disabled={!rs.enabled || rs.backend === "none"}
 					>
 						🔄 {dryRun ? "Dry Run" : "Sync Now"}
 					</button>
 				)}
+			</div>
+		</div>
+	);
+};
+
+// ── Individual sync item card ────────────────────────────────────────────
+const SyncItem: React.FC<{ entry: SyncLogEntry }> = ({ entry }) => {
+	const opLabel = {
+		upload: "Uploading",
+		download: "Downloading",
+		conflict: "Conflict",
+		skip: "Skipped",
+		error: "Error",
+		system: "",
+	}[entry.operation];
+
+	const statusLabel = {
+		pending: "Pending",
+		active: "In Progress",
+		done: "Done",
+		error: "Failed",
+		skipped: "Skipped",
+	}[entry.status];
+
+	return (
+		<div className={`sync-v2-item sync-v2-item--${entry.operation}`}>
+			<div className="sync-v2-item-main">
+				<div className="sync-v2-item-title" title={entry.title}>
+					{entry.title}
+				</div>
+				{entry.message && (
+					<div className="sync-v2-item-message">{entry.message}</div>
+				)}
+			</div>
+			<div className="sync-v2-item-meta">
+				{opLabel && <span className="sync-v2-item-action">{opLabel}</span>}
+				<span className={`sync-v2-item-status sync-v2-item-status--${entry.status}`}>
+					{statusLabel}
+				</span>
 			</div>
 		</div>
 	);
