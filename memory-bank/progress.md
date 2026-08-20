@@ -1,24 +1,30 @@
-### 2026-08-20 — T43: Integrated Sync UI — Task and Design Doc Created
+### 2026-08-20 — T43: Integrated Sync UI ✅ COMPLETE
 
-**Task created:** `memory-bank/tasks/T43.md`
-**Design doc created:** `memory-bank/implementation-details/integrated-sync-ui-design.md`
+**Task:** T43 — Integrate Sync UI into Chat Lab
+**Status:** ✅ COMPLETE — All 6 phases implemented and committed
 
-**Scope:** Replace standalone sync sidebar with integrated sync tab in Chat Lab
-- Remove `SYNC_SIDEBAR_VIEW_TYPE` (separate sidebar)
-- Export button → dropdown with Export + Sync options
-- Sync opens as `__sync__` tab in ChatTabBar
-- Rich progress UI: direction selector, dry run, per-session logs, completion cards
-- Settings: `syncDirection` default ("both" | "upload" | "download")
+**What was done:**
+- Removed standalone `SyncSidebarView` and related sidebar registration
+- Added `syncDirection` setting ("both" | "upload" | "download") to RemoteStorageConfig
+- Export button → dropdown menu with "Export sessions…" and "Sync with remote…"
+- `__sync__` special tab in ChatTabBar with "🔄 Sync" label
+- `ChatSyncPanel` component with rich progress UI:
+  - Direction selector, dry-run toggle, settings link
+  - Status indicator (idle/syncing/success/error)
+  - Progress bar with operation counters
+  - Completion summary cards
+  - Scrolling log area with color-coded operation icons
+  - Sync/Cancel buttons
+- Updated `triggerSync()` to accept direction override, onProgress/onLog callbacks
+- CSS styles for sync panel
 
-**6 Implementation Phases:**
-1. Remove 2nd sidebar (SyncSidebarView, ribbon icon, commands)
-2. Add `syncDirection` setting
-3. Export dropdown + sync tab in ChatTabBar
-4. ChatSyncPanel with rich progress UI
-5. SyncEngine direction parameter
-6. Integration & testing
+**Commits:**
+- `dd4a989` — Phase 1: Remove 2nd sidebar
+- `486cd1d` — Phase 2: Add syncDirection setting  
+- `570be35` — Phase 3: Export dropdown + Sync tab
+- `02e1ba2` — Phase 4: ChatSyncPanel with rich progress UI
 
-**T42f superseded by T43.**
+**Files:** `memory-bank/tasks/T43.md`, `memory-bank/implementation-details/integrated-sync-ui-design.md`
 
 ---
 
