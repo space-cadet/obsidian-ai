@@ -760,14 +760,18 @@ export default class ObsidianAIPlugin extends Plugin {
 					const title =
 						this._getSessionTitle(event.id) || event.id.slice(0, 8);
 					if (event.status === "start") {
-						modal?.addLog(event.direction!, `${title}`, { id: event.id });
-						options?.onLog?.({ id: event.id, operation: event.direction!, message: title, timestamp: Date.now() });
+						if (event.direction) {
+							modal?.addLog(event.direction, `${title}`, { id: event.id });
+						}
+						options?.onLog?.({ id: event.id, operation: event.direction || "system", message: title, timestamp: Date.now() });
 					} else if (event.status === "done") {
 						completedOps++;
 						if (event.direction === "upload") progressUploaded++;
 						if (event.direction === "download") progressDownloaded++;
-						modal?.addLog(event.direction!, `${title}`, { id: event.id, done: true });
-						options?.onLog?.({ id: event.id, operation: event.direction!, message: title, done: true, timestamp: Date.now() });
+						if (event.direction) {
+							modal?.addLog(event.direction, `${title}`, { id: event.id, done: true });
+						}
+						options?.onLog?.({ id: event.id, operation: event.direction || "system", message: title, done: true, timestamp: Date.now() });
 						options?.onProgress?.({
 							total: totalOps,
 							completed: completedOps,
@@ -777,14 +781,16 @@ export default class ObsidianAIPlugin extends Plugin {
 							skipped: progressSkipped,
 							elapsedMs: Date.now() - startTime,
 						});
-						syncLogger.log({
-							timestamp: Date.now(),
-							deviceId: syncLogger["deviceId"],
-							action: event.direction!,
-							sessionId: event.id,
-							sessionTitle: title,
-							message: "success",
-						});
+						if (event.direction) {
+							syncLogger.log({
+								timestamp: Date.now(),
+								deviceId: syncLogger["deviceId"],
+								action: event.direction,
+								sessionId: event.id,
+								sessionTitle: title,
+								message: "success",
+							});
+						}
 					} else if (event.status === "error") {
 						modal?.addLog("error", `${title}: ${event.error}`, { id: event.id, error: true });
 						options?.onLog?.({ id: event.id, operation: "error", message: `${title}: ${event.error}`, error: true, timestamp: Date.now() });

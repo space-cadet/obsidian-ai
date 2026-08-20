@@ -50,7 +50,7 @@ export class SyncLogger {
 	log(entry: SyncLogEntry): void {
 		const ts = new Date(entry.timestamp).toISOString();
 		const device = entry.deviceId.slice(0, 6);
-		const action = entry.action.padEnd(8);
+		const action = (entry.action || "unknown").padEnd(8);
 		const id = entry.sessionId ? entry.sessionId.slice(0, 8) : "--------";
 		const title = entry.sessionTitle ? ` "${entry.sessionTitle}"` : "";
 		const line = `${ts} [${device}] ${action} ${id}${title} — ${entry.message}`;

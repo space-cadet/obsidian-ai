@@ -25,7 +25,7 @@ export interface SyncEngineConfig {
 	progress?: (event: {
 		type: string;
 		id: string;
-		direction?: "upload" | "download";
+		direction?: "upload" | "download" | "conflict";
 		status: "start" | "done" | "error";
 		error?: string;
 	}) => void;
@@ -55,7 +55,7 @@ export class SyncEngine {
 	private progress?: (event: {
 		type: string;
 		id: string;
-		direction?: "upload" | "download";
+		direction?: "upload" | "download" | "conflict";
 		status: "start" | "done" | "error";
 		error?: string;
 	}) => void;
@@ -231,11 +231,13 @@ export class SyncEngine {
 					this.progress?.({
 						type: "session",
 						id: conflict.local.id,
+						direction: "conflict",
 						status: "start",
 					});
 					this.progress?.({
 						type: "session",
 						id: conflict.local.id,
+						direction: "conflict",
 						status: "done",
 					});
 					conflicts++;
@@ -689,7 +691,7 @@ export class SyncEngine {
 		handler: (event: {
 			type: string;
 			id: string;
-			direction?: "upload" | "download";
+			direction?: "upload" | "download" | "conflict";
 			status: "start" | "done" | "error";
 			error?: string;
 		}) => void,
