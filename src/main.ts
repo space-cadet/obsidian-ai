@@ -759,7 +759,7 @@ export default class ObsidianAIPlugin extends Plugin {
 			this.syncEngine?.setProgressHandler((event) => {
 				if (event.type === "session") {
 					const title =
-						this._getSessionTitle(event.id) || event.id.slice(0, 8);
+						this._getSessionTitle(event.id)?.trim() || "Untitled session";
 					if (event.status === "start") {
 						if (event.direction) {
 							modal?.addLog(event.direction, `${title}`, { id: event.id });

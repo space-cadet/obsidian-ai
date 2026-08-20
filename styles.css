@@ -4452,25 +4452,26 @@
 
 /* SyncIt status-screen layout */
 .chat-sync-panel-v2 {
-	padding: 28px 24px 20px;
-	gap: 18px;
+	padding: 16px;
+	gap: 10px;
 	background: var(--background-primary);
+	overflow-y: auto;
 }
 
 .sync-v2-status-block { flex: 0 0 auto; }
 .sync-v2-eyebrow {
-	font-size: 1.35em;
+	font-size: var(--font-ui-smaller);
 	font-weight: 400;
 	color: var(--text-muted);
-	margin-bottom: 8px;
+	margin-bottom: 4px;
 }
 .sync-v2-status-block h2 {
 	margin: 0 0 8px;
-	font-size: 2.15em;
+	font-size: 1.35em;
 	font-weight: 500;
 	letter-spacing: -0.02em;
 }
-.sync-v2-substatus { color: var(--text-muted); font-size: 1.2em; }
+.sync-v2-substatus { color: var(--text-muted); font-size: var(--font-ui-smaller); }
 .sync-v2-controls {
 	order: 0;
 	padding: 0;
@@ -4489,11 +4490,11 @@
 }
 .sync-v2-progress-fill { background: var(--interactive-accent); border-radius: 999px; }
 .sync-v2-progress-meta {
-	font-size: 1.15em;
+	font-size: var(--font-ui-smaller);
 	color: var(--text-muted);
 }
 .sync-v2-progress-meta span:first-child {
-	font-size: 1.45em;
+	font-size: var(--font-ui-small);
 	color: var(--text-normal);
 }
 .sync-v2-counters {
@@ -4508,55 +4509,58 @@
 	padding: 0;
 	background: transparent;
 }
-.sync-v2-pill-count { font-size: 2em; line-height: 1.05; }
-.sync-v2-pill-label { font-size: 1.05em; color: var(--text-muted); text-transform: lowercase; }
+.sync-v2-pill-count { font-size: 1.25em; line-height: 1.05; }
+.sync-v2-pill-label { font-size: var(--font-ui-smaller); color: var(--text-muted); text-transform: lowercase; }
 .sync-v2-pill.upload .sync-v2-pill-count { color: var(--text-success); }
 .sync-v2-pill.download .sync-v2-pill-count { color: var(--text-accent); }
 .sync-v2-pill.skip .sync-v2-pill-count { color: var(--text-muted); }
 .sync-v2-pill.conflict .sync-v2-pill-count { color: var(--text-warning); }
 .sync-v2-pill.error .sync-v2-pill-count { color: var(--text-error); }
 .sync-v2-list {
-	gap: 8px;
+	flex: 1 1 180px;
+	min-height: 140px;
+	max-height: 42vh;
+	gap: 6px;
 	border-top: 1px solid var(--background-modifier-border);
 	padding-top: 12px;
 }
 .sync-v2-section-title {
 	flex: 0 0 auto;
-	font-size: 1.25em;
+	font-size: var(--font-ui-small);
 	color: var(--text-muted);
 	margin-bottom: 2px;
 }
 .sync-v2-item {
-	min-height: 52px;
+	min-height: 40px;
 	padding: 9px 12px;
 	border-left: 0;
 	border-radius: 7px;
 	background: var(--background-secondary);
 }
-.sync-v2-item-title { font-size: 1.05em; }
+.sync-v2-item-title { font-size: var(--font-ui-small); }
 .sync-v2-item-status { font-size: 0.85em; border-radius: 6px; text-transform: none; }
 .sync-v2-actions {
 	order: 5;
 	padding: 0;
 	border: 0;
 }
-.sync-v2-btn { width: 100%; min-height: 58px; border-radius: 999px; font-size: 1.35em; }
+.sync-v2-btn { width: 100%; min-height: 38px; border-radius: 8px; font-size: var(--font-ui-small); }
 .sync-v2-btn.cancel { background: var(--background-secondary); color: var(--text-error); }
 .sync-v2-settings-action {
 	order: 6;
 	flex: 0 0 auto;
 	width: 100%;
-	min-height: 58px;
-	border: 0;
-	border-radius: 999px;
+	min-height: 36px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
 	background: var(--background-secondary);
 	color: var(--text-normal);
-	font-size: 1.3em;
+	font-size: var(--font-ui-small);
 	cursor: pointer;
 }
 .sync-v2-settings-action:hover, .sync-v2-btn.cancel:hover { background: var(--background-modifier-hover); }
 @media (max-width: 520px) {
-	.chat-sync-panel-v2 { padding: 20px 16px 14px; }
+	.chat-sync-panel-v2 { padding: 12px; }
 	.sync-v2-counters { grid-template-columns: repeat(3, 1fr); row-gap: 14px; }
 	.sync-v2-pill-count { font-size: 1.65em; }
 }

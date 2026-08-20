@@ -225,23 +225,6 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 				</div>
 			)}
 
-			{/* ── Result Summary ───────────────────────────────────────── */}
-			{result && !isSyncing && (
-				<div className={`sync-v2-result ${result.ok ? "success" : "error"}`}>
-					<div className="sync-v2-result-text">
-						{result.ok ? "✅" : "⚠️"} {result.message}
-					</div>
-					<div className="sync-v2-result-meta">
-						<span>↑ {result.uploaded}</span>
-						<span>↓ {result.downloaded}</span>
-						<span>⚡ {result.conflicts}</span>
-						<span>⊘ {result.skipped}</span>
-						{result.errors.length > 0 && <span>⚠️ {result.errors.length}</span>}
-						<span>⏱ {elapsedText}</span>
-					</div>
-				</div>
-			)}
-
 			{error && !isSyncing && (
 				<div className="sync-v2-error">❌ {error}</div>
 			)}
