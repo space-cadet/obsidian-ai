@@ -205,6 +205,24 @@ export function renderRemoteStorageSection(
 				});
 		});
 
+	// ── Sync direction (T43) ──
+	new Setting(section)
+		.setName("Sync Direction")
+		.setDesc(
+			"Control whether to upload, download, or sync both ways.",
+		)
+		.addDropdown((dropdown) => {
+			dropdown
+				.addOption("both", "↕️ Both ways")
+				.addOption("upload", "⬆️ Upload only")
+				.addOption("download", "⬇️ Download only")
+				.setValue(rs.syncDirection)
+				.onChange(async (value) => {
+					rs.syncDirection = value as "both" | "upload" | "download";
+					await saveSettings({ quiet: true });
+				});
+		});
+
 	// ═══════════════════════════════════════════════════
 	// WebDAV-specific settings
 	// ═══════════════════════════════════════════════════
