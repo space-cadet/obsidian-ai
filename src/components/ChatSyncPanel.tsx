@@ -151,23 +151,18 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		};
 	}, [logs]);
 
+	const scanned = progress?.total ?? logs.length;
+	const completed = progress?.completed ?? counts.done;
+	const statusHeading = isSyncing ? "Syncing…" : result ? (result.ok ? "Complete" : "Sync finished with errors") : error ? "Sync failed" : "Ready to sync";
+	const directionLabel = direction === "both" ? "Upload + download" : direction === "upload" ? "Upload" : "Download";
+
 	// ── Render ─────────────────────────────────────────────────────────────
 	return (
 		<div className="chat-sync-panel-v2">
-			{/* ── Header Row ───────────────────────────────────────────── */}
-			<div className="sync-v2-header">
-				<h2>🔄 Chat Sync</h2>
-				{isSyncing ? (
-					<span className="sync-v2-status syncing">Syncing…</span>
-				) : result ? (
-					<span className={`sync-v2-status ${result.ok ? "success" : "error"}`}>
-						{result.ok ? "Complete" : "Errors"}
-					</span>
-				) : error ? (
-					<span className="sync-v2-status error">Failed</span>
-				) : (
-					<span className="sync-v2-status idle">Ready</span>
-				)}
+			<div className="sync-v2-status-block">
+				<div className="sync-v2-eyebrow">Status</div>
+				<h2>{statusHeading}</h2>
+				<div className="sync-v2-substatus">{isSyncing ? `${completed} of ${scanned} · ${elapsedText}` : `${directionLabel} · Last sync: ${lastSyncText}`}</div>
 			</div>
 
 			{/* ── Controls Row ─────────────────────────────────────────── */}
@@ -195,53 +190,37 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 				</button>
 			</div>
 
-			{/* ── Progress Section (syncit-style) ──────────────────────── */}
-			{isSyncing && progress && (
+			{/* ── Progress Section (SyncIt-style) ──────────────────────── */}
+			{isSyncing && (
 				<div className="sync-v2-progress">
-					<div className="sync-v2-progress-main">
-						<div className="sync-v2-progress-bar-wrap">
-							<div className="sync-v2-progress-track">
-								<div
-									className="sync-v2-progress-fill"
-									style={{ width: `${progressPercent}%` }}
-								/>
-							</div>
-						</div>
-						<div className="sync-v2-progress-percent">{progressPercent}%</div>
-					</div>
-					<div className="sync-v2-progress-meta">
-						<span>{progress.completed} / {progress.total} sessions</span>
-						<span>⏱ {elapsedText}</span>
-					</div>
+					<div className="sync-v2-progress-track"><div className="sync-v2-progress-fill" style={{ width: `${progressPercent}%` }} /></div>
+					<div className="sync-v2-progress-meta"><span>{progressPercent}%</span><span>{progress?.completed ?? 0} / {progress?.total ?? 0} sessions</span></div>
 				</div>
 			)}
 
 			{/* ── Category Counters (syncit-style pills) ───────────────── */}
-			{(isSyncing || logs.length > 0) && (
+			{(isSyncing || logs.length > 0 || result) && (
 				<div className="sync-v2-counters">
-					<div className="sync-v2-pill">
-						<span className="sync-v2-pill-label">Scanned</span>
-						<span className="sync-v2-pill-count">{logs.length}</span>
-					</div>
+					<div className="sync-v2-pill"><span className="sync-v2-pill-count">{scanned}</span><span className="sync-v2-pill-label">scanned</span></div>
 					<div className="sync-v2-pill upload">
-						<span className="sync-v2-pill-label">Upload</span>
 						<span className="sync-v2-pill-count">{counts.upload}</span>
+						<span className="sync-v2-pill-label">upload</span>
 					</div>
 					<div className="sync-v2-pill download">
-						<span className="sync-v2-pill-label">Download</span>
 						<span className="sync-v2-pill-count">{counts.download}</span>
+						<span className="sync-v2-pill-label">download</span>
 					</div>
 					<div className="sync-v2-pill skip">
-						<span className="sync-v2-pill-label">Skip</span>
 						<span className="sync-v2-pill-count">{counts.skip}</span>
+						<span className="sync-v2-pill-label">skip</span>
 					</div>
 					<div className="sync-v2-pill conflict">
-						<span className="sync-v2-pill-label">Conflict</span>
 						<span className="sync-v2-pill-count">{counts.conflict}</span>
+						<span className="sync-v2-pill-label">conflict</span>
 					</div>
 					<div className="sync-v2-pill error">
-						<span className="sync-v2-pill-label">Error</span>
 						<span className="sync-v2-pill-count">{counts.error}</span>
+						<span className="sync-v2-pill-label">error</span>
 					</div>
 				</div>
 			)}
@@ -269,6 +248,7 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 
 			{/* ── Per-item List (syncit-style cards) ───────────────────── */}
 			<div className="sync-v2-list">
+				<div className="sync-v2-section-title">Files</div>
 				{logs.length === 0 && !isSyncing && (
 					<div className="sync-v2-empty">
 						<div className="sync-v2-empty-icon">📂</div>
@@ -286,7 +266,7 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 			<div className="sync-v2-actions">
 				{isSyncing ? (
 					<button className="sync-v2-btn cancel" onClick={handleCancel}>
-						🛑 Cancel Sync
+						Cancel
 					</button>
 				) : (
 					<button
@@ -294,10 +274,11 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 						onClick={handleSync}
 						disabled={!rs.enabled || rs.backend === "none"}
 					>
-						🔄 {dryRun ? "Dry Run" : "Sync Now"}
+						{dryRun ? "Start dry run" : "Start sync"}
 					</button>
 				)}
 			</div>
+			<button className="sync-v2-settings-action" onClick={handleOpenSettings}>Settings</button>
 		</div>
 	);
 };
