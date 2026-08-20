@@ -31,6 +31,7 @@ export interface ChatPluginLike {
 		conflicts: number;
 		skipped: number;
 	}>;
+	cancelSync?(): void;
 	onSessionEnd?(session: import("../types").ChatSession): Promise<void>;
 }
 

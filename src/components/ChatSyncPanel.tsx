@@ -122,7 +122,7 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 	}, [plugin, direction, dryRun, updateLog]);
 
 	const handleCancel = useCallback(() => {
-		(plugin as any).syncEngine?.cancel?.();
+		plugin.cancelSync?.();
 	}, [plugin]);
 
 	const handleOpenSettings = useCallback(() => {

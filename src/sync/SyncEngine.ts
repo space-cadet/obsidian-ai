@@ -476,7 +476,6 @@ export class SyncEngine {
 			} finally {
 				this.conflictStrategy = previousStrategy;
 			}
-			return { uploaded: 0, downloaded: 0, conflicts: 0, skipped: 0, errors: [] };
 		}
 
 		if (this.state === "syncing") throw new Error("A sync is already running");
@@ -527,6 +526,17 @@ export class SyncEngine {
 		} finally {
 			this.state = "idle";
 		}
+	}
+
+	/** Get the current progress handler (for save/restore patterns). */
+	getProgressHandler(): ((event: {
+		type: string;
+		id: string;
+		direction?: "upload" | "download" | "conflict";
+		status: "start" | "done" | "error";
+		error?: string;
+	}) => void) | undefined {
+		return this.progress;
 	}
 
 	/** Upload a single session to remote storage.

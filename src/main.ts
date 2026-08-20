@@ -692,26 +692,37 @@ export default class ObsidianAIPlugin extends Plugin {
 	}): Promise<{ uploaded: number; downloaded: number; conflicts: number; skipped: number }> {
 		if (!this.syncEngine) await this._initSyncEngine();
 		if (!this.syncEngine) throw new Error("Sync is not configured");
-		this.syncEngine.setProgressHandler((event) => {
-			if (event.type !== "session" || !event.direction) return;
-			const title = this._getSessionTitle(event.id)?.trim() || "Untitled session";
-			options?.onLog?.({
-				id: event.id,
-				operation: event.direction,
-				title,
-				status: event.status === "error" ? "error" : event.status === "done" ? "done" : "pending",
-				message: event.error,
-				timestamp: Date.now(),
+		const previousHandler = this.syncEngine.getProgressHandler();
+		try {
+			this.syncEngine.setProgressHandler((event) => {
+				if (event.type !== "session" || !event.direction) return;
+				const title = this._getSessionTitle(event.id)?.trim() || "Untitled session";
+				options?.onLog?.({
+					id: event.id,
+					operation: event.direction,
+					title,
+					status: event.status === "error" ? "error" : event.status === "done" ? "done" : "pending",
+					message: event.error,
+					timestamp: Date.now(),
+				});
 			});
-		});
-		const result = await this.syncEngine.rebuildIndex(choice);
-		new Notice("Sync record rebuilt.");
-		return {
-			uploaded: result.uploaded,
-			downloaded: result.downloaded,
-			conflicts: result.conflicts,
-			skipped: result.skipped,
-		};
+			const result = await this.syncEngine.rebuildIndex(choice);
+			new Notice("Sync record rebuilt.");
+			return {
+				uploaded: result.uploaded,
+				downloaded: result.downloaded,
+				conflicts: result.conflicts,
+				skipped: result.skipped,
+			};
+		} finally {
+			if (previousHandler) {
+				this.syncEngine!.setProgressHandler(previousHandler);
+			}
+		}
+	}
+
+	cancelSync(): void {
+		this.syncEngine?.cancel();
 	}
 
 	async triggerSync(
