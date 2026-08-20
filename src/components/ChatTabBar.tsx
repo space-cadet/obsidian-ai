@@ -15,6 +15,22 @@ interface ChatTabBarProps {
 	tabTitleWidth?: number;
 }
 
+/** Special tab IDs that don't correspond to sessions */
+const SPECIAL_TABS = new Set(["__sync__"]);
+
+function isSpecialTab(id: string): boolean {
+	return SPECIAL_TABS.has(id);
+}
+
+function getSpecialTabLabel(id: string): string {
+	switch (id) {
+		case "__sync__":
+			return "🔄 Sync";
+		default:
+			return id;
+	}
+}
+
 /** A lightweight tab strip for sessions within one shared chat view. */
 const ChatTabBar: React.FC<ChatTabBarProps> = ({
 	sessions,
@@ -28,9 +44,31 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 	tabTitleWidth = 160,
 }) => {
 	const tabListRef = useRef<HTMLDivElement>(null);
-	const openSessions = openSessionIds
-		.map((id) => sessions.find((session) => session.id === id))
-		.filter((session): session is ChatSession => Boolean(session));
+
+	// Build tab list including both sessions and special tabs
+	const tabs = openSessionIds
+		.map((id) => {
+			if (isSpecialTab(id)) {
+				return {
+					id,
+					type: "special" as const,
+					label: getSpecialTabLabel(id),
+				};
+			}
+			const session = sessions.find((s) => s.id === id);
+			return session
+				? {
+						id,
+						type: "session" as const,
+						label: session.title || "New chat",
+						session,
+					}
+				: null;
+		})
+		.filter(Boolean) as Array<
+		| { id: string; type: "special"; label: string }
+		| { id: string; type: "session"; label: string; session: ChatSession }
+	>;
 
 	// A restored desktop workspace can retain a prior horizontal scroll offset.
 	// Begin every newly mounted tab strip at its first tab so no title starts offscreen.
@@ -38,7 +76,7 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 		tabListRef.current?.scrollTo?.({ left: 0 });
 	}, []);
 
-	if (openSessions.length === 0) return null;
+	if (tabs.length === 0) return null;
 
 	return (
 		<div
@@ -51,47 +89,44 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 				} as React.CSSProperties
 			}
 		>
-			{openSessions.map((session) => {
-				const active = session.id === activeSessionId;
-				const title = session.title || "New chat";
+			{tabs.map((tab) => {
+				const active = tab.id === activeSessionId;
+				const isSpecial = tab.type === "special";
 				return (
 					<div
-						key={session.id}
-						className={`chat-session-tab${active ? " is-active" : ""}`}
+						key={tab.id}
+						className={`chat-session-tab${active ? " is-active" : ""}${isSpecial ? " is-special" : ""}`}
 						role="presentation"
 					>
 						<button
 							className="chat-session-tab-select"
 							role="tab"
 							aria-selected={active}
-							aria-label={title}
-							onClick={() => onSelect(session.id)}
-							title={title}
+							aria-label={tab.label}
+							onClick={() => onSelect(tab.id)}
+							title={tab.label}
 							onContextMenu={(event) => {
+								if (isSpecial) return;
 								event.preventDefault();
 								const menu = new Menu();
 								menu.addItem((item) =>
 									item
 										.setTitle("Close tab")
 										.setIcon("x")
-										.onClick(() => onClose(session.id)),
+										.onClick(() => onClose(tab.id)),
 								);
 								menu.addSeparator();
 								menu.addItem((item) =>
 									item
 										.setTitle("Close other tabs")
 										.setIcon("panel-right-close")
-										.onClick(() =>
-											onCloseOthers(session.id),
-										),
+										.onClick(() => onCloseOthers(tab.id)),
 								);
 								menu.addItem((item) =>
 									item
 										.setTitle("Close tabs to the right")
 										.setIcon("chevrons-right")
-										.onClick(() =>
-											onCloseToRight(session.id),
-										),
+										.onClick(() => onCloseToRight(tab.id)),
 								);
 								menu.addSeparator();
 								menu.addItem((item) =>
@@ -101,27 +136,29 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 										.onClick(() => {
 											const renamed = window.prompt(
 												"Session title",
-												title,
+												tab.label,
 											);
 											if (renamed?.trim())
-												onRename(session.id, renamed);
+												onRename(tab.id, renamed);
 										}),
 								);
 								menu.showAtMouseEvent(event.nativeEvent);
 							}}
 						>
 							<span className="chat-session-tab-label" dir="ltr">
-								{title}
+								{tab.label}
 							</span>
 						</button>
-						<button
-							className="chat-session-tab-close"
-							onClick={() => onClose(session.id)}
-							aria-label={`Close ${title}`}
-							title="Close tab"
-						>
-							<ObsidianIcon icon="x" size={13} />
-						</button>
+						{!isSpecial && (
+							<button
+								className="chat-session-tab-close"
+								onClick={() => onClose(tab.id)}
+								aria-label={`Close ${tab.label}`}
+								title="Close tab"
+							>
+								<ObsidianIcon icon="x" size={13} />
+							</button>
+						)}
 					</div>
 				);
 			})}

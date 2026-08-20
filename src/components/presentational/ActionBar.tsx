@@ -1,4 +1,5 @@
 import React from "react";
+import { Menu } from "obsidian";
 import { ChatPluginLike } from "../../views/ObsidianAIChatView";
 import type { ProviderProfile } from "../../settings";
 import ObsidianIcon from "../ObsidianIcon";
@@ -8,6 +9,7 @@ interface ActionBarProps {
 	onNewChat: () => void;
 	onLoadChat: () => void;
 	onExportChat: () => void;
+	onOpenSync: () => void;
 	canLoad: boolean;
 	plugin: ChatPluginLike;
 	autoApprove: boolean;
@@ -36,6 +38,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	onNewChat,
 	onLoadChat,
 	onExportChat,
+	onOpenSync,
 	canLoad,
 	plugin,
 	autoApprove,
@@ -64,6 +67,23 @@ const ActionBar: React.FC<ActionBarProps> = ({
 		(plugin.app as any).setting.openTabById(plugin.manifest.id);
 	};
 
+	const showExportMenu = (event: React.MouseEvent) => {
+		const menu = new Menu();
+		menu.addItem((item) =>
+			item
+				.setTitle("Export sessions…")
+				.setIcon("download")
+				.onClick(() => onExportChat()),
+		);
+		menu.addItem((item) =>
+			item
+				.setTitle("Sync with remote…")
+				.setIcon("sync")
+				.onClick(() => onOpenSync()),
+		);
+		menu.showAtMouseEvent(event.nativeEvent as MouseEvent);
+	};
+
 	return (
 		<div className="chat-action-bar">
 			<div className="chat-action-bar-left">
@@ -87,8 +107,8 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				</button>
 				<button
 					className="chat-btn chat-icon-btn"
-					onClick={onExportChat}
-					title="Export chat sessions"
+					onClick={showExportMenu}
+					title="Export or sync"
 				>
 					<ObsidianIcon icon="download" size={15} />
 				</button>

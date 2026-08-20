@@ -846,6 +846,12 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					onNewChat={handleNewChat}
 					onLoadChat={() => ui.setShowSessionPicker(true)}
 					onExportChat={handleExportChat}
+					onOpenSync={() => {
+						if (!openSessionIds.includes("__sync__")) {
+							setOpenSessionIds((prev) => [...prev, "__sync__"]);
+						}
+						setActiveSessionId("__sync__");
+					}}
 					onToggleAutoApprove={handleToggleAutoApprove}
 					onToggleAutoName={handleToggleAutoName}
 					onManualRename={handleManualRename}

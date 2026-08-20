@@ -145,6 +145,7 @@ const PreviewApp: React.FC = () => {
 						onNewChat={noop}
 						onLoadChat={() => setSessionPickerOpen(true)}
 						onExportChat={noop}
+						onOpenSync={noop}
 						onToggleAutoApprove={noop}
 						onToggleAutoName={noop}
 						onManualRename={noop}

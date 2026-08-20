@@ -35,6 +35,7 @@ interface ChatToolbarProps {
 	onNewChat: () => void;
 	onLoadChat: () => void;
 	onExportChat: () => void;
+	onOpenSync: () => void;
 	onToggleAutoApprove: () => void;
 	onToggleAutoName: () => void;
 	onManualRename: () => void;
@@ -73,6 +74,7 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 	onNewChat,
 	onLoadChat,
 	onExportChat,
+	onOpenSync,
 	onToggleAutoApprove,
 	onToggleAutoName,
 	onManualRename,
@@ -96,6 +98,7 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 					onNewChat={onNewChat}
 					onLoadChat={onLoadChat}
 					onExportChat={onExportChat}
+					onOpenSync={onOpenSync}
 					canLoad={hasHistory}
 					plugin={plugin}
 					autoApprove={autoApprove}

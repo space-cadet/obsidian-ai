@@ -16,6 +16,7 @@ const baseProps = {
 	onNewChat: vi.fn(),
 	onLoadChat: vi.fn(),
 	onExportChat: vi.fn(),
+	onOpenSync: vi.fn(),
 	canLoad: true,
 	plugin: { app: {}, manifest: { id: "chat-lab" } } as any,
 	autoApprove: false,
