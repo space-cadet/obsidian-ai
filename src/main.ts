@@ -686,7 +686,15 @@ export default class ObsidianAIPlugin extends Plugin {
 
 	/** Trigger a manual sync and update settings.
 	 *  Sidebar is the primary UI; pass `{ useModal: true }` to also show the modal. */
-	async triggerSync(dryRun = false, options?: { useModal?: boolean }): Promise<{ ok: boolean; message: string }> {
+	async triggerSync(
+		dryRun = false,
+		options?: {
+			useModal?: boolean;
+			direction?: "both" | "upload" | "download";
+			onProgress?: (progress: { total: number; completed: number; uploaded: number; downloaded: number; conflicts: number; skipped: number; elapsedMs: number }) => void;
+			onLog?: (entry: { id: string; operation: string; message: string; done?: boolean; error?: boolean; timestamp: number }) => void;
+		},
+	): Promise<{ ok: boolean; message: string; uploaded: number; downloaded: number; conflicts: number; skipped: number; errors: string[] }> {
 		// Lazy-init sync engine if not already initialized (e.g., user enabled sync after plugin load)
 		if (!this.syncEngine) {
 			await this._initSyncEngine();
@@ -695,7 +703,7 @@ export default class ObsidianAIPlugin extends Plugin {
 			const msg =
 				"Sync not configured. Enable Remote Storage and enter credentials.";
 			new Notice(msg);
-			return { ok: false, message: msg };
+			return { ok: false, message: msg, uploaded: 0, downloaded: 0, conflicts: 0, skipped: 0, errors: [msg] };
 		}
 
 		this.syncEngine.dryRun = dryRun;
@@ -715,43 +723,28 @@ export default class ObsidianAIPlugin extends Plugin {
 
 		// Wire progress callback into sync engine → modal
 		let completedOps = 0;
-		this.syncEngine?.setProgressHandler((event) => {
-			if (event.type === "session") {
-				const title =
-					this._getSessionTitle(event.id) || event.id.slice(0, 8);
-				if (event.status === "start") {
-					modal?.addLog(event.direction!, `${title}`, { id: event.id });
-				} else if (event.status === "done") {
-					completedOps++;
-					modal?.addLog(event.direction!, `${title}`, { id: event.id, done: true });
-					syncLogger.log({
-						timestamp: Date.now(),
-						deviceId: syncLogger["deviceId"],
-						action: event.direction!,
-						sessionId: event.id,
-						sessionTitle: title,
-						message: "success",
-					});
-				} else if (event.status === "error") {
-					modal?.addLog("error", `${title}: ${event.error}`, { id: event.id, error: true });
-					syncLogger.log({
-						timestamp: Date.now(),
-						deviceId: syncLogger["deviceId"],
-						action: "error",
-						sessionId: event.id,
-						sessionTitle: title,
-						message: event.error || "unknown error",
-					});
-				}
-			}
-		});
+		// Track operation counts for progress callbacks
+		let progressUploaded = 0;
+		let progressDownloaded = 0;
+		let progressConflicts = 0;
+		let progressSkipped = 0;
+		let totalOps = 0;
 
 		try {
 			// Compute sync plan (may fail if offline, bad credentials, etc.)
 			modal?.addLog("system", "Reading local sessions...");
 			await this._populateSyncCache();
-			const plan = await this.syncEngine.computeSyncPlan();
-			const totalOps =
+			let plan = await this.syncEngine.computeSyncPlan();
+
+			// Apply direction filter (T43)
+			const direction = options?.direction ?? this.settings.remoteStorage.syncDirection ?? "both";
+			if (direction === "upload") {
+				plan = { ...plan, download: [], conflicts: [] };
+			} else if (direction === "download") {
+				plan = { ...plan, upload: [], conflicts: [] };
+			}
+
+			totalOps =
 				plan.upload.length +
 				plan.download.length +
 				plan.conflicts.length;
@@ -760,6 +753,52 @@ export default class ObsidianAIPlugin extends Plugin {
 				"system",
 				`Plan: ↑${plan.upload.length} ↓${plan.download.length} ⚡${plan.conflicts.length} ⊘${plan.skipped}`,
 			);
+
+			// Set up progress handler now that totalOps is known
+			this.syncEngine?.setProgressHandler((event) => {
+				if (event.type === "session") {
+					const title =
+						this._getSessionTitle(event.id) || event.id.slice(0, 8);
+					if (event.status === "start") {
+						modal?.addLog(event.direction!, `${title}`, { id: event.id });
+						options?.onLog?.({ id: event.id, operation: event.direction!, message: title, timestamp: Date.now() });
+					} else if (event.status === "done") {
+						completedOps++;
+						if (event.direction === "upload") progressUploaded++;
+						if (event.direction === "download") progressDownloaded++;
+						modal?.addLog(event.direction!, `${title}`, { id: event.id, done: true });
+						options?.onLog?.({ id: event.id, operation: event.direction!, message: title, done: true, timestamp: Date.now() });
+						options?.onProgress?.({
+							total: totalOps,
+							completed: completedOps,
+							uploaded: progressUploaded,
+							downloaded: progressDownloaded,
+							conflicts: progressConflicts,
+							skipped: progressSkipped,
+							elapsedMs: Date.now() - startTime,
+						});
+						syncLogger.log({
+							timestamp: Date.now(),
+							deviceId: syncLogger["deviceId"],
+							action: event.direction!,
+							sessionId: event.id,
+							sessionTitle: title,
+							message: "success",
+						});
+					} else if (event.status === "error") {
+						modal?.addLog("error", `${title}: ${event.error}`, { id: event.id, error: true });
+						options?.onLog?.({ id: event.id, operation: "error", message: `${title}: ${event.error}`, error: true, timestamp: Date.now() });
+						syncLogger.log({
+							timestamp: Date.now(),
+							deviceId: syncLogger["deviceId"],
+							action: "error",
+							sessionId: event.id,
+							sessionTitle: title,
+							message: event.error || "unknown error",
+						});
+					}
+				}
+			});
 
 			const result = await this.syncEngine.sync();
 			const durationMs = Date.now() - startTime;
@@ -806,7 +845,7 @@ export default class ObsidianAIPlugin extends Plugin {
 				new Notice(`⚠️ Sync finished with errors: ${msg}`, 8000);
 			}
 
-			return { ok, message: msg };
+			return { ok, message: msg, uploaded: result.uploaded, downloaded: result.downloaded, conflicts: result.conflicts, skipped: result.skipped, errors: result.errors };
 		} catch (err: any) {
 			const msg = `Sync failed: ${err.message}`;
 			const durationMs = Date.now() - startTime;
@@ -834,7 +873,7 @@ export default class ObsidianAIPlugin extends Plugin {
 				message: msg,
 			});
 			new Notice(`❌ ${msg}`, 8000);
-			return { ok: false, message: msg };
+			return { ok: false, message: msg, uploaded: 0, downloaded: 0, conflicts: 0, skipped: 0, errors: [msg] };
 		} finally {
 			this.syncEngine.dryRun = false;
 		}

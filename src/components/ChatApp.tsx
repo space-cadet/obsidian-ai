@@ -53,6 +53,7 @@ import PendingToolCard from "./presentational/PendingToolCard";
 import ObsidianIcon from "./ObsidianIcon";
 import ChatToolbar from "./ChatToolbar";
 import ChatMainArea from "./ChatMainArea";
+import ChatSyncPanel from "./ChatSyncPanel";
 import ChatOverlays from "./ChatOverlays";
 import SearchInput from "./presentational/SearchInput";
 import SearchResults from "./presentational/search-results";
@@ -903,6 +904,9 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					<ObsidianIcon icon="eye-off" size={15} />
 				</button>
 			)}
+			{activeSessionId === "__sync__" ? (
+			<ChatSyncPanel plugin={plugin} />
+		) : (
 			<ChatMainArea
 				app={plugin.app}
 				renderMarkdown={renderMarkdown}
@@ -987,6 +991,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				onLongPress={ui.enterSelectionMode}
 				onToggleSelection={ui.toggleMessageSelection}
 			/>
+		)}
 			{ui.selectionMode && (
 				<div className="chat-selection-toolbar" role="toolbar">
 					<span>{ui.selectedMessageIds.size} selected</span>
