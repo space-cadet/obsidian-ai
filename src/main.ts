@@ -25,6 +25,7 @@ import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/ObsidianAIChatView";
 import { PluginUpdater, UpdateAvailableModal } from "./updater/PluginUpdater";
 import { GIT_COMMIT_HASH, GIT_BRANCH } from "./version-info";
 import { StoredChatData, ChatSession } from "./types";
+import type { SyncLogEntry } from "./components/ChatSyncPanel";
 import { createFileLogger, FileLogger } from "./logger";
 import { createStorage, ChatStorage, StorageDeps } from "./storage/ChatStorage";
 import { ChatStorageMigration } from "./storage/Migration";
@@ -692,7 +693,7 @@ export default class ObsidianAIPlugin extends Plugin {
 			useModal?: boolean;
 			direction?: "both" | "upload" | "download";
 			onProgress?: (progress: { total: number; completed: number; uploaded: number; downloaded: number; conflicts: number; skipped: number; elapsedMs: number }) => void;
-			onLog?: (entry: { id: string; operation: string; message: string; done?: boolean; error?: boolean; timestamp: number }) => void;
+			onLog?: (entry: SyncLogEntry) => void;
 		},
 	): Promise<{ ok: boolean; message: string; uploaded: number; downloaded: number; conflicts: number; skipped: number; errors: string[] }> {
 		// Lazy-init sync engine if not already initialized (e.g., user enabled sync after plugin load)
@@ -763,7 +764,13 @@ export default class ObsidianAIPlugin extends Plugin {
 						if (event.direction) {
 							modal?.addLog(event.direction, `${title}`, { id: event.id });
 						}
-						options?.onLog?.({ id: event.id, operation: event.direction || "system", message: title, timestamp: Date.now() });
+						options?.onLog?.({
+							id: event.id,
+							operation: event.direction || "system",
+							title,
+							status: "pending",
+							timestamp: Date.now(),
+						});
 					} else if (event.status === "done") {
 						completedOps++;
 						if (event.direction === "upload") progressUploaded++;
@@ -771,7 +778,13 @@ export default class ObsidianAIPlugin extends Plugin {
 						if (event.direction) {
 							modal?.addLog(event.direction, `${title}`, { id: event.id, done: true });
 						}
-						options?.onLog?.({ id: event.id, operation: event.direction || "system", message: title, done: true, timestamp: Date.now() });
+						options?.onLog?.({
+							id: event.id,
+							operation: event.direction || "system",
+							title,
+							status: "done",
+							timestamp: Date.now(),
+						});
 						options?.onProgress?.({
 							total: totalOps,
 							completed: completedOps,
@@ -793,7 +806,14 @@ export default class ObsidianAIPlugin extends Plugin {
 						}
 					} else if (event.status === "error") {
 						modal?.addLog("error", `${title}: ${event.error}`, { id: event.id, error: true });
-						options?.onLog?.({ id: event.id, operation: "error", message: `${title}: ${event.error}`, error: true, timestamp: Date.now() });
+						options?.onLog?.({
+							id: event.id,
+							operation: "error",
+							title,
+							status: "error",
+							message: event.error,
+							timestamp: Date.now(),
+						});
 						syncLogger.log({
 							timestamp: Date.now(),
 							deviceId: syncLogger["deviceId"],
