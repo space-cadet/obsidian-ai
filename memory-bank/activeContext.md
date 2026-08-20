@@ -2,6 +2,14 @@
 
 *Last Updated: 2026-08-19 19:44 IST*
 
+### 2026-08-21 — T43: Sync panel closeout
+
+- Completed the integrated Sync tab polish and rebuild workflow.
+- Rebuild choices now perform real work: trust remote, trust local, or compare while leaving real conflicts visible.
+- Rebuild activity streams into the Files list and can be cancelled.
+- Added a close button to the special Sync tab; this is the final code fix for the session.
+- Latest pushed commit before this final fix: `b31f6bd`.
+
 ### 2026-08-20 — T43: Integrated Sync UI ✅ COMPLETE
 
 **Task:** T43 — Integrate Sync UI into Chat Lab

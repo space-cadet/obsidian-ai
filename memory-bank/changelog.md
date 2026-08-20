@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased - 2026-08-21
+
+### Fixed
+- Added a close button to the integrated Sync tab — T43
+- Rebuild activity now appears live in the Files list and supports cancellation — T43
+
+### Changed
+- Rebuild choices now show results after completion — T43
+
 ## Unreleased - 2026-08-14
 
 ### Added

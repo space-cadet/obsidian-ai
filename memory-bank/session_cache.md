@@ -1,5 +1,13 @@
 # Session Cache
 
+*Last Updated: 2026-08-21 00:21:02 IST*
+
+## Latest Session
+- Focus: T43 integrated Sync tab and rebuild workflow
+- Completed: Sync UI redesign, rebuild choices, live rebuild activity, cancellation, and Sync-tab close button
+- Latest code commit before final close-button fix: `b31f6bd`
+- Final action: run checks, commit, push, then close the session
+
 *Session: 2026-08-19 14:54–17:56 IST*
 *Branch: `main`*
 *Models: kimi/k2.7 (main)*

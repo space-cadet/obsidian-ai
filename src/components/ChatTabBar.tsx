@@ -149,16 +149,14 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 								{tab.label}
 							</span>
 						</button>
-						{!isSpecial && (
-							<button
-								className="chat-session-tab-close"
-								onClick={() => onClose(tab.id)}
-								aria-label={`Close ${tab.label}`}
-								title="Close tab"
-							>
-								<ObsidianIcon icon="x" size={13} />
-							</button>
-						)}
+						<button
+							className="chat-session-tab-close"
+							onClick={() => onClose(tab.id)}
+							aria-label={`Close ${tab.label}`}
+							title="Close tab"
+						>
+							<ObsidianIcon icon="x" size={13} />
+						</button>
 					</div>
 				);
 			})}

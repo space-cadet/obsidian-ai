@@ -1,6 +1,14 @@
 # Edit History
 
-*Last Updated: 2026-08-19 13:31:15 IST*
+*Last Updated: 2026-08-21 00:21:02 IST*
+
+#### 00:21 IST - T43: Close integrated Sync tab and record session closeout
+- Modified `src/components/ChatTabBar.tsx` - Show the close button for the special Sync tab.
+- Updated `memory-bank/tasks/T43.md` - Recorded the completed Sync panel and rebuild work.
+- Updated `memory-bank/activeContext.md` - Recorded the final T43 session state.
+- Updated `memory-bank/changelog.md` - Added the unreleased Sync-tab closeout changes.
+- Updated `memory-bank/session_cache.md` - Recorded the session handoff and closeout.
+- Created `memory-bank/sessions/2026-08-21-night.md` - Recorded the session summary.
 
 #### 13:31 IST - T6a, T48, T49, T50, T51: Created new task batch from DeepSeek pricing investigation
 - Created `memory-bank/tasks/T6a.md` — Token Counter Accuracy Fix (subtask of T6)
