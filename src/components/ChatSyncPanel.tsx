@@ -70,21 +70,55 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 	const logsEndRef = useRef<HTMLDivElement>(null);
 	const startTimeRef = useRef<number>(0);
 
+	// ── Batched update refs ────────────────────────────────────────────────
+	const logBufferRef = useRef<SyncLogEntry[]>([]);
+	const progressBufferRef = useRef<SyncProgress | null>(null);
+	const rafRef = useRef<number | null>(null);
+
+	const flushUpdates = useCallback(() => {
+		rafRef.current = null;
+		if (logBufferRef.current.length > 0) {
+			const batch = logBufferRef.current;
+			logBufferRef.current = [];
+			setLogs((prev) => {
+				const next = [...prev];
+				const map = new Map(next.map((l, i) => [l.id + l.timestamp, i]));
+				for (const entry of batch) {
+					const key = entry.id + entry.timestamp;
+					const idx = map.get(key);
+					if (idx !== undefined) {
+						next[idx] = { ...next[idx], ...entry };
+					} else {
+						next.push(entry);
+						if (next.length > 200) next.shift();
+					}
+				}
+				return next;
+			});
+		}
+		if (progressBufferRef.current) {
+			setProgress(progressBufferRef.current);
+			progressBufferRef.current = null;
+		}
+	}, []);
+
 	useEffect(() => {
 		logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	}, [logs]);
 
 	const updateLog = useCallback((entry: SyncLogEntry) => {
-		setLogs((prev) => {
-			const idx = prev.findIndex((l) => l.id === entry.id);
-			if (idx >= 0) {
-				const next = [...prev];
-				next[idx] = { ...next[idx], ...entry };
-				return next;
-			}
-			return [...prev.slice(-199), entry];
-		});
-	}, []);
+		logBufferRef.current.push(entry);
+		if (!rafRef.current) {
+			rafRef.current = requestAnimationFrame(flushUpdates);
+		}
+	}, [flushUpdates]);
+
+	const updateProgress = useCallback((p: SyncProgress) => {
+		progressBufferRef.current = p;
+		if (!rafRef.current) {
+			rafRef.current = requestAnimationFrame(flushUpdates);
+		}
+	}, [flushUpdates]);
 
 	const handleSync = useCallback(async () => {
 		setIsSyncing(true);
@@ -97,7 +131,7 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		try {
 			const syncResult = await (plugin as any).triggerSync?.(dryRun, {
 				direction,
-				onProgress: (p: SyncProgress) => setProgress(p),
+				onProgress: (p: SyncProgress) => updateProgress(p),
 				onLog: (entry: SyncLogEntry) => updateLog(entry),
 			});
 
@@ -119,7 +153,7 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		} finally {
 			setIsSyncing(false);
 		}
-	}, [plugin, direction, dryRun, updateLog]);
+	}, [plugin, direction, dryRun, updateLog, updateProgress]);
 
 	const handleCancel = useCallback(() => {
 		plugin.cancelSync?.();

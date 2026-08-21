@@ -794,10 +794,16 @@ export default class ObsidianAIPlugin extends Plugin {
 			);
 
 			// Set up progress handler now that totalOps is known
+			// Build title map from local sessions for better remote session titles
+			const chatData = await this.loadChatData();
+			const titleMap = new Map(chatData.sessions?.map((s: any) => [s.id, s.title]) ?? []);
+
 			this.syncEngine?.setProgressHandler((event) => {
 				if (event.type === "session") {
 					const title =
-						this._getSessionTitle(event.id)?.trim() || "Untitled session";
+						titleMap.get(event.id) ||
+						this._getSessionTitle(event.id)?.trim() ||
+						`Session ${event.id.slice(0, 8)}…`;
 					if (event.status === "start") {
 						if (event.direction) {
 							modal?.addLog(event.direction, `${title}`, { id: event.id });
@@ -864,7 +870,7 @@ export default class ObsidianAIPlugin extends Plugin {
 				}
 			});
 
-			const result = await this.syncEngine.sync();
+			const result = await this.syncEngine.sync(options?.direction);
 			const durationMs = Date.now() - startTime;
 			if (!dryRun) {
 				this.settings.remoteStorage.lastSyncTime = Date.now();

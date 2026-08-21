@@ -132,7 +132,7 @@ export class SyncEngine {
 	}
 
 	/** Perform a full sync: upload local changes, download remote changes, resolve conflicts. */
-	async sync(): Promise<SyncResult> {
+	async sync(direction?: "both" | "upload" | "download"): Promise<SyncResult> {
 		if (this.state === "syncing") {
 			this.log("warn", "SyncEngine: sync already in progress, skipping");
 			return {
@@ -174,7 +174,14 @@ export class SyncEngine {
 		const syncedRemotes: RemoteSessionMeta[] = [];
 
 		try {
-			const plan = await this.computeSyncPlan(index);
+			let plan = await this.computeSyncPlan(index);
+
+			// T43: Apply direction filter
+			if (direction === "upload") {
+				plan = { ...plan, download: [], conflicts: [] };
+			} else if (direction === "download") {
+				plan = { ...plan, upload: [], conflicts: [] };
+			}
 
 			// T42e: Dry run mode — compute plan but do not transfer anything
 			if (this.dryRun) {
