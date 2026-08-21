@@ -979,21 +979,32 @@ export default class ObsidianAIPlugin extends Plugin {
 
 	/**
 	 * Serialize plugin settings and data for remote sync.
-	 * API keys and credentials are stripped for security.
+	 * Respects syncComponents — only includes selected components.
 	 */
 	private _serializePluginData(): object {
-		// Strip sensitive fields from provider profiles
-		const safeProfiles = this.settings.providerProfiles.map((p) => ({
-			...p,
-			apiKey: "",
-			password: "",
-			// Keep other settings like model, URL, etc.
-		}));
+		const sc = this.settings.syncComponents;
 
-		return {
+		// Strip or include API keys based on user preference
+		const profiles = this.settings.providerProfiles.map((p) => {
+			if (sc.apiKeys) return p; // include keys
+			return { ...p, apiKey: "", password: "" };
+		});
+
+		const data: any = {
 			version: 1,
 			timestamp: Date.now(),
-			settings: {
+			components: {
+				pluginSettings: sc.pluginSettings,
+				apiKeys: sc.apiKeys,
+				memory: sc.memory,
+				memoryAudit: sc.memoryAudit,
+				persona: sc.persona,
+				usageStats: sc.usageStats,
+			},
+		};
+
+		if (sc.pluginSettings) {
+			data.settings = {
 				selectionPrompt: this.settings.selectionPrompt,
 				cursorPrompt: this.settings.cursorPrompt,
 				customCommands: this.settings.customCommands,
@@ -1019,10 +1030,9 @@ export default class ObsidianAIPlugin extends Plugin {
 				pdfExtractionMethod: this.settings.pdfExtractionMethod,
 				pdfMaxPages: this.settings.pdfMaxPages,
 				intelligence: this.settings.intelligence,
-				providerProfiles: safeProfiles,
+				providerProfiles: profiles,
 				activeProviderProfileId: this.settings.activeProviderProfileId,
 				selectedProfileIds: this.settings.selectedProfileIds,
-				// Remote storage config (without credentials)
 				remoteStorage: {
 					enabled: this.settings.remoteStorage.enabled,
 					backend: this.settings.remoteStorage.backend,
@@ -1032,42 +1042,48 @@ export default class ObsidianAIPlugin extends Plugin {
 					syncDirection: this.settings.remoteStorage.syncDirection,
 					concurrencyLimit: this.settings.remoteStorage.concurrencyLimit,
 				},
-			},
-			// Sync index (shared across devices)
-			syncIndex: (this.syncEngine as any)?.indexManager?.getIndex?.() ?? null,
-		};
+			};
+			data.syncIndex = (this.syncEngine as any)?.indexManager?.getIndex?.() ?? null;
+		}
+
+		return data;
 	}
 
 	/**
 	 * Deserialize and merge plugin data from remote.
-	 * Uses last-write-wins with notification.
+	 * Only merges components that are enabled in syncComponents.
 	 */
 	private async _deserializePluginData(data: object): Promise<void> {
 		const remote = data as any;
 		if (!remote.settings) return;
 
-		// Merge settings (last-write-wins)
-		const merged = { ...this.settings, ...remote.settings };
+		const sc = this.settings.syncComponents;
 
-		// Preserve API keys from local settings (never overwrite from remote)
-		merged.providerProfiles = merged.providerProfiles.map((remoteProfile: any, idx: number) => {
-			const localProfile = this.settings.providerProfiles[idx];
-			if (localProfile && localProfile.id === remoteProfile.id) {
-				return { ...remoteProfile, apiKey: localProfile.apiKey };
+		// Merge settings (last-write-wins) only if pluginSettings is enabled
+		if (sc.pluginSettings) {
+			const merged = { ...this.settings, ...remote.settings };
+
+			// Preserve API keys from local settings unless apiKeys is explicitly enabled
+			if (!sc.apiKeys) {
+				merged.providerProfiles = merged.providerProfiles.map((remoteProfile: any, idx: number) => {
+					const localProfile = this.settings.providerProfiles[idx];
+					if (localProfile && localProfile.id === remoteProfile.id) {
+						return { ...remoteProfile, apiKey: localProfile.apiKey };
+					}
+					return remoteProfile;
+				});
 			}
-			return remoteProfile;
-		});
 
-		// Preserve remote storage credentials
-		merged.remoteStorage = {
-			...this.settings.remoteStorage,
-			...remote.settings.remoteStorage,
-			webdav: this.settings.remoteStorage.webdav,
-			s3: this.settings.remoteStorage.s3,
-		};
+			// Preserve remote storage credentials
+			merged.remoteStorage = {
+				...this.settings.remoteStorage,
+				...remote.settings.remoteStorage,
+				webdav: this.settings.remoteStorage.webdav,
+				s3: this.settings.remoteStorage.s3,
+			};
 
-		this.settings = merged;
-		await this.saveSettings();
+			this.settings = merged;
+		}
 
 		// Merge sync index if present
 		if (remote.syncIndex && this.syncEngine) {
@@ -1077,12 +1093,14 @@ export default class ObsidianAIPlugin extends Plugin {
 			}
 		}
 
-		this.logger?.log("info", "[T43c] Plugin data merged from remote");
+		await this.saveSettings();
+		this.logger?.log("info", "[T55] Plugin data merged from remote");
 	}
 
 	/**
-	 * Sync plugin data (settings, memory, index) to/from remote.
+	 * Sync plugin data (settings, memory, persona, usage stats) to/from remote.
 	 * Called automatically after session sync completes.
+	 * Respects syncComponents selection.
 	 */
 	async syncPluginData(direction?: "upload" | "download" | "both"): Promise<{
 		uploaded: boolean;
@@ -1095,38 +1113,105 @@ export default class ObsidianAIPlugin extends Plugin {
 		const adapter = (this.syncEngine as any).adapter as StorageAdapter;
 		if (!adapter) return result;
 
+		const sc = this.settings.syncComponents;
 		const dir = direction ?? this.settings.remoteStorage.syncDirection ?? "both";
-		const PLUGIN_DATA_PATH = "plugin-data.json";
 
 		try {
-			// Upload local plugin data
-			if (dir === "upload" || dir === "both") {
-				const data = this._serializePluginData();
-				await adapter.writeText(PLUGIN_DATA_PATH, JSON.stringify(data, null, 2));
-				result.uploaded = true;
-				this.logger?.log("info", "[T43c] Plugin data uploaded");
-			}
-
-			// Download and merge remote plugin data
-			if (dir === "download" || dir === "both") {
-				const remoteText = await adapter.readText(PLUGIN_DATA_PATH);
-				if (remoteText) {
-					const remoteData = JSON.parse(remoteText);
-					// Simple conflict: if remote is newer, merge it
-					if (remoteData.timestamp && remoteData.timestamp > (this.settings.remoteStorage.lastSyncTime ?? 0)) {
-						await this._deserializePluginData(remoteData);
-						result.downloaded = true;
-					} else if (dir === "both") {
-						// Both modified — last-write-wins, but notify
-						result.conflict = true;
+			// ── Plugin Settings (plugin-data.json) ──
+			if (sc.pluginSettings || sc.apiKeys) {
+				const PLUGIN_DATA_PATH = "plugin-data.json";
+				if (dir === "upload" || dir === "both") {
+					const data = this._serializePluginData();
+					await adapter.writeText(PLUGIN_DATA_PATH, JSON.stringify(data, null, 2));
+					result.uploaded = true;
+					this.logger?.log("info", "[T55] Plugin data uploaded");
+				}
+				if (dir === "download" || dir === "both") {
+					const remoteText = await adapter.readText(PLUGIN_DATA_PATH);
+					if (remoteText) {
+						const remoteData = JSON.parse(remoteText);
+						if (remoteData.timestamp && remoteData.timestamp > (this.settings.remoteStorage.lastSyncTime ?? 0)) {
+							await this._deserializePluginData(remoteData);
+							result.downloaded = true;
+						} else if (dir === "both") {
+							result.conflict = true;
+						}
 					}
 				}
 			}
+
+			// ── AI Memory ──
+			if (sc.memory) {
+				await this._syncTextFile("intelligence/memory.json", dir, result);
+			}
+
+			// ── Memory Audit ──
+			if (sc.memoryAudit) {
+				await this._syncTextFile("intelligence/memory-audit.jsonl", dir, result);
+			}
+
+			// ── Persona ──
+			if (sc.persona) {
+				await this._syncTextFile("intelligence/persona.md", dir, result);
+			}
+
+			// ── Usage Stats ──
+			if (sc.usageStats) {
+				// Compute stats from sessions and sync
+				const chatData = await this.loadChatData();
+				const { summarizeLlmUsage } = await import("./lib/usageStats");
+				const stats = summarizeLlmUsage(chatData.sessions || []);
+				if (dir === "upload" || dir === "both") {
+					await adapter.writeText("usage-stats.json", JSON.stringify(stats, null, 2));
+					result.uploaded = true;
+				}
+				if (dir === "download" || dir === "both") {
+					// Usage stats are derived — downloading has no effect on local state
+					this.logger?.log("info", "[T55] Usage stats are computed locally; skipping download");
+				}
+			}
 		} catch (err: any) {
-			this.logger?.log("warn", `[T43c] Plugin data sync failed: ${err.message}`);
+			this.logger?.log("warn", `[T55] Plugin data sync failed: ${err.message}`);
 		}
 
 		return result;
+	}
+
+	/**
+	 * Helper: sync a single text file to/from remote.
+	 */
+	private async _syncTextFile(
+		path: string,
+		direction: "upload" | "download" | "both",
+		result: { uploaded: boolean; downloaded: boolean; conflict: boolean },
+	): Promise<void> {
+		const adapter = (this.syncEngine as any).adapter as StorageAdapter;
+		if (!adapter) return;
+
+		const localPath = `${this.app.vault.configDir}/plugins/${this.manifest.id}/${path}`;
+
+		try {
+			if (direction === "upload" || direction === "both") {
+				const adapter_fs = this.app.vault.adapter;
+				if (await adapter_fs.exists(localPath)) {
+					const content = await adapter_fs.read(localPath);
+					await adapter.writeText(path, content);
+					result.uploaded = true;
+					this.logger?.log("info", `[T55] Uploaded ${path}`);
+				}
+			}
+			if (direction === "download" || direction === "both") {
+				const remoteContent = await adapter.readText(path);
+				if (remoteContent !== null) {
+					const adapter_fs = this.app.vault.adapter;
+					await adapter_fs.write(localPath, remoteContent);
+					result.downloaded = true;
+					this.logger?.log("info", `[T55] Downloaded ${path}`);
+				}
+			}
+		} catch (err: any) {
+			this.logger?.log("warn", `[T55] Failed to sync ${path}: ${err.message}`);
+		}
 	}
 
 	/** Open this plugin's settings directly at the Remote Storage section. */

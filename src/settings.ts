@@ -14,6 +14,16 @@ export interface IntelligenceSettings {
 	enableMemoryAuditTool: boolean;
 }
 
+export interface SyncComponentConfig {
+	chatSessions: boolean;
+	pluginSettings: boolean;
+	apiKeys: boolean;
+	memory: boolean;
+	memoryAudit: boolean;
+	persona: boolean;
+	usageStats: boolean;
+}
+
 export type ProviderType =
 	| "openai"
 	| "ollama"
@@ -164,6 +174,8 @@ export interface ObsidianAISettings {
 
 	// Remote storage / sync settings (T42)
 	remoteStorage: RemoteStorageConfig;
+	// Component-level sync selection (T55)
+	syncComponents: SyncComponentConfig;
 }
 
 type LegacySettings = Partial<ObsidianAISettings> & {
@@ -407,6 +419,16 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 		},
 		lastSyncTime: 0,
 	},
+	// Component-level sync defaults (T55)
+	syncComponents: {
+		chatSessions: true,
+		pluginSettings: true,
+		apiKeys: false,
+		memory: true,
+		memoryAudit: false,
+		persona: true,
+		usageStats: false,
+	},
 };
 
 export const normalizeSettings = (
@@ -580,6 +602,15 @@ export const normalizeSettings = (
 				enabled: Boolean(merged.remoteStorage?.s3?.enabled ?? false),
 			},
 			lastSyncTime: merged.remoteStorage?.lastSyncTime ?? 0,
+		},
+		syncComponents: {
+			chatSessions: Boolean(merged.syncComponents?.chatSessions ?? true),
+			pluginSettings: Boolean(merged.syncComponents?.pluginSettings ?? true),
+			apiKeys: Boolean(merged.syncComponents?.apiKeys ?? false),
+			memory: Boolean(merged.syncComponents?.memory ?? true),
+			memoryAudit: Boolean(merged.syncComponents?.memoryAudit ?? false),
+			persona: Boolean(merged.syncComponents?.persona ?? true),
+			usageStats: Boolean(merged.syncComponents?.usageStats ?? false),
 		},
 	};
 };

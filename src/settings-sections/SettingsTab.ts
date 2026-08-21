@@ -11,6 +11,7 @@ import { renderHeroSection } from "./hero";
 import { renderProviderProfilesSection } from "./providerProfiles";
 import { renderIntelligenceSection } from "./intelligence";
 import { renderIntegrationsSection } from "./integrations";
+import { renderSyncComponentsSection } from "./syncComponents";
 import { renderSyncSection } from "./syncSettings";
 import { renderUpdaterSection } from "./updaterSettings";
 import { renderWebSearchSection } from "./webSearch";
@@ -112,7 +113,8 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Intelligence", "AI Intelligence Layer"],
 				["Web Search", "Web Search"],
 				["Sync", "Multi-User Sync"],
-				["Remote Storage", "Remote Storage"],
+				["Sync Components", "Sync Components"],
+			["Remote Storage", "Remote Storage"],
 				["Updates", "Updates"],
 				["Telemetry & Privacy", "Telemetry & Privacy"],
 				["Advanced", "Advanced"],
@@ -183,7 +185,12 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				this.plugin,
 				this.saveSettings.bind(this),
 			);
-			renderRemoteStorageSection(
+			renderSyncComponentsSection(
+			containerEl,
+			this.plugin,
+			this.saveSettings.bind(this),
+		);
+		renderRemoteStorageSection(
 				containerEl,
 				this.plugin,
 				this.saveSettings.bind(this),

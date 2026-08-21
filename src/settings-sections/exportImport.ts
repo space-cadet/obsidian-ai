@@ -49,9 +49,48 @@ function deepClone<T>(obj: T): T {
 }
 
 function exportSettings(plugin: ObsidianAIPlugin, includeSecrets: boolean): ExportedSettings {
-	const settings = includeSecrets
-		? deepClone(plugin.settings)
-		: redactSensitiveValues(deepClone(plugin.settings));
+	const sc = plugin.settings.syncComponents;
+	let settings = deepClone(plugin.settings);
+
+	// Filter out unselected components from export
+	if (!sc.chatSessions) {
+		settings = { ...settings, remoteStorage: { ...settings.remoteStorage, enabled: false } };
+	}
+	if (!sc.pluginSettings) {
+		// Zero out plugin settings fields but keep structure
+		settings.selectionPrompt = "";
+		settings.cursorPrompt = "";
+		settings.customCommands = [];
+		settings.messageHistory = false;
+		settings.includeActiveNote = false;
+		settings.maxContextTokens = 8000;
+		settings.maxContextMessages = 10;
+		settings.maxSavedConversations = 20;
+		settings.autoNameSessions = false;
+		settings.enableAgentTools = true;
+		settings.autoApply = false;
+		settings.maxAgentSteps = 5;
+		settings.pressEnterToSend = true;
+		settings.chatTabTitleWidth = 160;
+		settings.restoreChatTabs = true;
+		settings.showFullRequestTokens = true;
+		settings.contextPickerPathDisplay = "duplicates";
+		settings.webSearchProvider = "duckduckgo";
+		settings.pdfExtractionMethod = "auto";
+		settings.pdfMaxPages = 50;
+		settings.intelligence = DEFAULT_SETTINGS.intelligence;
+		settings.checkForUpdates = true;
+		settings.updateChannel = "stable";
+		settings.autoUpdate = false;
+	}
+	if (!sc.apiKeys && !includeSecrets) {
+		// Already redacted by redactSensitiveValues if !includeSecrets
+	}
+
+	if (!includeSecrets) {
+		settings = redactSensitiveValues(settings);
+	}
+
 	return {
 		schemaVersion: CURRENT_SCHEMA_VERSION,
 		exportedAt: new Date().toISOString(),
