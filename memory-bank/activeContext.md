@@ -1,16 +1,50 @@
 # Active Context
 
-*Last Updated: 2026-08-19 19:44 IST*
+*Last Updated: 2026-08-21 11:20 IST*
 
-### 2026-08-21 — T43: Sync panel closeout
+### 2026-08-21 — T43 Subtasks Complete
 
-- Completed the integrated Sync tab polish and rebuild workflow.
-- Rebuild choices now perform real work: trust remote, trust local, or compare while leaving real conflicts visible.
-- Rebuild activity streams into the Files list and can be cancelled.
-- Added a close button to the special Sync tab; this is the final code fix for the session.
-- Latest pushed commit before this final fix: `b31f6bd`.
+All three T43 subtasks completed:
 
-### 2026-08-21 — T43: Integrated Sync UI ✅ COMPLETE
+| Subtask | Issue | Status |
+|---------|-------|--------|
+| **T43a** | Fix rebuildSyncIndex title resolution | ✅ Complete |
+| **T43b** | Add activity indicators to sync UI | ✅ Complete |
+| **T43c** | Extend sync to all plugin data | ✅ Complete |
+
+**T43a:** Applied `titleMap` pattern from `triggerSync()` to `rebuildSyncIndex()` — eliminates "Untitled Session" by resolving titles from local cache, sync cache, then truncated ID.
+
+**T43b:** Added CSS animations for visual feedback during sync:
+- Rotating spinner in status heading (pure CSS, low CPU)
+- Pulsing progress bar during active sync
+- Shimmer animation on pending list items
+
+**T43c:** Extended sync beyond chat sessions to plugin data:
+- `StorageAdapter` gained `readText()` method
+- `syncPluginData()` serializes settings (minus API keys) + sync index
+- Auto-called after successful session sync
+- Last-write-wins conflict resolution with notification
+
+---
+
+### 2026-08-21 — T51: Telemetry DISABLED — Obsidian Policy Block
+
+**Finding:** Obsidian's developer policies **explicitly prohibit client-side telemetry** for plugins in the official Community Plugins directory.
+- The "Kindle Highlights" plugin was **delisted** for sending telemetry to Sentry
+- Even opt-in, anonymized telemetry violates this policy
+- Source: [Obsidian Developer Policies](https://docs.obsidian.md/Developer+policies)
+
+**Action:** All telemetry code removed from the plugin:
+- `src/lib/telemetry.ts` — deleted
+- `src/settings-sections/telemetry.ts` — deleted
+- `src/main.ts` — removed first-run dialog, init, flush
+- `src/settings.ts` — removed `telemetryEnabled`, `telemetryId`, `telemetryAsked`
+- `src/components/ChatApp.tsx` — removed `chat_started` event logging
+- `src/agent/AgentLoop.ts` — removed `tool_used` event logging
+
+**Archive:** Complete implementation preserved in `memory-bank/implementation-details/telemetry-implementation-archived.md`
+
+---
 
 **Task:** T43 — Integrate Sync UI into Chat Lab
 - Replaced standalone `SyncSidebarView` with integrated sync tab inside Chat Lab
@@ -18,16 +52,6 @@
 - Sync opens as non-session tab (`__sync__`) with rich progress UI
 - Direction control: Two-way / Upload only / Download only
 - T42f superseded by T43
-
-### 2026-08-21 — T43 Subtasks Created (Tablet Testing Issues)
-
-**Discovered during tablet testing:**
-- Commit `a2d5544`: Fixed batch progress updates, direction filter, title improvements
-- **T43a**: `rebuildSyncIndex()` still shows "Untitled Session" — titleMap fix only applied to `triggerSync`
-- **T43b**: Insufficient activity indicators — dry-run finishes in single frame, no spinner/hourglass
-- **T43c**: Sync only covers chat sessions — settings, AI memory, sync index are device-local
-
-**Status:** ✅ COMPLETE — All 6 phases implemented and committed
 
 **Commits:**
 - `dd4a989` — Phase 1: Remove 2nd sidebar
@@ -77,12 +101,12 @@
 
 | Subtask | Feature | Priority | Status |
 |---------|---------|----------|--------|
-| **T42a** | Sync Index — Skip Unchanged Sessions | P1 | 🔄 |
-| **T42b** | Atomic Writes | P1 | 🔄 |
-| **T42c** | Concurrency Control | P1 | 🔄 |
-| **T42d** | Server Signature / Cache Invalidation | P1 | 🔄 |
-| **T42e** | Dry Run Mode | P2 | 🔄 |
-| **T42f** | Progress UI Improvements | P2 | 🔄 |
+| **T42a** | Sync Index — Skip Unchanged Sessions | P1 | ✅ |
+| **T42b** | Atomic Writes | P1 | ✅ |
+| **T42c** | Concurrency Control | P1 | ✅ |
+| **T42d** | Server Signature / Cache Invalidation | P1 | ✅ |
+| **T42e** | Dry Run Mode | P2 | ✅ |
+| **T42f** | Progress UI Improvements | P2 | ⛔ SUPERSEDED by T43 |
 
 **Design docs created:**
 - `memory-bank/implementation-details/sync-index-design.md`
@@ -92,8 +116,6 @@
 - `memory-bank/implementation-details/dry-run-design.md`
 - `memory-bank/implementation-details/progress-ui-design.md`
 
-**Rationale:** After comparing obsidian-ai's sync with SyncIt's proven implementation, six mechanical improvements were identified that make obsidian-ai's sync faster (index skip, concurrency), safer (atomic writes, server signature), and more user-friendly (dry run, progress UI) without changing the core architecture.
-
 ---
 
 # Active Context
@@ -102,42 +124,26 @@
 
 ### 2026-08-19 — DeepSeek V4 Pricing Investigation + New Task Batch (T6a, T48, T49, T50, T51)
 
-- **Context**: User noticed DeepSeek V4 pricing was higher than expected. Investigation revealed
-  the plugin's token counter significantly undercounts actual API usage — showing only the
-  current user message tokens (~8K) while the full request payload includes system prompt +
-  10 turns of history (~850K tokens, 842K cached).
-- **Root cause**: `estimateTokens()` in `tokenEstimator.ts` only counts `text.length / 4` for
-  the user message text. It ignores system prompt, conversation history, and tool call context.
-- **DeepSeek Responses API**: Confirmed stateless (`previous_response_id` not supported per
-  official compatibility docs). Cache hit pricing is cheap ($0.007/M) but the UI lies about
-  actual usage.
-
 **New tasks created:**
 
 | Task | Title | Priority | Status |
 |------|-------|----------|--------|
-| **T6a** | Token Counter Accuracy Fix — Full Request Payload Counting | HIGH | 🔄 Active |
+| **T6a** | Token Counter Accuracy Fix — Full Request Payload Counting | HIGH | ✅ COMPLETE |
 | **T48** | Conversation Compaction Mechanism | HIGH | 🔄 Active |
-| **T49** | Settings Export and Import | MEDIUM | 🔄 Active |
+| **T49** | Settings Export and Import | MEDIUM | ✅ COMPLETE |
 | **T50** | OpenAI Responses API / Threads Support (Stateful Sessions) | MEDIUM | 🔄 Active |
-| **T51** | Opt-in Telemetry and Usage Data Collection | MEDIUM | 🔄 Active |
+| **T51** | Opt-in Telemetry and Usage Data Collection | MEDIUM | ⛔ DISABLED |
 
-- **T6a**: 20-line fix. Show full payload tokens (system + history + message) instead of
-  message-only count. Settings toggle for backward compatibility.
 - **T48**: Auto-summarize old conversation turns after N turns to reduce per-request payload.
-  Estimated ~80% token savings on long conversations. Provider-agnostic (works with DeepSeek).
-- **T49**: JSON export/import for plugin settings. API keys redacted by default. Schema versioning.
-- **T50**: OpenAI stateful sessions via Responses API. Deprioritized for DeepSeek users (their
-  Responses API is stateless). Only benefits OpenAI power users.
-- **T51**: Opt-in anonymized telemetry. Strictly disabled by default. Full disclosure. Collects
-  provider type, feature usage, error rates — never message content or API keys.
+- **T50**: OpenAI stateful sessions via Responses API.
+- **T51**: REMOVED — Obsidian policy prohibits client-side telemetry.
 
 **Implementation docs created/updated:**
-- Updated `context-system-design.md` (T6a) — token counting behavior section
+- Updated `context-system-design.md` (T6a)
 - Created `conversation-compaction-design.md` (T48)
 - Created `settings-export-schema.md` (T49)
-- Updated `openresponses-implementation.md` (T50) — provider compatibility matrix
-- Created `telemetry-privacy-design.md` (T51)
+- Updated `openresponses-implementation.md` (T50)
+- Created `telemetry-privacy-design.md` (T51) — archived
 
 ---
 

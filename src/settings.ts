@@ -162,11 +162,6 @@ export interface ObsidianAISettings {
 	lastUpdateCheck: number;
 	autoUpdate: boolean;
 
-	// Telemetry settings (T51)
-	telemetryEnabled: boolean;
-	telemetryId: string;
-	telemetryAsked: boolean;
-
 	// Remote storage / sync settings (T42)
 	remoteStorage: RemoteStorageConfig;
 }
@@ -382,11 +377,6 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	lastUpdateCheck: 0,
 	autoUpdate: false,
 
-	// Telemetry defaults (T51)
-	telemetryEnabled: false,
-	telemetryId: "",
-	telemetryAsked: false,
-
 	// Remote storage defaults (T42)
 	remoteStorage: {
 		enabled: false,
@@ -541,10 +531,6 @@ export const normalizeSettings = (
 		updateChannel: (merged.updateChannel as "stable" | "dev") ?? "stable",
 		lastUpdateCheck: merged.lastUpdateCheck ?? 0,
 		autoUpdate: Boolean(merged.autoUpdate ?? false),
-		// Telemetry normalization (T51)
-		telemetryEnabled: Boolean(merged.telemetryEnabled ?? false),
-		telemetryId: merged.telemetryId ?? "",
-		telemetryAsked: Boolean(merged.telemetryAsked ?? false),
 		remoteStorage: {
 			enabled: Boolean(merged.remoteStorage?.enabled ?? false),
 			backend:

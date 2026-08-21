@@ -172,6 +172,18 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		await this.put(fullPath, content, "text/plain");
 	}
 
+	async readText(path: string): Promise<string | null> {
+		const fullPath = this.prefix + path;
+		try {
+			return await this.get(fullPath);
+		} catch (err: any) {
+			if (err.status === 404 || err.message?.includes("404")) {
+				return null;
+			}
+			throw err;
+		}
+	}
+
 	// ─── Internal WebDAV operations ───
 
 	private getAuthHeader(): string {

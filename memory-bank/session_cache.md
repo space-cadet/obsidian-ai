@@ -1,8 +1,19 @@
 # Session Cache
 
-*Last Updated: 2026-08-21 00:21:02 IST*
+*Last Updated: 2026-08-21 11:20 IST*
 
 ## Latest Session
+- Focus: T43 subtasks (T43a title resolution, T43b activity indicators, T43c plugin data sync)
+- Completed: All three T43 subtasks implemented
+- Build: TypeScript clean
+
+*Session: 2026-08-21 11:00–11:20 UTC*
+*Branch: `main`*
+*Models: kimi/k3*
+
+---
+
+## Previous Session (2026-08-19)
 - Focus: T43 integrated Sync tab and rebuild workflow
 - Completed: Sync UI redesign, rebuild choices, live rebuild activity, cancellation, and Sync-tab close button
 - Latest code commit before final close-button fix: `b31f6bd`

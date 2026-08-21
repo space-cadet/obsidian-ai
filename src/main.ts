@@ -91,26 +91,6 @@ export default class ObsidianAIPlugin extends Plugin {
 
 		await this.loadSettings();
 
-		// Initialize telemetry (T51) — must be after loadSettings
-		const { telemetry, getOrCreateTelemetryId, showTelemetryOptInDialog } = await import("./lib/telemetry");
-		if (!this.settings.telemetryId) {
-			this.settings.telemetryId = getOrCreateTelemetryId();
-		}
-		telemetry.init(this);
-		// First-run telemetry opt-in (strictly opt-in, asked once)
-		if (!this.settings.telemetryAsked) {
-			// Defer dialog slightly so Obsidian UI is ready
-			window.setTimeout(async () => {
-				const enabled = await showTelemetryOptInDialog(this);
-				this.settings.telemetryEnabled = enabled;
-				this.settings.telemetryAsked = true;
-				await this.saveSettings();
-				telemetry.setEnabled(enabled);
-			}, 2000);
-		} else {
-			telemetry.setEnabled(this.settings.telemetryEnabled);
-		}
-
 		this.integrationRegistry = new ProviderRegistry(
 			this.app,
 			this.settings,
@@ -583,10 +563,6 @@ export default class ObsidianAIPlugin extends Plugin {
 	onunload() {
 		this.logger.stopMemoryLogging();
 		this.logger.flushNow();
-		// Flush any pending telemetry events (T51)
-		import("./lib/telemetry").then(({ telemetry }) => {
-			telemetry.destroy();
-		}).catch(() => {});
 	}
 
 	private _lastSyncConfigHash: string = "";
@@ -692,11 +668,16 @@ export default class ObsidianAIPlugin extends Plugin {
 	}): Promise<{ uploaded: number; downloaded: number; conflicts: number; skipped: number }> {
 		if (!this.syncEngine) await this._initSyncEngine();
 		if (!this.syncEngine) throw new Error("Sync is not configured");
+
+		// Build title map from local sessions for better title resolution (T43a)
+		const chatData = await this.loadChatData();
+		const titleMap = new Map(chatData.sessions?.map((s: any) => [s.id, s.title]) ?? []);
+
 		const previousHandler = this.syncEngine.getProgressHandler();
 		try {
 			this.syncEngine.setProgressHandler((event) => {
 				if (event.type !== "session" || !event.direction) return;
-				const title = this._getSessionTitle(event.id)?.trim() || "Untitled session";
+				const title = titleMap.get(event.id) || this._getSessionTitle(event.id)?.trim() || `Session ${event.id.slice(0, 8)}…`;
 				options?.onLog?.({
 					id: event.id,
 					operation: event.direction,
@@ -915,6 +896,18 @@ export default class ObsidianAIPlugin extends Plugin {
 				new Notice(`⚠️ Sync finished with errors: ${msg}`, 8000);
 			}
 
+			// T43c: Sync plugin data (settings, index) after session sync
+			if (!dryRun && ok) {
+				try {
+					const pdResult = await this.syncPluginData(direction);
+					if (pdResult.conflict) {
+						new Notice("⚠️ Plugin settings conflict detected. Last-write-wins applied.", 5000);
+					}
+				} catch (e: any) {
+					this.logger?.log("warn", `[T43c] Plugin data sync error: ${e.message}`);
+				}
+			}
+
 			return { ok, message: msg, uploaded: result.uploaded, downloaded: result.downloaded, conflicts: result.conflicts, skipped: result.skipped, errors: result.errors };
 		} catch (err: any) {
 			const msg = `Sync failed: ${err.message}`;
@@ -980,6 +973,160 @@ export default class ObsidianAIPlugin extends Plugin {
 				`SyncEngine: failed to populate cache: ${err.message}`,
 			);
 		}
+	}
+
+	// ── T43c: Plugin Data Sync ─────────────────────────────────────────────
+
+	/**
+	 * Serialize plugin settings and data for remote sync.
+	 * API keys and credentials are stripped for security.
+	 */
+	private _serializePluginData(): object {
+		// Strip sensitive fields from provider profiles
+		const safeProfiles = this.settings.providerProfiles.map((p) => ({
+			...p,
+			apiKey: "",
+			password: "",
+			// Keep other settings like model, URL, etc.
+		}));
+
+		return {
+			version: 1,
+			timestamp: Date.now(),
+			settings: {
+				selectionPrompt: this.settings.selectionPrompt,
+				cursorPrompt: this.settings.cursorPrompt,
+				customCommands: this.settings.customCommands,
+				commandPrefix: this.settings.commandPrefix,
+				messageHistory: this.settings.messageHistory,
+				includeActiveNote: this.settings.includeActiveNote,
+				maxContextTokens: this.settings.maxContextTokens,
+				maxContextMessages: this.settings.maxContextMessages,
+				maxSavedConversations: this.settings.maxSavedConversations,
+				autoNameSessions: this.settings.autoNameSessions,
+				debugLogLevel: this.settings.debugLogLevel,
+				debugLogRetention: this.settings.debugLogRetention,
+				debugLogMaxSizeMB: this.settings.debugLogMaxSizeMB,
+				enableAgentTools: this.settings.enableAgentTools,
+				autoApply: this.settings.autoApply,
+				maxAgentSteps: this.settings.maxAgentSteps,
+				pressEnterToSend: this.settings.pressEnterToSend,
+				chatTabTitleWidth: this.settings.chatTabTitleWidth,
+				restoreChatTabs: this.settings.restoreChatTabs,
+				showFullRequestTokens: this.settings.showFullRequestTokens,
+				contextPickerPathDisplay: this.settings.contextPickerPathDisplay,
+				webSearchProvider: this.settings.webSearchProvider,
+				pdfExtractionMethod: this.settings.pdfExtractionMethod,
+				pdfMaxPages: this.settings.pdfMaxPages,
+				intelligence: this.settings.intelligence,
+				providerProfiles: safeProfiles,
+				activeProviderProfileId: this.settings.activeProviderProfileId,
+				selectedProfileIds: this.settings.selectedProfileIds,
+				// Remote storage config (without credentials)
+				remoteStorage: {
+					enabled: this.settings.remoteStorage.enabled,
+					backend: this.settings.remoteStorage.backend,
+					autoSync: this.settings.remoteStorage.autoSync,
+					syncIntervalMinutes: this.settings.remoteStorage.syncIntervalMinutes,
+					conflictStrategy: this.settings.remoteStorage.conflictStrategy,
+					syncDirection: this.settings.remoteStorage.syncDirection,
+					concurrencyLimit: this.settings.remoteStorage.concurrencyLimit,
+				},
+			},
+			// Sync index (shared across devices)
+			syncIndex: (this.syncEngine as any)?.indexManager?.getIndex?.() ?? null,
+		};
+	}
+
+	/**
+	 * Deserialize and merge plugin data from remote.
+	 * Uses last-write-wins with notification.
+	 */
+	private async _deserializePluginData(data: object): Promise<void> {
+		const remote = data as any;
+		if (!remote.settings) return;
+
+		// Merge settings (last-write-wins)
+		const merged = { ...this.settings, ...remote.settings };
+
+		// Preserve API keys from local settings (never overwrite from remote)
+		merged.providerProfiles = merged.providerProfiles.map((remoteProfile: any, idx: number) => {
+			const localProfile = this.settings.providerProfiles[idx];
+			if (localProfile && localProfile.id === remoteProfile.id) {
+				return { ...remoteProfile, apiKey: localProfile.apiKey };
+			}
+			return remoteProfile;
+		});
+
+		// Preserve remote storage credentials
+		merged.remoteStorage = {
+			...this.settings.remoteStorage,
+			...remote.settings.remoteStorage,
+			webdav: this.settings.remoteStorage.webdav,
+			s3: this.settings.remoteStorage.s3,
+		};
+
+		this.settings = merged;
+		await this.saveSettings();
+
+		// Merge sync index if present
+		if (remote.syncIndex && this.syncEngine) {
+			const indexManager = (this.syncEngine as any).indexManager;
+			if (indexManager?.mergeIndex) {
+				indexManager.mergeIndex(remote.syncIndex);
+			}
+		}
+
+		this.logger?.log("info", "[T43c] Plugin data merged from remote");
+	}
+
+	/**
+	 * Sync plugin data (settings, memory, index) to/from remote.
+	 * Called automatically after session sync completes.
+	 */
+	async syncPluginData(direction?: "upload" | "download" | "both"): Promise<{
+		uploaded: boolean;
+		downloaded: boolean;
+		conflict: boolean;
+	}> {
+		const result = { uploaded: false, downloaded: false, conflict: false };
+		if (!this.syncEngine) return result;
+
+		const adapter = (this.syncEngine as any).adapter as StorageAdapter;
+		if (!adapter) return result;
+
+		const dir = direction ?? this.settings.remoteStorage.syncDirection ?? "both";
+		const PLUGIN_DATA_PATH = "plugin-data.json";
+
+		try {
+			// Upload local plugin data
+			if (dir === "upload" || dir === "both") {
+				const data = this._serializePluginData();
+				await adapter.writeText(PLUGIN_DATA_PATH, JSON.stringify(data, null, 2));
+				result.uploaded = true;
+				this.logger?.log("info", "[T43c] Plugin data uploaded");
+			}
+
+			// Download and merge remote plugin data
+			if (dir === "download" || dir === "both") {
+				const remoteText = await adapter.readText(PLUGIN_DATA_PATH);
+				if (remoteText) {
+					const remoteData = JSON.parse(remoteText);
+					// Simple conflict: if remote is newer, merge it
+					if (remoteData.timestamp && remoteData.timestamp > (this.settings.remoteStorage.lastSyncTime ?? 0)) {
+						await this._deserializePluginData(remoteData);
+						result.downloaded = true;
+					} else if (dir === "both") {
+						// Both modified — last-write-wins, but notify
+						result.conflict = true;
+					}
+				}
+			}
+		} catch (err: any) {
+			this.logger?.log("warn", `[T43c] Plugin data sync failed: ${err.message}`);
+		}
+
+		return result;
 	}
 
 	/** Open this plugin's settings directly at the Remote Storage section. */

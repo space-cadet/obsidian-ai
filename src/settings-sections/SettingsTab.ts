@@ -17,7 +17,6 @@ import { renderWebSearchSection } from "./webSearch";
 import { renderPdfExtractionSection } from "./pdfExtraction";
 import { renderRemoteStorageSection } from "./remoteStorageSettings";
 import { renderExportImportSection } from "./exportImport";
-import { renderTelemetrySection } from "./telemetry";
 
 function debounce(fn: () => void, ms: number): () => void {
 	let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -190,11 +189,6 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				this.saveSettings.bind(this),
 			);
 			renderUpdaterSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
-			);
-			renderTelemetrySection(
 				containerEl,
 				this.plugin,
 				this.saveSettings.bind(this),

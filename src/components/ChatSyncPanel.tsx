@@ -229,7 +229,10 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		<div className="chat-sync-panel-v2">
 			<div className="sync-v2-status-block">
 				<div className="sync-v2-eyebrow">Status</div>
-				<h2>{statusHeading}</h2>
+				<h2 className={isSyncing ? "sync-v2-status--syncing" : ""}>
+					{isSyncing && <span className="sync-v2-spinner" />}
+					{statusHeading}
+				</h2>
 				<div className="sync-v2-substatus">{isSyncing ? `${completed} of ${scanned} · ${elapsedText}` : `${directionLabel} · Last sync: ${lastSyncText}`}</div>
 			</div>
 
@@ -286,7 +289,7 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 			{/* ── Progress Section (SyncIt-style) ──────────────────────── */}
 			{isSyncing && (
 				<div className="sync-v2-progress">
-					<div className="sync-v2-progress-track"><div className="sync-v2-progress-fill" style={{ width: `${progressPercent}%` }} /></div>
+					<div className="sync-v2-progress-track"><div className={`sync-v2-progress-fill ${isSyncing ? "sync-v2-progress-fill--active" : ""}`} style={{ width: `${progressPercent}%` }} /></div>
 					<div className="sync-v2-progress-meta"><span>{progressPercent}%</span><span>{progress?.completed ?? 0} / {progress?.total ?? 0} sessions</span></div>
 				</div>
 			)}
@@ -383,7 +386,7 @@ const SyncItem: React.FC<{ entry: SyncLogEntry }> = ({ entry }) => {
 	}[entry.status];
 
 	return (
-		<div className={`sync-v2-item sync-v2-item--${entry.operation}`}>
+		<div className={`sync-v2-item sync-v2-item--${entry.operation} ${entry.status === "pending" ? "sync-v2-item--pending" : ""}`}>
 			<div className="sync-v2-item-main">
 				<div className="sync-v2-item-title" title={entry.title}>
 					{entry.title}

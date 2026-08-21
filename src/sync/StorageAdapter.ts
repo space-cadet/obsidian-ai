@@ -68,6 +68,9 @@ export interface StorageAdapter {
 	/** Write raw text to a file at the given path (for logs, metadata). */
 	writeText(path: string, content: string): Promise<void>;
 
+	/** Read raw text from a file at the given path. */
+	readText(path: string): Promise<string | null>;
+
 	/** Delete a remote session. */
 	deleteSession(id: string): Promise<void>;
 
