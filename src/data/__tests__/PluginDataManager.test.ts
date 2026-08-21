@@ -105,7 +105,7 @@ describe("PluginDataManager", () => {
 			const current = createMockPlugin().settings;
 			const imported: Partial<ObsidianAISettings> = {
 				providerProfiles: [
-					{ id: "p1", name: "Updated", apiKey: "new-key", provider: "openai" },
+					{ id: "p1", name: "Updated", apiKey: "new-key", provider: "openai", model: "gpt-4", createdAt: 0, updatedAt: 0 },
 				],
 			};
 
@@ -117,7 +117,7 @@ describe("PluginDataManager", () => {
 			const current = createMockPlugin().settings;
 			const imported: Partial<ObsidianAISettings> = {
 				providerProfiles: [
-					{ id: "p1", name: "Updated", apiKey: "", provider: "openai" },
+					{ id: "p1", name: "Updated", apiKey: "", provider: "openai", model: "gpt-4", createdAt: 0, updatedAt: 0 },
 				],
 			};
 
@@ -127,14 +127,14 @@ describe("PluginDataManager", () => {
 
 		it("preserves remote storage credentials", () => {
 			const current = createMockPlugin().settings;
-			current.remoteStorage.webdav = { url: "local", username: "me", password: "secret" };
+			current.remoteStorage.webdav = { type: "webdav" as const, url: "local", username: "me", password: "secret", prefix: "", enabled: true };
 
 			const imported: Partial<ObsidianAISettings> = {
-				remoteStorage: { enabled: true, backend: "webdav", webdav: { url: "remote" } },
+				remoteStorage: { enabled: true, backend: "webdav", passphrase: "", autoSync: false, syncIntervalMinutes: 30, conflictStrategy: "last-write-wins", syncDirection: "both", lastSyncTime: 0, webdav: { type: "webdav" as const, url: "remote", username: "", password: "", prefix: "", enabled: true } } as any,
 			};
 
 			const result = mergeSettings(current, imported, { preserveRemoteStorage: true });
-			expect(result.remoteStorage.webdav.password).toBe("secret");
+			expect(result.remoteStorage.webdav!.password).toBe("secret");
 		});
 	});
 
