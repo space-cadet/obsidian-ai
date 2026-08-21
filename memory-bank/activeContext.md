@@ -42,24 +42,24 @@ Added `SyncComponentConfig` to settings with 7 toggles controlling which data co
 
 ---
 
-### 2026-08-21 — Planned Changes (Sync/Storage/Global Reorganization)
+### 2026-08-21 — Planned Changes (Sync/Storage/Global Reorganization) — COMPLETED as T56
 
-Three architectural improvements identified for future work:
+All three architectural improvements implemented in commit `45917c8`:
 
-1. **Rename "Multi-User Sync" → "Multi-User Chat Relay"**
-   - Current name is ambiguous; "Chat Relay" accurately describes the WebSocket relay functionality
-   - Settings nav and UI labels need update
+1. **Rename "Multi-User Sync" → "Multi-User Chat Relay"** ✅
+   - Settings nav and UI labels updated
 
-2. **Unified Plugin Data Management Layer**
-   - Currently: export/import and remote sync handle data separately with duplicated filtering logic
-   - Goal: single data access layer that both tools use transparently
-   - Benefits: consistency, less code duplication, easier testing
+2. **Unified Plugin Data Management Layer** ✅
+   - `PluginDataManager` created at `src/data/PluginDataManager.ts`
+   - Single source of truth for serialization/deserialization
+   - Used by both export/import and remote sync
 
-3. **Global Reorganization of Sync/Storage/Export-Import Code**
-   - Current state: built ad-hoc across T42, T43, T49, T55
-   - Goal: coherent, robust, modularized architecture
-   - Likely involves: extracting a `DataManager` class, unifying serialization, cleaner separation of concerns
-   - This is a significant refactor; should be planned as a dedicated task
+3. **Global Reorganization** ✅ (Phase 1)
+   - Eliminated ~210 lines of duplicated logic across exportImport.ts and main.ts
+   - Coherent `extractSettings()` / `mergeSettings()` / `redactSecrets()` pipeline
+   - Foundation laid for further modularization (FileSyncManager, delta sync, etc.)
+
+See `tasks/T56.md` for full details.
 
 ---
 

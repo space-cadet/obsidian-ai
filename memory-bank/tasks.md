@@ -22,6 +22,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T43b | Add Activity Indicators to Sync UI | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43 | [Details](tasks/T43b.md) |
 | T43c | Extend Sync to All Plugin Data | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43, T42 | [Details](tasks/T43c.md) |
 | T55 | Component-Level Sync Selection | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43, T42, T49 | [Details](tasks/T55.md) |
+| T56 | Unify Plugin Data Management Layer | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43, T49, T55 | [Details](tasks/T56.md) |
 | T44 | Standalone UI Preview and Obsidian Host Boundary | 🔄 | MEDIUM | 2026-08-12 | T1, T22 | [Details](tasks/T44.md) |
 | T6a | Token Counter Accuracy Fix | 🔄 | HIGH | — | T6 | [Details](tasks/T6a.md) |
 | T48 | Conversation Compaction Mechanism | 🔄 | HIGH | — | T6a | [Details](tasks/T48.md) |

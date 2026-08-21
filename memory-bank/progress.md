@@ -51,6 +51,33 @@ Added fine-grained control over which data components participate in remote sync
 
 ---
 
+### 2026-08-21 — T56: Unify Plugin Data Management Layer ✅
+
+**Commit:** `45917c8`
+
+Addressed all three planned architectural improvements from T55 post-delivery review:
+
+1. **Rename "Multi-User Sync" → "Multi-User Chat Relay"**
+   - `syncSettings.ts` section title and DOM ID updated
+   - `SettingsTab.ts` nav label updated
+
+2. **Unified PluginDataManager**
+   - New `src/data/PluginDataManager.ts` — centralizes all serialization/deserialization
+   - `createExportBundle()` / `createSyncBundle()` — unified filtering by syncComponents
+   - `applyExportBundle()` / `applySyncBundle()` — unified merge with credential preservation
+   - `validateImport()` — schema validation
+   - 14 unit tests added
+
+3. **Refactored callers**
+   - `exportImport.ts`: Replaced ~80 lines of duplicated logic with PluginDataManager calls
+   - `main.ts`: Replaced ~130 lines of inline serialize/deserialize with one-line delegations
+
+**Result:** Single source of truth for plugin data portability. All 250 tests passing.
+
+**Files:** `src/data/PluginDataManager.ts` (new), `src/data/__tests__/PluginDataManager.test.ts` (new), `src/settings-sections/syncSettings.ts`, `src/settings-sections/SettingsTab.ts`, `src/settings-sections/exportImport.ts`, `src/main.ts`
+
+---
+
 ### 2026-08-21 — T51: Telemetry DISABLED — Obsidian Policy Block
 
 **Status:** ⛔ **REMOVED from plugin** (was: ✅ COMPLETE)
