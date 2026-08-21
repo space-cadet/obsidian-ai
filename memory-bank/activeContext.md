@@ -10,7 +10,7 @@
 - Added a close button to the special Sync tab; this is the final code fix for the session.
 - Latest pushed commit before this final fix: `b31f6bd`.
 
-### 2026-08-20 — T43: Integrated Sync UI ✅ COMPLETE
+### 2026-08-21 — T43: Integrated Sync UI ✅ COMPLETE
 
 **Task:** T43 — Integrate Sync UI into Chat Lab
 - Replaced standalone `SyncSidebarView` with integrated sync tab inside Chat Lab
@@ -18,6 +18,14 @@
 - Sync opens as non-session tab (`__sync__`) with rich progress UI
 - Direction control: Two-way / Upload only / Download only
 - T42f superseded by T43
+
+### 2026-08-21 — T43 Subtasks Created (Tablet Testing Issues)
+
+**Discovered during tablet testing:**
+- Commit `a2d5544`: Fixed batch progress updates, direction filter, title improvements
+- **T43a**: `rebuildSyncIndex()` still shows "Untitled Session" — titleMap fix only applied to `triggerSync`
+- **T43b**: Insufficient activity indicators — dry-run finishes in single frame, no spinner/hourglass
+- **T43c**: Sync only covers chat sessions — settings, AI memory, sync index are device-local
 
 **Status:** ✅ COMPLETE — All 6 phases implemented and committed
 

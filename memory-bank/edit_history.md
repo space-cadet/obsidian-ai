@@ -1,6 +1,14 @@
 # Edit History
 
-*Last Updated: 2026-08-21 00:21:02 IST*
+*Last Updated: 2026-08-21 08:20 IST*
+
+#### 08:20 IST - T43a, T43b, T43c: Created subtasks for tablet testing issues
+- Created `memory-bank/tasks/T43a.md` — Fix rebuildSyncIndex title resolution ("Untitled Session" bug)
+- Created `memory-bank/tasks/T43b.md` — Add activity indicators (spinners/animated feedback) to sync UI
+- Created `memory-bank/tasks/T43c.md` — Extend sync to all plugin data (settings, memory, logs, index)
+- Modified `memory-bank/tasks/T43.md` — Added subtasks section with links to T43a, T43b, T43c
+- Modified `memory-bank/tasks.md` — Registered T43a, T43b, T43c in active task registry
+- Modified `memory-bank/activeContext.md` — Recorded tablet testing issues and new subtasks
 
 #### 00:21 IST - T43: Close integrated Sync tab and record session closeout
 - Modified `src/components/ChatTabBar.tsx` - Show the close button for the special Sync tab.
