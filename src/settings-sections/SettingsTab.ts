@@ -112,7 +112,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Integrations", "Integrations"],
 				["Intelligence", "AI Intelligence Layer"],
 				["Web Search", "Web Search"],
-				["Sync", "Multi-User Sync"],
+				["Sync", "Multi-User Chat Relay"],
 				["Sync Components", "Sync Components"],
 			["Remote Storage", "Remote Storage"],
 				["Updates", "Updates"],

@@ -23,6 +23,34 @@
 
 ---
 
+### 2026-08-21 — T55: Component-Level Sync Selection ✅
+
+**Commit:** `7e0821b`
+
+Added fine-grained control over which data components participate in remote sync and export/import:
+
+| Component | Default | Behavior |
+|-----------|---------|----------|
+| Chat sessions | ✅ | Bidirectional |
+| Plugin settings | ✅ | Bidirectional |
+| API keys | ❌ | Bidirectional (opt-in) |
+| AI Memory | ✅ | Bidirectional |
+| Memory audit log | ❌ | Bidirectional |
+| AI Persona | ✅ | Bidirectional |
+| Usage stats | ❌ | Upload-only |
+
+**Changes:**
+- `SyncComponentConfig` interface added to settings (7 toggles)
+- New "Sync Components" settings section between Multi-User Sync and Remote Storage
+- Export/import filters by component
+- Remote sync respects toggles: `_serializePluginData()` conditionally includes, `_deserializePluginData()` only merges enabled, `_syncTextFile()` for individual files
+- Usage stats computed fresh on upload, skipped on download
+- API keys excluded by default; credential fields never overwritten from remote
+
+**Files:** `src/settings.ts`, `src/settings-sections/syncComponents.ts` (new), `src/settings-sections/SettingsTab.ts`, `src/settings-sections/exportImport.ts`, `src/main.ts`
+
+---
+
 ### 2026-08-21 — T51: Telemetry DISABLED — Obsidian Policy Block
 
 **Status:** ⛔ **REMOVED from plugin** (was: ✅ COMPLETE)

@@ -1,10 +1,74 @@
 # Session Cache
 
-*Last Updated: 2026-08-21 11:20 IST*
+*Last Updated: 2026-08-21 13:52 UTC*
 
 ## Latest Session
+- Focus: T43 subtask closeout + T55 component-level sync selection
+- Completed:
+  - T43a/b/c committed and pushed (`2d687a2`)
+  - T51 telemetry removal (Obsidian policy block)
+  - T55 component-level sync selection (`7e0821b`)
+- Build: 236/236 tests passing, TypeScript clean
+- Commits pushed to `main`
+
+*Session: 2026-08-21 13:00–13:52 UTC*
+*Branch: `main`*
+*Models: kimi/k3*
+
+## Work Completed (2026-08-21 Afternoon)
+
+### 1. T43a/b/c — Committed and Pushed
+- Combined commit `2d687a2`: all three subtasks + telemetry removal
+- T43a: `titleMap` pattern applied to `rebuildSyncIndex()`
+- T43b: CSS activity indicators (spinner, pulse bar, shimmer)
+- T43c: Plugin data sync with `_serializePluginData()` / `_deserializePluginData()`
+
+### 2. T51 — Telemetry Removed
+- Obsidian Community Plugins policy prohibits client-side telemetry
+- Deleted: `src/lib/telemetry.ts`, `src/settings-sections/telemetry.ts`
+- Removed init/event logging from `main.ts`, `settings.ts`, `ChatApp.tsx`, `AgentLoop.ts`
+- Archived implementation to `telemetry-implementation-archived.md`
+
+### 3. T55 — Component-Level Sync Selection
+- Commit `7e0821b`: +311/-63 lines across 5 files
+- Added `SyncComponentConfig` interface with 7 toggles
+- New `src/settings-sections/syncComponents.ts` settings section
+- Export/import filters by component
+- Remote sync respects toggles: conditional serialization, selective merge, individual file sync
+- Usage stats: computed on upload, skipped on download
+- API keys excluded by default; credentials never overwritten from remote
+
+## Files Modified
+- `src/main.ts` — T43a title resolution, T43c plugin data sync, T55 component filtering
+- `src/settings.ts` — T55 `SyncComponentConfig`
+- `src/settings-sections/syncComponents.ts` — **New** (T55)
+- `src/settings-sections/SettingsTab.ts` — T55 nav wiring
+- `src/settings-sections/exportImport.ts` — T55 component filtering
+- `src/components/ChatSyncPanel.tsx` — T43b activity indicators
+- `src/sync/StorageAdapter.ts` — T43c `readText()`
+- `src/sync/WebDAVStorageAdapter.ts` — T43c `readText()` implementation
+- `styles.css` — T43b CSS animations
+- Deleted: `src/lib/telemetry.ts`, `src/settings-sections/telemetry.ts`
+
+## Memory Bank Updates
+- `tasks.md` — T43a/b/c marked ✅ COMPLETE, T55 added
+- `tasks/T43a.md`, `tasks/T43b.md`, `tasks/T43c.md` — Already correct
+- `tasks/T55.md` — **Created**
+- `progress.md` — T43 subtasks + T55 completion added
+- `activeContext.md` — T55 + planned changes added
+- `session_cache.md` — This update
+- `implementation-details/sync-component-selection.md` — **Created**
+
+## Build Status
+- TypeScript: clean
+- Tests: 236/236 passing
+- All changes pushed to `main`
+
+---
+
+## Previous Session (2026-08-21 morning)
 - Focus: T43 subtasks (T43a title resolution, T43b activity indicators, T43c plugin data sync)
-- Completed: All three T43 subtasks implemented
+- Completed: All three T43 subtasks implemented (code changes only, not yet committed)
 - Build: TypeScript clean
 
 *Session: 2026-08-21 11:00–11:20 UTC*

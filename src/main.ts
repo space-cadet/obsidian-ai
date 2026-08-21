@@ -38,6 +38,7 @@ import { PersonaLoader } from "./intelligence/PersonaLoader";
 import { SearchIndex } from "./search/index";
 import { SessionSummarizer } from "./intelligence/SessionSummarizer";
 import { SyncEngine } from "./sync/SyncEngine";
+import { PluginDataManager } from "./data/PluginDataManager";
 import { LocalCache } from "./sync/LocalCache";
 import { EncryptionLayer } from "./sync/EncryptionLayer";
 import { WebDAVStorageAdapter } from "./sync/WebDAVStorageAdapter";
@@ -975,124 +976,24 @@ export default class ObsidianAIPlugin extends Plugin {
 		}
 	}
 
-	// ── T43c: Plugin Data Sync ─────────────────────────────────────────────
+	// ── T43c: Plugin Data Sync — Delegated to PluginDataManager ────────────
 
 	/**
 	 * Serialize plugin settings and data for remote sync.
-	 * Respects syncComponents — only includes selected components.
+	 * Delegates to PluginDataManager for unified serialization.
 	 */
 	private _serializePluginData(): object {
-		const sc = this.settings.syncComponents;
-
-		// Strip or include API keys based on user preference
-		const profiles = this.settings.providerProfiles.map((p) => {
-			if (sc.apiKeys) return p; // include keys
-			return { ...p, apiKey: "", password: "" };
-		});
-
-		const data: any = {
-			version: 1,
-			timestamp: Date.now(),
-			components: {
-				pluginSettings: sc.pluginSettings,
-				apiKeys: sc.apiKeys,
-				memory: sc.memory,
-				memoryAudit: sc.memoryAudit,
-				persona: sc.persona,
-				usageStats: sc.usageStats,
-			},
-		};
-
-		if (sc.pluginSettings) {
-			data.settings = {
-				selectionPrompt: this.settings.selectionPrompt,
-				cursorPrompt: this.settings.cursorPrompt,
-				customCommands: this.settings.customCommands,
-				commandPrefix: this.settings.commandPrefix,
-				messageHistory: this.settings.messageHistory,
-				includeActiveNote: this.settings.includeActiveNote,
-				maxContextTokens: this.settings.maxContextTokens,
-				maxContextMessages: this.settings.maxContextMessages,
-				maxSavedConversations: this.settings.maxSavedConversations,
-				autoNameSessions: this.settings.autoNameSessions,
-				debugLogLevel: this.settings.debugLogLevel,
-				debugLogRetention: this.settings.debugLogRetention,
-				debugLogMaxSizeMB: this.settings.debugLogMaxSizeMB,
-				enableAgentTools: this.settings.enableAgentTools,
-				autoApply: this.settings.autoApply,
-				maxAgentSteps: this.settings.maxAgentSteps,
-				pressEnterToSend: this.settings.pressEnterToSend,
-				chatTabTitleWidth: this.settings.chatTabTitleWidth,
-				restoreChatTabs: this.settings.restoreChatTabs,
-				showFullRequestTokens: this.settings.showFullRequestTokens,
-				contextPickerPathDisplay: this.settings.contextPickerPathDisplay,
-				webSearchProvider: this.settings.webSearchProvider,
-				pdfExtractionMethod: this.settings.pdfExtractionMethod,
-				pdfMaxPages: this.settings.pdfMaxPages,
-				intelligence: this.settings.intelligence,
-				providerProfiles: profiles,
-				activeProviderProfileId: this.settings.activeProviderProfileId,
-				selectedProfileIds: this.settings.selectedProfileIds,
-				remoteStorage: {
-					enabled: this.settings.remoteStorage.enabled,
-					backend: this.settings.remoteStorage.backend,
-					autoSync: this.settings.remoteStorage.autoSync,
-					syncIntervalMinutes: this.settings.remoteStorage.syncIntervalMinutes,
-					conflictStrategy: this.settings.remoteStorage.conflictStrategy,
-					syncDirection: this.settings.remoteStorage.syncDirection,
-					concurrencyLimit: this.settings.remoteStorage.concurrencyLimit,
-				},
-			};
-			data.syncIndex = (this.syncEngine as any)?.indexManager?.getIndex?.() ?? null;
-		}
-
-		return data;
+		const manager = new PluginDataManager(this);
+		return manager.createSyncBundle();
 	}
 
 	/**
 	 * Deserialize and merge plugin data from remote.
-	 * Only merges components that are enabled in syncComponents.
+	 * Delegates to PluginDataManager for unified deserialization.
 	 */
 	private async _deserializePluginData(data: object): Promise<void> {
-		const remote = data as any;
-		if (!remote.settings) return;
-
-		const sc = this.settings.syncComponents;
-
-		// Merge settings (last-write-wins) only if pluginSettings is enabled
-		if (sc.pluginSettings) {
-			const merged = { ...this.settings, ...remote.settings };
-
-			// Preserve API keys from local settings unless apiKeys is explicitly enabled
-			if (!sc.apiKeys) {
-				merged.providerProfiles = merged.providerProfiles.map((remoteProfile: any, idx: number) => {
-					const localProfile = this.settings.providerProfiles[idx];
-					if (localProfile && localProfile.id === remoteProfile.id) {
-						return { ...remoteProfile, apiKey: localProfile.apiKey };
-					}
-					return remoteProfile;
-				});
-			}
-
-			// Preserve remote storage credentials
-			merged.remoteStorage = {
-				...this.settings.remoteStorage,
-				...remote.settings.remoteStorage,
-				webdav: this.settings.remoteStorage.webdav,
-				s3: this.settings.remoteStorage.s3,
-			};
-
-			this.settings = merged;
-		}
-
-		// Merge sync index if present
-		if (remote.syncIndex && this.syncEngine) {
-			const indexManager = (this.syncEngine as any).indexManager;
-			if (indexManager?.mergeIndex) {
-				indexManager.mergeIndex(remote.syncIndex);
-			}
-		}
-
+		const manager = new PluginDataManager(this);
+		manager.applySyncBundle(data as any);
 		await this.saveSettings();
 		this.logger?.log("info", "[T55] Plugin data merged from remote");
 	}

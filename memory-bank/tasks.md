@@ -18,9 +18,10 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
 | T40 | Multi-User Chat with LaTeX Support | 🔄 | HIGH | 2026-08-08 | T16 | [Details](tasks/T40.md) |
 | T42 | Remote Chat Storage & Sync | 🔄 | HIGH | 2026-08-10 | T40 | [Details](tasks/T42.md) |
-| T43a | Fix Rebuild Sync Index Title Resolution | 🔄 | HIGH | 2026-08-21 | T43 | [Details](tasks/T43a.md) |
-| T43b | Add Activity Indicators to Sync UI | 🔄 | HIGH | 2026-08-21 | T43 | [Details](tasks/T43b.md) |
-| T43c | Extend Sync to All Plugin Data | 🔄 | HIGH | 2026-08-21 | T43, T42 | [Details](tasks/T43c.md) |
+| T43a | Fix Rebuild Sync Index Title Resolution | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43 | [Details](tasks/T43a.md) |
+| T43b | Add Activity Indicators to Sync UI | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43 | [Details](tasks/T43b.md) |
+| T43c | Extend Sync to All Plugin Data | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43, T42 | [Details](tasks/T43c.md) |
+| T55 | Component-Level Sync Selection | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43, T42, T49 | [Details](tasks/T55.md) |
 | T44 | Standalone UI Preview and Obsidian Host Boundary | 🔄 | MEDIUM | 2026-08-12 | T1, T22 | [Details](tasks/T44.md) |
 | T6a | Token Counter Accuracy Fix | 🔄 | HIGH | — | T6 | [Details](tasks/T6a.md) |
 | T48 | Conversation Compaction Mechanism | 🔄 | HIGH | — | T6a | [Details](tasks/T48.md) |

@@ -27,6 +27,42 @@ All three T43 subtasks completed:
 
 ---
 
+### 2026-08-21 — T55: Component-Level Sync Selection ✅
+
+**Commit:** `7e0821b`
+
+Added `SyncComponentConfig` to settings with 7 toggles controlling which data components participate in remote sync and export/import:
+- Chat sessions, Plugin settings, API keys, AI Memory, Memory audit log, AI Persona, Usage stats
+- New "Sync Components" settings section placed between Multi-User Sync and Remote Storage
+- Export/import filter by component; remote sync respects toggles
+- Usage stats computed on upload, skipped on download
+- API keys excluded by default; credential fields never overwritten from remote
+
+**Files:** `src/settings.ts`, `src/settings-sections/syncComponents.ts` (new), `src/settings-sections/SettingsTab.ts`, `src/settings-sections/exportImport.ts`, `src/main.ts`
+
+---
+
+### 2026-08-21 — Planned Changes (Sync/Storage/Global Reorganization)
+
+Three architectural improvements identified for future work:
+
+1. **Rename "Multi-User Sync" → "Multi-User Chat Relay"**
+   - Current name is ambiguous; "Chat Relay" accurately describes the WebSocket relay functionality
+   - Settings nav and UI labels need update
+
+2. **Unified Plugin Data Management Layer**
+   - Currently: export/import and remote sync handle data separately with duplicated filtering logic
+   - Goal: single data access layer that both tools use transparently
+   - Benefits: consistency, less code duplication, easier testing
+
+3. **Global Reorganization of Sync/Storage/Export-Import Code**
+   - Current state: built ad-hoc across T42, T43, T49, T55
+   - Goal: coherent, robust, modularized architecture
+   - Likely involves: extracting a `DataManager` class, unifying serialization, cleaner separation of concerns
+   - This is a significant refactor; should be planned as a dedicated task
+
+---
+
 ### 2026-08-21 — T51: Telemetry DISABLED — Obsidian Policy Block
 
 **Finding:** Obsidian's developer policies **explicitly prohibit client-side telemetry** for plugins in the official Community Plugins directory.

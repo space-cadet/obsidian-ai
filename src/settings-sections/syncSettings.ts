@@ -53,7 +53,7 @@ async function testRelayConnection(relayUrl: string): Promise<{
 	}
 }
 
-/** Render the Multi-User Sync settings section */
+/** Render the Multi-User Chat Relay settings section */
 export function renderSyncSection(
 	containerEl: HTMLElement,
 	plugin: ObsidianAIPlugin,
@@ -61,10 +61,10 @@ export function renderSyncSection(
 ): void {
 	const section = containerEl.createEl("div", {
 		cls: "obsidian-ai-settings-section",
-		attr: { id: "obsidian-ai-settings-multi-user-sync" },
+		attr: { id: "obsidian-ai-settings-multi-user-chat-relay" },
 	});
 
-	section.createEl("h2", { text: "Multi-User Sync" });
+	section.createEl("h2", { text: "Multi-User Chat Relay" });
 
 	const desc = section.createEl("p", { cls: "setting-item-description" });
 	desc.textContent =
