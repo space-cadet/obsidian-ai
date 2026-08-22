@@ -1,6 +1,15 @@
 # Active Context
 
-*Last Updated: 2026-08-23 02:02:32 IST*
+*Last Updated: 2026-08-23 04:24:00 IST*
+
+### 2026-08-23 — T48c compaction-strategy research
+
+- Created `context-compaction-strategies-reference.md` as a durable survey of
+  provider, framework, research, and OpenClaw approaches.
+- Updated `conversation-compaction-design.md` with the selected hybrid ladder,
+  structured/audited summary contract, provider extension points, and two-slice
+  implementation path.
+- T48c remains active; this was a documentation-only update.
 
 ### 2026-08-23 — T48 context-efficiency decomposition
 

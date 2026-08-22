@@ -1,6 +1,16 @@
 # Session Cache
 
-*Last Updated: 2026-08-23 02:02:32 IST*
+*Last Updated: 2026-08-23 04:24:00 IST*
+
+## 2026-08-23 T48c compaction research and strategy update
+
+- Created the standalone context-compaction research reference covering
+  provider-native, semantic, tool-replay, caching, hierarchical-memory,
+  safety-aware, and OpenClaw strategies.
+- Updated `conversation-compaction-design.md` with the recommended hybrid
+  ladder: stable/pinned context, bounded old-tool replay, token-triggered
+  semantic compaction, audited derived summaries, and safe trimming fallback.
+- T48c remains active; no source code or task status changed in this update.
 
 ## 2026-08-23 T48 context-efficiency plan
 
