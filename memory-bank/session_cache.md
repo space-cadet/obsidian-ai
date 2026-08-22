@@ -1,6 +1,21 @@
 # Session Cache
 
-*Last Updated: 2026-08-23 01:14:20 IST*
+*Last Updated: 2026-08-23 01:27:43 IST*
+
+## 2026-08-23 T58/T58c/T58d session closeout and plugin rebuild audit
+
+- Recorded the work from this chat under T58, T58c, and T58d: progress UX,
+  planning-stage updates, dry-run plugin-data planning, stable rows, latest
+  shimmer, persistent completion, and chat-session rebuild performance.
+- Confirmed plugin data is part of normal sync and dry-run planning, but the
+  Rebuild action still rebuilds only the chat-session SyncIndex.
+- Preserved the architectural boundary: plugin files use identity-scoped
+  shared state and must not be inserted into the session index. A separate
+  plugin-data rebuild/reconciliation phase remains follow-up.
+- Verification recorded: 29 test files / 269 tests, TypeScript, Prettier, and
+  production build passed; focused UI/rebuild tests and live acceptance remain.
+- Implementation commit `13efc4e` and documentation commit `ae79c7e` were
+  pushed to `origin/main` before this Memory Bank-only closeout.
 
 ## 2026-08-23 T58d implementation slice
 

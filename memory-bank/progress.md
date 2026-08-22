@@ -1,3 +1,17 @@
+### 2026-08-23 — T58/T58c/T58d: Sync progress implementation and plugin rebuild audit 🔄
+
+- Completed the planned progress and dry-run implementation: planning stages,
+  stable operation rows, latest-active shimmer, persistent completion state,
+  read-only plugin-data planning, and chat-session rebuild progress.
+- Rebuild now reuses its initial scan and uses bounded concurrency for
+  independent transfers. Verification passed: 29 test files / 269 tests,
+  TypeScript, Prettier, and production build.
+- Confirmed plugin data participates in normal sync and dry-run planning but
+  not in the Rebuild action. Its identity-scoped shared state remains separate
+  from the chat-session SyncIndex; a distinct plugin-data rebuild is still
+  required if that recovery operation is desired.
+- Focused UI/rebuild tests and real-host acceptance remain open.
+
 ### 2026-08-23 — T58d implementation slice 🔄
 
 - Implemented shared planning/progress phases for normal sync, dry-run, and

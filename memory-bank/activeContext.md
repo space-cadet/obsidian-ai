@@ -1,6 +1,23 @@
 # Active Context
 
-*Last Updated: 2026-08-23 00:44:16 IST*
+*Last Updated: 2026-08-23 01:27:43 IST*
+
+### 2026-08-23 — T58/T58c/T58d session closeout and rebuild audit
+
+- Completed and verified the T58d implementation slice: planning-stage
+  progress, stable operation rows, latest-active shimmer, persistent
+  completion progress, dry-run plugin-data planning, and chat-session rebuild
+  progress with scan reuse and bounded concurrency.
+- Confirmed plugin data is included in normal sync and dry-run planning and is
+  shown separately from chat sessions, while the chat-session SyncIndex remains
+  session-only.
+- Audited the Rebuild action and recorded that it does not rebuild plugin-data
+  shared state. A separate plugin-data rebuild/reconciliation phase remains
+  follow-up; do not merge plugin files into the session index.
+- Verification remains: 29 test files / 269 tests, TypeScript, Prettier, and
+  production build passed. Focused UI/rebuild tests and live acceptance remain.
+- Implementation commit `13efc4e` and documentation commit `ae79c7e` are pushed
+  to `origin/main`; this closeout adds only Memory Bank documentation changes.
 
 ### 2026-08-23 — T58 task ID migration and approved progress/rebuild plan
 

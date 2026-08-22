@@ -95,6 +95,15 @@ SyncIndex. The chat-session SyncIndex remains a session-only optimization
 record; plugin files use the separate identity-scoped shared state described
 above. The UI should show these as separate plan and result categories.
 
+### Rebuild Boundary Audit (2026-08-23)
+
+The implemented Rebuild action reconstructs only the chat-session SyncIndex.
+Plugin data is included in normal sync and dry-run planning, but there is no
+plugin-data rebuild step that scans or reconciles its identity-scoped shared
+state. This is a UX and recovery gap, not a reason to merge plugin files into
+the session index. Any future rebuild should remain a separate phase with
+plugin-specific conflict, credential, local-only, and completion reporting.
+
 ## Future `dataSyncProvider` Contract
 
 The existing `integrationProvider` contract remains for AI tools. A future sync contract should be separate and versioned:

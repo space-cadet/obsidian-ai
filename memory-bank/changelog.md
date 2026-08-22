@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## Unreleased - 2026-08-23
 
 ### Changed
+- Recorded the T58d implementation closeout and follow-up audit: plugin data
+  is included in normal sync and dry-run planning, but the Rebuild action still
+  covers only the chat-session SyncIndex; a separate plugin-data rebuild phase
+  remains open — T58/T58c/T58d
 - Began T58d implementation: shared planning/progress events, stable operation rows, latest-item shimmer, persistent completion progress, read-only plugin-data dry-run planning, and bounded rebuild transfers.
 - Verified the T58d implementation slice with TypeScript, Prettier, the full 269-test suite across 29 files, and a production build.
 - Restored T43 to its original Multi-User and Agent Chat scope, migrated the integrated sync UI records to T58/T58a-T58c, and added T58d for the approved progress, dry-run, and rebuild follow-up plan.
