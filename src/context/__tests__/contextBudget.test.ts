@@ -81,4 +81,40 @@ describe("buildBudgetedHistory", () => {
 
 		expect(result.history).toEqual([assistant, tool]);
 	});
+
+	it("extends a message ceiling when it would start with a tool result", () => {
+		const assistant = { role: "assistant", content: "call" };
+		const tool = { role: "tool", content: "result" };
+		const result = buildBudgetedHistory({
+			systemPrompt: "s",
+			currentMessage: "c",
+			history: [assistant, tool],
+			options: {
+				maxRequestTokens: 0,
+				maxMessages: 1,
+				preserveRecentMessages: 1,
+				responseReserveTokens: 0,
+			},
+		});
+
+		expect(result.history).toEqual([assistant, tool]);
+		expect(result.droppedMessages).toBe(0);
+	});
+
+	it("returns no history when the message ceiling is zero", () => {
+		const result = buildBudgetedHistory({
+			systemPrompt: "s",
+			currentMessage: "c",
+			history: ["a", "b"],
+			options: {
+				maxRequestTokens: 0,
+				maxMessages: 0,
+				preserveRecentMessages: 1,
+				responseReserveTokens: 0,
+			},
+		});
+
+		expect(result.history).toEqual([]);
+		expect(result.droppedMessages).toBe(2);
+	});
 });

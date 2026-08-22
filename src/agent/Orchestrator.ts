@@ -13,6 +13,7 @@ import { AgentLoop } from "./AgentLoop";
 import { ToolExecutor } from "./ToolExecutor";
 import { noteTools } from "./tools";
 import { estimateTokens } from "../context/tokenEstimator";
+import { buildBudgetedHistory } from "../context/contextBudget";
 
 export type DispatchMode = "sequential" | "parallel";
 export type ContextStrategy = "full" | "isolated";
@@ -44,6 +45,14 @@ export interface OrchestratorOptions {
 	enableTools?: boolean;
 	autoApprove?: boolean;
 	maxSteps?: number;
+	/** Total model request budget, including response reserve. */
+	maxRequestTokens?: number;
+	/** Number of newest messages retained verbatim in group context. */
+	preserveRecentMessages?: number;
+	/** Maximum number of persisted context messages considered for a request. */
+	maxContextMessages?: number;
+	/** Tokens reserved for the response and agent tool-loop continuations. */
+	requestResponseReserveTokens?: number;
 	/** Maximum estimated tokens for a model-facing tool result. */
 	maxToolResultTokens?: number;
 	/** Tool executor for running Obsidian note tools. If provided with enableTools=true, agents will use tool calling. */
@@ -67,6 +76,10 @@ export class Orchestrator {
 	enableTools: boolean;
 	autoApprove: boolean;
 	maxSteps: number;
+	maxRequestTokens: number;
+	preserveRecentMessages: number;
+	maxContextMessages: number;
+	requestResponseReserveTokens: number;
 	maxToolResultTokens: number;
 	toolExecutor?: ToolExecutor;
 
@@ -83,6 +96,11 @@ export class Orchestrator {
 		this.enableTools = options.enableTools ?? false;
 		this.autoApprove = options.autoApprove ?? false;
 		this.maxSteps = options.maxSteps ?? 5;
+		this.maxRequestTokens = options.maxRequestTokens ?? 32000;
+		this.preserveRecentMessages = options.preserveRecentMessages ?? 4;
+		this.maxContextMessages = options.maxContextMessages ?? 10;
+		this.requestResponseReserveTokens =
+			options.requestResponseReserveTokens ?? 4096;
 		this.maxToolResultTokens = options.maxToolResultTokens ?? 4000;
 		this.remoteUsers = options.remoteUsers ?? [];
 	}
@@ -372,12 +390,33 @@ export class Orchestrator {
 		resolvedParts: ResolvedMessagePart[] = [],
 	): Promise<AgentResponse> {
 		try {
-			const messages = this.buildContext(
+			const contextMessages = this.buildContext(
 				engine.id,
 				thread,
 				cleanText,
 				resolvedParts,
 			);
+			const systemMessage = contextMessages[0];
+			const currentMessage = contextMessages[contextMessages.length - 1];
+			const budgetedHistory = buildBudgetedHistory({
+				systemPrompt: systemMessage?.content,
+				currentMessage: currentMessage?.content,
+				history: contextMessages.slice(1, -1),
+				options: {
+					maxRequestTokens: this.maxRequestTokens,
+					maxMessages: this.maxContextMessages,
+					preserveRecentMessages: this.preserveRecentMessages,
+					responseReserveTokens: this.requestResponseReserveTokens,
+					additionalTokens: this.enableTools
+						? estimateTokens(JSON.stringify(noteTools) ?? "")
+						: 0,
+				},
+			});
+			const messages = [
+				systemMessage,
+				...budgetedHistory.history,
+				currentMessage,
+			];
 
 			// Tool-enabled path: use AgentLoop (same as single-user chat)
 			if (this.enableTools && this.toolExecutor) {

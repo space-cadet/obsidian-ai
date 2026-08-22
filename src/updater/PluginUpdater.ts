@@ -114,6 +114,20 @@ function branchFromRelease(release: ReleaseInfo): string {
 		: "main";
 }
 
+/** Extract the immutable source identity recorded in an automated release. */
+function commitInfoFromRelease(release: ReleaseInfo): CommitInfo | null {
+	const sha = release.body?.match(/\*\*Commit:\*\*\s*`([^`]+)`/)?.[1];
+	if (!sha) return null;
+	return {
+		sha,
+		message: release.name || `Published ${release.tag_name}`,
+		authorName: "GitHub Actions",
+		committedAt:
+			release.body?.match(/\*\*Built at:\*\*\s*(.+)/)?.[1]?.trim() ??
+			release.published_at,
+	};
+}
+
 /** Cross-platform file download using requestUrl + vault adapter */
 async function downloadFile(
 	app: App,
@@ -249,9 +263,9 @@ export class PluginUpdater {
 
 			const latestVersion = release.tag_name.replace(/^v/, "");
 
-			const latestCommit = await fetchLatestCommit(
-				includePrerelease && currentBranch ? currentBranch : "main",
-			);
+			const latestCommit = includePrerelease
+				? commitInfoFromRelease(release)
+				: await fetchLatestCommit("main");
 			this.log("info", "latestCommit:", latestCommit?.sha?.slice(0, 7));
 			// For dev channel: compare commit hashes to detect if already on latest
 			let commitMatch = false;
@@ -285,8 +299,10 @@ export class PluginUpdater {
 			// Dev releases intentionally reuse the same tag. A commit mismatch is
 			// therefore the authoritative signal for a dev update.
 			const hasUpdate =
-				includePrerelease && currentCommitHash && latestCommit
-					? !commitMatch
+				includePrerelease && currentCommitHash
+					? latestCommit
+						? !commitMatch
+						: false
 					: compareVersions(latestVersion, currentVersion) > 0;
 			this.log(
 				"info",
@@ -329,21 +345,15 @@ export class PluginUpdater {
 		for (const release of (releases ?? []).filter(
 			(r) => r.prerelease && r.tag_name.startsWith("latest-dev"),
 		)) {
-			let commitHash = release.body?.match(
-				/\*\*Commit:\*\*\s*`([^`]+)`/,
-			)?.[1];
-			let committedAt: string | undefined;
 			const branch = branchFromRelease(release);
+			const commitInfo = commitInfoFromRelease(release);
 
-			// Prefer the live branch commit so the browser shows the actual build
-			// identity, while retaining the release body as an offline fallback.
-			const commitInfo = await fetchLatestCommit(branch);
-			if (commitInfo) {
-				commitHash = commitInfo.sha;
-				committedAt = commitInfo.committedAt;
-			}
-
-			builds.push({ release, branch, commitHash, committedAt });
+			builds.push({
+				release,
+				branch,
+				commitHash: commitInfo?.sha,
+				committedAt: commitInfo?.committedAt ?? release.published_at,
+			});
 		}
 		return builds;
 	}

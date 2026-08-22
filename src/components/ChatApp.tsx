@@ -237,6 +237,11 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			enableTools: plugin.settings.enableAgentTools,
 			autoApprove: plugin.settings.autoApply,
 			maxSteps: plugin.settings.maxAgentSteps,
+			maxContextMessages: plugin.settings.maxContextMessages ?? 10,
+			maxRequestTokens: plugin.settings.maxRequestTokens ?? 32000,
+			preserveRecentMessages: plugin.settings.preserveRecentMessages ?? 4,
+			requestResponseReserveTokens:
+				plugin.settings.requestResponseReserveTokens ?? 4096,
 			maxToolResultTokens: plugin.settings.maxToolResultTokens ?? 4000,
 			toolExecutor: new ToolExecutor(
 				plugin.app,

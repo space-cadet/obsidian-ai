@@ -57,7 +57,22 @@ export function buildBudgetedHistory<T>(args: {
 	options: ContextBudgetOptions;
 }): BudgetedHistoryResult<T> {
 	const { history, options } = args;
-	const boundedHistory = history.slice(-Math.max(0, options.maxMessages));
+	const maxMessages = Math.max(0, options.maxMessages);
+	let boundedStart =
+		maxMessages > 0
+			? Math.max(0, history.length - maxMessages)
+			: history.length;
+	// The history is expanded after persistence, so a message ceiling can land
+	// on a tool result even though its assistant tool call is the previous item.
+	// Extend the slice by one message to preserve that provider-required pair.
+	if (
+		boundedStart > 0 &&
+		messageRole(history[boundedStart]) === "tool" &&
+		messageRole(history[boundedStart - 1]) === "assistant"
+	) {
+		boundedStart--;
+	}
+	const boundedHistory = history.slice(boundedStart);
 	const baseTokens =
 		estimateValue(args.systemPrompt) +
 		estimateValue(args.currentMessage) +
