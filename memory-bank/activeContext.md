@@ -1,6 +1,25 @@
 # Active Context
 
-*Last Updated: 2026-08-22 23:49:34 IST*
+*Last Updated: 2026-08-23 00:14:52 IST*
+
+### 2026-08-23 — T57c and provider usage reconciliation
+
+- T57c is complete in code. Sync identity now covers vault, backend, server,
+  account, remote path, and encryption identity and isolates cache, index,
+  plugin-file state, and retry records.
+- Durable retry records retain failed chat-session and plugin-data work with
+  backoff; successful shared-state items remain skipped on later runs.
+- The sync panel now includes plugin-data operations in progress and reports
+  chat-session and plugin-data categories separately as complete, partial, or
+  failed.
+- The token discrepancy is addressed by persisting AI SDK provider usage per
+  response. Usage stats no longer double-count the saved user estimate and use
+  a full-request estimate for responses without provider usage.
+- Verification: 29 test files / 268 tests passed, TypeScript clean, production
+  build passed.
+- Remaining: T57d SyncIt contract and overlap acceptance test; older raw
+  plugin-file migration; live OpenRouter reconciliation still requires a real
+  request because provider availability cannot be proven by local tests.
 
 ### 2026-08-22 — T57b Two-Way State, Recovery, and Deletions Implemented
 

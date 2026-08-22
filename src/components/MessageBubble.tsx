@@ -480,6 +480,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
 			{/* Token count + metadata */}
 			{(message.estimatedTokens !== undefined ||
+				message.providerUsage ||
 				message.modelName ||
 				message.responseTimeMs) && (
 				<div className="chat-message-metadata">
@@ -493,9 +494,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 							{message.responseTimeMs}ms
 						</span>
 					)}
-					{message.estimatedTokens !== undefined && (
+					{(message.estimatedTokens !== undefined ||
+						message.providerUsage) && (
 						<span className="chat-message-tokens">
-							~{message.estimatedTokens} tokens
+							{message.providerUsage?.totalTokens ??
+								`~${message.estimatedTokens ?? 0}`}{" "}
+							tokens
 						</span>
 					)}
 				</div>

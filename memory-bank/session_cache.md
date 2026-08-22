@@ -1,6 +1,21 @@
 # Session Cache
 
-*Last Updated: 2026-08-22 23:49:34 IST*
+*Last Updated: 2026-08-23 00:14:52 IST*
+
+## 2026-08-23 T57c and token reconciliation
+
+- Completed T57c implementation and tests.
+- Sync identity now namespaces LocalCache and SyncIndexManager and scopes
+  plugin-file shared state and retry records.
+- Failed chat/plugin items are durable and retryable; successful items clear
+  retry records and are not repeated unnecessarily.
+- Sync progress now includes plugin-data items and reports chat/plugin status
+  separately.
+- Provider usage from AI SDK streaming is persisted and preferred in usage
+  diagnostics; full-request estimates remain the fallback for older responses.
+- Verification: full suite 268/268, 29 files; TypeScript and production build
+  passed.
+- Remaining: T57d SyncIt contract/overlap test and raw plugin-file migration.
 
 ## Latest Session
 - Focus: T57b two-way state, recovery, and deletion closeout

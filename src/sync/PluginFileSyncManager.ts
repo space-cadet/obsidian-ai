@@ -5,6 +5,8 @@ import {
 	EncryptionLayer,
 	type EncryptedPayload,
 } from "./EncryptionLayer";
+import type { SyncRetryRecord } from "./SyncRetryStore";
+import { DurableSyncRetryStore } from "./SyncRetryStore";
 
 export type PluginFileSyncDirection = "upload" | "download" | "both";
 
@@ -62,6 +64,7 @@ export interface PluginFileDeletionRecord {
 
 export interface PluginFileSyncState {
 	schemaVersion: 1;
+	identity?: string;
 	entries: Record<string, PluginFileSyncStateEntry>;
 	deletions: PluginFileDeletionRecord[];
 }
@@ -102,6 +105,8 @@ export interface PluginFileSyncBatchResult {
 	conflicts: number;
 	skipped: number;
 	errors: string[];
+	status: "complete" | "partial" | "failed";
+	retryable: SyncRetryRecord[];
 }
 
 export interface PluginFileEnvelope {
@@ -226,6 +231,14 @@ export class PluginFileSyncManager {
 			resolveConflict?: (
 				conflict: PluginFileSyncConflict,
 			) => Promise<PluginFileConflictChoice>;
+			identity?: string;
+			retryStore?: DurableSyncRetryStore;
+			progress?: (event: {
+				id: string;
+				direction: "upload" | "download" | "conflict";
+				status: "start" | "done" | "error";
+				error?: string;
+			}) => void;
 		},
 	) {
 		this.now = options.now ?? Date.now;
@@ -244,39 +257,97 @@ export class PluginFileSyncManager {
 			: null;
 
 		for (const target of targets) {
+			this.options.progress?.({
+				id: target.id,
+				direction: direction === "both" ? "upload" : direction,
+				status: "start",
+			});
 			try {
-				items.push(
-					stateContext
-						? await this.syncOneWithState(
-								target,
-								direction,
-								stateContext,
-							)
-						: await this.syncOneLegacy(target, direction),
-				);
+				const item = stateContext
+					? await this.syncOneWithState(
+							target,
+							direction,
+							stateContext,
+						)
+					: await this.syncOneLegacy(target, direction);
+				items.push(item);
+				if (item.status === "failed" || item.status === "conflict") {
+					await this.options.retryStore?.record(
+						"plugin-data",
+						target.id,
+						item.error ?? "plugin data sync requires retry",
+					);
+					this.options.progress?.({
+						id: target.id,
+						direction:
+							item.status === "conflict"
+								? "conflict"
+								: direction === "download"
+									? "download"
+									: "upload",
+						status: "error",
+						error: item.error,
+					});
+				} else {
+					await this.options.retryStore?.clear(
+						"plugin-data",
+						target.id,
+					);
+					this.options.progress?.({
+						id: target.id,
+						direction: item.downloaded ? "download" : "upload",
+						status: "done",
+					});
+				}
 			} catch (error: any) {
+				const message = error?.message ?? String(error);
 				items.push({
 					id: target.id,
 					remotePath: target.remotePath,
 					status: "failed",
 					uploaded: false,
 					downloaded: false,
-					error: error?.message ?? String(error),
+					error: message,
+				});
+				await this.options.retryStore?.record(
+					"plugin-data",
+					target.id,
+					message,
+				);
+				this.options.progress?.({
+					id: target.id,
+					direction: direction === "download" ? "download" : "upload",
+					status: "error",
+					error: message,
 				});
 			}
 		}
 
+		const failed = items.filter((item) => item.status === "failed").length;
+		const conflicts = items.filter(
+			(item) => item.status === "conflict",
+		).length;
+		const retryable =
+			(await this.options.retryStore?.list())?.filter(
+				(record) => record.scope === "plugin-data",
+			) ?? [];
 		return {
 			items,
 			uploaded: items.filter((item) => item.uploaded).length,
 			downloaded: items.filter((item) => item.downloaded).length,
-			failed: items.filter((item) => item.status === "failed").length,
-			conflicts: items.filter((item) => item.status === "conflict")
-				.length,
+			failed,
+			conflicts,
 			skipped: items.filter((item) => item.status === "skipped").length,
 			errors: items
 				.filter((item) => item.status === "failed")
 				.map((item) => `${item.id}: ${item.error ?? "sync failed"}`),
+			status:
+				failed === items.length && items.length > 0
+					? "failed"
+					: failed > 0 || conflicts > 0
+						? "partial"
+						: "complete",
+			retryable,
 		};
 	}
 
@@ -309,13 +380,23 @@ export class PluginFileSyncManager {
 	}
 
 	private emptyState(): PluginFileSyncState {
-		return { schemaVersion: 1, entries: {}, deletions: [] };
+		return {
+			schemaVersion: 1,
+			...(this.options.identity
+				? { identity: this.options.identity }
+				: {}),
+			entries: {},
+			deletions: [],
+		};
 	}
 
 	private normalizeState(
 		value: PluginFileSyncState | null,
 	): PluginFileSyncState {
 		if (!value) return this.emptyState();
+		if (this.options.identity && value.identity !== this.options.identity) {
+			return this.emptyState();
+		}
 		if (
 			value.schemaVersion !== 1 ||
 			typeof value.entries !== "object" ||
@@ -325,6 +406,11 @@ export class PluginFileSyncManager {
 		}
 		return {
 			schemaVersion: 1,
+			...(this.options.identity
+				? { identity: this.options.identity }
+				: value.identity
+					? { identity: value.identity }
+					: {}),
 			entries: { ...value.entries },
 			deletions: value.deletions.slice(-100),
 		};

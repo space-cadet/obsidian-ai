@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import React, {
+	useState,
+	useCallback,
+	useRef,
+	useEffect,
+	useMemo,
+} from "react";
 import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 
 export type SyncDirection = "both" | "upload" | "download";
@@ -43,7 +49,9 @@ function formatDuration(ms: number): string {
 const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 	const rs = plugin.settings.remoteStorage;
 
-	const [direction, setDirection] = useState<SyncDirection>(rs.syncDirection ?? "both");
+	const [direction, setDirection] = useState<SyncDirection>(
+		rs.syncDirection ?? "both",
+	);
 	const [dryRun, setDryRun] = useState(false);
 	const [isSyncing, setIsSyncing] = useState(false);
 	const [progress, setProgress] = useState<SyncProgress | null>(null);
@@ -57,6 +65,18 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		skipped: number;
 		errors: string[];
 		elapsedMs: number;
+		pluginData?: {
+			status: "complete" | "partial" | "failed";
+			uploaded: boolean;
+			downloaded: boolean;
+			conflict: boolean;
+			failed: number;
+			errors: string[];
+		};
+		chatSessions?: {
+			status: "complete" | "partial" | "failed";
+			retryable: number;
+		};
 	} | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [showRebuildChoices, setShowRebuildChoices] = useState(false);
@@ -82,7 +102,9 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 			logBufferRef.current = [];
 			setLogs((prev) => {
 				const next = [...prev];
-				const map = new Map(next.map((l, i) => [l.id + l.timestamp, i]));
+				const map = new Map(
+					next.map((l, i) => [l.id + l.timestamp, i]),
+				);
 				for (const entry of batch) {
 					const key = entry.id + entry.timestamp;
 					const idx = map.get(key);
@@ -106,19 +128,25 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	}, [logs]);
 
-	const updateLog = useCallback((entry: SyncLogEntry) => {
-		logBufferRef.current.push(entry);
-		if (!rafRef.current) {
-			rafRef.current = requestAnimationFrame(flushUpdates);
-		}
-	}, [flushUpdates]);
+	const updateLog = useCallback(
+		(entry: SyncLogEntry) => {
+			logBufferRef.current.push(entry);
+			if (!rafRef.current) {
+				rafRef.current = requestAnimationFrame(flushUpdates);
+			}
+		},
+		[flushUpdates],
+	);
 
-	const updateProgress = useCallback((p: SyncProgress) => {
-		progressBufferRef.current = p;
-		if (!rafRef.current) {
-			rafRef.current = requestAnimationFrame(flushUpdates);
-		}
-	}, [flushUpdates]);
+	const updateProgress = useCallback(
+		(p: SyncProgress) => {
+			progressBufferRef.current = p;
+			if (!rafRef.current) {
+				rafRef.current = requestAnimationFrame(flushUpdates);
+			}
+		},
+		[flushUpdates],
+	);
 
 	const handleSync = useCallback(async () => {
 		setIsSyncing(true);
@@ -171,24 +199,27 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		plugin.app.setting.openTabById(plugin.manifest.id);
 	}, [plugin]);
 
-	const handleRebuild = useCallback(async (choice: "remote" | "local" | "compare") => {
-		if (!plugin.rebuildSyncIndex) return;
-		setIsRebuilding(true);
-		setShowRebuildChoices(false);
-		setError(null);
-		setRebuildReport(null);
-		setLogs([]);
-		try {
-			const report = await plugin.rebuildSyncIndex(choice, {
-				onLog: updateLog,
-			});
-			setRebuildReport(report);
-		} catch (err: any) {
-			setError(err?.message || String(err));
-		} finally {
-			setIsRebuilding(false);
-		}
-	}, [plugin]);
+	const handleRebuild = useCallback(
+		async (choice: "remote" | "local" | "compare") => {
+			if (!plugin.rebuildSyncIndex) return;
+			setIsRebuilding(true);
+			setShowRebuildChoices(false);
+			setError(null);
+			setRebuildReport(null);
+			setLogs([]);
+			try {
+				const report = await plugin.rebuildSyncIndex(choice, {
+					onLog: updateLog,
+				});
+				setRebuildReport(report);
+			} catch (err: any) {
+				setError(err?.message || String(err));
+			} finally {
+				setIsRebuilding(false);
+			}
+		},
+		[plugin],
+	);
 
 	const isBusy = isSyncing || isRebuilding;
 
@@ -221,8 +252,21 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 
 	const scanned = progress?.total ?? logs.length;
 	const completed = progress?.completed ?? counts.done;
-	const statusHeading = isSyncing ? "Syncing…" : result ? (result.ok ? "Complete" : "Sync finished with errors") : error ? "Sync failed" : "Ready to sync";
-	const directionLabel = direction === "both" ? "Upload + download" : direction === "upload" ? "Upload" : "Download";
+	const statusHeading = isSyncing
+		? "Syncing…"
+		: result
+			? result.ok
+				? "Complete"
+				: "Sync finished with errors"
+			: error
+				? "Sync failed"
+				: "Ready to sync";
+	const directionLabel =
+		direction === "both"
+			? "Upload + download"
+			: direction === "upload"
+				? "Upload"
+				: "Download";
 
 	// ── Render ─────────────────────────────────────────────────────────────
 	return (
@@ -233,14 +277,20 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 					{isSyncing && <span className="sync-v2-spinner" />}
 					{statusHeading}
 				</h2>
-				<div className="sync-v2-substatus">{isSyncing ? `${completed} of ${scanned} · ${elapsedText}` : `${directionLabel} · Last sync: ${lastSyncText}`}</div>
+				<div className="sync-v2-substatus">
+					{isSyncing
+						? `${completed} of ${scanned} · ${elapsedText}`
+						: `${directionLabel} · Last sync: ${lastSyncText}`}
+				</div>
 			</div>
 
 			{/* ── Controls Row ─────────────────────────────────────────── */}
 			<div className="sync-v2-controls">
 				<select
 					value={direction}
-					onChange={(e) => setDirection(e.target.value as SyncDirection)}
+					onChange={(e) =>
+						setDirection(e.target.value as SyncDirection)
+					}
 					disabled={isSyncing}
 				>
 					<option value="both">Both directions</option>
@@ -256,23 +306,53 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 					/>
 					Dry run
 				</label>
-				<button className="sync-v2-settings-btn" onClick={handleOpenSettings} aria-label="Open settings" title="Open settings">
+				<button
+					className="sync-v2-settings-btn"
+					onClick={handleOpenSettings}
+					aria-label="Open settings"
+					title="Open settings"
+				>
 					⚙️
 				</button>
 			</div>
 
 			{showRebuildChoices && !isBusy && (
 				<div className="sync-v2-rebuild-backdrop" role="presentation">
-				<div className="sync-v2-rebuild-panel" role="dialog" aria-modal="true" aria-labelledby="sync-v2-rebuild-title">
-					<h3 id="sync-v2-rebuild-title">Rebuild sync record</h3>
-					<p>The app needs to decide which copies to trust.</p>
-					<div className="sync-v2-rebuild-options">
-						<button onClick={() => void handleRebuild("remote")} disabled={isRebuilding}>Trust remote copies</button>
-						<button onClick={() => void handleRebuild("local")} disabled={isRebuilding}>Trust local copies</button>
-						<button onClick={() => void handleRebuild("compare")} disabled={isRebuilding}>Compare copies</button>
-						<button onClick={() => setShowRebuildChoices(false)} disabled={isRebuilding}>Cancel</button>
+					<div
+						className="sync-v2-rebuild-panel"
+						role="dialog"
+						aria-modal="true"
+						aria-labelledby="sync-v2-rebuild-title"
+					>
+						<h3 id="sync-v2-rebuild-title">Rebuild sync record</h3>
+						<p>The app needs to decide which copies to trust.</p>
+						<div className="sync-v2-rebuild-options">
+							<button
+								onClick={() => void handleRebuild("remote")}
+								disabled={isRebuilding}
+							>
+								Trust remote copies
+							</button>
+							<button
+								onClick={() => void handleRebuild("local")}
+								disabled={isRebuilding}
+							>
+								Trust local copies
+							</button>
+							<button
+								onClick={() => void handleRebuild("compare")}
+								disabled={isRebuilding}
+							>
+								Compare copies
+							</button>
+							<button
+								onClick={() => setShowRebuildChoices(false)}
+								disabled={isRebuilding}
+							>
+								Cancel
+							</button>
+						</div>
 					</div>
-				</div>
 				</div>
 			)}
 			{rebuildReport && !showRebuildChoices && (
@@ -282,42 +362,91 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 					<span>Downloaded: {rebuildReport.downloaded}</span>
 					<span>Needs attention: {rebuildReport.conflicts}</span>
 					<span>Already matched: {rebuildReport.skipped}</span>
-					<button onClick={() => setRebuildReport(null)}>Dismiss</button>
+					<button onClick={() => setRebuildReport(null)}>
+						Dismiss
+					</button>
 				</div>
 			)}
 
 			{/* ── Progress Section (SyncIt-style) ──────────────────────── */}
 			{isSyncing && (
 				<div className="sync-v2-progress">
-					<div className="sync-v2-progress-track"><div className={`sync-v2-progress-fill ${isSyncing ? "sync-v2-progress-fill--active" : ""}`} style={{ width: `${progressPercent}%` }} /></div>
-					<div className="sync-v2-progress-meta"><span>{progressPercent}%</span><span>{progress?.completed ?? 0} / {progress?.total ?? 0} sessions</span></div>
+					<div className="sync-v2-progress-track">
+						<div
+							className={`sync-v2-progress-fill ${isSyncing ? "sync-v2-progress-fill--active" : ""}`}
+							style={{ width: `${progressPercent}%` }}
+						/>
+					</div>
+					<div className="sync-v2-progress-meta">
+						<span>{progressPercent}%</span>
+						<span>
+							{progress?.completed ?? 0} / {progress?.total ?? 0}{" "}
+							operations
+						</span>
+					</div>
 				</div>
 			)}
 
 			{/* ── Category Counters (syncit-style pills) ───────────────── */}
 			{(isSyncing || logs.length > 0 || result) && (
 				<div className="sync-v2-counters">
-					<div className="sync-v2-pill"><span className="sync-v2-pill-count">{scanned}</span><span className="sync-v2-pill-label">scanned</span></div>
+					<div className="sync-v2-pill">
+						<span className="sync-v2-pill-count">{scanned}</span>
+						<span className="sync-v2-pill-label">scanned</span>
+					</div>
 					<div className="sync-v2-pill upload">
-						<span className="sync-v2-pill-count">{counts.upload}</span>
+						<span className="sync-v2-pill-count">
+							{counts.upload}
+						</span>
 						<span className="sync-v2-pill-label">upload</span>
 					</div>
 					<div className="sync-v2-pill download">
-						<span className="sync-v2-pill-count">{counts.download}</span>
+						<span className="sync-v2-pill-count">
+							{counts.download}
+						</span>
 						<span className="sync-v2-pill-label">download</span>
 					</div>
 					<div className="sync-v2-pill skip">
-						<span className="sync-v2-pill-count">{counts.skip}</span>
+						<span className="sync-v2-pill-count">
+							{counts.skip}
+						</span>
 						<span className="sync-v2-pill-label">skip</span>
 					</div>
 					<div className="sync-v2-pill conflict">
-						<span className="sync-v2-pill-count">{counts.conflict}</span>
+						<span className="sync-v2-pill-count">
+							{counts.conflict}
+						</span>
 						<span className="sync-v2-pill-label">conflict</span>
 					</div>
 					<div className="sync-v2-pill error">
-						<span className="sync-v2-pill-count">{counts.error}</span>
+						<span className="sync-v2-pill-count">
+							{counts.error}
+						</span>
 						<span className="sync-v2-pill-label">error</span>
 					</div>
+				</div>
+			)}
+
+			{result?.pluginData && (
+				<div className="sync-v2-rebuild-report">
+					<strong>Plugin data: {result.pluginData.status}</strong>
+					<span>
+						{result.pluginData.failed > 0
+							? `${result.pluginData.failed} item(s) need retry`
+							: "All selected plugin-data items completed"}
+					</span>
+				</div>
+			)}
+
+			{result?.chatSessions && (
+				<div className="sync-v2-rebuild-report">
+					<strong>Chat sessions: {result.chatSessions.status}</strong>
+					{result.chatSessions.retryable > 0 && (
+						<span>
+							{result.chatSessions.retryable} item(s) queued for
+							retry
+						</span>
+					)}
 				</div>
 			)}
 
@@ -332,7 +461,9 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 					<div className="sync-v2-empty">
 						<div className="sync-v2-empty-icon">📂</div>
 						<div>No sync activity yet</div>
-						<div className="sync-v2-empty-sub">Last sync: {lastSyncText}</div>
+						<div className="sync-v2-empty-sub">
+							Last sync: {lastSyncText}
+						</div>
 					</div>
 				)}
 				{logs.map((log) => (
@@ -344,7 +475,10 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 			{/* ── Action Bar ───────────────────────────────────────────── */}
 			<div className="sync-v2-actions">
 				{isBusy ? (
-					<button className="sync-v2-btn cancel" onClick={handleCancel}>
+					<button
+						className="sync-v2-btn cancel"
+						onClick={handleCancel}
+					>
 						Cancel
 					</button>
 				) : (
@@ -357,7 +491,11 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 					</button>
 				)}
 				{!isBusy && (
-					<button className="sync-v2-btn rebuild" onClick={() => setShowRebuildChoices(true)} disabled={isRebuilding}>
+					<button
+						className="sync-v2-btn rebuild"
+						onClick={() => setShowRebuildChoices(true)}
+						disabled={isRebuilding}
+					>
 						{isRebuilding ? "Rebuilding…" : "Rebuild"}
 					</button>
 				)}
@@ -386,7 +524,9 @@ const SyncItem: React.FC<{ entry: SyncLogEntry }> = ({ entry }) => {
 	}[entry.status];
 
 	return (
-		<div className={`sync-v2-item sync-v2-item--${entry.operation} ${entry.status === "pending" ? "sync-v2-item--pending" : ""}`}>
+		<div
+			className={`sync-v2-item sync-v2-item--${entry.operation} ${entry.status === "pending" ? "sync-v2-item--pending" : ""}`}
+		>
 			<div className="sync-v2-item-main">
 				<div className="sync-v2-item-title" title={entry.title}>
 					{entry.title}
@@ -396,8 +536,12 @@ const SyncItem: React.FC<{ entry: SyncLogEntry }> = ({ entry }) => {
 				)}
 			</div>
 			<div className="sync-v2-item-meta">
-				{opLabel && <span className="sync-v2-item-action">{opLabel}</span>}
-				<span className={`sync-v2-item-status sync-v2-item-status--${entry.status}`}>
+				{opLabel && (
+					<span className="sync-v2-item-action">{opLabel}</span>
+				)}
+				<span
+					className={`sync-v2-item-status sync-v2-item-status--${entry.status}`}
+				>
 					{statusLabel}
 				</span>
 			</div>

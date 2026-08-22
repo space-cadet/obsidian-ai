@@ -51,6 +51,7 @@ export class ParticipantRouter {
 			result?: import("./types").ToolResult;
 		}>;
 		tokenEstimate?: number;
+		providerUsage?: import("../types").ProviderTokenUsage;
 		error?: string;
 	}> {
 		// Route to remote users immediately so relay delivery does not wait for

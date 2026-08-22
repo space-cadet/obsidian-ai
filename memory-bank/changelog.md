@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased - 2026-08-22
+## Unreleased - 2026-08-23
 
 ### Changed
 - Corrected remote-storage task statuses and documentation to distinguish the WebDAV session baseline from unfinished full-sync work — T42, T42a–T42e
@@ -13,6 +13,12 @@ All notable changes to this project will be documented in this file.
 - Verified the T57a implementation with a clean TypeScript check, full build, and 256 passing tests — T57a
 - Added durable per-file shared state, encrypted remote state, recovery copies, explicit conflict choices, and deletion tombstones; unexplained remote disappearance now stops safely — T57b
 - Verified T57b with a clean TypeScript check, full build, and 263 passing tests across 27 test files — T57b
+- Added identity-scoped cache/index/plugin state and durable retry records — T57c
+- Added plugin-data progress and separate complete/partial/failed reporting — T57c
+- Persisted provider-reported prompt/completion usage and corrected the usage
+  summary fallback to count the full request estimate rather than one message — T6a follow-up
+- Verified T57c and token accounting with 268 passing tests, a clean TypeScript
+  check, and a production build.
 
 ---
 

@@ -3,6 +3,7 @@ import {
 	ChatMessage,
 	GroupChatParticipant,
 	ResolvedMessagePart,
+	ProviderTokenUsage,
 } from "../types";
 import type { MessageContentPart } from "../api";
 import { ProviderProfile } from "../settings";
@@ -11,6 +12,7 @@ import type { ToolCall, ToolResult } from "./types";
 import { AgentLoop } from "./AgentLoop";
 import { ToolExecutor } from "./ToolExecutor";
 import { noteTools } from "./tools";
+import { estimateTokens } from "../context/tokenEstimator";
 
 export type DispatchMode = "sequential" | "parallel";
 export type ContextStrategy = "full" | "isolated";
@@ -23,6 +25,7 @@ export interface AgentResponse {
 	text: string;
 	toolCalls?: Array<{ call: ToolCall; result?: ToolResult }>;
 	tokenEstimate?: number;
+	providerUsage?: ProviderTokenUsage;
 	error?: string;
 }
 
@@ -429,15 +432,21 @@ export class Orchestrator {
 					toolCalls:
 						toolCallsLog.length > 0 ? toolCallsLog : undefined,
 					tokenEstimate: result.tokenEstimate,
+					providerUsage: result.providerUsage,
 				};
 			}
 
 			// Simple non-tooling path (original MVP behavior preserved)
 			let fullText = "";
+			let providerUsage: ProviderTokenUsage | undefined;
 			const stream = this.api.streamChat(
 				messages,
 				undefined,
 				engine.profile,
+				undefined,
+				(usage) => {
+					providerUsage = usage;
+				},
 			);
 			for await (const chunk of stream) {
 				if (signal?.aborted) break;
@@ -449,6 +458,8 @@ export class Orchestrator {
 				agentName: engine.name,
 				agentColor: engine.color,
 				text: fullText,
+				tokenEstimate: estimateTokens(fullText),
+				providerUsage,
 			};
 		} catch (error: any) {
 			return {

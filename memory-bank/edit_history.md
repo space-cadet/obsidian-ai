@@ -1,6 +1,16 @@
 # Edit History
 
-*Last Updated: 2026-08-22 23:49:34 IST*
+*Last Updated: 2026-08-23 00:14:52 IST*
+
+## 2026-08-23
+
+#### 00:14 IST - T57c and token usage reconciliation
+
+- Modified sync identity, retry, progress, and category reporting paths.
+- Modified token usage capture, persisted message usage, diagnostics, session
+  totals, and full-request estimate fallback.
+- Added focused identity, retry, and provider-usage tests.
+- Verified 29 test files / 268 tests, TypeScript, and production build.
 
 ## 2026-08-22
 

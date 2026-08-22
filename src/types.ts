@@ -25,6 +25,15 @@ export type ContentPart =
 	| { type: "text"; content: string }
 	| { type: "tool_call"; call: ToolCall; result?: ToolResult };
 
+/** Token usage reported by the language-model provider for one response. */
+export interface ProviderTokenUsage {
+	inputTokens?: number;
+	outputTokens?: number;
+	totalTokens?: number;
+	cachedInputTokens?: number;
+	reasoningTokens?: number;
+}
+
 export interface ChatMessage {
 	id: string;
 	role: "user" | "assistant";
@@ -43,6 +52,10 @@ export interface ChatMessage {
 	resolvedParts?: ResolvedMessagePart[];
 	/** Estimated token count for this message (including context for user messages) */
 	estimatedTokens?: number;
+	/** Full request estimate captured when this response was sent. */
+	requestTokenEstimate?: number;
+	/** Provider-reported usage for this response, when available. */
+	providerUsage?: ProviderTokenUsage;
 	/** Model name that generated this message (e.g. "gpt-4o", "gemini-1.5-pro") */
 	modelName?: string;
 	/** Response time in milliseconds */

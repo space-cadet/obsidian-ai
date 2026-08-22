@@ -180,7 +180,7 @@ export function renderDiagnosticsSection(
 	const modelUsageEl = sectionEl.createDiv({
 		cls: "obsidian-ai-model-usage",
 	});
-	modelUsageEl.createEl("h4", { text: "Estimated usage by model" });
+	modelUsageEl.createEl("h4", { text: "Usage by model" });
 	const diskTotalEl = createMetric("Plugin Storage", "—");
 	const diskBreakdownEl = createMetric("Storage Breakdown", "—");
 
@@ -210,8 +210,9 @@ export function renderDiagnosticsSection(
 			sessionsEl.textContent = String(sessionCount);
 			messagesEl.textContent = String(msgCount);
 			const usage = summarizeLlmUsage(chatData.sessions);
-			usageTotalEl.textContent = `~${usage.totalEstimatedTokens.toLocaleString()} tokens`;
-			usageSplitEl.textContent = `~${usage.inputEstimatedTokens.toLocaleString()} / ~${usage.outputEstimatedTokens.toLocaleString()} tokens`;
+			const estimateMark = usage.usageSource === "provider" ? "" : "~";
+			usageTotalEl.textContent = `${estimateMark}${usage.totalEstimatedTokens.toLocaleString()} tokens`;
+			usageSplitEl.textContent = `${estimateMark}${usage.inputEstimatedTokens.toLocaleString()} / ${estimateMark}${usage.outputEstimatedTokens.toLocaleString()} tokens`;
 			responseStatsEl.textContent =
 				usage.averageResponseTimeMs === null
 					? String(usage.completedResponses)

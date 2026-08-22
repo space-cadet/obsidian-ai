@@ -428,6 +428,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							isError: !!response.error,
 							toolCalls: response.toolCalls,
 							estimatedTokens: response.tokenEstimate,
+							providerUsage: response.providerUsage,
 						};
 
 						setSessions((prev) =>
@@ -680,7 +681,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				},
 			];
 
-			const fullPayloadTokenEstimate = plugin.settings.showFullRequestTokens
+			const fullPayloadTokenEstimate = plugin.settings
+				.showFullRequestTokens
 				? estimateTokens(JSON.stringify(chatMessages))
 				: userTokenEstimate;
 
@@ -697,6 +699,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 
 			let assistantContent = fullText;
 			let assistantTokenEstimate = 0;
+			let providerUsage:
+				| import("../types").ProviderTokenUsage
+				| undefined;
 
 			try {
 				if (isAgentProvider) {
@@ -827,7 +832,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						},
 						onTokenUpdate: (total) => {
 							patchRuntime(currentActiveId, {
-								runningTokenTotal: fullPayloadTokenEstimate + total,
+								runningTokenTotal:
+									fullPayloadTokenEstimate + total,
 							});
 						},
 					});
@@ -961,7 +967,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						},
 						onTokenUpdate: (total) => {
 							patchRuntime(currentActiveId, {
-								runningTokenTotal: fullPayloadTokenEstimate + total,
+								runningTokenTotal:
+									fullPayloadTokenEstimate + total,
 							});
 						},
 					});
@@ -984,6 +991,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						});
 					}
 					assistantTokenEstimate = result.tokenEstimate;
+					providerUsage = result.providerUsage;
 				} else {
 					// … standard streamChat path (no tools)
 					let streamTokenTotal = userTokenEstimate;
@@ -992,6 +1000,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						controller.signal,
 						activeProfile,
 						thinkingEnabled,
+						(usage) => {
+							providerUsage = usage;
+						},
 					)) {
 						fullText += chunk;
 						if (!slashCmd) {
@@ -1090,6 +1101,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					timestamp: Date.now(),
 					command: commandMeta,
 					estimatedTokens: assistantTokenEstimate,
+					requestTokenEstimate: fullPayloadTokenEstimate,
+					providerUsage,
 					modelName: activeProfile.model,
 					responseTimeMs: Date.now() - streamStartTime,
 					toolCalls:

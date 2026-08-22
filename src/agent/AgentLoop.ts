@@ -3,6 +3,7 @@ import { ToolExecutor } from "./ToolExecutor";
 import type { ToolCall, ToolResult, StreamEvent } from "./types";
 import { estimateTokens } from "../context/tokenEstimator";
 import type { ProviderProfile } from "../settings";
+import type { ProviderTokenUsage } from "../types";
 
 export interface AgentLoopOptions {
 	chatApi: ChatApiManager;
@@ -31,6 +32,29 @@ export interface AgentLoopResult {
 	stepsTaken: number;
 	/** Token estimates for each step's assistant message (text + tool calls) */
 	stepTokenEstimates?: number[];
+	/** Provider-reported usage summed across the agent's model steps. */
+	providerUsage?: ProviderTokenUsage;
+}
+
+function addUsage(
+	left: ProviderTokenUsage | undefined,
+	right: ProviderTokenUsage | undefined,
+): ProviderTokenUsage | undefined {
+	if (!left && !right) return undefined;
+	const sum = (a: number | undefined, b: number | undefined) => {
+		const value = (a ?? 0) + (b ?? 0);
+		return value > 0 ? value : undefined;
+	};
+	return {
+		inputTokens: sum(left?.inputTokens, right?.inputTokens),
+		outputTokens: sum(left?.outputTokens, right?.outputTokens),
+		totalTokens: sum(left?.totalTokens, right?.totalTokens),
+		cachedInputTokens: sum(
+			left?.cachedInputTokens,
+			right?.cachedInputTokens,
+		),
+		reasoningTokens: sum(left?.reasoningTokens, right?.reasoningTokens),
+	};
 }
 
 /**
@@ -169,6 +193,7 @@ export class AgentLoop {
 		let fullText = "";
 		let currentMessages = messages;
 		const stepTokenEstimates: number[] = [];
+		let providerUsage: ProviderTokenUsage | undefined;
 
 		let runningTotal = 0;
 
@@ -203,6 +228,12 @@ export class AgentLoop {
 						break;
 					case "error":
 						throw new Error(event.message);
+					case "finish":
+						providerUsage = addUsage(
+							providerUsage,
+							event.providerUsage,
+						);
+						break;
 					case "tool-error":
 						console.warn(
 							`[AgentLoop] tool-error from stream: ${event.callId} — ${event.error}`,
@@ -326,6 +357,7 @@ export class AgentLoop {
 			tokenEstimate: totalTokens,
 			stepsTaken: maxSteps, // Simplified; could track actual
 			stepTokenEstimates,
+			providerUsage,
 		};
 	}
 }

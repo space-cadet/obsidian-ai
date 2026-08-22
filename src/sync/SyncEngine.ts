@@ -11,6 +11,7 @@ import { EncryptionLayer, checksum } from "./EncryptionLayer";
 import { SyncIndexManager } from "./SyncIndexManager";
 import { runWithConcurrency } from "./ConcurrencyLimiter";
 import type { SyncIndex } from "./SyncIndex";
+import { DurableSyncRetryStore } from "./SyncRetryStore";
 
 export type SyncState = "idle" | "syncing" | "error" | "locked";
 export type ConflictStrategy = "last-write-wins" | "keep-both" | "manual";
@@ -37,6 +38,9 @@ export interface SyncEngineConfig {
 	concurrencyLimit?: number;
 	/** Dry run mode: compute plan but do not transfer anything (T42e). */
 	dryRun?: boolean;
+	/** Complete identity used to isolate cache, index, and retry state. */
+	identity?: string;
+	retryStore?: DurableSyncRetryStore;
 }
 
 /**
@@ -63,7 +67,14 @@ export class SyncEngine {
 	private onSessionDownloaded?: (session: ChatSession) => Promise<void>;
 	private _cancelled = false;
 	private indexManager?: SyncIndexManager;
-	private serverConfig?: { url: string; username: string; prefix?: string };
+	private serverConfig?: {
+		url: string;
+		username: string;
+		prefix?: string;
+		identity?: string;
+	};
+	private identity?: string;
+	private retryStore?: DurableSyncRetryStore;
 	private concurrencyLimit: number;
 	dryRun: boolean;
 
@@ -79,6 +90,8 @@ export class SyncEngine {
 		this.indexManager = config.indexManager;
 		this.concurrencyLimit = config.concurrencyLimit ?? 3;
 		this.dryRun = config.dryRun ?? false;
+		this.identity = config.identity;
+		this.retryStore = config.retryStore;
 	}
 
 	get currentState(): SyncState {
@@ -125,6 +138,7 @@ export class SyncEngine {
 				url: String(cfg.url),
 				username: String(cfg.username),
 				prefix: cfg.prefix ? String(cfg.prefix) : undefined,
+				identity: this.identity,
 			};
 		}
 
@@ -154,6 +168,7 @@ export class SyncEngine {
 				conflicts: 0,
 				skipped: 0,
 				errors: ["Sync already in progress"],
+				status: "failed",
 			};
 		}
 
@@ -275,6 +290,8 @@ export class SyncEngine {
 					conflicts,
 					skipped: plan.skipped,
 					errors,
+					status: errors.length > 0 ? "partial" : "complete",
+					retryable: await this.retryStore?.list(),
 				};
 			}
 
@@ -306,6 +323,11 @@ export class SyncEngine {
 							const msg = `Upload failed for ${session.id}: ${err.message}`;
 							this.log("error", msg);
 							errors.push(msg);
+							await this.retryStore?.record(
+								"chat-session",
+								session.id,
+								msg,
+							);
 						}
 					},
 				);
@@ -339,6 +361,11 @@ export class SyncEngine {
 							const msg = `Download failed for ${meta.id}: ${err.message}`;
 							this.log("error", msg);
 							errors.push(msg);
+							await this.retryStore?.record(
+								"chat-session",
+								meta.id,
+								msg,
+							);
 						}
 					},
 				);
@@ -376,6 +403,11 @@ export class SyncEngine {
 							const msg = `Conflict resolution failed for ${conflict.local.id}: ${err.message}`;
 							this.log("error", msg);
 							errors.push(msg);
+							await this.retryStore?.record(
+								"chat-session",
+								conflict.local.id,
+								msg,
+							);
 							await this.cache.markConflict(conflict.local.id);
 						}
 					},
@@ -420,6 +452,13 @@ export class SyncEngine {
 				conflicts,
 				skipped: plan.skipped,
 				errors,
+				status:
+					errors.length === 0
+						? "complete"
+						: uploaded + downloaded + conflicts > 0
+							? "partial"
+							: "failed",
+				retryable: await this.retryStore?.list(),
 			};
 		} catch (err: any) {
 			this.state = "error";
@@ -432,6 +471,8 @@ export class SyncEngine {
 				conflicts: 0,
 				skipped: 0,
 				errors,
+				status: "failed",
+				retryable: await this.retryStore?.list(),
 			};
 		}
 	}
@@ -645,6 +686,7 @@ export class SyncEngine {
 
 		const result = await this.adapter.putSession(payload);
 		await this.cache.markSynced(session.id, session.updatedAt, result.etag);
+		await this.retryStore?.clear("chat-session", session.id);
 		this.progress?.({
 			type: "session",
 			id: session.id,
@@ -726,6 +768,7 @@ export class SyncEngine {
 		}
 
 		await this.cache.markSynced(meta.id, meta.modifiedAt, meta.etag);
+		await this.retryStore?.clear("chat-session", meta.id);
 		this.progress?.({
 			type: "session",
 			id: meta.id,

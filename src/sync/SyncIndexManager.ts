@@ -33,10 +33,16 @@ export class SyncIndexManager {
 		url: string;
 		username: string;
 		prefix?: string;
+		/** Complete vault/account/backend/encryption identity when available. */
+		identity?: string;
 	}): string {
+		if (config.identity) return config.identity;
 		const url = config.url.trim().replace(/\/$/, "");
 		const username = config.username.trim();
-		const prefix = (config.prefix ?? "").trim().replace(/^\//, "").replace(/\/$/, "");
+		const prefix = (config.prefix ?? "")
+			.trim()
+			.replace(/^\//, "")
+			.replace(/\/$/, "");
 		const raw = `${url}|${username}|${prefix}`;
 		let hash = 0;
 		for (let i = 0; i < raw.length; i++) {
@@ -68,7 +74,9 @@ export class SyncIndexManager {
 			const parsed: SyncIndex = data[this.dataKey] as SyncIndex;
 
 			if (parsed.serverSignature !== expectedSignature) {
-				console.info("SyncEngine: Server signature changed, invalidating sync index");
+				console.info(
+					"SyncEngine: Server signature changed, invalidating sync index",
+				);
 				this.index = null;
 				return null;
 			}
@@ -76,7 +84,10 @@ export class SyncIndexManager {
 			this.index = parsed;
 			return parsed;
 		} catch (err) {
-			console.warn("SyncEngine: Failed to load sync index, starting fresh:", err);
+			console.warn(
+				"SyncEngine: Failed to load sync index, starting fresh:",
+				err,
+			);
 			return null;
 		}
 	}
@@ -190,7 +201,9 @@ export class SyncIndexManager {
 		serverSignature: string,
 	): Promise<SyncIndex> {
 		const remoteMap = new Map(updatedRemotes.map((r) => [r.id, r]));
-		const entries: Record<string, SyncIndexEntry> = { ...existing?.entries };
+		const entries: Record<string, SyncIndexEntry> = {
+			...existing?.entries,
+		};
 
 		for (const local of updatedLocals) {
 			const remote = remoteMap.get(local.id);

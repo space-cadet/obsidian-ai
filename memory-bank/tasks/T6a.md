@@ -1,6 +1,6 @@
 # Task: T6a
 *Created: 2026-08-19 13:31:15 IST*
-*Last Updated: 2026-08-19 17:50 IST*
+*Last Updated: 2026-08-23 00:14 IST*
 
 ## Task Information
 **Title:** Token Counter Accuracy Fix — Full Request Payload Counting
@@ -41,6 +41,19 @@ matters).
 ### Limitations
 - Full payload count only works for active/new messages (while streaming)
 - For loaded older sessions, only individual message token sums are displayed (system prompt not included in saved session data)
+
+### Provider billing reconciliation follow-up — 2026-08-23
+
+The original counter correctly improved the live request estimate but the
+diagnostics usage summary still added one estimate per saved message. That did
+not reflect repeated prompt history, system context, tool steps, or provider
+reported usage, which explains large differences from OpenRouter totals.
+
+- Assistant messages now persist AI SDK provider usage when available.
+- Usage summaries prefer provider input/output/total tokens and avoid adding
+  the saved user estimate a second time.
+- Responses without provider usage store the full request estimate for a more
+  useful fallback; legacy messages remain explicitly estimated.
 
 ## Acceptance Criteria
 - [x] Full payload token count computed and displayed

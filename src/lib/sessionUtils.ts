@@ -19,8 +19,26 @@ export function pruneSessions(
 }
 
 export function getSessionTotalTokens(session: ChatSession): number {
-	return session.messages.reduce(
-		(sum, m) => sum + (m.estimatedTokens || 0),
-		0,
-	);
+	let total = 0;
+	let pendingUserTokens = 0;
+	for (const message of session.messages) {
+		if (message.role === "user") {
+			pendingUserTokens += message.estimatedTokens || 0;
+			continue;
+		}
+		const providerTotal = message.providerUsage?.totalTokens;
+		if (Number.isFinite(providerTotal)) {
+			total += providerTotal!;
+			pendingUserTokens = 0;
+		} else if (message.requestTokenEstimate !== undefined) {
+			total +=
+				Math.max(0, message.requestTokenEstimate) +
+				(message.estimatedTokens || 0);
+			pendingUserTokens = 0;
+		} else {
+			total += pendingUserTokens + (message.estimatedTokens || 0);
+			pendingUserTokens = 0;
+		}
+	}
+	return total + pendingUserTokens;
 }

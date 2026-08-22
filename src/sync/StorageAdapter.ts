@@ -1,4 +1,5 @@
 import type { ChatSession } from "../types";
+import type { SyncRetryRecord } from "./SyncRetryStore";
 
 /**
  * Encrypted session payload stored on remote backends.
@@ -38,6 +39,8 @@ export interface SyncResult {
 	conflicts: number;
 	skipped: number;
 	errors: string[];
+	status?: "complete" | "partial" | "failed";
+	retryable?: SyncRetryRecord[];
 }
 
 /**

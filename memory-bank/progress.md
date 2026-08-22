@@ -11,6 +11,22 @@
 - Added focused acceptance coverage. TypeScript, full build, and full suite
   passed: 263 tests across 27 files.
 
+### 2026-08-23 — T57c and token billing reconciliation ✅
+
+- Added a complete sync identity covering vault, backend, server, account,
+  remote path, and encryption identity. The identity namespaces the local
+  cache and invalidates the sync index and plugin-file state when setup changes.
+- Added durable identity-scoped retry records with exponential backoff. Failed
+  chat sessions and plugin-data items remain retryable; successful items clear
+  their records and are not needlessly repeated.
+- Added per-item plugin-data progress and separate chat-session/plugin-data
+  completion status in the sync panel, including partial and failed outcomes.
+- Captured AI SDK provider usage on assistant messages. Diagnostics and session
+  totals now prefer provider-reported prompt/completion/total tokens and use a
+  full-request estimate only when provider usage is unavailable.
+- Verification: 29 test files, 268 tests passed; TypeScript and production
+  build passed.
+
 ### 2026-08-21 — T43 Subtasks Complete
 
 **T43a: Fix Rebuild Sync Index Title Resolution** ✅

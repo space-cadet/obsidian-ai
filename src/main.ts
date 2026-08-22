@@ -48,6 +48,9 @@ import { SyncLogger } from "./sync/SyncLogger";
 import { StorageAdapter } from "./sync/StorageAdapter";
 import { SyncIndexManager } from "./sync/SyncIndexManager";
 import { createPluginIndexStorage } from "./sync/SyncIndex";
+import { makeSyncIdentity } from "./sync/SyncIdentity";
+import { DurableSyncRetryStore } from "./sync/SyncRetryStore";
+import type { SyncRetryRecord } from "./sync/SyncRetryStore";
 import {
 	PluginFileSyncManager,
 	createVaultTextSyncTarget,
@@ -73,6 +76,8 @@ export default class ObsidianAIPlugin extends Plugin {
 	sessionSummarizer: SessionSummarizer | null = null;
 	integrationRegistry!: ProviderRegistry;
 	syncEngine: SyncEngine | null = null;
+	private syncIdentity: string | null = null;
+	private syncRetryStore: DurableSyncRetryStore | null = null;
 
 	// Data integrity guards
 	private _backupCreated = false;
@@ -596,8 +601,21 @@ export default class ObsidianAIPlugin extends Plugin {
 		const rs = this.settings.remoteStorage;
 		if (!rs.enabled || rs.backend === "none") {
 			this.syncEngine = null;
+			this.syncIdentity = null;
+			this.syncRetryStore = null;
 			return;
 		}
+
+		const vaultAdapter = this.app.vault.adapter as any;
+		const vaultId = `${this.app.vault.getName()}|${vaultAdapter.getBasePath?.() ?? ""}`;
+		const syncIdentity = makeSyncIdentity({
+			vaultId,
+			backend: rs.backend,
+			server: rs.webdav?.url ?? "",
+			account: rs.webdav?.username ?? "",
+			remotePath: rs.webdav?.prefix ?? "",
+			encryptionIdentity: rs.passphrase ?? "",
+		});
 
 		// Build a config hash to detect changes
 		const configHash = JSON.stringify({
@@ -608,6 +626,7 @@ export default class ObsidianAIPlugin extends Plugin {
 			passphrase: rs.passphrase,
 			conflictStrategy: rs.conflictStrategy,
 			concurrencyLimit: rs.concurrencyLimit,
+			identity: syncIdentity,
 		});
 
 		// Skip re-init if config unchanged and engine exists
@@ -627,11 +646,22 @@ export default class ObsidianAIPlugin extends Plugin {
 
 		try {
 			const adapter = new WebDAVStorageAdapter();
-			const cacheNamespace = rs.webdav
-				? `${rs.webdav.url}:${rs.webdav.prefix || ""}`
-				: "default";
+			const cacheNamespace = syncIdentity;
 			const cache = new LocalCache(cacheNamespace);
 			const crypto = new EncryptionLayer();
+			const retryStore = new DurableSyncRetryStore(
+				{
+					load: async () =>
+						((await this.loadData()) as Record<
+							string,
+							unknown
+						> | null) ?? null,
+					save: async (data) => this.saveData(data),
+				},
+				syncIdentity,
+			);
+			this.syncIdentity = syncIdentity;
+			this.syncRetryStore = retryStore;
 
 			// T42a: Create sync index manager backed by plugin data
 			const indexStorage = createPluginIndexStorage(this, "syncIndex");
@@ -645,6 +675,8 @@ export default class ObsidianAIPlugin extends Plugin {
 				conflictStrategy: rs.conflictStrategy,
 				concurrencyLimit: rs.concurrencyLimit ?? 3,
 				indexManager,
+				identity: syncIdentity,
+				retryStore,
 				logger: {
 					log: (level: string, msg: string) => {
 						this.logger?.log(level as any, `[SyncEngine] ${msg}`);
@@ -674,6 +706,7 @@ export default class ObsidianAIPlugin extends Plugin {
 					username: rs.webdav.username,
 					password: rs.webdav.password,
 					prefix: rs.webdav.prefix,
+					identity: syncIdentity,
 				});
 				this.logger?.log("info", "SyncEngine initialized (WebDAV)");
 			}
@@ -779,6 +812,18 @@ export default class ObsidianAIPlugin extends Plugin {
 		conflicts: number;
 		skipped: number;
 		errors: string[];
+		pluginData?: {
+			status: "complete" | "partial" | "failed";
+			uploaded: boolean;
+			downloaded: boolean;
+			conflict: boolean;
+			failed: number;
+			errors: string[];
+		};
+		chatSessions?: {
+			status: "complete" | "partial" | "failed";
+			retryable: number;
+		};
 	}> {
 		// Lazy-init sync engine if not already initialized (e.g., user enabled sync after plugin load)
 		if (!this.syncEngine) {
@@ -840,10 +885,19 @@ export default class ObsidianAIPlugin extends Plugin {
 				plan = { ...plan, upload: [], conflicts: [] };
 			}
 
+			const sc = this.settings.syncComponents;
+			const pluginDataOps = !dryRun
+				? Number(sc.pluginSettings || sc.apiKeys) +
+					Number(sc.memory) +
+					Number(sc.memoryAudit) +
+					Number(sc.persona) +
+					Number(sc.usageStats)
+				: 0;
 			totalOps =
 				plan.upload.length +
 				plan.download.length +
-				plan.conflicts.length;
+				plan.conflicts.length +
+				pluginDataOps;
 			modal?.setTotal(totalOps);
 			modal?.addLog(
 				"system",
@@ -939,6 +993,66 @@ export default class ObsidianAIPlugin extends Plugin {
 			});
 
 			const result = await this.syncEngine.sync(options?.direction);
+			let pluginDataResult:
+				| Awaited<ReturnType<ObsidianAIPlugin["syncPluginData"]>>
+				| undefined;
+			if (!dryRun) {
+				pluginDataResult = await this.syncPluginData(direction, {
+					onProgress: (event) => {
+						const title = `Plugin data: ${event.id}`;
+						if (event.status === "start") {
+							modal?.addLog(event.direction, title, {
+								id: event.id,
+							});
+							options?.onLog?.({
+								id: event.id,
+								operation: event.direction,
+								title,
+								status: "pending",
+								timestamp: Date.now(),
+							});
+							return;
+						}
+						completedOps++;
+						if (event.direction === "conflict") progressConflicts++;
+						if (event.status === "error") {
+							modal?.addLog("error", `${title}: ${event.error}`, {
+								id: event.id,
+								error: true,
+							});
+							options?.onLog?.({
+								id: event.id,
+								operation: "error",
+								title,
+								status: "error",
+								message: event.error,
+								timestamp: Date.now(),
+							});
+						} else {
+							modal?.addLog(event.direction, title, {
+								id: event.id,
+								done: true,
+							});
+							options?.onLog?.({
+								id: event.id,
+								operation: event.direction,
+								title,
+								status: "done",
+								timestamp: Date.now(),
+							});
+						}
+						options?.onProgress?.({
+							total: totalOps,
+							completed: completedOps,
+							uploaded: progressUploaded,
+							downloaded: progressDownloaded,
+							conflicts: progressConflicts,
+							skipped: progressSkipped,
+							elapsedMs: Date.now() - startTime,
+						});
+					},
+				});
+			}
 			const durationMs = Date.now() - startTime;
 			if (!dryRun) {
 				this.settings.remoteStorage.lastSyncTime = Date.now();
@@ -952,9 +1066,22 @@ export default class ObsidianAIPlugin extends Plugin {
 			if (result.skipped > 0) parts.push(`⊘${result.skipped}`);
 			if (result.errors.length > 0)
 				parts.push(`⚠️ ${result.errors.length}`);
+			if (pluginDataResult) {
+				if (pluginDataResult.uploaded) parts.push("plugin ↑");
+				if (pluginDataResult.downloaded) parts.push("plugin ↓");
+				if (pluginDataResult.conflict) parts.push("plugin ⚡");
+				if (pluginDataResult.failed > 0)
+					parts.push(`plugin ⚠️ ${pluginDataResult.failed}`);
+			}
 
 			const msg = parts.length > 0 ? parts.join(" ") : "Nothing to sync";
-			const ok = result.errors.length === 0;
+			const ok =
+				result.errors.length === 0 &&
+				(!pluginDataResult || pluginDataResult.status === "complete");
+			const combinedErrors = [
+				...result.errors,
+				...(pluginDataResult?.errors ?? []),
+			];
 
 			// Record session to logs
 			const sessionRecord = {
@@ -971,7 +1098,7 @@ export default class ObsidianAIPlugin extends Plugin {
 				await syncLogger.appendRemote(adapter, sessionRecord);
 			}
 
-			modal?.finish({ ...result, message: msg });
+			modal?.finish({ ...result, errors: combinedErrors, message: msg });
 
 			// Toast notification
 			if (ok) {
@@ -985,24 +1112,6 @@ export default class ObsidianAIPlugin extends Plugin {
 				new Notice(`⚠️ Sync finished with errors: ${msg}`, 8000);
 			}
 
-			// T43c: Sync plugin data (settings, index) after session sync
-			if (!dryRun && ok) {
-				try {
-					const pdResult = await this.syncPluginData(direction);
-					if (pdResult.conflict) {
-						new Notice(
-							"⚠️ Plugin data conflict detected. No conflicting file was overwritten.",
-							6000,
-						);
-					}
-				} catch (e: any) {
-					this.logger?.log(
-						"warn",
-						`[T43c] Plugin data sync error: ${e.message}`,
-					);
-				}
-			}
-
 			return {
 				ok,
 				message: msg,
@@ -1010,7 +1119,23 @@ export default class ObsidianAIPlugin extends Plugin {
 				downloaded: result.downloaded,
 				conflicts: result.conflicts,
 				skipped: result.skipped,
-				errors: result.errors,
+				errors: combinedErrors,
+				pluginData: pluginDataResult
+					? {
+							status: pluginDataResult.status,
+							uploaded: pluginDataResult.uploaded,
+							downloaded: pluginDataResult.downloaded,
+							conflict: pluginDataResult.conflict,
+							failed: pluginDataResult.failed,
+							errors: pluginDataResult.errors,
+						}
+					: undefined,
+				chatSessions: {
+					status:
+						result.status ??
+						(result.errors.length === 0 ? "complete" : "partial"),
+					retryable: result.retryable?.length ?? 0,
+				},
 			};
 		} catch (err: any) {
 			const msg = `Sync failed: ${err.message}`;
@@ -1115,24 +1240,47 @@ export default class ObsidianAIPlugin extends Plugin {
 	 * Called automatically after session sync completes.
 	 * Respects syncComponents selection.
 	 */
-	async syncPluginData(direction?: "upload" | "download" | "both"): Promise<{
+	async syncPluginData(
+		direction?: "upload" | "download" | "both",
+		options?: {
+			onProgress?: (event: {
+				id: string;
+				direction: "upload" | "download" | "conflict";
+				status: "start" | "done" | "error";
+				error?: string;
+			}) => void;
+		},
+	): Promise<{
 		uploaded: boolean;
 		downloaded: boolean;
 		conflict: boolean;
 		failed: number;
 		errors: string[];
+		status: "complete" | "partial" | "failed";
+		retryable: SyncRetryRecord[];
 		items: Array<{
 			id: string;
 			status: string;
 			error?: string;
 		}>;
 	}> {
-		const result = {
+		const result: {
+			uploaded: boolean;
+			downloaded: boolean;
+			conflict: boolean;
+			failed: number;
+			errors: string[];
+			status: "complete" | "partial" | "failed";
+			retryable: SyncRetryRecord[];
+			items: Array<{ id: string; status: string; error?: string }>;
+		} = {
 			uploaded: false,
 			downloaded: false,
 			conflict: false,
 			failed: 0,
 			errors: [] as string[],
+			status: "complete",
+			retryable: [] as SyncRetryRecord[],
 			items: [] as Array<{ id: string; status: string; error?: string }>,
 		};
 		if (!this.syncEngine) return result;
@@ -1248,6 +1396,9 @@ export default class ObsidianAIPlugin extends Plugin {
 				remote: this.syncEngine.storageAdapter,
 				crypto: this.syncEngine.encryptionLayer,
 				stateStore,
+				identity: this.syncIdentity ?? undefined,
+				retryStore: this.syncRetryStore ?? undefined,
+				progress: options?.onProgress,
 				resolveConflict: (conflict: PluginFileSyncConflict) =>
 					requestPluginFileConflictChoice(this.app, conflict),
 			});
@@ -1257,6 +1408,8 @@ export default class ObsidianAIPlugin extends Plugin {
 			result.failed = syncResult.failed;
 			result.conflict = syncResult.conflicts > 0;
 			result.errors = syncResult.errors;
+			result.status = syncResult.status;
+			result.retryable = syncResult.retryable;
 			result.items = syncResult.items.map((item) => ({
 				id: item.id,
 				status: item.status,
@@ -1279,6 +1432,7 @@ export default class ObsidianAIPlugin extends Plugin {
 		} catch (err: any) {
 			const message = `Plugin data sync failed: ${err.message}`;
 			result.failed += 1;
+			result.status = "failed";
 			result.errors.push(message);
 			this.logger?.log("warn", `[T57a] ${message}`);
 		}

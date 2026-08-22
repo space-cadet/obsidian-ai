@@ -20,6 +20,7 @@ import { EditorView } from "@codemirror/view";
 import { setGeneratedResponseEffect } from "./modules/AIExtension";
 import { parseCommand } from "./modules/commands/parser";
 import { MessageQueue } from "./modules/messageHistory/queue";
+import type { ProviderTokenUsage } from "./types";
 
 /**
  * Content part for multimodal messages — text, image, or file.
@@ -42,6 +43,22 @@ export type HistoryMessage = {
 	mode: string;
 	userPrompt: string;
 };
+
+function normalizeProviderUsage(usage: {
+	inputTokens?: number;
+	outputTokens?: number;
+	totalTokens?: number;
+	inputTokenDetails?: { cacheReadTokens?: number };
+	outputTokenDetails?: { reasoningTokens?: number };
+}): ProviderTokenUsage {
+	return {
+		inputTokens: usage.inputTokens,
+		outputTokens: usage.outputTokens,
+		totalTokens: usage.totalTokens,
+		cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens,
+		reasoningTokens: usage.outputTokenDetails?.reasoningTokens,
+	};
+}
 
 /**
  * Maps a provider type to its required credential fields.
@@ -414,6 +431,7 @@ export class ChatApiManager {
 		signal?: AbortSignal,
 		profile?: ProviderProfile,
 		thinkingEnabled?: boolean,
+		onUsage?: (usage: ProviderTokenUsage) => void,
 	): AsyncIterable<string> {
 		const model = createLanguageModel(
 			profile ?? getActiveProviderProfile(this.settings),
@@ -454,6 +472,9 @@ export class ChatApiManager {
 
 		for await (const chunk of result.textStream) {
 			yield chunk;
+		}
+		if (onUsage) {
+			onUsage(normalizeProviderUsage(await result.usage));
 		}
 	}
 
@@ -556,7 +577,11 @@ export class ChatApiManager {
 					};
 					break;
 				case "finish":
-					yield { type: "finish", reason: part.finishReason };
+					yield {
+						type: "finish",
+						reason: part.finishReason,
+						providerUsage: normalizeProviderUsage(part.totalUsage),
+					};
 					break;
 				case "error":
 					yield { type: "error", message: String(part.error) };

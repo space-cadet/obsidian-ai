@@ -180,8 +180,8 @@ export class SyncProgressModal extends Modal {
 		// Auto-scroll
 		this.logEl.scrollTop = this.logEl.scrollHeight;
 
-		// Update progress for session operations
-		if ((type === "upload" || type === "download") && meta?.done) {
+		// Update progress for every completed transfer, including plugin data.
+		if (type !== "system" && type !== "error" && meta?.done) {
 			this.completedCount++;
 			this.updateProgress();
 		}

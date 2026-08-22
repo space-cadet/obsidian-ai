@@ -10,6 +10,8 @@ export interface ToolCall {
 	providerMetadata?: Record<string, unknown>;
 }
 
+import type { ProviderTokenUsage } from "../types";
+
 export interface ToolResult {
 	success?: boolean;
 	content?: string;
@@ -71,5 +73,5 @@ export type StreamEvent =
 	| { type: "tool-call"; call: ToolCall }
 	| { type: "tool-result"; callId: string; result: unknown }
 	| { type: "tool-error"; callId: string; error: string }
-	| { type: "finish"; reason: string }
+	| { type: "finish"; reason: string; providerUsage?: ProviderTokenUsage }
 	| { type: "error"; message: string };
