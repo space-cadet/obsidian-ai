@@ -1,15 +1,16 @@
 # Session Cache
 
-*Last Updated: 2026-08-22 23:19:11 IST*
+*Last Updated: 2026-08-22 23:49:34 IST*
 
 ## Latest Session
-- Focus: T57a implementation and closeout verification
+- Focus: T57b two-way state, recovery, and deletion closeout
 - Completed:
-  - Added `PluginFileSyncManager` and routed selected plugin-data sync through it
-  - Added encrypted/checksummed envelopes, atomic remote writes, safe local replacement, and conflict reporting
-  - Added focused tests; full suite passes with 256 tests
-  - Full build passes
-  - Implementation commit `38f9f9e` is ready for the authorized push
+  - Added durable per-file shared state and encrypted remote state
+  - Added recovery copies, deletion tombstones, and explicit conflict choices
+  - Added focused T57b acceptance tests; full suite passes with 263 tests
+  - Full build and TypeScript checks pass
+- Remaining: T57c durable retries/identity, T57d SyncIt contract, and older raw
+  remote-file migration
 - TypeScript clean
 
 *Session: 2026-08-21 13:00–13:52 UTC*
@@ -22,7 +23,7 @@
 
 - T57a is complete for the shared transfer path.
 - Older raw remote files are rejected safely during download-only sync; migration remains open.
-- T57b remains next for remembered state, recovery copies, deletion records, and user choices.
+- T57b is complete for remembered state, recovery copies, deletion records, and user choices.
 - T57c remains next for durable retry records and full sync identity handling.
 - Build and test closeout passed at 2026-08-22 23:19:11 IST.
 
@@ -187,5 +188,6 @@ Updated the remote-storage records after comparing the Memory Bank with the curr
 - T42a–T42e now show which parts are implemented and which safety checks remain.
 - T43c now records the later T55 changes instead of presenting its older notes as current.
 - T55 and the sync design docs now state that auxiliary plugin files do not yet share the session encryption and recovery protections.
-- Deletion behavior, retry limits, cache invalidation, and per-file conflict handling are recorded as open limits.
+- Retry limits and cache invalidation remain open limits; per-file conflict,
+  recovery, and deletion handling are now covered by T57b.
 - No sync code was changed.

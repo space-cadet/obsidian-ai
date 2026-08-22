@@ -1,8 +1,18 @@
 # Edit History
 
-*Last Updated: 2026-08-22 23:00 IST*
+*Last Updated: 2026-08-22 23:49:34 IST*
 
 ## 2026-08-22
+
+#### 23:49:34 IST - T57b: Implement two-way plugin-data safety
+
+- Modified `src/sync/PluginFileSyncManager.ts` - Added durable shared state, encrypted remote state, recovery hooks, conflict choices, and deletion tombstones.
+- Modified `src/sync/PluginFileSyncManager.test.ts` - Added acceptance coverage for remote-only transfer, recovery, all conflict choices, known deletion, and unexplained disappearance.
+- Created `src/modals/PluginFileConflictModal.ts` - Added the user-facing local/remote/both/cancel choice flow.
+- Modified `src/main.ts` - Persisted plugin-file state, wrote recovery copies, and connected the conflict modal.
+- Modified `src/sync/StorageAdapter.ts` and `src/sync/WebDAVStorageAdapter.ts` - Added explicit raw plugin-file deletion support.
+- Updated `memory-bank/tasks/T57b.md`, `memory-bank/tasks/T57.md`, `memory-bank/tasks.md`, `memory-bank/tasks/T42.md`, `memory-bank/activeContext.md`, `memory-bank/progress.md`, `memory-bank/changelog.md`, and `memory-bank/session_cache.md` - Recorded T57b completion and remaining T57c/T57d/migration work.
+- Verified TypeScript, production build, and full test suite: 263 tests across 27 files.
 
 #### 23:19:11 IST - T57: Build and Memory Bank closeout
 

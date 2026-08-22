@@ -7,8 +7,9 @@
 
 The component choices are implemented. They control which data is copied, and
 T57a now gives selected files one encrypted, checksummed, and atomic transfer
-path. T57b and T57c still cover remembered conflicts, recovery, deletions, and
-durable retries. T57 also defines the boundary with SyncIt whole-vault sync.
+path. T57b now covers remembered conflicts, recovery, and deletions; T57c still
+covers durable retries and complete sync identity handling. T57 also defines the
+boundary with SyncIt whole-vault sync.
 
 ## Overview
 

@@ -19,6 +19,10 @@ class FakeRemote implements PluginFileSyncRemote {
 		return this.files.get(path) ?? null;
 	}
 
+	async deleteText(path: string): Promise<void> {
+		this.files.delete(path);
+	}
+
 	async writeTextAtomic(
 		path: string,
 		content: string,
@@ -27,6 +31,18 @@ class FakeRemote implements PluginFileSyncRemote {
 		this.atomicWrites.push({ path, content, contentType });
 		this.files.set(path, content);
 		return { etag: `etag-${this.atomicWrites.length}`, modifiedAt: 1000 };
+	}
+}
+
+class FakeStateStore {
+	state: any = null;
+
+	async load() {
+		return this.state;
+	}
+
+	async save(state: any) {
+		this.state = structuredClone(state);
 	}
 }
 
@@ -41,6 +57,35 @@ function makeTarget(initial: string | null = "local value") {
 		},
 	};
 	return { target, getLocal: () => local };
+}
+
+function makeStateTarget(initial: string | null = "local value") {
+	let local = initial;
+	const backups: Array<{ content: string; reason: string }> = [];
+	const conflictCopies: string[] = [];
+	const target: PluginFileSyncTarget = {
+		id: "memory",
+		remotePath: "intelligence/memory.json",
+		readLocal: async () => local,
+		writeLocal: async (content) => {
+			local = content;
+		},
+		backupLocal: async (content, reason) => {
+			backups.push({ content, reason });
+		},
+		deleteLocal: async () => {
+			local = null;
+		},
+		writeConflictCopy: async (content) => {
+			conflictCopies.push(content);
+		},
+	};
+	return {
+		target,
+		getLocal: () => local,
+		backups,
+		conflictCopies,
+	};
 }
 
 describe("PluginFileSyncManager", () => {
@@ -165,5 +210,156 @@ describe("PluginFileSyncManager", () => {
 		expect(result.failed).toBe(0);
 		expect(result.items[0].status).toBe("conflict");
 		expect(local.getLocal()).toBe("local value");
+	});
+
+	it("downloads remote-only data on a new device and records shared state", async () => {
+		const remote = new FakeRemote();
+		const uploader = new PluginFileSyncManager({
+			remote,
+			crypto: new EncryptionLayer(),
+			stateStore: new FakeStateStore(),
+		});
+		await uploader.sync([makeStateTarget("shared value").target], "both");
+
+		const receiver = makeStateTarget(null);
+		const result = await new PluginFileSyncManager({
+			remote,
+			crypto: new EncryptionLayer(),
+			stateStore: new FakeStateStore(),
+		}).sync([receiver.target], "both");
+
+		expect(result.downloaded).toBe(1);
+		expect(receiver.getLocal()).toBe("shared value");
+	});
+
+	it("backs up before applying a remote-only replacement", async () => {
+		const remote = new FakeRemote();
+		const state = new FakeStateStore();
+		const manager = new PluginFileSyncManager({
+			remote,
+			crypto: new EncryptionLayer(),
+			stateStore: state,
+		});
+		const first = makeStateTarget("base");
+		await manager.sync([first.target], "both");
+
+		const remoteWriter = new PluginFileSyncManager({
+			remote,
+			crypto: new EncryptionLayer(),
+			stateStore: new FakeStateStore(),
+		});
+		await remoteWriter.sync([makeStateTarget("remote").target], "upload");
+
+		const local = makeStateTarget("base");
+		const result = await new PluginFileSyncManager({
+			remote,
+			crypto: new EncryptionLayer(),
+			stateStore: state,
+		}).sync([local.target], "both");
+
+		expect(result.downloaded).toBe(1);
+		expect(local.getLocal()).toBe("remote");
+		expect(local.backups).toEqual([
+			{ content: "base", reason: "replacement" },
+		]);
+	});
+
+	it.each(["local", "remote", "both", "cancel"] as const)(
+		"honors the %s conflict choice",
+		async (choice) => {
+			const remote = new FakeRemote();
+			const stateA = new FakeStateStore();
+			const seed = new PluginFileSyncManager({
+				remote,
+				crypto: new EncryptionLayer(),
+				stateStore: stateA,
+			});
+			await seed.sync([makeStateTarget("base").target], "both");
+
+			const remoteWriter = new PluginFileSyncManager({
+				remote,
+				crypto: new EncryptionLayer(),
+				stateStore: new FakeStateStore(),
+			});
+			await remoteWriter.sync(
+				[makeStateTarget("remote").target],
+				"upload",
+			);
+
+			const local = makeStateTarget("local");
+			const result = await new PluginFileSyncManager({
+				remote,
+				crypto: new EncryptionLayer(),
+				stateStore: stateA,
+				resolveConflict: async () => choice,
+			}).sync([local.target], "both");
+
+			if (choice === "local") {
+				expect(local.getLocal()).toBe("local");
+				expect(result.uploaded).toBe(1);
+			} else if (choice === "remote") {
+				expect(local.getLocal()).toBe("remote");
+				expect(result.downloaded).toBe(1);
+				expect(local.backups[0].content).toBe("local");
+			} else {
+				expect(local.getLocal()).toBe("local");
+				expect(result.conflicts).toBe(1);
+				if (choice === "both")
+					expect(local.conflictCopies).toEqual(["remote"]);
+			}
+		},
+	);
+
+	it("propagates a known deletion but stops on an unexplained disappearance", async () => {
+		const remote = new FakeRemote();
+		const state = new FakeStateStore();
+		const manager = new PluginFileSyncManager({
+			remote,
+			crypto: new EncryptionLayer(),
+			stateStore: state,
+		});
+		await manager.sync([makeStateTarget("base").target], "both");
+		const receiverState = new FakeStateStore();
+		receiverState.state = structuredClone(state.state);
+
+		const deleted = makeStateTarget(null);
+		const deletion = await new PluginFileSyncManager({
+			remote,
+			crypto: new EncryptionLayer(),
+			stateStore: state,
+		}).sync([deleted.target], "both");
+		expect(deletion.uploaded).toBe(1);
+		expect(remote.files.has("intelligence/memory.json")).toBe(false);
+
+		const receiver = makeStateTarget("base");
+		const received = await new PluginFileSyncManager({
+			remote,
+			crypto: new EncryptionLayer(),
+			stateStore: receiverState,
+		}).sync([receiver.target], "both");
+		expect(received.downloaded).toBe(1);
+		expect(receiver.getLocal()).toBe(null);
+		expect(receiver.backups[0].content).toBe("base");
+
+		const unknown = makeStateTarget("should stay");
+		const unknownState = new FakeStateStore();
+		unknownState.state = {
+			schemaVersion: 1,
+			entries: {
+				memory: {
+					exists: true,
+					checksum: "0".repeat(64),
+					lastSharedAt: 1,
+				},
+			},
+			deletions: [],
+		};
+		const unknownResult = await new PluginFileSyncManager({
+			remote,
+			crypto: new EncryptionLayer(),
+			stateStore: unknownState,
+		}).sync([unknown.target], "both");
+		expect(unknownResult.conflicts).toBe(1);
+		expect(unknown.getLocal()).toBe("should stay");
 	});
 });

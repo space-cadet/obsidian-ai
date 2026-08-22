@@ -215,6 +215,10 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		}
 	}
 
+	async deleteText(path: string): Promise<void> {
+		await this.del(this.prefix + path);
+	}
+
 	// ─── Internal WebDAV operations ───
 
 	private getAuthHeader(): string {

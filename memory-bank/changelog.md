@@ -7,10 +7,12 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Corrected remote-storage task statuses and documentation to distinguish the WebDAV session baseline from unfinished full-sync work — T42, T42a–T42e
 - Clarified that auxiliary plugin files do not yet share the session encryption, atomic-write, and conflict protections — T43c, T55, T56
-- Recorded open deletion, recovery, retry-queue, cache-invalidation, and per-file conflict work — T42
+- Recorded open retry-queue, cache-invalidation, and full-sync acceptance work — T42
 - Added T57 and the plugin-data/SyncIt boundary design: SyncIt owns whole-vault sync, while Chat Lab keeps plugin-specific sync — T57, T57d
 - Added the shared plugin-file sync manager with encrypted/checksummed envelopes, atomic writes, damaged-file rejection, and safe conflict reporting — T57a
 - Verified the T57a implementation with a clean TypeScript check, full build, and 256 passing tests — T57a
+- Added durable per-file shared state, encrypted remote state, recovery copies, explicit conflict choices, and deletion tombstones; unexplained remote disappearance now stops safely — T57b
+- Verified T57b with a clean TypeScript check, full build, and 263 passing tests across 27 test files — T57b
 
 ---
 

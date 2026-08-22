@@ -30,6 +30,7 @@ import { createFileLogger, FileLogger } from "./logger";
 import { createStorage, ChatStorage, StorageDeps } from "./storage/ChatStorage";
 import { ChatStorageMigration } from "./storage/Migration";
 import { MigrationPromptModal } from "./modals/MigrationPromptModal";
+import { requestPluginFileConflictChoice } from "./modals/PluginFileConflictModal";
 
 import { AgentApiManager } from "./api/AgentApiManager";
 
@@ -50,6 +51,8 @@ import { createPluginIndexStorage } from "./sync/SyncIndex";
 import {
 	PluginFileSyncManager,
 	createVaultTextSyncTarget,
+	type PluginFileSyncConflict,
+	type PluginFileSyncState,
 	type PluginFileSyncTarget,
 } from "./sync/PluginFileSyncManager";
 import { ProviderRegistry } from "./integrations/ProviderRegistry";
@@ -1140,6 +1143,40 @@ export default class ObsidianAIPlugin extends Plugin {
 		const pluginDataPath = `${this.app.vault.configDir}/plugins/${this.manifest.id}`;
 		const localAdapter = this.app.vault.adapter;
 		const targets: PluginFileSyncTarget[] = [];
+		const stateStore = {
+			load: async (): Promise<PluginFileSyncState | null> => {
+				const data = (await this.loadData()) as Record<
+					string,
+					unknown
+				> | null;
+				return (
+					(data?.pluginFileSyncState as
+						| PluginFileSyncState
+						| undefined) ?? null
+				);
+			},
+			save: async (state: PluginFileSyncState): Promise<void> => {
+				const data = ((await this.loadData()) ?? {}) as Record<
+					string,
+					unknown
+				>;
+				await this.saveData({ ...data, pluginFileSyncState: state });
+			},
+		};
+		const saveRecoveryCopy = async (
+			id: string,
+			content: string,
+			reason: string,
+		): Promise<void> => {
+			const recoveryDir = `${pluginDataPath}/sync-recovery`;
+			if (!(await localAdapter.exists(recoveryDir))) {
+				await localAdapter.mkdir(recoveryDir);
+			}
+			await localAdapter.write(
+				`${recoveryDir}/${id}.${reason}-${Date.now()}.bak`,
+				content,
+			);
+		};
 
 		if (sc.pluginSettings || sc.apiKeys) {
 			targets.push({
@@ -1151,6 +1188,10 @@ export default class ObsidianAIPlugin extends Plugin {
 					const data = JSON.parse(content);
 					await this._deserializePluginData(data);
 				},
+				backupLocal: (content, reason) =>
+					saveRecoveryCopy("plugin-settings", content, reason),
+				writeConflictCopy: (content) =>
+					saveRecoveryCopy("plugin-settings", content, "conflict"),
 			});
 		}
 
@@ -1206,6 +1247,9 @@ export default class ObsidianAIPlugin extends Plugin {
 			const manager = new PluginFileSyncManager({
 				remote: this.syncEngine.storageAdapter,
 				crypto: this.syncEngine.encryptionLayer,
+				stateStore,
+				resolveConflict: (conflict: PluginFileSyncConflict) =>
+					requestPluginFileConflictChoice(this.app, conflict),
 			});
 			const syncResult = await manager.sync(targets, dir);
 			result.uploaded = syncResult.uploaded > 0;

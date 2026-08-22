@@ -81,6 +81,9 @@ export interface StorageAdapter {
 	/** Read raw text from a file at the given path. */
 	readText(path: string): Promise<string | null>;
 
+	/** Delete a raw text file, used for explicit plugin-data tombstones. */
+	deleteText(path: string): Promise<void>;
+
 	/** Delete a remote session. */
 	deleteSession(id: string): Promise<void>;
 

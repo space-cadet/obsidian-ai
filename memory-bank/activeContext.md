@@ -1,6 +1,21 @@
 # Active Context
 
-*Last Updated: 2026-08-22 23:19:11 IST*
+*Last Updated: 2026-08-22 23:49:34 IST*
+
+### 2026-08-22 — T57b Two-Way State, Recovery, and Deletions Implemented
+
+- Added durable per-file shared state with encrypted remote state and local
+  state persistence.
+- Added explicit local, remote, both, and cancel conflict choices through a
+  user-facing conflict modal.
+- Added recovery copies before local replacement/deletion and conflict copies
+  for keep-both.
+- Added deletion tombstones carrying the prior shared checksum. Missing remote
+  data without a matching tombstone is reported and left untouched.
+- TypeScript passed, full build passed, and the full test suite passed: 263
+  tests across 27 files.
+- T57b is complete. T57c durable retries/identity, T57d SyncIt contract, and
+  migration for older raw plugin files remain open.
 
 ### 2026-08-22 — T57a Shared Plugin-File Sync Implemented
 
@@ -16,8 +31,8 @@
 - TypeScript passed, the full build passed, and the full test suite passed:
   256 tests.
 - Implementation commit: `38f9f9e`.
-- T57b remains next for remembered state, recovery, deletion records, and user
-  choices.
+- T57b is now complete for remembered state, recovery, deletion records, and
+  user choices.
 
 ### 2026-08-22 — T57 Plugin Data Sync Safety and SyncIt Boundary
 
@@ -42,8 +57,11 @@ The remote-storage audit found that the session-sync path is more mature than th
 - T42 remains active: the WebDAV baseline is merged, but full sync scope is not complete.
 - T42a–T42e are implemented in code but remain open for acceptance checks and safety review.
 - T43c is historical where T55 changed its behavior; memory, persona, audit, and usage files are now optional components.
-- Auxiliary plugin files are not yet protected by the same encryption, checksum, atomic-write, or conflict rules as chat sessions.
-- Deletion records, recovery copies, and a durable retry queue remain open work.
+- Auxiliary plugin files are not yet protected by every chat-session-specific
+  feature; the shared plugin-file path now has encryption, checksums,
+  atomic-write, conflict, recovery, and deletion protections.
+- Durable retry records, complete sync identity handling, and older raw-file
+  migration remain open.
 - T56 is a first reorganization pass; its FileSyncManager, shared index, and component-delta work remain open.
 
 ### 2026-08-21 — T43 Subtasks Complete

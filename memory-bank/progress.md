@@ -1,3 +1,16 @@
+### 2026-08-22 — T57b: Two-Way State, Recovery, and Deletions ✅
+
+- Added durable per-file shared state and encrypted remote state persistence to
+  `PluginFileSyncManager`.
+- Added user-facing local/remote/both/cancel conflict choices and visible
+  conflict reporting.
+- Added recovery copies before local replacement or deletion, plus keep-both
+  conflict copies.
+- Added deletion tombstones tied to the previous shared checksum; unexplained
+  missing remote data is never auto-deleted or overwritten.
+- Added focused acceptance coverage. TypeScript, full build, and full suite
+  passed: 263 tests across 27 files.
+
 ### 2026-08-21 — T43 Subtasks Complete
 
 **T43a: Fix Rebuild Sync Index Title Resolution** ✅
@@ -31,8 +44,8 @@
 - Added version, checksum, encryption, temporary remote writes, safe local
   replacement, damaged-file rejection, and per-file result reporting.
 - Two-way differences are reported as conflicts without overwriting either
-  side. Last-known-state choices, recovery, deletions, and durable retries
-  remain open in T57b and T57c.
+  side. T57b now provides last-known-state choices, recovery, and deletions;
+  durable retries remain open in T57c.
 - TypeScript passed, full build passed, and full test suite passed: 256 tests.
 - Implementation commit: `38f9f9e`.
 
@@ -52,7 +65,7 @@
 - T42 now records the WebDAV baseline as merged while keeping the full sync scope open.
 - T42a–T42e are implemented, but acceptance work remains for cache clearing, temporary-file cleanup, concurrent cache updates, and full dry-run coverage.
 - T43c, T55, and T56 now distinguish chat-session encryption from the separate auxiliary-file path.
-- Deletion records, recovery copies, per-file conflicts, and a durable retry queue remain open.
+- Durable retry records and complete sync identity handling remain open in T57c.
 
 ---
 
