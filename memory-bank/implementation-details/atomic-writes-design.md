@@ -3,6 +3,10 @@
 *Created: 2026-08-19*
 *Related Tasks: T42b, T42*
 
+## Current Status
+
+The temporary-file pattern is implemented for WebDAV session uploads. Cleanup during initialization is still open, and auxiliary plugin-data files do not yet use this pattern.
+
 ## Problem
 
 If an upload is interrupted, the server may have a partial/corrupted session file. Obsidian-ai writes directly to the final path.

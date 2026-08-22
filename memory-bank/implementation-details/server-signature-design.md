@@ -3,13 +3,17 @@
 *Created: 2026-08-19*
 *Related Tasks: T42d, T42*
 
+## Current Status
+
+The signature is used to invalidate the sync index. The stronger design below also clears the local session cache, but that behavior still needs to be verified when only the account or encryption identity changes.
+
 ## Problem
 
 If a user changes WebDAV servers (new URL, new account), the local cache may be stale. Obsidian-ai doesn't detect this and may skip sessions that should be re-synced.
 
 ## Solution
 
-Hash the server config into a `serverSignature`. Store it with the cache. On sync, compare signatures — if different, clear cache and rebuild.
+Hash the server connection into a `serverSignature`. Store it with the sync index. On sync, compare signatures. If different, do not reuse the old index. Clearing the full local cache is the safer target and remains a follow-up check.
 
 ## Implementation
 

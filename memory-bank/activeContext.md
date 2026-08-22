@@ -1,6 +1,17 @@
 # Active Context
 
-*Last Updated: 2026-08-21 11:20 IST*
+*Last Updated: 2026-08-22 22:17 IST*
+
+### 2026-08-22 — Sync and Memory Bank Audit Corrections
+
+The remote-storage audit found that the session-sync path is more mature than the auxiliary plugin-data path. The Memory Bank now records this boundary plainly.
+
+- T42 remains active: the WebDAV baseline is merged, but full sync scope is not complete.
+- T42a–T42e are implemented in code but remain open for acceptance checks and safety review.
+- T43c is historical where T55 changed its behavior; memory, persona, audit, and usage files are now optional components.
+- Auxiliary plugin files are not yet protected by the same encryption, checksum, atomic-write, or conflict rules as chat sessions.
+- Deletion records, recovery copies, and a durable retry queue remain open work.
+- T56 is a first reorganization pass; its FileSyncManager, shared index, and component-delta work remain open.
 
 ### 2026-08-21 — T43 Subtasks Complete
 
@@ -137,11 +148,11 @@ See `tasks/T56.md` for full details.
 
 | Subtask | Feature | Priority | Status |
 |---------|---------|----------|--------|
-| **T42a** | Sync Index — Skip Unchanged Sessions | P1 | ✅ |
-| **T42b** | Atomic Writes | P1 | ✅ |
-| **T42c** | Concurrency Control | P1 | ✅ |
-| **T42d** | Server Signature / Cache Invalidation | P1 | ✅ |
-| **T42e** | Dry Run Mode | P2 | ✅ |
+| **T42a** | Sync Index — Skip Unchanged Sessions | P1 | 🔄 review open |
+| **T42b** | Atomic Writes | P1 | 🔄 review open |
+| **T42c** | Concurrency Control | P1 | 🔄 review open |
+| **T42d** | Server Signature / Cache Invalidation | P1 | 🔄 review open |
+| **T42e** | Dry Run Mode | P2 | 🔄 review open |
 | **T42f** | Progress UI Improvements | P2 | ⛔ SUPERSEDED by T43 |
 
 **Design docs created:**

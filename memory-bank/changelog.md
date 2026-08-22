@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased - 2026-08-22
+
+### Changed
+- Corrected remote-storage task statuses and documentation to distinguish the WebDAV session baseline from unfinished full-sync work — T42, T42a–T42e
+- Clarified that auxiliary plugin files do not yet share the session encryption, atomic-write, and conflict protections — T43c, T55, T56
+- Recorded open deletion, recovery, retry-queue, cache-invalidation, and per-file conflict work — T42
+
+---
+
 ## Unreleased - 2026-08-21
 
 ### Fixed

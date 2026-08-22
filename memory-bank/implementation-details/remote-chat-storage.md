@@ -3,13 +3,17 @@
 *Created: 2026-08-10*
 *Related Task: T42*
 
+## Document Status
+
+This is the original design. The WebDAV session path is implemented. S3, custom-server support, safe deletion, full offline retry, and uniform protection for auxiliary plugin files are still open.
+
 ## Overview
 
 This document details the architecture for syncing Obsidian AI chat sessions to remote storage backends. The design prioritizes:
 
-1. **Privacy**: Zero-knowledge encryption (server never sees plaintext)
+1. **Privacy goal**: Zero-knowledge encryption for data that passes through the encryption layer
 2. **Flexibility**: Pluggable backends (S3, WebDAV, custom)
-3. **Reliability**: Offline-first with sync-on-reconnect
+3. **Reliability goal**: Offline-first with retry after a later sync; a separate durable retry queue is not yet implemented
 4. **Simplicity**: Minimal configuration, sensible defaults
 
 ## Architecture Diagram
@@ -38,6 +42,12 @@ This document details the architecture for syncing Obsidian AI chat sessions to 
 ```
 
 ## Component Details
+
+### Current Scope Boundary
+
+Chat sessions use the encrypted session format when encryption is enabled. Settings, memory, persona, audit, and usage files currently use a separate text-file path. They need their own encryption, checksums, atomic writes, and conflict rules before the whole system can be described as uniformly protected.
+
+Deleted sessions are kept rather than removed from the other device or the server. This is a safety choice for now, not complete two-way deletion.
 
 ### 1. StorageAdapter Interface
 

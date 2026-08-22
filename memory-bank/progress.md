@@ -23,6 +23,15 @@
 
 ---
 
+### 2026-08-22 — Remote Sync Documentation and Safety Boundary Review
+
+- T42 now records the WebDAV baseline as merged while keeping the full sync scope open.
+- T42a–T42e are implemented, but acceptance work remains for cache clearing, temporary-file cleanup, concurrent cache updates, and full dry-run coverage.
+- T43c, T55, and T56 now distinguish chat-session encryption from the separate auxiliary-file path.
+- Deletion records, recovery copies, per-file conflicts, and a durable retry queue remain open.
+
+---
+
 ### 2026-08-21 — T55: Component-Level Sync Selection ✅
 
 **Commit:** `7e0821b`
@@ -51,11 +60,11 @@ Added fine-grained control over which data components participate in remote sync
 
 ---
 
-### 2026-08-21 — T56: Unify Plugin Data Management Layer ✅
+### 2026-08-21 — T56: Unify Plugin Data Management Layer — First Pass ✅
 
 **Commit:** `45917c8`
 
-Addressed all three planned architectural improvements from T55 post-delivery review:
+Implemented the first pass on the three architectural improvements from the T55 post-delivery review:
 
 1. **Rename "Multi-User Sync" → "Multi-User Chat Relay"**
    - `syncSettings.ts` section title and DOM ID updated
@@ -72,7 +81,7 @@ Addressed all three planned architectural improvements from T55 post-delivery re
    - `exportImport.ts`: Replaced ~80 lines of duplicated logic with PluginDataManager calls
    - `main.ts`: Replaced ~130 lines of inline serialize/deserialize with one-line delegations
 
-**Result:** Single source of truth for plugin data portability. All 250 tests passing.
+**Result:** Shared settings serialization and merge logic for portability. File syncing and index handling still have separate paths. All 250 tests passing.
 
 **Files:** `src/data/PluginDataManager.ts` (new), `src/data/__tests__/PluginDataManager.test.ts` (new), `src/settings-sections/syncSettings.ts`, `src/settings-sections/SettingsTab.ts`, `src/settings-sections/exportImport.ts`, `src/main.ts`
 
@@ -130,11 +139,11 @@ Addressed all three planned architectural improvements from T55 post-delivery re
 
 | Subtask | Feature | Priority | Status | Design Doc |
 |---------|---------|----------|--------|------------|
-| T42a | Sync Index — Skip Unchanged Sessions | P1 | ✅ | `sync-index-design.md` |
-| T42b | Atomic Writes | P1 | ✅ | `atomic-writes-design.md` |
-| T42c | Concurrency Control | P1 | ✅ | `concurrency-control-design.md` |
-| T42d | Server Signature / Cache Invalidation | P1 | ✅ | `server-signature-design.md` |
-| T42e | Dry Run Mode | P2 | ✅ | `dry-run-design.md` |
+| T42a | Sync Index — Skip Unchanged Sessions | P1 | 🔄 review open | `sync-index-design.md` |
+| T42b | Atomic Writes | P1 | 🔄 review open | `atomic-writes-design.md` |
+| T42c | Concurrency Control | P1 | 🔄 review open | `concurrency-control-design.md` |
+| T42d | Server Signature / Cache Invalidation | P1 | 🔄 review open | `server-signature-design.md` |
+| T42e | Dry Run Mode | P2 | 🔄 review open | `dry-run-design.md` |
 | T42f | Progress UI Improvements | P2 | ⛔ SUPERSEDED by T43 |
 
 **What each feature ports from SyncIt:**
@@ -550,7 +559,7 @@ Addressed all three planned architectural improvements from T55 post-delivery re
 
 1. **Econ-Sim** — T1-T6 ✅ complete
 2. **String Motion Simulator** — T1-T4, T7, T8 ✅; T5, T6 pending
-3. **obsidian-ai (Chat Lab)** — T42 merged to main, T43 complete, T43a-c complete
+3. **obsidian-ai (Chat Lab)** — T42 WebDAV baseline merged; sync safety review remains open
 4. **Game Center** — Chess2 single-player ✅, Ludo T4 ✅
 5. **cloudy-blog** — 4 posts live
 6. **Cron-digests** — T20 ✅, T21 ✅, T22 pending
@@ -562,7 +571,7 @@ Addressed all three planned architectural improvements from T55 post-delivery re
 
 ## Completed Tasks Summary
 
-- **T1-T5, T7-T9, T10-T13, T15-T23, T25-T26, T29, T33-T34, T40-T43, T45, T49, T51(removed), T61, T64**
+- **T1-T5, T7-T9, T10-T13, T15-T23, T25-T26, T29, T33-T34, T40-T41, T43, T45, T49, T51(removed), T61, T64**
 
 ## Blocked / Pending
 

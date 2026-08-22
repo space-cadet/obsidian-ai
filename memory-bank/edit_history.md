@@ -2,6 +2,17 @@
 
 *Last Updated: 2026-08-21 08:20 IST*
 
+## 2026-08-22
+
+#### 22:17:13 IST - T42, T43c, T55, T56: Correct remote-sync records after code audit
+
+- Modified `memory-bank/tasks/T42.md` - Marked the WebDAV baseline as merged while recording the unfinished full-sync scope and current safety limits.
+- Modified `memory-bank/tasks/T42a.md` through `memory-bank/tasks/T42e.md` - Replaced stale pending/completed wording with implemented status and remaining acceptance checks.
+- Modified `memory-bank/tasks/T43c.md` - Recorded T55 as the later change and clarified the separate auxiliary-file path.
+- Modified `memory-bank/tasks/T55.md` and `memory-bank/tasks/T56.md` - Corrected encryption claims and recorded remaining conflict, recovery, deletion, and reorganization work.
+- Modified `memory-bank/implementation-details/remote-chat-storage.md`, `sync-component-selection.md`, `atomic-writes-design.md`, and `server-signature-design.md` - Added plain-language current-status and limit notes.
+- Modified `memory-bank/tasks.md`, `progress.md`, `activeContext.md`, and `session_cache.md` - Synchronized the registry and session handoff with the audit.
+
 #### 08:20 IST - T43a, T43b, T43c: Created subtasks for tablet testing issues
 - Created `memory-bank/tasks/T43a.md` — Fix rebuildSyncIndex title resolution ("Untitled Session" bug)
 - Created `memory-bank/tasks/T43b.md` — Add activity indicators (spinners/animated feedback) to sync UI

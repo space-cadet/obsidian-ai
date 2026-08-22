@@ -1,6 +1,6 @@
 # Session Cache
 
-*Last Updated: 2026-08-21 13:52 UTC*
+*Last Updated: 2026-08-22 22:17 IST*
 
 ## Latest Session
 - Focus: T43 subtask closeout + T55 component-level sync selection
@@ -156,3 +156,16 @@ Session started after tool outage (~14:36–15:22 IST). Previous session had com
 - `memory-bank/implementation-details/telemetry-implementation.md` — New
 - `memory-bank/edits/2026-08-19/175500-session.md` — Edit chunks
 - `memory-bank/session_cache.md` — This file
+
+---
+
+## 2026-08-22 Documentation Audit
+
+Updated the remote-storage records after comparing the Memory Bank with the current code.
+
+- T42 now clearly says the WebDAV baseline is merged but the full sync scope remains open.
+- T42a–T42e now show which parts are implemented and which safety checks remain.
+- T43c now records the later T55 changes instead of presenting its older notes as current.
+- T55 and the sync design docs now state that auxiliary plugin files do not yet share the session encryption and recovery protections.
+- Deletion behavior, retry limits, cache invalidation, and per-file conflict handling are recorded as open limits.
+- No sync code was changed.

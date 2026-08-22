@@ -3,6 +3,10 @@
 *Related Tasks: T55, T43c, T49*
 *Created: 2026-08-21*
 
+## Current Status
+
+The component choices are implemented. They control which data is copied, but they do not yet provide separate conflict handling, recovery copies, or uniform encryption for every selected file.
+
 ## Overview
 
 This document describes the component-level sync selection system that allows users to control which categories of plugin data participate in remote sync and export/import operations.
@@ -121,6 +125,8 @@ if (!localSettings.syncComponents.aiMemory) {
 
 ## Remote Sync Implementation
 
+The examples below describe the data-selection rules, not a claim that every selected file is encrypted. Chat sessions use the encrypted session path. Auxiliary files currently use the separate text-file path.
+
 ### Plugin Data Serialization (`src/main.ts`)
 
 ```typescript
@@ -202,6 +208,12 @@ Used for:
 - `persona.md` → `obsidian-ai-sync/persona.md`
 - `memory-audit.jsonl` → `obsidian-ai-sync/memory-audit.jsonl`
 
+Current limits:
+
+- A downloaded file can replace the local file without a full conflict screen.
+- Deletions are not recorded as tombstones, so absence does not mean deletion.
+- These files still need encryption, checksums, and atomic writes.
+
 ### Usage Stats: Upload-Only
 
 ```typescript
@@ -225,9 +237,9 @@ Computed fresh during upload. Skipped during download (server has no `usageStats
 
 Even with `apiKeys: true`:
 1. Keys are included in the plaintext JSON
-2. The JSON is encrypted via `EncryptionLayer` before transmission
-3. Server never sees plaintext
-4. Keys are decrypted only on the target device with the same passphrase
+2. Chat-session payloads are encrypted via `EncryptionLayer` before transmission
+3. The current plugin-data text-file path still needs to be moved through the same encryption layer
+4. Keys are decrypted only on the target device after the encryption work is complete
 
 ### Credential Immutability
 
