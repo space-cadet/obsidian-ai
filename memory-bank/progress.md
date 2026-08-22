@@ -33,7 +33,8 @@
 - Two-way differences are reported as conflicts without overwriting either
   side. Last-known-state choices, recovery, deletions, and durable retries
   remain open in T57b and T57c.
-- TypeScript passed; full test suite passed: 255 tests.
+- TypeScript passed, full build passed, and full test suite passed: 256 tests.
+- Implementation commit: `38f9f9e`.
 
 ### 2026-08-22 — T57 Approved: Plugin Data Sync Safety and SyncIt Boundary
 

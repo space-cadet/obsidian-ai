@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - Recorded open deletion, recovery, retry-queue, cache-invalidation, and per-file conflict work — T42
 - Added T57 and the plugin-data/SyncIt boundary design: SyncIt owns whole-vault sync, while Chat Lab keeps plugin-specific sync — T57, T57d
 - Added the shared plugin-file sync manager with encrypted/checksummed envelopes, atomic writes, damaged-file rejection, and safe conflict reporting — T57a
+- Verified the T57a implementation with a clean TypeScript check, full build, and 256 passing tests — T57a
 
 ---
 
