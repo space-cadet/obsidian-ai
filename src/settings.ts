@@ -518,9 +518,7 @@ export const normalizeSettings = (
 			),
 		),
 		restoreChatTabs: Boolean(merged.restoreChatTabs ?? true),
-		showFullRequestTokens: Boolean(
-			merged.showFullRequestTokens ?? true,
-		),
+		showFullRequestTokens: Boolean(merged.showFullRequestTokens ?? true),
 		contextPickerPathDisplay:
 			(merged.contextPickerPathDisplay as
 				| "never"
@@ -622,7 +620,9 @@ export const normalizeSettings = (
 		},
 		syncComponents: {
 			chatSessions: Boolean(merged.syncComponents?.chatSessions ?? true),
-			pluginSettings: Boolean(merged.syncComponents?.pluginSettings ?? true),
+			pluginSettings: Boolean(
+				merged.syncComponents?.pluginSettings ?? true,
+			),
 			apiKeys: Boolean(merged.syncComponents?.apiKeys ?? false),
 			memory: Boolean(merged.syncComponents?.memory ?? true),
 			memoryAudit: Boolean(merged.syncComponents?.memoryAudit ?? false),
