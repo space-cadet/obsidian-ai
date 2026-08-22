@@ -1,6 +1,22 @@
 # Active Context
 
-*Last Updated: 2026-08-22 22:17 IST*
+*Last Updated: 2026-08-22 22:40 IST*
+
+### 2026-08-22 — T57 Plugin Data Sync Safety and SyncIt Boundary
+
+The user approved the following direction:
+
+- SyncIt owns whole-vault sync.
+- Chat Lab keeps plugin-aware sync for its own data and must not add whole-vault
+  sync.
+- The existing `integrationProvider` remains an AI tool interface. A future
+  `dataSyncProvider` is a separate contract.
+- T57a–T57d cover the common file path, two-way conflicts and recovery,
+  identity/retry/reporting, and the SyncIt integration boundary.
+
+Beads issue creation was attempted but blocked because this checkout has no
+`.beads` database. Do not initialize a new issue database without explicit
+direction.
 
 ### 2026-08-22 — Sync and Memory Bank Audit Corrections
 

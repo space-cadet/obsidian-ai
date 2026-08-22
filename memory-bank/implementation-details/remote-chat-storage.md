@@ -49,6 +49,18 @@ Chat sessions use the encrypted session format when encryption is enabled. Setti
 
 Deleted sessions are kept rather than removed from the other device or the server. This is a safety choice for now, not complete two-way deletion.
 
+### SyncIt Boundary
+
+Chat Lab should sync only its own plugin data: chat sessions, selected plugin
+settings, memory, persona, and the explicitly supported logs or statistics.
+It should not add whole-vault sync. SyncIt remains the owner of ordinary vault
+files, while [T57](../tasks/T57.md) defines the safe handoff and prevents both
+plugins from managing the same remote path.
+
+The existing Integration Provider API is for AI tools, not data transport. A
+future separate `dataSyncProvider` contract is described in
+[the T57 design](plugin-data-sync-and-syncit-boundary.md).
+
 ### 1. StorageAdapter Interface
 
 ```typescript

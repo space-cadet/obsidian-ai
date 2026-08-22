@@ -5,7 +5,10 @@
 
 ## Current Status
 
-The component choices are implemented. They control which data is copied, but they do not yet provide separate conflict handling, recovery copies, or uniform encryption for every selected file.
+The component choices are implemented. They control which data is copied, but
+they do not yet provide separate conflict handling, recovery copies, or
+uniform encryption for every selected file. T57 is the next work package for
+those protections and for the boundary with SyncIt whole-vault sync.
 
 ## Overview
 

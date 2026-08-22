@@ -30,6 +30,19 @@ The host must remain able to use its built-in note tools without the provider
 API. A provider is optional: absence, disablement, unload, and version
 incompatibility are normal availability states rather than chat failures.
 
+## Scope Boundary: Data Sync
+
+This contract is for AI-facing domain tools, such as bounded Git status or
+history actions. It is not a file-sync API and it must not be used to pass
+arbitrary vault writes, credentials, or transport work through the AI tool
+path.
+
+The future data-sync contract is tracked separately in
+[T57d](../tasks/T57d.md). It will be a sibling named `dataSyncProvider`, with
+its own version, scopes, lifecycle, and ownership rules. SyncIt may provide
+whole-vault transport and retry behavior through that boundary, while Chat Lab
+continues to own the selection and serialization rules for its plugin data.
+
 ## Provider Contract
 
 The public contract is versioned from the first release. Capability descriptors

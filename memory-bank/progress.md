@@ -23,6 +23,16 @@
 
 ---
 
+### 2026-08-22 — T57 Approved: Plugin Data Sync Safety and SyncIt Boundary
+
+- SyncIt is recorded as the owner of whole-vault sync.
+- Chat Lab remains responsible for plugin-aware sync and will not add whole-vault sync.
+- Created T57 and subtasks T57a–T57d.
+- Created `implementation-details/plugin-data-sync-and-syncit-boundary.md`.
+- Kept the existing AI integration provider separate from the future data-sync provider contract.
+- Beads issue creation was attempted but blocked because this checkout has no `.beads` database.
+- No sync code was changed in this planning pass.
+
 ### 2026-08-22 — Remote Sync Documentation and Safety Boundary Review
 
 - T42 now records the WebDAV baseline as merged while keeping the full sync scope open.

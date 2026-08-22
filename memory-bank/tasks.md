@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-22 22:17 IST*
+*Last Updated: 2026-08-22 22:40 IST*
 
 ## Overview
 
@@ -28,6 +28,11 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T43c | Extend Sync to All Plugin Data | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43, T42 | [Details](tasks/T43c.md) |
 | T55 | Component-Level Sync Selection | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43, T42, T49 | [Details](tasks/T55.md) |
 | T56 | Unify Plugin Data Management Layer | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43, T49, T55 | [Details](tasks/T56.md) |
+| T57 | Plugin Data Sync Safety and SyncIt Boundary | 🔄 | HIGH | 2026-08-22 | — | T42, T39a | [Details](tasks/T57.md) |
+| T57a | Common Plugin-File Sync Layer | 🔄 | HIGH | 2026-08-22 | — | T57, T42b | [Details](tasks/T57a.md) |
+| T57b | Two-Way Conflicts, Recovery, and Deletions | 🔄 | HIGH | 2026-08-22 | — | T57, T57a | [Details](tasks/T57b.md) |
+| T57c | Sync Identity, Retry, and Failure Reporting | 🔄 | HIGH | 2026-08-22 | — | T57, T42d | [Details](tasks/T57c.md) |
+| T57d | Data-Sync Provider Contract with SyncIt | 🔄 | MEDIUM | 2026-08-22 | — | T57, T39a | [Details](tasks/T57d.md) |
 | T44 | Standalone UI Preview and Obsidian Host Boundary | 🔄 | MEDIUM | 2026-08-12 | T1, T22 | [Details](tasks/T44.md) |
 | T6a | Token Counter Accuracy Fix | 🔄 | HIGH | — | T6 | [Details](tasks/T6a.md) |
 | T48 | Conversation Compaction Mechanism | 🔄 | HIGH | — | T6a | [Details](tasks/T48.md) |
