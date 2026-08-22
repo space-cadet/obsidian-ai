@@ -1,3 +1,17 @@
+### 2026-08-23 — T58d implementation slice 🔄
+
+- Implemented shared planning/progress phases for normal sync, dry-run, and
+  index rebuild.
+- Added read-only plugin-data planning for dry runs and kept dry runs from
+  writing plugin state, retry records, or sync logs.
+- Fixed duplicate progress rows by using stable operation IDs; shimmer now
+  applies only to the latest active row, and completion progress remains
+  visible.
+- Rebuild now reuses the initial scan and uses bounded concurrency for
+  independent transfers.
+- Verification: 29 test files / 269 tests, TypeScript, Prettier, and
+  production build passed. Device/UI acceptance remains open.
+
 ### 2026-08-23 — T58 task ID migration and progress/rebuild plan 🔄
 
 - Restored T43 as the original Multi-User and Agent Chat task from Git history.
@@ -6,8 +20,8 @@
 - Created T58d for planning-stage progress, plugin-data dry-run planning,
   stable operation rows, latest-item shimmer, persistent completion state,
   rebuild progress, conflict status, and rebuild performance.
-- No source code changed; T58d implementation and real-host acceptance remain
-  open.
+- T58d implementation has started; real-host acceptance and remaining focused
+  UI/rebuild tests remain open.
 
 ### 2026-08-22 — T57b: Two-Way State, Recovery, and Deletions ✅
 

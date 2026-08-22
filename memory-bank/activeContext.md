@@ -15,6 +15,22 @@
 - No source code was changed; implementation and real-host acceptance remain
   open.
 
+### 2026-08-23 — T58d implementation slice
+
+- Added a shared sync progress contract with explicit planning, syncing,
+  rebuilding, completion, and error phases.
+- Sync planning now reports visible stages before transfers. Dry runs include
+  selected plugin-data components through a read-only planner and do not write
+  plugin files, shared state, retry records, or sync logs.
+- Stable operation IDs update one row from active to terminal state. Only the
+  latest active row receives the shimmer, and the final progress bar remains
+  visible at completion.
+- Rebuild reuses its first local/remote scan, reports planning and index-write
+  progress, and uses bounded concurrency for independent transfers.
+- Verification: TypeScript, Prettier, 269 tests across 29 files, and a
+  production build passed. Focused UI/rebuild tests and real-host acceptance
+  remain open.
+
 ### 2026-08-23 — T57c and provider usage reconciliation
 
 - T57c is complete in code. Sync identity now covers vault, backend, server,

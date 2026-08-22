@@ -25,7 +25,7 @@ import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/ObsidianAIChatView";
 import { PluginUpdater, UpdateAvailableModal } from "./updater/PluginUpdater";
 import { GIT_COMMIT_HASH, GIT_BRANCH } from "./version-info";
 import { StoredChatData, ChatSession } from "./types";
-import type { SyncLogEntry } from "./components/ChatSyncPanel";
+import type { SyncLogEntry, SyncProgressSnapshot } from "./sync/SyncProgress";
 import { createFileLogger, FileLogger } from "./logger";
 import { createStorage, ChatStorage, StorageDeps } from "./storage/ChatStorage";
 import { ChatStorageMigration } from "./storage/Migration";
@@ -723,14 +723,8 @@ export default class ObsidianAIPlugin extends Plugin {
 	async rebuildSyncIndex(
 		choice: "remote" | "local" | "compare",
 		options?: {
-			onLog?: (entry: {
-				id: string;
-				operation: "upload" | "download" | "conflict" | "error";
-				title: string;
-				status: "pending" | "done" | "error";
-				message?: string;
-				timestamp: number;
-			}) => void;
+			onLog?: (entry: SyncLogEntry) => void;
+			onProgress?: (progress: SyncProgressSnapshot) => void;
 		},
 	): Promise<{
 		uploaded: number;
@@ -748,15 +742,48 @@ export default class ObsidianAIPlugin extends Plugin {
 		);
 
 		const previousHandler = this.syncEngine.getProgressHandler();
+		const rebuildStart = Date.now();
+		let rebuildTotal = 0;
+		let rebuildCompleted = 0;
+		const emitRebuildProgress = (
+			progress: Partial<SyncProgressSnapshot> &
+				Pick<SyncProgressSnapshot, "phase" | "stage">,
+		) =>
+			options?.onProgress?.({
+				phase: progress.phase,
+				stage: progress.stage,
+				total: progress.total ?? rebuildTotal,
+				completed: progress.completed ?? rebuildCompleted,
+				uploaded: progress.uploaded ?? 0,
+				downloaded: progress.downloaded ?? 0,
+				conflicts: progress.conflicts ?? 0,
+				skipped: progress.skipped ?? 0,
+				elapsedMs: Date.now() - rebuildStart,
+				indeterminate: progress.indeterminate,
+			});
 		try {
 			this.syncEngine.setProgressHandler((event) => {
+				if (event.type === "stage") {
+					if (event.total !== undefined) rebuildTotal = event.total;
+					if (event.completed !== undefined)
+						rebuildCompleted = event.completed;
+					emitRebuildProgress({
+						phase: event.phase ?? "rebuilding",
+						stage: event.stage ?? "Rebuilding sync record",
+						total: rebuildTotal,
+						completed: rebuildCompleted,
+						indeterminate: event.indeterminate,
+					});
+					return;
+				}
 				if (event.type !== "session" || !event.direction) return;
 				const title =
 					titleMap.get(event.id) ||
 					this._getSessionTitle(event.id)?.trim() ||
 					`Session ${event.id.slice(0, 8)}…`;
+				if (event.status === "done") rebuildCompleted++;
 				options?.onLog?.({
-					id: event.id,
+					id: `session:${event.id}`,
 					operation: event.direction,
 					title,
 					status:
@@ -764,9 +791,15 @@ export default class ObsidianAIPlugin extends Plugin {
 							? "error"
 							: event.status === "done"
 								? "done"
-								: "pending",
+								: "active",
 					message: event.error,
 					timestamp: Date.now(),
+				});
+				emitRebuildProgress({
+					phase: event.status === "error" ? "error" : "rebuilding",
+					stage: "Applying rebuild plan",
+					total: rebuildTotal,
+					completed: rebuildCompleted,
 				});
 			});
 			const result = await this.syncEngine.rebuildIndex(choice);
@@ -793,15 +826,7 @@ export default class ObsidianAIPlugin extends Plugin {
 		options?: {
 			useModal?: boolean;
 			direction?: "both" | "upload" | "download";
-			onProgress?: (progress: {
-				total: number;
-				completed: number;
-				uploaded: number;
-				downloaded: number;
-				conflicts: number;
-				skipped: number;
-				elapsedMs: number;
-			}) => void;
+			onProgress?: (progress: SyncProgressSnapshot) => void;
 			onLog?: (entry: SyncLogEntry) => void;
 		},
 	): Promise<{
@@ -867,42 +892,50 @@ export default class ObsidianAIPlugin extends Plugin {
 		let progressConflicts = 0;
 		let progressSkipped = 0;
 		let totalOps = 0;
+		const emitProgress = (
+			progress: Partial<SyncProgressSnapshot> &
+				Pick<SyncProgressSnapshot, "phase" | "stage">,
+		) =>
+			options?.onProgress?.({
+				phase: progress.phase,
+				stage: progress.stage,
+				total: progress.total ?? totalOps,
+				completed: progress.completed ?? completedOps,
+				uploaded: progress.uploaded ?? progressUploaded,
+				downloaded: progress.downloaded ?? progressDownloaded,
+				conflicts: progress.conflicts ?? progressConflicts,
+				skipped: progress.skipped ?? progressSkipped,
+				elapsedMs: Date.now() - startTime,
+				indeterminate: progress.indeterminate,
+			});
 
 		try {
 			// Compute sync plan (may fail if offline, bad credentials, etc.)
+			emitProgress({
+				phase: "planning",
+				stage: "Reading local sessions",
+				indeterminate: true,
+			});
 			modal?.addLog("system", "Reading local sessions...");
 			await this._populateSyncCache();
-			let plan = await this.syncEngine.computeSyncPlan();
-
-			// Apply direction filter (T43)
+			emitProgress({
+				phase: "planning",
+				stage: "Reading remote sessions",
+				indeterminate: true,
+			});
 			const direction =
 				options?.direction ??
 				this.settings.remoteStorage.syncDirection ??
 				"both";
-			if (direction === "upload") {
-				plan = { ...plan, download: [], conflicts: [] };
-			} else if (direction === "download") {
-				plan = { ...plan, upload: [], conflicts: [] };
-			}
-
 			const sc = this.settings.syncComponents;
-			const pluginDataOps = !dryRun
-				? Number(sc.pluginSettings || sc.apiKeys) +
-					Number(sc.memory) +
-					Number(sc.memoryAudit) +
-					Number(sc.persona) +
-					Number(sc.usageStats)
-				: 0;
-			totalOps =
-				plan.upload.length +
-				plan.download.length +
-				plan.conflicts.length +
-				pluginDataOps;
+			const pluginDataOps =
+				Number(sc.pluginSettings || sc.apiKeys) +
+				Number(sc.memory) +
+				Number(sc.memoryAudit) +
+				Number(sc.persona) +
+				Number(sc.usageStats);
+			totalOps = pluginDataOps;
 			modal?.setTotal(totalOps);
-			modal?.addLog(
-				"system",
-				`Plan: ↑${plan.upload.length} ↓${plan.download.length} ⚡${plan.conflicts.length} ⊘${plan.skipped}`,
-			);
 
 			// Set up progress handler now that totalOps is known
 			// Build title map from local sessions for better remote session titles
@@ -912,6 +945,21 @@ export default class ObsidianAIPlugin extends Plugin {
 			);
 
 			this.syncEngine?.setProgressHandler((event) => {
+				if (event.type === "stage") {
+					if (event.total !== undefined) {
+						totalOps = event.total + pluginDataOps;
+						modal?.setTotal(totalOps);
+					}
+					modal?.addLog("system", event.stage ?? "Planning sync…");
+					emitProgress({
+						phase: event.phase ?? "planning",
+						stage: event.stage ?? "Planning sync…",
+						total: totalOps,
+						completed: event.completed ?? completedOps,
+						indeterminate: event.indeterminate,
+					});
+					return;
+				}
 				if (event.type === "session") {
 					const title =
 						titleMap.get(event.id) ||
@@ -924,10 +972,10 @@ export default class ObsidianAIPlugin extends Plugin {
 							});
 						}
 						options?.onLog?.({
-							id: event.id,
+							id: `session:${event.id}`,
 							operation: event.direction || "system",
 							title,
-							status: "pending",
+							status: "active",
 							timestamp: Date.now(),
 						});
 					} else if (event.status === "done") {
@@ -935,6 +983,7 @@ export default class ObsidianAIPlugin extends Plugin {
 						if (event.direction === "upload") progressUploaded++;
 						if (event.direction === "download")
 							progressDownloaded++;
+						if (event.direction === "conflict") progressConflicts++;
 						if (event.direction) {
 							modal?.addLog(event.direction, `${title}`, {
 								id: event.id,
@@ -942,20 +991,17 @@ export default class ObsidianAIPlugin extends Plugin {
 							});
 						}
 						options?.onLog?.({
-							id: event.id,
+							id: `session:${event.id}`,
 							operation: event.direction || "system",
 							title,
 							status: "done",
 							timestamp: Date.now(),
 						});
-						options?.onProgress?.({
+						emitProgress({
+							phase: "syncing",
+							stage: "Syncing chat sessions",
 							total: totalOps,
 							completed: completedOps,
-							uploaded: progressUploaded,
-							downloaded: progressDownloaded,
-							conflicts: progressConflicts,
-							skipped: progressSkipped,
-							elapsedMs: Date.now() - startTime,
 						});
 						if (event.direction) {
 							syncLogger.log({
@@ -973,7 +1019,7 @@ export default class ObsidianAIPlugin extends Plugin {
 							error: true,
 						});
 						options?.onLog?.({
-							id: event.id,
+							id: `session:${event.id}`,
 							operation: "error",
 							title,
 							status: "error",
@@ -996,63 +1042,70 @@ export default class ObsidianAIPlugin extends Plugin {
 			let pluginDataResult:
 				| Awaited<ReturnType<ObsidianAIPlugin["syncPluginData"]>>
 				| undefined;
-			if (!dryRun) {
-				pluginDataResult = await this.syncPluginData(direction, {
-					onProgress: (event) => {
-						const title = `Plugin data: ${event.id}`;
-						if (event.status === "start") {
-							modal?.addLog(event.direction, title, {
-								id: event.id,
-							});
-							options?.onLog?.({
-								id: event.id,
-								operation: event.direction,
-								title,
-								status: "pending",
-								timestamp: Date.now(),
-							});
-							return;
-						}
-						completedOps++;
-						if (event.direction === "conflict") progressConflicts++;
-						if (event.status === "error") {
-							modal?.addLog("error", `${title}: ${event.error}`, {
-								id: event.id,
-								error: true,
-							});
-							options?.onLog?.({
-								id: event.id,
-								operation: "error",
-								title,
-								status: "error",
-								message: event.error,
-								timestamp: Date.now(),
-							});
-						} else {
-							modal?.addLog(event.direction, title, {
-								id: event.id,
-								done: true,
-							});
-							options?.onLog?.({
-								id: event.id,
-								operation: event.direction,
-								title,
-								status: "done",
-								timestamp: Date.now(),
-							});
-						}
-						options?.onProgress?.({
-							total: totalOps,
-							completed: completedOps,
-							uploaded: progressUploaded,
-							downloaded: progressDownloaded,
-							conflicts: progressConflicts,
-							skipped: progressSkipped,
-							elapsedMs: Date.now() - startTime,
+			emitProgress({
+				phase: dryRun ? "planning" : "syncing",
+				stage: dryRun ? "Planning plugin data" : "Syncing plugin data",
+				total: totalOps,
+			});
+			pluginDataResult = await this.syncPluginData(direction, {
+				dryRun,
+				onProgress: (event) => {
+					const title = `Plugin data: ${event.id}`;
+					const operation = event.direction;
+					if (event.status === "start") {
+						modal?.addLog(operation, title, {
+							id: `plugin:${event.id}`,
 						});
-					},
-				});
-			}
+						options?.onLog?.({
+							id: `plugin:${event.id}`,
+							operation,
+							title,
+							status: "active",
+							timestamp: Date.now(),
+						});
+						return;
+					}
+					completedOps++;
+					if (operation === "upload") progressUploaded++;
+					if (operation === "download") progressDownloaded++;
+					if (operation === "conflict") progressConflicts++;
+					if (operation === "skip") progressSkipped++;
+					if (event.status === "error") {
+						modal?.addLog("error", `${title}: ${event.error}`, {
+							id: `plugin:${event.id}`,
+							error: true,
+						});
+						options?.onLog?.({
+							id: `plugin:${event.id}`,
+							operation: "error",
+							title,
+							status: "error",
+							message: event.error,
+							timestamp: Date.now(),
+						});
+					} else {
+						modal?.addLog(operation, title, {
+							id: `plugin:${event.id}`,
+							done: true,
+						});
+						options?.onLog?.({
+							id: `plugin:${event.id}`,
+							operation,
+							title,
+							status: "done",
+							timestamp: Date.now(),
+						});
+					}
+					emitProgress({
+						phase: dryRun ? "planning" : "syncing",
+						stage: dryRun
+							? "Planning plugin data"
+							: "Syncing plugin data",
+						total: totalOps,
+						completed: completedOps,
+					});
+				},
+			});
 			const durationMs = Date.now() - startTime;
 			if (!dryRun) {
 				this.settings.remoteStorage.lastSyncTime = Date.now();
@@ -1082,6 +1135,20 @@ export default class ObsidianAIPlugin extends Plugin {
 				...result.errors,
 				...(pluginDataResult?.errors ?? []),
 			];
+			emitProgress({
+				phase: combinedErrors.length > 0 ? "error" : "complete",
+				stage:
+					combinedErrors.length > 0
+						? dryRun
+							? "Dry-run finished with attention"
+							: "Sync finished with attention"
+						: dryRun
+							? "Dry run complete"
+							: "Sync complete",
+				total: totalOps,
+				completed: totalOps,
+				indeterminate: false,
+			});
 
 			// Record session to logs
 			const sessionRecord = {
@@ -1090,8 +1157,10 @@ export default class ObsidianAIPlugin extends Plugin {
 				result: { ...result, message: msg },
 				durationMs,
 			};
-			syncLogger.recordSession(sessionRecord);
-			await syncLogger.flushLocal();
+			if (!dryRun) {
+				syncLogger.recordSession(sessionRecord);
+				await syncLogger.flushLocal();
+			}
 			if (this.syncEngine && !dryRun) {
 				const adapter = (this.syncEngine as any)
 					.adapter as StorageAdapter;
@@ -1140,20 +1209,29 @@ export default class ObsidianAIPlugin extends Plugin {
 		} catch (err: any) {
 			const msg = `Sync failed: ${err.message}`;
 			const durationMs = Date.now() - startTime;
-			syncLogger.recordSession({
-				timestamp: Date.now(),
-				deviceId: syncLogger["deviceId"],
-				result: {
-					uploaded: 0,
-					downloaded: 0,
-					conflicts: 0,
-					skipped: 0,
-					errors: [err.message],
-					message: msg,
-				},
-				durationMs,
+			emitProgress({
+				phase: "error",
+				stage: dryRun ? "Dry run failed" : "Sync failed",
+				total: totalOps,
+				completed: totalOps,
+				indeterminate: false,
 			});
-			await syncLogger.flushLocal();
+			if (!dryRun) {
+				syncLogger.recordSession({
+					timestamp: Date.now(),
+					deviceId: syncLogger["deviceId"],
+					result: {
+						uploaded: 0,
+						downloaded: 0,
+						conflicts: 0,
+						skipped: 0,
+						errors: [err.message],
+						message: msg,
+					},
+					durationMs,
+				});
+				await syncLogger.flushLocal();
+			}
 
 			modal?.finish({
 				uploaded: 0,
@@ -1243,9 +1321,10 @@ export default class ObsidianAIPlugin extends Plugin {
 	async syncPluginData(
 		direction?: "upload" | "download" | "both",
 		options?: {
+			dryRun?: boolean;
 			onProgress?: (event: {
 				id: string;
-				direction: "upload" | "download" | "conflict";
+				direction: "upload" | "download" | "conflict" | "skip";
 				status: "start" | "done" | "error";
 				error?: string;
 			}) => void;
@@ -1402,7 +1481,9 @@ export default class ObsidianAIPlugin extends Plugin {
 				resolveConflict: (conflict: PluginFileSyncConflict) =>
 					requestPluginFileConflictChoice(this.app, conflict),
 			});
-			const syncResult = await manager.sync(targets, dir);
+			const syncResult = options?.dryRun
+				? await manager.plan(targets, dir)
+				: await manager.sync(targets, dir);
 			result.uploaded = syncResult.uploaded > 0;
 			result.downloaded = syncResult.downloaded > 0;
 			result.failed = syncResult.failed;
@@ -1416,17 +1497,22 @@ export default class ObsidianAIPlugin extends Plugin {
 				error: item.error,
 			}));
 
-			for (const item of syncResult.items) {
-				if (item.status === "failed" || item.status === "conflict") {
-					this.logger?.log(
-						"warn",
-						`[T57a] Failed ${item.id}: ${item.error}`,
-					);
-				} else if (item.status !== "skipped") {
-					this.logger?.log(
-						"info",
-						`[T57a] ${item.status} ${item.id}`,
-					);
+			if (!options?.dryRun) {
+				for (const item of syncResult.items) {
+					if (
+						item.status === "failed" ||
+						item.status === "conflict"
+					) {
+						this.logger?.log(
+							"warn",
+							`[T57a] Failed ${item.id}: ${item.error}`,
+						);
+					} else if (item.status !== "skipped") {
+						this.logger?.log(
+							"info",
+							`[T57a] ${item.status} ${item.id}`,
+						);
+					}
 				}
 			}
 		} catch (err: any) {

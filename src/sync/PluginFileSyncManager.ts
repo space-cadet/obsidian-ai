@@ -235,7 +235,7 @@ export class PluginFileSyncManager {
 			retryStore?: DurableSyncRetryStore;
 			progress?: (event: {
 				id: string;
-				direction: "upload" | "download" | "conflict";
+				direction: "upload" | "download" | "conflict" | "skip";
 				status: "start" | "done" | "error";
 				error?: string;
 			}) => void;
@@ -295,7 +295,12 @@ export class PluginFileSyncManager {
 					);
 					this.options.progress?.({
 						id: target.id,
-						direction: item.downloaded ? "download" : "upload",
+						direction:
+							item.status === "skipped"
+								? "skip"
+								: item.downloaded
+									? "download"
+									: "upload",
 						status: "done",
 					});
 				}
@@ -349,6 +354,44 @@ export class PluginFileSyncManager {
 						: "complete",
 			retryable,
 		};
+	}
+
+	/**
+	 * Inspect selected plugin files without writing local files, remote files,
+	 * shared state, recovery copies, or retry records. The normal comparison
+	 * logic is reused behind read-only facades so dry-run results stay aligned
+	 * with a real run.
+	 */
+	async plan(
+		targets: PluginFileSyncTarget[],
+		direction: PluginFileSyncDirection,
+	): Promise<PluginFileSyncBatchResult> {
+		const readOnlyRemote: PluginFileSyncRemote = {
+			readText: (path) => this.options.remote.readText(path),
+			writeTextAtomic: async () => ({}),
+			deleteText: async () => undefined,
+		};
+		const readOnlyStateStore = this.stateStore
+			? {
+					load: () => this.stateStore!.load(),
+					save: async () => undefined,
+				}
+			: undefined;
+		const readOnlyTargets = targets.map((target) => ({
+			...target,
+			writeLocal: async () => undefined,
+			backupLocal: async () => undefined,
+			deleteLocal: async () => undefined,
+			writeConflictCopy: async () => undefined,
+		}));
+		const planner = new PluginFileSyncManager({
+			...this.options,
+			remote: readOnlyRemote,
+			stateStore: readOnlyStateStore,
+			retryStore: undefined,
+			resolveConflict: undefined,
+		});
+		return planner.sync(readOnlyTargets, direction);
 	}
 
 	private async loadStateContext(): Promise<{

@@ -6,28 +6,12 @@ import React, {
 	useMemo,
 } from "react";
 import type { ChatPluginLike } from "../views/ObsidianAIChatView";
+import type { SyncLogEntry, SyncProgressSnapshot } from "../sync/SyncProgress";
+
+export type { SyncLogEntry, SyncProgressSnapshot } from "../sync/SyncProgress";
 
 export type SyncDirection = "both" | "upload" | "download";
-export type SyncStatus = "pending" | "active" | "done" | "error" | "skipped";
-
-export interface SyncLogEntry {
-	id: string;
-	operation: "upload" | "download" | "conflict" | "skip" | "error" | "system";
-	title: string;
-	status: SyncStatus;
-	message?: string;
-	timestamp: number;
-}
-
-export interface SyncProgress {
-	total: number;
-	completed: number;
-	uploaded: number;
-	downloaded: number;
-	conflicts: number;
-	skipped: number;
-	elapsedMs: number;
-}
+export type SyncProgress = SyncProgressSnapshot;
 
 interface ChatSyncPanelProps {
 	plugin: ChatPluginLike;
@@ -102,18 +86,16 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 			logBufferRef.current = [];
 			setLogs((prev) => {
 				const next = [...prev];
-				const map = new Map(
-					next.map((l, i) => [l.id + l.timestamp, i]),
-				);
+				const map = new Map(next.map((l, i) => [l.id, i]));
 				for (const entry of batch) {
-					const key = entry.id + entry.timestamp;
-					const idx = map.get(key);
+					const idx = map.get(entry.id);
 					if (idx !== undefined) {
 						next[idx] = { ...next[idx], ...entry };
 					} else {
 						next.push(entry);
 						if (next.length > 200) next.shift();
 					}
+					map.set(entry.id, next.length - 1);
 				}
 				return next;
 			});
@@ -150,7 +132,18 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 
 	const handleSync = useCallback(async () => {
 		setIsSyncing(true);
-		setProgress(null);
+		setProgress({
+			phase: "planning",
+			stage: "Preparing sync…",
+			total: 0,
+			completed: 0,
+			uploaded: 0,
+			downloaded: 0,
+			conflicts: 0,
+			skipped: 0,
+			elapsedMs: 0,
+			indeterminate: true,
+		});
 		setResult(null);
 		setError(null);
 		setLogs([]);
@@ -206,10 +199,24 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 			setShowRebuildChoices(false);
 			setError(null);
 			setRebuildReport(null);
+			setResult(null);
+			setProgress({
+				phase: "rebuilding",
+				stage: "Preparing rebuild…",
+				total: 0,
+				completed: 0,
+				uploaded: 0,
+				downloaded: 0,
+				conflicts: 0,
+				skipped: 0,
+				elapsedMs: 0,
+				indeterminate: true,
+			});
 			setLogs([]);
 			try {
 				const report = await plugin.rebuildSyncIndex(choice, {
 					onLog: updateLog,
+					onProgress: updateProgress,
 				});
 				setRebuildReport(report);
 			} catch (err: any) {
@@ -229,8 +236,14 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		: "Never";
 
 	const progressPercent = useMemo(() => {
-		if (!progress || progress.total <= 0) return 0;
-		return Math.round((progress.completed / progress.total) * 100);
+		if (!progress || progress.indeterminate) return 0;
+		if (progress.total <= 0) {
+			return progress.phase === "complete" ? 100 : 0;
+		}
+		return Math.min(
+			100,
+			Math.round((progress.completed / progress.total) * 100),
+		);
 	}, [progress]);
 
 	const elapsedText = useMemo(() => {
@@ -250,17 +263,30 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		};
 	}, [logs]);
 
+	const latestActiveId = useMemo(
+		() =>
+			[...logs]
+				.reverse()
+				.find(
+					(item) =>
+						item.status === "active" || item.status === "pending",
+				)?.id,
+		[logs],
+	);
+
 	const scanned = progress?.total ?? logs.length;
 	const completed = progress?.completed ?? counts.done;
 	const statusHeading = isSyncing
 		? "Syncing…"
-		: result
-			? result.ok
-				? "Complete"
-				: "Sync finished with errors"
-			: error
-				? "Sync failed"
-				: "Ready to sync";
+		: isRebuilding
+			? "Rebuilding…"
+			: result
+				? result.ok
+					? "Complete"
+					: "Sync finished with errors"
+				: error
+					? "Sync failed"
+					: "Ready to sync";
 	const directionLabel =
 		direction === "both"
 			? "Upload + download"
@@ -280,7 +306,9 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 				<div className="sync-v2-substatus">
 					{isSyncing
 						? `${completed} of ${scanned} · ${elapsedText}`
-						: `${directionLabel} · Last sync: ${lastSyncText}`}
+						: isRebuilding
+							? `${completed} of ${scanned} · ${elapsedText}`
+							: `${directionLabel} · Last sync: ${lastSyncText}`}
 				</div>
 			</div>
 
@@ -369,17 +397,22 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 			)}
 
 			{/* ── Progress Section (SyncIt-style) ──────────────────────── */}
-			{isSyncing && (
+			{(isBusy || progress || result || rebuildReport || error) && (
 				<div className="sync-v2-progress">
 					<div className="sync-v2-progress-track">
 						<div
-							className={`sync-v2-progress-fill ${isSyncing ? "sync-v2-progress-fill--active" : ""}`}
+							className={`sync-v2-progress-fill ${isBusy ? "sync-v2-progress-fill--active" : ""} ${progress?.indeterminate ? "sync-v2-progress-fill--indeterminate" : ""}`}
 							style={{ width: `${progressPercent}%` }}
 						/>
 					</div>
 					<div className="sync-v2-progress-meta">
-						<span>{progressPercent}%</span>
 						<span>
+							{progress?.indeterminate
+								? "Planning…"
+								: `${progressPercent}%`}
+						</span>
+						<span>
+							{progress?.stage ?? "Preparing…"} ·{" "}
 							{progress?.completed ?? 0} / {progress?.total ?? 0}{" "}
 							operations
 						</span>
@@ -467,7 +500,11 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 					</div>
 				)}
 				{logs.map((log) => (
-					<SyncItem key={log.id + log.timestamp} entry={log} />
+					<SyncItem
+						key={log.id}
+						entry={log}
+						latestActive={latestActiveId === log.id}
+					/>
 				))}
 				<div ref={logsEndRef} />
 			</div>
@@ -505,7 +542,10 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 };
 
 // ── Individual sync item card ────────────────────────────────────────────
-const SyncItem: React.FC<{ entry: SyncLogEntry }> = ({ entry }) => {
+const SyncItem: React.FC<{
+	entry: SyncLogEntry;
+	latestActive: boolean;
+}> = ({ entry, latestActive }) => {
 	const opLabel = {
 		upload: "Uploading",
 		download: "Downloading",
@@ -525,7 +565,7 @@ const SyncItem: React.FC<{ entry: SyncLogEntry }> = ({ entry }) => {
 
 	return (
 		<div
-			className={`sync-v2-item sync-v2-item--${entry.operation} ${entry.status === "pending" ? "sync-v2-item--pending" : ""}`}
+			className={`sync-v2-item sync-v2-item--${entry.operation} ${latestActive ? "sync-v2-item--latest-active" : ""}`}
 		>
 			<div className="sync-v2-item-main">
 				<div className="sync-v2-item-title" title={entry.title}>

@@ -5,6 +5,7 @@ import type {
 	RemoteSessionMeta,
 	SyncResult,
 	SyncPlan,
+	CachedSession,
 } from "./StorageAdapter";
 import { LocalCache } from "./LocalCache";
 import { EncryptionLayer, checksum } from "./EncryptionLayer";
@@ -12,6 +13,7 @@ import { SyncIndexManager } from "./SyncIndexManager";
 import { runWithConcurrency } from "./ConcurrencyLimiter";
 import type { SyncIndex } from "./SyncIndex";
 import { DurableSyncRetryStore } from "./SyncRetryStore";
+import type { SyncEngineProgressEvent } from "./SyncProgress";
 
 export type SyncState = "idle" | "syncing" | "error" | "locked";
 export type ConflictStrategy = "last-write-wins" | "keep-both" | "manual";
@@ -23,13 +25,7 @@ export interface SyncEngineConfig {
 	passphrase: string;
 	conflictStrategy?: ConflictStrategy;
 	logger?: { log(level: string, msg: string): void };
-	progress?: (event: {
-		type: string;
-		id: string;
-		direction?: "upload" | "download" | "conflict";
-		status: "start" | "done" | "error";
-		error?: string;
-	}) => void;
+	progress?: (event: SyncEngineProgressEvent) => void;
 	/** Called when a session is downloaded from remote. Implementor should save to app storage. */
 	onSessionDownloaded?: (session: ChatSession) => Promise<void>;
 	/** Optional sync index manager for skipping unchanged sessions (T42a). */
@@ -56,13 +52,7 @@ export class SyncEngine {
 	private passphrase: string;
 	private conflictStrategy: ConflictStrategy;
 	private logger?: { log(level: string, msg: string): void };
-	private progress?: (event: {
-		type: string;
-		id: string;
-		direction?: "upload" | "download" | "conflict";
-		status: "start" | "done" | "error";
-		error?: string;
-	}) => void;
+	private progress?: (event: SyncEngineProgressEvent) => void;
 	private logHandler?: (level: string, msg: string) => void;
 	private onSessionDownloaded?: (session: ChatSession) => Promise<void>;
 	private _cancelled = false;
@@ -207,6 +197,14 @@ export class SyncEngine {
 		const syncedRemotes: RemoteSessionMeta[] = [];
 
 		try {
+			this.progress?.({
+				type: "stage",
+				id: "sync:plan",
+				phase: "planning",
+				stage: "Building sync plan",
+				status: "start",
+				indeterminate: true,
+			});
 			let plan = await this.computeSyncPlan(index);
 
 			// T43: Apply direction filter
@@ -215,6 +213,18 @@ export class SyncEngine {
 			} else if (direction === "download") {
 				plan = { ...plan, upload: [], conflicts: [] };
 			}
+			this.progress?.({
+				type: "stage",
+				id: "sync:plan",
+				phase: "planning",
+				stage: `Plan ready: ↑${plan.upload.length} ↓${plan.download.length} ⚡${plan.conflicts.length} ⊘${plan.skipped}`,
+				status: "done",
+				total:
+					plan.upload.length +
+					plan.download.length +
+					plan.conflicts.length,
+				completed: 0,
+			});
 
 			// T42e: Dry run mode — compute plan but do not transfer anything
 			if (this.dryRun) {
@@ -482,7 +492,15 @@ export class SyncEngine {
 	async computeSyncPlan(index?: SyncIndex | null): Promise<SyncPlan> {
 		const localSessions = await this.cache.getAllSessions();
 		const remoteMetas = await this.adapter.listSessions();
+		return this.computeSyncPlanFromState(localSessions, remoteMetas, index);
+	}
 
+	/** Compute a plan from already-loaded state so rebuild does not rescan. */
+	private computeSyncPlanFromState(
+		localSessions: CachedSession[],
+		remoteMetas: RemoteSessionMeta[],
+		index?: SyncIndex | null,
+	): SyncPlan {
 		const remoteMap = new Map<string, RemoteSessionMeta>();
 		for (const meta of remoteMetas) {
 			remoteMap.set(meta.id, meta);
@@ -567,10 +585,36 @@ export class SyncEngine {
 		choice: "remote" | "local" | "compare",
 	): Promise<SyncResult> {
 		if (choice === "compare") {
+			this.progress?.({
+				type: "stage",
+				id: "rebuild:compare",
+				phase: "rebuilding",
+				stage: "Comparing local and remote copies",
+				status: "start",
+				indeterminate: true,
+			});
 			const previousStrategy = this.conflictStrategy;
 			this.conflictStrategy = "manual";
 			try {
-				return await this.sync();
+				const result = await this.sync();
+				this.progress?.({
+					type: "stage",
+					id: "rebuild:compare",
+					phase: "complete",
+					stage: "Comparison complete",
+					status: "done",
+					total:
+						result.uploaded +
+						result.downloaded +
+						result.conflicts +
+						result.skipped,
+					completed:
+						result.uploaded +
+						result.downloaded +
+						result.conflicts +
+						result.skipped,
+				});
+				return result;
 			} finally {
 				this.conflictStrategy = previousStrategy;
 			}
@@ -581,40 +625,94 @@ export class SyncEngine {
 		this.state = "syncing";
 		this._cancelled = false;
 		try {
+			this.progress?.({
+				type: "stage",
+				id: "rebuild:scan",
+				phase: "rebuilding",
+				stage: "Reading local and remote sessions",
+				status: "start",
+				indeterminate: true,
+			});
 			const locals = await this.cache.getAllSessions();
 			const remotes = await this.adapter.listSessions();
 			const remoteById = new Map(
 				remotes.map((remote) => [remote.id, remote]),
 			);
-			const plan = await this.computeSyncPlan();
-			const targets = new Set(
+			const localById = new Map(locals.map((local) => [local.id, local]));
+			const plan = this.computeSyncPlanFromState(locals, remotes);
+			const conflictIds = new Set(
 				plan.conflicts.map((item) => item.local.id),
 			);
+			const downloadTargets =
+				choice === "remote"
+					? remotes.filter(
+							(remote) =>
+								conflictIds.has(remote.id) ||
+								!localById.has(remote.id),
+						)
+					: [];
+			const uploadTargets =
+				choice === "local"
+					? locals.filter(
+							(local) =>
+								conflictIds.has(local.id) ||
+								!remoteById.has(local.id),
+						)
+					: [];
+			const transferTotal = uploadTargets.length + downloadTargets.length;
+			this.progress?.({
+				type: "stage",
+				id: "rebuild:scan",
+				phase: "rebuilding",
+				stage: "Rebuild plan ready",
+				status: "done",
+				total: transferTotal,
+				completed: 0,
+			});
 			let uploaded = 0;
 			let downloaded = 0;
+			const errors: string[] = [];
 
-			if (choice === "remote") {
-				for (const remote of remotes) {
-					if (this._cancelled) break;
-					if (
-						targets.has(remote.id) ||
-						!locals.some((local) => local.id === remote.id)
-					) {
-						await this.downloadSession(remote);
-						downloaded++;
+			await runWithConcurrency(
+				downloadTargets,
+				this.concurrencyLimit,
+				async (remote) => {
+					if (this._cancelled) return;
+					try {
+						if (await this.downloadSession(remote)) downloaded++;
+						else errors.push(`Download failed for ${remote.id}`);
+					} catch (error: any) {
+						errors.push(
+							`Download failed for ${remote.id}: ${error.message}`,
+						);
 					}
-				}
-			} else {
-				for (const local of locals) {
-					if (this._cancelled) break;
-					if (targets.has(local.id) || !remoteById.has(local.id)) {
-						await this.uploadSession(local);
-						uploaded++;
+				},
+			);
+			await runWithConcurrency(
+				uploadTargets,
+				this.concurrencyLimit,
+				async (local) => {
+					if (this._cancelled) return;
+					try {
+						if (await this.uploadSession(local)) uploaded++;
+					} catch (error: any) {
+						errors.push(
+							`Upload failed for ${local.id}: ${error.message}`,
+						);
 					}
-				}
-			}
+				},
+			);
 
 			if (!this._cancelled && this.indexManager && this.serverConfig) {
+				this.progress?.({
+					type: "stage",
+					id: "rebuild:index",
+					phase: "rebuilding",
+					stage: "Writing rebuilt sync index",
+					status: "start",
+					total: transferTotal,
+					completed: transferTotal,
+				});
 				const signature = SyncIndexManager.makeServerSignature(
 					this.serverConfig,
 				);
@@ -628,12 +726,33 @@ export class SyncEngine {
 					),
 				);
 			}
+			this.progress?.({
+				type: "stage",
+				id: "rebuild:complete",
+				phase:
+					this._cancelled || errors.length > 0 ? "error" : "complete",
+				stage: this._cancelled
+					? "Rebuild cancelled"
+					: "Rebuild complete",
+				status: this._cancelled || errors.length > 0 ? "error" : "done",
+				total: transferTotal,
+				completed: transferTotal,
+				error: errors[0],
+			});
 			return {
 				uploaded,
 				downloaded,
 				conflicts: plan.conflicts.length,
 				skipped: plan.skipped,
-				errors: this._cancelled ? ["Cancelled by user"] : [],
+				errors: this._cancelled
+					? ["Cancelled by user", ...errors]
+					: errors,
+				status:
+					this._cancelled || errors.length > 0
+						? uploaded + downloaded > 0
+							? "partial"
+							: "failed"
+						: "complete",
 			};
 		} finally {
 			this.state = "idle";
@@ -642,13 +761,7 @@ export class SyncEngine {
 
 	/** Get the current progress handler (for save/restore patterns). */
 	getProgressHandler():
-		| ((event: {
-				type: string;
-				id: string;
-				direction?: "upload" | "download" | "conflict";
-				status: "start" | "done" | "error";
-				error?: string;
-		  }) => void)
+		| ((event: SyncEngineProgressEvent) => void)
 		| undefined {
 		return this.progress;
 	}
@@ -881,13 +994,7 @@ export class SyncEngine {
 
 	/** Set a progress callback for per-session sync events. */
 	setProgressHandler(
-		handler: (event: {
-			type: string;
-			id: string;
-			direction?: "upload" | "download" | "conflict";
-			status: "start" | "done" | "error";
-			error?: string;
-		}) => void,
+		handler: (event: SyncEngineProgressEvent) => void,
 	): void {
 		this.progress = handler;
 	}

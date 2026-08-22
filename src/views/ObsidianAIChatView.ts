@@ -7,6 +7,7 @@ import { ChatApiManager } from "../api";
 import { App } from "obsidian";
 import { StoredChatData } from "../types";
 import { ObsidianAISettings } from "../settings";
+import type { SyncLogEntry, SyncProgressSnapshot } from "../sync/SyncProgress";
 
 export const CHAT_VIEWTYPE = "obsidian-ai-chat-view";
 
@@ -23,9 +24,13 @@ export interface ChatPluginLike {
 	saveChatData(data: StoredChatData): Promise<void>;
 	saveSettings(): Promise<void>;
 	openRemoteStorageSettings?(): void;
-	rebuildSyncIndex?(choice: "remote" | "local" | "compare", options?: {
-		onLog?: (entry: { id: string; operation: "upload" | "download" | "conflict" | "error"; title: string; status: "pending" | "done" | "error"; message?: string; timestamp: number }) => void;
-	}): Promise<{
+	rebuildSyncIndex?(
+		choice: "remote" | "local" | "compare",
+		options?: {
+			onLog?: (entry: SyncLogEntry) => void;
+			onProgress?: (progress: SyncProgressSnapshot) => void;
+		},
+	): Promise<{
 		uploaded: number;
 		downloaded: number;
 		conflicts: number;

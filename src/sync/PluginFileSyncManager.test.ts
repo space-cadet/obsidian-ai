@@ -115,6 +115,25 @@ describe("PluginFileSyncManager", () => {
 		expect(remote.atomicWrites[0].contentType).toBe("application/json");
 	});
 
+	it("plans plugin data without writing remote, local, or shared state", async () => {
+		const remote = new FakeRemote();
+		const state = new FakeStateStore();
+		const local = makeStateTarget("dry-run value");
+		const manager = new PluginFileSyncManager({
+			remote,
+			crypto: new EncryptionLayer(),
+			stateStore: state,
+		});
+
+		const result = await manager.plan([local.target], "upload");
+
+		expect(result.uploaded).toBe(1);
+		expect(result.failed).toBe(0);
+		expect(remote.atomicWrites).toHaveLength(0);
+		expect(state.state).toBeNull();
+		expect(local.getLocal()).toBe("dry-run value");
+	});
+
 	it("encrypts and verifies plugin data across separate encryption instances", async () => {
 		const remote = new FakeRemote();
 		const uploaderCrypto = new EncryptionLayer();
