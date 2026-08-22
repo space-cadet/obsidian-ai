@@ -1,0 +1,84 @@
+import { describe, expect, it } from "vitest";
+import { buildBudgetedHistory, truncateTextForTokens } from "../contextBudget";
+
+describe("buildBudgetedHistory", () => {
+	it("keeps the recent tail and drops older messages to fit the budget", () => {
+		const result = buildBudgetedHistory({
+			systemPrompt: "system",
+			currentMessage: "current",
+			history: ["old-1", "old-2", "recent-1", "recent-2"],
+			options: {
+				maxRequestTokens: 11,
+				maxMessages: 10,
+				preserveRecentMessages: 2,
+				responseReserveTokens: 0,
+			},
+		});
+
+		expect(result.history).toEqual(["recent-1", "recent-2"]);
+		expect(result.droppedMessages).toBe(2);
+		expect(result.overBudget).toBe(false);
+	});
+
+	it("preserves chronological order when older messages fit", () => {
+		const result = buildBudgetedHistory({
+			systemPrompt: "s",
+			currentMessage: "c",
+			history: ["a", "b", "c"],
+			options: {
+				maxRequestTokens: 100,
+				maxMessages: 10,
+				preserveRecentMessages: 1,
+				responseReserveTokens: 0,
+			},
+		});
+
+		expect(result.history).toEqual(["a", "b", "c"]);
+	});
+
+	it("keeps legacy message-count behavior when the budget is disabled", () => {
+		const result = buildBudgetedHistory({
+			systemPrompt: "system",
+			currentMessage: "current",
+			history: ["a", "b", "c"],
+			options: {
+				maxRequestTokens: 0,
+				maxMessages: 2,
+				preserveRecentMessages: 1,
+				responseReserveTokens: 0,
+			},
+		});
+
+		expect(result.history).toEqual(["b", "c"]);
+		expect(result.droppedMessages).toBe(1);
+	});
+
+	it("truncates large tool results while keeping their head and tail", () => {
+		const result = truncateTextForTokens(
+			"head-" + "x".repeat(200) + "-tail",
+			20,
+		);
+
+		expect(result).toContain("head-");
+		expect(result).toContain("-tail");
+		expect(result).toContain("tool result truncated");
+	});
+
+	it("does not split an assistant tool call from its tool result", () => {
+		const assistant = { role: "assistant", content: "call" };
+		const tool = { role: "tool", content: "result" };
+		const result = buildBudgetedHistory({
+			systemPrompt: "s",
+			currentMessage: "c",
+			history: [assistant, tool],
+			options: {
+				maxRequestTokens: 100,
+				maxMessages: 10,
+				preserveRecentMessages: 1,
+				responseReserveTokens: 0,
+			},
+		});
+
+		expect(result.history).toEqual([assistant, tool]);
+	});
+});

@@ -79,6 +79,29 @@ The summary is structured markdown with these sections:
 - User asked about Z but didn't get a clear answer
 ```
 
+## Quality-Preservation Rules
+
+Compaction is a lossy representation change, so cost savings must not come from
+silently changing the meaning of the conversation. The model-facing context
+builder must:
+
+1. Preserve the newest 3–5 messages verbatim (default: 4), including active
+   tool-call/result pairs.
+2. Retain explicit user decisions, constraints, preferences, unresolved work,
+   and tool outcomes in separate structured sections.
+3. Mark the result as **derived context**. A summary must not impersonate a
+   user message or override a later explicit user instruction.
+4. Keep the complete transcript and raw tool results available for display,
+   export, and targeted retrieval. If an answer depends on an exact filename,
+   quote, code fragment, or tool result, retrieve the original rather than
+   relying on the summary.
+5. Treat uncertainty as a reason to ask or retrieve, never as permission to
+   fill in missing historical detail.
+
+The quality target is therefore **compact by default, exact on demand**. A
+compaction test is not successful merely because it reduces tokens; it must
+also recover the same decisions and constraints as the un-compacted history.
+
 ---
 ## Tradeoffs
 
@@ -89,6 +112,11 @@ The summary is structured markdown with these sections:
 | Assistant "memory" | Perfect | Good for key facts, fuzzy on details |
 | Summarization cost | None | One extra API call per compaction |
 | User transparency | Clear | Needs visual indicator in UI |
+
+The expected quality impact is small for ordinary chats because recent turns
+and explicit durable facts remain intact. Exact-detail tasks are the exception;
+they must use the retrieval path instead of treating the summary as a source
+of verbatim evidence.
 
 ---
 

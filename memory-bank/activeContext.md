@@ -11,6 +11,10 @@
   canonical representation and compact tool-result summaries.
 - T6a remains complete and supplies provider-usage accounting; T48 owns
   context construction and compaction.
+- Quality guardrails approved for implementation: preserve the newest 3–5 turns
+  verbatim (default 4), structure decisions/constraints/open work/tool
+  outcomes, label summaries as derived context, retrieve exact older material
+  on demand, and ask rather than invent when the summary is insufficient.
 
 ---
 

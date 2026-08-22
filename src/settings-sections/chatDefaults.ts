@@ -177,4 +177,68 @@ export function renderChatDefaultsSection(
 					await saveSettings();
 				});
 		});
+
+	new Setting(sectionEl)
+		.setName("Model request token budget")
+		.setDesc(
+			"Maximum estimated tokens sent for the system prompt, conversation history, current message, tools, and response reserve. Recent messages are preserved first. Set to 0 to use the legacy message-count limit only.",
+		)
+		.addText((text) => {
+			text.setPlaceholder("32000")
+				.setValue(String(plugin.settings.maxRequestTokens))
+				.inputEl.addEventListener("blur", async () => {
+					const value = Number.parseInt(text.getValue(), 10);
+					plugin.settings.maxRequestTokens =
+						Number.isFinite(value) && value >= 0 ? value : 32000;
+					await saveSettings();
+				});
+		});
+
+	new Setting(sectionEl)
+		.setName("Recent messages to preserve")
+		.setDesc(
+			"Number of newest messages retained verbatim when the request budget trims older history.",
+		)
+		.addText((text) => {
+			text.setPlaceholder("4")
+				.setValue(String(plugin.settings.preserveRecentMessages))
+				.inputEl.addEventListener("blur", async () => {
+					const value = Number.parseInt(text.getValue(), 10);
+					plugin.settings.preserveRecentMessages =
+						Number.isFinite(value) && value > 0 ? value : 4;
+					await saveSettings();
+				});
+		});
+
+	new Setting(sectionEl)
+		.setName("Response token reserve")
+		.setDesc(
+			"Tokens held back for the assistant response and agent tool-loop continuations.",
+		)
+		.addText((text) => {
+			text.setPlaceholder("4096")
+				.setValue(String(plugin.settings.requestResponseReserveTokens))
+				.inputEl.addEventListener("blur", async () => {
+					const value = Number.parseInt(text.getValue(), 10);
+					plugin.settings.requestResponseReserveTokens =
+						Number.isFinite(value) && value >= 0 ? value : 4096;
+					await saveSettings();
+				});
+		});
+
+	new Setting(sectionEl)
+		.setName("Max tool-result replay tokens")
+		.setDesc(
+			"Maximum estimated tokens from one tool result replayed to the model. Full results remain in the saved transcript for display and export.",
+		)
+		.addText((text) => {
+			text.setPlaceholder("4000")
+				.setValue(String(plugin.settings.maxToolResultTokens))
+				.inputEl.addEventListener("blur", async () => {
+					const value = Number.parseInt(text.getValue(), 10);
+					plugin.settings.maxToolResultTokens =
+						Number.isFinite(value) && value > 0 ? value : 4000;
+					await saveSettings();
+				});
+		});
 }

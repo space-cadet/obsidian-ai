@@ -120,6 +120,14 @@ export interface ObsidianAISettings {
 	includeActiveNote: boolean;
 	maxContextTokens: number;
 	maxContextMessages: number;
+	/** Total model request budget, including system prompt and response reserve. */
+	maxRequestTokens: number;
+	/** Number of newest messages retained verbatim by the budgeted builder. */
+	preserveRecentMessages: number;
+	/** Tokens reserved for the response and agent tool-loop continuations. */
+	requestResponseReserveTokens: number;
+	/** Maximum tokens of any persisted tool result replayed to the model. */
+	maxToolResultTokens: number;
 	maxSavedConversations: number;
 	autoNameSessions: boolean;
 	debugLogLevel: "off" | "error" | "info" | "debug";
@@ -342,6 +350,10 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	includeActiveNote: false,
 	maxContextTokens: 8000,
 	maxContextMessages: 10,
+	maxRequestTokens: 32000,
+	preserveRecentMessages: 4,
+	requestResponseReserveTokens: 4096,
+	maxToolResultTokens: 4000,
 	maxSavedConversations: 20,
 	autoNameSessions: false,
 	chatStorageFormat: "legacy",
@@ -471,6 +483,11 @@ export const normalizeSettings = (
 		includeActiveNote: Boolean(merged.includeActiveNote),
 		maxContextTokens: merged.maxContextTokens ?? 8000,
 		maxContextMessages: merged.maxContextMessages ?? 10,
+		maxRequestTokens: merged.maxRequestTokens ?? 32000,
+		preserveRecentMessages: merged.preserveRecentMessages ?? 4,
+		requestResponseReserveTokens:
+			merged.requestResponseReserveTokens ?? 4096,
+		maxToolResultTokens: merged.maxToolResultTokens ?? 4000,
 		maxSavedConversations: merged.maxSavedConversations ?? 20,
 		autoNameSessions: Boolean(merged.autoNameSessions),
 		chatStorageFormat:

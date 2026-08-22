@@ -23,6 +23,10 @@ import {
 	estimateContentPartsTokens,
 	estimateAttachmentTokens,
 } from "../context/tokenEstimator";
+import {
+	buildBudgetedHistory,
+	truncateTextForTokens,
+} from "../context/contextBudget";
 import { appendPendingText, finalizeContentParts } from "../lib/streamingUtils";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { parseSlashCommand } from "../lib/slashCommand";
@@ -159,6 +163,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 	const buildHistoryWithTools = (
 		messages: ChatMessage[],
 		maxMessages: number,
+		maxToolResultTokens: number,
 	): Array<{ role: "user" | "assistant" | "tool"; content: any }> => {
 		const result: Array<{
 			role: "user" | "assistant" | "tool";
@@ -208,9 +213,12 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						});
 
 						if (part.result) {
-							const resultText = part.result.error
-								? `Error: ${part.result.error}`
-								: part.result.content || "";
+							const resultText = truncateTextForTokens(
+								part.result.error
+									? `Error: ${part.result.error}`
+									: part.result.content || "",
+								maxToolResultTokens,
+							);
 							toolResults.push({
 								type: "tool-result",
 								toolCallId: part.call.toolCallId,
@@ -263,9 +271,12 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					});
 
 					if (tc.result) {
-						const resultText = tc.result.error
-							? `Error: ${tc.result.error}`
-							: tc.result.content || "";
+						const resultText = truncateTextForTokens(
+							tc.result.error
+								? `Error: ${tc.result.error}`
+								: tc.result.content || "",
+							maxToolResultTokens,
+						);
 						toolResults.push({
 							type: "tool-result",
 							toolCallId: tc.call.toolCallId,
@@ -635,9 +646,10 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			const streamStartTime = Date.now();
 
 			const maxContextMessages = plugin.settings.maxContextMessages || 10;
-			const history = buildHistoryWithTools(
+			const legacyHistory = buildHistoryWithTools(
 				messagesRef.current,
 				maxContextMessages,
+				plugin.settings.maxToolResultTokens ?? 4000,
 			);
 
 			let userContent = sendText;
@@ -664,17 +676,31 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				];
 			}
 
-			const chatMessages = [
-				{
-					role: "system" as const,
-					content: await buildSystemPrompt(
-						sendContextItems,
-						plugin.personaLoader,
-						slashCmd ?? undefined,
-						useTools && !slashCmd,
-					),
+			const systemPrompt = await buildSystemPrompt(
+				sendContextItems,
+				plugin.personaLoader,
+				slashCmd ?? undefined,
+				useTools && !slashCmd,
+			);
+			const budgetedHistory = buildBudgetedHistory({
+				systemPrompt,
+				currentMessage: userMessageContent,
+				history: legacyHistory,
+				options: {
+					maxRequestTokens: plugin.settings.maxRequestTokens ?? 32000,
+					maxMessages: maxContextMessages,
+					preserveRecentMessages:
+						plugin.settings.preserveRecentMessages ?? 4,
+					responseReserveTokens:
+						plugin.settings.requestResponseReserveTokens ?? 4096,
+					additionalTokens: useTools
+						? estimateTokens(JSON.stringify(toolRegistry) ?? "")
+						: 0,
 				},
-				...history,
+			});
+			const chatMessages = [
+				{ role: "system" as const, content: systemPrompt },
+				...budgetedHistory.history,
 				{
 					role: "user" as const,
 					content: userMessageContent,
