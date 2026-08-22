@@ -44,6 +44,8 @@ export interface OrchestratorOptions {
 	enableTools?: boolean;
 	autoApprove?: boolean;
 	maxSteps?: number;
+	/** Maximum estimated tokens for a model-facing tool result. */
+	maxToolResultTokens?: number;
 	/** Tool executor for running Obsidian note tools. If provided with enableTools=true, agents will use tool calling. */
 	toolExecutor?: ToolExecutor;
 	/** IDs of remote users participating in this chat (relay user IDs) */
@@ -65,6 +67,7 @@ export class Orchestrator {
 	enableTools: boolean;
 	autoApprove: boolean;
 	maxSteps: number;
+	maxToolResultTokens: number;
 	toolExecutor?: ToolExecutor;
 
 	constructor(options: OrchestratorOptions) {
@@ -80,6 +83,7 @@ export class Orchestrator {
 		this.enableTools = options.enableTools ?? false;
 		this.autoApprove = options.autoApprove ?? false;
 		this.maxSteps = options.maxSteps ?? 5;
+		this.maxToolResultTokens = options.maxToolResultTokens ?? 4000;
 		this.remoteUsers = options.remoteUsers ?? [];
 	}
 
@@ -388,6 +392,7 @@ export class Orchestrator {
 					toolExecutor: this.toolExecutor,
 					maxSteps: this.maxSteps,
 					autoApprove: this.autoApprove,
+					maxToolResultTokens: this.maxToolResultTokens,
 					profile: engine.profile,
 					onTextDelta: (text) => {
 						fullText = text;

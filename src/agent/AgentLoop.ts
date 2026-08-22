@@ -2,6 +2,7 @@ import { ChatApiManager } from "../api";
 import { ToolExecutor } from "./ToolExecutor";
 import type { ToolCall, ToolResult, StreamEvent } from "./types";
 import { estimateTokens } from "../context/tokenEstimator";
+import { truncateTextForTokens } from "../context/contextBudget";
 import type { ProviderProfile } from "../settings";
 import type { ProviderTokenUsage } from "../types";
 
@@ -14,6 +15,8 @@ export interface AgentLoopOptions {
 	profile?: ProviderProfile;
 	/** Whether to enable thinking/reasoning mode for LLM requests. */
 	thinkingEnabled?: boolean;
+	/** Maximum estimated tokens for a model-facing tool result. */
+	maxToolResultTokens?: number;
 	/** Called with accumulated text whenever a text-delta arrives. */
 	onTextDelta: (accumulatedText: string) => void;
 	/** Called when a tool call is detected (before execution/approval). */
@@ -189,6 +192,7 @@ export class AgentLoop {
 	): Promise<AgentLoopResult> {
 		const { chatApi, toolExecutor, maxSteps, autoApprove, onTextDelta } =
 			this.opts;
+		const maxToolResultTokens = this.opts.maxToolResultTokens ?? 4000;
 
 		let fullText = "";
 		let currentMessages = messages;
@@ -319,6 +323,12 @@ export class AgentLoop {
 				pendingCall.toolName,
 				result,
 			);
+			// Keep the complete result in the callbacks/persisted transcript, but
+			// never feed an oversized result into the immediate continuation.
+			const modelResult = truncateTextForTokens(
+				formattedResult,
+				maxToolResultTokens,
+			);
 			const toolMsg: any = {
 				role: "tool",
 				content: [
@@ -328,7 +338,7 @@ export class AgentLoop {
 						toolName: pendingCall.toolName,
 						output: {
 							type: "text",
-							value: formattedResult,
+							value: modelResult,
 						},
 					},
 				],
@@ -337,7 +347,7 @@ export class AgentLoop {
 			currentMessages = [...currentMessages, assistantMsg, toolMsg];
 
 			// Count tokens for tool result
-			const resultTokens = estimateTokens(formattedResult);
+			const resultTokens = estimateTokens(modelResult);
 			runningTotal += resultTokens;
 			this.opts.onTokenUpdate?.(runningTotal);
 

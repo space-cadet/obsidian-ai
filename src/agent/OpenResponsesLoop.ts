@@ -6,6 +6,7 @@ import type { OpenResponsesEvent } from "../api/OpenResponsesParser";
 import type { ToolExecutor } from "./ToolExecutor";
 import type { ToolCall, ToolResult } from "./types";
 import { estimateTokens } from "../context/tokenEstimator";
+import { truncateTextForTokens } from "../context/contextBudget";
 import type { OpenResponsesTool } from "../api/AgentApiManager";
 
 interface OpenResponsesLoopOptions {
@@ -13,6 +14,7 @@ interface OpenResponsesLoopOptions {
 	toolExecutor: ToolExecutor;
 	maxSteps: number;
 	autoApprove: boolean;
+	maxToolResultTokens?: number;
 	onTextDelta?: (text: string) => void;
 	onToolCall?: (call: ToolCall) => void;
 	requestApproval?: (call: ToolCall) => Promise<ToolResult | null>;
@@ -25,6 +27,7 @@ export class OpenResponsesLoop {
 	private toolExecutor: ToolExecutor;
 	private maxSteps: number;
 	private autoApprove: boolean;
+	private maxToolResultTokens: number;
 	private onTextDelta?: (text: string) => void;
 	private onToolCall?: (call: ToolCall) => void;
 	private requestApproval?: (call: ToolCall) => Promise<ToolResult | null>;
@@ -42,6 +45,7 @@ export class OpenResponsesLoop {
 		this.toolExecutor = options.toolExecutor;
 		this.maxSteps = options.maxSteps;
 		this.autoApprove = options.autoApprove;
+		this.maxToolResultTokens = options.maxToolResultTokens ?? 4000;
 		this.onTextDelta = options.onTextDelta;
 		this.onToolCall = options.onToolCall;
 		this.requestApproval = options.requestApproval;
@@ -195,14 +199,20 @@ export class OpenResponsesLoop {
 				this.onToolResult?.(toolCall, result);
 
 				// Format result for OpenResponses
+				const output = JSON.stringify({
+					success: result.success ?? !result.error,
+					content: result.content,
+					error: result.error,
+					...result, // include all other fields
+				});
 				functionCallOutputs.push({
 					call_id,
-					output: JSON.stringify({
-						success: result.success ?? !result.error,
-						content: result.content,
-						error: result.error,
-						...result, // include all other fields
-					}),
+					// The full result remains available through onToolResult and the
+					// persisted transcript; only this continuation payload is bounded.
+					output: truncateTextForTokens(
+						output,
+						this.maxToolResultTokens,
+					),
 				});
 			}
 

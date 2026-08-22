@@ -237,6 +237,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			enableTools: plugin.settings.enableAgentTools,
 			autoApprove: plugin.settings.autoApply,
 			maxSteps: plugin.settings.maxAgentSteps,
+			maxToolResultTokens: plugin.settings.maxToolResultTokens ?? 4000,
 			toolExecutor: new ToolExecutor(
 				plugin.app,
 				plugin.settings,

@@ -765,6 +765,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						),
 						maxSteps: activeProfile.maxSteps ?? maxAgentSteps,
 						autoApprove: activeProfile.autoApprove ?? autoApprove,
+						maxToolResultTokens:
+							plugin.settings.maxToolResultTokens ?? 4000,
 						onTextDelta: (text) => {
 							fullText = text;
 							patchRuntime(currentActiveId, {
@@ -898,6 +900,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						),
 						maxSteps: maxAgentSteps,
 						autoApprove,
+						maxToolResultTokens:
+							plugin.settings.maxToolResultTokens ?? 4000,
 						profile: activeProfile,
 						thinkingEnabled,
 						onTextDelta: (text) => {
