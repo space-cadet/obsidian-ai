@@ -68,6 +68,16 @@ export interface StorageAdapter {
 	/** Write raw text to a file at the given path (for logs, metadata). */
 	writeText(path: string, content: string): Promise<void>;
 
+	/**
+	 * Write text through a temporary path and replace the final path only after
+	 * the temporary write succeeds.
+	 */
+	writeTextAtomic(
+		path: string,
+		content: string,
+		contentType?: string,
+	): Promise<{ etag?: string; modifiedAt?: number }>;
+
 	/** Read raw text from a file at the given path. */
 	readText(path: string): Promise<string | null>;
 

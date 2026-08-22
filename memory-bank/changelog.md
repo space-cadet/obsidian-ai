@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - Clarified that auxiliary plugin files do not yet share the session encryption, atomic-write, and conflict protections — T43c, T55, T56
 - Recorded open deletion, recovery, retry-queue, cache-invalidation, and per-file conflict work — T42
 - Added T57 and the plugin-data/SyncIt boundary design: SyncIt owns whole-vault sync, while Chat Lab keeps plugin-specific sync — T57, T57d
+- Added the shared plugin-file sync manager with encrypted/checksummed envelopes, atomic writes, damaged-file rejection, and safe conflict reporting — T57a
 
 ---
 

@@ -47,6 +47,11 @@ import { SyncLogger } from "./sync/SyncLogger";
 import { StorageAdapter } from "./sync/StorageAdapter";
 import { SyncIndexManager } from "./sync/SyncIndexManager";
 import { createPluginIndexStorage } from "./sync/SyncIndex";
+import {
+	PluginFileSyncManager,
+	createVaultTextSyncTarget,
+	type PluginFileSyncTarget,
+} from "./sync/PluginFileSyncManager";
 import { ProviderRegistry } from "./integrations/ProviderRegistry";
 
 export const OPEN_CHAT_COMMAND_ID = "open-chat-lab-sidebar";
@@ -280,8 +285,16 @@ export default class ObsidianAIPlugin extends Plugin {
 		});
 
 		// Initialize auto-updater (pass file logger so diagnostics go to debug.log)
-		this._updater = new PluginUpdater(this.app, this.manifest.id, this.logger);
-		this.logger.log("info", "[Main] PluginUpdater initialized, current commit:", GIT_COMMIT_HASH.slice(0, 7));
+		this._updater = new PluginUpdater(
+			this.app,
+			this.manifest.id,
+			this.logger,
+		);
+		this.logger.log(
+			"info",
+			"[Main] PluginUpdater initialized, current commit:",
+			GIT_COMMIT_HASH.slice(0, 7),
+		);
 
 		// Add manual update check command
 		this.addCommand({
@@ -548,14 +561,21 @@ export default class ObsidianAIPlugin extends Plugin {
 			}
 		} catch (error: any) {
 			console.error("[ObsidianAI] Update check failed:", error);
-			const isRateLimit = error?.status === 403 ||
+			const isRateLimit =
+				error?.status === 403 ||
 				error?.message?.includes("rate limit") ||
 				error?.message?.includes("API rate limit");
 			if (manual) {
 				if (isRateLimit) {
-					new Notice("❌ GitHub API rate limit exceeded. Try again in a few minutes.", 6000);
+					new Notice(
+						"❌ GitHub API rate limit exceeded. Try again in a few minutes.",
+						6000,
+					);
 				} else {
-					new Notice(`❌ Update check failed: ${error.message}`, 5000);
+					new Notice(
+						`❌ Update check failed: ${error.message}`,
+						5000,
+					);
 				}
 			}
 		}
@@ -664,26 +684,51 @@ export default class ObsidianAIPlugin extends Plugin {
 
 	/** Trigger a manual sync and update settings.
 	 *  Sidebar is the primary UI; pass `{ useModal: true }` to also show the modal. */
-	async rebuildSyncIndex(choice: "remote" | "local" | "compare", options?: {
-		onLog?: (entry: { id: string; operation: "upload" | "download" | "conflict" | "error"; title: string; status: "pending" | "done" | "error"; message?: string; timestamp: number }) => void;
-	}): Promise<{ uploaded: number; downloaded: number; conflicts: number; skipped: number }> {
+	async rebuildSyncIndex(
+		choice: "remote" | "local" | "compare",
+		options?: {
+			onLog?: (entry: {
+				id: string;
+				operation: "upload" | "download" | "conflict" | "error";
+				title: string;
+				status: "pending" | "done" | "error";
+				message?: string;
+				timestamp: number;
+			}) => void;
+		},
+	): Promise<{
+		uploaded: number;
+		downloaded: number;
+		conflicts: number;
+		skipped: number;
+	}> {
 		if (!this.syncEngine) await this._initSyncEngine();
 		if (!this.syncEngine) throw new Error("Sync is not configured");
 
 		// Build title map from local sessions for better title resolution (T43a)
 		const chatData = await this.loadChatData();
-		const titleMap = new Map(chatData.sessions?.map((s: any) => [s.id, s.title]) ?? []);
+		const titleMap = new Map(
+			chatData.sessions?.map((s: any) => [s.id, s.title]) ?? [],
+		);
 
 		const previousHandler = this.syncEngine.getProgressHandler();
 		try {
 			this.syncEngine.setProgressHandler((event) => {
 				if (event.type !== "session" || !event.direction) return;
-				const title = titleMap.get(event.id) || this._getSessionTitle(event.id)?.trim() || `Session ${event.id.slice(0, 8)}…`;
+				const title =
+					titleMap.get(event.id) ||
+					this._getSessionTitle(event.id)?.trim() ||
+					`Session ${event.id.slice(0, 8)}…`;
 				options?.onLog?.({
 					id: event.id,
 					operation: event.direction,
 					title,
-					status: event.status === "error" ? "error" : event.status === "done" ? "done" : "pending",
+					status:
+						event.status === "error"
+							? "error"
+							: event.status === "done"
+								? "done"
+								: "pending",
 					message: event.error,
 					timestamp: Date.now(),
 				});
@@ -712,10 +757,26 @@ export default class ObsidianAIPlugin extends Plugin {
 		options?: {
 			useModal?: boolean;
 			direction?: "both" | "upload" | "download";
-			onProgress?: (progress: { total: number; completed: number; uploaded: number; downloaded: number; conflicts: number; skipped: number; elapsedMs: number }) => void;
+			onProgress?: (progress: {
+				total: number;
+				completed: number;
+				uploaded: number;
+				downloaded: number;
+				conflicts: number;
+				skipped: number;
+				elapsedMs: number;
+			}) => void;
 			onLog?: (entry: SyncLogEntry) => void;
 		},
-	): Promise<{ ok: boolean; message: string; uploaded: number; downloaded: number; conflicts: number; skipped: number; errors: string[] }> {
+	): Promise<{
+		ok: boolean;
+		message: string;
+		uploaded: number;
+		downloaded: number;
+		conflicts: number;
+		skipped: number;
+		errors: string[];
+	}> {
 		// Lazy-init sync engine if not already initialized (e.g., user enabled sync after plugin load)
 		if (!this.syncEngine) {
 			await this._initSyncEngine();
@@ -724,7 +785,15 @@ export default class ObsidianAIPlugin extends Plugin {
 			const msg =
 				"Sync not configured. Enable Remote Storage and enter credentials.";
 			new Notice(msg);
-			return { ok: false, message: msg, uploaded: 0, downloaded: 0, conflicts: 0, skipped: 0, errors: [msg] };
+			return {
+				ok: false,
+				message: msg,
+				uploaded: 0,
+				downloaded: 0,
+				conflicts: 0,
+				skipped: 0,
+				errors: [msg],
+			};
 		}
 
 		this.syncEngine.dryRun = dryRun;
@@ -758,7 +827,10 @@ export default class ObsidianAIPlugin extends Plugin {
 			let plan = await this.syncEngine.computeSyncPlan();
 
 			// Apply direction filter (T43)
-			const direction = options?.direction ?? this.settings.remoteStorage.syncDirection ?? "both";
+			const direction =
+				options?.direction ??
+				this.settings.remoteStorage.syncDirection ??
+				"both";
 			if (direction === "upload") {
 				plan = { ...plan, download: [], conflicts: [] };
 			} else if (direction === "download") {
@@ -778,7 +850,9 @@ export default class ObsidianAIPlugin extends Plugin {
 			// Set up progress handler now that totalOps is known
 			// Build title map from local sessions for better remote session titles
 			const chatData = await this.loadChatData();
-			const titleMap = new Map(chatData.sessions?.map((s: any) => [s.id, s.title]) ?? []);
+			const titleMap = new Map(
+				chatData.sessions?.map((s: any) => [s.id, s.title]) ?? [],
+			);
 
 			this.syncEngine?.setProgressHandler((event) => {
 				if (event.type === "session") {
@@ -788,7 +862,9 @@ export default class ObsidianAIPlugin extends Plugin {
 						`Session ${event.id.slice(0, 8)}…`;
 					if (event.status === "start") {
 						if (event.direction) {
-							modal?.addLog(event.direction, `${title}`, { id: event.id });
+							modal?.addLog(event.direction, `${title}`, {
+								id: event.id,
+							});
 						}
 						options?.onLog?.({
 							id: event.id,
@@ -800,9 +876,13 @@ export default class ObsidianAIPlugin extends Plugin {
 					} else if (event.status === "done") {
 						completedOps++;
 						if (event.direction === "upload") progressUploaded++;
-						if (event.direction === "download") progressDownloaded++;
+						if (event.direction === "download")
+							progressDownloaded++;
 						if (event.direction) {
-							modal?.addLog(event.direction, `${title}`, { id: event.id, done: true });
+							modal?.addLog(event.direction, `${title}`, {
+								id: event.id,
+								done: true,
+							});
 						}
 						options?.onLog?.({
 							id: event.id,
@@ -831,7 +911,10 @@ export default class ObsidianAIPlugin extends Plugin {
 							});
 						}
 					} else if (event.status === "error") {
-						modal?.addLog("error", `${title}: ${event.error}`, { id: event.id, error: true });
+						modal?.addLog("error", `${title}: ${event.error}`, {
+							id: event.id,
+							error: true,
+						});
 						options?.onLog?.({
 							id: event.id,
 							operation: "error",
@@ -890,7 +973,9 @@ export default class ObsidianAIPlugin extends Plugin {
 			// Toast notification
 			if (ok) {
 				new Notice(
-					dryRun ? `🔍 Dry run complete: ${msg}` : `✅ Sync complete: ${msg}`,
+					dryRun
+						? `🔍 Dry run complete: ${msg}`
+						: `✅ Sync complete: ${msg}`,
 					6000,
 				);
 			} else {
@@ -902,14 +987,28 @@ export default class ObsidianAIPlugin extends Plugin {
 				try {
 					const pdResult = await this.syncPluginData(direction);
 					if (pdResult.conflict) {
-						new Notice("⚠️ Plugin settings conflict detected. Last-write-wins applied.", 5000);
+						new Notice(
+							"⚠️ Plugin data conflict detected. No conflicting file was overwritten.",
+							6000,
+						);
 					}
 				} catch (e: any) {
-					this.logger?.log("warn", `[T43c] Plugin data sync error: ${e.message}`);
+					this.logger?.log(
+						"warn",
+						`[T43c] Plugin data sync error: ${e.message}`,
+					);
 				}
 			}
 
-			return { ok, message: msg, uploaded: result.uploaded, downloaded: result.downloaded, conflicts: result.conflicts, skipped: result.skipped, errors: result.errors };
+			return {
+				ok,
+				message: msg,
+				uploaded: result.uploaded,
+				downloaded: result.downloaded,
+				conflicts: result.conflicts,
+				skipped: result.skipped,
+				errors: result.errors,
+			};
 		} catch (err: any) {
 			const msg = `Sync failed: ${err.message}`;
 			const durationMs = Date.now() - startTime;
@@ -937,7 +1036,15 @@ export default class ObsidianAIPlugin extends Plugin {
 				message: msg,
 			});
 			new Notice(`❌ ${msg}`, 8000);
-			return { ok: false, message: msg, uploaded: 0, downloaded: 0, conflicts: 0, skipped: 0, errors: [msg] };
+			return {
+				ok: false,
+				message: msg,
+				uploaded: 0,
+				downloaded: 0,
+				conflicts: 0,
+				skipped: 0,
+				errors: [msg],
+			};
 		} finally {
 			this.syncEngine.dryRun = false;
 		}
@@ -948,7 +1055,9 @@ export default class ObsidianAIPlugin extends Plugin {
 		// Look up from loaded chat data
 		const chatData = (this as any)._chatData;
 		if (chatData?.sessions) {
-			const session = chatData.sessions.find((s: any) => s.id === sessionId);
+			const session = chatData.sessions.find(
+				(s: any) => s.id === sessionId,
+			);
 			if (session?.title) return session.title;
 		}
 		// Fallback to sync engine cache if available
@@ -1007,112 +1116,130 @@ export default class ObsidianAIPlugin extends Plugin {
 		uploaded: boolean;
 		downloaded: boolean;
 		conflict: boolean;
+		failed: number;
+		errors: string[];
+		items: Array<{
+			id: string;
+			status: string;
+			error?: string;
+		}>;
 	}> {
-		const result = { uploaded: false, downloaded: false, conflict: false };
+		const result = {
+			uploaded: false,
+			downloaded: false,
+			conflict: false,
+			failed: 0,
+			errors: [] as string[],
+			items: [] as Array<{ id: string; status: string; error?: string }>,
+		};
 		if (!this.syncEngine) return result;
 
-		const adapter = (this.syncEngine as any).adapter as StorageAdapter;
-		if (!adapter) return result;
-
 		const sc = this.settings.syncComponents;
-		const dir = direction ?? this.settings.remoteStorage.syncDirection ?? "both";
+		const dir =
+			direction ?? this.settings.remoteStorage.syncDirection ?? "both";
+		const pluginDataPath = `${this.app.vault.configDir}/plugins/${this.manifest.id}`;
+		const localAdapter = this.app.vault.adapter;
+		const targets: PluginFileSyncTarget[] = [];
+
+		if (sc.pluginSettings || sc.apiKeys) {
+			targets.push({
+				id: "plugin-settings",
+				remotePath: "plugin-data.json",
+				readLocal: async () =>
+					JSON.stringify(this._serializePluginData(), null, 2),
+				writeLocal: async (content) => {
+					const data = JSON.parse(content);
+					await this._deserializePluginData(data);
+				},
+			});
+		}
+
+		if (sc.memory) {
+			targets.push(
+				createVaultTextSyncTarget(
+					"memory",
+					"intelligence/memory.json",
+					`${pluginDataPath}/intelligence/memory.json`,
+					localAdapter,
+				),
+			);
+		}
+
+		if (sc.memoryAudit) {
+			targets.push(
+				createVaultTextSyncTarget(
+					"memory-audit",
+					"intelligence/memory-audit.jsonl",
+					`${pluginDataPath}/intelligence/memory-audit.jsonl`,
+					localAdapter,
+				),
+			);
+		}
+
+		if (sc.persona) {
+			targets.push(
+				createVaultTextSyncTarget(
+					"persona",
+					"intelligence/persona.md",
+					`${pluginDataPath}/intelligence/persona.md`,
+					localAdapter,
+				),
+			);
+		}
+
+		if (sc.usageStats) {
+			const chatData = await this.loadChatData();
+			const { summarizeLlmUsage } = await import("./lib/usageStats");
+			const stats = summarizeLlmUsage(chatData.sessions || []);
+			targets.push({
+				id: "usage-stats",
+				remotePath: "usage-stats.json",
+				allowDownload: false,
+				readLocal: async () => JSON.stringify(stats, null, 2),
+				writeLocal: async () => {
+					// Usage data is derived locally and is intentionally upload-only.
+				},
+			});
+		}
 
 		try {
-			// ── Plugin Settings (plugin-data.json) ──
-			if (sc.pluginSettings || sc.apiKeys) {
-				const PLUGIN_DATA_PATH = "plugin-data.json";
-				if (dir === "upload" || dir === "both") {
-					const data = this._serializePluginData();
-					await adapter.writeText(PLUGIN_DATA_PATH, JSON.stringify(data, null, 2));
-					result.uploaded = true;
-					this.logger?.log("info", "[T55] Plugin data uploaded");
-				}
-				if (dir === "download" || dir === "both") {
-					const remoteText = await adapter.readText(PLUGIN_DATA_PATH);
-					if (remoteText) {
-						const remoteData = JSON.parse(remoteText);
-						if (remoteData.timestamp && remoteData.timestamp > (this.settings.remoteStorage.lastSyncTime ?? 0)) {
-							await this._deserializePluginData(remoteData);
-							result.downloaded = true;
-						} else if (dir === "both") {
-							result.conflict = true;
-						}
-					}
-				}
-			}
+			const manager = new PluginFileSyncManager({
+				remote: this.syncEngine.storageAdapter,
+				crypto: this.syncEngine.encryptionLayer,
+			});
+			const syncResult = await manager.sync(targets, dir);
+			result.uploaded = syncResult.uploaded > 0;
+			result.downloaded = syncResult.downloaded > 0;
+			result.failed = syncResult.failed;
+			result.conflict = syncResult.conflicts > 0;
+			result.errors = syncResult.errors;
+			result.items = syncResult.items.map((item) => ({
+				id: item.id,
+				status: item.status,
+				error: item.error,
+			}));
 
-			// ── AI Memory ──
-			if (sc.memory) {
-				await this._syncTextFile("intelligence/memory.json", dir, result);
-			}
-
-			// ── Memory Audit ──
-			if (sc.memoryAudit) {
-				await this._syncTextFile("intelligence/memory-audit.jsonl", dir, result);
-			}
-
-			// ── Persona ──
-			if (sc.persona) {
-				await this._syncTextFile("intelligence/persona.md", dir, result);
-			}
-
-			// ── Usage Stats ──
-			if (sc.usageStats) {
-				// Compute stats from sessions and sync
-				const chatData = await this.loadChatData();
-				const { summarizeLlmUsage } = await import("./lib/usageStats");
-				const stats = summarizeLlmUsage(chatData.sessions || []);
-				if (dir === "upload" || dir === "both") {
-					await adapter.writeText("usage-stats.json", JSON.stringify(stats, null, 2));
-					result.uploaded = true;
-				}
-				if (dir === "download" || dir === "both") {
-					// Usage stats are derived — downloading has no effect on local state
-					this.logger?.log("info", "[T55] Usage stats are computed locally; skipping download");
+			for (const item of syncResult.items) {
+				if (item.status === "failed" || item.status === "conflict") {
+					this.logger?.log(
+						"warn",
+						`[T57a] Failed ${item.id}: ${item.error}`,
+					);
+				} else if (item.status !== "skipped") {
+					this.logger?.log(
+						"info",
+						`[T57a] ${item.status} ${item.id}`,
+					);
 				}
 			}
 		} catch (err: any) {
-			this.logger?.log("warn", `[T55] Plugin data sync failed: ${err.message}`);
+			const message = `Plugin data sync failed: ${err.message}`;
+			result.failed += 1;
+			result.errors.push(message);
+			this.logger?.log("warn", `[T57a] ${message}`);
 		}
 
 		return result;
-	}
-
-	/**
-	 * Helper: sync a single text file to/from remote.
-	 */
-	private async _syncTextFile(
-		path: string,
-		direction: "upload" | "download" | "both",
-		result: { uploaded: boolean; downloaded: boolean; conflict: boolean },
-	): Promise<void> {
-		const adapter = (this.syncEngine as any).adapter as StorageAdapter;
-		if (!adapter) return;
-
-		const localPath = `${this.app.vault.configDir}/plugins/${this.manifest.id}/${path}`;
-
-		try {
-			if (direction === "upload" || direction === "both") {
-				const adapter_fs = this.app.vault.adapter;
-				if (await adapter_fs.exists(localPath)) {
-					const content = await adapter_fs.read(localPath);
-					await adapter.writeText(path, content);
-					result.uploaded = true;
-					this.logger?.log("info", `[T55] Uploaded ${path}`);
-				}
-			}
-			if (direction === "download" || direction === "both") {
-				const remoteContent = await adapter.readText(path);
-				if (remoteContent !== null) {
-					const adapter_fs = this.app.vault.adapter;
-					await adapter_fs.write(localPath, remoteContent);
-					result.downloaded = true;
-					this.logger?.log("info", `[T55] Downloaded ${path}`);
-				}
-			}
-		} catch (err: any) {
-			this.logger?.log("warn", `[T55] Failed to sync ${path}: ${err.message}`);
-		}
 	}
 
 	/** Open this plugin's settings directly at the Remote Storage section. */
@@ -1129,9 +1256,11 @@ export default class ObsidianAIPlugin extends Plugin {
 				".vertical-tab-content, .setting-tab-content",
 			);
 			if (scrollContainer) {
-				const top = section.getBoundingClientRect().top -
+				const top =
+					section.getBoundingClientRect().top -
 					scrollContainer.getBoundingClientRect().top +
-					scrollContainer.scrollTop - 12;
+					scrollContainer.scrollTop -
+					12;
 				scrollContainer.scrollTo({ top, behavior: "smooth" });
 			} else {
 				section.scrollIntoView({ behavior: "smooth", block: "start" });

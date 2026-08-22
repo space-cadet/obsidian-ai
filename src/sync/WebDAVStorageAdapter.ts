@@ -172,6 +172,37 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 		await this.put(fullPath, content, "text/plain");
 	}
 
+	async writeTextAtomic(
+		path: string,
+		content: string,
+		contentType = "application/json",
+	): Promise<{ etag?: string; modifiedAt?: number }> {
+		const fullPath = this.prefix + path;
+		const parent = fullPath.split("/").slice(0, -1).join("/") + "/";
+		if (parent && parent !== "/") {
+			await this.mkcol(parent);
+		}
+
+		const tempPath = createTempPath(fullPath);
+		try {
+			const putRes = await this.put(tempPath, content, contentType);
+			const moveRes = await this.move(tempPath, fullPath);
+			const etag =
+				moveRes.headers.etag ||
+				moveRes.headers.ETag ||
+				putRes.headers.etag ||
+				putRes.headers.ETag;
+			return { etag, modifiedAt: Date.now() };
+		} catch (err) {
+			try {
+				await this.del(tempPath);
+			} catch {
+				// Cleanup is best effort; keep the original error.
+			}
+			throw err;
+		}
+	}
+
 	async readText(path: string): Promise<string | null> {
 		const fullPath = this.prefix + path;
 		try {

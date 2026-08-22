@@ -5,10 +5,10 @@
 
 ## Current Status
 
-The component choices are implemented. They control which data is copied, but
-they do not yet provide separate conflict handling, recovery copies, or
-uniform encryption for every selected file. T57 is the next work package for
-those protections and for the boundary with SyncIt whole-vault sync.
+The component choices are implemented. They control which data is copied, and
+T57a now gives selected files one encrypted, checksummed, and atomic transfer
+path. T57b and T57c still cover remembered conflicts, recovery, deletions, and
+durable retries. T57 also defines the boundary with SyncIt whole-vault sync.
 
 ## Overview
 
@@ -190,12 +190,12 @@ private _deserializePluginData(remoteJson: string): void {
 }
 ```
 
-### Individual File Sync (`_syncTextFile()`)
+### Individual File Sync (`PluginFileSyncManager`)
 
 For files that exist independently (not inside the plugin-data blob):
 
 ```typescript
-private async _syncTextFile(
+private async syncPluginFile(
     filename: string,
     localContent: string | null,
     remotePath: string
@@ -213,9 +213,11 @@ Used for:
 
 Current limits:
 
-- A downloaded file can replace the local file without a full conflict screen.
+- Differing local and remote files are reported as conflicts without replacing
+  either side; a full comparison screen and remembered choice are still open.
 - Deletions are not recorded as tombstones, so absence does not mean deletion.
-- These files still need encryption, checksums, and atomic writes.
+- Older raw remote files do not have the new envelope and are rejected safely
+  during download-only sync.
 
 ### Usage Stats: Upload-Only
 

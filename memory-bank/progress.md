@@ -23,6 +23,18 @@
 
 ---
 
+### 2026-08-22 — T57a: Shared Plugin-File Sync Implemented ✅
+
+- Added `src/sync/PluginFileSyncManager.ts` and focused tests.
+- Routed plugin settings, memory, persona, audit, and usage transfers through
+  the common manager.
+- Added version, checksum, encryption, temporary remote writes, safe local
+  replacement, damaged-file rejection, and per-file result reporting.
+- Two-way differences are reported as conflicts without overwriting either
+  side. Last-known-state choices, recovery, deletions, and durable retries
+  remain open in T57b and T57c.
+- TypeScript passed; full test suite passed: 255 tests.
+
 ### 2026-08-22 — T57 Approved: Plugin Data Sync Safety and SyncIt Boundary
 
 - SyncIt is recorded as the owner of whole-vault sync.
@@ -31,7 +43,8 @@
 - Created `implementation-details/plugin-data-sync-and-syncit-boundary.md`.
 - Kept the existing AI integration provider separate from the future data-sync provider contract.
 - Beads issue creation was attempted but blocked because this checkout has no `.beads` database.
-- No sync code was changed in this planning pass.
+- No sync code was changed in the original planning pass; T57a is now the
+  first implementation slice.
 
 ### 2026-08-22 — Remote Sync Documentation and Safety Boundary Review
 

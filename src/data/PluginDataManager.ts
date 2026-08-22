@@ -1,5 +1,9 @@
 import type ObsidianAIPlugin from "../main";
-import { DEFAULT_SETTINGS, type ObsidianAISettings, type SyncComponentConfig } from "../settings";
+import {
+	DEFAULT_SETTINGS,
+	type ObsidianAISettings,
+	type SyncComponentConfig,
+} from "../settings";
 
 /** Fields that should never be overwritten from remote or import sources */
 const CREDENTIAL_KEYS = [
@@ -40,7 +44,11 @@ function redactSensitiveValues(obj: any): any {
 	if (typeof obj === "object") {
 		const result: any = {};
 		for (const [key, value] of Object.entries(obj)) {
-			if (SENSITIVE_KEYS.includes(key) && typeof value === "string" && value) {
+			if (
+				SENSITIVE_KEYS.includes(key) &&
+				typeof value === "string" &&
+				value
+			) {
 				result[key] = "REDACTED";
 			} else {
 				result[key] = redactSensitiveValues(value);
@@ -91,7 +99,8 @@ function extractSettings(
 		settings.chatTabTitleWidth = DEFAULT_SETTINGS.chatTabTitleWidth;
 		settings.restoreChatTabs = true;
 		settings.showFullRequestTokens = true;
-		settings.contextPickerPathDisplay = DEFAULT_SETTINGS.contextPickerPathDisplay;
+		settings.contextPickerPathDisplay =
+			DEFAULT_SETTINGS.contextPickerPathDisplay;
 		settings.webSearchProvider = DEFAULT_SETTINGS.webSearchProvider;
 		settings.pdfExtractionMethod = DEFAULT_SETTINGS.pdfExtractionMethod;
 		settings.pdfMaxPages = DEFAULT_SETTINGS.pdfMaxPages;
@@ -127,15 +136,21 @@ function mergeSettings(
 		preserveRemoteStorage?: boolean;
 	} = {},
 ): ObsidianAISettings {
-	const { preserveCredentials = true, preserveRemoteStorage = true } = options;
+	const { preserveCredentials = true, preserveRemoteStorage = true } =
+		options;
 
 	// Merge provider profiles by ID
 	const mergedProfiles = [...current.providerProfiles];
 	if (imported.providerProfiles) {
 		for (const importedProfile of imported.providerProfiles) {
-			const idx = mergedProfiles.findIndex((p) => p.id === importedProfile.id);
+			const idx = mergedProfiles.findIndex(
+				(p) => p.id === importedProfile.id,
+			);
 			if (idx >= 0) {
-				mergedProfiles[idx] = { ...mergedProfiles[idx], ...importedProfile };
+				mergedProfiles[idx] = {
+					...mergedProfiles[idx],
+					...importedProfile,
+				};
 			} else {
 				mergedProfiles.push(importedProfile);
 			}
@@ -149,7 +164,9 @@ function mergeSettings(
 	};
 
 	// Restore defaults for any missing required fields
-	for (const key of Object.keys(DEFAULT_SETTINGS) as Array<keyof ObsidianAISettings>) {
+	for (const key of Object.keys(DEFAULT_SETTINGS) as Array<
+		keyof ObsidianAISettings
+	>) {
 		if (result[key] === undefined) {
 			(result as any)[key] = deepClone(DEFAULT_SETTINGS[key]);
 		}
@@ -163,8 +180,13 @@ function mergeSettings(
 			);
 			if (localProfile) {
 				for (const key of CREDENTIAL_KEYS) {
-					if ((localProfile as any)[key] && !(result.providerProfiles[i] as any)[key]) {
-						(result.providerProfiles[i] as any)[key] = (localProfile as any)[key];
+					if (
+						(localProfile as any)[key] &&
+						!(result.providerProfiles[i] as any)[key]
+					) {
+						(result.providerProfiles[i] as any)[key] = (
+							localProfile as any
+						)[key];
 					}
 				}
 			}
@@ -192,7 +214,6 @@ export interface ExportBundle {
 
 export interface SyncBundle {
 	version: number;
-	timestamp: number;
 	components: Partial<SyncComponentConfig>;
 	settings?: Partial<ObsidianAISettings>;
 	syncIndex?: any;
@@ -211,7 +232,12 @@ export class PluginDataManager {
 	 */
 	createExportBundle(includeSecrets: boolean = false): ExportBundle {
 		const sc = this.plugin.settings.syncComponents;
-		let settings = extractSettings(this.plugin, sc, includeSecrets, "export") as ObsidianAISettings;
+		let settings = extractSettings(
+			this.plugin,
+			sc,
+			includeSecrets,
+			"export",
+		) as ObsidianAISettings;
 
 		if (!includeSecrets) {
 			settings = redactSensitiveValues(settings);
@@ -235,7 +261,6 @@ export class PluginDataManager {
 
 		const bundle: SyncBundle = {
 			version: 1,
-			timestamp: Date.now(),
 			components: {
 				pluginSettings: sc.pluginSettings,
 				apiKeys: sc.apiKeys,
@@ -249,7 +274,8 @@ export class PluginDataManager {
 		if (sc.pluginSettings) {
 			bundle.settings = settings;
 			bundle.syncIndex =
-				(this.plugin.syncEngine as any)?.indexManager?.getIndex?.() ?? null;
+				(this.plugin.syncEngine as any)?.indexManager?.getIndex?.() ??
+				null;
 		}
 
 		return bundle;
@@ -259,10 +285,14 @@ export class PluginDataManager {
 	 * Apply an export bundle (from backup/migration).
 	 */
 	applyExportBundle(bundle: ExportBundle): void {
-		this.plugin.settings = mergeSettings(this.plugin.settings, bundle.settings, {
-			preserveCredentials: true,
-			preserveRemoteStorage: true,
-		});
+		this.plugin.settings = mergeSettings(
+			this.plugin.settings,
+			bundle.settings,
+			{
+				preserveCredentials: true,
+				preserveRemoteStorage: true,
+			},
+		);
 	}
 
 	/**
@@ -273,10 +303,14 @@ export class PluginDataManager {
 		const sc = this.plugin.settings.syncComponents;
 
 		if (sc.pluginSettings && bundle.settings) {
-			this.plugin.settings = mergeSettings(this.plugin.settings, bundle.settings, {
-				preserveCredentials: !sc.apiKeys,
-				preserveRemoteStorage: true,
-			});
+			this.plugin.settings = mergeSettings(
+				this.plugin.settings,
+				bundle.settings,
+				{
+					preserveCredentials: !sc.apiKeys,
+					preserveRemoteStorage: true,
+				},
+			);
 		}
 
 		if (bundle.syncIndex && this.plugin.syncEngine) {
@@ -295,13 +329,22 @@ export class PluginDataManager {
 			return { valid: false, error: "Invalid JSON: not an object" };
 		}
 		if (!data.settings || typeof data.settings !== "object") {
-			return { valid: false, error: "Invalid format: missing 'settings' field" };
+			return {
+				valid: false,
+				error: "Invalid format: missing 'settings' field",
+			};
 		}
 		if (typeof data.schemaVersion !== "number") {
-			return { valid: false, error: "Invalid format: missing or invalid 'schemaVersion'" };
+			return {
+				valid: false,
+				error: "Invalid format: missing or invalid 'schemaVersion'",
+			};
 		}
 		if (data.schemaVersion > 1) {
-			return { valid: false, error: `Unsupported schema version: ${data.schemaVersion}. Current: 1` };
+			return {
+				valid: false,
+				error: `Unsupported schema version: ${data.schemaVersion}. Current: 1`,
+			};
 		}
 		return { valid: true };
 	}

@@ -1,6 +1,21 @@
 # Active Context
 
-*Last Updated: 2026-08-22 22:40 IST*
+*Last Updated: 2026-08-22 23:00 IST*
+
+### 2026-08-22 — T57a Shared Plugin-File Sync Implemented
+
+- Added `PluginFileSyncManager` and routed plugin settings, memory, persona,
+  audit, and usage transfers through it.
+- Remote plugin files now use a versioned envelope with a checksum and shared
+  encryption when enabled.
+- WebDAV writes use a temporary file followed by replacement. Local downloads
+  use Obsidian's atomic process operation when replacing an existing file.
+- Malformed or tampered remote data is rejected without changing local data.
+- In two-way mode, differing local and remote files are reported as conflicts;
+  neither side is overwritten yet.
+- TypeScript passed and the full test suite passed: 255 tests.
+- T57b remains next for remembered state, recovery, deletion records, and user
+  choices.
 
 ### 2026-08-22 — T57 Plugin Data Sync Safety and SyncIt Boundary
 

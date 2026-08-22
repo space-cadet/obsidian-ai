@@ -5,7 +5,10 @@
 
 ## Document Status
 
-This is the original design. The WebDAV session path is implemented. S3, custom-server support, safe deletion, full offline retry, and uniform protection for auxiliary plugin files are still open.
+This is the original design. The WebDAV session path is implemented. Selected
+auxiliary plugin files now use the T57a shared envelope and atomic write path.
+S3, custom-server support, safe deletion, full offline retry, and remembered
+per-file conflict choices are still open.
 
 ## Overview
 
@@ -45,7 +48,11 @@ This document details the architecture for syncing Obsidian AI chat sessions to 
 
 ### Current Scope Boundary
 
-Chat sessions use the encrypted session format when encryption is enabled. Settings, memory, persona, audit, and usage files currently use a separate text-file path. They need their own encryption, checksums, atomic writes, and conflict rules before the whole system can be described as uniformly protected.
+Chat sessions and selected plugin files use encrypted, checksummed envelopes
+when encryption is enabled. The plugin files also use atomic remote writes and
+safe local replacement. Sync logs still use a separate raw text path, and the
+plugin-file system still needs remembered conflict state, recovery copies,
+deletion records, and durable retries.
 
 Deleted sessions are kept rather than removed from the other device or the server. This is a safety choice for now, not complete two-way deletion.
 

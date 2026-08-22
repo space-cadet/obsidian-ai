@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { PluginDataManager, extractSettings, mergeSettings } from "../PluginDataManager";
-import { DEFAULT_SETTINGS, type ObsidianAISettings, type SyncComponentConfig } from "../../settings";
+import {
+	PluginDataManager,
+	extractSettings,
+	mergeSettings,
+} from "../PluginDataManager";
+import {
+	DEFAULT_SETTINGS,
+	type ObsidianAISettings,
+	type SyncComponentConfig,
+} from "../../settings";
 
 function createMockPlugin(settings: Partial<ObsidianAISettings> = {}): any {
 	return {
@@ -9,8 +17,24 @@ function createMockPlugin(settings: Partial<ObsidianAISettings> = {}): any {
 			...DEFAULT_SETTINGS,
 			...settings,
 			providerProfiles: settings.providerProfiles ?? [
-				{ id: "p1", name: "OpenAI", apiKey: "sk-secret", provider: "openai", model: "gpt-4", createdAt: 0, updatedAt: 0 },
-				{ id: "p2", name: "Local", apiKey: "", provider: "ollama", model: "llama2", createdAt: 0, updatedAt: 0 },
+				{
+					id: "p1",
+					name: "OpenAI",
+					apiKey: "sk-secret",
+					provider: "openai",
+					model: "gpt-4",
+					createdAt: 0,
+					updatedAt: 0,
+				},
+				{
+					id: "p2",
+					name: "Local",
+					apiKey: "",
+					provider: "ollama",
+					model: "llama2",
+					createdAt: 0,
+					updatedAt: 0,
+				},
 			],
 		},
 		syncEngine: null,
@@ -25,7 +49,9 @@ describe("PluginDataManager", () => {
 			const bundle = manager.createExportBundle(true);
 
 			expect(bundle.schemaVersion).toBe(1);
-			expect(bundle.settings.providerProfiles[0].apiKey).toBe("sk-secret");
+			expect(bundle.settings.providerProfiles[0].apiKey).toBe(
+				"sk-secret",
+			);
 		});
 
 		it("redacts secrets by default", () => {
@@ -73,6 +99,15 @@ describe("PluginDataManager", () => {
 
 			expect(bundle.settings!.providerProfiles![0].apiKey).toBe("");
 		});
+
+		it("keeps the sync bundle stable when settings do not change", () => {
+			const plugin = createMockPlugin();
+			const manager = new PluginDataManager(plugin);
+
+			expect(manager.createSyncBundle()).toEqual(
+				manager.createSyncBundle(),
+			);
+		});
 	});
 
 	describe("validateImport", () => {
@@ -105,7 +140,15 @@ describe("PluginDataManager", () => {
 			const current = createMockPlugin().settings;
 			const imported: Partial<ObsidianAISettings> = {
 				providerProfiles: [
-					{ id: "p1", name: "Updated", apiKey: "new-key", provider: "openai", model: "gpt-4", createdAt: 0, updatedAt: 0 },
+					{
+						id: "p1",
+						name: "Updated",
+						apiKey: "new-key",
+						provider: "openai",
+						model: "gpt-4",
+						createdAt: 0,
+						updatedAt: 0,
+					},
 				],
 			};
 
@@ -117,23 +160,59 @@ describe("PluginDataManager", () => {
 			const current = createMockPlugin().settings;
 			const imported: Partial<ObsidianAISettings> = {
 				providerProfiles: [
-					{ id: "p1", name: "Updated", apiKey: "", provider: "openai", model: "gpt-4", createdAt: 0, updatedAt: 0 },
+					{
+						id: "p1",
+						name: "Updated",
+						apiKey: "",
+						provider: "openai",
+						model: "gpt-4",
+						createdAt: 0,
+						updatedAt: 0,
+					},
 				],
 			};
 
-			const result = mergeSettings(current, imported, { preserveCredentials: true });
+			const result = mergeSettings(current, imported, {
+				preserveCredentials: true,
+			});
 			expect(result.providerProfiles[0].apiKey).toBe("sk-secret");
 		});
 
 		it("preserves remote storage credentials", () => {
 			const current = createMockPlugin().settings;
-			current.remoteStorage.webdav = { type: "webdav" as const, url: "local", username: "me", password: "secret", prefix: "", enabled: true };
-
-			const imported: Partial<ObsidianAISettings> = {
-				remoteStorage: { enabled: true, backend: "webdav", passphrase: "", autoSync: false, syncIntervalMinutes: 30, conflictStrategy: "last-write-wins", syncDirection: "both", lastSyncTime: 0, webdav: { type: "webdav" as const, url: "remote", username: "", password: "", prefix: "", enabled: true } } as any,
+			current.remoteStorage.webdav = {
+				type: "webdav" as const,
+				url: "local",
+				username: "me",
+				password: "secret",
+				prefix: "",
+				enabled: true,
 			};
 
-			const result = mergeSettings(current, imported, { preserveRemoteStorage: true });
+			const imported: Partial<ObsidianAISettings> = {
+				remoteStorage: {
+					enabled: true,
+					backend: "webdav",
+					passphrase: "",
+					autoSync: false,
+					syncIntervalMinutes: 30,
+					conflictStrategy: "last-write-wins",
+					syncDirection: "both",
+					lastSyncTime: 0,
+					webdav: {
+						type: "webdav" as const,
+						url: "remote",
+						username: "",
+						password: "",
+						prefix: "",
+						enabled: true,
+					},
+				} as any,
+			};
+
+			const result = mergeSettings(current, imported, {
+				preserveRemoteStorage: true,
+			});
 			expect(result.remoteStorage.webdav!.password).toBe("secret");
 		});
 	});

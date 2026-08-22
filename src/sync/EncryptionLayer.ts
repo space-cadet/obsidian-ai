@@ -37,6 +37,18 @@ export class EncryptionLayer {
 	}
 
 	/**
+	 * Set the active passphrase without deriving a key yet. The first encrypt or
+	 * decrypt operation derives the key with the correct payload salt.
+	 */
+	setPassphrase(passphrase: string): void {
+		if (this.passphrase !== passphrase) {
+			this.key = null;
+			this.salt = null;
+		}
+		this.passphrase = passphrase;
+	}
+
+	/**
 	 * Derive an AES-256-GCM key from a passphrase.
 	 * If passphrase is empty, encryption is disabled (plaintext mode).
 	 * @param passphrase User-provided passphrase
@@ -148,7 +160,7 @@ export class EncryptionLayer {
 	 */
 	async decrypt(
 		payload: EncryptedPayload,
-		passphrase?: string,
+		passphrase: string = this.passphrase,
 	): Promise<string> {
 		// Plaintext mode: return directly
 		if (payload.unencrypted) {
