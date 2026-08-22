@@ -1,7 +1,8 @@
 # Progress UI Design (Obsidian-AI)
 
 *Created: 2026-08-19*
-*Related Tasks: T42f, T42*
+*Related Tasks: T42f, T58, T58d, T42*
+*Status: Historical T42f sidebar design; current integrated-panel follow-up is specified in `integrated-sync-ui-design.md` and T58d.*
 
 ## Problem
 

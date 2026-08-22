@@ -1,7 +1,7 @@
 # Plugin Data Sync and SyncIt Boundary
 
 *Created: 2026-08-22*
-*Related Tasks: T42, T57, T57a, T57b, T57c, T57d*
+*Related Tasks: T42, T57, T57a, T57b, T57c, T57d, T58d*
 
 ## Purpose
 
@@ -86,6 +86,14 @@ The local cache and sync index must belong to the complete sync identity:
 - Encryption identity
 
 If any part changes, old state must not be reused without rebuilding it.
+
+## Dry-Run and Index Boundary
+
+Dry-run planning must include selected plugin-data components without writing
+remote files, local files, retry records, deletion records, or the chat-session
+SyncIndex. The chat-session SyncIndex remains a session-only optimization
+record; plugin files use the separate identity-scoped shared state described
+above. The UI should show these as separate plan and result categories.
 
 ## Future `dataSyncProvider` Contract
 

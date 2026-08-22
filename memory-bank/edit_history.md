@@ -1,8 +1,21 @@
 # Edit History
 
-*Last Updated: 2026-08-23 00:14:52 IST*
+*Last Updated: 2026-08-23 00:44:16 IST*
 
 ## 2026-08-23
+
+#### 00:44:16 IST - T58: Resolve task ID conflict and record progress plan
+
+- Modified `memory-bank/tasks/T43.md` - Restored the original Multi-User and Agent Chat task and documented the ID clarification.
+- Created `memory-bank/tasks/T58.md` - Moved the integrated sync UI task to its canonical namespace.
+- Modified `memory-bank/tasks/T43a.md`, `memory-bank/tasks/T43b.md`, and `memory-bank/tasks/T43c.md` - Added compatibility pointers to the canonical T58a-T58c records.
+- Created `memory-bank/tasks/T58a.md`, `memory-bank/tasks/T58b.md`, and `memory-bank/tasks/T58c.md` - Canonicalized the existing integrated sync subtasks.
+- Created `memory-bank/tasks/T58d.md` - Recorded the approved unified progress, dry-run, rebuild, and performance plan.
+- Modified `memory-bank/tasks.md`, `memory-bank/tasks/T42.md`, `memory-bank/tasks/T42a.md`, `memory-bank/tasks/T42c.md`, `memory-bank/tasks/T42e.md`, `memory-bank/tasks/T42f.md`, `memory-bank/tasks/T55.md`, `memory-bank/tasks/T56.md`, and `memory-bank/tasks/T57.md` - Updated task IDs, dependencies, status, and current sync limits.
+- Modified `memory-bank/changelog.md` - Added the T43-to-T58 migration and T58d follow-up summary.
+- Modified `memory-bank/implementation-details/integrated-sync-ui-design.md`, `memory-bank/implementation-details/dry-run-design.md`, `memory-bank/implementation-details/sync-index-design.md`, `memory-bank/implementation-details/concurrency-control-design.md`, `memory-bank/implementation-details/plugin-data-sync-and-syncit-boundary.md`, `memory-bank/implementation-details/progress-ui-design.md`, and `memory-bank/implementation-details/sync-component-selection.md` - Recorded the approved progress, dry-run, index, rebuild, and task-boundary requirements.
+- Modified `memory-bank/activeContext.md`, `memory-bank/progress.md`, `memory-bank/session_cache.md`, and `memory-bank/sessions/2026-08-23-night.md` - Recorded the T58 migration and implementation handoff.
+- Created `memory-bank/edits/2026-08-23/004416-T58-task-id-migration.md` - Added the canonical edit chunk.
 
 #### 00:14 IST - T57c and token usage reconciliation
 

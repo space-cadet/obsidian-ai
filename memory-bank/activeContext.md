@@ -1,6 +1,19 @@
 # Active Context
 
-*Last Updated: 2026-08-23 00:14:52 IST*
+*Last Updated: 2026-08-23 00:44:16 IST*
+
+### 2026-08-23 — T58 task ID migration and approved progress/rebuild plan
+
+- Restored T43 as the original Multi-User and Agent Chat task because that is
+  its historical meaning in the task registry and Git history.
+- Moved the integrated sync UI records to the canonical T58 namespace:
+  T58, T58a, T58b, and T58c. The old T43a-c files now point to their renamed
+  records so historical links remain usable.
+- Created T58d to track the approved unified progress, dry-run plugin-data
+  planning, stable operation rows, latest-item shimmer, persistent completion
+  state, rebuild progress, conflict status, and rebuild performance work.
+- No source code was changed; implementation and real-host acceptance remain
+  open.
 
 ### 2026-08-23 — T57c and provider usage reconciliation
 
@@ -75,7 +88,7 @@ The remote-storage audit found that the session-sync path is more mature than th
 
 - T42 remains active: the WebDAV baseline is merged, but full sync scope is not complete.
 - T42a–T42e are implemented in code but remain open for acceptance checks and safety review.
-- T43c is historical where T55 changed its behavior; memory, persona, audit, and usage files are now optional components.
+- T58c is historical where T55 changed its behavior; memory, persona, audit, and usage files are now optional components.
 - Auxiliary plugin files are not yet protected by every chat-session-specific
   feature; the shared plugin-file path now has encryption, checksums,
   atomic-write, conflict, recovery, and deletion protections.
@@ -83,24 +96,24 @@ The remote-storage audit found that the session-sync path is more mature than th
   migration remain open.
 - T56 is a first reorganization pass; its FileSyncManager, shared index, and component-delta work remain open.
 
-### 2026-08-21 — T43 Subtasks Complete
+### 2026-08-21 — T58 Subtasks Complete
 
-All three T43 subtasks completed:
+All three T58 subtasks completed:
 
 | Subtask | Issue | Status |
 |---------|-------|--------|
-| **T43a** | Fix rebuildSyncIndex title resolution | ✅ Complete |
-| **T43b** | Add activity indicators to sync UI | ✅ Complete |
-| **T43c** | Extend sync to all plugin data | ✅ Complete |
+| **T58a** | Fix rebuildSyncIndex title resolution | ✅ Complete |
+| **T58b** | Add activity indicators to sync UI | ✅ Complete; T58d follow-up open |
+| **T58c** | Extend sync to all plugin data | ✅ Complete |
 
-**T43a:** Applied `titleMap` pattern from `triggerSync()` to `rebuildSyncIndex()` — eliminates "Untitled Session" by resolving titles from local cache, sync cache, then truncated ID.
+**T58a:** Applied `titleMap` pattern from `triggerSync()` to `rebuildSyncIndex()` — eliminates "Untitled Session" by resolving titles from local cache, sync cache, then truncated ID.
 
-**T43b:** Added CSS animations for visual feedback during sync:
+**T58b:** Added CSS animations for visual feedback during sync:
 - Rotating spinner in status heading (pure CSS, low CPU)
 - Pulsing progress bar during active sync
 - Shimmer animation on pending list items
 
-**T43c:** Extended sync beyond chat sessions to plugin data:
+**T58c:** Extended sync beyond chat sessions to plugin data:
 - `StorageAdapter` gained `readText()` method
 - `syncPluginData()` serializes settings (minus API keys) + sync index
 - Auto-called after successful session sync
@@ -163,12 +176,12 @@ See `tasks/T56.md` for full details.
 
 ---
 
-**Task:** T43 — Integrate Sync UI into Chat Lab
+**Task:** T58 — Integrate Sync UI into Chat Lab
 - Replaced standalone `SyncSidebarView` with integrated sync tab inside Chat Lab
 - Export button becomes dropdown with Export + Sync options
 - Sync opens as non-session tab (`__sync__`) with rich progress UI
 - Direction control: Two-way / Upload only / Download only
-- T42f superseded by T43
+- T42f superseded by T58
 
 **Commits:**
 - `dd4a989` — Phase 1: Remove 2nd sidebar
@@ -223,7 +236,7 @@ See `tasks/T56.md` for full details.
 | **T42c** | Concurrency Control | P1 | 🔄 review open |
 | **T42d** | Server Signature / Cache Invalidation | P1 | 🔄 review open |
 | **T42e** | Dry Run Mode | P2 | 🔄 review open |
-| **T42f** | Progress UI Improvements | P2 | ⛔ SUPERSEDED by T43 |
+| **T42f** | Progress UI Improvements | P2 | ⛔ SUPERSEDED by T58 |
 
 **Design docs created:**
 - `memory-bank/implementation-details/sync-index-design.md`

@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## Unreleased - 2026-08-23
 
 ### Changed
+- Restored T43 to its original Multi-User and Agent Chat scope, migrated the integrated sync UI records to T58/T58a-T58c, and added T58d for the approved progress, dry-run, and rebuild follow-up plan.
+- Recorded the task-ID migration and follow-up acceptance boundary across the Memory Bank; no source code changed.
 - Corrected remote-storage task statuses and documentation to distinguish the WebDAV session baseline from unfinished full-sync work — T42, T42a–T42e
 - Clarified that auxiliary plugin files do not yet share the session encryption, atomic-write, and conflict protections — T43c, T55, T56
 - Recorded open retry-queue, cache-invalidation, and full-sync acceptance work — T42

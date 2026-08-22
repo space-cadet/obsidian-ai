@@ -1,3 +1,14 @@
+### 2026-08-23 — T58 task ID migration and progress/rebuild plan 🔄
+
+- Restored T43 as the original Multi-User and Agent Chat task from Git history.
+- Moved the integrated sync UI records to T58 and T58a-T58c, retaining T43a-c
+  compatibility pointers for historical links.
+- Created T58d for planning-stage progress, plugin-data dry-run planning,
+  stable operation rows, latest-item shimmer, persistent completion state,
+  rebuild progress, conflict status, and rebuild performance.
+- No source code changed; T58d implementation and real-host acceptance remain
+  open.
+
 ### 2026-08-22 — T57b: Two-Way State, Recovery, and Deletions ✅
 
 - Added durable per-file shared state and encrypted remote state persistence to
@@ -27,21 +38,21 @@
 - Verification: 29 test files, 268 tests passed; TypeScript and production
   build passed.
 
-### 2026-08-21 — T43 Subtasks Complete
+### 2026-08-21 — T58 Subtasks Complete
 
-**T43a: Fix Rebuild Sync Index Title Resolution** ✅
+**T58a: Fix Rebuild Sync Index Title Resolution** ✅
 - Applied `titleMap` pattern from `triggerSync()` to `rebuildSyncIndex()`
 - Eliminates "Untitled Session" by resolving titles from local cache → sync cache → truncated ID
 - File: `src/main.ts`
 
-**T43b: Add Activity Indicators to Sync UI** ✅
+**T58b: Add Activity Indicators to Sync UI** ✅
 - Added CSS spinner animation (`sync-v2-spin`) for status heading
 - Added pulsing progress bar animation (`sync-v2-pulse-bar`)
 - Added shimmer animation on pending items (`sync-v2-shimmer`)
 - Pure CSS — no JS animation overhead, tablet-friendly
 - Files: `src/components/ChatSyncPanel.tsx`, `styles.css`
 
-**T43c: Extend Sync to All Plugin Data** ✅
+**T58c: Extend Sync to All Plugin Data** ✅
 - `StorageAdapter` gained `readText()` method
 - `WebDAVStorageAdapter` implemented `readText()`
 - Added `_serializePluginData()` — bundles settings (minus API keys) + sync index
@@ -80,7 +91,7 @@
 
 - T42 now records the WebDAV baseline as merged while keeping the full sync scope open.
 - T42a–T42e are implemented, but acceptance work remains for cache clearing, temporary-file cleanup, concurrent cache updates, and full dry-run coverage.
-- T43c, T55, and T56 now distinguish chat-session encryption from the separate auxiliary-file path.
+- T58c, T55, and T56 now distinguish chat-session encryption from the separate auxiliary-file path.
 - Durable retry records and complete sync identity handling remain open in T57c.
 
 ---
@@ -158,7 +169,7 @@ Implemented the first pass on the three architectural improvements from the T55 
 
 ---
 
-**Task:** T43 — Integrate Sync UI into Chat Lab
+**Task:** T58 — Integrate Sync UI into Chat Lab
 **Status:** ✅ COMPLETE — All 6 phases implemented and committed
 
 **What was done:**
@@ -182,7 +193,7 @@ Implemented the first pass on the three architectural improvements from the T55 
 - `570be35` — Phase 3: Export dropdown + Sync tab
 - `02e1ba2` — Phase 4: ChatSyncPanel with rich progress UI
 
-**Files:** `memory-bank/tasks/T43.md`, `memory-bank/implementation-details/integrated-sync-ui-design.md`
+**Files:** `memory-bank/tasks/T58.md`, `memory-bank/implementation-details/integrated-sync-ui-design.md`
 
 ---
 
@@ -197,7 +208,7 @@ Implemented the first pass on the three architectural improvements from the T55 
 | T42c | Concurrency Control | P1 | 🔄 review open | `concurrency-control-design.md` |
 | T42d | Server Signature / Cache Invalidation | P1 | 🔄 review open | `server-signature-design.md` |
 | T42e | Dry Run Mode | P2 | 🔄 review open | `dry-run-design.md` |
-| T42f | Progress UI Improvements | P2 | ⛔ SUPERSEDED by T43 |
+| T42f | Progress UI Improvements | P2 | ⛔ SUPERSEDED by T58 |
 
 **What each feature ports from SyncIt:**
 - **T42a**: `SyncIndexManager` — persist `{checksum, ETag}` to skip unchanged sessions

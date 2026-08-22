@@ -1,6 +1,17 @@
 # Session Cache
 
-*Last Updated: 2026-08-23 00:14:52 IST*
+*Last Updated: 2026-08-23 00:44:16 IST*
+
+## 2026-08-23 T58 task ID migration and approved follow-up plan
+
+- Restored T43 as the original Multi-User and Agent Chat task from Git history.
+- Moved the integrated sync UI records to T58 and T58a-T58c; old T43a-c files
+  remain compatibility pointers for historical links.
+- Created T58d for planning-stage progress, plugin-data dry-run planning,
+  stable operation rows, latest-item shimmer, persistent completion state,
+  rebuild progress, conflict status, and rebuild performance.
+- No source code changed. The implementation and real-host acceptance remain
+  open.
 
 ## 2026-08-23 T57c and token reconciliation
 
@@ -53,11 +64,11 @@
 
 ## Work Completed (2026-08-21 Afternoon)
 
-### 1. T43a/b/c — Committed and Pushed
+### 1. T58a/b/c — Committed and Pushed
 - Combined commit `2d687a2`: all three subtasks + telemetry removal
-- T43a: `titleMap` pattern applied to `rebuildSyncIndex()`
-- T43b: CSS activity indicators (spinner, pulse bar, shimmer)
-- T43c: Plugin data sync with `_serializePluginData()` / `_deserializePluginData()`
+- T58a: `titleMap` pattern applied to `rebuildSyncIndex()`
+- T58b: CSS activity indicators (spinner, pulse bar, shimmer)
+- T58c: Plugin data sync with `_serializePluginData()` / `_deserializePluginData()`
 
 ### 2. T51 — Telemetry Removed
 - Obsidian Community Plugins policy prohibits client-side telemetry
@@ -75,23 +86,23 @@
 - API keys excluded by default; credentials never overwritten from remote
 
 ## Files Modified
-- `src/main.ts` — T43a title resolution, T43c plugin data sync, T55 component filtering
+- `src/main.ts` — T58a title resolution, T58c plugin data sync, T55 component filtering
 - `src/settings.ts` — T55 `SyncComponentConfig`
 - `src/settings-sections/syncComponents.ts` — **New** (T55)
 - `src/settings-sections/SettingsTab.ts` — T55 nav wiring
 - `src/settings-sections/exportImport.ts` — T55 component filtering
-- `src/components/ChatSyncPanel.tsx` — T43b activity indicators
-- `src/sync/StorageAdapter.ts` — T43c `readText()`
-- `src/sync/WebDAVStorageAdapter.ts` — T43c `readText()` implementation
-- `styles.css` — T43b CSS animations
+- `src/components/ChatSyncPanel.tsx` — T58b activity indicators
+- `src/sync/StorageAdapter.ts` — T58c `readText()`
+- `src/sync/WebDAVStorageAdapter.ts` — T58c `readText()` implementation
+- `styles.css` — T58b CSS animations
 - Deleted: `src/lib/telemetry.ts`, `src/settings-sections/telemetry.ts`
 
 ## Memory Bank Updates
-- `tasks.md` — T43a/b/c marked ✅ COMPLETE, T55 added
-- `tasks/T43a.md`, `tasks/T43b.md`, `tasks/T43c.md` — Already correct
+- `tasks.md` — T58a/b/c marked ✅ COMPLETE, T55 added
+- `tasks/T58a.md`, `tasks/T58b.md`, `tasks/T58c.md` — Canonical sync subtask records
 - `tasks/T55.md` — **Created**
 - `tasks/T56.md` — **Created**
-- `progress.md` — T43 subtasks + T55 + T56 completion added
+- `progress.md` — T58 subtasks + T55 + T56 completion added
 - `activeContext.md` — T55 + planned changes (completed) added
 - `session_cache.md` — This update
 - `implementation-details/sync-component-selection.md` — **Created**
@@ -104,8 +115,8 @@
 ---
 
 ## Previous Session (2026-08-21 morning)
-- Focus: T43 subtasks (T43a title resolution, T43b activity indicators, T43c plugin data sync)
-- Completed: All three T43 subtasks implemented (code changes only, not yet committed)
+- Focus: T58 subtasks (T58a title resolution, T58b activity indicators, T58c plugin data sync)
+- Completed: All three T58 subtasks implemented (code changes only, not yet committed)
 - Build: TypeScript clean
 
 *Session: 2026-08-21 11:00–11:20 UTC*
@@ -115,7 +126,7 @@
 ---
 
 ## Previous Session (2026-08-19)
-- Focus: T43 integrated Sync tab and rebuild workflow
+- Focus: T58 integrated Sync tab and rebuild workflow
 - Completed: Sync UI redesign, rebuild choices, live rebuild activity, cancellation, and Sync-tab close button
 - Latest code commit before final close-button fix: `b31f6bd`
 - Final action: run checks, commit, push, then close the session
@@ -201,7 +212,7 @@ Updated the remote-storage records after comparing the Memory Bank with the curr
 
 - T42 now clearly says the WebDAV baseline is merged but the full sync scope remains open.
 - T42a–T42e now show which parts are implemented and which safety checks remain.
-- T43c now records the later T55 changes instead of presenting its older notes as current.
+- T58c now records the later T55 changes instead of presenting its older notes as current.
 - T55 and the sync design docs now state that auxiliary plugin files do not yet share the session encryption and recovery protections.
 - Retry limits and cache invalidation remain open limits; per-file conflict,
   recovery, and deletion handling are now covered by T57b.

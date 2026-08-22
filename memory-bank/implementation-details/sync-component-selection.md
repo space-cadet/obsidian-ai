@@ -1,6 +1,6 @@
 # Sync Component Selection — Implementation Details
 
-*Related Tasks: T55, T43c, T49*
+*Related Tasks: T55, T58c, T49*
 *Created: 2026-08-21*
 
 ## Current Status

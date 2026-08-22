@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-22 23:19:11 IST*
+*Last Updated: 2026-08-23 00:44:16 IST*
 
 ## Overview
 
@@ -23,11 +23,13 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T42c | Concurrency Control for Parallel Sync | 🔄 | HIGH | 2026-08-19 | T42 | [Details](tasks/T42c.md) |
 | T42d | Server Signature and Cache Invalidation | 🔄 | HIGH | 2026-08-19 | T42 | [Details](tasks/T42d.md) |
 | T42e | Sync Dry Run | 🔄 | MEDIUM | 2026-08-19 | T42 | [Details](tasks/T42e.md) |
-| T43a | Fix Rebuild Sync Index Title Resolution | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43 | [Details](tasks/T43a.md) |
-| T43b | Add Activity Indicators to Sync UI | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43 | [Details](tasks/T43b.md) |
-| T43c | Extend Sync to All Plugin Data | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43, T42 | [Details](tasks/T43c.md) |
-| T55 | Component-Level Sync Selection | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43, T42, T49 | [Details](tasks/T55.md) |
-| T56 | Unify Plugin Data Management Layer | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T43, T49, T55 | [Details](tasks/T56.md) |
+| T58 | Integrated Sync UI into Chat Lab | 🔄 | HIGH | 2026-08-23 | T42 | [Details](tasks/T58.md) |
+| T58a | Fix Rebuild Sync Index Title Resolution | ✅ | HIGH | 2026-08-21 | T58 | [Details](tasks/T58a.md) |
+| T58b | Add Activity Indicators to Sync UI | ✅ | HIGH | 2026-08-21 | T58 | [Details](tasks/T58b.md) |
+| T58c | Extend Sync to All Plugin Data | ✅ | HIGH | 2026-08-21 | T58, T42 | [Details](tasks/T58c.md) |
+| T58d | Unified Sync Progress, Dry-Run Planning, and Index Rebuild UX | 🔄 | HIGH | 2026-08-23 | T42a, T42c, T42e, T57a, T57b, T57c | [Details](tasks/T58d.md) |
+| T55 | Component-Level Sync Selection | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T58, T42, T49 | [Details](tasks/T55.md) |
+| T56 | Unify Plugin Data Management Layer | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T58, T49, T55 | [Details](tasks/T56.md) |
 | T57 | Plugin Data Sync Safety and SyncIt Boundary | 🔄 | HIGH | 2026-08-22 | — | T42, T39a | [Details](tasks/T57.md) |
 | T57a | Common Plugin-File Sync Layer | ✅ | HIGH | 2026-08-22 | 2026-08-22 | T57, T42b | [Details](tasks/T57a.md) |
 | T57b | Two-Way Conflicts, Recovery, and Deletions | ✅ | HIGH | 2026-08-22 | 2026-08-22 | T57, T57a | [Details](tasks/T57b.md) |
@@ -147,6 +149,27 @@ T8: Open Source Release with Branding
 T8a: Community Directory Review Remediation
   └── T8
   └── T7
+T42: Remote Chat Storage & Sync
+  └── T40
+  └── T42a
+  └── T42b
+  └── T42c
+  └── T42d
+  └── T42e
+  └── T58
+  └── T57
+T58: Integrated Sync UI into Chat Lab
+  └── T42
+  └── T58a
+  └── T58b
+  └── T58c
+  └── T58d
+T57: Plugin Data Sync Safety and SyncIt Boundary
+  └── T42
+  └── T57a
+  └── T57b
+  └── T57c
+  └── T57d
 T9: Settings & Provider Profiles
   └── T1
 T44: Standalone UI Preview and Obsidian Host Boundary
@@ -156,7 +179,7 @@ T44: Standalone UI Preview and Obsidian Host Boundary
 
 ## Status Summary
 
-- **Active**: 8
-- **Completed**: 20
+- **Active**: 25
+- **Completed**: 29
 - **Paused**: 0
-- **Total**: 28
+- **Total**: 54

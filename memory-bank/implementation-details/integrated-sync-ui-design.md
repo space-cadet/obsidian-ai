@@ -1,6 +1,6 @@
 # Integrated Sync UI Design
 
-*Design doc for T43: Integrate Sync UI into Chat Lab*
+*Design doc for T58: Integrate Sync UI into Chat Lab*
 *Created: 2026-08-20*
 
 ## Overview
@@ -254,7 +254,7 @@ if (direction === "upload") {
 ```typescript
 interface RemoteStorageConfig {
   // ... existing fields ...
-  /** Default sync direction (T43) */
+  /** Default sync direction (T58) */
   syncDirection: "both" | "upload" | "download";
 }
 ```
@@ -284,7 +284,7 @@ private log(level: string, msg: string): void {
 
 The `logHandler` callback (set via `setLogHandler`) is used for live UI updates. The `logger` (FileLogger) writes to disk.
 
-T43 does not add any new logging infrastructure — it uses what's already there.
+T58 does not add any new logging infrastructure — it uses what's already there.
 
 ## Progress Callback Flow
 
@@ -295,6 +295,7 @@ User clicks "Sync Now" in ChatSyncPanel
     - Sets syncEngine.dryRun = dryRun
     - Calls syncEngine.sync(direction)
   → SyncEngine.sync():
+    - Emits planning stages while local and remote state are read
     - Computes plan with direction filter
     - Calls progress callback for each operation
     - Calls logHandler for each log line
@@ -303,6 +304,13 @@ User clicks "Sync Now" in ChatSyncPanel
     - logHandler → ChatSyncPanel.addLog() (if sync tab open)
     - Also → debug logger
   → ChatSyncPanel updates React state → UI re-renders
+
+The same progress contract is used for real sync, dry-run planning, selected
+plugin-data planning, and index rebuild. Planning may be indeterminate until a
+total is known. The final 100% state remains visible after completion. Each
+operation has a stable identity so pending, active, done, skipped, and error
+events update one row rather than append duplicates. The shimmer is limited to
+the latest active row.
 ```
 
 ## Migration Notes
@@ -321,7 +329,10 @@ User clicks "Sync Now" in ChatSyncPanel
 - [ ] Changing direction in panel doesn't affect settings
 - [ ] Dry run toggle works
 - [ ] Sync button triggers sync with selected direction
-- [ ] Progress bar updates during sync
+- [ ] Progress bar updates during planning and item processing
+- [ ] Progress bar remains visible at 100% after sync or dry-run completion
+- [ ] Dry-run planning includes selected plugin-data components without writes
+- [ ] Index rebuild shows planning and item progress with a final result
 - [ ] Log entries appear with correct badges
 - [ ] Completion cards shown after sync
 - [ ] Cancel button stops sync

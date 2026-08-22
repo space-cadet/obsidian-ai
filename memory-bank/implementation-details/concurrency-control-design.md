@@ -1,7 +1,7 @@
 # Concurrency Control Design (Obsidian-AI)
 
 *Created: 2026-08-19*
-*Related Tasks: T42c, T42*
+*Related Tasks: T42c, T58d, T42*
 
 ## Problem
 
@@ -56,6 +56,11 @@ async uploadSessions(sessions: CachedSession[]): Promise<void> {
     );
 }
 ```
+
+Index rebuild must use the same bounded transfer helper for independent
+remote-trust downloads and local-trust uploads. It should not re-list or
+recompute local and remote collections unnecessarily; the plan used for the
+rebuild should be passed through to the index-save step.
 
 ## Settings
 

@@ -1,7 +1,7 @@
 # Sync Index Design (Obsidian-AI)
 
 *Created: 2026-08-19*
-*Related Tasks: T42a, T42*
+*Related Tasks: T42a, T58d, T42*
 
 ## Problem
 
@@ -9,7 +9,10 @@ Obsidian-ai's sync compares all local sessions against all remote sessions on ev
 
 ## Solution
 
-Persisted sync index that tracks session state from the last successful sync. On subsequent syncs, skip sessions whose local checksum and remote ETag match the index.
+Persisted sync index that tracks chat-session state from the last successful
+sync. On subsequent syncs, skip sessions whose local checksum and remote ETag
+match the index. Auxiliary plugin files use a separate identity-scoped
+shared-state record and are not entries in this session index.
 
 ## Architecture
 
@@ -59,6 +62,13 @@ Index is invalidated (cleared) when:
 |----------|--------|-------|
 | 50 sessions, 0 changes | 50 comparisons + 50 PROPFINDs | 0 comparisons (index skip) |
 | 50 sessions, 2 changes | 50 comparisons | 2 comparisons + 48 skips |
+
+## Rebuild and Progress Boundary
+
+Index rebuild must report planning and item progress using the same stable
+operation identifiers as normal sync. It should reuse the computed local and
+remote plan, use maps/sets for membership checks, and apply bounded concurrency
+where transfers are independent. These follow-ups are tracked in T58d.
 
 ## Safety
 
