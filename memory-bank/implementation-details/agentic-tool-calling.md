@@ -641,6 +641,14 @@ If the full tool calling architecture is too heavy for v1, an intermediate step 
 
 ## Tool Result Formatting Implementation
 
+### Model replay policy (T48b, 2026-08-23)
+
+Tool results have two audiences: the UI/export path may retain the full result,
+while model history must use a bounded canonical representation. Large results
+such as broad memory listings should be summarized, truncated with an explicit
+marker, or referenced externally. Request serialization must not replay the same
+result through both `contentParts` and legacy `toolCalls`.
+
 Location: `src/agent/AgentLoop.ts` - `formatToolResult(toolName, result)`
 
 ### search_notes / list_notes → Markdown Table

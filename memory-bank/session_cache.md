@@ -1,5 +1,17 @@
 # Session Cache
 
+*Last Updated: 2026-08-23 02:02:32 IST*
+
+## 2026-08-23 T48 context-efficiency plan
+
+- T48 expanded to token-budgeted model context with full display history kept
+  separately from bounded model replay.
+- Created active subtasks T48a-T48d covering request budgeting, tool-result
+  replay limits, rolling compaction, and provider-aware usage display.
+- Updated related design documentation. Implementation is not started.
+- Repository was fast-forwarded to `be9ad92`; worktree remains clean apart from
+  these Memory Bank updates.
+
 *Last Updated: 2026-08-23 01:27:43 IST*
 
 ## 2026-08-23 T58/T58c/T58d session closeout and plugin rebuild audit

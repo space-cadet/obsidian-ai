@@ -143,6 +143,19 @@ When toggled on:
 
 ## Token Budget
 
+### Request budget hierarchy (2026-08-23 — T48)
+
+Every request should fit the following bounded budget before serialization:
+
+```text
+system prompt + tool definitions + current input + attachments
++ bounded history/summary + response/tool reserve <= model context budget
+```
+
+`characters / 4` remains a fallback estimate only. Provider usage should be
+recorded when available. Full note, PDF, and attachment content must be capped
+before it is combined with history; a fixed message count alone is insufficient.
+
 ```
 ContextEngine.resolveAll() returns:
   { contextString: string, estimatedTokens: number }

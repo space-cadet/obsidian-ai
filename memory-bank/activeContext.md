@@ -1,5 +1,19 @@
 # Active Context
 
+*Last Updated: 2026-08-23 02:02:32 IST*
+
+### 2026-08-23 — T48 context-efficiency decomposition
+
+- Expanded T48 from turn-count compaction to token-budgeted model context.
+- Created T48a-T48d for request budgeting, bounded tool replay, rolling
+  compaction, and usage reconciliation.
+- Full transcript remains available to the user; model history uses a bounded
+  canonical representation and compact tool-result summaries.
+- T6a remains complete and supplies provider-usage accounting; T48 owns
+  context construction and compaction.
+
+---
+
 *Last Updated: 2026-08-23 01:27:43 IST*
 
 ### 2026-08-23 — T58/T58c/T58d session closeout and rebuild audit

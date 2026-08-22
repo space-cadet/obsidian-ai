@@ -677,3 +677,13 @@ Implemented the first pass on the three architectural improvements from the T55 
 - Node modules auto-delete on session end
 - Timestamps: ALL in IST
 - Blog: push to space-cadet/website triggers auto-deploy
+# 2026-08-23 — T48 context-efficiency plan
+
+- Diagnosed the gap between visible message estimates and provider billing:
+  repeated history, large tool results, attachments, and system/tool payloads
+  are not adequately represented by a fixed message count.
+- Decomposed T48 into T48a-T48d: token budgeting, tool-result replay limits,
+  rolling summaries, and usage display.
+- No source code changed; implementation remains pending.
+
+---

@@ -1,12 +1,16 @@
 # Conversation Compaction Design
 *Created: 2026-08-19 13:31:15 IST*
-*Last Updated: 2026-08-19 13:31:15 IST*
+*Last Updated: 2026-08-23 02:02:32 IST*
 
 ## Overview
 
 Automatic summarization of old conversation turns to reduce per-request token
 usage. After N turns, older messages are replaced with a condensed summary,
 reducing the payload sent on every subsequent API call.
+
+The revised design is token-budget driven: turn count is only a fallback. The
+full transcript remains available to the user, while request construction uses
+a bounded model-history view.
 
 **Motivation**: DeepSeek investigation showed 892K cache hit tokens per request
 after 10-turn conversations. Compaction can reduce this by ~80% for long
@@ -18,8 +22,9 @@ conversations while preserving essential context.
 
 Compaction fires when **either** condition is met:
 
-1. **Turn threshold**: `messages.length >= compactionTurnThreshold` (default: 10)
-2. **Token threshold**: `estimatedPayloadTokens >= compactionTokenThreshold` (default: 200,000)
+1. **Token threshold**: the serialized request exceeds the available context
+   budget after system, tools, current input, and response reserve are counted.
+2. **Turn threshold**: `messages.length >= compactionTurnThreshold` (fallback).
 
 The check runs after each successful assistant response (before the next user
 message is processed).
@@ -32,7 +37,7 @@ message is processed).
 Input: messages[] (full conversation history)
        keepRecent = 3 (configurable, default 3)
 
-1. Determine compaction window:
+1. Build a request budget and determine compaction window:
    toSummarize = messages[0 : -keepRecent]
    keepAsIs = messages[-keepRecent:]
 
@@ -47,7 +52,7 @@ Input: messages[] (full conversation history)
        ...keepAsIs
    ]
 
-4. Update state:
+4. Update model-history state while retaining the full display transcript:
    messagesRef.current = compactedMessages
 ```
 
@@ -88,6 +93,11 @@ The summary is structured markdown with these sections:
 ---
 
 ## Integration with `buildHistoryWithTools()`
+
+Tool results require a separate replay policy. Full results remain available for
+display and export, but future model requests use a bounded summary or truncated
+representation. `contentParts` and legacy `toolCalls` must not both be serialized
+as duplicate model history.
 
 The compaction summary must preserve tool call context so that the LLM can
 continue making tool calls correctly:
@@ -141,6 +151,10 @@ Clicking the indicator shows the full summary text (for user inspection).
 ---
 
 ## Cost Analysis
+
+Compaction cost must be compared with the saved input cost. Provider-reported
+usage is authoritative when available; the character-based estimator is only a
+fallback and must not be presented as billing data.
 
 **Without compaction (20-turn conversation):**
 - Turn 1–10: ~500K tokens/request → $0.35 (Flash off-peak)
