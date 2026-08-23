@@ -116,12 +116,28 @@ export function buildBudgetedHistory<T>(args: {
 		preservedStart--;
 	}
 
-	// Always retain the recent tail. Exact recent context is the primary
-	// quality safeguard; the result reports overBudget if it cannot fit.
-	for (let index = preservedStart; index < boundedHistory.length; index++) {
-		const message = boundedHistory[index];
-		selected.push(message);
-		historyTokens += estimateValue(message);
+	// Retain the recent tail when it fits, but never let the quality safeguard
+	// violate the total request ceiling. Consider newest tool-call/result units
+	// first so a large unit can be skipped without orphaning its partner.
+	for (let index = boundedHistory.length - 1; index >= preservedStart; ) {
+		let groupStart = index;
+		if (
+			messageRole(boundedHistory[index]) === "tool" &&
+			index > 0 &&
+			messageRole(boundedHistory[index - 1]) === "assistant"
+		) {
+			groupStart = index - 1;
+		}
+		const group = boundedHistory.slice(groupStart, index + 1);
+		const groupTokens = group.reduce(
+			(sum, message) => sum + estimateValue(message),
+			0,
+		);
+		if (historyTokens + groupTokens <= availableForHistory) {
+			selected.unshift(...group);
+			historyTokens += groupTokens;
+		}
+		index = groupStart - 1;
 	}
 
 	// Add older messages from newest to oldest while they fit. Reverse at the

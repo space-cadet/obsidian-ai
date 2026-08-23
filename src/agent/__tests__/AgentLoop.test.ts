@@ -129,7 +129,7 @@ describe("AgentLoop", () => {
 			maxSteps: 3,
 			autoApprove: true,
 			maxToolResultTokens: 20,
-			maxRequestTokens: 20,
+			maxRequestTokens: 80,
 			maxContextMessages: 10,
 			preserveRecentMessages: 1,
 			requestResponseReserveTokens: 0,
@@ -148,7 +148,7 @@ describe("AgentLoop", () => {
 		);
 
 		expect(streamChatWithTools).toHaveBeenCalledTimes(3);
-		expect(streamChatWithTools.mock.calls[1][0]).toHaveLength(4);
-		expect(streamChatWithTools.mock.calls[2][0]).toHaveLength(4);
+		expect(streamChatWithTools.mock.calls[1][0]).toHaveLength(2);
+		expect(streamChatWithTools.mock.calls[2][0]).toHaveLength(2);
 	});
 });

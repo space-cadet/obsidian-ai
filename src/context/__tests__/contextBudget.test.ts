@@ -117,4 +117,25 @@ describe("buildBudgetedHistory", () => {
 		expect(result.history).toEqual([]);
 		expect(result.droppedMessages).toBe(2);
 	});
+
+	it("does not let the preserved tail exceed the request budget", () => {
+		const result = buildBudgetedHistory({
+			systemPrompt: "s",
+			currentMessage: "c",
+			history: [
+				{ role: "assistant", content: "call" },
+				{ role: "tool", content: "x".repeat(200) },
+			],
+			options: {
+				maxRequestTokens: 20,
+				maxMessages: 10,
+				preserveRecentMessages: 2,
+				responseReserveTokens: 0,
+			},
+		});
+
+		expect(result.history).toEqual([]);
+		expect(result.estimatedRequestTokens).toBeLessThanOrEqual(20);
+		expect(result.overBudget).toBe(false);
+	});
 });

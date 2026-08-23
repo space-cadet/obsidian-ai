@@ -15,6 +15,8 @@ interface OpenResponsesLoopOptions {
 	maxSteps: number;
 	autoApprove: boolean;
 	maxToolResultTokens?: number;
+	/** Shared token allowance for all outputs in one continuation. */
+	requestResponseReserveTokens?: number;
 	onTextDelta?: (text: string) => void;
 	onToolCall?: (call: ToolCall) => void;
 	requestApproval?: (call: ToolCall) => Promise<ToolResult | null>;
@@ -28,6 +30,7 @@ export class OpenResponsesLoop {
 	private maxSteps: number;
 	private autoApprove: boolean;
 	private maxToolResultTokens: number;
+	private requestResponseReserveTokens: number;
 	private onTextDelta?: (text: string) => void;
 	private onToolCall?: (call: ToolCall) => void;
 	private requestApproval?: (call: ToolCall) => Promise<ToolResult | null>;
@@ -46,6 +49,8 @@ export class OpenResponsesLoop {
 		this.maxSteps = options.maxSteps;
 		this.autoApprove = options.autoApprove;
 		this.maxToolResultTokens = options.maxToolResultTokens ?? 4000;
+		this.requestResponseReserveTokens =
+			options.requestResponseReserveTokens ?? 4096;
 		this.onTextDelta = options.onTextDelta;
 		this.onToolCall = options.onToolCall;
 		this.requestApproval = options.requestApproval;
@@ -158,7 +163,7 @@ export class OpenResponsesLoop {
 			this.onTokenUpdate?.(runningTotal);
 
 			// Execute pending function calls
-			const functionCallOutputs: Array<{
+			const rawFunctionCallOutputs: Array<{
 				call_id: string;
 				output: string;
 			}> = [];
@@ -205,16 +210,42 @@ export class OpenResponsesLoop {
 					error: result.error,
 					...result, // include all other fields
 				});
-				functionCallOutputs.push({
+				rawFunctionCallOutputs.push({
 					call_id,
-					// The full result remains available through onToolResult and the
-					// persisted transcript; only this continuation payload is bounded.
-					output: truncateTextForTokens(
-						output,
-						this.maxToolResultTokens,
-					),
+					output,
 				});
 			}
+
+			// The full results remain available through onToolResult and the
+			// persisted transcript. Share the continuation allowance across all
+			// outputs so parallel tool calls cannot multiply the configured budget.
+			const sharedBudget =
+				this.maxToolResultTokens > 0 &&
+				this.requestResponseReserveTokens > 0
+					? Math.min(
+							this.maxToolResultTokens *
+								rawFunctionCallOutputs.length,
+							this.requestResponseReserveTokens,
+						)
+					: this.maxToolResultTokens;
+			const perOutputBudget =
+				rawFunctionCallOutputs.length > 0 && sharedBudget > 0
+					? Math.max(
+							1,
+							Math.floor(
+								sharedBudget / rawFunctionCallOutputs.length,
+							),
+						)
+					: sharedBudget;
+			const functionCallOutputs = rawFunctionCallOutputs.map(
+				(output) => ({
+					call_id: output.call_id,
+					output: truncateTextForTokens(
+						output.output,
+						perOutputBudget,
+					),
+				}),
+			);
 
 			// Send tool results back to agent for continuation
 			console.log(

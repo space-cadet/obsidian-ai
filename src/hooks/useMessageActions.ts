@@ -767,6 +767,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						autoApprove: activeProfile.autoApprove ?? autoApprove,
 						maxToolResultTokens:
 							plugin.settings.maxToolResultTokens ?? 4000,
+						requestResponseReserveTokens:
+							plugin.settings.requestResponseReserveTokens ??
+							4096,
 						onTextDelta: (text) => {
 							fullText = text;
 							patchRuntime(currentActiveId, {
