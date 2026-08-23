@@ -412,6 +412,11 @@ export class Orchestrator {
 						: 0,
 				},
 			});
+			if (budgetedHistory.overBudget) {
+				throw new Error(
+					"The group request exceeds the configured model context budget. Reduce the prompt or increase the request budget.",
+				);
+			}
 			const messages = [
 				systemMessage,
 				...budgetedHistory.history,

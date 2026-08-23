@@ -39,8 +39,12 @@ function messageRole(value: unknown): string | undefined {
 /** Keep tool replay bounded while preserving both the beginning and conclusion. */
 export function truncateTextForTokens(text: string, maxTokens: number): string {
 	if (maxTokens <= 0 || estimateTokens(text) <= maxTokens) return text;
-	const maxChars = Math.max(8, maxTokens * 4);
+	const maxChars = Math.max(1, maxTokens * 4);
 	const marker = "\n[…tool result truncated for model context…]\n";
+	if (maxChars <= marker.length + 1) {
+		const compactMarker = "…";
+		return `${text.slice(0, Math.max(0, maxChars - compactMarker.length))}${compactMarker}`;
+	}
 	const available = Math.max(2, maxChars - marker.length);
 	const headLength = Math.ceil(available * 0.7);
 	return `${text.slice(0, headLength)}${marker}${text.slice(-Math.max(1, available - headLength))}`;
@@ -100,6 +104,7 @@ export function buildBudgetedHistory<T>(args: {
 	);
 	const selected = new Array<T>();
 	let historyTokens = 0;
+	let newestGroupOverBudget = false;
 	const preserveCount = Math.min(
 		boundedHistory.length,
 		Math.max(0, options.preserveRecentMessages),
@@ -136,6 +141,12 @@ export function buildBudgetedHistory<T>(args: {
 		if (historyTokens + groupTokens <= availableForHistory) {
 			selected.unshift(...group);
 			historyTokens += groupTokens;
+		} else if (index === boundedHistory.length - 1) {
+			// Never silently remove the newest tool exchange. Callers must either
+			// truncate it further or stop before sending an invalid continuation.
+			selected.unshift(...group);
+			historyTokens += groupTokens;
+			newestGroupOverBudget = true;
 		}
 		index = groupStart - 1;
 	}
@@ -168,6 +179,8 @@ export function buildBudgetedHistory<T>(args: {
 		history: modelHistory,
 		estimatedRequestTokens: baseTokens + historyTokens,
 		droppedMessages: history.length - modelHistory.length,
-		overBudget: baseTokens + historyTokens > options.maxRequestTokens,
+		overBudget:
+			baseTokens + historyTokens > options.maxRequestTokens ||
+			newestGroupOverBudget,
 	};
 }

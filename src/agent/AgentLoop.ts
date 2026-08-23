@@ -216,12 +216,15 @@ export class AgentLoop {
 			const maxRequestTokens = this.opts.maxRequestTokens ?? 0;
 			const fullHistory = [...initialHistory, ...continuationMessages];
 			if (maxRequestTokens <= 0) {
-				return [
-					...(systemMessage ? [systemMessage] : []),
-					...initialHistory,
-					currentMessage,
-					...continuationMessages,
-				];
+				return {
+					messages: [
+						...(systemMessage ? [systemMessage] : []),
+						...initialHistory,
+						currentMessage,
+						...continuationMessages,
+					],
+					overBudget: false,
+				};
 			}
 			const budgeted = buildBudgetedHistory({
 				systemPrompt: systemMessage?.content,
@@ -247,16 +250,25 @@ export class AgentLoop {
 			const selectedContinuationMessages = budgeted.history.filter(
 				(message) => continuationSet.has(message),
 			);
-			return [
-				...(systemMessage ? [systemMessage] : []),
-				...selectedInitialHistory,
-				currentMessage,
-				...selectedContinuationMessages,
-			];
+			return {
+				messages: [
+					...(systemMessage ? [systemMessage] : []),
+					...selectedInitialHistory,
+					currentMessage,
+					...selectedContinuationMessages,
+				],
+				overBudget: budgeted.overBudget,
+			};
 		};
 
 		let fullText = "";
-		let currentMessages = budgetMessages();
+		let budgetedMessages = budgetMessages();
+		if (budgetedMessages.overBudget) {
+			throw new Error(
+				"The agent request exceeds the configured model context budget.",
+			);
+		}
+		let currentMessages = budgetedMessages.messages;
 		const stepTokenEstimates: number[] = [];
 		let providerUsage: ProviderTokenUsage | undefined;
 
@@ -410,7 +422,13 @@ export class AgentLoop {
 				assistantMsg,
 				toolMsg,
 			];
-			currentMessages = budgetMessages();
+			budgetedMessages = budgetMessages();
+			if (budgetedMessages.overBudget) {
+				throw new Error(
+					"The agent tool continuation exceeds the configured model context budget.",
+				);
+			}
+			currentMessages = budgetedMessages.messages;
 
 			// Count tokens for tool result
 			const resultTokens = estimateTokens(modelResult);

@@ -698,6 +698,11 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						: 0,
 				},
 			});
+			if (budgetedHistory.overBudget) {
+				throw new Error(
+					"The request exceeds the configured model context budget. Reduce the prompt or increase the request budget.",
+				);
+			}
 			const chatMessages = [
 				{ role: "system" as const, content: systemPrompt },
 				...budgetedHistory.history,

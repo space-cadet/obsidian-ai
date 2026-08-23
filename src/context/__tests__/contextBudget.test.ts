@@ -134,8 +134,14 @@ describe("buildBudgetedHistory", () => {
 			},
 		});
 
-		expect(result.history).toEqual([]);
-		expect(result.estimatedRequestTokens).toBeLessThanOrEqual(20);
-		expect(result.overBudget).toBe(false);
+		expect(result.history).toHaveLength(2);
+		expect(result.estimatedRequestTokens).toBeGreaterThan(20);
+		expect(result.overBudget).toBe(true);
+	});
+
+	it("keeps tiny truncations within their token limit", () => {
+		const result = truncateTextForTokens("a very long result", 1);
+
+		expect(result.length).toBeLessThanOrEqual(4);
 	});
 });

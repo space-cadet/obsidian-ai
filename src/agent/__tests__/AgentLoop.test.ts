@@ -138,17 +138,16 @@ describe("AgentLoop", () => {
 			requestApproval: vi.fn(),
 		});
 
-		await loop.run(
-			[
-				{ role: "system", content: "system" },
-				{ role: "user", content: "Read both notes" },
-			],
-			{},
-			new AbortController().signal,
-		);
-
-		expect(streamChatWithTools).toHaveBeenCalledTimes(3);
-		expect(streamChatWithTools.mock.calls[1][0]).toHaveLength(2);
-		expect(streamChatWithTools.mock.calls[2][0]).toHaveLength(2);
+		await expect(
+			loop.run(
+				[
+					{ role: "system", content: "system" },
+					{ role: "user", content: "Read both notes" },
+				],
+				{},
+				new AbortController().signal,
+			),
+		).rejects.toThrow("tool continuation exceeds");
+		expect(streamChatWithTools).toHaveBeenCalledTimes(1);
 	});
 });
