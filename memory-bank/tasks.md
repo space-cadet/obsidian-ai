@@ -37,7 +37,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T57d | Data-Sync Provider Contract with SyncIt | 🔄 | MEDIUM | 2026-08-22 | — | T57, T39a | [Details](tasks/T57d.md) |
 | T44 | Standalone UI Preview and Obsidian Host Boundary | 🔄 | MEDIUM | 2026-08-12 | T1, T22 | [Details](tasks/T44.md) |
 | T6a | Token Counter Accuracy Fix | 🔄 | HIGH | — | T6 | [Details](tasks/T6a.md) |
-| T48 | Conversation Compaction Mechanism | 🔄 | HIGH | — | T6a | [Details](tasks/T48.md) |
+| T48 | Conversation Compaction Mechanism | 🔄 | HIGH | 2026-08-23 | T6a | [Details](tasks/T48.md) |
 | T48a | Token-Budgeted Context Builder | 🔄 | HIGH | 2026-08-23 | T6a, T48 | [Details](tasks/T48a.md) |
 | T48b | Tool-Result Replay Limits and Canonical Serialization | 🔄 | HIGH | 2026-08-23 | T13a, T48a | [Details](tasks/T48b.md) |
 | T48c | Rolling Conversation Summary and Compaction | 🔄 | HIGH | 2026-08-23 | T48a, T48b | [Details](tasks/T48c.md) |

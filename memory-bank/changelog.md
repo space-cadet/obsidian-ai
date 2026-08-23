@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ## Unreleased - 2026-08-23
 
 ### Changed
+- Recorded the merged T48 semantic-compaction implementation (`6a205b9`, PR #5),
+  its live fourth-turn validation, and the remaining T48c diagnostic and
+  historical-retrieval acceptance gaps — T48/T48a-T48c.
 - Recorded the T58d implementation closeout and follow-up audit: plugin data
   is included in normal sync and dry-run planning, but the Rebuild action still
   covers only the chat-session SyncIndex; a separate plugin-data rebuild phase

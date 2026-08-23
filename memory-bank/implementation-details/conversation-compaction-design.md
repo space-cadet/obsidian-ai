@@ -2,6 +2,27 @@
 *Created: 2026-08-19 13:31:15 IST*
 *Last Updated: 2026-08-23 04:24:00 IST*
 
+## Implemented Slice and Current Boundary — 2026-08-23 17:05:26 IST
+
+The first semantic-compaction implementation is merged in `6a205b9` (PR #5).
+It adds configurable history-trigger and release thresholds, a configurable
+recent-message tail, JSON-directed summary generation, asynchronous
+summarization, a non-destructive model-history projection, and a visible
+completion notice. The persisted transcript remains unchanged.
+
+The implementation is narrower than the full design above. The summary is
+currently held in memory per session; it is not persisted in the session export
+and there is no summary-inspection view or exact message-ID retrieval yet. The
+summary parser checks JSON syntax but does not yet perform the full schema,
+provenance, or quality audit described in this document. Tool-pair preservation
+across compaction and repeated compaction cycles also need focused acceptance
+coverage.
+
+Live validation is recorded in
+`T48c-validation-2026-08-23.md`. It demonstrated the trigger, asynchronous
+completion notice, and recovery of seeded markers and requirements, but the
+export alone cannot expose the in-memory summary.
+
 ## Overview
 
 Token-budgeted management of model-visible conversation history. The system

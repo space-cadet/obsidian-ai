@@ -1,6 +1,20 @@
 # Active Context
 
-*Last Updated: 2026-08-23 04:24:00 IST*
+*Last Updated: 2026-08-23 17:05:26 IST*
+
+### 2026-08-23 — T48c implementation validation and current boundary
+
+- T48 implementation is merged to `main` through PR #5 as `6a205b9`.
+- The merged slice provides request budgeting, bounded tool-result replay,
+  semantic compaction, configurable trigger/release values, asynchronous
+  summarization, and a visible completion notice.
+- Live validation used trigger `8,000`, release `4,000`, and four preserved
+  recent messages. The fourth turn triggered compaction and the recovery prompt
+  recovered all four seeded markers and representative requirements.
+- T48c remains active for diagnostic instrumentation, schema/provenance and
+  tool-pair validation, repeated compaction coverage, exact historical
+  retrieval, and summary inspection/persistence. T48d remains active for
+  provider-aware usage reconciliation.
 
 ### 2026-08-23 — T48c compaction-strategy research
 
