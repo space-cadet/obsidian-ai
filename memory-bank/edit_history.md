@@ -1,8 +1,15 @@
 # Edit History
 
-*Last Updated: 2026-08-23 01:27:43 IST*
+*Last Updated: 2026-08-23 04:24:00 IST*
 
 ## 2026-08-23
+
+#### 04:24:00 IST - T48c: Record context-compaction research and strategy
+- Created `memory-bank/implementation-details/context-compaction-strategies-reference.md` - Recorded provider-native, semantic, tool-replay, caching, hierarchical-memory, safety-aware, and OpenClaw compaction strategies with sources.
+- Modified `memory-bank/implementation-details/conversation-compaction-design.md` - Replaced turn-count replacement with the token-triggered hybrid ladder, separate model-history projection, structured audited summary contract, provider compatibility, and two-slice T48c path.
+- Modified `memory-bank/activeContext.md` - Recorded the research and documentation-only T48c update.
+- Modified `memory-bank/session_cache.md` - Recorded the research reference, strategy update, and unchanged task status.
+- Modified `memory-bank/sessions/2026-08-23-night.md` - Recorded decisions and remaining T48c direction.
 
 #### 01:27:43 IST - T58/T58c/T58d: Record sync implementation and plugin rebuild audit
 

@@ -237,6 +237,12 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			enableTools: plugin.settings.enableAgentTools,
 			autoApprove: plugin.settings.autoApply,
 			maxSteps: plugin.settings.maxAgentSteps,
+			maxContextMessages: plugin.settings.maxContextMessages ?? 10,
+			maxRequestTokens: plugin.settings.maxRequestTokens ?? 32000,
+			preserveRecentMessages: plugin.settings.preserveRecentMessages ?? 4,
+			requestResponseReserveTokens:
+				plugin.settings.requestResponseReserveTokens ?? 4096,
+			maxToolResultTokens: plugin.settings.maxToolResultTokens ?? 4000,
 			toolExecutor: new ToolExecutor(
 				plugin.app,
 				plugin.settings,
@@ -557,7 +563,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	// Wrap handleSend to also sync to relay (only if ParticipantRouter is not handling it)
 	const handleSendWithSync = useCallback(
 		async (text: string, attachments?: import("../types").Attachment[]) => {
-		await actions.handleSend(text, attachments);
+			await actions.handleSend(text, attachments);
 			// Only do legacy relay sync if ParticipantRouter is not active
 			if (
 				!participantRouter &&
@@ -898,93 +904,94 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				</button>
 			)}
 			{activeSessionId === "__sync__" ? (
-			<ChatSyncPanel plugin={plugin} />
-		) : (
-			<ChatMainArea
-				app={plugin.app}
-				renderMarkdown={renderMarkdown}
-				plugin={plugin}
-				sessionId={activeSessionId}
-				messages={messages}
-				currentAiMessage={activeRuntime.currentAiMessage}
-				currentContentParts={activeRuntime.currentContentParts}
-				isStreaming={activeRuntime.isStreaming}
-				isEditing={ui.isEditing}
-				thinkingEnabled={thinkingEnabled}
-				showThinking={thinkingEnabled}
-				scrollToMessageId={scrollToMessageId}
-				restoreScrollTop={
-					plugin.settings.restoreChatTabs
-						? sessions.find(
-								(session) => session.id === activeSessionId,
-							)?.scrollPosition
-						: undefined
-				}
-				pendingToolCall={activeRuntime.pendingToolCall}
-				pendingToolDisplay={
-					activeRuntime.pendingToolCall?.toolName
-						? (plugin.integrationRegistry?.getCapabilityDisplay(
-								activeRuntime.pendingToolCall.toolName,
-							) ?? null)
-						: null
-				}
-				typingUsers={typingUsers}
-				onSend={handleSendWithSync}
-				onStop={actions.handleStop}
-				onTyping={() => syncAdapterRef.current?.sendTyping()}
-				onAddMention={handleAddMention}
-				onCancelEdit={actions.handleCancelEdit}
-				onToggleThinking={() => setThinkingEnabled((t) => !t)}
-				onAppend={actions.handleAppend}
-				onInsertAtCursor={actions.handleInsertAtCursor}
-				onApply={actions.handleApply}
-				onRetry={actions.handleRetry}
-				onEditMessage={actions.handleEditMessage}
-				onApplyToTarget={actions.handleApplyToTarget}
-				onCreateNote={actions.handleCreateNote}
-				onAppendToTarget={actions.handleAppendToTarget}
-				onOpenPastSession={openSessionInTab}
-				onScrollPositionChange={handleScrollPositionChange}
-				onApproveTool={actions.handleApproveTool}
-				onRejectTool={actions.handleRejectTool}
-				attachments={ui.messageAttachments}
-				onAttachmentsChange={ui.setMessageAttachments}
-				pressEnterToSend={plugin.settings.pressEnterToSend}
-				tokenTotal={(() => {
-					const session = activeSessionId
-						? sessions.find((s) => s.id === activeSessionId)
-						: null;
-					const sessionTotal = session
-						? getSessionTotalTokens(session)
-						: 0;
-					const showFullRequest =
-						plugin.settings.showFullRequestTokens;
-					if (
-						activeRuntime.isStreaming &&
-						activeRuntime.runningTokenTotal > 0
-					) {
-						// When full payload mode is on, runningTokenTotal already
-						// includes system + history + user + response tokens.
-						// Show just that to avoid double-counting history.
-						const displayTotal = showFullRequest
-							? activeRuntime.runningTokenTotal
-							: sessionTotal + activeRuntime.runningTokenTotal;
-						return `~${displayTotal.toLocaleString()} tokens`;
+				<ChatSyncPanel plugin={plugin} />
+			) : (
+				<ChatMainArea
+					app={plugin.app}
+					renderMarkdown={renderMarkdown}
+					plugin={plugin}
+					sessionId={activeSessionId}
+					messages={messages}
+					currentAiMessage={activeRuntime.currentAiMessage}
+					currentContentParts={activeRuntime.currentContentParts}
+					isStreaming={activeRuntime.isStreaming}
+					isEditing={ui.isEditing}
+					thinkingEnabled={thinkingEnabled}
+					showThinking={thinkingEnabled}
+					scrollToMessageId={scrollToMessageId}
+					restoreScrollTop={
+						plugin.settings.restoreChatTabs
+							? sessions.find(
+									(session) => session.id === activeSessionId,
+								)?.scrollPosition
+							: undefined
 					}
-					if (sessionTotal > 0) {
-						return `~${sessionTotal.toLocaleString()} tokens`;
+					pendingToolCall={activeRuntime.pendingToolCall}
+					pendingToolDisplay={
+						activeRuntime.pendingToolCall?.toolName
+							? (plugin.integrationRegistry?.getCapabilityDisplay(
+									activeRuntime.pendingToolCall.toolName,
+								) ?? null)
+							: null
 					}
-					return undefined;
-				})()}
-				draft={undefined}
-				onDraftChange={undefined}
-				editMessage={ui.editMessageText}
-				selectionMode={ui.selectionMode}
-				selectedMessageIds={ui.selectedMessageIds}
-				onLongPress={ui.enterSelectionMode}
-				onToggleSelection={ui.toggleMessageSelection}
-			/>
-		)}
+					typingUsers={typingUsers}
+					onSend={handleSendWithSync}
+					onStop={actions.handleStop}
+					onTyping={() => syncAdapterRef.current?.sendTyping()}
+					onAddMention={handleAddMention}
+					onCancelEdit={actions.handleCancelEdit}
+					onToggleThinking={() => setThinkingEnabled((t) => !t)}
+					onAppend={actions.handleAppend}
+					onInsertAtCursor={actions.handleInsertAtCursor}
+					onApply={actions.handleApply}
+					onRetry={actions.handleRetry}
+					onEditMessage={actions.handleEditMessage}
+					onApplyToTarget={actions.handleApplyToTarget}
+					onCreateNote={actions.handleCreateNote}
+					onAppendToTarget={actions.handleAppendToTarget}
+					onOpenPastSession={openSessionInTab}
+					onScrollPositionChange={handleScrollPositionChange}
+					onApproveTool={actions.handleApproveTool}
+					onRejectTool={actions.handleRejectTool}
+					attachments={ui.messageAttachments}
+					onAttachmentsChange={ui.setMessageAttachments}
+					pressEnterToSend={plugin.settings.pressEnterToSend}
+					tokenTotal={(() => {
+						const session = activeSessionId
+							? sessions.find((s) => s.id === activeSessionId)
+							: null;
+						const sessionTotal = session
+							? getSessionTotalTokens(session)
+							: 0;
+						const showFullRequest =
+							plugin.settings.showFullRequestTokens;
+						if (
+							activeRuntime.isStreaming &&
+							activeRuntime.runningTokenTotal > 0
+						) {
+							// When full payload mode is on, runningTokenTotal already
+							// includes system + history + user + response tokens.
+							// Show just that to avoid double-counting history.
+							const displayTotal = showFullRequest
+								? activeRuntime.runningTokenTotal
+								: sessionTotal +
+									activeRuntime.runningTokenTotal;
+							return `~${displayTotal.toLocaleString()} tokens`;
+						}
+						if (sessionTotal > 0) {
+							return `~${sessionTotal.toLocaleString()} tokens`;
+						}
+						return undefined;
+					})()}
+					draft={undefined}
+					onDraftChange={undefined}
+					editMessage={ui.editMessageText}
+					selectionMode={ui.selectionMode}
+					selectedMessageIds={ui.selectedMessageIds}
+					onLongPress={ui.enterSelectionMode}
+					onToggleSelection={ui.toggleMessageSelection}
+				/>
+			)}
 			{ui.selectionMode && (
 				<div className="chat-selection-toolbar" role="toolbar">
 					<span>{ui.selectedMessageIds.size} selected</span>

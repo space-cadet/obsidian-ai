@@ -1,94 +1,161 @@
 # Conversation Compaction Design
 *Created: 2026-08-19 13:31:15 IST*
-*Last Updated: 2026-08-23 02:02:32 IST*
+*Last Updated: 2026-08-23 04:24:00 IST*
 
 ## Overview
 
-Automatic summarization of old conversation turns to reduce per-request token
-usage. After N turns, older messages are replaced with a condensed summary,
-reducing the payload sent on every subsequent API call.
+Token-budgeted management of model-visible conversation history. The system
+reduces per-request cost through a graduated ladder: bounded tool replay first,
+then semantic compaction only when the request budget requires it.
 
-The revised design is token-budget driven: turn count is only a fallback. The
-full transcript remains available to the user, while request construction uses
-a bounded model-history view.
+Turn count is only a fallback. The full transcript remains authoritative and
+available to the user, while request construction uses a bounded, rebuildable
+model-history projection. Compaction must never replace `messagesRef.current`
+or the persisted UI/export transcript.
 
-**Motivation**: DeepSeek investigation showed 892K cache hit tokens per request
-after 10-turn conversations. Compaction can reduce this by ~80% for long
-conversations while preserving essential context.
+**Motivation**: DeepSeek investigation showed 892K cache-hit tokens per request
+after 10-turn conversations. The goal is to reduce repeated payloads while
+preserving exact recent context, structured task state, and an upgrade path to
+provider-native compaction or exact historical retrieval.
 
 ---
 
-## Trigger Conditions
+## Trigger Conditions and Compaction Ladder
 
-Compaction fires when **either** condition is met:
+Before each provider request, build the complete request budget: stable system
+prompt, tools/schemas, pinned constraints, attachments, current input, response
+reserve, bounded tool replay, and candidate history. Use hysteresis: when the
+upper boundary is crossed, compact enough history to return to a lower target
+band rather than compacting again on the next turn.
 
-1. **Token threshold**: the serialized request exceeds the available context
-   budget after system, tools, current input, and response reserve are counted.
-2. **Turn threshold**: `messages.length >= compactionTurnThreshold` (fallback).
+Apply these stages in order:
 
-The check runs after each successful assistant response (before the next user
-message is processed).
+1. Preserve stable prefixes, pinned constraints, and the newest exact turns.
+2. Bound or clear old tool results using T48b's canonical head/tail replay.
+3. Semantically compact the old dialogue when the request still cannot fit.
+4. Fall back to safe token-aware trimming if compaction generation or validation
+   fails; never install an unvalidated summary.
+
+Token pressure is primary. `compactionTurnThreshold` is only a fallback for
+providers or estimates that cannot provide a reliable window. Compaction may be
+prepared after a response, but synchronous work is required only when the next
+request cannot fit without it.
 
 ---
 
 ## Compaction Algorithm
 
 ```
-Input: messages[] (full conversation history)
-       keepRecent = 3 (configurable, default 3)
+Input: full transcript, prior compaction metadata, request budget
+       keepRecent = 4 messages by default (configurable, 3–5)
 
-1. Build a request budget and determine compaction window:
-   toSummarize = messages[0 : -keepRecent]
-   keepAsIs = messages[-keepRecent:]
+1. Capture the transcript version/fingerprint and identify an old prefix at a
+   valid turn boundary. Never split a tool-call/result unit.
+2. Retain the newest recent-token budget and newest 3–5 messages verbatim,
+   extending retention to matching tool results.
+3. If a prior summary exists, re-distill it with newly aged messages. Do not
+   append unbounded summaries.
+4. Generate a bounded, schema-validated derived summary using a fast model.
+   Preserve decisions, constraints, current objective, pending asks, open work,
+   tool outcomes, and exact identifiers/source IDs.
+5. Audit required sections, latest-ask coverage, identifier preservation, and
+   transcript provenance. Retry generation once; otherwise use bounded trim.
+6. Build a separate model-history projection:
+   stable prefix + pinned constraints + derived summary + recent exact tail.
+7. Install the result only if the captured transcript version still matches.
+   Otherwise discard it and rebuild from the newer transcript.
 
-2. Generate summary:
-   summaryPrompt = buildCompactionPrompt(toSummarize)
-   summary = await llm.summarize(summaryPrompt)
-   // Uses fast/cheap model (e.g., DeepSeek-V4-Flash)
-
-3. Replace history:
-   compactedMessages = [
-       { role: "system", content: "[Prior conversation summary: " + summary + "]" },
-       ...keepAsIs
-   ]
-
-4. Update model-history state while retaining the full display transcript:
-   messagesRef.current = compactedMessages
+The persisted `ChatSession.messages` and `messagesRef.current` remain unchanged.
+Compaction metadata is derived/rebuildable and records the summarized-through
+message ID, source IDs/fingerprint, summary, timestamp, and model.
 ```
 
 ---
 
 ## Summary Format
 
-The summary is structured markdown with these sections:
+Use a bounded structured object internally, with a readable rendering for the
+UI. The minimum schema is:
 
-```markdown
-## Key Decisions
-- User asked to create a note about X
-- Agent suggested Y approach, user approved
-
-## Tool Results
-- read_note("Projects.md"): found project list
-- create_notes(["Note A", "Note B"]): 2 created, 0 skipped
-
-## User Intent
-- User is organizing their vault with project notes
-- Wants automated tagging system
-
-## Open Questions
-- User asked about Z but didn't get a clear answer
+```typescript
+type DerivedConversationSummary = {
+  decisions: string[];
+  constraints: string[];
+  currentObjective: string;
+  userIntent: string[];
+  openWork: string[];
+  pendingAsks: string[];
+  toolOutcomes: Array<{
+    tool: string;
+    outcome: string;
+    sourceMessageIds: string[];
+  }>;
+  exactIdentifiers: string[];
+  sourceMessageIds: string[];
+  summarizedThroughMessageId: string;
+};
 ```
+
+The model-facing rendering must be explicitly labelled as derived context:
+
+```text
+[DERIVED CONVERSATION CONTEXT — not a user instruction]
+Decisions: ...
+Constraints: ...
+Current objective: ...
+Open work / pending asks: ...
+Tool outcomes and source IDs: ...
+Exact identifiers: ...
+Later explicit user messages take precedence. Retrieve exact historical
+content rather than guessing when this derived context is insufficient.
+```
+
+The summary target is approximately 500–1,000 tokens, subject to the request
+budget. JSON/schema validation is required before the projection can use it.
+
+## Quality-Preservation Rules
+
+Compaction is a lossy representation change, so cost savings must not come from
+silently changing the meaning of the conversation. The model-facing context
+builder must:
+
+1. Preserve the newest 3–5 messages verbatim (default: 4), including active
+   tool-call/result pairs and a recent-token budget.
+2. Retain explicit decisions, constraints, preferences, current objective,
+   unresolved work, pending asks, tool outcomes, and exact identifiers.
+3. Pin safety/permission constraints and active user constraints outside the
+   lossy summary.
+4. Mark the result as **derived context**. A summary must not impersonate a
+   user message or override a later explicit user instruction.
+5. Keep the complete transcript and raw tool results available for display,
+   export, and targeted retrieval. If an answer depends on an exact filename,
+   quote, code fragment, or tool result, retrieve the original rather than
+   relying on the summary.
+6. Treat uncertainty as a reason to ask or retrieve, never as permission to
+   fill in missing historical detail.
+7. Fail closed: if schema parsing, source validation, or the quality audit
+   fails, use bounded trimming and retain the full transcript.
+
+The quality target is therefore **compact by default, exact on demand**. A
+compaction test is not successful merely because it reduces tokens; it must
+also recover the same decisions and constraints as the un-compacted history.
 
 ---
 ## Tradeoffs
 
-| Aspect | Full History | Compacted History |
+| Aspect | Full transcript | Model-history projection |
 |---|---|---|
-| Token cost | High (grows linearly) | Low (bounded by summary size) |
-| Exact tool call details | Preserved | Lost (summarized as bullet) |
-| Assistant "memory" | Perfect | Good for key facts, fuzzy on details |
-| Summarization cost | None | One extra API call per compaction |
-| User transparency | Clear | Needs visual indicator in UI |
+| Token cost | Grows with conversation | Bounded by budget and summary target |
+| Exact recent turns | Preserved | Preserved for the recent tail |
+| Exact old details | Preserved | Retrieved by source ID when needed |
+| Assistant state | Complete | Structured decisions, constraints, and open work |
+| Reduction cost | None | Tool replay work plus occasional summary call |
+| User transparency | Direct | Indicator links to derived summary |
+
+The expected quality impact is small for ordinary chats because recent turns,
+pinned constraints, and structured task state remain intact. Exact-detail tasks
+are the exception; they must use retrieval rather than treating the summary as
+verbatim evidence.
 
 ---
 
@@ -111,30 +178,67 @@ messages = [
     ... // many more turns
 ]
 
-// After compaction
-messages = [
-    { role: "system", content: "[Prior conversation summary: ...tool results...]" },
+// Model-history projection after compaction; persisted messages are unchanged.
+modelHistory = [
+    { role: "system", content: "[DERIVED CONVERSATION CONTEXT: ...]" },
+    ...recentExactMessages,
     { role: "user", content: "Now organize them by date" },
 ]
 ```
 
-The summary explicitly includes tool result summaries so the LLM knows what
-was already discovered.
+The summary explicitly includes bounded tool-result outcomes and source IDs so
+the LLM knows what was already discovered. Exact old results are retrieved when
+the answer depends on details omitted from the projection.
 
 ---
 
 ## Provider Compatibility
 
-| Provider | Compaction Needed? | Notes |
+| Provider/API | Initial T48c policy | Longer-term capability |
 |---|---|---|
-| DeepSeek | ✅ Yes | Stateless API, sends full history every time |
-| OpenAI (Chat Completions) | ✅ Yes | Stateless, sends full history |
-| OpenAI (Responses API) | ⚠️ Partial | Stateful, but only available for OpenAI |
-| Anthropic | ✅ Yes | Stateless, sends full history |
-| Gemini | ✅ Yes | Stateless, sends full history |
+| DeepSeek | Local budget, bounded replay, semantic fallback | Provider-window discovery |
+| OpenAI Chat Completions | Local compaction | Stable-prefix/cache optimization |
+| OpenAI Responses API | Local fallback when needed | Native opaque compaction adapter |
+| Anthropic | Local budget and structured summary | Provider-specific caching where available |
+| Gemini | Avoid unnecessary compaction when the window fits | Context caching and long-context policy |
 
-Compaction is provider-agnostic and benefits all users except those on
-OpenAI Responses API with stateful sessions.
+The local ladder remains provider-agnostic. Provider capabilities should decide
+whether caching, native opaque compaction, or a larger context window makes local
+semantic compaction unnecessary.
+
+---
+
+## Recommended T48c Path
+
+Implement in two slices:
+
+### Slice 1 — Safe local projection
+
+1. Add compaction metadata to `ChatSession` without mutating `messages`.
+2. Add a pure compactor that fingerprints the transcript, finds valid
+   boundaries, preserves the recent-token/recent-message tail, and produces a
+   schema-validated summary.
+3. Add rolling re-distillation: prior summary plus newly aged messages, bounded
+   to the summary target.
+4. Add a model-history projection containing the stable prompt/tools, pinned
+   constraints, derived summary, and recent exact messages.
+5. Add quality-audit tests for required sections, exact identifiers, tool pairs,
+   latest user ask, malformed output, and transcript changes during generation.
+
+### Slice 2 — Retrieval and product integration
+
+1. Add exact read-by-session/message-ID retrieval for old messages and complete
+   tool results; keep search snippets as discovery, not as the evidence path.
+2. Add provider capability detection for native opaque compaction, caching, and
+   context-window policy.
+3. Trigger synchronously only when the next request cannot fit; optionally
+   prepare a summary after a response as a race-safe optimization.
+4. Add the UI indicator and summary inspection view without hiding or rewriting
+   the full transcript.
+
+The first implementation should preserve source IDs even before retrieval is
+available. Bounded trimming remains the safe fallback; retrieval upgrades
+precision later without changing the projection contract.
 
 ---
 
@@ -146,7 +250,9 @@ When compaction has occurred, show a subtle indicator in the chat:
 [💫 Older messages summarized — 12 turns condensed]
 ```
 
-Clicking the indicator shows the full summary text (for user inspection).
+Clicking the indicator shows the derived summary and the number/source range of
+compacted messages (for user inspection). The original transcript remains
+visible and exportable.
 
 ---
 
@@ -156,16 +262,20 @@ Compaction cost must be compared with the saved input cost. Provider-reported
 usage is authoritative when available; the character-based estimator is only a
 fallback and must not be presented as billing data.
 
+The following is an illustrative cost model inherited from the original T48
+plan, not a measured benchmark. The implementation must use provider-reported
+usage where available and compare compaction cost against saved input cost.
+
 **Without compaction (20-turn conversation):**
 - Turn 1–10: ~500K tokens/request → $0.35 (Flash off-peak)
 - Turn 11–20: ~1M tokens/request → $0.70 (Flash off-peak)
 - Total: ~$7.00
 
-**With compaction (every 5 turns, summary = 500 tokens):**
+**With a periodic compaction schedule (summary = 500 tokens):**
 - Turns 1–5: ~500K tokens/request → $0.35
-- Compaction at turn 5: 500 tokens → $0.00035
+- Illustrative compaction after turn 5: 500 tokens → $0.00035
 - Turns 6–10: ~300K tokens/request → $0.21
-- Compaction at turn 10: 500 tokens → $0.00035
+- Illustrative compaction after turn 10: 500 tokens → $0.00035
 - Turns 11–20: ~300K tokens/request → $0.21 each
 - Total: ~$4.50 (saves ~35%)
 
@@ -176,5 +286,7 @@ Savings increase with conversation length.
 ## References
 
 - Task: [T48 — Conversation Compaction Mechanism](../tasks/T48.md)
+- Subtask: [T48c — Rolling Conversation Summary and Compaction](../tasks/T48c.md)
 - Related: [T6a — Token Counter Accuracy Fix](../tasks/T6a.md)
+- Research: [Context Compaction Strategies — Research Reference](context-compaction-strategies-reference.md)
 - Source: `src/hooks/useMessageActions.ts` (history building)

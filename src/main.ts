@@ -22,7 +22,11 @@ import {
 } from "./modules/SelectionState";
 import { diffExtension } from "./modules/diffExtension";
 import { ObsidianAIChatView, CHAT_VIEWTYPE } from "./views/ObsidianAIChatView";
-import { PluginUpdater, UpdateAvailableModal } from "./updater/PluginUpdater";
+import {
+	AvailableBuildsModal,
+	PluginUpdater,
+	UpdateAvailableModal,
+} from "./updater/PluginUpdater";
 import { GIT_COMMIT_HASH, GIT_BRANCH } from "./version-info";
 import { StoredChatData, ChatSession } from "./types";
 import type { SyncLogEntry, SyncProgressSnapshot } from "./sync/SyncProgress";
@@ -1762,5 +1766,20 @@ export default class ObsidianAIPlugin extends Plugin {
 		} catch (e) {
 			this.logger?.log("warn", `Failed to create rolling backup: ${e}`);
 		}
+	}
+
+	async showAvailableBuilds() {
+		if (!this._updater) return;
+		const modal = new AvailableBuildsModal(
+			this.app,
+			this._updater,
+			async (build) => {
+				const tempDir = await this._updater!.downloadUpdate(
+					build.release,
+				);
+				await this._updater!.installUpdate(tempDir);
+			},
+		);
+		modal.open();
 	}
 }

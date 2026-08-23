@@ -19,6 +19,14 @@ export interface ReleaseInfo {
 	}>;
 }
 
+export interface AvailableBuild {
+	release: ReleaseInfo;
+	branch: string;
+	commitHash?: string;
+	/** Git commit timestamp; release publication time is the fallback. */
+	committedAt?: string;
+}
+
 export interface CommitInfo {
 	sha: string;
 	message: string;
@@ -69,7 +77,7 @@ async function fetchLatestCommit(
 ): Promise<CommitInfo | null> {
 	try {
 		const data = await fetchJson(
-			`https://api.github.com/repos/${GITHUB_REPO}/commits/${branch}?_cb=${Date.now()}`,
+			`https://api.github.com/repos/${GITHUB_REPO}/commits/${encodeURIComponent(branch)}?_cb=${Date.now()}`,
 		);
 		if (!data?.sha) return null;
 		return {
@@ -99,6 +107,27 @@ async function fetchJson(url: string): Promise<any> {
 	return JSON.parse(response.text);
 }
 
+function branchFromRelease(release: ReleaseInfo): string {
+	const prefix = "latest-dev-";
+	return release.tag_name.startsWith(prefix)
+		? release.tag_name.slice(prefix.length)
+		: "main";
+}
+
+/** Extract the immutable source identity recorded in an automated release. */
+function commitInfoFromRelease(release: ReleaseInfo): CommitInfo | null {
+	const sha = release.body?.match(/\*\*Commit:\*\*\s*`([^`]+)`/)?.[1];
+	if (!sha) return null;
+	return {
+		sha,
+		message: release.name || `Published ${release.tag_name}`,
+		authorName: "GitHub Actions",
+		committedAt:
+			release.body?.match(/\*\*Built at:\*\*\s*(.+)/)?.[1]?.trim() ??
+			release.published_at,
+	};
+}
+
 /** Cross-platform file download using requestUrl + vault adapter */
 async function downloadFile(
 	app: App,
@@ -110,6 +139,9 @@ async function downloadFile(
 		method: "GET",
 		headers: { "User-Agent": "obsidian-ai-updater" },
 	});
+	if (response.status < 200 || response.status >= 300) {
+		throw new Error(`Download failed: HTTP ${response.status}`);
+	}
 	await app.vault.adapter.write(destPath, response.text);
 }
 
@@ -215,7 +247,13 @@ export class PluginUpdater {
 					releases.find((r) => r.tag_name === "latest-dev") ??
 					releases.find((r) => r.prerelease) ??
 					releases[0];
-				this.log("info", "selected release:", release?.tag_name, "prerelease:", release?.prerelease);
+				this.log(
+					"info",
+					"selected release:",
+					release?.tag_name,
+					"prerelease:",
+					release?.prerelease,
+				);
 			} else {
 				release = await fetchJson(
 					`https://api.github.com/repos/${GITHUB_REPO}/releases/latest?_cb=${Date.now()}`,
@@ -225,9 +263,9 @@ export class PluginUpdater {
 
 			const latestVersion = release.tag_name.replace(/^v/, "");
 
-			const latestCommit = await fetchLatestCommit(
-				includePrerelease && currentBranch ? currentBranch : "main",
-			);
+			const latestCommit = includePrerelease
+				? commitInfoFromRelease(release)
+				: await fetchLatestCommit("main");
 			this.log("info", "latestCommit:", latestCommit?.sha?.slice(0, 7));
 			// For dev channel: compare commit hashes to detect if already on latest
 			let commitMatch = false;
@@ -235,7 +273,15 @@ export class PluginUpdater {
 				const shortLocal = currentCommitHash.slice(0, 7);
 				const shortRemote = latestCommit.sha.slice(0, 7);
 				commitMatch = shortLocal === shortRemote;
-				this.log("info", "commit compare:", shortLocal, "vs", shortRemote, "match:", commitMatch);
+				this.log(
+					"info",
+					"commit compare:",
+					shortLocal,
+					"vs",
+					shortRemote,
+					"match:",
+					commitMatch,
+				);
 				if (commitMatch) {
 					this.log("info", "commits match - no update");
 					return {
@@ -250,9 +296,23 @@ export class PluginUpdater {
 				}
 			}
 
+			// Dev releases intentionally reuse the same tag. A commit mismatch is
+			// therefore the authoritative signal for a dev update.
 			const hasUpdate =
-				compareVersions(latestVersion, currentVersion) > 0;
-			this.log("info", "version compare:", latestVersion, "vs", currentVersion, "hasUpdate:", hasUpdate);
+				includePrerelease && currentCommitHash
+					? latestCommit
+						? !commitMatch
+						: false
+					: compareVersions(latestVersion, currentVersion) > 0;
+			this.log(
+				"info",
+				"version compare:",
+				latestVersion,
+				"vs",
+				currentVersion,
+				"hasUpdate:",
+				hasUpdate,
+			);
 
 			return {
 				hasUpdate,
@@ -275,11 +335,40 @@ export class PluginUpdater {
 		}
 	}
 
+	/** Return the published dev build for each available branch. */
+	async listAvailableBuilds(): Promise<AvailableBuild[]> {
+		const releases = (await fetchJson(
+			`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=100&_cb=${Date.now()}`,
+		)) as ReleaseInfo[];
+
+		const builds: AvailableBuild[] = [];
+		for (const release of (releases ?? []).filter(
+			(r) => r.prerelease && r.tag_name.startsWith("latest-dev"),
+		)) {
+			const branch = branchFromRelease(release);
+			const commitInfo = commitInfoFromRelease(release);
+
+			builds.push({
+				release,
+				branch,
+				commitHash: commitInfo?.sha,
+				committedAt: commitInfo?.committedAt ?? release.published_at,
+			});
+		}
+		return builds;
+	}
+
 	/** Download update files to a temp directory */
 	async downloadUpdate(release: ReleaseInfo): Promise<string> {
 		const tempDir = `${this.pluginDir}/.update-tmp`;
 		await this.ensureDir(tempDir);
-		this.log("info", "downloading to", tempDir, "assets:", release.assets.map((a) => a.name));
+		this.log(
+			"info",
+			"downloading to",
+			tempDir,
+			"assets:",
+			release.assets.map((a) => a.name),
+		);
 
 		// Download each required file
 		for (const filename of RELEASE_FILES) {
@@ -288,10 +377,22 @@ export class PluginUpdater {
 				throw new Error(`Release missing required file: ${filename}`);
 			}
 			const destPath = `${tempDir}/${filename}`;
-			this.log("info", "downloading", filename, "from", asset.browser_download_url);
+			this.log(
+				"info",
+				"downloading",
+				filename,
+				"from",
+				asset.browser_download_url,
+			);
 			await downloadFile(this.app, asset.browser_download_url, destPath);
 			const stat = await this.app.vault.adapter.stat(destPath);
-			this.log("info", "downloaded", filename, "size:", stat?.size ?? "unknown");
+			this.log(
+				"info",
+				"downloaded",
+				filename,
+				"size:",
+				stat?.size ?? "unknown",
+			);
 		}
 
 		return tempDir;
@@ -301,7 +402,13 @@ export class PluginUpdater {
 	async installUpdate(tempDir: string): Promise<void> {
 		const backupDir = `${this.pluginDir}/.backup`;
 		await this.ensureDir(backupDir);
-		this.log("info", "installing from", tempDir, "backing up to", backupDir);
+		this.log(
+			"info",
+			"installing from",
+			tempDir,
+			"backing up to",
+			backupDir,
+		);
 
 		// Backup current files
 		for (const filename of RELEASE_FILES) {
@@ -320,7 +427,12 @@ export class PluginUpdater {
 			const dest = `${this.pluginDir}/${filename}`;
 			const content = await this.readFile(src);
 			await this.writeFile(dest, content);
-			this.log("info", "installed", filename, "(" + content.length + " chars)");
+			this.log(
+				"info",
+				"installed",
+				filename,
+				"(" + content.length + " chars)",
+			);
 		}
 	}
 
@@ -446,5 +558,81 @@ export class UpdateAvailableModal extends Modal {
 			};
 			check();
 		});
+	}
+}
+
+/** Modal for selecting a published dev build from any branch. */
+export class AvailableBuildsModal extends Modal {
+	private builds: AvailableBuild[] = [];
+
+	constructor(
+		app: App,
+		private updater: PluginUpdater,
+		private onInstall: (build: AvailableBuild) => Promise<void>,
+	) {
+		super(app);
+	}
+
+	async onOpen() {
+		const { contentEl } = this;
+		contentEl.empty();
+		contentEl.createEl("h2", { text: "Available dev builds" });
+		contentEl.createEl("p", {
+			text: "Choose a published branch build to download and install.",
+		});
+		const status = contentEl.createEl("p", { text: "Loading builds…" });
+
+		try {
+			this.builds = await this.updater.listAvailableBuilds();
+			status.remove();
+			if (this.builds.length === 0) {
+				contentEl.createEl("p", {
+					text: "No branch builds are currently available.",
+				});
+				return;
+			}
+
+			for (const build of this.builds) {
+				const timestamp = build.committedAt
+					? new Date(build.committedAt).toLocaleString()
+					: new Date(build.release.published_at).toLocaleString();
+				new Setting(contentEl)
+					.setName(build.branch)
+					.setDesc(
+						`${build.release.name} · ${build.commitHash?.slice(0, 7) ?? "commit unavailable"} · ${timestamp}`,
+					)
+					.addButton((button) =>
+						button.setButtonText("Install").onClick(async () => {
+							button.setDisabled(true);
+							button.setButtonText("Installing…");
+							try {
+								await this.onInstall(build);
+								this.close();
+								new Notice(
+									"✅ Build installed. Reloading Obsidian…",
+								);
+								// @ts-ignore Obsidian exposes this command at runtime.
+								this.app.commands.executeCommandById(
+									"app:reload",
+								);
+							} catch (error: any) {
+								button.setDisabled(false);
+								button.setButtonText("Install");
+								new Notice(
+									`❌ Install failed: ${error.message}`,
+								);
+							}
+						}),
+					);
+			}
+		} catch (error) {
+			status.setText(
+				`Could not load builds: ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
+	}
+
+	onClose() {
+		this.contentEl.empty();
 	}
 }

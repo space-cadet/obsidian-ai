@@ -103,4 +103,15 @@ export function renderUpdaterSection(
 		const date = new Date(plugin.settings.lastUpdateCheck).toLocaleString();
 		lastCheck.textContent = `Last checked: ${date}`;
 	}
+
+	new Setting(section)
+		.setName("Available branch builds")
+		.setDesc(
+			"Browse and install published development builds from any branch.",
+		)
+		.addButton((button) =>
+			button
+				.setButtonText("Browse builds")
+				.onClick(() => plugin.showAvailableBuilds()),
+		);
 }
