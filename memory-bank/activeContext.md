@@ -1,6 +1,18 @@
 # Active Context
 
-*Last Updated: 2026-08-23 04:24:00 IST*
+*Last Updated: 2026-08-23 06:22:24 IST*
+
+### 2026-08-23 — T48 checkpoint and compaction handoff
+
+- PR #4 was merged as `ae8424d` after review fixes and green checks.
+- T48a request budgeting and T48b bounded tool-result replay are complete and
+  verified; full transcript/UI/export history remains separate from model
+  replay history.
+- The bounded replay retest preserved the first/last visible items and exposed
+  the truncation marker; the large same-turn result no longer bypasses the cap.
+- T48c remains active but unimplemented. Next work is token-triggered,
+  non-destructive rolling compaction with structured audited summaries and
+  exact-history preservation/retrieval.
 
 ### 2026-08-23 — T48c compaction-strategy research
 

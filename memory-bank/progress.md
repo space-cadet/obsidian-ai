@@ -1,3 +1,11 @@
+### 2026-08-23 — T48 checkpoint and compaction handoff ✅
+
+- PR #4 merged as `ae8424d` after review fixes and green checks.
+- T48a request budgeting and T48b bounded tool-result replay are complete and
+  verified, including same-turn continuation bounding and valid replay pairs.
+- T48c research/design is complete; semantic rolling compaction remains the
+  next implementation slice.
+
 ### 2026-08-23 — T58/T58c/T58d: Sync progress implementation and plugin rebuild audit 🔄
 
 - Completed the planned progress and dry-run implementation: planning stages,
