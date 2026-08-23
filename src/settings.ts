@@ -124,6 +124,10 @@ export interface ObsidianAISettings {
 	maxRequestTokens: number;
 	/** Number of newest messages retained verbatim by the budgeted builder. */
 	preserveRecentMessages: number;
+	/** Start semantic compaction at this estimated history size. */
+	compactionTriggerTokens: number;
+	/** Hysteresis release threshold for semantic compaction. */
+	compactionReleaseTokens: number;
 	/** Tokens reserved for the response and agent tool-loop continuations. */
 	requestResponseReserveTokens: number;
 	/** Maximum tokens of any persisted tool result replayed to the model. */
@@ -352,6 +356,8 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	maxContextMessages: 10,
 	maxRequestTokens: 32000,
 	preserveRecentMessages: 4,
+	compactionTriggerTokens: 24000,
+	compactionReleaseTokens: 16000,
 	requestResponseReserveTokens: 4096,
 	maxToolResultTokens: 4000,
 	maxSavedConversations: 20,
@@ -485,6 +491,8 @@ export const normalizeSettings = (
 		maxContextMessages: merged.maxContextMessages ?? 10,
 		maxRequestTokens: merged.maxRequestTokens ?? 32000,
 		preserveRecentMessages: merged.preserveRecentMessages ?? 4,
+		compactionTriggerTokens: merged.compactionTriggerTokens ?? 24000,
+		compactionReleaseTokens: merged.compactionReleaseTokens ?? 16000,
 		requestResponseReserveTokens:
 			merged.requestResponseReserveTokens ?? 4096,
 		maxToolResultTokens: merged.maxToolResultTokens ?? 4000,

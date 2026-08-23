@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { MarkdownView, Notice, TFile, WorkspaceLeaf } from "obsidian";
 import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 import type {
@@ -27,6 +27,11 @@ import {
 	buildBudgetedHistory,
 	truncateTextForTokens,
 } from "../context/contextBudget";
+import {
+	compactionHysteresisReleased,
+	formatCompactionSummary,
+	planSemanticCompaction,
+} from "../context/semanticCompaction";
 import { appendPendingText, finalizeContentParts } from "../lib/streamingUtils";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { parseSlashCommand } from "../lib/slashCommand";
@@ -112,6 +117,8 @@ export interface UseMessageActionsDeps {
 }
 
 export function useMessageActions(deps: UseMessageActionsDeps) {
+	const compactionBySessionRef = useRef<Record<string, string>>({});
+	const compactionInFlightRef = useRef<Record<string, boolean>>({});
 	const {
 		plugin,
 		orchestrator,
@@ -646,8 +653,85 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			const streamStartTime = Date.now();
 
 			const maxContextMessages = plugin.settings.maxContextMessages || 10;
-			const legacyHistory = buildHistoryWithTools(
+			const sessionIdForCompaction = activeSessionIdRef.current;
+			let existingSummary = sessionIdForCompaction
+				? compactionBySessionRef.current[sessionIdForCompaction]
+				: undefined;
+			if (
+				existingSummary &&
+				compactionHysteresisReleased(messagesRef.current, {
+					triggerTokens:
+						plugin.settings.compactionTriggerTokens ?? 24000,
+					releaseTokens:
+						plugin.settings.compactionReleaseTokens ?? 16000,
+					keepRecentMessages: Math.max(
+						3,
+						plugin.settings.preserveRecentMessages ?? 4,
+					),
+				})
+			) {
+				existingSummary = undefined;
+				if (sessionIdForCompaction) {
+					delete compactionBySessionRef.current[
+						sessionIdForCompaction
+					];
+				}
+			}
+			const compactionPlan = planSemanticCompaction(
 				messagesRef.current,
+				{
+					triggerTokens:
+						plugin.settings.compactionTriggerTokens ?? 24000,
+					releaseTokens:
+						plugin.settings.compactionReleaseTokens ?? 16000,
+					keepRecentMessages: Math.max(
+						3,
+						plugin.settings.preserveRecentMessages ?? 4,
+					),
+				},
+				Boolean(existingSummary),
+			);
+			let modelHistory = messagesRef.current;
+			let compactionSummary = existingSummary ?? "";
+			if (
+				compactionPlan.shouldCompact &&
+				sessionIdForCompaction &&
+				!compactionInFlightRef.current[sessionIdForCompaction]
+			) {
+				// Fire-and-forget: the current request is never delayed by compaction.
+				compactionInFlightRef.current[sessionIdForCompaction] = true;
+				void plugin.chatapi
+					.callApi(
+						"You summarize conversation history for another model. Return JSON only.",
+						compactionPlan.prompt,
+						activeProfile,
+					)
+					.then((rawSummary) => {
+						const parsed = JSON.parse(rawSummary);
+						compactionBySessionRef.current[sessionIdForCompaction] =
+							formatCompactionSummary(parsed);
+						new Notice(
+							"Conversation compacted for future requests.",
+						);
+					})
+					.catch((error) => {
+						console.warn(
+							"[T48c] Semantic compaction skipped:",
+							error,
+						);
+					})
+					.finally(() => {
+						delete compactionInFlightRef.current[
+							sessionIdForCompaction
+						];
+					});
+			} else if (existingSummary) {
+				modelHistory = messagesRef.current.slice(
+					-Math.max(3, plugin.settings.preserveRecentMessages ?? 4),
+				);
+			}
+			const legacyHistory = buildHistoryWithTools(
+				modelHistory,
 				maxContextMessages,
 				plugin.settings.maxToolResultTokens ?? 4000,
 			);
@@ -676,12 +760,15 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				];
 			}
 
-			const systemPrompt = await buildSystemPrompt(
+			let systemPrompt = await buildSystemPrompt(
 				sendContextItems,
 				plugin.personaLoader,
 				slashCmd ?? undefined,
 				useTools && !slashCmd,
 			);
+			if (compactionSummary) {
+				systemPrompt += `\n\n${compactionSummary}`;
+			}
 			const budgetedHistory = buildBudgetedHistory({
 				systemPrompt,
 				currentMessage: userMessageContent,

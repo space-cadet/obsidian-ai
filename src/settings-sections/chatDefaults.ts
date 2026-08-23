@@ -227,6 +227,38 @@ export function renderChatDefaultsSection(
 		});
 
 	new Setting(sectionEl)
+		.setName("Compaction trigger tokens")
+		.setDesc(
+			"Estimated history size at which old conversation turns are summarized. Set to 0 to disable semantic compaction.",
+		)
+		.addText((text) => {
+			text.setPlaceholder("24000")
+				.setValue(String(plugin.settings.compactionTriggerTokens))
+				.inputEl.addEventListener("blur", async () => {
+					const value = Number.parseInt(text.getValue(), 10);
+					plugin.settings.compactionTriggerTokens =
+						Number.isFinite(value) && value >= 0 ? value : 24000;
+					await saveSettings();
+				});
+		});
+
+	new Setting(sectionEl)
+		.setName("Compaction release tokens")
+		.setDesc(
+			"Estimated history size below which a future compaction may be triggered again. Keep below the trigger threshold.",
+		)
+		.addText((text) => {
+			text.setPlaceholder("16000")
+				.setValue(String(plugin.settings.compactionReleaseTokens))
+				.inputEl.addEventListener("blur", async () => {
+					const value = Number.parseInt(text.getValue(), 10);
+					plugin.settings.compactionReleaseTokens =
+						Number.isFinite(value) && value >= 0 ? value : 16000;
+					await saveSettings();
+				});
+		});
+
+	new Setting(sectionEl)
 		.setName("Max tool-result replay tokens")
 		.setDesc(
 			"Maximum estimated tokens from one tool result replayed to the model. Full results remain in the saved transcript for display and export.",
