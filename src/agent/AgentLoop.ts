@@ -2,7 +2,10 @@ import { ChatApiManager } from "../api";
 import { ToolExecutor } from "./ToolExecutor";
 import type { ToolCall, ToolResult, StreamEvent } from "./types";
 import { estimateTokens } from "../context/tokenEstimator";
-import { truncateTextForTokens } from "../context/contextBudget";
+import {
+	buildBudgetedHistory,
+	truncateTextForTokens,
+} from "../context/contextBudget";
 import type { ProviderProfile } from "../settings";
 import type { ProviderTokenUsage } from "../types";
 
@@ -17,6 +20,14 @@ export interface AgentLoopOptions {
 	thinkingEnabled?: boolean;
 	/** Maximum estimated tokens for a model-facing tool result. */
 	maxToolResultTokens?: number;
+	/** Total request budget to re-apply before each tool-loop continuation. */
+	maxRequestTokens?: number;
+	/** Maximum number of persisted messages considered for a continuation. */
+	maxContextMessages?: number;
+	/** Number of newest messages retained verbatim in a continuation. */
+	preserveRecentMessages?: number;
+	/** Tokens reserved for the response and later tool-loop steps. */
+	requestResponseReserveTokens?: number;
 	/** Called with accumulated text whenever a text-delta arrives. */
 	onTextDelta: (accumulatedText: string) => void;
 	/** Called when a tool call is detected (before execution/approval). */
@@ -193,9 +204,59 @@ export class AgentLoop {
 		const { chatApi, toolExecutor, maxSteps, autoApprove, onTextDelta } =
 			this.opts;
 		const maxToolResultTokens = this.opts.maxToolResultTokens ?? 4000;
+		const hasSystemMessage = messages[0]?.role === "system";
+		const systemMessage = hasSystemMessage ? messages[0] : undefined;
+		const currentMessage = messages[messages.length - 1];
+		const initialHistory = messages.slice(
+			hasSystemMessage ? 1 : 0,
+			Math.max(0, messages.length - 1),
+		);
+		let continuationMessages: any[] = [];
+		const budgetMessages = () => {
+			const maxRequestTokens = this.opts.maxRequestTokens ?? 0;
+			const fullHistory = [...initialHistory, ...continuationMessages];
+			if (maxRequestTokens <= 0) {
+				return [
+					...(systemMessage ? [systemMessage] : []),
+					...initialHistory,
+					currentMessage,
+					...continuationMessages,
+				];
+			}
+			const budgeted = buildBudgetedHistory({
+				systemPrompt: systemMessage?.content,
+				currentMessage: currentMessage?.content,
+				history: fullHistory,
+				options: {
+					maxRequestTokens,
+					maxMessages:
+						this.opts.maxContextMessages ?? fullHistory.length,
+					preserveRecentMessages:
+						this.opts.preserveRecentMessages ?? 4,
+					responseReserveTokens:
+						this.opts.requestResponseReserveTokens ?? 4096,
+					additionalTokens: estimateTokens(
+						JSON.stringify(tools) ?? "",
+					),
+				},
+			});
+			const continuationSet = new Set(continuationMessages);
+			const selectedInitialHistory = budgeted.history.filter(
+				(message) => !continuationSet.has(message),
+			);
+			const selectedContinuationMessages = budgeted.history.filter(
+				(message) => continuationSet.has(message),
+			);
+			return [
+				...(systemMessage ? [systemMessage] : []),
+				...selectedInitialHistory,
+				currentMessage,
+				...selectedContinuationMessages,
+			];
+		};
 
 		let fullText = "";
-		let currentMessages = messages;
+		let currentMessages = budgetMessages();
 		const stepTokenEstimates: number[] = [];
 		let providerUsage: ProviderTokenUsage | undefined;
 
@@ -344,7 +405,12 @@ export class AgentLoop {
 				],
 			};
 
-			currentMessages = [...currentMessages, assistantMsg, toolMsg];
+			continuationMessages = [
+				...continuationMessages,
+				assistantMsg,
+				toolMsg,
+			];
+			currentMessages = budgetMessages();
 
 			// Count tokens for tool result
 			const resultTokens = estimateTokens(modelResult);

@@ -431,6 +431,11 @@ export class Orchestrator {
 					toolExecutor: this.toolExecutor,
 					maxSteps: this.maxSteps,
 					autoApprove: this.autoApprove,
+					maxRequestTokens: this.maxRequestTokens,
+					maxContextMessages: this.maxContextMessages,
+					preserveRecentMessages: this.preserveRecentMessages,
+					requestResponseReserveTokens:
+						this.requestResponseReserveTokens,
 					maxToolResultTokens: this.maxToolResultTokens,
 					profile: engine.profile,
 					onTextDelta: (text) => {

@@ -900,6 +900,14 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						),
 						maxSteps: maxAgentSteps,
 						autoApprove,
+						maxRequestTokens:
+							plugin.settings.maxRequestTokens ?? 32000,
+						maxContextMessages,
+						preserveRecentMessages:
+							plugin.settings.preserveRecentMessages ?? 4,
+						requestResponseReserveTokens:
+							plugin.settings.requestResponseReserveTokens ??
+							4096,
 						maxToolResultTokens:
 							plugin.settings.maxToolResultTokens ?? 4000,
 						profile: activeProfile,
