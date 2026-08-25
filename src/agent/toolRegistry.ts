@@ -116,6 +116,31 @@ export function createBuiltInToolDefinitions(
 	});
 }
 
+/**
+ * Create built-in definitions with execute handlers bound.
+ *
+ * This is the integration point for T60a: ToolExecutor constructs the
+ * registry and injects its own private methods as executors. Once the
+ * registry is the sole source of truth, this factory moves into the
+ * registry module and ToolExecutor becomes a thin facade.
+ */
+export function createBuiltInToolDefinitionsWithExecutors(
+	executors: Record<
+		string,
+		(
+			call: import("./types").ToolCall,
+			context: ToolResolutionContext,
+		) => Promise<import("./types").ToolResult>
+	>,
+	tools: Record<string, Record<string, unknown>> = noteTools,
+): ToolDefinition[] {
+	const definitions = createBuiltInToolDefinitions(tools);
+	return definitions.map((definition) => {
+		const execute = executors[definition.id];
+		return execute ? { ...definition, execute } : definition;
+	});
+}
+
 export function normalizeProviderRisk(risk: ProviderRisk): HostToolRisk {
 	switch (risk) {
 		case "read":

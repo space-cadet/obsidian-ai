@@ -4,6 +4,11 @@ import type { ObsidianAISettings, WebSearchProvider } from "../settings";
 import type { PersonaLoader } from "../intelligence/PersonaLoader";
 import { SearchIndex } from "../search/index";
 import type { ProviderRegistry } from "../integrations/ProviderRegistry";
+import {
+	createBuiltInToolDefinitionsWithExecutors,
+	resolveToolRegistry,
+} from "./toolRegistry";
+import type { ResolvedToolRegistry } from "./toolRegistry";
 
 /* ── Security: forbidden path patterns ── */
 const FORBIDDEN_PATH_PATTERNS = [
@@ -25,6 +30,8 @@ function denyPath(path: string): ToolResult {
 	};
 }
 export class ToolExecutor {
+	private builtInRegistry: ResolvedToolRegistry;
+
 	constructor(
 		private app: App,
 		private settings?: ObsidianAISettings,
@@ -32,13 +39,73 @@ export class ToolExecutor {
 		private searchIndex?: SearchIndex,
 		private getActiveSessionId?: () => string | null,
 		private integrationRegistry?: ProviderRegistry,
-	) {}
+	) {
+		// Build canonical registry with execute handlers bound to this instance.
+		// This is the T60a integration point: the registry becomes the source of
+		// truth for built-in tool dispatch. The switch statement below is the
+		// fallback while migration is in progress.
+		const definitions = createBuiltInToolDefinitionsWithExecutors({
+			read_note: (call) => this.readNote(call.args as { path: string }),
+			edit_note: (call) =>
+				this.editNote(call.args as { path: string; content: string }),
+			append_to_note: (call) =>
+				this.appendToNote(call.args as { path: string; content: string }),
+			create_note: (call) =>
+				this.createNote(call.args as { path: string; content: string }),
+			create_notes: (call) =>
+				this.createNotes(call.args as { notes: Array<{ path: string; content: string }> }),
+			patch_note: (call) =>
+				this.patchNote(call.args as { path: string; search: string; replace: string; replace_all?: boolean }),
+			edit_section: (call) =>
+				this.editSection(call.args as { path: string; section_heading: string; new_content: string }),
+			search_notes: (call) =>
+				this.searchNotes(call.args as { query: string; sort_by?: string; limit?: number; folder?: string }),
+			list_notes: (call) =>
+				this.listNotes(call.args as { folder?: string; sort_by?: string; limit?: number; include_subfolders?: boolean; depth?: number }),
+			count_notes: (call) => this.countNotes(call.args as { folder?: string }),
+			get_note_metadata: (call) => this.getNoteMetadata(call.args as { path: string }),
+			list_folders: (call) => this.listFolders(call.args as { path?: string }),
+			search_web: (call) => this.searchWeb(call.args as { query: string; limit?: number }),
+			read_pdf: (call) => this.readPdf(call.args as { source: string; max_pages?: number }),
+			create_memory: (call) =>
+				this.createMemory(call.args as { category: string; content: string; tags?: string[] }),
+			update_memory: (call) =>
+				this.updateMemory(call.args as { id: string; category?: string; content?: string; tags?: string[] }),
+			delete_memory: (call) => this.deleteMemory(call.args as { id: string }),
+			list_memories: (call) =>
+				this.listMemories(call.args as { category?: string; tag?: string; limit?: number }),
+			search_memories: (call) =>
+				this.searchMemories(call.args as { query: string; limit?: number }),
+			read_memory_audit: (call) => this.readMemoryAudit(call.args as { limit?: number }),
+			search_past_sessions: (call) =>
+				this.searchPastSessions(call.args as { query: string; limit?: number }),
+			create_folder: (call) => this.createFolder(call.args as { path: string }),
+			move_note: (call) =>
+				this.moveNote(call.args as { path: string; new_path: string }),
+			delete_note: (call) => this.deleteNote(call.args as { path: string }),
+		});
+		this.builtInRegistry = resolveToolRegistry(definitions, {
+			enableMemoryAuditTool: this.settings?.intelligence?.enableMemoryAuditTool,
+		});
+	}
 
 	async execute(call: ToolCall): Promise<ToolResult> {
 		try {
+			// Provider tools first (external integration path)
 			const providerResult =
 				await this.integrationRegistry?.execute(call);
 			if (providerResult) return providerResult;
+
+			// T60a: registry dispatch — delegates to canonical definitions
+			const registryDef = this.builtInRegistry.byId.get(call.toolName);
+			if (registryDef?.execute) {
+				return await registryDef.execute(call, {
+					enableMemoryAuditTool:
+						this.settings?.intelligence?.enableMemoryAuditTool,
+				});
+			}
+
+			// Legacy switch fallback (to be removed once all tools are registry-backed)
 			switch (call.toolName) {
 				case "read_note":
 					return await this.readNote(call.args as { path: string });
