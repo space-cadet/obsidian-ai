@@ -1,19 +1,24 @@
-### 2026-08-25 — T60b OpenResponses Loop Bug Diagnosis 🔄
+### 2026-08-25 — T60b OpenResponses Loop Bug Fix ✅ COMPLETE
 
-- Diagnosed 3 protocol bugs in OpenResponses loop causing 500k-token blowup:
-  1. **Duplicate input submission:** `streamAgentResponse({ input, tools })` inside
-     the `while` loop resubmits full conversation on every tool round
+- Diagnosed and **fixed** 3 protocol bugs in OpenResponses loop causing 500k-token blowup:
+  1. **Duplicate input submission:** `streamAgentResponse({ input, tools })` was
+     inside the `while` loop, resubmitting full conversation on every tool round
   2. **Discarded continuation ID:** `previousResponseId` accepted but never
-     serialized; continuations are stateless
-  3. **Continuation handler gap:** Post-continuation stream doesn't handle
+     serialized; continuations were stateless
+  3. **Continuation handler gap:** Post-continuation stream didn't handle
      `function_call`/`function_call_done`, forcing fallback to broken outer loop
-- Minimal fix spec ready: move initial request outside loop, use stateful
-  continuations via `previous_response_id`, shared handler with full event support
+- **Implementation:**
+  - `AgentApiManager.ts`: Added `previousResponseId` to `AgentApiOptions`,
+    serializes to `body.previous_response_id`, passes through `continueWithToolResult()`
+  - `OpenResponsesLoop.ts`: Moved initial request outside loop; added shared
+    `consumeStream` handler supporting all event types; continuations use
+    stateful `previous_response_id`; tools preserved
+  - Tests: 3 new tests (OpenResponsesLoop + AgentApiManager). All 301 tests pass.
+  - Build passes.
 - Impact: ~140× token reduction for multi-step chains (500k → 3.6k)
 - Memory-bank updated: 7 task files, 1 implementation detail doc, 1 edit chunk,
-  1 new proposed task (T60d for search defaults)
-- No source code changed; implementation pending user approval
-- Session: `sessions/2026-08-25-evening.md`
+  1 new proposed task (T60d)
+- Commit: `38c352d` on `origin/main`
 
 ### 2026-08-25 — T60 Tool-System Architecture Plan 🔄
 

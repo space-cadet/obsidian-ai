@@ -138,15 +138,15 @@
 - Remaining: T57d SyncIt contract/overlap test and raw plugin-file migration.
 
 ## Latest Session
-- Focus: T60b OpenResponses loop bug diagnosis and memory-bank documentation
+- Focus: T60b OpenResponses loop bug fix — diagnosis and implementation
 - Completed:
-  - Verified 3 protocol bugs in OpenResponses loop (duplicate input, discarded
-    continuation ID, continuation handler gap)
-  - Documented findings across 7 task files, 1 implementation detail doc, 1 edit
-    chunk, and 1 new proposed task (T60d)
-  - Impact analysis: ~140× token reduction for multi-step tool chains
-- Remaining: T60b implementation pending user approval; T60a still incomplete
-- No source code changed in this session
+  - Phase 1: Diagnosed 3 protocol bugs (duplicate input, discarded continuation ID, continuation handler gap)
+  - Phase 2: Implemented fix:
+    - `AgentApiManager.ts`: Added `previousResponseId`, serializes to `body.previous_response_id`
+    - `OpenResponsesLoop.ts`: Moved initial request outside loop; shared handler with full event support
+    - Tests: 4 new tests. All 301 tests pass. Build passes.
+  - Impact: ~140× token reduction for multi-step chains
+- Commit: `38c352d` on `origin/main`
 - Session file: `sessions/2026-08-25-evening.md`
 
 *Session: 2026-08-25 16:00–17:00 IST*

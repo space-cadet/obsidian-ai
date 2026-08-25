@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-25 13:47:27 IST*
+*Last Updated: 2026-08-25 17:30:00 IST*
 
 ## Overview
 
@@ -44,7 +44,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T48d | Context-Aware Usage Display and Provider Reconciliation | 🔄 | HIGH | 2026-08-23 | T6a, T48a | [Details](tasks/T48d.md) |
 | T60 | Tool Capability Registry and Execution-Pipeline Hardening | 🔄 | HIGH | 2026-08-25 | T13, T13a | [Details](tasks/T60.md) |
 | T60a | Canonical Tool Registry and Dynamic Exposure | ✅ | HIGH | 2026-08-25 | T60, T39a | [Details](tasks/T60a.md) |
-| T60b | Cross-Loop Tool Transport Parity | 🔄 | HIGH | 2026-08-25 | T60, T60a, T14, T48b | [Details](tasks/T60b.md) |
+| T60b | Cross-Loop Tool Transport Parity | ✅ | HIGH | 2026-08-25 | T60, T60a, T14, T48b | [Details](tasks/T60b.md) |
 | T60c | Validated Execution Boundary and Reliability | ⏸️ | HIGH | 2026-08-25 | T60, T60a, T60b | [Details](tasks/T60c.md) |
 | T60d | Token-Efficient Search Defaults | 🔄 | MEDIUM | 2026-08-25 | T60 | [Details](tasks/T60d.md) |
 | T18a | Bounded Web Page Retrieval Tool | ⏸️ | MEDIUM | 2026-08-25 | T18, T60a, T60c | [Details](tasks/T18a.md) |
@@ -80,6 +80,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T13a | Tool Call Context Persistence Bug Fix | ✅ | HIGH | 2026-08-16 | 2026-08-16 | T13 | [Details](tasks/T13a.md) |
 | T45 | PDF Text Extraction Tool | ✅ | HIGH | 2026-08-16 | 2026-08-16 | T13, T19 | [Details](tasks/T45.md) |
 | T46 | Core Orchestration Decomposition | 🔄 | MEDIUM | 2026-08-17 | — | T22, T23 | [Details](tasks/T46.md) |
+| T60b | Cross-Loop Tool Transport Parity | ✅ | HIGH | 2026-08-25 | 2026-08-25 | T60, T60a, T14, T48b | [Details](tasks/T60b.md) |
 
 ## Task Relationships
 
@@ -200,7 +201,7 @@ T44: Standalone UI Preview and Obsidian Host Boundary
 
 ## Status Summary
 
-- **Active**: 26
-- **Completed**: 29
+- **Active**: 25
+- **Completed**: 30
 - **Paused**: 0
 - **Total**: 55

@@ -18,10 +18,17 @@ growth during multi-step tool chains:
 - Minimal fix spec ready: move initial request outside loop, store response_id,
   use continuations via `previous_response_id`, shared handler with full event
   support
+- **Implementation complete** (commit `38c352d`):
+  - `AgentApiManager.ts`: Added `previousResponseId` to `AgentApiOptions`,
+    serializes to `body.previous_response_id`, passes through `continueWithToolResult()`
+  - `OpenResponsesLoop.ts`: Moved initial request outside loop; shared
+    `consumeStream` handler with full event support; stateful continuations;
+    tools preserved
+  - Tests: 3 new tests covering continuation serialization, multi-round tool
+    chains, and budget sharing. All 301 tests pass. Build passes.
 - Impact: ~140× token reduction for multi-step chains (500k → 3.6k tokens)
 - Memory-bank updated: 7 task files, 1 implementation detail doc, 1 edit chunk,
   1 new proposed task (T60d for search defaults)
-- No source code changed; implementation pending user approval
 
 ### 2026-08-25 — T60 review correction and next gate
 
