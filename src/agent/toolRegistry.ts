@@ -1,3 +1,4 @@
+import Ajv, { type ValidateFunction } from "ajv";
 import { tool } from "ai";
 import type { ToolCall, ToolResult } from "./types";
 import { noteTools } from "./tools";
@@ -103,65 +104,56 @@ function formatValidationIssue(issue: unknown): string {
 	return `${path}${typeof item.message === "string" ? item.message : "invalid value"}`;
 }
 
+type JsonSchemaRecord = Record<string, unknown>;
+
+function isRecord(value: unknown): value is JsonSchemaRecord {
+	return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 function validateJsonObjectSchema(
-	schema: Record<string, unknown>,
+	schema: JsonSchemaRecord,
 	args: Record<string, unknown>,
 ): ToolArgumentValidation {
-	if (schema.type !== undefined && schema.type !== "object") {
-		return { ok: false, error: "tool arguments must be an object" };
-	}
-
-	const required = Array.isArray(schema.required)
-		? schema.required.filter(
-				(key): key is string => typeof key === "string",
-			)
-		: [];
-	for (const key of required) {
-		if (!(key in args)) {
-			return { ok: false, error: `missing required argument "${key}"` };
+	try {
+		let validate = jsonSchemaValidators.get(schema);
+		if (!validate) {
+			validate = jsonSchemaAjv.compile(schema);
+			jsonSchemaValidators.set(schema, validate);
 		}
+		if (validate(args)) return { ok: true, args };
+		const issue = validate.errors?.[0];
+		const path = issue?.instancePath || "$args";
+		return {
+			ok: false,
+			error: `${path}: ${issue?.message ?? "invalid arguments"}`,
+		};
+	} catch {
+		return { ok: false, error: "tool schema cannot be validated locally" };
 	}
+}
 
-	const properties =
-		schema.properties && typeof schema.properties === "object"
-			? (schema.properties as Record<string, unknown>)
-			: {};
-	for (const [key, propertySchema] of Object.entries(properties)) {
-		if (
-			!(key in args) ||
-			!propertySchema ||
-			typeof propertySchema !== "object"
-		) {
-			continue;
-		}
-		const expected = (propertySchema as { type?: unknown }).type;
-		if (typeof expected !== "string") continue;
-		const value = args[key];
-		const valid =
-			expected === "array"
-				? Array.isArray(value)
-				: expected === "null"
-					? value === null
-					: expected === "integer"
-						? typeof value === "number" &&
-							Number.isFinite(value) &&
-							Number.isInteger(value)
-						: typeof value === expected;
-		if (!valid) {
-			return {
-				ok: false,
-				error: `argument "${key}" must be ${expected}`,
-			};
-		}
+const jsonSchemaAjv = new Ajv({ allErrors: false, strict: false });
+const jsonSchemaValidators = new WeakMap<object, ValidateFunction>();
+
+function rawJsonObjectSchema(
+	inputSchema: unknown,
+): JsonSchemaRecord | undefined {
+	if (!isRecord(inputSchema)) return undefined;
+	if (isRecord(inputSchema.jsonSchema)) return inputSchema.jsonSchema;
+	if (
+		inputSchema.type === "object" ||
+		isRecord(inputSchema.properties) ||
+		Array.isArray(inputSchema.required)
+	) {
+		return inputSchema;
 	}
-
-	return { ok: true, args };
+	return undefined;
 }
 
 /**
  * Validate model-supplied arguments before any built-in or provider code runs.
- * Built-in schemas are Zod schemas; provider schemas may also expose their
- * generated JSON Schema through AI SDK's jsonSchema property.
+ * Built-in schemas are Zod schemas; provider schemas may be Standard Schema,
+ * AI SDK JSON Schema wrappers, or ordinary JSON Schema objects.
  */
 export async function validateToolArguments(
 	definition: ToolDefinition,
@@ -244,10 +236,7 @@ export async function validateToolArguments(
 		return { ok: true, args: result.value as Record<string, unknown> };
 	}
 
-	const jsonSchema =
-		schema?.jsonSchema && typeof schema.jsonSchema === "object"
-			? (schema.jsonSchema as Record<string, unknown>)
-			: undefined;
+	const jsonSchema = rawJsonObjectSchema(schema);
 	if (jsonSchema) return validateJsonObjectSchema(jsonSchema, objectArgs);
 
 	return {
@@ -271,6 +260,7 @@ function assertObjectLikeInputSchema(
 		["~standard"]?: { validate?: unknown };
 		_def?: { typeName?: unknown; type?: unknown };
 	};
+	if (rawJsonObjectSchema(inputSchema)) return;
 	if (typeof schema.safeParse === "function") {
 		const typeName = schema._def?.typeName ?? schema._def?.type;
 		if (

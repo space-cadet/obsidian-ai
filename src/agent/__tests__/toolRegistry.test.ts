@@ -150,6 +150,69 @@ describe("canonical tool registry", () => {
 		});
 	});
 
+	it("accepts and fully validates raw provider JSON Schemas", async () => {
+		const definition = providerCapabilityToToolDefinition("example", {
+			id: "example.raw-json",
+			title: "Raw JSON Schema",
+			description: "Uses the provider contract's raw JSON Schema form.",
+			inputSchema: {
+				type: "object",
+				properties: {
+					mode: { type: "string", enum: ["safe", "fast"] },
+					options: {
+						type: "object",
+						properties: {
+							limit: { type: "integer", minimum: 1, maximum: 10 },
+						},
+						required: ["limit"],
+						additionalProperties: false,
+					},
+				},
+				required: ["mode", "options"],
+				additionalProperties: false,
+			},
+			risk: "read",
+			execute: async () => ({ success: true }),
+		});
+
+		expect(
+			await validateToolArguments(definition, {
+				mode: "safe",
+				options: { limit: 5 },
+			}),
+		).toEqual({
+			ok: true,
+			args: { mode: "safe", options: { limit: 5 } },
+		});
+		expect(
+			await validateToolArguments(definition, {
+				mode: "unsafe",
+				options: { limit: 5 },
+			}),
+		).toMatchObject({
+			ok: false,
+			error: expect.stringContaining("allowed values"),
+		});
+		expect(
+			await validateToolArguments(definition, {
+				mode: "safe",
+				options: { limit: 11 },
+			}),
+		).toMatchObject({
+			ok: false,
+			error: expect.stringContaining("<= 10"),
+		});
+		expect(
+			await validateToolArguments(definition, {
+				mode: "safe",
+				options: {},
+			}),
+		).toMatchObject({
+			ok: false,
+			error: expect.stringContaining("required"),
+		});
+	});
+
 	it("rejects provider schemas that are not object-shaped", () => {
 		expect(() =>
 			providerCapabilityToToolDefinition("example", {
