@@ -41,9 +41,8 @@ export class ToolExecutor {
 		private integrationRegistry?: ProviderRegistry,
 	) {
 		// Build canonical registry with execute handlers bound to this instance.
-		// This is the T60a integration point: the registry becomes the source of
-		// truth for built-in tool dispatch. The switch statement below is the
-		// fallback while migration is in progress.
+		// T60b: The registry is now the sole source of truth for built-in dispatch.
+		// ToolExecutor.execute() delegates directly to registryDef.execute().
 		const definitions = createBuiltInToolDefinitionsWithExecutors({
 			read_note: (call) => this.readNote(call.args as { path: string }),
 			edit_note: (call) =>
@@ -96,7 +95,7 @@ export class ToolExecutor {
 				await this.integrationRegistry?.execute(call);
 			if (providerResult) return providerResult;
 
-			// T60a: registry dispatch — delegates to canonical definitions
+			// T60b: registry is the sole source of truth for built-in tools.
 			const registryDef = this.builtInRegistry.byId.get(call.toolName);
 			if (registryDef?.execute) {
 				return await registryDef.execute(call, {
@@ -105,136 +104,7 @@ export class ToolExecutor {
 				});
 			}
 
-			// Legacy switch fallback (to be removed once all tools are registry-backed)
-			switch (call.toolName) {
-				case "read_note":
-					return await this.readNote(call.args as { path: string });
-				case "edit_note":
-					return await this.editNote(
-						call.args as { path: string; content: string },
-					);
-				case "append_to_note":
-					return await this.appendToNote(
-						call.args as { path: string; content: string },
-					);
-				case "create_note":
-					return await this.createNote(
-						call.args as { path: string; content: string },
-					);
-				case "create_notes":
-					return await this.createNotes(
-						call.args as {
-							notes: Array<{ path: string; content: string }>;
-						},
-					);
-				case "patch_note":
-					return await this.patchNote(
-						call.args as {
-							path: string;
-							search: string;
-							replace: string;
-							replace_all?: boolean;
-						},
-					);
-				case "edit_section":
-					return await this.editSection(
-						call.args as {
-							path: string;
-							section_heading: string;
-							new_content: string;
-						},
-					);
-				case "search_notes":
-					return await this.searchNotes(
-						call.args as {
-							query: string;
-							sort_by?: string;
-							limit?: number;
-							folder?: string;
-						},
-					);
-				case "list_notes":
-					return await this.listNotes(
-						call.args as {
-							folder?: string;
-							sort_by?: string;
-							limit?: number;
-							include_subfolders?: boolean;
-							depth?: number;
-						},
-					);
-				case "count_notes":
-					return await this.countNotes(
-						call.args as { folder?: string },
-					);
-				case "get_note_metadata":
-					return await this.getNoteMetadata(
-						call.args as { path: string },
-					);
-				case "list_folders":
-					return await this.listFolders(
-						call.args as { path?: string },
-					);
-				case "search_web":
-					return await this.searchWeb(
-						call.args as { query: string; limit?: number },
-					);
-				case "read_pdf":
-					return await this.readPdf(
-						call.args as { source: string; max_pages?: number },
-					);
-				case "create_memory":
-					return await this.createMemory(
-						call.args as {
-							category: string;
-							content: string;
-							tags?: string[];
-						},
-					);
-				case "update_memory":
-					return await this.updateMemory(
-						call.args as {
-							id: string;
-							category?: string;
-							content?: string;
-							tags?: string[];
-						},
-					);
-				case "delete_memory":
-					return await this.deleteMemory(call.args as { id: string });
-				case "list_memories":
-					return await this.listMemories(
-						call.args as {
-							category?: string;
-							tag?: string;
-							limit?: number;
-						},
-					);
-				case "search_memories":
-					return await this.searchMemories(
-						call.args as { query: string; limit?: number },
-					);
-				case "read_memory_audit":
-					return await this.readMemoryAudit(
-						call.args as { limit?: number },
-					);
-				case "search_past_sessions":
-					return await this.searchPastSessions(
-						call.args as { query: string; limit?: number },
-					);
-				case "create_folder":
-					return await this.createFolder(
-						call.args as { path: string },
-					);
-				case "move_note":
-					return await this.moveNote(
-						call.args as { path: string; new_path: string },
-					);
-				case "delete_note":
-					return await this.deleteNote(call.args as { path: string });
-				default:
-					return { error: `Unknown tool: ${call.toolName}` };
-			}
+			return { error: `Unknown tool: ${call.toolName}` };
 		} catch (e: any) {
 			return { error: e.message || String(e) };
 		}
