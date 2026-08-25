@@ -146,6 +146,7 @@
     - `OpenResponsesLoop.ts`: Moved initial request outside loop; shared handler with full event support
     - Tests: 4 new tests. All 301 tests pass. Build passes.
   - Impact: ~140× token reduction for multi-step chains
+  - **Runtime finding:** `search_note_content` is O(n) over all markdown files with no index, no early termination, sequential I/O. On 800+ file vaults, takes 10+ seconds per call. Agent retries, causing overlapping scans.
 - Commit: `38c352d` on `origin/main`
 - Session file: `sessions/2026-08-25-evening.md`
 

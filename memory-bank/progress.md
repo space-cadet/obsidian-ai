@@ -1,3 +1,22 @@
+### 2026-08-25 — Runtime Finding: search_note_content Performance Issue 🔄
+
+During T60b fix validation, user ran the same prompt that caused the original
+500k-token incident. The agent now correctly uses `search_note_content`, but:
+
+**Problem:** `search_note_content` is **O(n) over all markdown files** with no
+index, no early termination, sequential I/O, and no timeout. On 800+ file
+vaults, each call takes 10+ seconds.
+
+**Behavior:** Agent calls tool repeatedly with no visible result, causing
+overlapping scans.
+
+**Code:** `ToolExecutor.ts:searchNoteContent()` — loop has no break when limit
+matches found.
+
+**Status:** Diagnosed, no source changes yet. Validates T60d need.
+
+---
+
 ### 2026-08-25 — T60b OpenResponses Loop Bug Fix ✅ COMPLETE
 
 - Diagnosed and **fixed** 3 protocol bugs in OpenResponses loop causing 500k-token blowup:
