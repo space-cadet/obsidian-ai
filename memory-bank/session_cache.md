@@ -2,6 +2,14 @@
 
 *Last Updated: 2026-08-25 23:55:03 IST*
 
+## 2026-08-26 Lazy-session-loading revisit — stopped safely
+
+- Reviewed the reverted `1fa2518` patch and identified its cross-layer risk: metadata-only sessions temporarily expose empty messages to UI, input, history/tool, runtime, autosave, tab, export, and sync consumers.
+- An attempted reimplementation was stopped before verification; no source commit was made.
+- Deleted local branch `feat/lazy-session-loading-safe` and discarded its four uncommitted edits.
+- `main` and `origin/main` remain clean at `ce547ae`.
+- Future work must begin from a clean branch with an impact map, explicit invariants, controlled regression tests, and full verification before commit/push.
+
 ## 2026-08-25 T60e/T15 Provider-Adaptive Streaming Plan
 
 - Approved a documentation-only plan for inconsistent live tool-call visibility
