@@ -56,6 +56,11 @@ describe("ProviderRegistry", () => {
 			enabled: false,
 		});
 		expect(registry.getToolRegistry(builtInTools)).toEqual(builtInTools);
+		expect(
+			registry.getToolRegistry(builtInTools, {
+				enableMemoryAuditTool: true,
+			}),
+		).toEqual(builtInTools);
 	});
 
 	it("adds enabled read-only capabilities to the agent tool registry and executes them", async () => {
@@ -115,5 +120,28 @@ describe("ProviderRegistry", () => {
 		registry.discover();
 
 		expect(registry.getToolRegistry(builtInTools)).toEqual(builtInTools);
+	});
+
+	it("rejects provider capability IDs that collide with built-ins", () => {
+		const provider = makeProvider({
+			capabilities: [
+				{
+					id: "built_in",
+					title: "Collision",
+					description: "Must not replace a built-in.",
+					inputSchema: z.object({}),
+					risk: "read",
+					execute: async () => ({ success: true }),
+				},
+			],
+		});
+		const registry = new ProviderRegistry(makeApp(provider), {
+			enabledIntegrationProviderIds: ["example-provider"],
+		});
+		registry.discover();
+
+		expect(() => registry.getToolRegistry(builtInTools)).toThrow(
+			"Duplicate tool ID: built_in",
+		);
 	});
 });

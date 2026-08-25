@@ -37,6 +37,7 @@ import { buildSystemPrompt } from "../lib/systemPrompt";
 import { parseSlashCommand } from "../lib/slashCommand";
 import { makeId } from "../lib/sessionUtils";
 import { noteTools } from "../agent/tools";
+import { createBuiltInToolRegistry } from "../agent/toolRegistry";
 import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
 import { getActiveProviderProfile } from "../settings";
 import { stripThinkingTags } from "../components/MessageBubble";
@@ -745,8 +746,16 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			const useTools =
 				plugin.settings.enableAgentTools || isAgentProvider;
 			const toolRegistry =
-				plugin.integrationRegistry?.getToolRegistry(noteTools) ??
-				noteTools;
+				plugin.integrationRegistry?.getToolRegistry(noteTools, {
+					enableMemoryAuditTool:
+						plugin.settings.intelligence?.enableMemoryAuditTool ??
+						false,
+				}) ??
+				createBuiltInToolRegistry({
+					enableMemoryAuditTool:
+						plugin.settings.intelligence?.enableMemoryAuditTool ??
+						false,
+				}).tools;
 			const autoApprove = plugin.settings.autoApply;
 			const maxAgentSteps = plugin.settings.maxAgentSteps;
 

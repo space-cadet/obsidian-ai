@@ -1,6 +1,11 @@
-import { tool } from "ai";
 import type { App } from "obsidian";
 import type { ToolCall, ToolResult } from "../agent/types";
+import type { ToolResolutionContext } from "../agent/toolRegistry";
+import {
+	createBuiltInToolDefinitions,
+	providerCapabilityToToolDefinition,
+	resolveToolRegistry,
+} from "../agent/toolRegistry";
 import {
 	INTEGRATION_PROVIDER_API_VERSION,
 	type IntegrationProvider,
@@ -143,18 +148,29 @@ export class ProviderRegistry {
 		this.discover();
 	}
 
-	getToolRegistry(builtInTools: ToolRecord): ToolRecord {
-		const providerTools = this.getEnabledReadCapabilities();
-		if (providerTools.length === 0) return builtInTools;
-
-		const entries = providerTools.map((capability) => [
-			capability.id,
-			tool({
-				description: capability.description,
-				inputSchema: capability.inputSchema as any,
-			}),
-		]);
-		return { ...builtInTools, ...Object.fromEntries(entries) };
+	getToolRegistry(
+		builtInTools: ToolRecord,
+		context: ToolResolutionContext = {},
+	): ToolRecord {
+		const builtInDefinitions = createBuiltInToolDefinitions(builtInTools);
+		const providerDefinitions = this.getEnabledReadCapabilities().map(
+			(capability) => {
+				const provider = this.getProviderForCapability(capability.id);
+				if (!provider) {
+					throw new Error(
+						`Provider for capability ${capability.id} is unavailable.`,
+					);
+				}
+				return providerCapabilityToToolDefinition(
+					provider.id,
+					capability,
+				);
+			},
+		);
+		return resolveToolRegistry(
+			[...builtInDefinitions, ...providerDefinitions],
+			context,
+		).tools;
 	}
 
 	async execute(call: ToolCall): Promise<ToolResult | null> {

@@ -1,28 +1,58 @@
 // src/agent/tools/toOpenResponses.ts
-// Serialize T13 tool definitions to OpenResponses function tool schema
+// Serialize the canonical/AI SDK tool projection to OpenResponses function tools.
+
+import { asSchema } from "ai";
 
 import type { OpenResponsesTool } from "../../api/AgentApiManager";
 
-interface T13Tool {
+interface AiSdkTool {
+	description?: string;
+	inputSchema?: unknown;
+}
+
+interface LegacyTool {
 	toolName: string;
 	description: string;
-	parameters: {
-		type: string;
-		properties?: Record<string, any>;
-		required?: string[];
-	};
+	parameters: object;
+}
+
+export type OpenResponsesToolDefinition = AiSdkTool & {
+	id: string;
+};
+
+function toJsonSchema(inputSchema: unknown): object {
+	if (inputSchema && typeof inputSchema === "object") {
+		const schema = inputSchema as { jsonSchema?: unknown };
+		if (schema.jsonSchema && typeof schema.jsonSchema === "object") {
+			return schema.jsonSchema as object;
+		}
+	}
+	if (inputSchema === undefined) return { type: "object", properties: {} };
+	return asSchema(inputSchema as any).jsonSchema as object;
 }
 
 /**
  * Convert a single T13 tool definition to OpenResponses format.
  */
-export function toolToOpenResponses(tool: T13Tool): OpenResponsesTool {
+export function toolToOpenResponses(
+	tool: OpenResponsesToolDefinition | LegacyTool,
+): OpenResponsesTool {
+	if ("toolName" in tool) {
+		return {
+			type: "function",
+			function: {
+				name: tool.toolName,
+				description: tool.description,
+				parameters: tool.parameters,
+			},
+		};
+	}
 	return {
 		type: "function",
 		function: {
-			name: tool.toolName,
+			name: tool.id,
 			description: tool.description,
-			parameters: tool.parameters,
+			parameters: toJsonSchema(tool.inputSchema),
 		},
 	};
 }
@@ -30,7 +60,9 @@ export function toolToOpenResponses(tool: T13Tool): OpenResponsesTool {
 /**
  * Convert an array of T13 tool definitions.
  */
-export function toolsToOpenResponses(tools: T13Tool[]): OpenResponsesTool[] {
+export function toolsToOpenResponses(
+	tools: Array<OpenResponsesToolDefinition | LegacyTool>,
+): OpenResponsesTool[] {
 	return tools.map(toolToOpenResponses);
 }
 
@@ -38,7 +70,9 @@ export function toolsToOpenResponses(tools: T13Tool[]): OpenResponsesTool[] {
  * Convert the noteTools record to OpenResponses format.
  */
 export function noteToolsToOpenResponses(
-	noteTools: Record<string, T13Tool>,
+	noteTools: Record<string, AiSdkTool>,
 ): OpenResponsesTool[] {
-	return Object.values(noteTools).map(toolToOpenResponses);
+	return Object.entries(noteTools).map(([id, tool]) =>
+		toolToOpenResponses({ id, ...tool }),
+	);
 }
