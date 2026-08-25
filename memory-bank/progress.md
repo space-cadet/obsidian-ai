@@ -1,3 +1,12 @@
+### 2026-08-25 — T60e/T15 Provider-Adaptive Streaming Plan ⏸️
+
+- Approved a separate-branch follow-up for inconsistent live tool-call
+  visibility across providers.
+- T60e owns incremental event forwarding and tool-call lifecycle; T15 owns
+  thinking/waiting indicators and provisional tool-card presentation.
+- Planned branch: `feat/t60e-provider-adaptive-streaming-ui`.
+- No source implementation has started; T60d search work remains separate.
+
 ### 2026-08-25 — Runtime Finding: search_note_content Performance Issue 🔄
 
 During T60b fix validation, user ran the same prompt that caused the original

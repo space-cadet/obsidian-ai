@@ -8,6 +8,19 @@
 
 Implement bidirectional remote agent connectivity in the Obsidian AI plugin using the OpenResponses API. The plugin becomes a client that connects to remote OpenClaw agents (Ember on phone, Cloudy on VPS) via HTTP POST + SSE streaming, executes tool calls against the local vault, and sends results back.
 
+## Streaming Observability Boundary — T60e (2026-08-25)
+
+The current parser handles output-text deltas and function-call output-item
+events, but does not surface function-argument delta events. The loop collects
+function calls during `consumeStream()` and notifies the UI after that response
+ends. T60e will add provider-neutral provisional tool progress while preserving
+the execution boundary: incomplete arguments remain display-only and are never
+sent to `ToolExecutor`.
+
+This follow-up must be implemented on the separate branch
+`feat/t60e-provider-adaptive-streaming-ui`. T14 remains the owner of remote
+connectivity and SSE protocol correctness.
+
 **Prerequisite:** T14a (Tailscale network setup) must be completed for end-to-end testing.
 
 ---

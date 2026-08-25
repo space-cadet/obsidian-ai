@@ -1,6 +1,6 @@
 # Agentic Tool Calling Implementation
 *Created: 2026-05-03 02:40:00 IST*
-*Last Updated: 2026-08-25 12:52:36 IST*
+*Last Updated: 2026-08-25 23:55:03 IST*
 
 ## Overview
 
@@ -30,6 +30,16 @@ The target design is documented in
 `tool-capability-registry-and-execution-pipeline.md`. T38 owns approval/audit,
 T46 owns physical decomposition, and T60a–c own registry, transport, and
 execution-pipeline hardening.
+
+## Provider-Adaptive Streaming Boundary — T60e
+
+The current `AgentLoop` receives SDK tool events but notifies the UI only after
+the response stream ends; `OpenResponsesLoop` similarly collects function calls
+before invoking its callback. Partial arguments and hidden reasoning are not
+shown. T60e defines the follow-up contract for provisional display, complete
+argument validation before execution, and generic provider-neutral progress
+states. It must be implemented on the separate branch
+`feat/t60e-provider-adaptive-streaming-ui`; T15 owns the visual presentation.
 
 ## Design Philosophy
 

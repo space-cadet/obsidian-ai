@@ -163,3 +163,17 @@ it("renders tool call cards during streaming (regression: T25)", async () => {
 ## Current Status
 
 ⏸️ **Pending** — Task created but deferred until after next release cycle. Fixes are verified by build + manual QA.
+
+## T60e Provider-Adaptive Streaming Coverage — 2026-08-25
+
+The planned T60e follow-up adds tests for event timing and provider variance:
+
+- AI SDK tool-input start/delta/end translation and callback order
+- OpenResponses function-argument delta/done parsing
+- Provisional display without execution before complete valid arguments
+- Buffered/no-event providers and generic waiting-state transitions
+- Reasoning-only output, cancellation, malformed arguments, and rejection
+- Multiple tool rounds with correct call/result pairing and persistence
+
+These tests belong on the separate T60e branch and should cover both
+`AgentLoop` and `OpenResponsesLoop` before changing the production UI contract.

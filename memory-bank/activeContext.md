@@ -1,6 +1,18 @@
 # Active Context
 
-*Last Updated: 2026-08-25 18:00:00 IST*
+*Last Updated: 2026-08-25 23:55:03 IST*
+
+### 2026-08-25 — T60e/T15 Provider-Adaptive Streaming Plan
+
+The current `b56f806` runtime streams visible text but delays tool-call UI
+callbacks until a response step ends, hides reasoning deltas, and does not
+surface partial tool arguments. A separate-branch follow-up was approved:
+`feat/t60e-provider-adaptive-streaming-ui`.
+
+T60e owns the provider-neutral event/lifecycle contract across AI SDK and
+OpenResponses; T15 owns the visual progress states and provisional tool cards;
+T60c owns complete-argument validation and execution hardening. No source code
+has changed for this plan.
 
 ### 2026-08-25 — Runtime Finding: search_note_content Performance Issue
 

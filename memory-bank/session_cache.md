@@ -1,6 +1,15 @@
 # Session Cache
 
-*Last Updated: 2026-08-25 17:00:00 IST*
+*Last Updated: 2026-08-25 23:55:03 IST*
+
+## 2026-08-25 T60e/T15 Provider-Adaptive Streaming Plan
+
+- Approved a documentation-only plan for inconsistent live tool-call visibility
+  across direct providers and OpenResponses agents.
+- T60e owns the separate-branch transport/lifecycle work; T15 owns the UI
+  progress and provisional-card presentation; T60c owns validation/execution.
+- Required branch: `feat/t60e-provider-adaptive-streaming-ui`.
+- No source changes have been made; T60e remains planned.
 
 ## 2026-08-25 T60b OpenResponses loop bug diagnosis
 

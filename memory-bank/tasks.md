@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-25 17:30:00 IST*
+*Last Updated: 2026-08-25 23:55:03 IST*
 
 ## Overview
 
@@ -47,6 +47,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T60b | Cross-Loop Tool Transport Parity | ✅ | HIGH | 2026-08-25 | T60, T60a, T14, T48b | [Details](tasks/T60b.md) |
 | T60c | Validated Execution Boundary and Reliability | ⏸️ | HIGH | 2026-08-25 | T60, T60a, T60b | [Details](tasks/T60c.md) |
 | T60d | Token-Efficient Search Defaults | 🔄 | MEDIUM | 2026-08-25 | T60 | [Details](tasks/T60d.md) |
+| T60e | Provider-Adaptive Streaming and Tool-Call Progress UI | ⏸️ | HIGH | 2026-08-25 | T60b, T15, T25 | [Details](tasks/T60e.md) |
 | T18a | Bounded Web Page Retrieval Tool | ⏸️ | MEDIUM | 2026-08-25 | T18, T60a, T60c | [Details](tasks/T18a.md) |
 | T49 | Settings Export and Import | 🔄 | MEDIUM | — | T23 | [Details](tasks/T49.md) |
 | T50 | OpenAI Responses API / Threads Support | 🔄 | MEDIUM | — | T14 | [Details](tasks/T50.md) |
@@ -144,6 +145,7 @@ T60: Tool Capability Registry and Execution-Pipeline Hardening
   └── T60b
   └── T60c
   └── T60d
+  └── T60e
 T21: CLI Test Harness for AI Features
   └── T13
   └── T19
@@ -201,7 +203,7 @@ T44: Standalone UI Preview and Obsidian Host Boundary
 
 ## Status Summary
 
-- **Active**: 25
+- **Active**: 26
 - **Completed**: 30
 - **Paused**: 0
-- **Total**: 55
+- **Total**: 56

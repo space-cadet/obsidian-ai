@@ -45,6 +45,18 @@ setSelectedProfileIds(new Set([fallbackId]));
 - `src/components/ChatMessages.tsx` — forwards `showThinking` to `MessageBubble`
 - `src/components/MessageBubble.tsx` — `TextSegment` conditionally strips thinking tags
 
+## Provider-Adaptive Progress — T60e/T15 (planned)
+
+The current chat UI updates visible text incrementally but does not expose
+partial tool-call arguments or a distinct waiting state when a provider buffers
+reasoning/tool events. The planned follow-up adds generic Thinking, Preparing
+tool, Waiting for provider, Executing tool, and Finishing states plus
+provisional tool-call cards. Raw hidden reasoning remains undisplayed.
+
+Transport and execution lifecycle belong to T60e; visual rendering belongs to
+T15. Implementation must occur on the separate branch
+`feat/t60e-provider-adaptive-streaming-ui`.
+
 ---
 
 ## Past-Session Links and Shared Tabs (2026-07-29)
