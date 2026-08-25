@@ -59,6 +59,8 @@ export class ToolExecutor {
 				this.editSection(call.args as { path: string; section_heading: string; new_content: string }),
 			search_notes: (call) =>
 				this.searchNotes(call.args as { query: string; sort_by?: string; limit?: number; folder?: string }),
+			search_note_content: (call) =>
+				this.searchNoteContent(call.args as { query: string; folder?: string; sort_by?: string; limit?: number; context_lines?: number }),
 			list_notes: (call) =>
 				this.listNotes(call.args as { folder?: string; sort_by?: string; limit?: number; include_subfolders?: boolean; depth?: number }),
 			count_notes: (call) => this.countNotes(call.args as { folder?: string }),
@@ -163,6 +165,150 @@ export class ToolExecutor {
 			matches,
 			query: args.query ?? "",
 			count: matches.length,
+		};
+	}
+
+	private async searchNoteContent(args: {
+		query: string;
+		folder?: string;
+		sort_by?: string;
+		limit?: number;
+		context_lines?: number;
+	}): Promise<ToolResult> {
+		const query = args.query?.toLowerCase() ?? "";
+		const sortBy = args.sort_by ?? "relevance";
+		const limit = Math.min(args.limit ?? 20, 50);
+		const folder = args.folder;
+		const contextLines = Math.min(args.context_lines ?? 2, 5);
+
+		if (!query) {
+			return { error: "Query is required for content search." };
+		}
+
+		// Split query into terms (AND semantics — all must appear)
+		const terms = query.split(/\s+/).filter((t) => t.length > 0);
+		if (terms.length === 0) {
+			return { error: "Query contains no searchable terms." };
+		}
+
+		let files = this.app.vault.getMarkdownFiles();
+
+		// Folder filter
+		if (folder) {
+			files = files.filter(
+				(f) =>
+					f.path.startsWith(folder + "/") ||
+					f.parent?.path === folder,
+			);
+		}
+
+		interface MatchResult {
+			file: TFile;
+			matchCount: number;
+			excerpts: string[];
+		}
+
+		const results: MatchResult[] = [];
+
+		for (const file of files) {
+			let content: string;
+			try {
+				content = await this.app.vault.read(file);
+			} catch {
+				continue;
+			}
+
+			const lowerContent = content.toLowerCase();
+
+			// AND semantics: all terms must appear
+			const allTermsPresent = terms.every((term) =>
+				lowerContent.includes(term),
+			);
+			if (!allTermsPresent) continue;
+
+			// Find match positions and build excerpts
+			const lines = content.split("\n");
+			const lowerLines = lines.map((l) => l.toLowerCase());
+			const matchedLineIndices = new Set<number>();
+
+			for (let i = 0; i < lines.length; i++) {
+				if (terms.every((term) => lowerLines[i].includes(term))) {
+					matchedLineIndices.add(i);
+				}
+			}
+
+			// Also count total occurrences (not just line matches)
+			let matchCount = 0;
+			for (const term of terms) {
+				let idx = lowerContent.indexOf(term);
+				while (idx !== -1) {
+					matchCount++;
+					idx = lowerContent.indexOf(term, idx + 1);
+				}
+			}
+
+			// Build excerpts with context
+			const excerpts: string[] = [];
+			const usedRanges = new Set<string>();
+
+			for (const lineIdx of matchedLineIndices) {
+				const start = Math.max(0, lineIdx - contextLines);
+				const end = Math.min(lines.length, lineIdx + contextLines + 1);
+				const rangeKey = `${start}-${end}`;
+				if (usedRanges.has(rangeKey)) continue;
+				usedRanges.add(rangeKey);
+
+				const excerptLines = lines.slice(start, end);
+				excerpts.push(excerptLines.join("\n"));
+			}
+
+			results.push({ file, matchCount, excerpts });
+		}
+
+		// Sort
+		results.sort((a, b) => {
+			switch (sortBy) {
+				case "relevance":
+					return b.matchCount - a.matchCount;
+				case "modified":
+					return b.file.stat.mtime - a.file.stat.mtime;
+				case "created":
+					return b.file.stat.ctime - a.file.stat.ctime;
+				case "name":
+				default:
+					return a.file.basename.localeCompare(b.file.basename);
+			}
+		});
+
+		// Limit
+		const limited = results.slice(0, limit);
+
+		if (limited.length === 0) {
+			return {
+				success: true,
+				content: `No notes found containing all terms: "${terms.join(", ")}"`,
+				count: 0,
+			};
+		}
+
+		// Format results
+		const formatted = limited
+			.map((r, i) => {
+				const excerptText =
+					r.excerpts.length > 0
+						? "\n" +
+							r.excerpts
+								.map((ex) => ex.split("\n").map((l) => "    " + l).join("\n"))
+								.join("\n    ...\n")
+						: "";
+				return `${i + 1}. **${r.file.basename}** (${r.matchCount} matches)${excerptText}`;
+			})
+			.join("\n\n");
+
+		return {
+			success: true,
+			content: `Found ${limited.length} note(s) matching "${args.query}":\n\n${formatted}`,
+			count: limited.length,
 		};
 	}
 

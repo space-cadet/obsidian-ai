@@ -152,6 +152,77 @@ describe("ToolExecutor registry integration", () => {
 		expect(registryResult).toEqual(directResult);
 	});
 
+	it("search_note_content finds notes by body content", async () => {
+		const app = createMockApp(mockFiles);
+		const executor = new ToolExecutor(app);
+
+		const result = await executor.execute({
+			toolCallId: "test-3",
+			toolName: "search_note_content",
+			args: { query: "quantum gravity" },
+		});
+
+		expect(result.success).toBe(true);
+		expect(result.count).toBe(1);
+		expect(result.content).toContain("Ideas");
+		expect(result.content).toContain("Quantum gravity");
+	});
+
+	it("search_note_content uses AND semantics for multiple terms", async () => {
+		const app = createMockApp(mockFiles);
+		const executor = new ToolExecutor(app);
+
+		// "coffee code" should match Daily note with both words
+		const result = await executor.execute({
+			toolCallId: "test-4",
+			toolName: "search_note_content",
+			args: { query: "coffee code" },
+		});
+
+		expect(result.success).toBe(true);
+		expect(result.count).toBe(1);
+		expect(result.content).toContain("2026-08-25");
+
+		// "quantum coffee" should match nothing (different notes)
+		const noMatch = await executor.execute({
+			toolCallId: "test-5",
+			toolName: "search_note_content",
+			args: { query: "quantum coffee" },
+		});
+
+		expect(noMatch.success).toBe(true);
+		expect(noMatch.count).toBe(0);
+	});
+
+	it("search_note_content respects folder filter", async () => {
+		const app = createMockApp(mockFiles);
+		const executor = new ToolExecutor(app);
+
+		const result = await executor.execute({
+			toolCallId: "test-6",
+			toolName: "search_note_content",
+			args: { query: "gravity", folder: "Projects" },
+		});
+
+		expect(result.success).toBe(true);
+		expect(result.count).toBe(1);
+		expect(result.content).toContain("Ideas");
+	});
+
+	it("search_note_content returns empty when no match", async () => {
+		const app = createMockApp(mockFiles);
+		const executor = new ToolExecutor(app);
+
+		const result = await executor.execute({
+			toolCallId: "test-7",
+			toolName: "search_note_content",
+			args: { query: "nonexistent topic" },
+		});
+
+		expect(result.success).toBe(true);
+		expect(result.count).toBe(0);
+	});
+
 	it("registry omits unavailable tools (read_memory_audit when disabled)", () => {
 		const withAudit = resolveToolRegistry(
 			createBuiltInToolDefinitions(),

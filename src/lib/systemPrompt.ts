@@ -55,6 +55,7 @@ export async function buildSystemPrompt(
 			"\n- patch_note: Find and replace text inside a note (small precise edits)." +
 			"\n- edit_section: Rewrite content under a specific heading." +
 			"\n- search_notes: Search for notes by filename or path. Use sort_by=name|modified|created, limit, folder, and search_content params." +
+			"\n- search_note_content: Search INSIDE note content for text, quotes, or topics the user wrote about. Use this when the user asks to find something they wrote, not just note names. Supports folder filter, sort_by=relevance|modified|created|name, limit, and context_lines." +
 			"\n- list_notes: Browse notes in the vault or a folder. Use sort_by=name|modified|created, limit, and include_subfolders (default true) params. Shows subfolders alongside files." +
 			"\n- count_notes: Count files in a folder or the entire vault. Returns total files, markdown files, direct files, and subfolder counts. Use when the user asks how many notes/files exist or for folder statistics." +
 			"\n- get_note_metadata: Get file stats (size, dates, word count) for a specific note." +
@@ -64,9 +65,9 @@ export async function buildSystemPrompt(
 			"\n- list_folders: List folders in the vault. Use to understand vault structure." +
 			"\n- search_web: Search the web for current information. Use when the user asks about recent events, news, or facts that may have changed since your training data." +
 			"\n- search_past_sessions: Search the user's saved previous chat conversations by topic or keywords. This is for chat history, not vault notes." +
-			"\n\nWhen the user asks to find, list, or search for notes, ALWAYS use search_notes or list_notes first." +
+			"\n\nWhen the user asks to find, list, or search for notes, ALWAYS use search_notes, list_notes, or search_note_content." +
 			" When the user asks whether you can search past sessions, chats, conversations, or what you discussed previously, say that you can search saved chat history and call search_past_sessions with the relevant keywords." +
-			" Do not say you cannot search — you have the search_notes and list_notes tools." +
+			" Do not say you cannot search — you have the search_notes, list_notes, and search_note_content tools." +
 			" Before editing a note you are unfamiliar with, use read_note to see its current content." +
 			"\n\nImportant: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks." +
 			"\n\nFor moving notes: use move_note(path, new_path). Parent folders are created automatically if needed." +

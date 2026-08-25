@@ -558,6 +558,7 @@ export class Orchestrator {
 				"\n- patch_note: Find and replace text inside a note (small precise edits)." +
 				"\n- edit_section: Rewrite content under a specific heading." +
 				"\n- search_notes: Search for notes by filename or path." +
+				"\n- search_note_content: Search inside note content for text, quotes, or topics. Use when the user asks to find something they wrote about." +
 				"\n- list_notes: Browse all notes in the vault or a folder." +
 				"\n- get_note_metadata: Get file stats (size, dates, word count) for a specific note." +
 				"\n- create_folder: Create a new folder in the vault." +
@@ -565,9 +566,9 @@ export class Orchestrator {
 				"\n- delete_note: Delete a note from the vault." +
 				"\n- list_folders: List folders in the vault." +
 				"\n- search_past_sessions: Search the user's saved previous chat conversations by topic or keywords. This is for chat history, not vault notes." +
-				"\n\nWhen the user asks to find, list, or search for notes, ALWAYS use search_notes or list_notes first." +
+				"\n\nWhen the user asks to find, list, or search for notes, ALWAYS use search_notes, list_notes, or search_note_content." +
 				" When the user asks whether you can search past sessions, chats, conversations, or what you discussed previously, say that you can search saved chat history and call search_past_sessions with the relevant keywords." +
-				" Do not say you cannot search — you have the search_notes and list_notes tools." +
+				" Do not say you cannot search — you have the search_notes, list_notes, and search_note_content tools." +
 				" Before editing a note you are unfamiliar with, use read_note to see its current content." +
 				"\n\nImportant: When using edit_note, provide the COMPLETE new note content." +
 				" Do not use diff syntax or markdown code blocks.";

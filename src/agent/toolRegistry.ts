@@ -56,6 +56,7 @@ const BUILTIN_RISKS: Record<string, HostToolRisk> = {
 	patch_note: "local-write",
 	edit_section: "local-write",
 	search_notes: "read",
+	search_note_content: "read",
 	list_notes: "read",
 	count_notes: "read",
 	get_note_metadata: "read",

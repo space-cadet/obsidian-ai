@@ -11,6 +11,7 @@ const EXPECTED_TOOLS = [
 	"patch_note",
 	"edit_section",
 	"search_notes",
+	"search_note_content",
 	"list_notes",
 	"count_notes",
 	"get_note_metadata",

@@ -438,6 +438,45 @@ export const readMemoryAuditTool = t({
 	}),
 });
 
+export const searchNoteContentTool = t({
+	description:
+		"Search inside the content of notes in the vault. " +
+		"Use this when the user asks to find text, quotes, ideas, or topics they wrote about — not just note names. " +
+		"Returns matching notes with excerpts showing where the query appears.",
+	inputSchema: z.object({
+		query: z
+			.string()
+			.describe(
+				'Search query (case-insensitive substring match). Supports multiple words — all must appear in the note.',
+			),
+		folder: z
+			.string()
+			.optional()
+			.describe(
+				'Restrict search to a specific folder path, e.g. "Research"',
+			),
+		sort_by: z
+			.enum(["relevance", "modified", "created", "name"])
+			.optional()
+			.default("relevance")
+			.describe("Sort results by relevance (match count), modified date, created date, or name."),
+		limit: z
+			.number()
+			.optional()
+			.default(20)
+			.describe(
+				"Maximum number of results to return (default 20, max 50).",
+			),
+		context_lines: z
+			.number()
+			.optional()
+			.default(2)
+			.describe(
+				"Lines of context around each match to include in excerpts (default 2, max 5).",
+			),
+	}),
+});
+
 export const searchPastSessionsTool = t({
 	description:
 		"Search past chat sessions by topic, keyword, or content. " +
@@ -481,5 +520,6 @@ export const noteTools = {
 	list_memories: listMemoriesTool,
 	search_memories: searchMemoriesTool,
 	read_memory_audit: readMemoryAuditTool,
+	search_note_content: searchNoteContentTool,
 	search_past_sessions: searchPastSessionsTool,
 };
