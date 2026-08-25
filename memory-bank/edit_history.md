@@ -1,8 +1,16 @@
 # Edit History
 
-*Last Updated: 2026-08-25 13:53:29 IST*
+*Last Updated: 2026-08-25 14:45 IST*
 
 ## 2026-08-25
+
+#### 14:45 IST - T60a: Wire registry into execution
+- Created `src/agent/__tests__/toolExecutor.integration.test.ts` — 4 integration tests proving registry execution parity with direct ToolExecutor dispatch.
+- Modified `src/agent/toolRegistry.ts` — Added `createBuiltInToolDefinitionsWithExecutors()` factory to attach execute handlers to canonical definitions.
+- Modified `src/agent/ToolExecutor.ts` — Added `builtInRegistry` field; constructor builds registry with 24 bound handlers; `execute()` delegates to registry before falling back to switch statement.
+- Modified `memory-bank/tasks/T60a.md` — Marked criteria 1-3, 5, 9 complete; added progress entry.
+- Created `memory-bank/sessions/2026-08-25-afternoon-execution.md` — Session log for execution wiring work.
+- Commit `e731220`: 4 files changed, 292 insertions(+), 6 deletions(-).
 
 #### 13:47:27 IST - T60: Correct registry integration boundary after review
 - Modified `memory-bank/tasks/T60.md` - Recorded the bounded adapter status and made registry-to-execution integration an acceptance gate.

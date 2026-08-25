@@ -136,7 +136,9 @@ export function createBuiltInToolDefinitionsWithExecutors(
 ): ToolDefinition[] {
 	const definitions = createBuiltInToolDefinitions(tools);
 	return definitions.map((definition) => {
-		const execute = executors[definition.id];
+		const execute = executors[definition.id] as
+			| ((call: import("./types").ToolCall, context: ToolResolutionContext) => Promise<import("./types").ToolResult>)
+			| undefined;
 		return execute ? { ...definition, execute } : definition;
 	});
 }

@@ -5,10 +5,10 @@ import { TFile } from "obsidian";
 vi.mock("obsidian", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("obsidian")>();
 	class MockTFile {
-		path: string;
-		basename: string;
+		path!: string;
+		basename!: string;
 		stat: any;
-		extension: string;
+		extension!: string;
 		parent?: { path: string };
 		constructor(data: any) {
 			Object.assign(this, data);
