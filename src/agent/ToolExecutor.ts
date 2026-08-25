@@ -7,8 +7,10 @@ import type { ProviderRegistry } from "../integrations/ProviderRegistry";
 import {
 	createBuiltInToolDefinitionsWithExecutors,
 	resolveToolRegistry,
+	validateToolArguments,
 } from "./toolRegistry";
-import type { ResolvedToolRegistry } from "./toolRegistry";
+import type { ResolvedToolRegistry, ToolDefinition } from "./toolRegistry";
+import { ContinuationStore, requestFingerprint } from "./pagination";
 
 /* ── Security: forbidden path patterns ── */
 const FORBIDDEN_PATH_PATTERNS = [
@@ -31,6 +33,7 @@ function denyPath(path: string): ToolResult {
 }
 export class ToolExecutor {
 	private builtInRegistry: ResolvedToolRegistry;
+	private readonly continuations = new ContinuationStore();
 
 	constructor(
 		private app: App,
@@ -40,74 +43,200 @@ export class ToolExecutor {
 		private getActiveSessionId?: () => string | null,
 		private integrationRegistry?: ProviderRegistry,
 	) {
-		// Build canonical registry with execute handlers bound to this instance.
-		// T60b: The registry is now the sole source of truth for built-in dispatch.
-		// ToolExecutor.execute() delegates directly to registryDef.execute().
-		const definitions = createBuiltInToolDefinitionsWithExecutors({
+		// Build the same descriptor registry used to expose tools to the model.
+		// Built-in and provider execution both pass through this map.
+		const builtInDefinitions = createBuiltInToolDefinitionsWithExecutors({
 			read_note: (call) => this.readNote(call.args as { path: string }),
 			edit_note: (call) =>
 				this.editNote(call.args as { path: string; content: string }),
 			append_to_note: (call) =>
-				this.appendToNote(call.args as { path: string; content: string }),
+				this.appendToNote(
+					call.args as { path: string; content: string },
+				),
 			create_note: (call) =>
 				this.createNote(call.args as { path: string; content: string }),
 			create_notes: (call) =>
-				this.createNotes(call.args as { notes: Array<{ path: string; content: string }> }),
+				this.createNotes(
+					call.args as {
+						notes: Array<{ path: string; content: string }>;
+					},
+				),
 			patch_note: (call) =>
-				this.patchNote(call.args as { path: string; search: string; replace: string; replace_all?: boolean }),
+				this.patchNote(
+					call.args as {
+						path: string;
+						search: string;
+						replace: string;
+						replace_all?: boolean;
+					},
+				),
 			edit_section: (call) =>
-				this.editSection(call.args as { path: string; section_heading: string; new_content: string }),
+				this.editSection(
+					call.args as {
+						path: string;
+						section_heading: string;
+						new_content: string;
+					},
+				),
 			search_notes: (call) =>
-				this.searchNotes(call.args as { query: string; sort_by?: string; limit?: number; folder?: string }),
+				this.searchNotes(
+					call.args as {
+						query: string;
+						sort_by?: string;
+						limit?: number;
+						folder?: string;
+						cursor?: string;
+					},
+				),
 			search_note_content: (call) =>
-				this.searchNoteContent(call.args as { query: string; folder?: string; sort_by?: string; limit?: number; context_lines?: number; match_mode?: string; include_filename?: boolean; include_snippets?: boolean }),
+				this.searchNoteContent(
+					call.args as {
+						query: string;
+						folder?: string;
+						sort_by?: string;
+						limit?: number;
+						context_lines?: number;
+						match_mode?: string;
+						include_filename?: boolean;
+						include_snippets?: boolean;
+						cursor?: string;
+					},
+				),
 			list_notes: (call) =>
-				this.listNotes(call.args as { folder?: string; sort_by?: string; limit?: number; include_subfolders?: boolean; depth?: number }),
-			count_notes: (call) => this.countNotes(call.args as { folder?: string }),
-			get_note_metadata: (call) => this.getNoteMetadata(call.args as { path: string }),
-			list_folders: (call) => this.listFolders(call.args as { path?: string }),
-			check_paths: (call) => this.checkPaths(call.args as { paths: string[] }),
-			search_web: (call) => this.searchWeb(call.args as { query: string; limit?: number }),
-			read_pdf: (call) => this.readPdf(call.args as { source: string; max_pages?: number }),
+				this.listNotes(
+					call.args as {
+						folder?: string;
+						sort_by?: string;
+						limit?: number;
+						include_subfolders?: boolean;
+						depth?: number;
+						cursor?: string;
+					},
+				),
+			count_notes: (call) =>
+				this.countNotes(call.args as { folder?: string }),
+			get_note_metadata: (call) =>
+				this.getNoteMetadata(call.args as { path: string }),
+			list_folders: (call) =>
+				this.listFolders(call.args as { path?: string }),
+			check_paths: (call) =>
+				this.checkPaths(call.args as { paths: string[] }),
+			search_web: (call) =>
+				this.searchWeb(
+					call.args as {
+						query: string;
+						limit?: number;
+						cursor?: string;
+					},
+				),
+			read_pdf: (call) =>
+				this.readPdf(
+					call.args as {
+						source: string;
+						max_pages?: number;
+						start_page?: number;
+					},
+				),
 			create_memory: (call) =>
-				this.createMemory(call.args as { category: string; content: string; tags?: string[] }),
+				this.createMemory(
+					call.args as {
+						category: string;
+						content: string;
+						tags?: string[];
+					},
+				),
 			update_memory: (call) =>
-				this.updateMemory(call.args as { id: string; category?: string; content?: string; tags?: string[] }),
-			delete_memory: (call) => this.deleteMemory(call.args as { id: string }),
+				this.updateMemory(
+					call.args as {
+						id: string;
+						category?: string;
+						content?: string;
+						tags?: string[];
+					},
+				),
+			delete_memory: (call) =>
+				this.deleteMemory(call.args as { id: string }),
 			list_memories: (call) =>
-				this.listMemories(call.args as { category?: string; tag?: string; limit?: number }),
+				this.listMemories(
+					call.args as {
+						category?: string;
+						tag?: string;
+						limit?: number;
+						cursor?: string;
+					},
+				),
 			search_memories: (call) =>
-				this.searchMemories(call.args as { query: string; limit?: number }),
-			read_memory_audit: (call) => this.readMemoryAudit(call.args as { limit?: number }),
+				this.searchMemories(
+					call.args as {
+						query: string;
+						limit?: number;
+						cursor?: string;
+					},
+				),
+			read_memory_audit: (call) =>
+				this.readMemoryAudit(
+					call.args as { limit?: number; cursor?: string },
+				),
 			search_past_sessions: (call) =>
-				this.searchPastSessions(call.args as { query: string; limit?: number }),
-			create_folder: (call) => this.createFolder(call.args as { path: string }),
+				this.searchPastSessions(
+					call.args as {
+						query: string;
+						limit?: number;
+						cursor?: string;
+					},
+				),
+			create_folder: (call) =>
+				this.createFolder(call.args as { path: string }),
 			move_note: (call) =>
 				this.moveNote(call.args as { path: string; new_path: string }),
-			delete_note: (call) => this.deleteNote(call.args as { path: string }),
+			delete_note: (call) =>
+				this.deleteNote(call.args as { path: string }),
 		});
-		this.builtInRegistry = resolveToolRegistry(definitions, {
-			enableMemoryAuditTool: this.settings?.intelligence?.enableMemoryAuditTool,
-		});
+		const providerDefinitions: ToolDefinition[] =
+			this.integrationRegistry?.getToolDefinitions() ?? [];
+		this.builtInRegistry = resolveToolRegistry(
+			[...builtInDefinitions, ...providerDefinitions],
+			{
+				enableMemoryAuditTool:
+					this.settings?.intelligence?.enableMemoryAuditTool,
+			},
+		);
 	}
 
-	async execute(call: ToolCall): Promise<ToolResult> {
-		try {
-			// Provider tools first (external integration path)
-			const providerResult =
-				await this.integrationRegistry?.execute(call);
-			if (providerResult) return providerResult;
+	getModelTools(): Record<string, Record<string, unknown>> {
+		return this.builtInRegistry.tools;
+	}
 
-			// T60b: registry is the sole source of truth for built-in tools.
+	async execute(call: ToolCall, signal?: AbortSignal): Promise<ToolResult> {
+		try {
 			const registryDef = this.builtInRegistry.byId.get(call.toolName);
-			if (registryDef?.execute) {
-				return await registryDef.execute(call, {
-					enableMemoryAuditTool:
-						this.settings?.intelligence?.enableMemoryAuditTool,
-				});
+			if (!registryDef?.execute) {
+				return {
+					error: `Unknown or unavailable tool: ${call.toolName}`,
+				};
+			}
+			if (signal?.aborted) {
+				return { error: "Tool call cancelled before execution." };
 			}
 
-			return { error: `Unknown tool: ${call.toolName}` };
+			const validation = await validateToolArguments(
+				registryDef,
+				call.args,
+			);
+			if (!validation.ok) {
+				return {
+					error: `Invalid arguments for ${call.toolName}: ${validation.error}`,
+				};
+			}
+
+			const result = await registryDef.execute(
+				{ ...call, args: validation.args },
+				{
+					enableMemoryAuditTool:
+						this.settings?.intelligence?.enableMemoryAuditTool,
+				},
+			);
+			return result;
 		} catch (e: any) {
 			return { error: e.message || String(e) };
 		}
@@ -118,10 +247,11 @@ export class ToolExecutor {
 		sort_by?: string;
 		limit?: number;
 		folder?: string;
+		cursor?: string;
 	}): Promise<ToolResult> {
 		const query = args.query?.toLowerCase() ?? "";
 		const sortBy = args.sort_by ?? "name";
-		const limit = Math.min(args.limit ?? 20, 100);
+		const limit = Math.min(args.limit ?? 20, 50);
 		const folder = args.folder;
 
 		// Validate and resolve folder
@@ -161,9 +291,6 @@ export class ToolExecutor {
 		// Sort
 		files = this.sortFiles(files, sortBy);
 
-		// Limit
-		files = files.slice(0, limit);
-
 		const matches = await Promise.all(
 			files.map(async (f) => ({
 				path: f.path,
@@ -173,12 +300,35 @@ export class ToolExecutor {
 				size: f.stat.size,
 			})),
 		);
+		const page = this.continuations.page({
+			toolName: "search_notes",
+			fingerprint: requestFingerprint("search_notes", {
+				query,
+				sort_by: sortBy,
+				folder: folderFilter ?? null,
+			}),
+			items: matches,
+			limit,
+			cursor: args.cursor,
+		});
+		if ("error" in page) return page;
+		const compactMatches =
+			page.total > 20
+				? page.items.map(({ path, basename, modified }) => ({
+						path,
+						basename,
+						modified,
+					}))
+				: page.items;
 
 		return {
 			success: true,
-			matches,
+			matches: compactMatches,
 			query: args.query ?? "",
-			count: matches.length,
+			count: compactMatches.length,
+			total_matches: page.total,
+			has_more: page.hasMore,
+			next_cursor: page.nextCursor,
 		};
 	}
 
@@ -187,6 +337,7 @@ export class ToolExecutor {
 		folder?: string;
 		sort_by?: string;
 		limit?: number;
+		cursor?: string;
 		context_lines?: number;
 		match_mode?: string;
 		include_filename?: boolean;
@@ -313,16 +464,22 @@ export class ToolExecutor {
 			const excerpts: string[] = [];
 			if (includeSnippets && contentMatch) {
 				const lines = content.split("\n");
-				const lowerLines = lines.map((l) => l.toLowerCase().normalize("NFC"));
+				const lowerLines = lines.map((l) =>
+					l.toLowerCase().normalize("NFC"),
+				);
 				const matchedLineIndices = new Set<number>();
 
 				for (let i = 0; i < lines.length; i++) {
 					if (matchMode === "any") {
-						if (terms.some((term) => lowerLines[i].includes(term))) {
+						if (
+							terms.some((term) => lowerLines[i].includes(term))
+						) {
 							matchedLineIndices.add(i);
 						}
 					} else {
-						if (terms.every((term) => lowerLines[i].includes(term))) {
+						if (
+							terms.every((term) => lowerLines[i].includes(term))
+						) {
 							matchedLineIndices.add(i);
 						}
 					}
@@ -331,7 +488,10 @@ export class ToolExecutor {
 				const usedRanges = new Set<string>();
 				for (const lineIdx of matchedLineIndices) {
 					const start = Math.max(0, lineIdx - contextLines);
-					const end = Math.min(lines.length, lineIdx + contextLines + 1);
+					const end = Math.min(
+						lines.length,
+						lineIdx + contextLines + 1,
+					);
 					const rangeKey = `${start}-${end}`;
 					if (usedRanges.has(rangeKey)) continue;
 					usedRanges.add(rangeKey);
@@ -346,23 +506,47 @@ export class ToolExecutor {
 
 		// Sort
 		results.sort((a, b) => {
-			switch (sortBy) {
-				case "relevance":
-					return b.matchCount - a.matchCount;
-				case "modified":
-					return b.file.stat.mtime - a.file.stat.mtime;
-				case "created":
-					return b.file.stat.ctime - a.file.stat.ctime;
-				case "name":
-				default:
-					return a.file.basename.localeCompare(b.file.basename);
-			}
+			const primary = (() => {
+				switch (sortBy) {
+					case "relevance":
+						return b.matchCount - a.matchCount;
+					case "modified":
+						return b.file.stat.mtime - a.file.stat.mtime;
+					case "created":
+						return b.file.stat.ctime - a.file.stat.ctime;
+					case "name":
+					default:
+						return a.file.basename.localeCompare(b.file.basename);
+				}
+			})();
+			return primary || a.file.path.localeCompare(b.file.path);
 		});
 
-		// Limit
-		const limited = results.slice(0, limit);
-		const totalMatches = results.length;
-		const truncated = totalMatches > limit;
+		const resultItems = results.map((result) => ({
+			path: result.file.path,
+			basename: result.file.basename,
+			matchCount: result.matchCount,
+			excerpts: result.excerpts,
+		}));
+		const page = this.continuations.page({
+			toolName: "search_note_content",
+			fingerprint: requestFingerprint("search_note_content", {
+				query: normalizedQuery,
+				folder: folderFilter ?? null,
+				sort_by: sortBy,
+				context_lines: contextLines,
+				match_mode: matchMode,
+				include_filename: includeFilename,
+				include_snippets: includeSnippets,
+			}),
+			items: resultItems,
+			limit,
+			cursor: args.cursor,
+		});
+		if ("error" in page) return page;
+		const limited = page.items;
+		const totalMatches = page.total;
+		const truncated = page.hasMore;
 
 		if (limited.length === 0) {
 			return {
@@ -371,6 +555,7 @@ export class ToolExecutor {
 				count: 0,
 				total_matches: 0,
 				truncated: false,
+				has_more: false,
 				paths: [],
 			};
 		}
@@ -378,13 +563,15 @@ export class ToolExecutor {
 		// Format results
 		if (!includeSnippets) {
 			// Counts-only mode: just list paths
-			const paths = limited.map((r) => r.file.path);
+			const paths = limited.map((r) => r.path);
 			return {
 				success: true,
 				paths,
 				count: limited.length,
 				total_matches: totalMatches,
 				truncated,
+				has_more: page.hasMore,
+				next_cursor: page.nextCursor,
 			};
 		}
 
@@ -394,10 +581,15 @@ export class ToolExecutor {
 					r.excerpts.length > 0
 						? "\n" +
 							r.excerpts
-								.map((ex) => ex.split("\n").map((l) => "    " + l).join("\n"))
+								.map((ex) =>
+									ex
+										.split("\n")
+										.map((l) => "    " + l)
+										.join("\n"),
+								)
 								.join("\n    ...\n")
 						: "";
-				return `${i + 1}. **${r.file.basename}** — ${r.file.path} (${r.matchCount} matches)${excerptText}`;
+				return `${i + 1}. **${r.basename}** — ${r.path} (${r.matchCount} matches)${excerptText}`;
 			})
 			.join("\n\n");
 
@@ -407,7 +599,9 @@ export class ToolExecutor {
 			count: limited.length,
 			total_matches: totalMatches,
 			truncated,
-			paths: limited.map((r) => r.file.path),
+			has_more: page.hasMore,
+			next_cursor: page.nextCursor,
+			paths: limited.map((r) => r.path),
 		};
 	}
 
@@ -417,6 +611,7 @@ export class ToolExecutor {
 		limit?: number;
 		include_subfolders?: boolean;
 		depth?: number;
+		cursor?: string;
 	}): Promise<ToolResult> {
 		const sortBy = args.sort_by ?? "name";
 		const limit = Math.min(args.limit ?? 30, 100);
@@ -448,7 +643,6 @@ export class ToolExecutor {
 		}
 
 		files = this.sortFiles(files, sortBy);
-		files = files.slice(0, limit);
 
 		const notes = await Promise.all(
 			files.map(async (f) => ({
@@ -459,6 +653,19 @@ export class ToolExecutor {
 				size: f.stat.size,
 			})),
 		);
+		const page = this.continuations.page({
+			toolName: "list_notes",
+			fingerprint: requestFingerprint("list_notes", {
+				folder: folderFilter ?? null,
+				sort_by: sortBy,
+				include_subfolders: includeSubfolders,
+				depth,
+			}),
+			items: notes,
+			limit,
+			cursor: args.cursor,
+		});
+		if ("error" in page) return page;
 
 		// Collect subfolders
 		let subfolders: string[] | undefined;
@@ -471,10 +678,13 @@ export class ToolExecutor {
 				if (parts.length <= 1) continue;
 				if (folderFilter) {
 					if (f.path.startsWith(folderFilter + "/")) {
-						const relativePath = f.path.slice(folderFilter.length + 1);
+						const relativePath = f.path.slice(
+							folderFilter.length + 1,
+						);
 						const relativeParts = relativePath.split("/");
 						if (relativeParts.length >= 2) {
-							const subPath = folderFilter + "/" + relativeParts[0];
+							const subPath =
+								folderFilter + "/" + relativeParts[0];
 							folderSet.add(subPath);
 						}
 					}
@@ -487,9 +697,12 @@ export class ToolExecutor {
 
 		return {
 			success: true,
-			notes,
+			notes: page.items,
 			folder: folderFilter ?? "(all vault)",
-			count: notes.length,
+			count: page.items.length,
+			total_count: page.total,
+			has_more: page.hasMore,
+			next_cursor: page.nextCursor,
 			subfolders,
 			subfolderCount: subfolders?.length,
 		};
@@ -601,15 +814,18 @@ export class ToolExecutor {
 
 	private sortFiles(files: TFile[], sortBy: string): TFile[] {
 		return [...files].sort((a, b) => {
-			switch (sortBy) {
-				case "modified":
-					return b.stat.mtime - a.stat.mtime;
-				case "created":
-					return b.stat.ctime - a.stat.ctime;
-				case "name":
-				default:
-					return a.basename.localeCompare(b.basename);
-			}
+			const primary = (() => {
+				switch (sortBy) {
+					case "modified":
+						return b.stat.mtime - a.stat.mtime;
+					case "created":
+						return b.stat.ctime - a.stat.ctime;
+					case "name":
+					default:
+						return a.basename.localeCompare(b.basename);
+				}
+			})();
+			return primary || a.path.localeCompare(b.path);
 		});
 	}
 
@@ -1115,7 +1331,9 @@ export class ToolExecutor {
 				// → include "Research/Papers/2026" (one level below parent)
 				// → exclude "Research/Papers/2026/Jan" (deeper)
 				if (f.path.startsWith(resolvedParent + "/")) {
-					const relativePath = f.path.slice(resolvedParent.length + 1);
+					const relativePath = f.path.slice(
+						resolvedParent.length + 1,
+					);
 					const relativeParts = relativePath.split("/");
 					if (relativeParts.length >= 2) {
 						// At least one folder below the file name
@@ -1146,6 +1364,7 @@ export class ToolExecutor {
 	private async searchWeb(args: {
 		query: string;
 		limit?: number;
+		cursor?: string;
 	}): Promise<ToolResult> {
 		const provider = this.settings?.webSearchProvider ?? "duckduckgo";
 		const limit = Math.min(args.limit ?? 5, 20);
@@ -1157,24 +1376,47 @@ export class ToolExecutor {
 				snippet: string;
 			}> = [];
 
-			if (provider === "brave") {
-				results = await this.searchBrave(args.query, limit);
-			} else if (provider === "duckduckgo") {
-				results = await this.searchDuckDuckGo(args.query, limit);
-			} else if (provider === "searxng") {
-				results = await this.searchSearXNG(args.query, limit);
-			} else if (provider === "tavily") {
-				results = await this.searchTavily(args.query, limit);
-			} else if (provider === "exa") {
-				results = await this.searchExa(args.query, limit);
+			if (!args.cursor) {
+				const snapshotLimit = 20;
+				if (provider === "brave") {
+					results = await this.searchBrave(args.query, snapshotLimit);
+				} else if (provider === "duckduckgo") {
+					results = await this.searchDuckDuckGo(
+						args.query,
+						snapshotLimit,
+					);
+				} else if (provider === "searxng") {
+					results = await this.searchSearXNG(
+						args.query,
+						snapshotLimit,
+					);
+				} else if (provider === "tavily") {
+					results = await this.searchTavily(
+						args.query,
+						snapshotLimit,
+					);
+				} else if (provider === "exa") {
+					results = await this.searchExa(args.query, snapshotLimit);
+				}
 			}
 
-			if (results.length === 0) {
+			const page = this.continuations.page({
+				toolName: "search_web",
+				fingerprint: requestFingerprint("search_web", {
+					query: args.query,
+					provider,
+				}),
+				items: results,
+				limit,
+				cursor: args.cursor,
+			});
+			if ("error" in page) return page;
+			if (page.items.length === 0) {
 				return { error: "No search results found." };
 			}
 
 			// Format as markdown for the LLM
-			const formatted = results
+			const formatted = page.items
 				.map(
 					(r, i) =>
 						`${i + 1}. **${r.title}**\n   URL: ${r.url}\n   ${r.snippet}`,
@@ -1185,7 +1427,10 @@ export class ToolExecutor {
 				success: true,
 				content: formatted,
 				query: args.query,
-				count: results.length,
+				count: page.items.length,
+				total_count: page.total,
+				has_more: page.hasMore,
+				next_cursor: page.nextCursor,
 			};
 		} catch (e: any) {
 			return {
@@ -1197,11 +1442,13 @@ export class ToolExecutor {
 	private async readPdf(args: {
 		source: string;
 		max_pages?: number;
+		start_page?: number;
 	}): Promise<ToolResult> {
 		const { extractPdfFromUrl, extractPdfFromBuffer } =
 			await import("../utils/PdfExtractor");
 
-		const maxPages = args.max_pages ?? 50;
+		const maxPages = Math.min(Math.max(args.max_pages ?? 50, 1), 50);
+		const startPage = Math.max(Math.floor(args.start_page ?? 1), 1);
 		const source = args.source;
 
 		try {
@@ -1211,6 +1458,7 @@ export class ToolExecutor {
 				// Online PDF
 				result = await extractPdfFromUrl(source, {
 					maxPages,
+					startPage,
 					method:
 						(this.settings as any)?.pdfExtractionMethod || "auto",
 					serverUrl: (this.settings as any)?.pdfExtractionServerUrl,
@@ -1222,7 +1470,10 @@ export class ToolExecutor {
 					return { error: `PDF not found in vault: ${source}` };
 				}
 				const buffer = await this.app.vault.readBinary(file);
-				result = await extractPdfFromBuffer(buffer, { maxPages });
+				result = await extractPdfFromBuffer(buffer, {
+					maxPages,
+					startPage,
+				});
 			}
 
 			if (!result.success) {
@@ -1234,8 +1485,14 @@ export class ToolExecutor {
 			let header = `## PDF: ${source}\n\n`;
 			if (meta?.title) header += `**Title:** ${meta.title}\n`;
 			if (meta?.author) header += `**Author:** ${meta.author}\n`;
-			if (meta?.totalPages) {
-				header += `**Pages:** ${meta.extractedPages ?? "?"} of ${meta.totalPages} extracted\n`;
+			const extractedPages = meta?.extractedPages ?? 0;
+			const pageEnd =
+				extractedPages > 0
+					? startPage + extractedPages - 1
+					: startPage - 1;
+			const totalPages = meta?.totalPages ?? 0;
+			if (totalPages) {
+				header += `**Pages:** ${startPage}–${pageEnd} of ${totalPages} extracted\n`;
 			}
 			header += `**Word count:** ~${result.totalWordCount ?? "?"}\n\n---\n\n`;
 
@@ -1243,6 +1500,14 @@ export class ToolExecutor {
 
 			return {
 				content: header + body,
+				page_start: startPage,
+				page_end: pageEnd,
+				total_pages: totalPages || undefined,
+				has_more: totalPages > 0 && pageEnd < totalPages,
+				next_page:
+					totalPages > 0 && pageEnd < totalPages
+						? pageEnd + 1
+						: undefined,
 			};
 		} catch (e: any) {
 			return {
@@ -1583,6 +1848,7 @@ export class ToolExecutor {
 		category?: string;
 		tag?: string;
 		limit?: number;
+		cursor?: string;
 	}): Promise<ToolResult> {
 		if (!this.personaLoader) {
 			return {
@@ -1594,19 +1860,32 @@ export class ToolExecutor {
 			const entries = await this.personaLoader.memoryStore.list({
 				category: args.category as any,
 				tag: args.tag,
-				limit: args.limit,
 			});
-			if (entries.length === 0) {
+			const page = this.continuations.page({
+				toolName: "list_memories",
+				fingerprint: requestFingerprint("list_memories", {
+					category: args.category ?? null,
+					tag: args.tag ?? null,
+				}),
+				items: [...entries].reverse(),
+				limit: Math.min(args.limit ?? 20, 50),
+				cursor: args.cursor,
+			});
+			if ("error" in page) return page;
+			if (page.items.length === 0) {
 				return { success: true, content: "No memories found." };
 			}
-			const lines = entries.map(
+			const lines = page.items.map(
 				(e) =>
 					`- [${e.timestamp}] **${e.category}**: ${e.content}${e.tags.length ? " " + e.tags.map((t) => `#${t}`).join(" ") : ""} [id:${e.id}]`,
 			);
 			return {
 				success: true,
 				content: lines.join("\n"),
-				count: entries.length,
+				count: page.items.length,
+				total_count: page.total,
+				has_more: page.hasMore,
+				next_cursor: page.nextCursor,
 			};
 		} catch (e: any) {
 			return { error: `Failed to list memories: ${e.message}` };
@@ -1616,6 +1895,7 @@ export class ToolExecutor {
 	private async searchMemories(args: {
 		query: string;
 		limit?: number;
+		cursor?: string;
 	}): Promise<ToolResult> {
 		if (!this.personaLoader) {
 			return {
@@ -1624,27 +1904,38 @@ export class ToolExecutor {
 		}
 
 		try {
-			const entries = await this.personaLoader.memoryStore.search(
-				args.query,
-			);
-			const limit = Math.min(args.limit ?? 10, 50);
-			const limited = entries.slice(0, limit);
+			const entries = args.cursor
+				? []
+				: await this.personaLoader.memoryStore.search(args.query);
+			const page = this.continuations.page({
+				toolName: "search_memories",
+				fingerprint: requestFingerprint("search_memories", {
+					query: args.query,
+				}),
+				items: entries,
+				limit: Math.min(args.limit ?? 10, 50),
+				cursor: args.cursor,
+			});
+			if ("error" in page) return page;
 
-			if (limited.length === 0) {
+			if (page.items.length === 0) {
 				return {
 					success: true,
 					content: "No memories match your query.",
 				};
 			}
 
-			const lines = limited.map(
+			const lines = page.items.map(
 				(e) =>
 					`- [${e.timestamp}] **${e.category}**: ${e.content}${e.tags.length ? " " + e.tags.map((t) => `#${t}`).join(" ") : ""} [id:${e.id}]`,
 			);
 			return {
 				success: true,
 				content: lines.join("\n"),
-				count: limited.length,
+				count: page.items.length,
+				total_count: page.total,
+				has_more: page.hasMore,
+				next_cursor: page.nextCursor,
 			};
 		} catch (e: any) {
 			return { error: `Failed to search memories: ${e.message}` };
@@ -1653,6 +1944,7 @@ export class ToolExecutor {
 
 	private async readMemoryAudit(args: {
 		limit?: number;
+		cursor?: string;
 	}): Promise<ToolResult> {
 		if (!this.personaLoader) {
 			return {
@@ -1667,14 +1959,22 @@ export class ToolExecutor {
 		}
 
 		try {
-			const entries = await this.personaLoader.memoryStore.readAudit(
-				args.limit ?? 20,
-			);
-			if (entries.length === 0) {
+			const entries = args.cursor
+				? []
+				: await this.personaLoader.memoryStore.readAudit();
+			const page = this.continuations.page({
+				toolName: "read_memory_audit",
+				fingerprint: requestFingerprint("read_memory_audit", {}),
+				items: entries,
+				limit: Math.min(args.limit ?? 20, 50),
+				cursor: args.cursor,
+			});
+			if ("error" in page) return page;
+			if (page.items.length === 0) {
 				return { success: true, content: "No audit entries found." };
 			}
 
-			const lines = entries.map((e) => {
+			const lines = page.items.map((e) => {
 				const time = new Date(e.timestamp).toLocaleString();
 				const icon =
 					e.operation === "create"
@@ -1690,7 +1990,10 @@ export class ToolExecutor {
 			return {
 				success: true,
 				content: lines.join("\n"),
-				count: entries.length,
+				count: page.items.length,
+				total_count: page.total,
+				has_more: page.hasMore,
+				next_cursor: page.nextCursor,
 			};
 		} catch (e: any) {
 			return { error: `Failed to read memory audit: ${e.message}` };
@@ -1700,6 +2003,7 @@ export class ToolExecutor {
 	private async searchPastSessions(args: {
 		query: string;
 		limit?: number;
+		cursor?: string;
 	}): Promise<ToolResult> {
 		if (!this.searchIndex) {
 			return {
@@ -1709,20 +2013,31 @@ export class ToolExecutor {
 
 		try {
 			const activeSessionId = this.getActiveSessionId?.();
-			const results = (await this.searchIndex.search(args.query)).filter(
-				(result) => result.sessionId !== activeSessionId,
-			);
-			const limit = Math.min(args.limit ?? 5, 20);
-			const limited = results.slice(0, limit);
+			const results = args.cursor
+				? []
+				: (await this.searchIndex.search(args.query)).filter(
+						(result) => result.sessionId !== activeSessionId,
+					);
+			const page = this.continuations.page({
+				toolName: "search_past_sessions",
+				fingerprint: requestFingerprint("search_past_sessions", {
+					query: args.query,
+					active_session_id: activeSessionId ?? null,
+				}),
+				items: results,
+				limit: Math.min(args.limit ?? 5, 20),
+				cursor: args.cursor,
+			});
+			if ("error" in page) return page;
 
-			if (limited.length === 0) {
+			if (page.items.length === 0) {
 				return {
 					success: true,
 					content: "No past sessions found matching your query.",
 				};
 			}
 
-			const formatted = limited
+			const formatted = page.items
 				.map((r, i) => {
 					const date = new Date(r.timestamp).toLocaleDateString();
 					return `${i + 1}. **Session ${r.sessionId}** (${date}): ${r.snippet.slice(0, 150)}...`;
@@ -1731,8 +2046,12 @@ export class ToolExecutor {
 
 			return {
 				success: true,
-				sessionResults: limited,
-				content: `Found ${limited.length} result(s):\n\n${formatted}`,
+				sessionResults: page.items,
+				count: page.items.length,
+				total_count: page.total,
+				has_more: page.hasMore,
+				next_cursor: page.nextCursor,
+				content: `Found ${page.items.length} result(s):\n\n${formatted}`,
 			};
 		} catch (e: any) {
 			return { error: `Search failed: ${e.message || String(e)}` };

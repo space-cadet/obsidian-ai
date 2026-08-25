@@ -175,9 +175,19 @@ export class OpenResponsesLoop {
 
 			for (const [call_id, fc] of this.pendingFunctionCalls) {
 				let args: Record<string, unknown>;
+				let argumentError: string | undefined;
 				try {
 					args = JSON.parse(fc.arguments || "{}");
+					if (
+						!args ||
+						typeof args !== "object" ||
+						Array.isArray(args)
+					) {
+						argumentError = "tool arguments must be a JSON object";
+						args = {};
+					}
 				} catch {
+					argumentError = "tool arguments are not valid JSON";
 					args = {};
 				}
 
@@ -191,8 +201,10 @@ export class OpenResponsesLoop {
 
 				let result: ToolResult;
 
-				if (this.autoApprove) {
-					result = await this.toolExecutor.execute(toolCall);
+				if (argumentError) {
+					result = { error: `Invalid arguments: ${argumentError}` };
+				} else if (this.autoApprove) {
+					result = await this.toolExecutor.execute(toolCall, signal);
 				} else {
 					const approved = await this.requestApproval?.(toolCall);
 					if (approved) {

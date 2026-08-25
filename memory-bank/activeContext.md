@@ -1,6 +1,21 @@
 # Active Context
 
-*Last Updated: 2026-08-25 23:55:03 IST*
+*Last Updated: 2026-08-26 03:23:54 IST*
+
+### 2026-08-26 — T60 implementation and live pagination validation
+
+T60a/T60c/T60d implementation and review fixes are on the feature branch;
+T60f pagination is complete. Live testing succeeded for note and session list
+pagination. The project passes 37 test files / 320 tests, TypeScript, and the
+production build. T60a and T60c retain incomplete criteria; the native AI SDK
+loop's cumulative context resend remains a separate follow-up.
+
+### 2026-08-26 — T60f Result Pagination Plan
+
+The tool inventory found nine result-limited built-in tools without a reliable
+next-batch mechanism. T60f now owns bounded pagination and continuations,
+separately from T60d's token-efficient search defaults. No source changes have
+been made for T60f.
 
 ### 2026-08-25 — T60e/T15 Provider-Adaptive Streaming Plan
 

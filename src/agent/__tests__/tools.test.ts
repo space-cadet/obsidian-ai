@@ -194,6 +194,15 @@ describe("search_notes schema", () => {
 		});
 	});
 
+	it("accepts a continuation cursor without changing the search contract", () => {
+		const result = schema.parse({
+			query: "daily",
+			limit: 10,
+			cursor: "opaque-cursor",
+		});
+		expect(result.cursor).toBe("opaque-cursor");
+	});
+
 	it("rejects invalid sort_by enum value", () => {
 		expect(() =>
 			schema.parse({ query: "test", sort_by: "size" }),
@@ -227,6 +236,17 @@ describe("list_notes schema", () => {
 		// NOTE: schema does not enforce max 3; description mentions it as guidance
 		const result = schema.parse({ depth: 5 });
 		expect(result.depth).toBe(5);
+	});
+});
+
+describe("read_pdf schema", () => {
+	const schema = noteTools.read_pdf.inputSchema as z.ZodSchema;
+
+	it("defaults to the first page and accepts a later page", () => {
+		expect(schema.parse({ source: "paper.pdf" }).start_page).toBe(1);
+		expect(schema.parse({ source: "paper.pdf", start_page: 51 })).toEqual(
+			expect.objectContaining({ start_page: 51 }),
+		);
 	});
 });
 

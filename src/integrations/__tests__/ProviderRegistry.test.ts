@@ -76,6 +76,11 @@ describe("ProviderRegistry", () => {
 		expect(registry.getToolRegistry(builtInTools)).toHaveProperty(
 			"example.status",
 		);
+		const resolved = registry.getResolvedToolRegistry(builtInTools);
+		const providerDefinition = resolved.byId.get("example.status");
+		expect(providerDefinition?.source).toBe("provider");
+		expect(providerDefinition?.execute).toBeDefined();
+		expect(resolved.tools).toHaveProperty("example.status");
 		const result = await registry.execute({
 			toolCallId: "call-1",
 			toolName: "example.status",

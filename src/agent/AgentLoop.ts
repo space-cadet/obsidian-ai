@@ -79,6 +79,12 @@ function formatToolResult(toolName: string, result: ToolResult): string {
 	if (result.error) {
 		return `Error: ${result.error}`;
 	}
+	const continuationHint = () =>
+		result.has_more && result.next_cursor
+			? `\n\nMore results are available. To continue, call ${toolName} again with cursor=${result.next_cursor} and keep the same filters.`
+			: result.has_more && result.next_page
+				? `\n\nMore PDF pages are available. Call read_pdf again with start_page=${result.next_page}.`
+				: "";
 
 	switch (toolName) {
 		case "search_notes": {
@@ -94,7 +100,7 @@ function formatToolResult(toolName: string, result: ToolResult): string {
 				const wikiPath = m.path.replace(/\.md$/, "");
 				md += `| [[${wikiPath}]] | ${date} | ${m.size ?? "—"} |\n`;
 			}
-			return md;
+			return md + continuationHint();
 		}
 
 		case "list_notes": {
@@ -110,7 +116,7 @@ function formatToolResult(toolName: string, result: ToolResult): string {
 				const wikiPath = n.path.replace(/\.md$/, "");
 				md += `| [[${wikiPath}]] | ${date} | ${n.size ?? "—"} |\n`;
 			}
-			return md;
+			return md + continuationHint();
 		}
 
 		case "list_folders": {
@@ -353,7 +359,7 @@ export class AgentLoop {
 
 			let result: ToolResult;
 			if (autoApprove) {
-				result = await toolExecutor.execute(pendingCall);
+				result = await toolExecutor.execute(pendingCall, signal);
 			} else {
 				result = (await this.opts.requestApproval(pendingCall)) ?? {
 					error: "User rejected the tool call",

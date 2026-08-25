@@ -40,6 +40,20 @@ export interface ToolResult {
 	total_matches?: number;
 	/** Whether results were truncated due to limit. */
 	truncated?: boolean;
+	/** Whether another bounded result page is available. */
+	has_more?: boolean;
+	/** Opaque cursor for requesting the next bounded result page. */
+	next_cursor?: string;
+	/** Total number of items in the bounded result set. */
+	total_count?: number;
+	/** Starting PDF page for an extracted page range. */
+	page_start?: number;
+	/** Ending PDF page for an extracted page range. */
+	page_end?: number;
+	/** Total pages in a PDF, when known. */
+	total_pages?: number;
+	/** Next PDF page to request, when more pages are available. */
+	next_page?: number;
 	/** Array of paths for count-only search results. */
 	paths?: string[];
 	/** Results array for batch operations like check_paths. */

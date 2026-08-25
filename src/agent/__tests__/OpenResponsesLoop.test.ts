@@ -196,4 +196,37 @@ describe("OpenResponsesLoop", () => {
 		);
 		expect(toolExecutor.execute).toHaveBeenCalledTimes(2);
 	});
+
+	it("does not execute malformed JSON tool arguments", async () => {
+		const execute = vi.fn();
+		const loop = new OpenResponsesLoop({
+			agentApi: {
+				streamAgentResponse: vi
+					.fn()
+					.mockImplementation(async function* () {
+						yield {
+							type: "function_call_done",
+							call_id: "bad-call",
+							name: "read_note",
+							arguments: "{not-json}",
+						};
+						yield { type: "finish", response_id: "response-1" };
+					}),
+				continueWithToolResult: vi
+					.fn()
+					.mockImplementation(async function* () {
+						yield { type: "text-delta", delta: "Handled" };
+						yield { type: "finish", response_id: "response-2" };
+					}),
+			} as any,
+			toolExecutor: { execute } as any,
+			maxSteps: 1,
+			autoApprove: true,
+		});
+
+		await expect(
+			loop.run([], [], new AbortController().signal),
+		).resolves.toBe("Handled");
+		expect(execute).not.toHaveBeenCalled();
+	});
 });

@@ -345,6 +345,97 @@ describe("ToolExecutor registry integration", () => {
 		expect(withoutAudit.byId.has("read_memory_audit")).toBe(false);
 	});
 
+	it("rejects invalid arguments before a tool handler runs", async () => {
+		const executor = new ToolExecutor(createMockApp(mockFiles));
+		const result = await executor.execute({
+			toolCallId: "invalid-read",
+			toolName: "read_note",
+			args: {},
+		});
+
+		expect(result.error).toContain("Invalid arguments for read_note");
+	});
+
+	it("caps search_notes at 50 and trims metadata for large result sets", async () => {
+		const files = Object.fromEntries(
+			Array.from({ length: 60 }, (_, index) => [
+				`Searchable/${String(index).padStart(2, "0")}-note.md`,
+				`# Note ${index}`,
+			]),
+		);
+		const executor = new ToolExecutor(createMockApp(files));
+		const result = await executor.execute({
+			toolCallId: "large-search",
+			toolName: "search_notes",
+			args: { query: "note", limit: 100 },
+		});
+
+		expect(result.count).toBe(50);
+		expect(result.matches).toHaveLength(50);
+		expect(result.matches?.[0]).toEqual(
+			expect.objectContaining({
+				path: expect.any(String),
+				modified: expect.any(Number),
+			}),
+		);
+		expect(result.matches?.[0]).not.toHaveProperty("created");
+		expect(result.matches?.[0]).not.toHaveProperty("size");
+	});
+
+	it("supports next pages for note name searches", async () => {
+		const files = Object.fromEntries(
+			Array.from({ length: 5 }, (_, index) => [
+				`Searchable/${String(index).padStart(2, "0")}-note.md`,
+				`# Note ${index}`,
+			]),
+		);
+		const executor = new ToolExecutor(createMockApp(files));
+
+		const first = await executor.execute({
+			toolCallId: "page-1",
+			toolName: "search_notes",
+			args: { query: "note", limit: 2 },
+		});
+		const second = await executor.execute({
+			toolCallId: "page-2",
+			toolName: "search_notes",
+			args: { query: "note", limit: 2, cursor: first.next_cursor },
+		});
+
+		expect(first.matches?.map((match) => match.path)).toEqual([
+			"Searchable/00-note.md",
+			"Searchable/01-note.md",
+		]);
+		expect(second.matches?.map((match) => match.path)).toEqual([
+			"Searchable/02-note.md",
+			"Searchable/03-note.md",
+		]);
+		expect(first.has_more).toBe(true);
+		expect(second.has_more).toBe(true);
+		expect(second.total_matches).toBe(5);
+	});
+
+	it("rejects a note cursor when the query changes", async () => {
+		const executor = new ToolExecutor(
+			createMockApp({
+				"one-note.md": "one",
+				"two-note.md": "two",
+			}),
+		);
+		const first = await executor.execute({
+			toolCallId: "cursor-query-1",
+			toolName: "search_notes",
+			args: { query: "note", limit: 1 },
+		});
+		const result = await executor.execute({
+			toolCallId: "cursor-query-2",
+			toolName: "search_notes",
+			args: { query: "other", limit: 1, cursor: first.next_cursor },
+		});
+
+		expect(result.error).toContain("does not match");
+	});
+
 	it("every built-in tool has a defined risk class", () => {
 		const definitions = createBuiltInToolDefinitions();
 		for (const def of definitions) {
