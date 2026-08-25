@@ -36,6 +36,16 @@ export interface ToolResult {
 	subfolders?: string[];
 	query?: string;
 	folder?: string;
+	/** Total number of matches found (may exceed returned count if truncated). */
+	total_matches?: number;
+	/** Whether results were truncated due to limit. */
+	truncated?: boolean;
+	/** Array of paths for count-only search results. */
+	paths?: string[];
+	/** Results array for batch operations like check_paths. */
+	results?: Array<Record<string, unknown>>;
+	/** Summary string for batch operations. */
+	summary?: string;
 	notes?: Array<{
 		path: string;
 		basename: string;

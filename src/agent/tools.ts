@@ -438,6 +438,22 @@ export const readMemoryAuditTool = t({
 	}),
 });
 
+export const checkPathsTool = t({
+	description:
+		"Check whether one or more note paths exist in the vault. " +
+		"Use this for fast batch existence checks — especially useful for atomic-note vaults where each concept has its own file. " +
+		"Returns existence status, canonical path, and word count for each path checked.",
+	inputSchema: z.object({
+		paths: z
+			.array(z.string())
+			.min(1)
+			.max(100)
+			.describe(
+				"Array of note paths or basenames to check, e.g. ['Learning Chinese/vocabulary/冰箱', 'Learning Chinese/vocabulary/厨房']",
+			),
+	}),
+});
+
 export const searchNoteContentTool = t({
 	description:
 		"Search inside the content of notes in the vault. " +
@@ -447,7 +463,7 @@ export const searchNoteContentTool = t({
 		query: z
 			.string()
 			.describe(
-				'Search query (case-insensitive substring match). Supports multiple words — all must appear in the note.',
+				'Search query (case-insensitive substring match). Supports multiple words — all must appear in the note by default. Use match_mode "phrase" for exact multi-word matching.',
 			),
 		folder: z
 			.string()
@@ -473,6 +489,27 @@ export const searchNoteContentTool = t({
 			.default(2)
 			.describe(
 				"Lines of context around each match to include in excerpts (default 2, max 5).",
+			),
+		match_mode: z
+			.enum(["and", "phrase", "any"])
+			.optional()
+			.default("and")
+			.describe(
+				"Match mode: 'and' = all words must appear (default), 'phrase' = exact phrase match, 'any' = any word matches.",
+			),
+		include_filename: z
+			.boolean()
+			.optional()
+			.default(false)
+			.describe(
+				"Also search in note filenames/basenames, not just content (default false).",
+			),
+		include_snippets: z
+			.boolean()
+			.optional()
+			.default(true)
+			.describe(
+				"Include text excerpts in results (default true). Set false for fast count-only mode.",
 			),
 	}),
 });
@@ -512,6 +549,7 @@ export const noteTools = {
 	move_note: moveNoteTool,
 	delete_note: deleteNoteTool,
 	list_folders: listFoldersTool,
+	check_paths: checkPathsTool,
 	search_web: searchWebTool,
 	read_pdf: readPdfTool,
 	create_memory: createMemoryTool,

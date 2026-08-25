@@ -64,6 +64,7 @@ const BUILTIN_RISKS: Record<string, HostToolRisk> = {
 	move_note: "local-write",
 	delete_note: "destructive",
 	list_folders: "read",
+	check_paths: "read",
 	search_web: "remote-read",
 	read_pdf: "remote-read",
 	create_memory: "local-create",

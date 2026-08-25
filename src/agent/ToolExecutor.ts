@@ -66,6 +66,7 @@ export class ToolExecutor {
 			count_notes: (call) => this.countNotes(call.args as { folder?: string }),
 			get_note_metadata: (call) => this.getNoteMetadata(call.args as { path: string }),
 			list_folders: (call) => this.listFolders(call.args as { path?: string }),
+			check_paths: (call) => this.checkPaths(call.args as { paths: string[] }),
 			search_web: (call) => this.searchWeb(call.args as { query: string; limit?: number }),
 			read_pdf: (call) => this.readPdf(call.args as { source: string; max_pages?: number }),
 			create_memory: (call) =>
@@ -123,14 +124,27 @@ export class ToolExecutor {
 		const limit = Math.min(args.limit ?? 20, 100);
 		const folder = args.folder;
 
+		// Validate and resolve folder
+		let folderFilter = folder;
+		if (folder) {
+			const resolved = this.resolveFolderPath(folder);
+			if (resolved.path) {
+				folderFilter = resolved.path;
+			} else {
+				return {
+					error: `Folder not found: "${folder}". ${resolved.suggestions.length > 0 ? `Did you mean: ${resolved.suggestions.join(", ")}?` : "No similar folders found."}`,
+				};
+			}
+		}
+
 		let files = this.app.vault.getFiles();
 
 		// Folder filter
-		if (folder) {
+		if (folderFilter) {
 			files = files.filter(
 				(f) =>
-					f.path.startsWith(folder + "/") ||
-					f.parent?.path === folder,
+					f.path.startsWith(folderFilter + "/") ||
+					f.parent?.path === folderFilter,
 			);
 		}
 
@@ -174,31 +188,58 @@ export class ToolExecutor {
 		sort_by?: string;
 		limit?: number;
 		context_lines?: number;
+		match_mode?: string;
+		include_filename?: boolean;
+		include_snippets?: boolean;
 	}): Promise<ToolResult> {
 		const query = args.query?.toLowerCase() ?? "";
 		const sortBy = args.sort_by ?? "relevance";
 		const limit = Math.min(args.limit ?? 20, 50);
 		const folder = args.folder;
 		const contextLines = Math.min(args.context_lines ?? 2, 5);
+		const matchMode = args.match_mode ?? "and";
+		const includeFilename = args.include_filename ?? false;
+		const includeSnippets = args.include_snippets ?? true;
 
 		if (!query) {
 			return { error: "Query is required for content search." };
 		}
 
-		// Split query into terms (AND semantics — all must appear)
-		const terms = query.split(/\s+/).filter((t) => t.length > 0);
+		// Normalize query for Unicode support
+		const normalizedQuery = query.normalize("NFC");
+
+		// Parse terms based on match mode
+		let terms: string[];
+		if (matchMode === "phrase") {
+			terms = [normalizedQuery];
+		} else {
+			terms = normalizedQuery.split(/\s+/).filter((t) => t.length > 0);
+		}
 		if (terms.length === 0) {
 			return { error: "Query contains no searchable terms." };
+		}
+
+		// Validate folder if provided
+		let folderFilter = folder;
+		if (folder) {
+			const resolved = this.resolveFolderPath(folder);
+			if (resolved.path) {
+				folderFilter = resolved.path;
+			} else {
+				return {
+					error: `Folder not found: "${folder}". ${resolved.suggestions.length > 0 ? `Did you mean: ${resolved.suggestions.join(", ")}?` : "No similar folders found."}`,
+				};
+			}
 		}
 
 		let files = this.app.vault.getMarkdownFiles();
 
 		// Folder filter
-		if (folder) {
+		if (folderFilter) {
 			files = files.filter(
 				(f) =>
-					f.path.startsWith(folder + "/") ||
-					f.parent?.path === folder,
+					f.path.startsWith(folderFilter + "/") ||
+					f.parent?.path === folderFilter,
 			);
 		}
 
@@ -218,51 +259,89 @@ export class ToolExecutor {
 				continue;
 			}
 
-			const lowerContent = content.toLowerCase();
+			const normalizedContent = content.normalize("NFC").toLowerCase();
+			const basenameLower = file.basename.toLowerCase();
 
-			// AND semantics: all terms must appear
-			const allTermsPresent = terms.every((term) =>
-				lowerContent.includes(term),
-			);
-			if (!allTermsPresent) continue;
+			// Check content match
+			let contentMatch = false;
+			let contentMatchCount = 0;
 
-			// Find match positions and build excerpts
-			const lines = content.split("\n");
-			const lowerLines = lines.map((l) => l.toLowerCase());
-			const matchedLineIndices = new Set<number>();
-
-			for (let i = 0; i < lines.length; i++) {
-				if (terms.every((term) => lowerLines[i].includes(term))) {
-					matchedLineIndices.add(i);
+			if (matchMode === "any") {
+				contentMatch = terms.some((term) =>
+					normalizedContent.includes(term),
+				);
+				for (const term of terms) {
+					let idx = normalizedContent.indexOf(term);
+					while (idx !== -1) {
+						contentMatchCount++;
+						idx = normalizedContent.indexOf(term, idx + 1);
+					}
+				}
+			} else {
+				// "and" or "phrase"
+				contentMatch = terms.every((term) =>
+					normalizedContent.includes(term),
+				);
+				for (const term of terms) {
+					let idx = normalizedContent.indexOf(term);
+					while (idx !== -1) {
+						contentMatchCount++;
+						idx = normalizedContent.indexOf(term, idx + 1);
+					}
 				}
 			}
 
-			// Also count total occurrences (not just line matches)
-			let matchCount = 0;
-			for (const term of terms) {
-				let idx = lowerContent.indexOf(term);
-				while (idx !== -1) {
-					matchCount++;
-					idx = lowerContent.indexOf(term, idx + 1);
+			// Check filename match if requested
+			let filenameMatch = false;
+			if (includeFilename) {
+				if (matchMode === "any") {
+					filenameMatch = terms.some((term) =>
+						basenameLower.includes(term),
+					);
+				} else {
+					filenameMatch = terms.every((term) =>
+						basenameLower.includes(term),
+					);
 				}
 			}
 
-			// Build excerpts with context
+			if (!contentMatch && !filenameMatch) continue;
+
+			const totalMatchCount = contentMatchCount + (filenameMatch ? 1 : 0);
+
+			// Build excerpts only if requested
 			const excerpts: string[] = [];
-			const usedRanges = new Set<string>();
+			if (includeSnippets && contentMatch) {
+				const lines = content.split("\n");
+				const lowerLines = lines.map((l) => l.toLowerCase().normalize("NFC"));
+				const matchedLineIndices = new Set<number>();
 
-			for (const lineIdx of matchedLineIndices) {
-				const start = Math.max(0, lineIdx - contextLines);
-				const end = Math.min(lines.length, lineIdx + contextLines + 1);
-				const rangeKey = `${start}-${end}`;
-				if (usedRanges.has(rangeKey)) continue;
-				usedRanges.add(rangeKey);
+				for (let i = 0; i < lines.length; i++) {
+					if (matchMode === "any") {
+						if (terms.some((term) => lowerLines[i].includes(term))) {
+							matchedLineIndices.add(i);
+						}
+					} else {
+						if (terms.every((term) => lowerLines[i].includes(term))) {
+							matchedLineIndices.add(i);
+						}
+					}
+				}
 
-				const excerptLines = lines.slice(start, end);
-				excerpts.push(excerptLines.join("\n"));
+				const usedRanges = new Set<string>();
+				for (const lineIdx of matchedLineIndices) {
+					const start = Math.max(0, lineIdx - contextLines);
+					const end = Math.min(lines.length, lineIdx + contextLines + 1);
+					const rangeKey = `${start}-${end}`;
+					if (usedRanges.has(rangeKey)) continue;
+					usedRanges.add(rangeKey);
+
+					const excerptLines = lines.slice(start, end);
+					excerpts.push(excerptLines.join("\n"));
+				}
 			}
 
-			results.push({ file, matchCount, excerpts });
+			results.push({ file, matchCount: totalMatchCount, excerpts });
 		}
 
 		// Sort
@@ -282,16 +361,32 @@ export class ToolExecutor {
 
 		// Limit
 		const limited = results.slice(0, limit);
+		const totalMatches = results.length;
+		const truncated = totalMatches > limit;
 
 		if (limited.length === 0) {
 			return {
 				success: true,
-				content: `No notes found containing all terms: "${terms.join(", ")}"`,
+				content: `No notes found matching "${args.query}"${folderFilter ? ` in folder "${folderFilter}"` : ""}.`,
 				count: 0,
+				total_matches: 0,
+				truncated: false,
 			};
 		}
 
 		// Format results
+		if (!includeSnippets) {
+			// Counts-only mode: just list paths
+			const paths = limited.map((r) => r.file.path);
+			return {
+				success: true,
+				paths,
+				count: limited.length,
+				total_matches: totalMatches,
+				truncated,
+			};
+		}
+
 		const formatted = limited
 			.map((r, i) => {
 				const excerptText =
@@ -307,8 +402,10 @@ export class ToolExecutor {
 
 		return {
 			success: true,
-			content: `Found ${limited.length} note(s) matching "${args.query}":\n\n${formatted}`,
+			content: `Found ${limited.length} note(s) matching "${args.query}"${folderFilter ? ` in folder "${folderFilter}"` : ""}:\n\n${formatted}`,
 			count: limited.length,
+			total_matches: totalMatches,
+			truncated,
 		};
 	}
 
@@ -325,13 +422,26 @@ export class ToolExecutor {
 		const includeSubfolders = args.include_subfolders ?? true;
 		const depth = Math.min(args.depth ?? 1, 3);
 
+		// Validate and resolve folder
+		let folderFilter = folder;
+		if (folder) {
+			const resolved = this.resolveFolderPath(folder);
+			if (resolved.path) {
+				folderFilter = resolved.path;
+			} else {
+				return {
+					error: `Folder not found: "${folder}". ${resolved.suggestions.length > 0 ? `Did you mean: ${resolved.suggestions.join(", ")}?` : "No similar folders found."}`,
+				};
+			}
+		}
+
 		let files = this.app.vault.getFiles();
 
-		if (folder) {
+		if (folderFilter) {
 			files = files.filter(
 				(f) =>
-					f.path.startsWith(folder + "/") ||
-					f.parent?.path === folder,
+					f.path.startsWith(folderFilter + "/") ||
+					f.parent?.path === folderFilter,
 			);
 		}
 
@@ -357,12 +467,12 @@ export class ToolExecutor {
 				if (f.path === "/") continue;
 				const parts = f.path.split("/");
 				if (parts.length <= 1) continue;
-				if (folder) {
-					if (f.path.startsWith(folder + "/")) {
-						const relativePath = f.path.slice(folder.length + 1);
+				if (folderFilter) {
+					if (f.path.startsWith(folderFilter + "/")) {
+						const relativePath = f.path.slice(folderFilter.length + 1);
 						const relativeParts = relativePath.split("/");
 						if (relativeParts.length >= 2) {
-							const subPath = folder + "/" + relativeParts[0];
+							const subPath = folderFilter + "/" + relativeParts[0];
 							folderSet.add(subPath);
 						}
 					}
@@ -376,7 +486,7 @@ export class ToolExecutor {
 		return {
 			success: true,
 			notes,
-			folder: folder ?? "(all vault)",
+			folder: folderFilter ?? "(all vault)",
 			count: notes.length,
 			subfolders,
 			subfolderCount: subfolders?.length,
@@ -385,19 +495,33 @@ export class ToolExecutor {
 
 	private async countNotes(args: { folder?: string }): Promise<ToolResult> {
 		const folder = args.folder;
+
+		// Validate and resolve folder
+		let folderFilter = folder;
+		if (folder) {
+			const resolved = this.resolveFolderPath(folder);
+			if (resolved.path) {
+				folderFilter = resolved.path;
+			} else {
+				return {
+					error: `Folder not found: "${folder}". ${resolved.suggestions.length > 0 ? `Did you mean: ${resolved.suggestions.join(", ")}?` : "No similar folders found."}`,
+				};
+			}
+		}
+
 		let allFiles = this.app.vault.getFiles();
 		let markdownFiles = this.app.vault.getMarkdownFiles();
 
-		if (folder) {
+		if (folderFilter) {
 			allFiles = allFiles.filter(
 				(f) =>
-					f.path.startsWith(folder + "/") ||
-					f.parent?.path === folder,
+					f.path.startsWith(folderFilter + "/") ||
+					f.parent?.path === folderFilter,
 			);
 			markdownFiles = markdownFiles.filter(
 				(f) =>
-					f.path.startsWith(folder + "/") ||
-					f.parent?.path === folder,
+					f.path.startsWith(folderFilter + "/") ||
+					f.parent?.path === folderFilter,
 			);
 		}
 
@@ -406,14 +530,14 @@ export class ToolExecutor {
 
 		// Count direct files (not in subfolders)
 		const directAllFiles = allFiles.filter((f) => {
-			const relativePath = folder
-				? f.path.slice(folder.length + 1)
+			const relativePath = folderFilter
+				? f.path.slice(folderFilter.length + 1)
 				: f.path;
 			return !relativePath.includes("/");
 		});
 		const directMarkdownFiles = markdownFiles.filter((f) => {
-			const relativePath = folder
-				? f.path.slice(folder.length + 1)
+			const relativePath = folderFilter
+				? f.path.slice(folderFilter.length + 1)
 				: f.path;
 			return !relativePath.includes("/");
 		});
@@ -425,12 +549,12 @@ export class ToolExecutor {
 			if (f.path === "/") continue;
 			const parts = f.path.split("/");
 			if (parts.length <= 1) continue;
-			if (folder) {
-				if (f.path.startsWith(folder + "/")) {
-					const relativePath = f.path.slice(folder.length + 1);
+			if (folderFilter) {
+				if (f.path.startsWith(folderFilter + "/")) {
+					const relativePath = f.path.slice(folderFilter.length + 1);
 					const relativeParts = relativePath.split("/");
 					if (relativeParts.length >= 2) {
-						folderSet.add(folder + "/" + relativeParts[0]);
+						folderSet.add(folderFilter + "/" + relativeParts[0]);
 					}
 				}
 			} else {
@@ -441,14 +565,14 @@ export class ToolExecutor {
 
 		return {
 			success: true,
-			folder: folder ?? "(entire vault)",
+			folder: folderFilter ?? "(entire vault)",
 			totalCount,
 			markdownCount,
 			directCount: directAllFiles.length,
 			directMarkdownCount: directMarkdownFiles.length,
 			subfolderCount,
 			content:
-				`${folder ?? "Vault"}: ${totalCount} total files (${markdownCount} markdown, ${totalCount - markdownCount} non-markdown). ` +
+				`${folderFilter ?? "Vault"}: ${totalCount} total files (${markdownCount} markdown, ${totalCount - markdownCount} non-markdown). ` +
 				`${directAllFiles.length} directly in folder, ${totalCount - directAllFiles.length} in ${subfolderCount} subfolder${subfolderCount !== 1 ? "s" : ""}.`,
 		};
 	}
@@ -485,6 +609,107 @@ export class ToolExecutor {
 					return a.basename.localeCompare(b.basename);
 			}
 		});
+	}
+
+	/**
+	 * Resolve a folder path with case-insensitive fallback.
+	 * Returns the canonical folder path if found, or null with suggestions.
+	 */
+	private resolveFolderPath(folder: string): { path: string | null; suggestions: string[] } {
+		const allLoaded = this.app.vault.getAllLoadedFiles();
+		const allFolders = new Set<string>();
+
+		for (const f of allLoaded) {
+			if (f.path === "/") continue;
+			const parts = f.path.split("/");
+			// Collect all folder paths
+			let accumulated = "";
+			for (let i = 0; i < parts.length - 1; i++) {
+				accumulated = accumulated ? `${accumulated}/${parts[i]}` : parts[i];
+				allFolders.add(accumulated);
+			}
+		}
+
+		const folderLower = folder.toLowerCase();
+
+		// 1. Exact match
+		if (allFolders.has(folder)) {
+			return { path: folder, suggestions: [] };
+		}
+
+		// 2. Case-insensitive match
+		for (const f of allFolders) {
+			if (f.toLowerCase() === folderLower) {
+				return { path: f, suggestions: [] };
+			}
+		}
+
+		// 3. Substring matches for suggestions
+		const suggestions: string[] = [];
+		for (const f of allFolders) {
+			const fLower = f.toLowerCase();
+			if (fLower.includes(folderLower) || folderLower.includes(fLower)) {
+				suggestions.push(f);
+			}
+		}
+
+		return { path: null, suggestions: suggestions.slice(0, 5) };
+	}
+
+	/**
+	 * Check whether multiple note paths exist in the vault.
+	 * Returns existence status, canonical path, and metadata for each.
+	 */
+	private async checkPaths(args: { paths: string[] }): Promise<ToolResult> {
+		if (!Array.isArray(args.paths) || args.paths.length === 0) {
+			return { error: "paths must be a non-empty array of strings." };
+		}
+		if (args.paths.length > 100) {
+			return { error: "Maximum 100 paths per check_paths call." };
+		}
+
+		const results = await Promise.all(
+			args.paths.map(async (path) => {
+				if (!isPathAllowed(path)) {
+					return {
+						path,
+						exists: false,
+						error: "Access denied: path is outside the allowed vault area.",
+					};
+				}
+
+				const file = this.resolveNote(path);
+				if (!file) {
+					return {
+						path,
+						exists: false,
+						canonical_path: null,
+						word_count: null,
+						modified: null,
+					};
+				}
+
+				const content = await this.app.vault.read(file);
+				const wordCount = content
+					.split(/\s+/)
+					.filter((w) => w.length > 0).length;
+
+				return {
+					path,
+					exists: true,
+					canonical_path: file.path,
+					word_count: wordCount,
+					modified: file.stat.mtime,
+				};
+			}),
+		);
+
+		const found = results.filter((r) => r.exists).length;
+		return {
+			success: true,
+			results,
+			summary: `${found}/${results.length} paths exist`,
+		};
 	}
 
 	/**
@@ -825,6 +1050,20 @@ export class ToolExecutor {
 	private async listFolders(args: { path?: string }): Promise<ToolResult> {
 		const parentPath =
 			args.path?.replace(/\\+/g, "/").replace(/\/$/, "") ?? "";
+
+		// Validate and resolve parent folder
+		let resolvedParent = parentPath;
+		if (parentPath) {
+			const resolved = this.resolveFolderPath(parentPath);
+			if (resolved.path) {
+				resolvedParent = resolved.path;
+			} else {
+				return {
+					error: `Folder not found: "${parentPath}". ${resolved.suggestions.length > 0 ? `Did you mean: ${resolved.suggestions.join(", ")}?` : "No similar folders found."}`,
+				};
+			}
+		}
+
 		const allFiles = this.app.vault.getAllLoadedFiles();
 		const folderSet = new Set<string>();
 
@@ -833,23 +1072,23 @@ export class ToolExecutor {
 			const parts = f.path.split("/");
 			if (parts.length <= 1) continue; // root-level file, no folder
 
-			if (parentPath) {
-				// List immediate subfolders of parentPath (depth 1)
-				// For file "Research/Papers/2026/Jan.md" with parentPath "Research/Papers":
+			if (resolvedParent) {
+				// List immediate subfolders of resolvedParent (depth 1)
+				// For file "Research/Papers/2026/Jan.md" with resolvedParent "Research/Papers":
 				// → include "Research/Papers/2026" (one level below parent)
 				// → exclude "Research/Papers/2026/Jan" (deeper)
-				if (f.path.startsWith(parentPath + "/")) {
-					const relativePath = f.path.slice(parentPath.length + 1);
+				if (f.path.startsWith(resolvedParent + "/")) {
+					const relativePath = f.path.slice(resolvedParent.length + 1);
 					const relativeParts = relativePath.split("/");
 					if (relativeParts.length >= 2) {
 						// At least one folder below the file name
 						const immediateSub =
-							parentPath + "/" + relativeParts[0];
+							resolvedParent + "/" + relativeParts[0];
 						folderSet.add(immediateSub);
 					}
 				}
 			} else {
-				// No parentPath: list top-level folders only (depth 1)
+				// No resolvedParent: list top-level folders only (depth 1)
 				folderSet.add(parts[0]);
 			}
 		}
@@ -859,7 +1098,7 @@ export class ToolExecutor {
 			success: true,
 			folders,
 			count: folders.length,
-			parent: parentPath || "(root)",
+			parent: resolvedParent || "(root)",
 		};
 	}
 
