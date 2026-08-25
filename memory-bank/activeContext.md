@@ -1,6 +1,13 @@
 # Active Context
 
-*Last Updated: 2026-08-25 23:55:03 IST*
+*Last Updated: 2026-08-26 02:27:28 IST*
+
+### 2026-08-26 — T60f Result Pagination Plan
+
+The tool inventory found nine result-limited built-in tools without a reliable
+next-batch mechanism. T60f now owns bounded pagination and continuations,
+separately from T60d's token-efficient search defaults. No source changes have
+been made for T60f.
 
 ### 2026-08-25 — T60e/T15 Provider-Adaptive Streaming Plan
 

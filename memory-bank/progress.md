@@ -1,3 +1,11 @@
+### 2026-08-26 — T60f Result Pagination Plan ⏸️
+
+- Created T60f to track bounded result pagination and continuations for the
+  nine result-limited tools identified in the tool inventory.
+- The scope includes stable ordering, cursors or offsets, `has_more`, safe
+  continuation validation, PDF page ranges, and cross-transport tests.
+- No source implementation has started.
+
 ### 2026-08-25 — T60e/T15 Provider-Adaptive Streaming Plan ⏸️
 
 - Approved a separate-branch follow-up for inconsistent live tool-call

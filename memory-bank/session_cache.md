@@ -1,6 +1,13 @@
 # Session Cache
 
-*Last Updated: 2026-08-25 23:55:03 IST*
+*Last Updated: 2026-08-26 02:27:28 IST*
+
+## 2026-08-26 T60f bounded result pagination
+
+- Created T60f as one focused task for the nine built-in tools whose results
+  are bounded without a reliable next-batch mechanism.
+- T60d remains focused on search result size and token efficiency.
+- No source changes were made; implementation remains planned.
 
 ## 2026-08-26 Lazy-session-loading revisit — stopped safely
 
