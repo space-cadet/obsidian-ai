@@ -345,6 +345,43 @@ describe("ToolExecutor registry integration", () => {
 		expect(withoutAudit.byId.has("read_memory_audit")).toBe(false);
 	});
 
+	it("rejects invalid arguments before a tool handler runs", async () => {
+		const executor = new ToolExecutor(createMockApp(mockFiles));
+		const result = await executor.execute({
+			toolCallId: "invalid-read",
+			toolName: "read_note",
+			args: {},
+		});
+
+		expect(result.error).toContain("Invalid arguments for read_note");
+	});
+
+	it("caps search_notes at 50 and trims metadata for large result sets", async () => {
+		const files = Object.fromEntries(
+			Array.from({ length: 60 }, (_, index) => [
+				`Searchable/${String(index).padStart(2, "0")}-note.md`,
+				`# Note ${index}`,
+			]),
+		);
+		const executor = new ToolExecutor(createMockApp(files));
+		const result = await executor.execute({
+			toolCallId: "large-search",
+			toolName: "search_notes",
+			args: { query: "note", limit: 100 },
+		});
+
+		expect(result.count).toBe(50);
+		expect(result.matches).toHaveLength(50);
+		expect(result.matches?.[0]).toEqual(
+			expect.objectContaining({
+				path: expect.any(String),
+				modified: expect.any(Number),
+			}),
+		);
+		expect(result.matches?.[0]).not.toHaveProperty("created");
+		expect(result.matches?.[0]).not.toHaveProperty("size");
+	});
+
 	it("every built-in tool has a defined risk class", () => {
 		const definitions = createBuiltInToolDefinitions();
 		for (const def of definitions) {

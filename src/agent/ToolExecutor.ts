@@ -7,8 +7,9 @@ import type { ProviderRegistry } from "../integrations/ProviderRegistry";
 import {
 	createBuiltInToolDefinitionsWithExecutors,
 	resolveToolRegistry,
+	validateToolArguments,
 } from "./toolRegistry";
-import type { ResolvedToolRegistry } from "./toolRegistry";
+import type { ResolvedToolRegistry, ToolDefinition } from "./toolRegistry";
 
 /* ── Security: forbidden path patterns ── */
 const FORBIDDEN_PATH_PATTERNS = [
@@ -40,74 +41,173 @@ export class ToolExecutor {
 		private getActiveSessionId?: () => string | null,
 		private integrationRegistry?: ProviderRegistry,
 	) {
-		// Build canonical registry with execute handlers bound to this instance.
-		// T60b: The registry is now the sole source of truth for built-in dispatch.
-		// ToolExecutor.execute() delegates directly to registryDef.execute().
-		const definitions = createBuiltInToolDefinitionsWithExecutors({
+		// Build the same descriptor registry used to expose tools to the model.
+		// Built-in and provider execution both pass through this map.
+		const builtInDefinitions = createBuiltInToolDefinitionsWithExecutors({
 			read_note: (call) => this.readNote(call.args as { path: string }),
 			edit_note: (call) =>
 				this.editNote(call.args as { path: string; content: string }),
 			append_to_note: (call) =>
-				this.appendToNote(call.args as { path: string; content: string }),
+				this.appendToNote(
+					call.args as { path: string; content: string },
+				),
 			create_note: (call) =>
 				this.createNote(call.args as { path: string; content: string }),
 			create_notes: (call) =>
-				this.createNotes(call.args as { notes: Array<{ path: string; content: string }> }),
+				this.createNotes(
+					call.args as {
+						notes: Array<{ path: string; content: string }>;
+					},
+				),
 			patch_note: (call) =>
-				this.patchNote(call.args as { path: string; search: string; replace: string; replace_all?: boolean }),
+				this.patchNote(
+					call.args as {
+						path: string;
+						search: string;
+						replace: string;
+						replace_all?: boolean;
+					},
+				),
 			edit_section: (call) =>
-				this.editSection(call.args as { path: string; section_heading: string; new_content: string }),
+				this.editSection(
+					call.args as {
+						path: string;
+						section_heading: string;
+						new_content: string;
+					},
+				),
 			search_notes: (call) =>
-				this.searchNotes(call.args as { query: string; sort_by?: string; limit?: number; folder?: string }),
+				this.searchNotes(
+					call.args as {
+						query: string;
+						sort_by?: string;
+						limit?: number;
+						folder?: string;
+					},
+				),
 			search_note_content: (call) =>
-				this.searchNoteContent(call.args as { query: string; folder?: string; sort_by?: string; limit?: number; context_lines?: number; match_mode?: string; include_filename?: boolean; include_snippets?: boolean }),
+				this.searchNoteContent(
+					call.args as {
+						query: string;
+						folder?: string;
+						sort_by?: string;
+						limit?: number;
+						context_lines?: number;
+						match_mode?: string;
+						include_filename?: boolean;
+						include_snippets?: boolean;
+					},
+				),
 			list_notes: (call) =>
-				this.listNotes(call.args as { folder?: string; sort_by?: string; limit?: number; include_subfolders?: boolean; depth?: number }),
-			count_notes: (call) => this.countNotes(call.args as { folder?: string }),
-			get_note_metadata: (call) => this.getNoteMetadata(call.args as { path: string }),
-			list_folders: (call) => this.listFolders(call.args as { path?: string }),
-			check_paths: (call) => this.checkPaths(call.args as { paths: string[] }),
-			search_web: (call) => this.searchWeb(call.args as { query: string; limit?: number }),
-			read_pdf: (call) => this.readPdf(call.args as { source: string; max_pages?: number }),
+				this.listNotes(
+					call.args as {
+						folder?: string;
+						sort_by?: string;
+						limit?: number;
+						include_subfolders?: boolean;
+						depth?: number;
+					},
+				),
+			count_notes: (call) =>
+				this.countNotes(call.args as { folder?: string }),
+			get_note_metadata: (call) =>
+				this.getNoteMetadata(call.args as { path: string }),
+			list_folders: (call) =>
+				this.listFolders(call.args as { path?: string }),
+			check_paths: (call) =>
+				this.checkPaths(call.args as { paths: string[] }),
+			search_web: (call) =>
+				this.searchWeb(call.args as { query: string; limit?: number }),
+			read_pdf: (call) =>
+				this.readPdf(
+					call.args as { source: string; max_pages?: number },
+				),
 			create_memory: (call) =>
-				this.createMemory(call.args as { category: string; content: string; tags?: string[] }),
+				this.createMemory(
+					call.args as {
+						category: string;
+						content: string;
+						tags?: string[];
+					},
+				),
 			update_memory: (call) =>
-				this.updateMemory(call.args as { id: string; category?: string; content?: string; tags?: string[] }),
-			delete_memory: (call) => this.deleteMemory(call.args as { id: string }),
+				this.updateMemory(
+					call.args as {
+						id: string;
+						category?: string;
+						content?: string;
+						tags?: string[];
+					},
+				),
+			delete_memory: (call) =>
+				this.deleteMemory(call.args as { id: string }),
 			list_memories: (call) =>
-				this.listMemories(call.args as { category?: string; tag?: string; limit?: number }),
+				this.listMemories(
+					call.args as {
+						category?: string;
+						tag?: string;
+						limit?: number;
+					},
+				),
 			search_memories: (call) =>
-				this.searchMemories(call.args as { query: string; limit?: number }),
-			read_memory_audit: (call) => this.readMemoryAudit(call.args as { limit?: number }),
+				this.searchMemories(
+					call.args as { query: string; limit?: number },
+				),
+			read_memory_audit: (call) =>
+				this.readMemoryAudit(call.args as { limit?: number }),
 			search_past_sessions: (call) =>
-				this.searchPastSessions(call.args as { query: string; limit?: number }),
-			create_folder: (call) => this.createFolder(call.args as { path: string }),
+				this.searchPastSessions(
+					call.args as { query: string; limit?: number },
+				),
+			create_folder: (call) =>
+				this.createFolder(call.args as { path: string }),
 			move_note: (call) =>
 				this.moveNote(call.args as { path: string; new_path: string }),
-			delete_note: (call) => this.deleteNote(call.args as { path: string }),
+			delete_note: (call) =>
+				this.deleteNote(call.args as { path: string }),
 		});
-		this.builtInRegistry = resolveToolRegistry(definitions, {
-			enableMemoryAuditTool: this.settings?.intelligence?.enableMemoryAuditTool,
-		});
+		const providerDefinitions: ToolDefinition[] =
+			this.integrationRegistry?.getToolDefinitions() ?? [];
+		this.builtInRegistry = resolveToolRegistry(
+			[...builtInDefinitions, ...providerDefinitions],
+			{
+				enableMemoryAuditTool:
+					this.settings?.intelligence?.enableMemoryAuditTool,
+			},
+		);
 	}
 
-	async execute(call: ToolCall): Promise<ToolResult> {
-		try {
-			// Provider tools first (external integration path)
-			const providerResult =
-				await this.integrationRegistry?.execute(call);
-			if (providerResult) return providerResult;
+	getModelTools(): Record<string, Record<string, unknown>> {
+		return this.builtInRegistry.tools;
+	}
 
-			// T60b: registry is the sole source of truth for built-in tools.
+	async execute(call: ToolCall, signal?: AbortSignal): Promise<ToolResult> {
+		try {
 			const registryDef = this.builtInRegistry.byId.get(call.toolName);
-			if (registryDef?.execute) {
-				return await registryDef.execute(call, {
-					enableMemoryAuditTool:
-						this.settings?.intelligence?.enableMemoryAuditTool,
-				});
+			if (!registryDef?.execute) {
+				return {
+					error: `Unknown or unavailable tool: ${call.toolName}`,
+				};
+			}
+			if (signal?.aborted) {
+				return { error: "Tool call cancelled before execution." };
 			}
 
-			return { error: `Unknown tool: ${call.toolName}` };
+			const validation = validateToolArguments(registryDef, call.args);
+			if (!validation.ok) {
+				return {
+					error: `Invalid arguments for ${call.toolName}: ${validation.error}`,
+				};
+			}
+
+			const result = await registryDef.execute(
+				{ ...call, args: validation.args },
+				{
+					enableMemoryAuditTool:
+						this.settings?.intelligence?.enableMemoryAuditTool,
+				},
+			);
+			return result;
 		} catch (e: any) {
 			return { error: e.message || String(e) };
 		}
@@ -121,7 +221,7 @@ export class ToolExecutor {
 	}): Promise<ToolResult> {
 		const query = args.query?.toLowerCase() ?? "";
 		const sortBy = args.sort_by ?? "name";
-		const limit = Math.min(args.limit ?? 20, 100);
+		const limit = Math.min(args.limit ?? 20, 50);
 		const folder = args.folder;
 
 		// Validate and resolve folder
@@ -173,12 +273,20 @@ export class ToolExecutor {
 				size: f.stat.size,
 			})),
 		);
+		const compactMatches =
+			matches.length > 20
+				? matches.map(({ path, basename, modified }) => ({
+						path,
+						basename,
+						modified,
+					}))
+				: matches;
 
 		return {
 			success: true,
-			matches,
+			matches: compactMatches,
 			query: args.query ?? "",
-			count: matches.length,
+			count: compactMatches.length,
 		};
 	}
 
@@ -313,16 +421,22 @@ export class ToolExecutor {
 			const excerpts: string[] = [];
 			if (includeSnippets && contentMatch) {
 				const lines = content.split("\n");
-				const lowerLines = lines.map((l) => l.toLowerCase().normalize("NFC"));
+				const lowerLines = lines.map((l) =>
+					l.toLowerCase().normalize("NFC"),
+				);
 				const matchedLineIndices = new Set<number>();
 
 				for (let i = 0; i < lines.length; i++) {
 					if (matchMode === "any") {
-						if (terms.some((term) => lowerLines[i].includes(term))) {
+						if (
+							terms.some((term) => lowerLines[i].includes(term))
+						) {
 							matchedLineIndices.add(i);
 						}
 					} else {
-						if (terms.every((term) => lowerLines[i].includes(term))) {
+						if (
+							terms.every((term) => lowerLines[i].includes(term))
+						) {
 							matchedLineIndices.add(i);
 						}
 					}
@@ -331,7 +445,10 @@ export class ToolExecutor {
 				const usedRanges = new Set<string>();
 				for (const lineIdx of matchedLineIndices) {
 					const start = Math.max(0, lineIdx - contextLines);
-					const end = Math.min(lines.length, lineIdx + contextLines + 1);
+					const end = Math.min(
+						lines.length,
+						lineIdx + contextLines + 1,
+					);
 					const rangeKey = `${start}-${end}`;
 					if (usedRanges.has(rangeKey)) continue;
 					usedRanges.add(rangeKey);
@@ -394,7 +511,12 @@ export class ToolExecutor {
 					r.excerpts.length > 0
 						? "\n" +
 							r.excerpts
-								.map((ex) => ex.split("\n").map((l) => "    " + l).join("\n"))
+								.map((ex) =>
+									ex
+										.split("\n")
+										.map((l) => "    " + l)
+										.join("\n"),
+								)
 								.join("\n    ...\n")
 						: "";
 				return `${i + 1}. **${r.file.basename}** — ${r.file.path} (${r.matchCount} matches)${excerptText}`;
@@ -471,10 +593,13 @@ export class ToolExecutor {
 				if (parts.length <= 1) continue;
 				if (folderFilter) {
 					if (f.path.startsWith(folderFilter + "/")) {
-						const relativePath = f.path.slice(folderFilter.length + 1);
+						const relativePath = f.path.slice(
+							folderFilter.length + 1,
+						);
 						const relativeParts = relativePath.split("/");
 						if (relativeParts.length >= 2) {
-							const subPath = folderFilter + "/" + relativeParts[0];
+							const subPath =
+								folderFilter + "/" + relativeParts[0];
 							folderSet.add(subPath);
 						}
 					}
@@ -1115,7 +1240,9 @@ export class ToolExecutor {
 				// → include "Research/Papers/2026" (one level below parent)
 				// → exclude "Research/Papers/2026/Jan" (deeper)
 				if (f.path.startsWith(resolvedParent + "/")) {
-					const relativePath = f.path.slice(resolvedParent.length + 1);
+					const relativePath = f.path.slice(
+						resolvedParent.length + 1,
+					);
 					const relativeParts = relativePath.split("/");
 					if (relativeParts.length >= 2) {
 						// At least one folder below the file name

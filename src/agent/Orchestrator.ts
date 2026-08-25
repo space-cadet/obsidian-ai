@@ -11,7 +11,6 @@ import { parseMentions, ParsedMention } from "./MentionParser";
 import type { ToolCall, ToolResult } from "./types";
 import { AgentLoop } from "./AgentLoop";
 import { ToolExecutor } from "./ToolExecutor";
-import { noteTools } from "./tools";
 import { estimateTokens } from "../context/tokenEstimator";
 import { buildBudgetedHistory } from "../context/contextBudget";
 
@@ -408,7 +407,11 @@ export class Orchestrator {
 					preserveRecentMessages: this.preserveRecentMessages,
 					responseReserveTokens: this.requestResponseReserveTokens,
 					additionalTokens: this.enableTools
-						? estimateTokens(JSON.stringify(noteTools) ?? "")
+						? estimateTokens(
+								JSON.stringify(
+									this.toolExecutor?.getModelTools(),
+								) ?? "",
+							)
 						: 0,
 				},
 			});
@@ -474,7 +477,7 @@ export class Orchestrator {
 
 				const result = await agent.run(
 					messages,
-					noteTools,
+					this.toolExecutor.getModelTools(),
 					signal ?? new AbortController().signal,
 				);
 
@@ -557,7 +560,7 @@ export class Orchestrator {
 				"\n- create_note: Create a new note in the vault." +
 				"\n- patch_note: Find and replace text inside a note (small precise edits)." +
 				"\n- edit_section: Rewrite content under a specific heading." +
-				"\n- search_notes: Search for notes by filename or path; use first for note discovery and atomic-note coverage." +
+				"\n- search_notes: Search for notes by filename or path; use first for note discovery and atomic-note coverage. Default limit is 20, maximum 50." +
 				"\n- search_note_content: Search inside note content for text, quotes, or topics. Use for prose after narrowing the folder; results may include logs, lesson notes, or generated indexes." +
 				"\n- list_notes: Browse all notes in the vault or a folder; use before content search when checking which notes exist." +
 				"\n- get_note_metadata: Get file stats (size, dates, word count) for a specific note." +
@@ -568,6 +571,7 @@ export class Orchestrator {
 				"\n- check_paths: Batch-check note paths or basenames; prefer this for atomic-note existence checks." +
 				"\n- search_past_sessions: Search the user's saved previous chat conversations by topic or keywords. This is for chat history, not vault notes." +
 				"\n\nWhen the user asks to find, list, or search for notes, ALWAYS use search_notes, list_notes, or search_note_content." +
+				" For several search terms, prefer one search_note_content call with match_mode=and or any instead of separate searches." +
 				" When the user asks whether you can search past sessions, chats, conversations, or what you discussed previously, say that you can search saved chat history and call search_past_sessions with the relevant keywords." +
 				" Do not say you cannot search — you have the search_notes, list_notes, and search_note_content tools." +
 				" Before editing a note you are unfamiliar with, use read_note to see its current content." +

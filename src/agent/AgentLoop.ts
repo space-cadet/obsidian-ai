@@ -353,7 +353,7 @@ export class AgentLoop {
 
 			let result: ToolResult;
 			if (autoApprove) {
-				result = await toolExecutor.execute(pendingCall);
+				result = await toolExecutor.execute(pendingCall, signal);
 			} else {
 				result = (await this.opts.requestApproval(pendingCall)) ?? {
 					error: "User rejected the tool call",

@@ -136,7 +136,7 @@ export const searchNotesTool = t({
 			.optional()
 			.default(20)
 			.describe(
-				"Maximum number of results to return (default 20, max 100).",
+				"Maximum number of results to return (default 20, max 50).",
 			),
 		folder: z
 			.string()

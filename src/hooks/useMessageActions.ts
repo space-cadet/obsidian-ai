@@ -745,8 +745,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			const isAgentProvider = activeProfile.provider === "agent";
 			const useTools =
 				plugin.settings.enableAgentTools || isAgentProvider;
-			const toolRegistry =
-				plugin.integrationRegistry?.getToolRegistry(noteTools, {
+			const resolvedToolRegistry =
+				plugin.integrationRegistry?.getResolvedToolRegistry(noteTools, {
 					enableMemoryAuditTool:
 						plugin.settings.intelligence?.enableMemoryAuditTool ??
 						false,
@@ -755,7 +755,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					enableMemoryAuditTool:
 						plugin.settings.intelligence?.enableMemoryAuditTool ??
 						false,
-				}).tools;
+				});
+			const toolRegistry = resolvedToolRegistry.tools;
 			const autoApprove = plugin.settings.autoApply;
 			const maxAgentSteps = plugin.settings.maxAgentSteps;
 
@@ -969,7 +970,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							});
 						},
 					});
-					const orTools = noteToolsToOpenResponses(noteTools);
+					const orTools = noteToolsToOpenResponses(toolRegistry);
 					const resultText = await openResponsesLoop.run(
 						chatMessages as Array<{
 							role: "user" | "assistant" | "system";

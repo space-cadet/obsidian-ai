@@ -41,6 +41,10 @@ export interface ToolDefinition {
 	) => Promise<ToolResult>;
 }
 
+export type ToolArgumentValidation =
+	| { ok: true; args: Record<string, unknown> }
+	| { ok: false; error: string };
+
 export interface ResolvedToolRegistry {
 	definitions: ToolDefinition[];
 	tools: Record<string, Record<string, unknown>>;
@@ -89,6 +93,157 @@ function memoryAuditAvailability(
 	return context.enableMemoryAuditTool ? "available" : "disabled";
 }
 
+function formatValidationIssue(issue: unknown): string {
+	if (!issue || typeof issue !== "object") return "invalid arguments";
+	const item = issue as { path?: unknown; message?: unknown };
+	const path =
+		Array.isArray(item.path) && item.path.length > 0
+			? `${item.path.join(".")}: `
+			: "";
+	return `${path}${typeof item.message === "string" ? item.message : "invalid value"}`;
+}
+
+function validateJsonObjectSchema(
+	schema: Record<string, unknown>,
+	args: Record<string, unknown>,
+): ToolArgumentValidation {
+	if (schema.type !== undefined && schema.type !== "object") {
+		return { ok: false, error: "tool arguments must be an object" };
+	}
+
+	const required = Array.isArray(schema.required)
+		? schema.required.filter(
+				(key): key is string => typeof key === "string",
+			)
+		: [];
+	for (const key of required) {
+		if (!(key in args)) {
+			return { ok: false, error: `missing required argument "${key}"` };
+		}
+	}
+
+	const properties =
+		schema.properties && typeof schema.properties === "object"
+			? (schema.properties as Record<string, unknown>)
+			: {};
+	for (const [key, propertySchema] of Object.entries(properties)) {
+		if (
+			!(key in args) ||
+			!propertySchema ||
+			typeof propertySchema !== "object"
+		) {
+			continue;
+		}
+		const expected = (propertySchema as { type?: unknown }).type;
+		if (typeof expected !== "string") continue;
+		const value = args[key];
+		const valid =
+			expected === "array"
+				? Array.isArray(value)
+				: expected === "null"
+					? value === null
+					: typeof value === expected;
+		if (!valid) {
+			return {
+				ok: false,
+				error: `argument "${key}" must be ${expected}`,
+			};
+		}
+	}
+
+	return { ok: true, args };
+}
+
+/**
+ * Validate model-supplied arguments before any built-in or provider code runs.
+ * Built-in schemas are Zod schemas; provider schemas may also expose their
+ * generated JSON Schema through AI SDK's jsonSchema property.
+ */
+export function validateToolArguments(
+	definition: ToolDefinition,
+	args: unknown,
+): ToolArgumentValidation {
+	if (!args || typeof args !== "object" || Array.isArray(args)) {
+		return { ok: false, error: "tool arguments must be an object" };
+	}
+
+	const objectArgs = args as Record<string, unknown>;
+	const schema = definition.inputSchema as {
+		safeParse?: (value: unknown) => {
+			success: boolean;
+			data?: unknown;
+			error?: { issues?: unknown[] };
+		};
+		jsonSchema?: unknown;
+	};
+
+	if (typeof schema?.safeParse === "function") {
+		const parsed = schema.safeParse(objectArgs);
+		if (!parsed.success) {
+			const issues = parsed.error?.issues ?? [];
+			return {
+				ok: false,
+				error:
+					issues.length > 0
+						? issues.map(formatValidationIssue).join("; ")
+						: "invalid arguments",
+			};
+		}
+		if (
+			!parsed.data ||
+			typeof parsed.data !== "object" ||
+			Array.isArray(parsed.data)
+		) {
+			return { ok: false, error: "tool arguments must be an object" };
+		}
+		return { ok: true, args: parsed.data as Record<string, unknown> };
+	}
+
+	const jsonSchema =
+		schema?.jsonSchema && typeof schema.jsonSchema === "object"
+			? (schema.jsonSchema as Record<string, unknown>)
+			: undefined;
+	if (jsonSchema) return validateJsonObjectSchema(jsonSchema, objectArgs);
+
+	return {
+		ok: false,
+		error: "tool schema cannot be validated locally",
+	};
+}
+
+function assertObjectLikeInputSchema(
+	toolId: string,
+	inputSchema: unknown,
+): void {
+	if (!inputSchema || typeof inputSchema !== "object") {
+		throw new Error(
+			`Tool ${toolId} must declare an object-like input schema.`,
+		);
+	}
+	const schema = inputSchema as {
+		safeParse?: unknown;
+		jsonSchema?: unknown;
+		_def?: { typeName?: unknown; type?: unknown };
+	};
+	if (typeof schema.safeParse === "function") {
+		const typeName = schema._def?.typeName ?? schema._def?.type;
+		if (
+			typeName !== undefined &&
+			typeName !== "ZodObject" &&
+			typeName !== "object"
+		) {
+			throw new Error(
+				`Tool ${toolId} must declare an object-like input schema.`,
+			);
+		}
+		return;
+	}
+	if (schema.jsonSchema && typeof schema.jsonSchema === "object") return;
+	throw new Error(
+		`Tool ${toolId} must declare a locally inspectable input schema.`,
+	);
+}
+
 /** Build canonical descriptors over the existing built-in AI SDK tools. */
 export function createBuiltInToolDefinitions(
 	tools: Record<string, Record<string, unknown>> = noteTools,
@@ -101,6 +256,7 @@ export function createBuiltInToolDefinitions(
 				`Built-in tool ${id} is missing its model contract.`,
 			);
 		}
+		assertObjectLikeInputSchema(id, inputSchema);
 		return {
 			id,
 			version: 1,
@@ -139,7 +295,10 @@ export function createBuiltInToolDefinitionsWithExecutors(
 	const definitions = createBuiltInToolDefinitions(tools);
 	return definitions.map((definition) => {
 		const execute = executors[definition.id] as
-			| ((call: import("./types").ToolCall, context: ToolResolutionContext) => Promise<import("./types").ToolResult>)
+			| ((
+					call: import("./types").ToolCall,
+					context: ToolResolutionContext,
+			  ) => Promise<import("./types").ToolResult>)
 			| undefined;
 		return execute ? { ...definition, execute } : definition;
 	});
@@ -162,6 +321,7 @@ export function providerCapabilityToToolDefinition(
 	providerId: string,
 	capability: ProviderCapability,
 ): ToolDefinition {
+	assertObjectLikeInputSchema(capability.id, capability.inputSchema);
 	const modelTool = tool({
 		description: capability.description,
 		inputSchema: capability.inputSchema as any,

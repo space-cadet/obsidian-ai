@@ -5,6 +5,7 @@ import {
 	createBuiltInToolRegistry,
 	providerCapabilityToToolDefinition,
 	resolveToolRegistry,
+	validateToolArguments,
 } from "../toolRegistry";
 
 describe("canonical tool registry", () => {
@@ -60,5 +61,33 @@ describe("canonical tool registry", () => {
 			risk: "read",
 		});
 		expect(definition.modelTool).toHaveProperty("inputSchema");
+	});
+
+	it("validates arguments against the canonical schema", () => {
+		const definition = createBuiltInToolDefinitions().find(
+			(item) => item.id === "read_note",
+		)!;
+
+		expect(validateToolArguments(definition, { path: "Ideas" })).toEqual({
+			ok: true,
+			args: { path: "Ideas" },
+		});
+		expect(validateToolArguments(definition, {})).toMatchObject({
+			ok: false,
+			error: expect.stringContaining("path"),
+		});
+	});
+
+	it("rejects provider schemas that are not object-shaped", () => {
+		expect(() =>
+			providerCapabilityToToolDefinition("example", {
+				id: "example.bad",
+				title: "Bad schema",
+				description: "Not an object schema.",
+				inputSchema: z.string(),
+				risk: "read",
+				execute: async () => ({ success: true }),
+			}),
+		).toThrow("object-like input schema");
 	});
 });

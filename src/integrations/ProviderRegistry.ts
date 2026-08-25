@@ -6,6 +6,10 @@ import {
 	providerCapabilityToToolDefinition,
 	resolveToolRegistry,
 } from "../agent/toolRegistry";
+import type {
+	ResolvedToolRegistry,
+	ToolDefinition,
+} from "../agent/toolRegistry";
 import {
 	INTEGRATION_PROVIDER_API_VERSION,
 	type IntegrationProvider,
@@ -152,25 +156,42 @@ export class ProviderRegistry {
 		builtInTools: ToolRecord,
 		context: ToolResolutionContext = {},
 	): ToolRecord {
-		const builtInDefinitions = createBuiltInToolDefinitions(builtInTools);
-		const providerDefinitions = this.getEnabledReadCapabilities().map(
-			(capability) => {
-				const provider = this.getProviderForCapability(capability.id);
-				if (!provider) {
-					throw new Error(
-						`Provider for capability ${capability.id} is unavailable.`,
-					);
-				}
-				return providerCapabilityToToolDefinition(
-					provider.id,
-					capability,
+		return this.getResolvedToolRegistry(builtInTools, context).tools;
+	}
+
+	/** Return the complete descriptors used to expose and execute provider tools. */
+	getToolDefinitions(): ToolDefinition[] {
+		return this.getEnabledReadCapabilities().map((capability) => {
+			const provider = this.getProviderForCapability(capability.id);
+			if (!provider) {
+				throw new Error(
+					`Provider for capability ${capability.id} is unavailable.`,
 				);
-			},
-		);
+			}
+			const definition = providerCapabilityToToolDefinition(
+				provider.id,
+				capability,
+			);
+			return {
+				...definition,
+				execute: async (call: ToolCall) =>
+					(await this.execute(call)) ?? {
+						error: `Integration provider for ${call.toolName} is unavailable.`,
+					},
+			};
+		});
+	}
+
+	/** Resolve built-in and provider tools through one descriptor registry. */
+	getResolvedToolRegistry(
+		builtInTools: ToolRecord,
+		context: ToolResolutionContext = {},
+	): ResolvedToolRegistry {
+		const builtInDefinitions = createBuiltInToolDefinitions(builtInTools);
 		return resolveToolRegistry(
-			[...builtInDefinitions, ...providerDefinitions],
+			[...builtInDefinitions, ...this.getToolDefinitions()],
 			context,
-		).tools;
+		);
 	}
 
 	async execute(call: ToolCall): Promise<ToolResult | null> {
