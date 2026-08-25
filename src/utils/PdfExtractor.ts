@@ -15,6 +15,8 @@ import * as pdfjs from "pdfjs-dist";
 export interface PdfExtractionOptions {
 	/** Max pages to extract (default: 50) */
 	maxPages?: number;
+	/** First page to extract (1-based, default: 1) */
+	startPage?: number;
 	/** Server endpoint URL */
 	serverUrl?: string;
 	/** Extraction method */
@@ -51,12 +53,17 @@ async function extractFromServer(
 	const serverUrl =
 		options.serverUrl || "https://quantumofgravity.com/relay/pdf-extract/";
 	const maxPages = options.maxPages ?? 50;
+	const startPage = Math.max(1, options.startPage ?? 1);
 
 	try {
 		const response = await fetch(`${serverUrl}extract`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ url, max_pages: maxPages }),
+			body: JSON.stringify({
+				url,
+				max_pages: maxPages,
+				start_page: startPage,
+			}),
 		});
 
 		if (!response.ok) {
@@ -114,13 +121,17 @@ async function extractFromClient(
 	options: PdfExtractionOptions = {},
 ): Promise<PdfExtractionResult> {
 	const maxPages = options.maxPages ?? 50;
+	const startPage = Math.max(1, options.startPage ?? 1);
 
 	try {
 		const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
 		const pdf = await loadingTask.promise;
 
 		const totalPages = pdf.numPages;
-		const pagesToExtract = Math.min(maxPages, totalPages);
+		const pagesToExtract = Math.min(
+			maxPages,
+			Math.max(0, totalPages - startPage + 1),
+		);
 
 		const pages: Array<{
 			pageNumber: number;
@@ -128,7 +139,7 @@ async function extractFromClient(
 			wordCount: number;
 		}> = [];
 
-		for (let i = 1; i <= pagesToExtract; i++) {
+		for (let i = startPage; i < startPage + pagesToExtract; i++) {
 			const page = await pdf.getPage(i);
 			const textContent = await page.getTextContent();
 			const text = textContent.items
@@ -174,6 +185,23 @@ export async function extractPdfFromUrl(
 	options: PdfExtractionOptions = {},
 ): Promise<PdfExtractionResult> {
 	const method = options.method || "auto";
+	if ((options.startPage ?? 1) > 1) {
+		try {
+			const response = await fetch(url);
+			if (!response.ok) {
+				return {
+					success: false,
+					error: `Failed to fetch PDF: HTTP ${response.status}`,
+				};
+			}
+			return extractFromClient(await response.arrayBuffer(), options);
+		} catch (err: any) {
+			return {
+				success: false,
+				error: `Failed to fetch/extract PDF: ${err.message}`,
+			};
+		}
+	}
 
 	if (method === "server" || method === "auto") {
 		const result = await extractFromServer(url, options);

@@ -138,6 +138,12 @@ export const searchNotesTool = t({
 			.describe(
 				"Maximum number of results to return (default 20, max 50).",
 			),
+		cursor: z
+			.string()
+			.optional()
+			.describe(
+				"Opaque cursor returned when another result page is available.",
+			),
 		folder: z
 			.string()
 			.optional()
@@ -170,6 +176,12 @@ export const listNotesTool = t({
 			.default(30)
 			.describe(
 				"Maximum number of results to return (default 30, max 100).",
+			),
+		cursor: z
+			.string()
+			.optional()
+			.describe(
+				"Opaque cursor returned when another result page is available.",
 			),
 		include_subfolders: z
 			.boolean()
@@ -289,6 +301,12 @@ export const searchWebTool = t({
 			.describe(
 				"Maximum number of results to return (default 5, max 20).",
 			),
+		cursor: z
+			.string()
+			.optional()
+			.describe(
+				"Opaque cursor returned when another result page is available.",
+			),
 	}),
 });
 
@@ -311,6 +329,11 @@ export const readPdfTool = t({
 			.describe(
 				"Maximum pages to extract (default 50). Use lower for large PDFs to save tokens.",
 			),
+		start_page: z
+			.number()
+			.optional()
+			.default(1)
+			.describe("First PDF page to extract, starting at 1."),
 	}),
 });
 
@@ -404,7 +427,13 @@ export const listMemoriesTool = t({
 			.number()
 			.optional()
 			.default(20)
-			.describe("Maximum entries to return (default 20)"),
+			.describe("Maximum entries to return (default 20, max 50)"),
+		cursor: z
+			.string()
+			.optional()
+			.describe(
+				"Opaque cursor returned when another result page is available.",
+			),
 	}),
 });
 
@@ -420,7 +449,13 @@ export const searchMemoriesTool = t({
 			.number()
 			.optional()
 			.default(10)
-			.describe("Maximum results (default 10)"),
+			.describe("Maximum results (default 10, max 50)"),
+		cursor: z
+			.string()
+			.optional()
+			.describe(
+				"Opaque cursor returned when another result page is available.",
+			),
 	}),
 });
 
@@ -434,7 +469,13 @@ export const readMemoryAuditTool = t({
 			.number()
 			.optional()
 			.default(20)
-			.describe("Maximum audit entries to return (default 20)"),
+			.describe("Maximum audit entries to return (default 20, max 50)"),
+		cursor: z
+			.string()
+			.optional()
+			.describe(
+				"Opaque cursor returned when another result page is available.",
+			),
 	}),
 });
 
@@ -486,6 +527,12 @@ export const searchNoteContentTool = t({
 			.describe(
 				"Maximum number of results to return (default 20, max 50).",
 			),
+		cursor: z
+			.string()
+			.optional()
+			.describe(
+				"Opaque cursor returned when another result page is available.",
+			),
 		context_lines: z
 			.number()
 			.optional()
@@ -532,7 +579,15 @@ export const searchPastSessionsTool = t({
 			.number()
 			.optional()
 			.default(5)
-			.describe("Maximum number of results to return (default 5)"),
+			.describe(
+				"Maximum number of results to return (default 5, max 20)",
+			),
+		cursor: z
+			.string()
+			.optional()
+			.describe(
+				"Opaque cursor returned when another result page is available.",
+			),
 	}),
 });
 

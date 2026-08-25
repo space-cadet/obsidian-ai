@@ -304,14 +304,15 @@ export class MemoryStore {
 	}
 
 	/** Read recent audit entries (newest first). */
-	async readAudit(limit: number = 50): Promise<MemoryAuditEntry[]> {
+	async readAudit(limit?: number): Promise<MemoryAuditEntry[]> {
 		const adapter = this.deps.app.vault.adapter;
 		if (!(await adapter.exists(this.auditPath))) return [];
 		try {
 			const raw = await adapter.read(this.auditPath);
 			const lines = raw.trim().split("\n").filter(Boolean);
 			const entries: MemoryAuditEntry[] = [];
-			for (const line of lines.slice(-limit)) {
+			const selected = limit === undefined ? lines : lines.slice(-limit);
+			for (const line of selected) {
 				try {
 					entries.push(JSON.parse(line));
 				} catch {

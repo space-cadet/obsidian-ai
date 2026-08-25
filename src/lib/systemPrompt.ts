@@ -65,10 +65,13 @@ export async function buildSystemPrompt(
 			"\n- list_folders: List folders in the vault. Use to understand vault structure." +
 			"\n- search_web: Search the web for current information. Use when the user asks about recent events, news, or facts that may have changed since your training data." +
 			"\n- search_past_sessions: Search the user's saved previous chat conversations by topic or keywords. This is for chat history, not vault notes." +
+			"\n- read_pdf: Read a bounded PDF page range with max_pages and start_page." +
+			"\n- list_memories/search_memories/read_memory_audit: Read bounded memory results and use cursor when another page is available." +
 			"\n\nWhen the user asks to find, list, or search for notes, ALWAYS use search_notes, list_notes, or search_note_content." +
 			" For several search terms, prefer one search_note_content call with match_mode=and or any instead of separate searches." +
 			" When the user asks whether you can search past sessions, chats, conversations, or what you discussed previously, say that you can search saved chat history and call search_past_sessions with the relevant keywords." +
 			" Do not say you cannot search — you have the search_notes, list_notes, and search_note_content tools." +
+			" When a bounded tool returns has_more=true, call the same tool again with its next_cursor only if the user needs more results; keep the original filters unchanged. For PDFs, request the returned next_page with start_page." +
 			" Before editing a note you are unfamiliar with, use read_note to see its current content." +
 			"\n\nImportant: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks." +
 			"\n\nFor moving notes: use move_note(path, new_path). Parent folders are created automatically if needed." +
