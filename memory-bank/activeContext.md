@@ -1,6 +1,20 @@
 # Active Context
 
-*Last Updated: 2026-08-23 17:05:26 IST*
+*Last Updated: 2026-08-25 12:52:36 IST*
+
+### 2026-08-25 — T60 tool-system architecture plan
+
+- Audited 24 built-in tools, the read-only peer-provider registry, native AI
+  SDK loop, OpenResponses loop, council mode, approval UI, dispatch, prompt,
+  result formatting, and focused tests.
+- Created T60/T60a–c for the canonical capability registry, cross-loop
+  transport parity, and validated execution boundary.
+- Kept approval/audit in T38, provider lifecycle in T39a, physical
+  decomposition in T46, advanced vault tools in T17, and exact historical
+  retrieval in T48c.
+- Created T18a for bounded web-page retrieval. No source implementation began.
+- Recommended first implementation: T60a registry plus focused AI SDK and
+  OpenResponses serializer tests.
 
 ### 2026-08-23 — T48c implementation validation and current boundary
 

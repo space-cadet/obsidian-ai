@@ -1,12 +1,35 @@
 # Agentic Tool Calling Implementation
 *Created: 2026-05-03 02:40:00 IST*
-*Last Updated: 2026-07-29 13:47:51 IST*
+*Last Updated: 2026-08-25 12:52:36 IST*
 
 ## Overview
 
 The LLM acts as an agent that can read, edit, create, move, delete, and organize Obsidian notes via native function calling. The Vercel AI SDK provides the tool calling primitives. This document describes the complete implementation.
 
 **Status**: ✅ Tool layer implemented. AgentLoop extracted. PendingToolCard created. Tool result formatting active.
+
+## Current Audit Boundary — 2026-08-25
+
+The registry now contains 24 built-in tools plus opt-in read-only provider
+capabilities. The original architecture remains functional, but definitions,
+dispatch, prompt descriptions, previews, result formatting, availability, and
+risk have drifted across independent modules.
+
+Open gaps are tracked by T60:
+
+- Native `AgentLoop` retains only the last call emitted in a model step.
+- OpenResponses does not consume the resolved provider-aware registry and its
+  serializer requires compatibility coverage against current tool objects.
+- Local schema validation is not enforced through one transport-independent boundary.
+- The static prompt advertises removed `search_content` input and omits tools.
+- Disabled memory/audit capabilities remain model-visible.
+- The binary auto-apply setting does not distinguish read, local mutation,
+  remote work, and destructive operations.
+
+The target design is documented in
+`tool-capability-registry-and-execution-pipeline.md`. T38 owns approval/audit,
+T46 owns physical decomposition, and T60a–c own registry, transport, and
+execution-pipeline hardening.
 
 ## Design Philosophy
 
@@ -137,13 +160,12 @@ export const noteTools = {
 
   // --- Discovery Tools (3) ---
   search_notes: {
-    description: 'Search for notes by filename or path. Use sort_by=name|modified|created, limit, folder, search_content.',
+    description: 'Search for notes by filename or path. Use sort_by=name|modified|created, limit, and folder.',
     parameters: z.object({
       query: z.string(),
       sort_by: z.enum(['name', 'modified', 'created']).optional(),
       limit: z.number().optional(),
       folder: z.string().optional(),
-      search_content: z.boolean().optional(),
     }),
   },
   list_notes: {

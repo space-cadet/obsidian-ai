@@ -1,3 +1,12 @@
+### 2026-08-25 — T60 Tool-System Architecture Plan 🔄
+
+- Completed a read-only audit of built-in and provider tool availability,
+  transport loops, approval, validation, dispatch, rendering, and tests.
+- Recorded T60/T60a–c and the canonical registry/execution-pipeline design.
+- Updated T14, T17, T18, T38, T39/T39a, T46, T48b, and T48c ownership and
+  acceptance boundaries; created T18a for bounded web-page retrieval.
+- Planning only: no source code changed and no implementation claim was made.
+
 ### 2026-08-23 — T48c implementation validation and merged closeout 🔄
 
 - Recorded the T48 implementation merged through PR #5 as `6a205b9`, including

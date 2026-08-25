@@ -222,6 +222,19 @@ versions, and mutation exclusion. This increment does not implement a Git
 provider, mutations, shell access, remote operations, or OpenResponses schema
 conversion.
 
+### Audit follow-up — 2026-08-25
+
+T60a–c extend the host boundary without changing provider ownership:
+
+- The resolved built-in/provider registry must be serialized for both normal
+  AI SDK chat and OpenResponses remote agents.
+- Provider inputs are validated locally through the host schema before execute.
+- Built-in/provider capability IDs are collision-checked at registry resolution.
+- Provider load, unload, enablement, and availability changes rebuild every
+  transport projection.
+- Focused tests cover registry-to-OpenResponses conversion, malformed input,
+  provider loss, cancellation, and unavailable-capability behavior.
+
 ## Tool Safety, Privacy, and Audit
 
 The host is the final policy authority. Provider risk labels guide the UI but

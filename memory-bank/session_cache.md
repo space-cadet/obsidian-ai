@@ -1,6 +1,20 @@
 # Session Cache
 
-*Last Updated: 2026-08-23 17:05:26 IST*
+*Last Updated: 2026-08-25 12:52:36 IST*
+
+## 2026-08-25 T60 tool-system audit and planning
+
+- Audited the 24 built-in tools, peer-provider registry, AgentLoop,
+  OpenResponsesLoop, council mode, approval flow, ToolExecutor, prompt, and tests.
+- Created T60/T60a–c and the canonical tool capability registry/execution
+  pipeline design; created T18a for bounded ordinary web-page retrieval.
+- Assigned approval/audit work to T38, provider lifecycle to T39a,
+  decomposition to T46, advanced vault capabilities to T17, and exact
+  historical retrieval to T48c.
+- Focused audit tests passed before documentation work: 5 files, 34 tests.
+- No source implementation was performed. Next recommended slice: T60a plus
+  registry serialization tests.
+- Session: `sessions/2026-08-25-afternoon.md`
 
 ## 2026-08-23 T48c implementation validation and Memory Bank closeout
 

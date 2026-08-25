@@ -1,6 +1,6 @@
 # Orchestration Decomposition Design
 *Created: 2026-08-17 06:07 IST*
-*Last Updated: 2026-08-17 06:07 IST*
+*Last Updated: 2026-08-25 12:52:36 IST*
 *Applies to: obsidian-ai plugin codebase — T46*
 
 ## Overview
@@ -24,6 +24,13 @@ are now the primary maintainability risks.
 
 ## Phase 1: ToolExecutor.ts (1,383 → ~400 lines)
 
+T60 changes this from a handler-only extraction into a registry-and-pipeline
+decomposition. The target modules must include the canonical capability
+registry, validation/authorization/execution pipeline, AI SDK/OpenResponses
+serializers, result formatters, domain handlers, and path resolver. A smaller
+switch statement is not an acceptable end state because it leaves schema,
+prompt, preview, risk, availability, and formatting metadata duplicated.
+
 ### Current State
 `ToolExecutor` is a god class that:
 - Dispatches tool calls to the right handler
@@ -38,6 +45,10 @@ are now the primary maintainability risks.
 src/agent/
 ├── ToolExecutor.ts              # Thin dispatcher (~400 lines)
 ├── tools/
+│   ├── registry.ts              # Canonical capability definitions
+│   ├── pipeline.ts              # Shared validated execution state machine
+│   ├── serializers.ts           # AI SDK/OpenResponses projections
+│   ├── formatters.ts            # Model/UI result projections
 │   ├── handlers/
 │   │   ├── note-handlers.ts     # read, edit, append, create, patch, edit_section
 │   │   ├── discovery-handlers.ts # search, list, metadata, count

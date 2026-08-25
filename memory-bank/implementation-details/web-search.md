@@ -151,6 +151,8 @@ export type WebSearchProvider = "brave" | "duckduckgo" | "tavily" | "exa" | "sea
 - Add result caching to avoid repeated searches
 - Add "search results too old" warning if all results are >1 year
 - Consider adding `fetch_webpage` tool to read full article content
+- 2026-08-25: Promoted bounded page retrieval to T18a. It requires URL safety,
+  redirect/content-type/byte/token limits, readable-text extraction, and source metadata.
 
 ## Changelog
 

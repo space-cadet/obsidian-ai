@@ -1,5 +1,6 @@
 # Tool Approval, Batch Plan, and Operation Audit Design
 *Created: 2026-08-05 13:23:15 IST*
+*Last Updated: 2026-08-25 12:52:36 IST*
 *Status: Deferred design for T38*
 
 ## Scope
@@ -8,6 +9,11 @@ This document defines a future tool-execution safety layer. It does not change
 the current tool implementation or grant authority to execute any plan.
 
 ## Approval Policy
+
+The host classifies operations as `read`, `local-create`, `local-write`,
+`remote-read`, `remote-write`, or `destructive`. Provider declarations cannot
+lower the host classification. Council mode must support the same manual
+approval UI as direct chat rather than forcing broad auto-approval.
 
 The Tool Safety & Approval settings section replaces the binary `autoApply`
 setting with one persisted policy:
@@ -40,6 +46,10 @@ unbounded array of arbitrary tool calls.
 5. The result records applied, skipped, and failed entries. No success result
    may conceal a partial application.
 
+The fingerprint rule applies to current single-note overwrite, append, patch,
+section edit, and move operations as they migrate into the shared T60 pipeline;
+it is not limited to future batch plans.
+
 Initial candidates are batch moves and structured frontmatter/patch changes.
 Bulk delete is deferred until the general plan contract is demonstrated; it
 needs a separate destructive confirmation even within a plan preview.
@@ -69,3 +79,8 @@ file, 10 retained files, and 10 MB total.
 4. Add structured patch/frontmatter plans with optimistic concurrency checks.
 5. Consider batch deletion only after the previous stages receive manual UI
    validation.
+
+All policy and audit decisions execute inside T60's common pipeline after
+schema validation and before side effects. A policy changes approval behavior;
+it never bypasses validation, availability, limits, path safety, preflight,
+fingerprint checks, cancellation, or result auditing.

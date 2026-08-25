@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-23 01:27:43 IST*
+*Last Updated: 2026-08-25 12:52:36 IST*
 
 ## Overview
 
@@ -42,6 +42,11 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T48b | Tool-Result Replay Limits and Canonical Serialization | 🔄 | HIGH | 2026-08-23 | T13a, T48a | [Details](tasks/T48b.md) |
 | T48c | Rolling Conversation Summary and Compaction | 🔄 | HIGH | 2026-08-23 | T48a, T48b | [Details](tasks/T48c.md) |
 | T48d | Context-Aware Usage Display and Provider Reconciliation | 🔄 | HIGH | 2026-08-23 | T6a, T48a | [Details](tasks/T48d.md) |
+| T60 | Tool Capability Registry and Execution-Pipeline Hardening | 🔄 | HIGH | 2026-08-25 | T13, T13a | [Details](tasks/T60.md) |
+| T60a | Canonical Tool Registry and Dynamic Exposure | ⏸️ | HIGH | 2026-08-25 | T60, T39a | [Details](tasks/T60a.md) |
+| T60b | Cross-Loop Tool Transport Parity | ⏸️ | HIGH | 2026-08-25 | T60, T60a, T14, T48b | [Details](tasks/T60b.md) |
+| T60c | Validated Execution Boundary and Reliability | ⏸️ | HIGH | 2026-08-25 | T60, T60a, T60b | [Details](tasks/T60c.md) |
+| T18a | Bounded Web Page Retrieval Tool | ⏸️ | MEDIUM | 2026-08-25 | T18, T60a, T60c | [Details](tasks/T18a.md) |
 | T49 | Settings Export and Import | 🔄 | MEDIUM | — | T23 | [Details](tasks/T49.md) |
 | T50 | OpenAI Responses API / Threads Support | 🔄 | MEDIUM | — | T14 | [Details](tasks/T50.md) |
 | T51 | Opt-in Telemetry and Usage Data Collection | 🔄 | MEDIUM | — | T38 | [Details](tasks/T51.md) |
@@ -108,6 +113,10 @@ T16: Group Chat (Multi-Agent Conversation)
 T18: Web Search Tool for Chat
   └── T13
   └── T9
+T18a: Bounded Web Page Retrieval Tool
+  └── T18
+  └── T60a
+  └── T60c
 T19: File Attachments for Chat Messages
   └── T13
   └── T4
@@ -126,6 +135,12 @@ T20: Message Selection and Chat History Exports
 T45: PDF Text Extraction Tool
   └── T13
   └── T19
+T60: Tool Capability Registry and Execution-Pipeline Hardening
+  └── T13
+  └── T13a
+  └── T60a
+  └── T60b
+  └── T60c
 T21: CLI Test Harness for AI Features
   └── T13
   └── T19

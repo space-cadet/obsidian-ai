@@ -257,6 +257,12 @@ Implement in two slices:
 4. Add the UI indicator and summary inspection view without hiding or rewriting
    the full transcript.
 
+The exact retrieval surface is now specified as two T60-compatible tools:
+`read_past_message(session_id, message_id)` and
+`read_tool_result(session_id, tool_call_id)`. T48c owns exact retrieval and
+provenance semantics; T60b/T60c own transport, validation, execution, and
+canonical replay behavior.
+
 The first implementation should preserve source IDs even before retrieval is
 available. Bounded trimming remains the safe fallback; retrieval upgrades
 precision later without changing the projection contract.
