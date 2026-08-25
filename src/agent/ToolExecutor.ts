@@ -60,7 +60,7 @@ export class ToolExecutor {
 			search_notes: (call) =>
 				this.searchNotes(call.args as { query: string; sort_by?: string; limit?: number; folder?: string }),
 			search_note_content: (call) =>
-				this.searchNoteContent(call.args as { query: string; folder?: string; sort_by?: string; limit?: number; context_lines?: number }),
+				this.searchNoteContent(call.args as { query: string; folder?: string; sort_by?: string; limit?: number; context_lines?: number; match_mode?: string; include_filename?: boolean; include_snippets?: boolean }),
 			list_notes: (call) =>
 				this.listNotes(call.args as { folder?: string; sort_by?: string; limit?: number; include_subfolders?: boolean; depth?: number }),
 			count_notes: (call) => this.countNotes(call.args as { folder?: string }),
@@ -197,9 +197,9 @@ export class ToolExecutor {
 		const limit = Math.min(args.limit ?? 20, 50);
 		const folder = args.folder;
 		const contextLines = Math.min(args.context_lines ?? 2, 5);
-		const matchMode = args.match_mode ?? "and";
+		const matchMode = args.match_mode ?? "phrase";
 		const includeFilename = args.include_filename ?? false;
-		const includeSnippets = args.include_snippets ?? true;
+		const includeSnippets = args.include_snippets ?? false;
 
 		if (!query) {
 			return { error: "Query is required for content search." };
@@ -371,6 +371,7 @@ export class ToolExecutor {
 				count: 0,
 				total_matches: 0,
 				truncated: false,
+				paths: [],
 			};
 		}
 
@@ -396,7 +397,7 @@ export class ToolExecutor {
 								.map((ex) => ex.split("\n").map((l) => "    " + l).join("\n"))
 								.join("\n    ...\n")
 						: "";
-				return `${i + 1}. **${r.file.basename}** (${r.matchCount} matches)${excerptText}`;
+				return `${i + 1}. **${r.file.basename}** — ${r.file.path} (${r.matchCount} matches)${excerptText}`;
 			})
 			.join("\n\n");
 
@@ -406,6 +407,7 @@ export class ToolExecutor {
 			count: limited.length,
 			total_matches: totalMatches,
 			truncated,
+			paths: limited.map((r) => r.file.path),
 		};
 	}
 
@@ -615,45 +617,80 @@ export class ToolExecutor {
 	 * Resolve a folder path with case-insensitive fallback.
 	 * Returns the canonical folder path if found, or null with suggestions.
 	 */
-	private resolveFolderPath(folder: string): { path: string | null; suggestions: string[] } {
-		const allLoaded = this.app.vault.getAllLoadedFiles();
+	private normalizeFolderPath(folder: string): string {
+		return folder
+			.replace(/\\+/g, "/")
+			.replace(/\/+/g, "/")
+			.replace(/^\/+|\/+$/g, "");
+	}
+
+	private addFolderAndAncestors(
+		allFolders: Set<string>,
+		folderPath: string,
+	): void {
+		const normalized = this.normalizeFolderPath(folderPath);
+		if (!normalized) return;
+
+		const parts = normalized.split("/");
+		let accumulated = "";
+		for (const part of parts) {
+			accumulated = accumulated ? `${accumulated}/${part}` : part;
+			allFolders.add(accumulated);
+		}
+	}
+
+	private resolveFolderPath(folder: string): {
+		path: string | null;
+		suggestions: string[];
+	} {
+		const requested = this.normalizeFolderPath(folder);
+		if (!requested) return { path: null, suggestions: [] };
+
 		const allFolders = new Set<string>();
-
-		for (const f of allLoaded) {
-			if (f.path === "/") continue;
-			const parts = f.path.split("/");
-			// Collect all folder paths
-			let accumulated = "";
-			for (let i = 0; i < parts.length - 1; i++) {
-				accumulated = accumulated ? `${accumulated}/${parts[i]}` : parts[i];
-				allFolders.add(accumulated);
+		for (const entry of this.app.vault.getAllLoadedFiles()) {
+			const candidate = entry as any;
+			// TFolder entries expose children; TFile entries expose their parent.
+			if (Array.isArray(candidate.children)) {
+				this.addFolderAndAncestors(allFolders, candidate.path);
+			} else if (candidate.parent?.path) {
+				this.addFolderAndAncestors(allFolders, candidate.parent.path);
 			}
 		}
 
-		const folderLower = folder.toLowerCase();
+		const requestedLower = requested.toLowerCase();
 
-		// 1. Exact match
-		if (allFolders.has(folder)) {
-			return { path: folder, suggestions: [] };
-		}
-
-		// 2. Case-insensitive match
-		for (const f of allFolders) {
-			if (f.toLowerCase() === folderLower) {
-				return { path: f, suggestions: [] };
+		// 1. Exact and case-insensitive canonical paths.
+		for (const candidate of allFolders) {
+			if (candidate.toLowerCase() === requestedLower) {
+				return { path: candidate, suggestions: [] };
 			}
 		}
 
-		// 3. Substring matches for suggestions
-		const suggestions: string[] = [];
-		for (const f of allFolders) {
-			const fLower = f.toLowerCase();
-			if (fLower.includes(folderLower) || folderLower.includes(fLower)) {
-				suggestions.push(f);
+		// 2. Unambiguous short folder names, e.g. "vocabulary".
+		const aliasMatches = Array.from(allFolders).filter(
+			(candidate) =>
+				candidate.split("/").at(-1)?.toLowerCase() === requestedLower,
+		);
+		if (aliasMatches.length === 1) {
+			return { path: aliasMatches[0], suggestions: [] };
+		}
+
+		// 3. Suggestions for missing or ambiguous paths.
+		const suggestionSet = new Set<string>(aliasMatches);
+		for (const candidate of allFolders) {
+			const candidateLower = candidate.toLowerCase();
+			if (
+				candidateLower.includes(requestedLower) ||
+				requestedLower.includes(candidateLower)
+			) {
+				suggestionSet.add(candidate);
 			}
 		}
 
-		return { path: null, suggestions: suggestions.slice(0, 5) };
+		return {
+			path: null,
+			suggestions: Array.from(suggestionSet).sort().slice(0, 5),
+		};
 	}
 
 	/**

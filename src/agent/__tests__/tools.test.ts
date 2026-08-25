@@ -19,6 +19,7 @@ const EXPECTED_TOOLS = [
 	"move_note",
 	"delete_note",
 	"list_folders",
+	"check_paths",
 	"search_web",
 	"read_pdf",
 	"create_memory",
@@ -36,7 +37,9 @@ describe("noteTools", () => {
 			expect(noteTools).toHaveProperty(name);
 			expect(noteTools[name as keyof typeof noteTools]).toBeDefined();
 		}
-		expect(Object.keys(noteTools)).toHaveLength(EXPECTED_TOOLS.length);
+		expect([...Object.keys(noteTools)].sort()).toEqual(
+			[...EXPECTED_TOOLS].sort(),
+		);
 	});
 
 	it("every tool has a non-empty description", () => {
@@ -59,6 +62,16 @@ describe("noteTools", () => {
 				`Tool ${name} should have inputSchema`,
 			).toBeDefined();
 		}
+	});
+});
+
+describe("search_note_content schema", () => {
+	const schema = noteTools.search_note_content.inputSchema as z.ZodSchema;
+
+	it("defaults to compact phrase searches", () => {
+		const parsed = schema.parse({ query: "there is" });
+		expect(parsed.match_mode).toBe("phrase");
+		expect(parsed.include_snippets).toBe(false);
 	});
 });
 

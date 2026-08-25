@@ -10,7 +10,6 @@ import {
 describe("canonical tool registry", () => {
 	it("describes every built-in tool exactly once", () => {
 		const definitions = createBuiltInToolDefinitions();
-		expect(definitions).toHaveLength(25);
 		expect(
 			new Set(definitions.map((definition) => definition.id)).size,
 		).toBe(definitions.length);

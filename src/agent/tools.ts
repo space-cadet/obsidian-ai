@@ -118,8 +118,8 @@ export const editSectionTool = t({
 export const searchNotesTool = t({
 	description:
 		"Search for notes in the vault by name or path. " +
-		"Use this when the user asks to find, list, or search for notes without providing specific context. " +
-		"Returns a list of matching note paths with metadata.",
+		"Use this first when the user asks to find notes or verify atomic-note coverage. " +
+		"Returns canonical note paths with metadata; folder filters accept canonical paths or unambiguous folder names.",
 	inputSchema: z.object({
 		query: z
 			.string()
@@ -150,7 +150,7 @@ export const searchNotesTool = t({
 export const listNotesTool = t({
 	description:
 		"List notes in the vault, optionally filtered by folder. " +
-		"Use this when the user asks to browse, list, or show notes — especially when no specific search query is given. " +
+		"Use this before content search when the user asks to browse, list, or verify note coverage — especially when no specific search query is given. " +
 		"Returns a formatted list with metadata. Also shows subfolders if present.",
 	inputSchema: z.object({
 		folder: z
@@ -458,12 +458,13 @@ export const searchNoteContentTool = t({
 	description:
 		"Search inside the content of notes in the vault. " +
 		"Use this when the user asks to find text, quotes, ideas, or topics they wrote about — not just note names. " +
-		"Returns matching notes with excerpts showing where the query appears.",
+		"For atomic-note coverage, use check_paths or list_notes first; content hits can include logs, lesson notes, and generated indexes. " +
+		"Pass a narrow folder whenever possible. Snippets are opt-in to keep results compact.",
 	inputSchema: z.object({
 		query: z
 			.string()
 			.describe(
-				'Search query (case-insensitive substring match). Supports multiple words — all must appear in the note by default. Use match_mode "phrase" for exact multi-word matching.',
+				'Search query. The default phrase mode matches the exact sequence; use match_mode "and" or "any" for word-based matching.',
 			),
 		folder: z
 			.string()
@@ -475,7 +476,9 @@ export const searchNoteContentTool = t({
 			.enum(["relevance", "modified", "created", "name"])
 			.optional()
 			.default("relevance")
-			.describe("Sort results by relevance (match count), modified date, created date, or name."),
+			.describe(
+				"Sort results by relevance (match count), modified date, created date, or name.",
+			),
 		limit: z
 			.number()
 			.optional()
@@ -493,9 +496,9 @@ export const searchNoteContentTool = t({
 		match_mode: z
 			.enum(["and", "phrase", "any"])
 			.optional()
-			.default("and")
+			.default("phrase")
 			.describe(
-				"Match mode: 'and' = all words must appear (default), 'phrase' = exact phrase match, 'any' = any word matches.",
+				"Match mode: 'phrase' = exact sequence (default), 'and' = all words must appear, 'any' = any word matches.",
 			),
 		include_filename: z
 			.boolean()
@@ -507,9 +510,9 @@ export const searchNoteContentTool = t({
 		include_snippets: z
 			.boolean()
 			.optional()
-			.default(true)
+			.default(false)
 			.describe(
-				"Include text excerpts in results (default true). Set false for fast count-only mode.",
+				"Include text excerpts in results (default false). Set true when prose context is needed.",
 			),
 	}),
 });

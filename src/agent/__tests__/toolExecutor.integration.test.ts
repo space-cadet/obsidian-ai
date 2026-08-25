@@ -97,6 +97,8 @@ describe("ToolExecutor registry integration", () => {
 	const mockFiles: Record<string, string> = {
 		"Projects/Ideas.md": "# Ideas\n\n- Quantum gravity",
 		"Daily/2026-08-25.md": "## Morning\n\nCoffee and code.",
+		"Learning Chinese/vocabulary/右边.md": "右边 = right side",
+		"Learning Chinese/grammar/there-is.md": "There is a book.",
 		"Untagged.txt": "plain text file",
 	};
 
@@ -121,7 +123,11 @@ describe("ToolExecutor registry integration", () => {
 		expect(readNoteDef?.execute).toBeDefined();
 
 		const registryResult = await readNoteDef.execute(
-			{ toolCallId: "test-1b", toolName: "read_note", args: { path: "Projects/Ideas" } },
+			{
+				toolCallId: "test-1b",
+				toolName: "read_note",
+				args: { path: "Projects/Ideas" },
+			},
 			{ enableMemoryAuditTool: false },
 		);
 		expect(registryResult).toEqual(directResult);
@@ -137,8 +143,14 @@ describe("ToolExecutor registry integration", () => {
 			args: {},
 		});
 
-		expect(directResult.notes).toHaveLength(3);
-		expect(directResult.count).toBe(3);
+		const expectedPaths = Object.keys(mockFiles);
+		expect(directResult.notes?.map((note) => note.path)).toHaveLength(
+			expectedPaths.length,
+		);
+		expect(new Set(directResult.notes?.map((note) => note.path))).toEqual(
+			new Set(expectedPaths),
+		);
+		expect(directResult.count).toBe(expectedPaths.length);
 
 		// Registry path also works
 		const registry = (executor as any).builtInRegistry;
@@ -159,13 +171,14 @@ describe("ToolExecutor registry integration", () => {
 		const result = await executor.execute({
 			toolCallId: "test-3",
 			toolName: "search_note_content",
-			args: { query: "quantum gravity" },
+			args: { query: "quantum gravity", include_snippets: true },
 		});
 
 		expect(result.success).toBe(true);
 		expect(result.count).toBe(1);
 		expect(result.content).toContain("Ideas");
 		expect(result.content).toContain("Quantum gravity");
+		expect(result.paths).toEqual(["Projects/Ideas.md"]);
 	});
 
 	it("search_note_content uses AND semantics for multiple terms", async () => {
@@ -176,7 +189,11 @@ describe("ToolExecutor registry integration", () => {
 		const result = await executor.execute({
 			toolCallId: "test-4",
 			toolName: "search_note_content",
-			args: { query: "coffee code" },
+			args: {
+				query: "coffee code",
+				match_mode: "and",
+				include_snippets: true,
+			},
 		});
 
 		expect(result.success).toBe(true);
@@ -201,12 +218,104 @@ describe("ToolExecutor registry integration", () => {
 		const result = await executor.execute({
 			toolCallId: "test-6",
 			toolName: "search_note_content",
-			args: { query: "gravity", folder: "Projects" },
+			args: {
+				query: "gravity",
+				folder: "projects/",
+				include_snippets: true,
+			},
 		});
 
 		expect(result.success).toBe(true);
 		expect(result.count).toBe(1);
 		expect(result.content).toContain("Ideas");
+	});
+
+	it("resolves short folder aliases and returns canonical paths", async () => {
+		const app = createMockApp(mockFiles);
+		const executor = new ToolExecutor(app);
+
+		const result = await executor.execute({
+			toolCallId: "test-8",
+			toolName: "search_notes",
+			args: { query: "右边", folder: "VOCABULARY/" },
+		});
+
+		expect(result.success).toBe(true);
+		expect(result.matches?.map((match) => match.path)).toEqual([
+			"Learning Chinese/vocabulary/右边.md",
+		]);
+	});
+
+	it("supports compact content coverage checks", async () => {
+		const app = createMockApp(mockFiles);
+		const executor = new ToolExecutor(app);
+
+		const result = await executor.execute({
+			toolCallId: "test-9",
+			toolName: "search_note_content",
+			args: {
+				query: "there is",
+				folder: "grammar",
+				include_snippets: false,
+			},
+		});
+
+		expect(result.success).toBe(true);
+		expect(result.paths).toEqual(["Learning Chinese/grammar/there-is.md"]);
+		expect(result.content).toBeUndefined();
+	});
+
+	it("supports explicit any matching", async () => {
+		const app = createMockApp(mockFiles);
+		const executor = new ToolExecutor(app);
+
+		const result = await executor.execute({
+			toolCallId: "test-10",
+			toolName: "search_note_content",
+			args: {
+				query: "right coffee",
+				match_mode: "any",
+				include_snippets: false,
+			},
+		});
+
+		expect(result.success).toBe(true);
+		expect(result.paths).toEqual([
+			"Daily/2026-08-25.md",
+			"Learning Chinese/vocabulary/右边.md",
+		]);
+	});
+
+	it("checks atomic note paths in a batch", async () => {
+		const app = createMockApp(mockFiles);
+		const executor = new ToolExecutor(app);
+
+		const result = await executor.execute({
+			toolCallId: "test-11",
+			toolName: "check_paths",
+			args: {
+				paths: [
+					"右边",
+					"Learning Chinese/grammar/there-is",
+					"missing-note",
+				],
+			},
+		});
+
+		expect(result.success).toBe(true);
+		expect(result.results).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					path: "右边",
+					exists: true,
+					canonical_path: "Learning Chinese/vocabulary/右边.md",
+				}),
+				expect.objectContaining({
+					path: "missing-note",
+					exists: false,
+				}),
+			]),
+		);
 	});
 
 	it("search_note_content returns empty when no match", async () => {
@@ -224,10 +333,9 @@ describe("ToolExecutor registry integration", () => {
 	});
 
 	it("registry omits unavailable tools (read_memory_audit when disabled)", () => {
-		const withAudit = resolveToolRegistry(
-			createBuiltInToolDefinitions(),
-			{ enableMemoryAuditTool: true },
-		);
+		const withAudit = resolveToolRegistry(createBuiltInToolDefinitions(), {
+			enableMemoryAuditTool: true,
+		});
 		const withoutAudit = resolveToolRegistry(
 			createBuiltInToolDefinitions(),
 			{ enableMemoryAuditTool: false },
