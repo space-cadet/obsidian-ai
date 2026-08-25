@@ -142,7 +142,11 @@ function validateJsonObjectSchema(
 				? Array.isArray(value)
 				: expected === "null"
 					? value === null
-					: typeof value === expected;
+					: expected === "integer"
+						? typeof value === "number" &&
+							Number.isFinite(value) &&
+							Number.isInteger(value)
+						: typeof value === expected;
 		if (!valid) {
 			return {
 				ok: false,
@@ -159,10 +163,10 @@ function validateJsonObjectSchema(
  * Built-in schemas are Zod schemas; provider schemas may also expose their
  * generated JSON Schema through AI SDK's jsonSchema property.
  */
-export function validateToolArguments(
+export async function validateToolArguments(
 	definition: ToolDefinition,
 	args: unknown,
-): ToolArgumentValidation {
+): Promise<ToolArgumentValidation> {
 	if (!args || typeof args !== "object" || Array.isArray(args)) {
 		return { ok: false, error: "tool arguments must be an object" };
 	}
@@ -175,6 +179,15 @@ export function validateToolArguments(
 			error?: { issues?: unknown[] };
 		};
 		jsonSchema?: unknown;
+		["~standard"]?: {
+			version?: number;
+			validate?: (
+				value: unknown,
+			) =>
+				| { value: unknown }
+				| { issues: unknown[] }
+				| Promise<{ value: unknown } | { issues: unknown[] }>;
+		};
 	};
 
 	if (typeof schema?.safeParse === "function") {
@@ -197,6 +210,38 @@ export function validateToolArguments(
 			return { ok: false, error: "tool arguments must be an object" };
 		}
 		return { ok: true, args: parsed.data as Record<string, unknown> };
+	}
+
+	const standard = schema?.["~standard"] as
+		| {
+				version?: number;
+				validate?: (
+					value: unknown,
+				) =>
+					| { value: unknown }
+					| { issues: unknown[] }
+					| Promise<{ value: unknown } | { issues: unknown[] }>;
+		  }
+		| undefined;
+	if (typeof standard?.validate === "function") {
+		const result = await standard.validate(objectArgs);
+		if ("issues" in result) {
+			return {
+				ok: false,
+				error:
+					result.issues.length > 0
+						? result.issues.map(formatValidationIssue).join("; ")
+						: "invalid arguments",
+			};
+		}
+		if (
+			!result.value ||
+			typeof result.value !== "object" ||
+			Array.isArray(result.value)
+		) {
+			return { ok: false, error: "tool arguments must be an object" };
+		}
+		return { ok: true, args: result.value as Record<string, unknown> };
 	}
 
 	const jsonSchema =
@@ -223,6 +268,7 @@ function assertObjectLikeInputSchema(
 	const schema = inputSchema as {
 		safeParse?: unknown;
 		jsonSchema?: unknown;
+		["~standard"]?: { validate?: unknown };
 		_def?: { typeName?: unknown; type?: unknown };
 	};
 	if (typeof schema.safeParse === "function") {
@@ -239,6 +285,7 @@ function assertObjectLikeInputSchema(
 		return;
 	}
 	if (schema.jsonSchema && typeof schema.jsonSchema === "object") return;
+	if (typeof schema["~standard"]?.validate === "function") return;
 	throw new Error(
 		`Tool ${toolId} must declare a locally inspectable input schema.`,
 	);

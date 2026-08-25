@@ -63,18 +63,90 @@ describe("canonical tool registry", () => {
 		expect(definition.modelTool).toHaveProperty("inputSchema");
 	});
 
-	it("validates arguments against the canonical schema", () => {
+	it("validates arguments against the canonical schema", async () => {
 		const definition = createBuiltInToolDefinitions().find(
 			(item) => item.id === "read_note",
 		)!;
 
-		expect(validateToolArguments(definition, { path: "Ideas" })).toEqual({
+		expect(
+			await validateToolArguments(definition, { path: "Ideas" }),
+		).toEqual({
 			ok: true,
 			args: { path: "Ideas" },
 		});
-		expect(validateToolArguments(definition, {})).toMatchObject({
+		expect(await validateToolArguments(definition, {})).toMatchObject({
 			ok: false,
 			error: expect.stringContaining("path"),
+		});
+	});
+
+	it("accepts standard-schema provider validators", async () => {
+		const definition = providerCapabilityToToolDefinition("example", {
+			id: "example.standard",
+			title: "Standard schema",
+			description: "Uses the standard validation interface.",
+			inputSchema: {
+				["~standard"]: {
+					version: 1,
+					vendor: "test",
+					validate(value: unknown) {
+						if (
+							value &&
+							typeof value === "object" &&
+							"path" in value &&
+							typeof (value as { path?: unknown }).path ===
+								"string"
+						) {
+							return { value };
+						}
+						return {
+							issues: [
+								{ path: ["path"], message: "path is required" },
+							],
+						};
+					},
+				},
+			},
+			risk: "read",
+			execute: async () => ({ success: true }),
+		});
+
+		expect(
+			await validateToolArguments(definition, { path: "Ideas" }),
+		).toEqual({ ok: true, args: { path: "Ideas" } });
+		expect(await validateToolArguments(definition, {})).toMatchObject({
+			ok: false,
+			error: expect.stringContaining("path"),
+		});
+	});
+
+	it("accepts integer-valued JSON Schema properties", async () => {
+		const definition = {
+			id: "example.integer",
+			version: 1 as const,
+			title: "Integer schema",
+			description: "Uses a JSON Schema integer.",
+			inputSchema: {
+				jsonSchema: {
+					type: "object",
+					properties: { limit: { type: "integer" } },
+					required: ["limit"],
+				},
+			},
+			modelTool: {},
+			risk: "read" as const,
+			source: "provider" as const,
+		};
+
+		expect(await validateToolArguments(definition, { limit: 5 })).toEqual({
+			ok: true,
+			args: { limit: 5 },
+		});
+		expect(
+			await validateToolArguments(definition, { limit: 5.5 }),
+		).toMatchObject({
+			ok: false,
+			error: expect.stringContaining("integer"),
 		});
 	});
 

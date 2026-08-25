@@ -193,7 +193,10 @@ export class ToolExecutor {
 				return { error: "Tool call cancelled before execution." };
 			}
 
-			const validation = validateToolArguments(registryDef, call.args);
+			const validation = await validateToolArguments(
+				registryDef,
+				call.args,
+			);
 			if (!validation.ok) {
 				return {
 					error: `Invalid arguments for ${call.toolName}: ${validation.error}`,
