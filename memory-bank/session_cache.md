@@ -1,6 +1,17 @@
 # Session Cache
 
-*Last Updated: 2026-08-25 12:52:36 IST*
+*Last Updated: 2026-08-25 13:47:27 IST*
+
+## 2026-08-25 T60a integration gate
+
+- Review correction: commit `68dc915` added a registry adapter, not a complete
+  execution architecture. `ToolExecutor` still owns dispatch and provider
+  metadata can still be discarded before execution.
+- T60a is active and incomplete. T60b and T60c remain paused.
+- Next step: write the failing registry execution-contract test first, then
+  wire `ToolExecutor` through the registry. Do not begin transport parity or
+  the full validation pipeline before this gate passes.
+- No new planning documents are needed at this stage.
 
 ## 2026-08-25 T60 tool-system audit and planning
 
@@ -12,8 +23,9 @@
   decomposition to T46, advanced vault capabilities to T17, and exact
   historical retrieval to T48c.
 - Focused audit tests passed before documentation work: 5 files, 34 tests.
-- No source implementation was performed. Next recommended slice: T60a plus
-  registry serialization tests.
+- At the planning stage, no source implementation was performed. The later
+  bounded T60a adapter is recorded below; its execution integration remains
+  the next slice.
 - Session: `sessions/2026-08-25-afternoon.md`
 
 ## 2026-08-23 T48c implementation validation and Memory Bank closeout

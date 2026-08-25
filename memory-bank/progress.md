@@ -5,7 +5,19 @@
 - Recorded T60/T60a–c and the canonical registry/execution-pipeline design.
 - Updated T14, T17, T18, T38, T39/T39a, T46, T48b, and T48c ownership and
   acceptance boundaries; created T18a for bounded web-page retrieval.
-- Planning only: no source code changed and no implementation claim was made.
+- At the planning stage, no source code had changed and no implementation
+  claim was made; the bounded T60a adapter was added afterward in commit
+  `68dc915`.
+
+### 2026-08-25 — T60a registry review correction 🔄
+
+- Commit `68dc915` added the registry adapter, provider normalization,
+  availability filtering, OpenResponses projection support, and focused tests.
+- The adapter is not yet connected to `ToolExecutor`; T60a remains incomplete.
+- The next step is a failing integration test for the registry execution
+  contract, followed by the smallest wiring change that makes it pass.
+- T60b transport parity and T60c validation remain paused. No new planning
+  subtasks or design documents are being added at this stage.
 
 ### 2026-08-23 — T48c implementation validation and merged closeout 🔄
 

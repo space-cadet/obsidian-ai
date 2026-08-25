@@ -36,4 +36,13 @@ and record an ownership-aware improvement plan.
 
 ## Session Outcome
 
-**Status**: ✅ PLANNING COMPLETE
+**Status**: 🔄 T60a integration required; planning correction recorded
+
+## Review Correction — 2026-08-25 13:47:27 IST
+
+- User review confirmed that the T60a registry adapter is not yet connected
+  to execution and should not be described as a completed architecture.
+- T60a was kept active and narrowed to a test-first integration gate:
+  registry execution for `read_note` must match the existing `ToolExecutor`
+  result contract.
+- T60b and T60c remain paused. No further planning documents are needed now.

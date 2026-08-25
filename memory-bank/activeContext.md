@@ -1,6 +1,21 @@
 # Active Context
 
-*Last Updated: 2026-08-25 12:52:36 IST*
+*Last Updated: 2026-08-25 13:47:27 IST*
+
+### 2026-08-25 — T60 review correction and next gate
+
+- Commit `68dc915` added a bounded T60a registry adapter and projection tests;
+  it did not connect the registry to `ToolExecutor`.
+- T60a remains active and incomplete. T60b and T60c remain paused.
+- The first implementation step is now a failing integration test: a registry
+  definition for `read_note` must execute and return the same result contract
+  as the existing `ToolExecutor` path.
+- The registry must retain provider metadata through execution, use one
+  shared availability filter, support explicit titles, and reject unusable
+  provider schemas. Tests should check behavior rather than tool counts or
+  boilerplate version values.
+- No additional task or design documents are needed until this integration
+  gate passes.
 
 ### 2026-08-25 — T60 tool-system architecture plan
 

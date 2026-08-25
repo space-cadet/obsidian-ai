@@ -1,6 +1,6 @@
 # Tool Capability Registry and Execution Pipeline
 *Created: 2026-08-25 12:52:36 IST*
-*Last Updated: 2026-08-25 12:52:36 IST*
+*Last Updated: 2026-08-25 13:47:27 IST*
 *Task: T60*
 
 ## Current Boundary
@@ -21,6 +21,19 @@ The audit found these primary gaps:
 - Static prompt and preview metadata drift from the implemented registry.
 - Disabled runtime capabilities remain model-visible.
 - Existing-content mutations have no approval-time content fingerprint.
+
+## Implemented Versus Target — 2026-08-25
+
+Commit `68dc915` implements a bounded registry adapter, provider
+normalization, availability filtering, and projection tests. It does not yet
+make the registry the execution source of truth. `ToolExecutor` still owns
+the main dispatch path, and provider resolution can still reduce complete
+definitions to raw AI SDK tools.
+
+The next implementation gate is test-first registry integration:
+`registry.byId.get('read_note').execute(call)` must have a defined result
+contract and match the existing `ToolExecutor` result before transport parity
+or the full validation pipeline begins.
 
 ## Canonical Definition
 
@@ -50,7 +63,7 @@ Every transport uses the same state machine:
 Reads may run concurrently within a bounded pool. Mutations affecting the same
 target serialize. Destructive actions use a dedicated confirmation boundary.
 
-## Derived Surfaces
+## Target Derived Surfaces
 
 The resolved registry generates AI SDK tools, OpenResponses JSON Schema tools,
 dynamic prompt summaries, approval/result descriptors, executor dispatch, and
