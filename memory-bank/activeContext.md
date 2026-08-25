@@ -1,6 +1,27 @@
 # Active Context
 
-*Last Updated: 2026-08-25 13:47:27 IST*
+*Last Updated: 2026-08-25 17:00:00 IST*
+
+### 2026-08-25 — T60b OpenResponses loop bug diagnosis
+
+- Verified 3 protocol bugs in the OpenResponses loop that cause unbounded token
+growth during multi-step tool chains:
+  1. **Duplicate input submission:** `streamAgentResponse({ input, tools })` is
+     inside the `while` loop, resubmitting the full conversation on every tool
+     round (direct cause of 500k-token incident)
+  2. **Discarded continuation ID:** `previousResponseId` accepted by
+     `continueWithToolResult()` but never serialized to request body;
+     continuations are sent as stateless requests
+  3. **Continuation handler gap:** Post-continuation stream only handles
+     text/finish/error, not function_call/function_call_done — multi-round
+     chains fall back to broken outer loop
+- Minimal fix spec ready: move initial request outside loop, store response_id,
+  use continuations via `previous_response_id`, shared handler with full event
+  support
+- Impact: ~140× token reduction for multi-step chains (500k → 3.6k tokens)
+- Memory-bank updated: 7 task files, 1 implementation detail doc, 1 edit chunk,
+  1 new proposed task (T60d for search defaults)
+- No source code changed; implementation pending user approval
 
 ### 2026-08-25 — T60 review correction and next gate
 

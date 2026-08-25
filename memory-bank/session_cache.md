@@ -1,6 +1,21 @@
 # Session Cache
 
-*Last Updated: 2026-08-25 13:47:27 IST*
+*Last Updated: 2026-08-25 17:00:00 IST*
+
+## 2026-08-25 T60b OpenResponses loop bug diagnosis
+
+- Verified 3 protocol bugs in OpenResponses loop causing 500k-token blowup:
+  1. Duplicate input submission — `streamAgentResponse({ input, tools })` inside
+     the while loop resubmits full conversation on every tool round
+  2. Discarded continuation ID — `previousResponseId` accepted but never
+     serialized to request body; continuations are stateless
+  3. Continuation handler gap — post-continuation stream doesn't handle
+     `function_call`/`function_call_done`, forcing fallback to broken outer loop
+- Impact: ~140× token reduction for multi-step tool chains (500k → 3.6k)
+- Memory-bank updated across 7 task files, 1 implementation detail doc, 1 edit
+  chunk, and 1 new proposed task (T60d)
+- No source code changed in this session
+- Session: `sessions/2026-08-25-evening.md`
 
 ## 2026-08-25 T60a integration gate
 
@@ -123,17 +138,18 @@
 - Remaining: T57d SyncIt contract/overlap test and raw plugin-file migration.
 
 ## Latest Session
-- Focus: T57b two-way state, recovery, and deletion closeout
+- Focus: T60b OpenResponses loop bug diagnosis and memory-bank documentation
 - Completed:
-  - Added durable per-file shared state and encrypted remote state
-  - Added recovery copies, deletion tombstones, and explicit conflict choices
-  - Added focused T57b acceptance tests; full suite passes with 263 tests
-  - Full build and TypeScript checks pass
-- Remaining: T57c durable retries/identity, T57d SyncIt contract, and older raw
-  remote-file migration
-- TypeScript clean
+  - Verified 3 protocol bugs in OpenResponses loop (duplicate input, discarded
+    continuation ID, continuation handler gap)
+  - Documented findings across 7 task files, 1 implementation detail doc, 1 edit
+    chunk, and 1 new proposed task (T60d)
+  - Impact analysis: ~140× token reduction for multi-step tool chains
+- Remaining: T60b implementation pending user approval; T60a still incomplete
+- No source code changed in this session
+- Session file: `sessions/2026-08-25-evening.md`
 
-*Session: 2026-08-21 13:00–13:52 UTC*
+*Session: 2026-08-25 16:00–17:00 IST*
 *Branch: `main`*
 *Models: kimi/k3*
 
