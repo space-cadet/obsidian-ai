@@ -115,4 +115,85 @@ describe("OpenResponsesLoop", () => {
 			),
 		).toBeLessThanOrEqual(40);
 	});
+
+	it("uses stateful continuations for multi-round tool calls", async () => {
+		const tools = [
+			{
+				type: "function" as const,
+				function: { name: "read_note" },
+			},
+		];
+		const signal = new AbortController().signal;
+		const streamAgentResponse = vi
+			.fn()
+			.mockImplementation(async function* () {
+				yield {
+					type: "function_call_done",
+					call_id: "call-one",
+					name: "read_note",
+					arguments: JSON.stringify({ path: "One" }),
+				};
+				yield { type: "finish", response_id: "response-1" };
+			});
+		const continueWithToolResult = vi
+			.fn()
+			.mockImplementationOnce(async function* () {
+				yield {
+					type: "function_call_done",
+					call_id: "call-two",
+					name: "read_note",
+					arguments: JSON.stringify({ path: "Two" }),
+				};
+				yield { type: "finish", response_id: "response-2" };
+			})
+			.mockImplementationOnce(async function* () {
+				yield { type: "text-delta", delta: "Done" };
+				yield { type: "finish", response_id: "response-3" };
+			});
+		const toolExecutor = {
+			execute: vi.fn().mockResolvedValue({
+				success: true,
+				content: "note content",
+			}),
+		};
+		const loop = new OpenResponsesLoop({
+			agentApi: {
+				streamAgentResponse,
+				continueWithToolResult,
+			} as any,
+			toolExecutor: toolExecutor as any,
+			maxSteps: 3,
+			autoApprove: true,
+		});
+
+		await expect(
+			loop.run(
+				[{ role: "user", content: "original request" }],
+				tools,
+				signal,
+			),
+		).resolves.toBe("Done");
+
+		expect(streamAgentResponse).toHaveBeenCalledTimes(1);
+		expect(continueWithToolResult).toHaveBeenCalledTimes(2);
+		expect(continueWithToolResult).toHaveBeenNthCalledWith(
+			1,
+			"response-1",
+			expect.arrayContaining([
+				expect.objectContaining({ call_id: "call-one" }),
+			]),
+			tools,
+			signal,
+		);
+		expect(continueWithToolResult).toHaveBeenNthCalledWith(
+			2,
+			"response-2",
+			expect.arrayContaining([
+				expect.objectContaining({ call_id: "call-two" }),
+			]),
+			tools,
+			signal,
+		);
+		expect(toolExecutor.execute).toHaveBeenCalledTimes(2);
+	});
 });

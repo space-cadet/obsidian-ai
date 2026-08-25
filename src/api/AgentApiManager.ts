@@ -28,6 +28,7 @@ export interface AgentApiOptions {
 	tools?: Array<OpenResponsesTool>;
 	stream?: boolean;
 	maxOutputTokens?: number;
+	previousResponseId?: string;
 }
 
 export type OpenResponsesInputItem =
@@ -103,6 +104,9 @@ export class AgentApiManager {
 		}
 		if (options.maxOutputTokens) {
 			body.max_output_tokens = options.maxOutputTokens;
+		}
+		if (options.previousResponseId) {
+			body.previous_response_id = options.previousResponseId;
 		}
 		// Session continuity: derive stable session from profile sessionKey
 		if (this.profile.sessionKey) {
@@ -201,6 +205,7 @@ export class AgentApiManager {
 	public async *continueWithToolResult(
 		previousResponseId: string,
 		functionCallOutputs: Array<{ call_id: string; output: string }>,
+		tools: OpenResponsesTool[],
 		signal?: AbortSignal,
 	): AsyncIterable<OpenResponsesEvent> {
 		const input: OpenResponsesInputItem[] = functionCallOutputs.map(
@@ -214,7 +219,8 @@ export class AgentApiManager {
 		for await (const event of this.streamAgentResponse(
 			{
 				input,
-				// previous_response_id is accepted but currently ignored by OpenClaw
+				tools,
+				previousResponseId,
 			},
 			signal,
 		)) {

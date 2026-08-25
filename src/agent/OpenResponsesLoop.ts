@@ -89,23 +89,14 @@ export class OpenResponsesLoop {
 		let runningTotal = 0;
 		let totalAccumulatedText = ""; // Track text across all steps for UI
 
-		while (step < this.maxSteps) {
-			step++;
-			console.log(`[OpenResponsesLoop] Step ${step}/${this.maxSteps}`);
-
-			// Reset accumulated text for this turn (but keep totalAccumulatedText for UI)
+		const consumeStream = async (
+			events: AsyncIterable<OpenResponsesEvent>,
+		): Promise<void> => {
+			// Reset per-response state, but keep totalAccumulatedText for the UI.
 			this.accumulatedText = "";
 			this.pendingFunctionCalls.clear();
 
-			// Stream response from agent
-			for await (const event of this.agentApi.streamAgentResponse(
-				{
-					input,
-					tools,
-					stream: true,
-				},
-				signal,
-			)) {
+			for await (const event of events) {
 				if (signal?.aborted) break;
 
 				switch (event.type) {
@@ -143,17 +134,31 @@ export class OpenResponsesLoop {
 				}
 			}
 
-			// Store text accumulated in this step
 			finalText = this.accumulatedText;
+		};
 
-			// Check if any function calls need execution
-			if (this.pendingFunctionCalls.size === 0) {
-				// No tool calls — conversation is complete
-				console.log("[OpenResponsesLoop] No function calls — done");
-				// Text already counted incrementally during streaming
-				this.onTokenUpdate?.(runningTotal);
-				break;
-			}
+		// The original request must be sent exactly once. Every subsequent
+		// response is obtained through a stateful function-call continuation.
+		await consumeStream(
+			this.agentApi.streamAgentResponse(
+				{
+					input,
+					tools,
+					stream: true,
+				},
+				signal,
+			),
+		);
+
+		while (
+			this.pendingFunctionCalls.size > 0 &&
+			step < this.maxSteps &&
+			!signal?.aborted
+		) {
+			step++;
+			console.log(
+				`[OpenResponsesLoop] Tool round ${step}/${this.maxSteps}`,
+			);
 
 			// Tool call detected — count args only (text already counted incrementally)
 			const stepArgsTokens = Array.from(
@@ -251,6 +256,11 @@ export class OpenResponsesLoop {
 			console.log(
 				`[OpenResponsesLoop] Sending ${functionCallOutputs.length} tool results for step ${step + 1}`,
 			);
+			if (!lastResponseId) {
+				throw new Error(
+					"Cannot continue OpenResponses request without a response ID.",
+				);
+			}
 
 			// Count tool results
 			const stepResultTokens = functionCallOutputs.reduce(
@@ -260,32 +270,17 @@ export class OpenResponsesLoop {
 			runningTotal += stepResultTokens;
 			this.onTokenUpdate?.(runningTotal);
 
-			// Continue streaming with tool results
-			for await (const event of this.agentApi.continueWithToolResult(
-				lastResponseId,
-				functionCallOutputs,
-				signal,
-			)) {
-				if (signal?.aborted) break;
-
-				switch (event.type) {
-					case "text-delta":
-						this.accumulatedText += event.delta;
-						totalAccumulatedText += event.delta;
-						this.onTextDelta?.(totalAccumulatedText);
-						// Incremental token counting during streaming
-						runningTotal += estimateTokens(event.delta);
-						this.onTokenUpdate?.(runningTotal);
-						break;
-					case "finish":
-						lastResponseId = event.response_id;
-						break;
-					case "error":
-						throw new Error(event.message);
-				}
-			}
-
-			finalText = this.accumulatedText;
+			// Continue streaming with tool results. consumeStream handles tool
+			// calls here as well, allowing multi-round tool chains to remain on
+			// the stateful continuation path.
+			await consumeStream(
+				this.agentApi.continueWithToolResult(
+					lastResponseId,
+					functionCallOutputs,
+					tools,
+					signal,
+				),
+			);
 			// Text already counted incrementally during streaming; no need to re-count
 			this.onTokenUpdate?.(runningTotal);
 
@@ -293,7 +288,7 @@ export class OpenResponsesLoop {
 			stepTokenEstimates.push(stepArgsTokens + stepResultTokens);
 		}
 
-		if (step >= this.maxSteps) {
+		if (this.pendingFunctionCalls.size > 0 && step >= this.maxSteps) {
 			console.warn(
 				`[OpenResponsesLoop] Max steps (${this.maxSteps}) reached`,
 			);
