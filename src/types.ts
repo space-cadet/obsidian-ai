@@ -77,6 +77,8 @@ export interface ChatMessage {
 	remote?: boolean;
 	/** User ID of the remote sender (when remote is true) */
 	fromUserId?: string;
+	/** True if this is a local debug/system message (not sent to model) */
+	isDebug?: boolean;
 }
 
 /** Participant in a group chat session */

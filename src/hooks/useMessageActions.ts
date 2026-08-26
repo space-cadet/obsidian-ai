@@ -36,6 +36,7 @@ import { appendPendingText, finalizeContentParts } from "../lib/streamingUtils";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { parseSlashCommand } from "../lib/slashCommand";
 import { buildHistoryWithTools } from "../lib/historyBuilder";
+import { handleDebugCommand } from "../lib/debugCommands";
 import { makeId } from "../lib/sessionUtils";
 import { noteTools } from "../agent/tools";
 import { createBuiltInToolRegistry } from "../agent/toolRegistry";
@@ -337,6 +338,45 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			}
 
 			// ─── SINGLE CHAT PATH ───
+
+			// Check for debug commands first (!debug ...)
+			const currentSession = sessionsRef.current.find(
+				(s) => s.id === activeSessionIdRef.current,
+			);
+			const debugResult = handleDebugCommand(
+				text,
+				currentSession,
+				resolvedProfile,
+				{
+					toolHistoryMode: plugin.settings.toolHistoryMode ?? "elide",
+					maxRequestTokens: plugin.settings.maxRequestTokens,
+				},
+			);
+			if (debugResult.handled) {
+				const debugMsg: ChatMessage = {
+					id: makeId(),
+					role: "assistant",
+					content: debugResult.response || "",
+					timestamp: Date.now(),
+					isDebug: true,
+				};
+				const currentActiveId = activeSessionIdRef.current;
+				if (currentActiveId) {
+					setSessions((prev) =>
+						prev.map((s) =>
+							s.id === currentActiveId
+								? {
+										...s,
+										messages: [...s.messages, debugMsg],
+										updatedAt: Date.now(),
+									}
+								: s,
+						),
+					);
+				}
+				return;
+			}
+
 			const slashCmd = parseSlashCommand(text);
 			let sendText = text;
 			let sendContextItems = contextItemsRef.current;

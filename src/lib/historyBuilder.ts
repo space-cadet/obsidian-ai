@@ -27,6 +27,9 @@ export function buildHistoryWithTools(
 	const result: HistoryEntry[] = [];
 
 	for (const m of messages.slice(-maxMessages)) {
+		// Skip debug/system messages — never sent to model
+		if (m.isDebug) continue;
+
 		if (m.role === "user") {
 			result.push({
 				role: "user",
