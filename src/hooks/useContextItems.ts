@@ -1,4 +1,10 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import {
+	useState,
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+} from "react";
 import { WorkspaceLeaf, MarkdownView } from "obsidian";
 import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 import type { ChatSession, ContextItem } from "../types";
@@ -7,6 +13,8 @@ import { makeId } from "../lib/sessionUtils";
 
 export interface UseContextItemsResult {
 	contextItems: ContextItem[];
+	/** Always points at the context selected for the visible session. */
+	contextItemsRef: React.MutableRefObject<ContextItem[]>;
 	setContextItems: React.Dispatch<React.SetStateAction<ContextItem[]>>;
 	targetNoteName: string | null;
 	setTargetNoteName: React.Dispatch<React.SetStateAction<string | null>>;
@@ -19,6 +27,7 @@ export interface UseContextItemsResult {
 export function useContextItems(
 	plugin: ChatPluginLike,
 	sessionsRef: React.MutableRefObject<ChatSession[]>,
+	activeSessionId: string | null,
 	activeSessionIdRef: React.MutableRefObject<string | null>,
 	setSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>,
 	setWasTruncated: (v: boolean) => void,
@@ -56,19 +65,23 @@ export function useContextItems(
 			plugin.app.workspace.off("active-leaf-change", onLeafChange as any);
 	}, [plugin]);
 
-	// Sync contextItems when active session changes
+	// Sync context before normal effects run. Without this, a new session can
+	// briefly inherit the old composer's selected notes and persist them.
 	const prevActiveSessionIdRef = useRef<string | null>(null);
-	useEffect(() => {
-		const activeSessionId = activeSessionIdRef.current;
+	useLayoutEffect(() => {
 		if (activeSessionId === prevActiveSessionIdRef.current) return;
 		prevActiveSessionIdRef.current = activeSessionId;
 		const s = sessionsRef.current.find((s) => s.id === activeSessionId);
 		const sessionItems = s?.contextItems ?? [];
-		if (!sameContextItems(contextItemsRef.current, sessionItems)) {
+		const visibleItems = contextItemsRef.current;
+		// Update the callback-facing value immediately. This prevents a send
+		// triggered during the session hand-off from reading the old session.
+		contextItemsRef.current = sessionItems;
+		if (!sameContextItems(visibleItems, sessionItems)) {
 			setContextItems(sessionItems);
 		}
 		setWasTruncated(false);
-	}, [activeSessionIdRef, sessionsRef, setWasTruncated]);
+	}, [activeSessionId, sessionsRef, setWasTruncated]);
 
 	// Persist contextItems to the current session whenever they change
 	useEffect(() => {
@@ -142,6 +155,7 @@ export function useContextItems(
 
 	return {
 		contextItems,
+		contextItemsRef,
 		setContextItems,
 		targetNoteName,
 		setTargetNoteName,

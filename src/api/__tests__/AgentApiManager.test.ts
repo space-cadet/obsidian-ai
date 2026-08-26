@@ -2,6 +2,40 @@ import { describe, expect, it, vi } from "vitest";
 import { AgentApiManager } from "../AgentApiManager";
 
 describe("AgentApiManager", () => {
+	it("propagates a stopped request to the chat loop", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi
+				.fn()
+				.mockRejectedValue(
+					new DOMException("Generation was stopped.", "AbortError"),
+				),
+		);
+		const manager = new AgentApiManager(
+			{
+				id: "agent",
+				name: "Agent",
+				provider: "agent",
+				endpointUrl: "https://agent.example.com/v1/responses",
+				agentId: "main",
+				autoApprove: true,
+				maxSteps: 3,
+				model: "openclaw",
+			},
+			{} as any,
+		);
+
+		const consume = async () => {
+			for await (const _event of manager.streamAgentResponse({
+				input: [],
+			})) {
+				// Consume the generator.
+			}
+		};
+
+		await expect(consume()).rejects.toMatchObject({ name: "AbortError" });
+	});
+
 	it("serializes stateful continuation requests", async () => {
 		const fetchMock = vi.fn().mockResolvedValue({
 			ok: true,

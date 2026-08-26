@@ -65,6 +65,12 @@ export interface ChatDiagnostics {
 		requestResponseReserveTokens?: number;
 		maxToolResultTokens?: number;
 	};
+	/** Cancellation timing for this request, when Stop Generation is used. */
+	cancellation?: {
+		controllerCreatedAt: number;
+		requestedAt?: number;
+		observedAt?: number;
+	};
 	steps: ChatDiagnosticStep[];
 }
 
@@ -182,6 +188,7 @@ export function createChatDiagnostics(args: {
 		startedAt: Date.now(),
 		profile: args.profile,
 		settings: args.settings ?? {},
+		cancellation: { controllerCreatedAt: Date.now() },
 		steps: [],
 	};
 }
@@ -212,5 +219,8 @@ export function diagnosticSummary(diagnostics: ChatDiagnostics): string {
 		`steps=${diagnostics.steps.length}`,
 		`provider input=${providerInput || "unknown"}`,
 		`provider output=${providerOutput || "unknown"}`,
+		...(diagnostics.cancellation?.requestedAt
+			? ["cancellation=requested"]
+			: []),
 	].join(", ");
 }

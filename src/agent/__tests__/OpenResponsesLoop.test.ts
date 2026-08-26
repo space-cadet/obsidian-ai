@@ -229,4 +229,27 @@ describe("OpenResponsesLoop", () => {
 		).resolves.toBe("Handled");
 		expect(execute).not.toHaveBeenCalled();
 	});
+
+	it("surfaces cancellation instead of treating it as a completed response", async () => {
+		const controller = new AbortController();
+		const loop = new OpenResponsesLoop({
+			agentApi: {
+				streamAgentResponse: vi.fn(async function* () {
+					yield { type: "text-delta", delta: "Partial" };
+					controller.abort();
+					yield { type: "finish", response_id: "response-1" };
+				}),
+				continueWithToolResult: vi.fn(),
+			} as any,
+			toolExecutor: { execute: vi.fn() } as any,
+			maxSteps: 1,
+			autoApprove: true,
+		});
+
+		await expect(loop.run([], [], controller.signal)).rejects.toMatchObject(
+			{
+				name: "AbortError",
+			},
+		);
+	});
 });

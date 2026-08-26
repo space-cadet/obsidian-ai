@@ -880,6 +880,23 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			let providerUsage:
 				| import("../types").ProviderTokenUsage
 				| undefined;
+			let standardDiagnosticStep: ChatDiagnosticStep | undefined;
+
+			if (diagnostics) {
+				controller.signal.addEventListener(
+					"abort",
+					() => {
+						diagnostics.cancellation = {
+							...diagnostics.cancellation,
+							controllerCreatedAt:
+								diagnostics.cancellation?.controllerCreatedAt ??
+								Date.now(),
+							requestedAt: Date.now(),
+						};
+					},
+					{ once: true },
+				);
+			}
 
 			try {
 				if (isAgentProvider) {
@@ -1195,7 +1212,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				} else {
 					// … standard streamChat path (no tools)
 					let streamTokenTotal = userTokenEstimate;
-					const diagnosticStep = diagnostics
+					standardDiagnosticStep = diagnostics
 						? beginDiagnosticStep(
 								1,
 								"initial",
@@ -1228,9 +1245,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							runningTokenTotal: streamTokenTotal,
 						});
 					}
-					if (diagnosticStep) {
+					if (standardDiagnosticStep) {
 						diagnosticSteps.push(
-							finishDiagnosticStep(diagnosticStep, {
+							finishDiagnosticStep(standardDiagnosticStep, {
 								response: { text: fullText },
 								providerUsage,
 								finishReason: "completed",
@@ -1345,7 +1362,27 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							: s,
 					),
 				);
+				standardDiagnosticStep = undefined;
 			} catch (e: any) {
+				if (controller.signal.aborted && diagnostics?.cancellation) {
+					diagnostics.cancellation.observedAt ??= Date.now();
+				}
+				if (standardDiagnosticStep) {
+					diagnosticSteps.push(
+						finishDiagnosticStep(standardDiagnosticStep, {
+							response: { text: fullText },
+							finishReason: controller.signal.aborted
+								? "aborted"
+								: undefined,
+							error: controller.signal.aborted
+								? undefined
+								: e instanceof Error
+									? e.message
+									: String(e),
+						}),
+					);
+					standardDiagnosticStep = undefined;
+				}
 				// Preserve partial content for ALL interruptions (AbortError, TypeError, network errors, etc.)
 				// The user should see what was received, not lose it.
 				if (fullText) {
@@ -1404,7 +1441,36 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 								: s,
 						),
 					);
-				} else if (e.name !== "AbortError") {
+				} else if (e.name === "AbortError") {
+					// Keep a cancellation record even if the provider had not produced
+					// any text yet. This also preserves the debug trace for Stop.
+					const stoppedMsg: ChatMessage = {
+						id: makeId(),
+						role: "assistant",
+						content: "Generation stopped.",
+						timestamp: Date.now(),
+						modelName: activeProfile.model,
+						responseTimeMs: Date.now() - streamStartTime,
+						diagnostics: diagnostics
+							? completeChatDiagnostics(
+									diagnostics,
+									diagnosticSteps,
+								)
+							: undefined,
+					};
+					setSessions((prev) =>
+						prev.map((s) =>
+							s.id === currentActiveId
+								? {
+										...s,
+										messages: [...s.messages, stoppedMsg],
+										updatedAt: Date.now(),
+										contextItems: sendContextItems,
+									}
+								: s,
+						),
+					);
+				} else {
 					// No partial content received and it's a real error — show error message
 					const errorMsg: ChatMessage = {
 						id: makeId(),

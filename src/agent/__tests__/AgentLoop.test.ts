@@ -227,4 +227,30 @@ describe("AgentLoop", () => {
 			120,
 		);
 	});
+
+	it("surfaces cancellation instead of returning a completed partial answer", async () => {
+		const controller = new AbortController();
+		const streamChatWithTools = vi.fn(async function* () {
+			yield { type: "text-delta", text: "Partial" };
+			controller.abort();
+			yield { type: "finish", reason: "stop" };
+		});
+		const loop = new AgentLoop({
+			chatApi: { streamChatWithTools } as any,
+			toolExecutor: { execute: vi.fn() } as any,
+			maxSteps: 1,
+			autoApprove: true,
+			onTextDelta: vi.fn(),
+			onToolCall: vi.fn(),
+			requestApproval: vi.fn(),
+		});
+
+		await expect(
+			loop.run(
+				[{ role: "user", content: "Hello" }],
+				{},
+				controller.signal,
+			),
+		).rejects.toMatchObject({ name: "AbortError" });
+	});
 });

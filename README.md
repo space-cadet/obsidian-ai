@@ -175,6 +175,9 @@ Stay current without manual downloads:
 ### Debug & Diagnostics
 
 - **Diagnostics Panel** — Memory usage, DOM nodes, chat sessions, total messages.
+- **Chat Debug Capture** — Turn on the bug button in a chat toolbar to record
+  each model call, request sizes, tool follow-ups, token usage, and Stop
+  Generation timing. See [Chat Debug Capture](docs/chat-debug-capture.md).
 - **File-Based Logger** — Debug logs written to disk for troubleshooting.
 - **Error Boundary** — Catches React render crashes, shows fallback UI.
 - **Build Info in Settings** — Version badge, git commit hash, and branch name visible in Settings hero.

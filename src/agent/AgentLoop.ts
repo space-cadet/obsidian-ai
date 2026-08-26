@@ -82,6 +82,10 @@ function addUsage(
 	};
 }
 
+function abortError(): DOMException {
+	return new DOMException("Generation was stopped.", "AbortError");
+}
+
 /**
  * Formats a ToolResult into a human-readable markdown string based on the tool type.
  * This prevents the LLM from dumping raw JSON in its response.
@@ -387,9 +391,10 @@ export class AgentLoop {
 					);
 				}
 				console.log("[AgentLoop] aborted during step", step);
-				// Text already counted incrementally during streaming
+				// Propagate cancellation to the UI. Returning normally used to make a
+				// stopped generation look like a completed answer.
 				this.opts.onTokenUpdate?.(runningTotal);
-				break;
+				throw abortError();
 			}
 
 			if (!pendingCall) {
@@ -433,6 +438,9 @@ export class AgentLoop {
 				result = (await this.opts.requestApproval(pendingCall)) ?? {
 					error: "User rejected the tool call",
 				};
+			}
+			if (signal.aborted) {
+				throw abortError();
 			}
 
 			console.log(

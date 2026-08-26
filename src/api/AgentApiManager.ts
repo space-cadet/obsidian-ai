@@ -154,7 +154,9 @@ export class AgentApiManager {
 			}
 		} catch (e: any) {
 			if (e.name === "AbortError") {
-				return;
+				// Let the chat loop record an interrupted generation instead of
+				// treating a stopped request as a completed empty response.
+				throw e;
 			}
 			yield { type: "error", message: e.message || String(e) };
 		}

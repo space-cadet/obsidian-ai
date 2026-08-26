@@ -232,6 +232,73 @@ describe("useMessageActions", () => {
 			const { result } = renderHook(() => useMessageActions(deps));
 			expect(() => act(() => result.current.handleStop())).not.toThrow();
 		});
+
+		it("stops an in-flight stream and records the cancellation", async () => {
+			let streamStarted!: () => void;
+			const started = new Promise<void>((resolve) => {
+				streamStarted = resolve;
+			});
+			const streamChat = vi.fn(async function* (_messages, signal) {
+				streamStarted();
+				await new Promise<void>((_resolve, reject) => {
+					signal.addEventListener(
+						"abort",
+						() =>
+							reject(
+								new DOMException(
+									"Generation was stopped.",
+									"AbortError",
+								),
+							),
+						{ once: true },
+					);
+				});
+			});
+			const session = {
+				id: "session-1",
+				messages: [],
+				title: "Test",
+				createdAt: 1,
+				updatedAt: 1,
+				contextItems: [],
+			};
+			const deps = makeDeps({
+				plugin: { ...mockPlugin, chatapi: { streamChat } } as any,
+				sessionsRef: { current: [session] },
+				messagesRef: { current: [] },
+				debugMode: true,
+				ui: {
+					...makeDeps().ui,
+					selectedProfileIds: new Set(["p1"]),
+				},
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+
+			const sending = result.current.handleSend("hello");
+			await started;
+			act(() => result.current.handleStop());
+			await sending;
+
+			expect(streamChat).toHaveBeenCalled();
+			const updates = (deps.setSessions as any).mock.calls
+				.map(([update]: any[]) =>
+					typeof update === "function"
+						? update([session])
+						: undefined,
+				)
+				.filter(Boolean);
+			expect(updates).toContainEqual(
+				expect.arrayContaining([
+					expect.objectContaining({
+						messages: expect.arrayContaining([
+							expect.objectContaining({
+								content: "Generation stopped.",
+							}),
+						]),
+					}),
+				]),
+			);
+		});
 	});
 
 	describe("handleEditMessage", () => {

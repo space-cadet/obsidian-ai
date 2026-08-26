@@ -16,6 +16,10 @@ import {
 	type ChatDiagnosticStep,
 } from "../diagnostics";
 
+function abortError(): DOMException {
+	return new DOMException("Generation was stopped.", "AbortError");
+}
+
 interface OpenResponsesLoopOptions {
 	agentApi: AgentApiManager;
 	toolExecutor: ToolExecutor;
@@ -109,52 +113,68 @@ export class OpenResponsesLoop {
 			this.accumulatedText = "";
 			this.pendingFunctionCalls.clear();
 
-			for await (const event of events) {
-				if (signal?.aborted) break;
+			try {
+				for await (const event of events) {
+					if (signal?.aborted) throw abortError();
 
-				switch (event.type) {
-					case "text-delta":
-						this.accumulatedText += event.delta;
-						totalAccumulatedText += event.delta;
-						this.onTextDelta?.(totalAccumulatedText);
-						// Incremental token counting during streaming
-						runningTotal += estimateTokens(event.delta);
-						this.onTokenUpdate?.(runningTotal);
-						break;
+					switch (event.type) {
+						case "text-delta":
+							this.accumulatedText += event.delta;
+							totalAccumulatedText += event.delta;
+							this.onTextDelta?.(totalAccumulatedText);
+							// Incremental token counting during streaming
+							runningTotal += estimateTokens(event.delta);
+							this.onTokenUpdate?.(runningTotal);
+							break;
 
-					case "function_call":
-						// Collect partial function calls (arguments may be streamed)
-						this.pendingFunctionCalls.set(event.call_id, {
-							name: event.name,
-							arguments: event.arguments,
-						});
-						break;
+						case "function_call":
+							// Collect partial function calls (arguments may be streamed)
+							this.pendingFunctionCalls.set(event.call_id, {
+								name: event.name,
+								arguments: event.arguments,
+							});
+							break;
 
-					case "function_call_done":
-						// Complete function call — update with final arguments
-						this.pendingFunctionCalls.set(event.call_id, {
-							name: event.name,
-							arguments: event.arguments,
-						});
-						break;
+						case "function_call_done":
+							// Complete function call — update with final arguments
+							this.pendingFunctionCalls.set(event.call_id, {
+								name: event.name,
+								arguments: event.arguments,
+							});
+							break;
 
-					case "finish":
-						lastResponseId = event.response_id;
-						if (diagnosticStep) {
-							diagnosticStep.providerUsage = event.usage
-								? {
-										inputTokens: event.usage.input_tokens,
-										outputTokens: event.usage.output_tokens,
-										totalTokens: event.usage.total_tokens,
-									}
-								: undefined;
-							diagnosticStep.finishReason = "completed";
-						}
-						break;
+						case "finish":
+							lastResponseId = event.response_id;
+							if (diagnosticStep) {
+								diagnosticStep.providerUsage = event.usage
+									? {
+											inputTokens:
+												event.usage.input_tokens,
+											outputTokens:
+												event.usage.output_tokens,
+											totalTokens:
+												event.usage.total_tokens,
+										}
+									: undefined;
+								diagnosticStep.finishReason = "completed";
+							}
+							break;
 
-					case "error":
-						throw new Error(event.message);
+						case "error":
+							throw new Error(event.message);
+					}
 				}
+			} catch (error) {
+				if (signal?.aborted && diagnosticStep) {
+					this.onDiagnosticStep?.(
+						finishDiagnosticStep(diagnosticStep, {
+							response: diagnosticStep.response,
+							providerUsage: diagnosticStep.providerUsage,
+							finishReason: "aborted",
+						}),
+					);
+				}
+				throw error;
 			}
 
 			finalText = this.accumulatedText;
@@ -303,6 +323,7 @@ export class OpenResponsesLoop {
 					replayedResultSize: measureDiagnosticValue(output),
 				});
 			}
+			if (signal?.aborted) throw abortError();
 
 			// The full results remain available through onToolResult and the
 			// persisted transcript. Share the continuation allowance across all

@@ -426,6 +426,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	// ─── Context Items ───
 	const {
 		contextItems,
+		contextItemsRef,
 		setContextItems,
 		targetNoteName,
 		setTargetNoteName,
@@ -436,6 +437,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	} = useContextItems(
 		plugin,
 		sessionsRef,
+		activeSessionId,
 		activeSessionIdRef,
 		setSessions,
 		setWasTruncated,
@@ -459,9 +461,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		setContextTokenCount,
 		setContextItems,
 		messagesRef,
-		contextItemsRef: { current: contextItems } as React.MutableRefObject<
-			ContextItem[]
-		>,
+		contextItemsRef,
 		lastMarkdownLeafRef: useRef<WorkspaceLeaf | null>(null),
 		getRuntime,
 		patchRuntime,
