@@ -757,6 +757,41 @@ Implemented the first pass on the three architectural improvements from the T55 
 10. **Graph Memory** — T3, T63
 11. **Quantum Dungeon** — T26
 
+## 2026-08-26 — Token Usage Diagnosis and Proposed Fixes 🆕
+
+Investigated why obsidian-ai chats consume excessive tokens. Key findings:
+
+1. **Tool payload elision missing (T62):** obsidian-ai replays full tool-call args
+   and tool-result content in history. OpenClaw uses `[input omitted]` /
+   `[content omitted]` by default. A 4000-token tool result costs 4000 tokens on
+   every replay; elided mode costs ~20 tokens. Estimated savings: **99%** on
+   tool-heavy history.
+
+2. **Context items re-resolved every turn (T63):** `resolveContextItems()` reads
+   vault files, expands embeds, and token-counts from scratch on every message.
+   No caching. For a 5000-token note context, this is 50k tokens of processing
+   over 10 turns. Session-scoped cache keyed by `(path, mtime, budget)` fixes it.
+
+3. **Self-settings tools proposed (T61):** Agent cannot introspect its own
+   `maxContextMessages`, `maxToolResultTokens`, etc. Proposed `read_settings`
+   and `update_setting` tools with Developer Mode guard. Enables self-diagnosis
+   and autonomous tuning.
+
+4. **Persona size ruled out:** `persona.md` is only 604 bytes — negligible.
+
+5. **Token estimator undercounts:** `chars / 4` heuristic is inaccurate for
+   structured JSON/tool schemas. Tracked under T6a.
+
+### Releases Cleaned Up
+- Deleted `latest-dev-debug/chat-diagnostics`
+- Deleted `latest-dev-t48-semantic-compaction`
+- Deleted `latest-dev-feat/t48-context-efficiency-updater`
+
+### New Tasks Created
+- T61 — Self-Settings Agent Tools
+- T62 — Tool Payload Elision in History Replay
+- T63 — Context Item Caching
+
 ## Completed Tasks Summary
 
 - **T1-T5, T7-T9, T10-T13, T15-T23, T25-T26, T29, T33-T34, T40-T41, T43, T45, T49, T51(removed), T61, T64**

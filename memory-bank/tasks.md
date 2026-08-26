@@ -56,7 +56,9 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
 | T8a | Community Directory Review Remediation | 🔄 | HIGH | 2026-08-15 | T8, T7 | [Details](tasks/T8a.md) |
 
-## Completed Tasks
+| T61 | Self-Settings Agent Tools | 🆕 | HIGH | — | — | T60a, T23 | [Details](tasks/T61.md) |
+| T62 | Tool Payload Elision in History Replay | 🆕 | HIGH | — | — | T48b, T60a | [Details](tasks/T62.md) |
+| T63 | Context Item Caching | 🆕 | MEDIUM | — | — | T3, T48a | [Details](tasks/T63.md) |
 
 | ID | Title | Status | Priority | Started | Completed | Dependencies | Details |
 |----|-------|--------|----------|---------|-----------|--------------|---------|
