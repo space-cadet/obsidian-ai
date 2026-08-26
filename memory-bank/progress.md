@@ -1,4 +1,16 @@
-### 2026-08-26 — T62: Tool Payload Elision in History Replay ✅
+### 2026-08-26 — T64: Context Optimization Benchmark Harness 🔄
+
+- Created standalone top-level task for measuring token optimization strategies
+  outside the Obsidian runtime
+- Level 1: no-API-call harness using same code paths as plugin (`buildBudgetedHistory`,
+  `buildHistoryWithTools`)
+- Level 2: optional live API validation against provider-reported usage
+- Fixture library planned: long coding sessions, multi-tool research,
+  attachment-heavy conversations
+- Strategy matrix: sliding window, tool eliding, compaction, budget caps,
+  deduplication
+- Serves T48, T48a, T48d, T6a, T60d; references added to those task files
+- New task file: `tasks/T64.md`; design doc: `implementation-details/context-benchmark-harness.md`
 
 - Implemented `toolHistoryMode: "elide" | "preserve"` setting (default `"elide"`)
 - Extracted `buildHistoryWithTools` from `useMessageActions.ts` to `src/lib/historyBuilder.ts`

@@ -2,7 +2,43 @@
 
 *Last Updated: 2026-08-26 03:23:54 IST*
 
-### 2026-08-26 — T60 implementation and live pagination validation
+### 2026-08-26 — T62 Elision Regression Discovered
+
+**Critical UX issue:** Default `"elide"` mode breaks multi-turn agent workflows.
+
+When the agent calls `read_note` and gets 22k chars of content, the next turn's
+history replay shows `[22749 chars, elided]` — the agent cannot see the content
+it just read. This makes it impossible to do multi-step analysis, pattern
+extraction, or any work that builds on previously retrieved information.
+
+**Root cause:** T62 was designed for token reduction in user-facing chat replay,
+not agentic workflows where the agent needs to retain tool result context across
+turns.
+
+**Workaround:** Switch `toolHistoryMode` to `"preserve"` in Settings → Chat Defaults.
+
+**Fix needed:** Options include smarter elision (summaries instead of `[elided]`),
+agent-mode bypass, lazy loading, or per-session toggle. Recorded in T62.md under
+"Known Issue."
+
+### 2026-08-26 — T64: Context Optimization Benchmark Harness planned
+
+Created standalone top-level task T64 for a benchmark harness that measures
+and optimizes token usage without requiring the Obsidian runtime. The harness
+is deliberately cross-cutting (serves T48, T48a, T48d, T6a, T60d) and
+standalone rather than a T48 subtask to keep boundaries clean.
+
+**Level 1** (no API calls): reconstructs model-facing history from session
+fixtures using the same `buildBudgetedHistory` / `buildHistoryWithTools` code
+paths as the plugin. Tests sliding window, tool eliding, compaction, budget
+caps, and deduplication strategies.
+
+**Level 2** (optional, live API): replays fixtures through real provider calls
+to validate estimate accuracy against provider-reported usage.
+
+Updated: T48c.md (diagnostic path → T64), T48a.md (provider-window discovery
+→ T64), T48d.md (ground-truth measurements → T64), tasks.md (+T64 entry).
+New files: `tasks/T64.md`, `implementation-details/context-benchmark-harness.md`.
 
 T60a/T60c/T60d implementation and review fixes are on the feature branch;
 T60f pagination is complete. Live testing succeeded for note and session list
