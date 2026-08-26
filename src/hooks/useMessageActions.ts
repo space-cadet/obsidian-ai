@@ -35,6 +35,8 @@ import {
 import { appendPendingText, finalizeContentParts } from "../lib/streamingUtils";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { parseSlashCommand } from "../lib/slashCommand";
+import { buildHistoryWithTools } from "../lib/historyBuilder";
+import { handleDebugCommand } from "../lib/debugCommands";
 import { makeId } from "../lib/sessionUtils";
 import { noteTools } from "../agent/tools";
 import { createBuiltInToolRegistry } from "../agent/toolRegistry";
@@ -159,167 +161,6 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			{ type: "text", text: replayText },
 			...(message.resolvedParts as import("../api").MessageContentPart[]),
 		];
-	};
-
-	/**
-	 * Build conversation history preserving tool call/result context.
-	 *
-	 * The Vercel AI SDK requires tool calls and results to be passed as
-	 * separate messages in a specific shape. This reconstructs that shape
-	 * from the persisted ChatMessage so multi-turn agent loops work.
-	 */
-	const buildHistoryWithTools = (
-		messages: ChatMessage[],
-		maxMessages: number,
-		maxToolResultTokens: number,
-	): Array<{ role: "user" | "assistant" | "tool"; content: any }> => {
-		const result: Array<{
-			role: "user" | "assistant" | "tool";
-			content: any;
-		}> = [];
-
-		for (const m of messages.slice(-maxMessages)) {
-			if (m.role === "user") {
-				result.push({
-					role: "user",
-					content: buildReplayContent(m),
-				});
-				continue;
-			}
-
-			// Assistant message — check for tool calls
-			const toolCalls = m.contentParts?.filter(
-				(
-					p,
-				): p is import("../types").ContentPart & {
-					type: "tool_call";
-				} => p.type === "tool_call",
-			);
-
-			if (toolCalls && toolCalls.length > 0) {
-				const assistantContent: any[] = [];
-				const toolResults: any[] = [];
-
-				for (const part of m.contentParts!) {
-					if (part.type === "text") {
-						assistantContent.push({
-							type: "text",
-							text: part.content,
-						});
-					} else if (part.type === "tool_call") {
-						assistantContent.push({
-							type: "tool-call",
-							toolCallId: part.call.toolCallId,
-							toolName: part.call.toolName,
-							input: part.call.args,
-							...(part.call.providerMetadata
-								? {
-										providerOptions:
-											part.call.providerMetadata,
-									}
-								: {}),
-						});
-
-						if (part.result) {
-							const resultText = truncateTextForTokens(
-								part.result.error
-									? `Error: ${part.result.error}`
-									: part.result.content || "",
-								maxToolResultTokens,
-							);
-							toolResults.push({
-								type: "tool-result",
-								toolCallId: part.call.toolCallId,
-								toolName: part.call.toolName,
-								output: {
-									type: "text",
-									value: resultText,
-								},
-							});
-						}
-					}
-				}
-
-				if (assistantContent.length > 0) {
-					result.push({
-						role: "assistant",
-						content: assistantContent,
-					});
-				}
-
-				if (toolResults.length > 0) {
-					result.push({
-						role: "tool",
-						content: toolResults,
-					});
-				}
-			} else if (m.toolCalls && m.toolCalls.length > 0) {
-				// Fallback: reconstruct from toolCalls (older format)
-				const assistantContent: any[] = [];
-				const toolResults: any[] = [];
-
-				if (m.content) {
-					assistantContent.push({
-						type: "text",
-						text: m.content,
-					});
-				}
-
-				for (const tc of m.toolCalls) {
-					assistantContent.push({
-						type: "tool-call",
-						toolCallId: tc.call.toolCallId,
-						toolName: tc.call.toolName,
-						input: tc.call.args,
-						...(tc.call.providerMetadata
-							? {
-									providerOptions: tc.call.providerMetadata,
-								}
-							: {}),
-					});
-
-					if (tc.result) {
-						const resultText = truncateTextForTokens(
-							tc.result.error
-								? `Error: ${tc.result.error}`
-								: tc.result.content || "",
-							maxToolResultTokens,
-						);
-						toolResults.push({
-							type: "tool-result",
-							toolCallId: tc.call.toolCallId,
-							toolName: tc.call.toolName,
-							output: {
-								type: "text",
-								value: resultText,
-							},
-						});
-					}
-				}
-
-				if (assistantContent.length > 0) {
-					result.push({
-						role: "assistant",
-						content: assistantContent,
-					});
-				}
-
-				if (toolResults.length > 0) {
-					result.push({
-						role: "tool",
-						content: toolResults,
-					});
-				}
-			} else {
-				// Plain text message
-				result.push({
-					role: "assistant",
-					content: buildReplayContent(m),
-				});
-			}
-		}
-
-		return result;
 	};
 
 	// ═══════════════════════════════════════════════════════
@@ -497,6 +338,45 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			}
 
 			// ─── SINGLE CHAT PATH ───
+
+			// Check for debug commands first (!debug ...)
+			const currentSession = sessionsRef.current.find(
+				(s) => s.id === activeSessionIdRef.current,
+			);
+			const debugResult = handleDebugCommand(
+				text,
+				currentSession,
+				resolvedProfile,
+				{
+					toolHistoryMode: plugin.settings.toolHistoryMode ?? "elide",
+					maxRequestTokens: plugin.settings.maxRequestTokens,
+				},
+			);
+			if (debugResult.handled) {
+				const debugMsg: ChatMessage = {
+					id: makeId(),
+					role: "assistant",
+					content: debugResult.response || "",
+					timestamp: Date.now(),
+					isDebug: true,
+				};
+				const currentActiveId = activeSessionIdRef.current;
+				if (currentActiveId) {
+					setSessions((prev) =>
+						prev.map((s) =>
+							s.id === currentActiveId
+								? {
+										...s,
+										messages: [...s.messages, debugMsg],
+										updatedAt: Date.now(),
+									}
+								: s,
+						),
+					);
+				}
+				return;
+			}
+
 			const slashCmd = parseSlashCommand(text);
 			let sendText = text;
 			let sendContextItems = contextItemsRef.current;
@@ -735,6 +615,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				modelHistory,
 				maxContextMessages,
 				plugin.settings.maxToolResultTokens ?? 4000,
+				plugin.settings.toolHistoryMode ?? "elide",
 			);
 
 			let userContent = sendText;

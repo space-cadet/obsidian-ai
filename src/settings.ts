@@ -132,6 +132,8 @@ export interface ObsidianAISettings {
 	requestResponseReserveTokens: number;
 	/** Maximum tokens of any persisted tool result replayed to the model. */
 	maxToolResultTokens: number;
+	/** How tool calls and results appear in history replay: "elide" = omit payloads (saves tokens), "preserve" = full detail (debug). */
+	toolHistoryMode: "elide" | "preserve";
 	maxSavedConversations: number;
 	autoNameSessions: boolean;
 	debugLogLevel: "off" | "error" | "info" | "debug";
@@ -360,6 +362,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	compactionReleaseTokens: 16000,
 	requestResponseReserveTokens: 4096,
 	maxToolResultTokens: 4000,
+	toolHistoryMode: "elide",
 	maxSavedConversations: 20,
 	autoNameSessions: false,
 	chatStorageFormat: "legacy",
@@ -496,6 +499,8 @@ export const normalizeSettings = (
 		requestResponseReserveTokens:
 			merged.requestResponseReserveTokens ?? 4096,
 		maxToolResultTokens: merged.maxToolResultTokens ?? 4000,
+		toolHistoryMode:
+			merged.toolHistoryMode === "preserve" ? "preserve" : "elide",
 		maxSavedConversations: merged.maxSavedConversations ?? 20,
 		autoNameSessions: Boolean(merged.autoNameSessions),
 		chatStorageFormat:

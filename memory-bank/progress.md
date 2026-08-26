@@ -1,3 +1,27 @@
+### 2026-08-26 — T64: Context Optimization Benchmark Harness 🔄
+
+- Created standalone top-level task for measuring token optimization strategies
+  outside the Obsidian runtime
+- Level 1: no-API-call harness using same code paths as plugin (`buildBudgetedHistory`,
+  `buildHistoryWithTools`)
+- Level 2: optional live API validation against provider-reported usage
+- Fixture library planned: long coding sessions, multi-tool research,
+  attachment-heavy conversations
+- Strategy matrix: sliding window, tool eliding, compaction, budget caps,
+  deduplication
+- Serves T48, T48a, T48d, T6a, T60d; references added to those task files
+- New task file: `tasks/T64.md`; design doc: `implementation-details/context-benchmark-harness.md`
+
+- Implemented `toolHistoryMode: "elide" | "preserve"` setting (default `"elide"`)
+- Extracted `buildHistoryWithTools` from `useMessageActions.ts` to `src/lib/historyBuilder.ts`
+- In elide mode: tool call args → `"[elided]"`, results → `"[N chars, elided]"`
+- Added UI dropdown in Chat Defaults settings
+- 9 new tests (elide/preserve modes, legacy format, errors, plain text)
+- **Debug command system added**: `!debug history/tokens/context/help` — local-only verification commands
+- **Clarification documented**: `maxToolResultTokens` (current-turn truncation, default 4000) is separate from `toolHistoryMode` (history replay elision)
+- Branch: `feat/t62-tool-payload-elision`, commits `58ab538` → `9d03d27`
+- Impact: ~99% token savings on tool-heavy history replay
+
 ### 2026-08-26 — T60 implementation and pagination validation ✅
 
 - Implemented T60a/T60c/T60d hardening and T60f bounded pagination on the

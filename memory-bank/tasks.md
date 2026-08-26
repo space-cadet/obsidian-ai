@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-26 03:23:54 IST*
+*Last Updated: 2026-08-26 20:23 IST*
 
 ## Overview
 
@@ -48,6 +48,10 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T60c | Validated Execution Boundary and Reliability | 🔄 | HIGH | 2026-08-25 | T60, T60a, T60b | [Details](tasks/T60c.md) |
 | T60d | Token-Efficient Search Defaults | ✅ | MEDIUM | 2026-08-25 | T60 | [Details](tasks/T60d.md) |
 | T60e | Provider-Adaptive Streaming and Tool-Call Progress UI | ⏸️ | HIGH | 2026-08-25 | T60b, T15, T25 | [Details](tasks/T60e.md) |
+| T61 | Self-Settings Agent Tools | 🔄 | HIGH | 2026-08-26 | — | [Details](tasks/T61.md) |
+| T62 | Tool Payload Elision in History Replay | ✅ | HIGH | 2026-08-26 | T48b | [Details](tasks/T62.md) |
+| T63 | Context Item Caching | 🔄 | MEDIUM | 2026-08-26 | — | [Details](tasks/T63.md) |
+| T64 | Context Optimization Benchmark Harness | 🔄 | HIGH | 2026-08-26 | T48a | [Details](tasks/T64.md) |
 | T60f | Bounded Result Pagination and Continuations | ✅ | MEDIUM | 2026-08-26 | T60a, T60b, T60c | [Details](tasks/T60f.md) |
 | T18a | Bounded Web Page Retrieval Tool | ⏸️ | MEDIUM | 2026-08-25 | T18, T60a, T60c | [Details](tasks/T18a.md) |
 | T49 | Settings Export and Import | 🔄 | MEDIUM | — | T23 | [Details](tasks/T49.md) |
@@ -203,9 +207,13 @@ T44: Standalone UI Preview and Obsidian Host Boundary
   └── T22
 ```
 
+T64: Context Optimization Benchmark Harness
+  └── T48a
+  └── Coordinates with: T48, T48c, T48d, T6a, T60d
+
 ## Status Summary
 
-- **Active**: 26
+- **Active**: 27
 - **Completed**: 30
 - **Paused**: 0
-- **Total**: 56
+- **Total**: 57
