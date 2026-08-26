@@ -745,6 +745,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							plugin.searchIndex ?? undefined,
 							() => currentActiveId,
 							plugin.integrationRegistry,
+							plugin.saveSettings.bind(plugin),
 						),
 						maxSteps: activeProfile.maxSteps ?? maxAgentSteps,
 						autoApprove: activeProfile.autoApprove ?? autoApprove,
@@ -883,6 +884,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							plugin.searchIndex ?? undefined,
 							() => currentActiveId,
 							plugin.integrationRegistry,
+							plugin.saveSettings.bind(plugin),
 						),
 						maxSteps: maxAgentSteps,
 						autoApprove,
@@ -1498,6 +1500,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			plugin.searchIndex ?? undefined,
 			() => currentActiveId,
 			plugin.integrationRegistry,
+			plugin.saveSettings.bind(plugin),
 		);
 		const result = await toolExecutor.execute(pendingToolCall);
 		runtime.resolveTool?.(result);

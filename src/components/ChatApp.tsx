@@ -250,6 +250,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				plugin.searchIndex ?? undefined,
 				() => activeSessionIdRef.current,
 				plugin.integrationRegistry,
+				plugin.saveSettings.bind(plugin),
 			),
 		});
 		orch.engines = resolved.map((e) => ({

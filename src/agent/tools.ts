@@ -591,6 +591,29 @@ export const searchPastSessionsTool = t({
 	}),
 });
 
+export const readSettingsTool = t({
+	description:
+		"Read the current plugin settings. " +
+		"Use this to self-diagnose configuration issues or understand current behavior. " +
+		"Sensitive fields like API keys and credentials are automatically redacted.",
+	inputSchema: z.object({}),
+});
+
+export const updateSettingTool = t({
+	description:
+		"Update a single plugin setting. Only available when developer mode is enabled. " +
+		"Use this to adjust token budgets, toggles, or behavior flags mid-conversation. " +
+		"Only whitelisted keys can be changed; credentials and paths are immutable.",
+	inputSchema: z.object({
+		key: z
+			.string()
+			.describe(
+				"The setting key to update. Whitelisted: maxContextMessages, maxToolResultTokens, enableAgentTools, autoApply, showFullRequestTokens, pressEnterToSend, autoNameSessions, messageHistory, includeActiveNote, toolHistoryMode, developerMode",
+			),
+		value: z.any().describe("The new value for the setting. Must match the expected type."),
+	}),
+});
+
 export const noteTools = {
 	read_note: readNoteTool,
 	edit_note: editNoteTool,
@@ -618,4 +641,6 @@ export const noteTools = {
 	read_memory_audit: readMemoryAuditTool,
 	search_note_content: searchNoteContentTool,
 	search_past_sessions: searchPastSessionsTool,
+	read_settings: readSettingsTool,
+	update_setting: updateSettingTool,
 };

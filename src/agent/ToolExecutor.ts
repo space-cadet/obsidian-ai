@@ -11,6 +11,10 @@ import {
 } from "./toolRegistry";
 import type { ResolvedToolRegistry, ToolDefinition } from "./toolRegistry";
 import { ContinuationStore, requestFingerprint } from "./pagination";
+import {
+	sanitizeSettings,
+	validateSettingUpdate,
+} from "../lib/selfSettingsTools";
 
 /* ── Security: forbidden path patterns ── */
 const FORBIDDEN_PATH_PATTERNS = [
@@ -42,6 +46,7 @@ export class ToolExecutor {
 		private searchIndex?: SearchIndex,
 		private getActiveSessionId?: () => string | null,
 		private integrationRegistry?: ProviderRegistry,
+		private saveSettings?: () => Promise<void>,
 	) {
 		// Build the same descriptor registry used to expose tools to the model.
 		// Built-in and provider execution both pass through this map.
@@ -191,6 +196,11 @@ export class ToolExecutor {
 				this.moveNote(call.args as { path: string; new_path: string }),
 			delete_note: (call) =>
 				this.deleteNote(call.args as { path: string }),
+			read_settings: (call) => this.readSettings(),
+			update_setting: (call) =>
+				this.updateSetting(
+					call.args as { key: string; value: unknown },
+				),
 		});
 		const providerDefinitions: ToolDefinition[] =
 			this.integrationRegistry?.getToolDefinitions() ?? [];
@@ -199,6 +209,7 @@ export class ToolExecutor {
 			{
 				enableMemoryAuditTool:
 					this.settings?.intelligence?.enableMemoryAuditTool,
+				developerMode: this.settings?.developerMode,
 			},
 		);
 	}
@@ -2055,6 +2066,94 @@ export class ToolExecutor {
 			};
 		} catch (e: any) {
 			return { error: `Search failed: ${e.message || String(e)}` };
+		}
+	}
+
+	/* ───────────────────────────────────────────────────────────
+	 * Self-Settings Tools (T61)
+	 * ─────────────────────────────────────────────────────────── */
+
+	private async readSettings(): Promise<ToolResult> {
+		if (!this.settings) {
+			return { error: "Settings are not available." };
+		}
+		return {
+			success: true,
+			settings: sanitizeSettings(this.settings),
+		};
+	}
+
+	private async updateSetting(args: {
+		key: string;
+		value: unknown;
+	}): Promise<ToolResult> {
+		if (!this.settings) {
+			return { error: "Settings are not available." };
+		}
+
+		// Server-side developerMode gate (T61 security requirement)
+		if (!this.settings.developerMode) {
+			return {
+				error:
+					"Developer mode is disabled. Enable it in Settings → Advanced to allow the AI to modify settings.",
+			};
+		}
+
+		const validation = validateSettingUpdate(args.key, args.value);
+		if (!validation.ok) {
+			return { error: validation.error };
+		}
+
+		// Apply the update
+		(this.settings as unknown as Record<string, unknown>)[validation.key] =
+			validation.value;
+
+		// Persist
+		if (this.saveSettings) {
+			try {
+				await this.saveSettings();
+			} catch (e: any) {
+				return {
+					error: `Failed to save settings: ${e.message || String(e)}`,
+				};
+			}
+		}
+
+		// Audit log
+		await this._auditSettingChange(validation.key, validation.value);
+
+		return {
+			success: true,
+			key: validation.key,
+			value: validation.value,
+		};
+	}
+
+	private async _auditSettingChange(
+		key: string,
+		value: unknown,
+	): Promise<void> {
+		const adapter = this.app.vault.adapter;
+		const auditPath = `${this.app.vault.configDir}/plugins/obsidian-ai/settings-audit.jsonl`;
+		const entry = {
+			timestamp: new Date().toISOString(),
+			operation: "update_setting",
+			key,
+			value:
+				typeof value === "boolean" || typeof value === "number"
+					? value
+					: String(value),
+		};
+		const line = JSON.stringify(entry) + "\n";
+		try {
+			if (await adapter.exists(auditPath)) {
+				const existing = await adapter.read(auditPath);
+				await adapter.write(auditPath, existing + line);
+			} else {
+				await adapter.write(auditPath, line);
+			}
+		} catch {
+			// Silently fail audit logging — it's non-critical
 		}
 	}
 }

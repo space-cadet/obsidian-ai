@@ -21,6 +21,7 @@ export type ToolAvailability = "available" | "disabled" | "misconfigured";
 
 export interface ToolResolutionContext {
 	enableMemoryAuditTool?: boolean;
+	developerMode?: boolean;
 }
 
 export interface ToolDefinition {
@@ -92,6 +93,12 @@ function memoryAuditAvailability(
 	context: ToolResolutionContext,
 ): ToolAvailability {
 	return context.enableMemoryAuditTool ? "available" : "disabled";
+}
+
+function updateSettingAvailability(
+	context: ToolResolutionContext,
+): ToolAvailability {
+	return context.developerMode ? "available" : "disabled";
 }
 
 function formatValidationIssue(issue: unknown): string {
@@ -306,7 +313,9 @@ export function createBuiltInToolDefinitions(
 			availability:
 				id === "read_memory_audit"
 					? memoryAuditAvailability
-					: () => "available",
+					: id === "update_setting"
+						? updateSettingAvailability
+						: () => "available",
 		};
 	});
 }

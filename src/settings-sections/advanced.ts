@@ -124,6 +124,22 @@ export function renderAdvancedSection(
 		logger: plugin.logger,
 	});
 
+	// Developer mode toggle (T61)
+	new Setting(sectionEl)
+		.setName("Developer mode")
+		.setDesc(
+			"When enabled, the AI can read and modify select plugin settings via tools. " +
+				"This gives the agent more autonomy — use with caution.",
+		)
+		.addToggle((toggle) => {
+			toggle
+				.setValue(plugin.settings.developerMode)
+				.onChange(async (value) => {
+					plugin.settings.developerMode = value;
+					await saveSettings();
+				});
+		});
+
 	migration.canMigrate().then((canMigrate) => {
 		if (canMigrate) {
 			new Setting(sectionEl)

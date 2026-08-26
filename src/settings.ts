@@ -151,6 +151,8 @@ export interface ObsidianAISettings {
 	showFullRequestTokens: boolean;
 	/** Restore saved internal chat tabs and their positions after a plugin reload. */
 	restoreChatTabs: boolean;
+	/** Enable developer mode: allows AI to read and modify plugin settings via tools. */
+	developerMode: boolean;
 	/** Chat storage format: 'legacy' = single data.json, 'jsonl' = split sessions */
 	chatStorageFormat: "legacy" | "jsonl";
 	/** Max sessions shown in sidebar before pagination */
@@ -379,6 +381,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	chatTabTitleWidth: 160,
 	restoreChatTabs: true,
 	showFullRequestTokens: true,
+	developerMode: false,
 	contextPickerPathDisplay: "duplicates",
 	webSearchProvider: "duckduckgo",
 	braveApiKey: "",
@@ -532,6 +535,7 @@ export const normalizeSettings = (
 		),
 		restoreChatTabs: Boolean(merged.restoreChatTabs ?? true),
 		showFullRequestTokens: Boolean(merged.showFullRequestTokens ?? true),
+		developerMode: Boolean(merged.developerMode ?? false),
 		contextPickerPathDisplay:
 			(merged.contextPickerPathDisplay as
 				| "never"

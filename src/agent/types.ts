@@ -89,6 +89,12 @@ export interface ToolResult {
 	providerName?: string;
 	capabilityTitle?: string;
 	risk?: "read" | "write" | "remote-write" | "destructive";
+	/** Sanitized plugin settings returned by read_settings. */
+	settings?: Record<string, unknown>;
+	/** Updated setting key returned by update_setting. */
+	key?: string;
+	/** Updated setting value returned by update_setting. */
+	value?: unknown;
 }
 
 export type StreamEvent =
