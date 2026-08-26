@@ -33,10 +33,25 @@ export function useContextItems(
 	setWasTruncated: (v: boolean) => void,
 	onCloseContextPicker: () => void,
 ): UseContextItemsResult {
-	const [contextItems, setContextItems] = useState<ContextItem[]>([]);
+	const [contextItems, setStoredContextItems] = useState<ContextItem[]>([]);
 	const [targetNoteName, setTargetNoteName] = useState<string | null>(null);
 	const contextItemsRef = useRef<ContextItem[]>([]);
 	contextItemsRef.current = contextItems;
+	// Keep the value used by send callbacks in lockstep with the visible
+	// composer state. React state updates are asynchronous; restoring context
+	// for an edit must be available to an immediate resubmit as well.
+	const setContextItems = useCallback<
+		React.Dispatch<React.SetStateAction<ContextItem[]>>
+	>((update) => {
+		setStoredContextItems((previous) => {
+			const next =
+				typeof update === "function"
+					? (update as (value: ContextItem[]) => ContextItem[])(previous)
+					: update;
+			contextItemsRef.current = next;
+			return next;
+		});
+	}, []);
 
 	// Track last focused markdown leaf
 	const lastMarkdownLeafRef = useRef<WorkspaceLeaf | null>(null);

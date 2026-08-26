@@ -302,6 +302,77 @@ describe("useMessageActions", () => {
 	});
 
 	describe("handleEditMessage", () => {
+		it("keeps restored context items available to an immediate resubmit", async () => {
+			const note = {
+				type: "note",
+				id: "grammar-notes",
+				path: "Grammar Notes.md",
+				name: "Grammar Notes",
+			};
+			const contextItemsRef = { current: [] as any[] };
+			const setContextItems = vi.fn((items: any) => {
+				contextItemsRef.current =
+					typeof items === "function"
+						? items(contextItemsRef.current)
+						: items;
+			});
+			const streamChat = vi.fn(async function* () {
+				yield "updated";
+			});
+			const session = {
+				id: "session-1",
+				messages: [
+					{
+						id: "m1",
+						role: "user",
+						content: "Examine grammar",
+						timestamp: 1,
+						contextItems: [note],
+					},
+					{ id: "m2", role: "assistant", content: "Done", timestamp: 2 },
+				],
+				title: "Test",
+				createdAt: 1,
+				updatedAt: 1,
+				contextItems: [],
+			} as any;
+			const deps = makeDeps({
+				plugin: { ...mockPlugin, chatapi: { streamChat } } as any,
+				sessionsRef: { current: [session] },
+				messagesRef: { current: [] },
+				contextItemsRef,
+				setContextItems,
+				ui: {
+					...makeDeps().ui,
+					selectedProfileIds: new Set(["p1"]),
+				},
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			act(() => result.current.handleEditMessage("m1"));
+			await act(async () => {
+				await result.current.handleSend("Examine grammar again");
+			});
+
+			expect(setContextItems).toHaveBeenCalledWith([note]);
+			const sessionUpdates = (deps.setSessions as any).mock.calls
+				.map(([update]: any[]) =>
+					typeof update === "function" ? update([session]) : undefined,
+				)
+				.filter(Boolean);
+			expect(sessionUpdates).toContainEqual(
+				expect.arrayContaining([
+					expect.objectContaining({
+						messages: expect.arrayContaining([
+							expect.objectContaining({
+								content: "Examine grammar again",
+								contextItems: [note],
+							}),
+						]),
+					}),
+				]),
+			);
+		});
+
 		it("sets editing state and truncates messages at the user message", () => {
 			const setSessions = vi.fn();
 			const ui = makeDeps().ui;
@@ -695,6 +766,41 @@ describe("useMessageActions", () => {
 	});
 
 	describe("handleSend — single chat remote attribution", () => {
+		it("clears streaming state when the request is over the context budget", async () => {
+			const patchRuntime = vi.fn();
+			const session = {
+				id: "session-1",
+				messages: [],
+				title: "Test",
+				createdAt: 1,
+				updatedAt: 1,
+				contextItems: [],
+			} as any;
+			const deps = makeDeps({
+				plugin: {
+					...mockPlugin,
+					settings: { ...mockPlugin.settings, maxRequestTokens: 1 },
+					chatapi: { streamChat: vi.fn() },
+				} as any,
+				sessionsRef: { current: [session] },
+				messagesRef: { current: [] },
+				patchRuntime,
+				ui: {
+					...makeDeps().ui,
+					selectedProfileIds: new Set(["p1"]),
+				},
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			await act(async () => {
+				await result.current.handleSend("too large");
+			});
+
+			expect(patchRuntime).toHaveBeenCalledWith(
+				"session-1",
+				expect.objectContaining({ isStreaming: false, controller: null }),
+			);
+		});
+
 		it("attributes remote user messages in history", async () => {
 			const streamChat = vi.fn(async function* () {
 				yield "response";

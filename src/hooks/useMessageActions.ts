@@ -821,11 +821,11 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						: 0,
 				},
 			});
-			if (budgetedHistory.overBudget) {
-				throw new Error(
-					"The request exceeds the configured model context budget. Reduce the prompt or increase the request budget.",
-				);
-			}
+			const budgetError = budgetedHistory.overBudget
+				? new Error(
+						"The request exceeds the configured model context budget. Reduce the prompt or increase the request budget.",
+					)
+				: undefined;
 			const chatMessages = [
 				{ role: "system" as const, content: systemPrompt },
 				...budgetedHistory.history,
@@ -899,6 +899,10 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			}
 
 			try {
+				// This check must be inside try/finally. The runtime is already
+				// marked as streaming above, so throwing earlier leaves the composer
+				// permanently disabled.
+				if (budgetError) throw budgetError;
 				if (isAgentProvider) {
 					// … OpenResponsesLoop path (same as original)
 					if (!activeProfile.endpointUrl) {
@@ -1592,7 +1596,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 
 			handleSend(userMsg.content, userMsg.attachments);
 		},
-		[handleSend],
+		[handleSend, setContextItems],
 	);
 
 	// ═══════════════════════════════════════════════════════
@@ -1637,7 +1641,14 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			ui.setEditMessageText(msg.content);
 		},
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- edit cancellation intentionally reads the current session refs.
-		[activeSessionIdRef, sessionsRef, setSessions, ui, getRuntime],
+		[
+			activeSessionIdRef,
+			sessionsRef,
+			setSessions,
+			setContextItems,
+			ui,
+			getRuntime,
+		],
 	);
 
 	const handleCancelEdit = useCallback(() => {
