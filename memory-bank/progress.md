@@ -1,3 +1,13 @@
+### 2026-08-26 — T62: Tool Payload Elision in History Replay ✅
+
+- Implemented `toolHistoryMode: "elide" | "preserve"` setting (default `"elide"`)
+- Extracted `buildHistoryWithTools` from `useMessageActions.ts` to `src/lib/historyBuilder.ts`
+- In elide mode: tool call args → `"[elided]"`, results → `"[N chars, elided]"`
+- Added UI dropdown in Chat Defaults settings
+- 9 new tests (elide/preserve modes, legacy format, errors, plain text)
+- Branch: `feat/t62-tool-payload-elision`, commit `58ab538`
+- Impact: ~99% token savings on tool-heavy history replay
+
 ### 2026-08-26 — T60 implementation and pagination validation ✅
 
 - Implemented T60a/T60c/T60d hardening and T60f bounded pagination on the
