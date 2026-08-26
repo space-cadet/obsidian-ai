@@ -5,7 +5,9 @@
 - In elide mode: tool call args → `"[elided]"`, results → `"[N chars, elided]"`
 - Added UI dropdown in Chat Defaults settings
 - 9 new tests (elide/preserve modes, legacy format, errors, plain text)
-- Branch: `feat/t62-tool-payload-elision`, commit `58ab538`
+- **Debug command system added**: `!debug history/tokens/context/help` — local-only verification commands
+- **Clarification documented**: `maxToolResultTokens` (current-turn truncation, default 4000) is separate from `toolHistoryMode` (history replay elision)
+- Branch: `feat/t62-tool-payload-elision`, commits `58ab538` → `9d03d27`
 - Impact: ~99% token savings on tool-heavy history replay
 
 ### 2026-08-26 — T60 implementation and pagination validation ✅
