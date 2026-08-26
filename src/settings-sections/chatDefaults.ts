@@ -273,4 +273,22 @@ export function renderChatDefaultsSection(
 					await saveSettings();
 				});
 		});
+
+	new Setting(sectionEl)
+		.setName("Tool history mode")
+		.setDesc(
+			"How tool calls and results appear in conversation history. 'Elide' hides payloads to save tokens (default). 'Preserve' keeps full detail for debugging.",
+		)
+		.addDropdown((dropdown) => {
+			dropdown
+				.addOption("elide", "Elide (saves tokens)")
+				.addOption("preserve", "Preserve (full detail)")
+				.setValue(plugin.settings.toolHistoryMode ?? "elide")
+				.onChange(async (value) => {
+					plugin.settings.toolHistoryMode = value as
+						| "elide"
+						| "preserve";
+					await saveSettings();
+				});
+		});
 }
