@@ -50,6 +50,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T60e | Provider-Adaptive Streaming and Tool-Call Progress UI | ⏸️ | HIGH | 2026-08-25 | T60b, T15, T25 | [Details](tasks/T60e.md) |
 | T61 | Self-Settings Agent Tools | 🔄 | HIGH | 2026-08-26 | — | [Details](tasks/T61.md) |
 | T62 | Tool Payload Elision in History Replay | ✅ | HIGH | 2026-08-26 | T48b | [Details](tasks/T62.md) |
+| T62a | T62 Elision Regression — Agent Workflow Breakage | 🔄 | HIGH | 2026-08-26 | T62 | [Details](tasks/T62a.md) |
 | T63 | Context Item Caching | 🔄 | MEDIUM | 2026-08-26 | — | [Details](tasks/T63.md) |
 | T64 | Context Optimization Benchmark Harness | 🔄 | HIGH | 2026-08-26 | T48a | [Details](tasks/T64.md) |
 | T60f | Bounded Result Pagination and Continuations | ✅ | MEDIUM | 2026-08-26 | T60a, T60b, T60c | [Details](tasks/T60f.md) |
@@ -207,13 +208,18 @@ T44: Standalone UI Preview and Obsidian Host Boundary
   └── T22
 ```
 
+T62: Tool Payload Elision in History Replay
+  └── T48b
+T62a: T62 Elision Regression — Agent Workflow Breakage
+  └── T62
+
 T64: Context Optimization Benchmark Harness
   └── T48a
   └── Coordinates with: T48, T48c, T48d, T6a, T60d
 
 ## Status Summary
 
-- **Active**: 27
+- **Active**: 28
 - **Completed**: 30
 - **Paused**: 0
-- **Total**: 57
+- **Total**: 58

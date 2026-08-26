@@ -18,6 +18,10 @@
 - Added UI dropdown in Chat Defaults settings
 - 9 new tests (elide/preserve modes, legacy format, errors, plain text)
 - **Debug command system added**: `!debug history/tokens/context/help` — local-only verification commands
+- **Regression discovered**: Default `"elide"` breaks agent workflows — agent loses all
+  access to previously read tool results across turns. T62a created as follow-up
+  with 6 candidate solutions (smart elision, agent-mode bypass, per-session toggle,
+  pin/unpin, per-file, hybrid).
 - **Clarification documented**: `maxToolResultTokens` (current-turn truncation, default 4000) is separate from `toolHistoryMode` (history replay elision)
 - Branch: `feat/t62-tool-payload-elision`, commits `58ab538` → `9d03d27`
 - Impact: ~99% token savings on tool-heavy history replay

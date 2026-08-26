@@ -18,8 +18,9 @@ turns.
 **Workaround:** Switch `toolHistoryMode` to `"preserve"` in Settings → Chat Defaults.
 
 **Fix needed:** Options include smarter elision (summaries instead of `[elided]`),
-agent-mode bypass, lazy loading, or per-session toggle. Recorded in T62.md under
-"Known Issue."
+agent-mode bypass, lazy loading, per-session toggle, and per-file/pin control.
+**Follow-up task created:** T62a (see `tasks/T62a.md`) with 6 candidate solutions
+and open questions.
 
 ### 2026-08-26 — T64: Context Optimization Benchmark Harness planned
 
