@@ -8,6 +8,13 @@ import type { ToolCall, ToolResult } from "./types";
 import { estimateTokens } from "../context/tokenEstimator";
 import { truncateTextForTokens } from "../context/contextBudget";
 import type { OpenResponsesTool } from "../api/AgentApiManager";
+import {
+	beginDiagnosticStep,
+	finishDiagnosticStep,
+	makeDiagnosticRequest,
+	measureDiagnosticValue,
+	type ChatDiagnosticStep,
+} from "../diagnostics";
 
 interface OpenResponsesLoopOptions {
 	agentApi: AgentApiManager;
@@ -22,6 +29,7 @@ interface OpenResponsesLoopOptions {
 	requestApproval?: (call: ToolCall) => Promise<ToolResult | null>;
 	onToolResult?: (call: ToolCall, result: ToolResult) => void;
 	onTokenUpdate?: (runningTotal: number) => void;
+	onDiagnosticStep?: (step: ChatDiagnosticStep) => void;
 }
 
 export class OpenResponsesLoop {
@@ -36,6 +44,7 @@ export class OpenResponsesLoop {
 	private requestApproval?: (call: ToolCall) => Promise<ToolResult | null>;
 	private onToolResult?: (call: ToolCall, result: ToolResult) => void;
 	private onTokenUpdate?: (runningTotal: number) => void;
+	private onDiagnosticStep?: (step: ChatDiagnosticStep) => void;
 
 	private accumulatedText = "";
 	private pendingFunctionCalls: Map<
@@ -56,6 +65,7 @@ export class OpenResponsesLoop {
 		this.requestApproval = options.requestApproval;
 		this.onToolResult = options.onToolResult;
 		this.onTokenUpdate = options.onTokenUpdate;
+		this.onDiagnosticStep = options.onDiagnosticStep;
 	}
 
 	/**
@@ -88,9 +98,12 @@ export class OpenResponsesLoop {
 
 		let runningTotal = 0;
 		let totalAccumulatedText = ""; // Track text across all steps for UI
+		let diagnosticStepNumber = 1;
+		let activeDiagnosticStep: ChatDiagnosticStep | undefined;
 
 		const consumeStream = async (
 			events: AsyncIterable<OpenResponsesEvent>,
+			diagnosticStep?: ChatDiagnosticStep,
 		): Promise<void> => {
 			// Reset per-response state, but keep totalAccumulatedText for the UI.
 			this.accumulatedText = "";
@@ -127,6 +140,16 @@ export class OpenResponsesLoop {
 
 					case "finish":
 						lastResponseId = event.response_id;
+						if (diagnosticStep) {
+							diagnosticStep.providerUsage = event.usage
+								? {
+										inputTokens: event.usage.input_tokens,
+										outputTokens: event.usage.output_tokens,
+										totalTokens: event.usage.total_tokens,
+									}
+								: undefined;
+							diagnosticStep.finishReason = "completed";
+						}
 						break;
 
 					case "error":
@@ -135,7 +158,26 @@ export class OpenResponsesLoop {
 			}
 
 			finalText = this.accumulatedText;
+			if (diagnosticStep) {
+				diagnosticStep.response = {
+					text: this.accumulatedText,
+					toolCalls: Array.from(
+						this.pendingFunctionCalls.entries(),
+					).map(([call_id, call]) => ({ call_id, ...call })),
+					responseId: lastResponseId || undefined,
+				};
+			}
 		};
+
+		activeDiagnosticStep = this.onDiagnosticStep
+			? beginDiagnosticStep(
+					1,
+					"initial",
+					makeDiagnosticRequest("openresponses", input, tools, {
+						stream: true,
+					}),
+				)
+			: undefined;
 
 		// The original request must be sent exactly once. Every subsequent
 		// response is obtained through a stateful function-call continuation.
@@ -148,7 +190,18 @@ export class OpenResponsesLoop {
 				},
 				signal,
 			),
+			activeDiagnosticStep,
 		);
+		if (activeDiagnosticStep && this.pendingFunctionCalls.size === 0) {
+			this.onDiagnosticStep?.(
+				finishDiagnosticStep(activeDiagnosticStep, {
+					response: activeDiagnosticStep.response,
+					providerUsage: activeDiagnosticStep.providerUsage,
+					finishReason: activeDiagnosticStep.finishReason,
+				}),
+			);
+			activeDiagnosticStep = undefined;
+		}
 
 		while (
 			this.pendingFunctionCalls.size > 0 &&
@@ -172,6 +225,9 @@ export class OpenResponsesLoop {
 				call_id: string;
 				output: string;
 			}> = [];
+			const diagnosticExchanges: NonNullable<
+				ChatDiagnosticStep["toolExchanges"]
+			> = [];
 
 			for (const [call_id, fc] of this.pendingFunctionCalls) {
 				let args: Record<string, unknown>;
@@ -231,6 +287,21 @@ export class OpenResponsesLoop {
 					call_id,
 					output,
 				});
+				diagnosticExchanges.push({
+					call: toolCall,
+					rawResult: result,
+					replayedResult: output,
+					truncated:
+						output !==
+						JSON.stringify({
+							success: result.success ?? !result.error,
+							content: result.content,
+							error: result.error,
+							...result,
+						}),
+					rawResultSize: measureDiagnosticValue(result),
+					replayedResultSize: measureDiagnosticValue(output),
+				});
 			}
 
 			// The full results remain available through onToolResult and the
@@ -263,6 +334,29 @@ export class OpenResponsesLoop {
 					),
 				}),
 			);
+			for (let index = 0; index < diagnosticExchanges.length; index++) {
+				diagnosticExchanges[index].replayedResult =
+					functionCallOutputs[index].output;
+				diagnosticExchanges[index].replayedResultSize =
+					measureDiagnosticValue(functionCallOutputs[index].output);
+				diagnosticExchanges[index].truncated =
+					functionCallOutputs[index].output !==
+					rawFunctionCallOutputs[index].output;
+			}
+
+			if (activeDiagnosticStep) {
+				const completedStep = finishDiagnosticStep(
+					activeDiagnosticStep,
+					{
+						response: activeDiagnosticStep.response,
+						toolExchanges: diagnosticExchanges,
+						providerUsage: activeDiagnosticStep.providerUsage,
+						finishReason: activeDiagnosticStep.finishReason,
+					},
+				);
+				this.onDiagnosticStep?.(completedStep);
+				activeDiagnosticStep = undefined;
+			}
 
 			// Send tool results back to agent for continuation
 			console.log(
@@ -285,6 +379,24 @@ export class OpenResponsesLoop {
 			// Continue streaming with tool results. consumeStream handles tool
 			// calls here as well, allowing multi-round tool chains to remain on
 			// the stateful continuation path.
+			activeDiagnosticStep = this.onDiagnosticStep
+				? beginDiagnosticStep(
+						diagnosticStepNumber + 1,
+						"tool",
+						makeDiagnosticRequest(
+							"openresponses",
+							functionCallOutputs.map((output) => ({
+								type: "function_call_output",
+								...output,
+							})),
+							tools,
+							{
+								previousResponseId: lastResponseId,
+								stream: true,
+							},
+						),
+					)
+				: undefined;
 			await consumeStream(
 				this.agentApi.continueWithToolResult(
 					lastResponseId,
@@ -292,7 +404,21 @@ export class OpenResponsesLoop {
 					tools,
 					signal,
 				),
+				activeDiagnosticStep,
 			);
+			if (activeDiagnosticStep) {
+				const completedStep = finishDiagnosticStep(
+					activeDiagnosticStep,
+					{
+						response: activeDiagnosticStep.response,
+						providerUsage: activeDiagnosticStep.providerUsage,
+						finishReason: activeDiagnosticStep.finishReason,
+					},
+				);
+				this.onDiagnosticStep?.(completedStep);
+				activeDiagnosticStep = undefined;
+				diagnosticStepNumber++;
+			}
 			// Text already counted incrementally during streaming; no need to re-count
 			this.onTokenUpdate?.(runningTotal);
 
@@ -303,6 +429,15 @@ export class OpenResponsesLoop {
 		if (this.pendingFunctionCalls.size > 0 && step >= this.maxSteps) {
 			console.warn(
 				`[OpenResponsesLoop] Max steps (${this.maxSteps}) reached`,
+			);
+		}
+		if (activeDiagnosticStep) {
+			this.onDiagnosticStep?.(
+				finishDiagnosticStep(activeDiagnosticStep, {
+					response: activeDiagnosticStep.response,
+					providerUsage: activeDiagnosticStep.providerUsage,
+					finishReason: activeDiagnosticStep.finishReason,
+				}),
 			);
 		}
 

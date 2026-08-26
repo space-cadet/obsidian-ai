@@ -13,7 +13,9 @@ interface ActionBarProps {
 	canLoad: boolean;
 	plugin: ChatPluginLike;
 	autoApprove: boolean;
+	debugMode?: boolean;
 	onToggleAutoApprove: () => void;
+	onToggleDebugMode?: () => void;
 	autoNameSessions: boolean;
 	onToggleAutoName: () => void;
 	onManualRename: () => void;
@@ -42,7 +44,9 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	canLoad,
 	plugin,
 	autoApprove,
+	debugMode = false,
 	onToggleAutoApprove,
+	onToggleDebugMode,
 	autoNameSessions,
 	onToggleAutoName,
 	onManualRename,
@@ -197,6 +201,20 @@ const ActionBar: React.FC<ActionBarProps> = ({
 							icon={relayEnabled ? "plug" : "plug-zap"}
 							size={15}
 						/>
+					</button>
+				)}
+				{onToggleDebugMode && (
+					<button
+						data-testid="debug-mode-toggle"
+						className={`chat-btn chat-icon-btn ${debugMode ? "is-active" : ""}`}
+						onClick={onToggleDebugMode}
+						title={
+							debugMode
+								? "Debug capture ON — record provider requests"
+								: "Debug capture OFF"
+						}
+					>
+						<ObsidianIcon icon="bug" size={15} />
 					</button>
 				)}
 				<button

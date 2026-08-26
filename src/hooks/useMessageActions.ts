@@ -42,6 +42,14 @@ import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
 import { getActiveProviderProfile } from "../settings";
 import { stripThinkingTags } from "../components/MessageBubble";
 import type { ChatRuntimeState, ChatRuntimePatch } from "./useChatRuntimeState";
+import {
+	beginDiagnosticStep,
+	completeChatDiagnostics,
+	createChatDiagnostics,
+	finishDiagnosticStep,
+	makeDiagnosticRequest,
+	type ChatDiagnosticStep,
+} from "../diagnostics";
 
 function formatPastSessionLinks(
 	toolCalls: Array<{ call: ToolCall; result?: ToolResult }>,
@@ -89,6 +97,7 @@ export interface UseMessageActionsDeps {
 	isGroupChat: boolean;
 	participants: GroupChatParticipant[];
 	thinkingEnabled: boolean;
+	debugMode?: boolean;
 
 	// Session
 	sessionsRef: React.MutableRefObject<ChatSession[]>;
@@ -128,6 +137,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 		isGroupChat,
 		participants,
 		thinkingEnabled,
+		debugMode = false,
 		sessionsRef,
 		activeSessionIdRef,
 		setSessions,
@@ -448,6 +458,22 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							toolCalls: response.toolCalls,
 							estimatedTokens: response.tokenEstimate,
 							providerUsage: response.providerUsage,
+							diagnostics:
+								debugMode && response.diagnosticSteps
+									? completeChatDiagnostics(
+											createChatDiagnostics({
+												transport: "ai-sdk",
+												profile: {
+													id: response.agentId,
+													name: response.agentName,
+													provider: "group",
+													model: "unknown",
+												},
+												settings: {},
+											}),
+											response.diagnosticSteps,
+										)
+									: undefined,
 						};
 
 						setSessions((prev) =>
@@ -813,6 +839,30 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				.showFullRequestTokens
 				? estimateTokens(JSON.stringify(chatMessages))
 				: userTokenEstimate;
+			const diagnostics = debugMode
+				? createChatDiagnostics({
+						transport: isAgentProvider ? "openresponses" : "ai-sdk",
+						profile: {
+							id: activeProfile.id,
+							name: activeProfile.name,
+							provider: activeProfile.provider,
+							model: activeProfile.model,
+						},
+						settings: {
+							maxRequestTokens:
+								plugin.settings.maxRequestTokens ?? 32000,
+							maxContextMessages,
+							preserveRecentMessages:
+								plugin.settings.preserveRecentMessages ?? 4,
+							requestResponseReserveTokens:
+								plugin.settings.requestResponseReserveTokens ??
+								4096,
+							maxToolResultTokens:
+								plugin.settings.maxToolResultTokens ?? 4000,
+						},
+					})
+				: undefined;
+			const diagnosticSteps: ChatDiagnosticStep[] = [];
 
 			// Update runtime with full payload estimate so UI shows correct starting count
 			patchRuntime(currentActiveId, {
@@ -969,6 +1019,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 									fullPayloadTokenEstimate + total,
 							});
 						},
+						onDiagnosticStep: (step) => {
+							if (diagnostics) diagnosticSteps.push(step);
+						},
 					});
 					const orTools = noteToolsToOpenResponses(toolRegistry);
 					const resultText = await openResponsesLoop.run(
@@ -1015,6 +1068,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							4096,
 						maxToolResultTokens:
 							plugin.settings.maxToolResultTokens ?? 4000,
+						captureDiagnostics: debugMode,
 						profile: activeProfile,
 						thinkingEnabled,
 						onTextDelta: (text) => {
@@ -1121,6 +1175,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						toolRegistry,
 						controller.signal,
 					);
+					if (diagnostics && result.diagnosticSteps) {
+						diagnosticSteps.push(...result.diagnosticSteps);
+					}
 					assistantContent = result.text;
 					const sessionLinks = formatPastSessionLinks(
 						toolCallsLog,
@@ -1138,6 +1195,17 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				} else {
 					// … standard streamChat path (no tools)
 					let streamTokenTotal = userTokenEstimate;
+					const diagnosticStep = diagnostics
+						? beginDiagnosticStep(
+								1,
+								"initial",
+								makeDiagnosticRequest(
+									"ai-sdk",
+									chatMessages,
+									undefined,
+								),
+							)
+						: undefined;
 					for await (const chunk of plugin.chatapi.streamChat(
 						chatMessages as any,
 						controller.signal,
@@ -1159,6 +1227,15 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						patchRuntime(currentActiveId, {
 							runningTokenTotal: streamTokenTotal,
 						});
+					}
+					if (diagnosticStep) {
+						diagnosticSteps.push(
+							finishDiagnosticStep(diagnosticStep, {
+								response: { text: fullText },
+								providerUsage,
+								finishReason: "completed",
+							}),
+						);
 					}
 					assistantContent = fullText;
 					assistantTokenEstimate = estimateTokens(fullText);
@@ -1252,6 +1329,9 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						toolCallsLog.length > 0 ? toolCallsLog : undefined,
 					contentParts:
 						contentParts.length > 0 ? contentParts : undefined,
+					diagnostics: diagnostics
+						? completeChatDiagnostics(diagnostics, diagnosticSteps)
+						: undefined,
 				};
 				setSessions((prev) =>
 					prev.map((s) =>
@@ -1301,6 +1381,12 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						modelName: activeProfile.model,
 						responseTimeMs: Date.now() - streamStartTime,
 						contentParts: interruptedParts,
+						diagnostics: diagnostics
+							? completeChatDiagnostics(
+									diagnostics,
+									diagnosticSteps,
+								)
+							: undefined,
 						isError: e.name !== "AbortError",
 					};
 					setSessions((prev) =>
@@ -1328,6 +1414,12 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						isError: true,
 						command: commandMeta,
 						estimatedTokens: estimateTokens(`Error: ${e.message}`),
+						diagnostics: diagnostics
+							? completeChatDiagnostics(
+									diagnostics,
+									diagnosticSteps,
+								)
+							: undefined,
 					};
 					setSessions((prev) =>
 						prev.map((s) =>
@@ -1367,6 +1459,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			isGroupChat,
 			participants,
 			thinkingEnabled,
+			debugMode,
 			ui,
 		],
 	);

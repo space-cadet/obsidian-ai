@@ -8,6 +8,13 @@ import {
 } from "../context/contextBudget";
 import type { ProviderProfile } from "../settings";
 import type { ProviderTokenUsage } from "../types";
+import {
+	beginDiagnosticStep,
+	finishDiagnosticStep,
+	makeDiagnosticRequest,
+	measureDiagnosticValue,
+	type ChatDiagnosticStep,
+} from "../diagnostics";
 
 export interface AgentLoopOptions {
 	chatApi: ChatApiManager;
@@ -20,6 +27,8 @@ export interface AgentLoopOptions {
 	thinkingEnabled?: boolean;
 	/** Maximum estimated tokens for a model-facing tool result. */
 	maxToolResultTokens?: number;
+	/** Capture the exact request/response data for each provider call. */
+	captureDiagnostics?: boolean;
 	/** Total request budget to re-apply before each tool-loop continuation. */
 	maxRequestTokens?: number;
 	/** Maximum number of persisted messages considered for a continuation. */
@@ -48,6 +57,8 @@ export interface AgentLoopResult {
 	stepTokenEstimates?: number[];
 	/** Provider-reported usage summed across the agent's model steps. */
 	providerUsage?: ProviderTokenUsage;
+	/** Per-provider-call traces when diagnostic capture was enabled. */
+	diagnosticSteps?: ChatDiagnosticStep[];
 }
 
 function addUsage(
@@ -276,6 +287,7 @@ export class AgentLoop {
 		}
 		let currentMessages = budgetedMessages.messages;
 		const stepTokenEstimates: number[] = [];
+		const diagnosticSteps: ChatDiagnosticStep[] = [];
 		let providerUsage: ProviderTokenUsage | undefined;
 
 		let runningTotal = 0;
@@ -284,51 +296,96 @@ export class AgentLoop {
 			let stepText = "";
 			let stepReasoning = "";
 			let pendingCall: ToolCall | null = null;
+			let stepProviderUsage: ProviderTokenUsage | undefined;
+			let finishReason: string | undefined;
+			const diagnosticStep = this.opts.captureDiagnostics
+				? beginDiagnosticStep(
+						step + 1,
+						step === 0 ? "initial" : "tool",
+						makeDiagnosticRequest("ai-sdk", currentMessages, tools),
+					)
+				: undefined;
 
-			for await (const event of chatApi.streamChatWithTools(
-				currentMessages,
-				tools,
-				signal,
-				this.opts.profile,
-				this.opts.thinkingEnabled,
-			)) {
-				if (signal.aborted) break;
+			try {
+				for await (const event of chatApi.streamChatWithTools(
+					currentMessages,
+					tools,
+					signal,
+					this.opts.profile,
+					this.opts.thinkingEnabled,
+				)) {
+					if (signal.aborted) break;
 
-				switch (event.type) {
-					case "text-delta":
-						stepText += event.text;
-						fullText += event.text;
-						onTextDelta(fullText);
-						// Incremental token counting during streaming
-						runningTotal += estimateTokens(event.text);
-						this.opts.onTokenUpdate?.(runningTotal);
-						break;
-					case "reasoning-delta":
-						stepReasoning += event.text;
-						break;
-					case "tool-call":
-						pendingCall = event.call;
-						break;
-					case "error":
-						throw new Error(event.message);
-					case "finish":
-						providerUsage = addUsage(
-							providerUsage,
-							event.providerUsage,
-						);
-						break;
-					case "tool-error":
-						console.warn(
-							`[AgentLoop] tool-error from stream: ${event.callId} — ${event.error}`,
-						);
-						break;
-					// finish, tool-result from stream are mostly bookkeeping
-					default:
-						break;
+					switch (event.type) {
+						case "text-delta":
+							stepText += event.text;
+							fullText += event.text;
+							onTextDelta(fullText);
+							// Incremental token counting during streaming
+							runningTotal += estimateTokens(event.text);
+							this.opts.onTokenUpdate?.(runningTotal);
+							break;
+						case "reasoning-delta":
+							stepReasoning += event.text;
+							break;
+						case "tool-call":
+							pendingCall = event.call;
+							break;
+						case "error":
+							throw new Error(event.message);
+						case "finish":
+							providerUsage = addUsage(
+								providerUsage,
+								event.providerUsage,
+							);
+							stepProviderUsage = event.providerUsage;
+							finishReason = event.reason;
+							break;
+						case "tool-error":
+							console.warn(
+								`[AgentLoop] tool-error from stream: ${event.callId} — ${event.error}`,
+							);
+							break;
+						// finish, tool-result from stream are mostly bookkeeping
+						default:
+							break;
+					}
 				}
+			} catch (error) {
+				if (diagnosticStep) {
+					diagnosticSteps.push(
+						finishDiagnosticStep(diagnosticStep, {
+							response: {
+								text: stepText,
+								reasoning: stepReasoning,
+								toolCalls: pendingCall ? [pendingCall] : [],
+							},
+							providerUsage: stepProviderUsage,
+							finishReason,
+							error:
+								error instanceof Error
+									? error.message
+									: String(error),
+						}),
+					);
+				}
+				throw error;
 			}
 
 			if (signal.aborted) {
+				if (diagnosticStep) {
+					diagnosticSteps.push(
+						finishDiagnosticStep(diagnosticStep, {
+							response: {
+								text: stepText,
+								reasoning: stepReasoning,
+								toolCalls: pendingCall ? [pendingCall] : [],
+							},
+							providerUsage: stepProviderUsage,
+							finishReason,
+						}),
+					);
+				}
 				console.log("[AgentLoop] aborted during step", step);
 				// Text already counted incrementally during streaming
 				this.opts.onTokenUpdate?.(runningTotal);
@@ -336,6 +393,18 @@ export class AgentLoop {
 			}
 
 			if (!pendingCall) {
+				if (diagnosticStep) {
+					diagnosticSteps.push(
+						finishDiagnosticStep(diagnosticStep, {
+							response: {
+								text: stepText,
+								reasoning: stepReasoning,
+							},
+							providerUsage: stepProviderUsage,
+							finishReason,
+						}),
+					);
+				}
 				console.log(
 					`[AgentLoop] done — no tool call at step ${step}, ${fullText.length} chars`,
 				);
@@ -443,6 +512,31 @@ export class AgentLoop {
 
 			// Track tokens for this step: tool call args + tool result (text counted incrementally)
 			stepTokenEstimates.push(toolCallTokens + resultTokens);
+			if (diagnosticStep) {
+				diagnosticSteps.push(
+					finishDiagnosticStep(diagnosticStep, {
+						response: {
+							text: stepText,
+							reasoning: stepReasoning,
+							toolCalls: [pendingCall],
+						},
+						toolExchanges: [
+							{
+								call: pendingCall,
+								rawResult: result,
+								replayedResult: modelResult,
+								truncated: modelResult !== formattedResult,
+								rawResultSize:
+									measureDiagnosticValue(formattedResult),
+								replayedResultSize:
+									measureDiagnosticValue(modelResult),
+							},
+						],
+						providerUsage: stepProviderUsage,
+						finishReason,
+					}),
+				);
+			}
 		}
 
 		// No more tool calls — compute final total.
@@ -458,6 +552,9 @@ export class AgentLoop {
 			stepsTaken: maxSteps, // Simplified; could track actual
 			stepTokenEstimates,
 			providerUsage,
+			diagnosticSteps: this.opts.captureDiagnostics
+				? diagnosticSteps
+				: undefined,
 		};
 	}
 }

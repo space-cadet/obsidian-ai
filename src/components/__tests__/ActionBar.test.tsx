@@ -20,7 +20,9 @@ const baseProps = {
 	canLoad: true,
 	plugin: { app: {}, manifest: { id: "chat-lab" } } as any,
 	autoApprove: false,
+	debugMode: false,
 	onToggleAutoApprove: vi.fn(),
+	onToggleDebugMode: vi.fn(),
 	autoNameSessions: false,
 	onToggleAutoName: vi.fn(),
 	onManualRename: vi.fn(),
@@ -63,5 +65,33 @@ describe("ActionBar participant badges", () => {
 		expect(
 			container.querySelector(".chat-remote-users-badge")?.textContent,
 		).toBe("2");
+	});
+
+	it("shows and toggles debug capture", () => {
+		const onToggleDebugMode = vi.fn();
+		const { getByTestId, rerender } = render(
+			<ActionBar
+				{...baseProps}
+				onToggleDebugMode={onToggleDebugMode}
+				debugMode={false}
+			/>,
+		);
+
+		getByTestId("debug-mode-toggle").click();
+		expect(onToggleDebugMode).toHaveBeenCalledTimes(1);
+		expect(getByTestId("debug-mode-toggle").className).not.toContain(
+			"is-active",
+		);
+
+		rerender(
+			<ActionBar
+				{...baseProps}
+				onToggleDebugMode={onToggleDebugMode}
+				debugMode={true}
+			/>,
+		);
+		expect(getByTestId("debug-mode-toggle").className).toContain(
+			"is-active",
+		);
 	});
 });

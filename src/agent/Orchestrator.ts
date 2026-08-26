@@ -13,6 +13,12 @@ import { AgentLoop } from "./AgentLoop";
 import { ToolExecutor } from "./ToolExecutor";
 import { estimateTokens } from "../context/tokenEstimator";
 import { buildBudgetedHistory } from "../context/contextBudget";
+import {
+	beginDiagnosticStep,
+	finishDiagnosticStep,
+	makeDiagnosticRequest,
+	type ChatDiagnosticStep,
+} from "../diagnostics";
 
 export type DispatchMode = "sequential" | "parallel";
 export type ContextStrategy = "full" | "isolated";
@@ -26,6 +32,7 @@ export interface AgentResponse {
 	toolCalls?: Array<{ call: ToolCall; result?: ToolResult }>;
 	tokenEstimate?: number;
 	providerUsage?: ProviderTokenUsage;
+	diagnosticSteps?: ChatDiagnosticStep[];
 	error?: string;
 }
 
@@ -54,6 +61,8 @@ export interface OrchestratorOptions {
 	requestResponseReserveTokens?: number;
 	/** Maximum estimated tokens for a model-facing tool result. */
 	maxToolResultTokens?: number;
+	/** Capture exact provider request traces for group-chat responses. */
+	captureDiagnostics?: boolean;
 	/** Tool executor for running Obsidian note tools. If provided with enableTools=true, agents will use tool calling. */
 	toolExecutor?: ToolExecutor;
 	/** IDs of remote users participating in this chat (relay user IDs) */
@@ -80,6 +89,7 @@ export class Orchestrator {
 	maxContextMessages: number;
 	requestResponseReserveTokens: number;
 	maxToolResultTokens: number;
+	captureDiagnostics: boolean;
 	toolExecutor?: ToolExecutor;
 
 	constructor(options: OrchestratorOptions) {
@@ -101,6 +111,7 @@ export class Orchestrator {
 		this.requestResponseReserveTokens =
 			options.requestResponseReserveTokens ?? 4096;
 		this.maxToolResultTokens = options.maxToolResultTokens ?? 4000;
+		this.captureDiagnostics = options.captureDiagnostics ?? false;
 		this.remoteUsers = options.remoteUsers ?? [];
 	}
 
@@ -445,6 +456,7 @@ export class Orchestrator {
 					requestResponseReserveTokens:
 						this.requestResponseReserveTokens,
 					maxToolResultTokens: this.maxToolResultTokens,
+					captureDiagnostics: this.captureDiagnostics,
 					profile: engine.profile,
 					onTextDelta: (text) => {
 						fullText = text;
@@ -490,12 +502,20 @@ export class Orchestrator {
 						toolCallsLog.length > 0 ? toolCallsLog : undefined,
 					tokenEstimate: result.tokenEstimate,
 					providerUsage: result.providerUsage,
+					diagnosticSteps: result.diagnosticSteps,
 				};
 			}
 
 			// Simple non-tooling path (original MVP behavior preserved)
 			let fullText = "";
 			let providerUsage: ProviderTokenUsage | undefined;
+			const diagnosticStep = this.captureDiagnostics
+				? beginDiagnosticStep(
+						1,
+						"initial",
+						makeDiagnosticRequest("ai-sdk", messages, undefined),
+					)
+				: undefined;
 			const stream = this.api.streamChat(
 				messages,
 				undefined,
@@ -509,6 +529,15 @@ export class Orchestrator {
 				if (signal?.aborted) break;
 				fullText += chunk;
 			}
+			const diagnosticSteps = diagnosticStep
+				? [
+						finishDiagnosticStep(diagnosticStep, {
+							response: { text: fullText },
+							providerUsage,
+							finishReason: "completed",
+						}),
+					]
+				: undefined;
 
 			return {
 				agentId: engine.id,
@@ -517,6 +546,7 @@ export class Orchestrator {
 				text: fullText,
 				tokenEstimate: estimateTokens(fullText),
 				providerUsage,
+				diagnosticSteps,
 			};
 		} catch (error: any) {
 			return {

@@ -150,4 +150,81 @@ describe("AgentLoop", () => {
 		).rejects.toThrow("tool continuation exceeds");
 		expect(streamChatWithTools).toHaveBeenCalledTimes(1);
 	});
+
+	it("captures one diagnostic record for each provider step", async () => {
+		const streamChatWithTools = vi
+			.fn()
+			.mockImplementationOnce(async function* () {
+				yield {
+					type: "tool-call",
+					call: {
+						toolCallId: "call-1",
+						toolName: "read_note",
+						args: { path: "Large note" },
+					},
+				};
+				yield {
+					type: "finish",
+					reason: "tool-calls",
+					providerUsage: {
+						inputTokens: 100,
+						outputTokens: 10,
+						totalTokens: 110,
+					},
+				};
+			})
+			.mockImplementationOnce(async function* () {
+				yield { type: "text-delta", text: "Done" };
+				yield {
+					type: "finish",
+					reason: "stop",
+					providerUsage: {
+						inputTokens: 120,
+						outputTokens: 4,
+						totalTokens: 124,
+					},
+				};
+			});
+		const loop = new AgentLoop({
+			chatApi: { streamChatWithTools } as any,
+			toolExecutor: {
+				execute: vi.fn().mockResolvedValue({
+					success: true,
+					content: "x".repeat(200),
+				}),
+			} as any,
+			maxSteps: 2,
+			autoApprove: true,
+			maxToolResultTokens: 20,
+			captureDiagnostics: true,
+			onTextDelta: vi.fn(),
+			onToolCall: vi.fn(),
+			requestApproval: vi.fn(),
+		});
+
+		const result = await loop.run(
+			[{ role: "user", content: "Read the large note" }],
+			{ read_note: { description: "Read a note" } },
+			new AbortController().signal,
+		);
+
+		expect(result.diagnosticSteps).toHaveLength(2);
+		expect(result.diagnosticSteps?.[0].request.payload).toEqual(
+			expect.objectContaining({
+				messages: [{ role: "user", content: "Read the large note" }],
+			}),
+		);
+		expect(result.diagnosticSteps?.[0].providerUsage).toEqual({
+			inputTokens: 100,
+			outputTokens: 10,
+			totalTokens: 110,
+		});
+		expect(result.diagnosticSteps?.[0].toolExchanges?.[0].truncated).toBe(
+			true,
+		);
+		expect(result.diagnosticSteps?.[1].continuation).toBe("tool");
+		expect(result.diagnosticSteps?.[1].providerUsage?.inputTokens).toBe(
+			120,
+		);
+	});
 });

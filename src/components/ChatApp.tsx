@@ -111,6 +111,23 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		string | undefined
 	>(initialMessageId);
 	const [thinkingEnabled, setThinkingEnabled] = useState(false);
+	const debugMode = useMemo(
+		() =>
+			sessions.find((session) => session.id === activeSessionId)
+				?.debugMode ?? false,
+		[sessions, activeSessionId],
+	);
+	const handleToggleDebugMode = useCallback(() => {
+		const sessionId = activeSessionIdRef.current;
+		if (!sessionId || sessionId === "__sync__") return;
+		setSessions((prev) =>
+			prev.map((session) =>
+				session.id === sessionId
+					? { ...session, debugMode: !session.debugMode }
+					: session,
+			),
+		);
+	}, [setSessions, activeSessionIdRef]);
 	const savedSessions = useMemo(
 		() => sessions.filter((session) => session.messages.length > 0),
 		[sessions],
@@ -243,6 +260,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			requestResponseReserveTokens:
 				plugin.settings.requestResponseReserveTokens ?? 4096,
 			maxToolResultTokens: plugin.settings.maxToolResultTokens ?? 4000,
+			captureDiagnostics: debugMode,
 			toolExecutor: new ToolExecutor(
 				plugin.app,
 				plugin.settings,
@@ -274,6 +292,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		plugin.chatapi,
 		plugin.settings,
 		plugin.app,
+		debugMode,
 	]);
 
 	// ─── Participant Router (wraps orchestrator + relay) ───
@@ -432,6 +451,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		isGroupChat,
 		participants,
 		thinkingEnabled,
+		debugMode,
 		sessionsRef,
 		activeSessionIdRef,
 		setSessions,
@@ -854,6 +874,8 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					}}
 					onToggleAutoApprove={handleToggleAutoApprove}
 					onToggleAutoName={handleToggleAutoName}
+					onToggleDebugMode={handleToggleDebugMode}
+					debugMode={debugMode}
 					onManualRename={handleManualRename}
 					onToggleZenMode={ui.toggleZenMode}
 					onToggleDebateMode={ui.toggleDebateMode}

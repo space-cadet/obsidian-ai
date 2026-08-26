@@ -23,6 +23,7 @@ interface ChatToolbarProps {
 	participantDropdownRef: React.RefObject<HTMLDivElement>;
 	remoteUserDropdownRef: React.RefObject<HTMLDivElement>;
 	autoApprove: boolean;
+	debugMode?: boolean;
 	autoNameSessions: boolean;
 	zenMode: boolean;
 	debateMode: boolean;
@@ -37,6 +38,7 @@ interface ChatToolbarProps {
 	onExportChat: () => void;
 	onOpenSync: () => void;
 	onToggleAutoApprove: () => void;
+	onToggleDebugMode?: () => void;
 	onToggleAutoName: () => void;
 	onManualRename: () => void;
 	onToggleZenMode: () => void;
@@ -62,6 +64,7 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 	participantDropdownRef,
 	remoteUserDropdownRef,
 	autoApprove,
+	debugMode = false,
 	autoNameSessions,
 	zenMode,
 	debateMode,
@@ -76,6 +79,7 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 	onExportChat,
 	onOpenSync,
 	onToggleAutoApprove,
+	onToggleDebugMode,
 	onToggleAutoName,
 	onManualRename,
 	onToggleZenMode,
@@ -102,7 +106,9 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 					canLoad={hasHistory}
 					plugin={plugin}
 					autoApprove={autoApprove}
+					debugMode={debugMode}
 					onToggleAutoApprove={onToggleAutoApprove}
+					onToggleDebugMode={onToggleDebugMode}
 					autoNameSessions={autoNameSessions}
 					onToggleAutoName={onToggleAutoName}
 					onManualRename={onManualRename}

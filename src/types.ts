@@ -1,4 +1,5 @@
 import type { ToolCall, ToolResult } from "./agent/types";
+import type { ChatDiagnostics } from "./diagnostics";
 
 /** Attachment to a chat message — vault file or external file the LLM should consume */
 export interface Attachment {
@@ -67,6 +68,8 @@ export interface ChatMessage {
 	}>;
 	/** Ordered content parts for inline rendering of tool calls */
 	contentParts?: ContentPart[];
+	/** Full per-provider-call request trace when session debug mode was enabled. */
+	diagnostics?: ChatDiagnostics;
 	/** Agent ID that generated this message (for group chat) */
 	agentId?: string;
 	/** Agent name for display (for group chat) */
@@ -117,6 +120,8 @@ export interface ChatSession {
 	selectedRemoteUserIds?: string[];
 	/** Whether thinking/reasoning is enabled for this session */
 	thinkingEnabled?: boolean;
+	/** Capture full provider request traces for messages in this session. */
+	debugMode?: boolean;
 	/** Unsent composer text saved for recovery across restarts and tab switches */
 	draft?: string;
 	/** Whether this session is connected to a relay server for multi-user sync */

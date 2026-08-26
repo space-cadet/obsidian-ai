@@ -1,5 +1,6 @@
 import { ChatSession, ChatMessage } from "../types";
 import { ExportScope } from "../components/presentational/ExportModal";
+import { diagnosticSummary } from "../diagnostics";
 
 function formatTimestamp(ts: number): string {
 	return new Date(ts).toISOString();
@@ -56,6 +57,14 @@ export function messageToMarkdown(msg: ChatMessage, index: number): string {
 			}
 			body += `---\n`;
 		}
+	}
+
+	if (msg.diagnostics) {
+		body +=
+			`\n\n---\n**🔍 Diagnostic trace:** ${diagnosticSummary(msg.diagnostics)}\n\n` +
+			"```json\n" +
+			JSON.stringify(msg.diagnostics, null, 2) +
+			"\n```\n---\n";
 	}
 
 	return `### ${index + 1}. ${roleLabel}${modelTag}${agentTag}${errorTag}\n*${ts}*\n\n${body}\n`;
