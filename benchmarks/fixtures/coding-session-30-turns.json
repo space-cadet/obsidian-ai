@@ -1,0 +1,390 @@
+[
+  {
+    "id": "u-0",
+    "role": "user",
+    "content": "Can you refactor the parser in notes/grammar.md?",
+    "timestamp": 1787776633892
+  },
+  {
+    "id": "a-0",
+    "role": "assistant",
+    "content": "I will read note for you.",
+    "timestamp": 1787776634892,
+    "contentParts": [
+      {
+        "type": "tool_call",
+        "call": {
+          "toolCallId": "tc-09fr8fvu",
+          "toolName": "read_note",
+          "args": {
+            "path": "notes/grammar.md"
+          }
+        },
+        "result": {
+          "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit."
+        }
+      }
+    ]
+  },
+  {
+    "id": "u-1",
+    "role": "user",
+    "content": "Search for all notes about error handling.",
+    "timestamp": 1787776753892
+  },
+  {
+    "id": "a-1",
+    "role": "assistant",
+    "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi.",
+    "timestamp": 1787776754892
+  },
+  {
+    "id": "u-2",
+    "role": "user",
+    "content": "Write a summary of the project structure to notes/summary.md.",
+    "timestamp": 1787776873892
+  },
+  {
+    "id": "a-2",
+    "role": "assistant",
+    "content": "I will write note for you.",
+    "timestamp": 1787776874892,
+    "contentParts": [
+      {
+        "type": "tool_call",
+        "call": {
+          "toolCallId": "tc-43nz4d8z",
+          "toolName": "write_note",
+          "args": {
+            "path": "notes/history.md"
+          }
+        },
+        "result": {
+          "success": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "u-3",
+    "role": "user",
+    "content": "What does the read_note tool return?",
+    "timestamp": 1787776993892
+  },
+  {
+    "id": "a-3",
+    "role": "assistant",
+    "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi.",
+    "timestamp": 1787776994892
+  },
+  {
+    "id": "u-4",
+    "role": "user",
+    "content": "Help me clean up the duplicate code in notes/utils.md.",
+    "timestamp": 1787777113892
+  },
+  {
+    "id": "a-4",
+    "role": "assistant",
+    "content": "I will search notes for you.",
+    "timestamp": 1787777114892,
+    "contentParts": [
+      {
+        "type": "tool_call",
+        "call": {
+          "toolCallId": "tc-zf2z7dy9",
+          "toolName": "search_notes",
+          "args": {
+            "query": "refactor",
+            "limit": 20
+          }
+        },
+        "result": {
+          "matches": [
+            {
+              "path": "notes/note-0.md",
+              "basename": "note-0.md",
+              "modified": 1787777113892,
+              "size": 1000
+            },
+            {
+              "path": "notes/note-1.md",
+              "basename": "note-1.md",
+              "modified": 1787690713892,
+              "size": 1500
+            },
+            {
+              "path": "notes/note-2.md",
+              "basename": "note-2.md",
+              "modified": 1787604313892,
+              "size": 2000
+            },
+            {
+              "path": "notes/note-3.md",
+              "basename": "note-3.md",
+              "modified": 1787517913892,
+              "size": 2500
+            },
+            {
+              "path": "notes/note-4.md",
+              "basename": "note-4.md",
+              "modified": 1787431513892,
+              "size": 3000
+            },
+            {
+              "path": "notes/note-5.md",
+              "basename": "note-5.md",
+              "modified": 1787345113892,
+              "size": 3500
+            },
+            {
+              "path": "notes/note-6.md",
+              "basename": "note-6.md",
+              "modified": 1787258713892,
+              "size": 4000
+            },
+            {
+              "path": "notes/note-7.md",
+              "basename": "note-7.md",
+              "modified": 1787172313892,
+              "size": 4500
+            },
+            {
+              "path": "notes/note-8.md",
+              "basename": "note-8.md",
+              "modified": 1787085913892,
+              "size": 5000
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "u-5",
+    "role": "user",
+    "content": "List all notes in the vault.",
+    "timestamp": 1787777233892
+  },
+  {
+    "id": "a-5",
+    "role": "assistant",
+    "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi.",
+    "timestamp": 1787777234892
+  },
+  {
+    "id": "u-6",
+    "role": "user",
+    "content": "Create a new note for the API design at notes/api-design.md.",
+    "timestamp": 1787777353892
+  },
+  {
+    "id": "a-6",
+    "role": "assistant",
+    "content": "I will read note for you.",
+    "timestamp": 1787777354892,
+    "contentParts": [
+      {
+        "type": "tool_call",
+        "call": {
+          "toolCallId": "tc-n6vwmmqd",
+          "toolName": "read_note",
+          "args": {
+            "path": "notes/utils.md"
+          }
+        },
+        "result": {
+          "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit."
+        }
+      }
+    ]
+  },
+  {
+    "id": "u-7",
+    "role": "user",
+    "content": "How many words are in notes/large-doc.md?",
+    "timestamp": 1787777473892
+  },
+  {
+    "id": "a-7",
+    "role": "assistant",
+    "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi.",
+    "timestamp": 1787777474892
+  },
+  {
+    "id": "u-8",
+    "role": "user",
+    "content": "Search for TODO items across all notes.",
+    "timestamp": 1787777593892
+  },
+  {
+    "id": "a-8",
+    "role": "assistant",
+    "content": "I will write note for you.",
+    "timestamp": 1787777594892,
+    "contentParts": [
+      {
+        "type": "tool_call",
+        "call": {
+          "toolCallId": "tc-srpv95x3",
+          "toolName": "write_note",
+          "args": {
+            "path": "notes/history.md"
+          }
+        },
+        "result": {
+          "success": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "u-9",
+    "role": "user",
+    "content": "Read notes/config.md and explain the settings.",
+    "timestamp": 1787777713892
+  },
+  {
+    "id": "a-9",
+    "role": "assistant",
+    "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi.",
+    "timestamp": 1787777714892
+  },
+  {
+    "id": "u-10",
+    "role": "user",
+    "content": "Append a changelog entry to notes/history.md.",
+    "timestamp": 1787777833892
+  },
+  {
+    "id": "a-10",
+    "role": "assistant",
+    "content": "I will search notes for you.",
+    "timestamp": 1787777834892,
+    "contentParts": [
+      {
+        "type": "tool_call",
+        "call": {
+          "toolCallId": "tc-2ymcy61c",
+          "toolName": "search_notes",
+          "args": {
+            "query": "refactor",
+            "limit": 20
+          }
+        },
+        "result": {
+          "matches": [
+            {
+              "path": "notes/note-0.md",
+              "basename": "note-0.md",
+              "modified": 1787777833892,
+              "size": 1000
+            },
+            {
+              "path": "notes/note-1.md",
+              "basename": "note-1.md",
+              "modified": 1787691433892,
+              "size": 1500
+            },
+            {
+              "path": "notes/note-2.md",
+              "basename": "note-2.md",
+              "modified": 1787605033892,
+              "size": 2000
+            },
+            {
+              "path": "notes/note-3.md",
+              "basename": "note-3.md",
+              "modified": 1787518633892,
+              "size": 2500
+            },
+            {
+              "path": "notes/note-4.md",
+              "basename": "note-4.md",
+              "modified": 1787432233892,
+              "size": 3000
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "id": "u-11",
+    "role": "user",
+    "content": "Find notes that mention 'refactor'.",
+    "timestamp": 1787777953892
+  },
+  {
+    "id": "a-11",
+    "role": "assistant",
+    "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi.",
+    "timestamp": 1787777954892
+  },
+  {
+    "id": "u-12",
+    "role": "user",
+    "content": "Edit the introduction in notes/readme.md.",
+    "timestamp": 1787778073892
+  },
+  {
+    "id": "a-12",
+    "role": "assistant",
+    "content": "I will read note for you.",
+    "timestamp": 1787778074892,
+    "contentParts": [
+      {
+        "type": "tool_call",
+        "call": {
+          "toolCallId": "tc-8el2vhnt",
+          "toolName": "read_note",
+          "args": {
+            "path": "notes/grammar.md"
+          }
+        },
+        "result": {
+          "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit."
+        }
+      }
+    ]
+  },
+  {
+    "id": "u-13",
+    "role": "user",
+    "content": "What folders exist under projects/?",
+    "timestamp": 1787778193892
+  },
+  {
+    "id": "a-13",
+    "role": "assistant",
+    "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi.",
+    "timestamp": 1787778194892
+  },
+  {
+    "id": "u-14",
+    "role": "user",
+    "content": "Check if notes/deprecated.md still exists.",
+    "timestamp": 1787778313892
+  },
+  {
+    "id": "a-14",
+    "role": "assistant",
+    "content": "I will write note for you.",
+    "timestamp": 1787778314892,
+    "contentParts": [
+      {
+        "type": "tool_call",
+        "call": {
+          "toolCallId": "tc-nf6tf4pj",
+          "toolName": "write_note",
+          "args": {
+            "path": "notes/history.md"
+          }
+        },
+        "result": {
+          "success": true
+        }
+      }
+    ]
+  }
+]

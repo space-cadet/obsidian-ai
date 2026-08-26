@@ -1,0 +1,197 @@
+[
+  {
+    "id": "u-0",
+    "role": "user",
+    "content": "Research the latest trends in quantum computing.",
+    "timestamp": 1787777233897
+  },
+  {
+    "id": "a-0",
+    "role": "assistant",
+    "content": "Searching for relevant information.",
+    "timestamp": 1787777234897,
+    "contentParts": [
+      {
+        "type": "tool_call",
+        "call": {
+          "toolCallId": "tc-er9v64rg",
+          "toolName": "web_search",
+          "args": {
+            "query": "the latest trends in quantum computing"
+          }
+        },
+        "result": {
+          "content": "Search results:\n1. lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore. — https://example.com/result-0-0\n2. lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore. — https://example.com/result-0-1\n3. lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore. — https://example.com/result-0-2"
+        }
+      }
+    ]
+  },
+  {
+    "id": "u-1",
+    "role": "user",
+    "content": "What does notes/physics-overview.md say about entanglement?",
+    "timestamp": 1787777353897
+  },
+  {
+    "id": "a-1",
+    "role": "assistant",
+    "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat.",
+    "timestamp": 1787777354897
+  },
+  {
+    "id": "u-2",
+    "role": "user",
+    "content": "Search the web for recent papers on error correction.",
+    "timestamp": 1787777473897
+  },
+  {
+    "id": "a-2",
+    "role": "assistant",
+    "content": "Searching for relevant information.",
+    "timestamp": 1787777474897,
+    "contentParts": [
+      {
+        "type": "tool_call",
+        "call": {
+          "toolCallId": "tc-1ac5adu1",
+          "toolName": "read_note",
+          "args": {
+            "path": "notes/bibliography.md"
+          }
+        },
+        "result": {
+          "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum fugiat.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum fugiat.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum fugiat.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum fugiat."
+        }
+      }
+    ]
+  },
+  {
+    "id": "u-3",
+    "role": "user",
+    "content": "Summarize the findings in notes/research-log.md.",
+    "timestamp": 1787777593897
+  },
+  {
+    "id": "a-3",
+    "role": "assistant",
+    "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat.",
+    "timestamp": 1787777594897
+  },
+  {
+    "id": "u-4",
+    "role": "user",
+    "content": "Find web sources about topological quantum computing.",
+    "timestamp": 1787777713897
+  },
+  {
+    "id": "a-4",
+    "role": "assistant",
+    "content": "Searching for relevant information.",
+    "timestamp": 1787777714897,
+    "contentParts": [
+      {
+        "type": "tool_call",
+        "call": {
+          "toolCallId": "tc-pxnwbzmj",
+          "toolName": "web_search",
+          "args": {
+            "query": "web sources about topological quantum computing"
+          }
+        },
+        "result": {
+          "content": "Search results:\n1. lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore. — https://example.com/result-4-0\n2. lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore. — https://example.com/result-4-1\n3. lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore. — https://example.com/result-4-2"
+        }
+      }
+    ]
+  },
+  {
+    "id": "u-5",
+    "role": "user",
+    "content": "Read notes/bibliography.md and list the key references.",
+    "timestamp": 1787777833897
+  },
+  {
+    "id": "a-5",
+    "role": "assistant",
+    "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat.",
+    "timestamp": 1787777834897
+  },
+  {
+    "id": "u-6",
+    "role": "user",
+    "content": "Search for 'anyon braiding' online.",
+    "timestamp": 1787777953897
+  },
+  {
+    "id": "a-6",
+    "role": "assistant",
+    "content": "Searching for relevant information.",
+    "timestamp": 1787777954897,
+    "contentParts": [
+      {
+        "type": "tool_call",
+        "call": {
+          "toolCallId": "tc-8k6ylsyd",
+          "toolName": "read_note",
+          "args": {
+            "path": "notes/research-log.md"
+          }
+        },
+        "result": {
+          "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum fugiat.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum fugiat.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum fugiat.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat duis aute irure in reprehenderit voluptate velit esse cillum fugiat."
+        }
+      }
+    ]
+  },
+  {
+    "id": "u-7",
+    "role": "user",
+    "content": "What are the main sections in notes/thesis.md?",
+    "timestamp": 1787778073897
+  },
+  {
+    "id": "a-7",
+    "role": "assistant",
+    "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat.",
+    "timestamp": 1787778074897
+  },
+  {
+    "id": "u-8",
+    "role": "user",
+    "content": "Look up recent news about quantum supremacy.",
+    "timestamp": 1787778193897
+  },
+  {
+    "id": "a-8",
+    "role": "assistant",
+    "content": "Searching for relevant information.",
+    "timestamp": 1787778194897,
+    "contentParts": [
+      {
+        "type": "tool_call",
+        "call": {
+          "toolCallId": "tc-l3ufav2h",
+          "toolName": "web_search",
+          "args": {
+            "query": "up recent news about quantum supremacy"
+          }
+        },
+        "result": {
+          "content": "Search results:\n1. lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore. — https://example.com/result-8-0\n2. lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore. — https://example.com/result-8-1\n3. lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore. — https://example.com/result-8-2"
+        }
+      }
+    ]
+  },
+  {
+    "id": "u-9",
+    "role": "user",
+    "content": "Read the introduction from notes/intro.md.",
+    "timestamp": 1787778313897
+  },
+  {
+    "id": "a-9",
+    "role": "assistant",
+    "content": "lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat.\n\nlorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam quis nostrud exercitation ullamco laboris nisi aliquip ex ea commodo consequat.",
+    "timestamp": 1787778314897
+  }
+]

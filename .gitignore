@@ -31,6 +31,9 @@ data.json
 # Local relay runtime logs
 relay/logs/*.log
 
+# Benchmark generated reports
+benchmarks/benchmark-report.json
+
 # Exclude macOS Finder (System Explorer) View States
 .DS_Store
 

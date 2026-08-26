@@ -10,6 +10,8 @@
 		"test:watch": "vitest",
 		"test:e2e": "vitest run --config vitest.e2e.config.ts",
 		"test:e2e:watch": "vitest --config vitest.e2e.config.ts",
+		"benchmarks": "npx tsx benchmarks/context-benchmark.ts",
+		"benchmarks:generate": "npx tsx benchmarks/context-benchmark.ts --generate-fixtures",
 		"preview:build": "node scripts/build-preview.mjs",
 		"package": "pnpm run build && mkdir -p dist/chat-lab && cp main.js manifest.json styles.css dist/chat-lab/",
 		"version:generate": "node scripts/generate-version-info.js",
