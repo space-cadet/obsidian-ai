@@ -8,6 +8,7 @@ function makeSession(messages: ChatMessage[] = []): ChatSession {
 		id: "test-session",
 		title: "Test",
 		messages,
+		contextItems: [],
 		createdAt: Date.now(),
 		updatedAt: Date.now(),
 	};
