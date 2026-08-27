@@ -37,7 +37,19 @@ export interface BenchmarkResult {
 	result: StrategyResult;
 }
 
-export type StrategyFn = (fixture: Fixture) => StrategyResult;
+export interface ExperimentResult {
+	fixture: string;
+	strategy: string;
+	maxContextMessages: number;
+	maxToolResultTokens: number;
+	toolHistoryMode: string;
+	perTurnTokens: number[];
+	totalTokens: number;
+	peakTurnTokens: number;
+	messagesDropped: number;
+}
+
+export type ExperimentFn = (fixture: Fixture, maxMsg: number, maxToolTokens: number, mode: string) => ExperimentResult;
 
 export interface LiveResult {
 	fixture: string;
@@ -141,6 +153,63 @@ const preserveStrategy: StrategyFn = (fixture) => {
 		tool_calls_count: countToolCalls(fixture.messages),
 	};
 };
+
+// ─── Experiment: Per-turn token accumulation with message window ─────────────
+
+function runMessageWindowExperiment(
+	fixture: Fixture,
+	maxContextMessages: number,
+	maxToolResultTokens: number,
+	toolHistoryMode: string,
+): ExperimentResult {
+	const perTurnTokens: number[] = [];
+	let totalTokens = 0;
+	let peakTurnTokens = 0;
+	let messagesDropped = 0;
+
+	// Simulate turn-by-turn: for each assistant message, build history
+	// as it would exist at that point in the conversation
+	const assistantTurns = fixture.messages.filter((m) => m.role === "assistant");
+
+	for (let i = 0; i < assistantTurns.length; i++) {
+		// Take all messages up to and including this assistant turn
+		const endIndex = fixture.messages.indexOf(assistantTurns[i]) + 1;
+		const messagesSoFar = fixture.messages.slice(0, endIndex);
+
+		// Apply message window cap
+		const windowedMessages =
+			maxContextMessages > 0
+				? messagesSoFar.slice(-maxContextMessages)
+				: messagesSoFar;
+
+		messagesDropped += messagesSoFar.length - windowedMessages.length;
+
+		// Build history with the selected strategy
+		const history = buildHistoryWithTools(
+			windowedMessages,
+			1000,
+			maxToolResultTokens,
+			toolHistoryMode as "elide" | "preserve",
+		);
+
+		const turnTokens = countTokens(history);
+		perTurnTokens.push(turnTokens);
+		totalTokens += turnTokens;
+		peakTurnTokens = Math.max(peakTurnTokens, turnTokens);
+	}
+
+	return {
+		fixture: fixture.name,
+		strategy: toolHistoryMode,
+		maxContextMessages,
+		maxToolResultTokens,
+		toolHistoryMode,
+		perTurnTokens,
+		totalTokens,
+		peakTurnTokens,
+		messagesDropped,
+	};
+}
 
 // ─── Live API Benchmarking ───────────────────────────────────────────────────
 
@@ -591,7 +660,72 @@ export function generateFixtures(): void {
 	}
 }
 
-// ─── Benchmark Runner ────────────────────────────────────────────────────────
+// ─── Experiment Runner ───────────────────────────────────────────────────────
+
+function runMessageWindowExperiments(): ExperimentResult[] {
+	const fixtures = loadFixtures();
+	const results: ExperimentResult[] = [];
+
+	// Focus on grammar migration fixture + one synthetic for comparison
+	const targetFixtures = fixtures.filter(
+		(f) =>
+			f.name === "grammar-migration-13-turns" ||
+			f.name === "attachment-session-15-turns",
+	);
+
+	for (const fixture of targetFixtures) {
+		// Test matrix: maxContextMessages × toolHistoryMode × maxToolResultTokens
+		const messageCaps = [0, 10, 25, 50]; // 0 = unlimited
+		const toolModes: Array<[string, number]> = [
+			["elide", 4000],
+			["preserve", 4000],
+			["preserve", 64000],
+		];
+
+		for (const maxMsg of messageCaps) {
+			for (const [mode, maxToolTokens] of toolModes) {
+				results.push(
+					runMessageWindowExperiment(
+						fixture,
+						maxMsg,
+						maxToolTokens,
+						mode,
+					),
+				);
+			}
+		}
+	}
+
+	return results;
+}
+
+function printExperimentResults(results: ExperimentResult[]) {
+	console.log("\n═══════════════════════════════════════════════════════════════");
+	console.log("  MESSAGE WINDOW EXPERIMENT RESULTS");
+	console.log("═══════════════════════════════════════════════════════════════\n");
+
+	for (const result of results) {
+		const capLabel = result.maxContextMessages === 0 ? "unlimited" : `${result.maxContextMessages}`;
+		console.log(`📁 ${result.fixture}`);
+		console.log(`   Mode: ${result.toolHistoryMode} | MaxToolTokens: ${result.maxToolResultTokens} | MsgCap: ${capLabel}`);
+		console.log(`   Turns: ${result.perTurnTokens.length} | Total: ${result.totalTokens.toLocaleString()} tokens | Peak: ${result.peakTurnTokens.toLocaleString()}`);
+		console.log(`   Messages dropped: ${result.messagesDropped}`);
+		console.log(`   Per-turn: [${result.perTurnTokens.map((t) => t.toLocaleString()).join(", ")}]`);
+		console.log("");
+	}
+
+	// Summary table
+	console.log("\n─── Summary: Grammar Migration Fixture ───\n");
+	const gmResults = results.filter((r) => r.fixture === "grammar-migration-13-turns");
+	console.log("MsgCap | Mode      | ToolTok | Total Tokens | Peak/Turn | Dropped");
+	console.log("-------|-----------|---------|--------------|-----------|--------");
+	for (const r of gmResults) {
+		const cap = r.maxContextMessages === 0 ? "∞" : r.maxContextMessages.toString().padStart(2);
+		console.log(
+			`${cap.padEnd(6)} | ${r.toolHistoryMode.padEnd(9)} | ${r.maxToolResultTokens.toString().padStart(7)} | ${r.totalTokens.toLocaleString().padStart(12)} | ${r.peakTurnTokens.toLocaleString().padStart(9)} | ${r.messagesDropped.toString().padStart(7)}`,
+		);
+	}
+}
 
 function runBenchmark(): BenchmarkResult[] {
 	const fixtures = loadFixtures();
@@ -661,14 +795,19 @@ async function runLiveBenchmarks(providerName: string): Promise<LiveResult[]> {
 
 	return results;
 }
-
-// ─── Main ────────────────────────────────────────────────────────────────────
+	// ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
 	const args = process.argv.slice(2);
 
 	if (args.includes("--generate-fixtures")) {
 		generateFixtures();
+		return;
+	}
+
+	if (args.includes("--experiment")) {
+		const results = runMessageWindowExperiments();
+		printExperimentResults(results);
 		return;
 	}
 

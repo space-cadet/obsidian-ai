@@ -2,6 +2,31 @@
 
 *Last Updated: 2026-08-27 13:21 IST*
 
+### 2026-08-27 — T64b Experiment Run: Message Window Simulation
+
+Added `maxContextMessages` simulation to harness and ran against grammar migration
+fixture (real session JSON, 13 assistant turns).
+
+**Results** (tiktoken estimator):
+
+| MsgCap | Mode | ToolTok | Total | Peak | vs Unlimited |
+|--------|------|---------|-------|------|-------------|
+| ∞ | preserve | 64000 | 146,747 | 23,450 | — |
+| 10 | preserve | 64000 | 85,110 | 11,217 | **-42%** |
+| 10 | preserve | 4000 | 76,510 | 10,708 | -41% |
+| 10 | elide | 4000 | 6,868 | 803 | -95% |
+
+**Conclusion**: `maxContextMessages: 10` is the dominant token-reduction mechanism
+for this workload. The `maxToolResultTokens` threshold matters only in preserve
+mode (11% difference between 4000 and 64000). The T64a bug (preserve still
+truncates at the threshold) has small impact at 64000.
+
+**For T62a**: Data supports auto-preserve for agent mode — with a 10-message
+cap, preserve mode stays bounded at ~85K total tokens, making the "cost" of
+full retention acceptable.
+
+---
+
 ### 2026-08-27 — Architecture Modularity Review and Refactoring Plan
 
 The read-only architecture review and file-size scan identified responsibility
