@@ -1,6 +1,6 @@
 # Orchestration Decomposition Design
 *Created: 2026-08-17 06:07 IST*
-*Last Updated: 2026-08-27 13:21 IST*
+*Last Updated: 2026-08-27 18:10:37 IST*
 *Applies to: obsidian-ai plugin codebase — T46*
 
 ## Overview
@@ -34,7 +34,7 @@ switch statement is not an acceptable end state because it leaves schema,
 prompt, preview, risk, availability, and formatting metadata duplicated.
 
 ### Current State
-`ToolExecutor` is a god class that:
+`ToolExecutor` was an overloaded class that:
 - Dispatches tool calls to the right handler
 - Validates parameters
 - Handles errors and retries
@@ -104,6 +104,33 @@ export const noteHandlers: Record<string, ToolHandler> = {
 Move `formatToolResult()` from `AgentLoop.ts` to a dedicated formatter or keep
 it in `AgentLoop.ts` (which is already a separate orchestrator). The key rule:
 formatting is an orchestration concern, not a handler concern.
+
+## Verified Progress — 2026-08-27
+
+The first implementation slice follows the design above:
+
+- `ToolExecutor.ts` is now 265 lines and keeps registry construction,
+  validation, and compatibility dispatch together.
+- `tools/ToolResolver.ts` owns path and note lookup rules.
+- `tools/handlers/noteHandlers.ts` owns note content changes.
+- `tools/handlers/` now separates note, bulk, discovery, vault, web, memory,
+  session, and settings capabilities. `ToolHandlerContext.ts` gives them the
+  same host services and continuation store.
+- `ChatTurnCoordinator.ts` provides one React-free entry point for native and
+  OpenResponses turns.
+- `ChatTurnRequest.ts` builds the prompt, bounded history, request budget, and
+  model-message list without depending on React.
+- `ChatTurnPersistence.ts` creates completed assistant messages and updates one
+  session without depending on React.
+- `ChatTurnOutput.ts` collects text, tool calls, tool results, and content parts
+  without depending on React or Obsidian services.
+- Prompt text and OpenResponses tools are built from the resolved definitions.
+
+The focused tool/provider tests, full test suite, TypeScript check, and
+production build passed after this slice. The remaining work is intentionally
+open: move the remaining UI callback and approval lifecycle boundaries out of
+the hook, then revisit
+`api.ts` and `main.ts`.
 
 ## Phase 1a: Chat Turn Coordinator (T46a)
 
@@ -261,7 +288,7 @@ export default class ObsidianAIPlugin extends Plugin {
 
 | File | Current | Target | Hard Limit |
 |------|---------|--------|------------|
-| ToolExecutor.ts | 2,159 | ~400 | 500 |
-| useMessageActions.ts | 1,533 | thin UI adapter; see T46a | — |
+| ToolExecutor.ts | 265 | ~400 | 500 |
+| useMessageActions.ts | 1,350 | thin UI adapter; see T46a | — |
 | api.ts | 765 | ~300 | 400 |
 | main.ts | 1,785 | ~300–400 | 400 |

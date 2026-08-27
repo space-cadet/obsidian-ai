@@ -1,8 +1,97 @@
 # Edit History
 
-*Last Updated: 2026-08-26 03:23:54 IST*
+*Last Updated: 2026-08-27 18:13:52 IST*
 
 ## 2026-08-27
+
+#### 18:13:52 IST - T46a: Refresh Memory Bank closeout timestamps
+- Modified `memory-bank/activeContext.md` - Aligned the last-updated timestamp with the output extraction
+- Modified `memory-bank/session_cache.md` - Aligned the last-updated timestamp with the output extraction
+
+#### 18:10:37 IST - T46a: Extract turn output collection from the React hook
+- Created `src/agent/ChatTurnOutput.ts` - Text, tool-call, tool-result, and content-part collection
+- Created `src/agent/__tests__/ChatTurnOutput.test.ts` - Focused output-state coverage
+- Modified `src/hooks/useMessageActions.ts` - Delegated turn output state while retaining UI updates
+- Modified `memory-bank/tasks/T46.md` - Recorded the output extraction and current size
+- Modified `memory-bank/tasks/T46a.md` - Recorded the output boundary and remaining lifecycle work
+- Modified `memory-bank/activeContext.md` - Recorded the new extraction and verification
+- Modified `memory-bank/session_cache.md` - Recorded the new extraction and next step
+- Modified `memory-bank/progress.md` - Recorded the current implementation milestone
+- Modified `memory-bank/changelog.md` - Recorded the output extraction and current test count
+- Modified `memory-bank/sessions/2026-08-27-architecture-modularity.md` - Appended the output update
+- Modified `memory-bank/implementation-details/orchestration-decomposition.md` - Recorded output ownership
+- Modified `memory-bank/implementation-details/refactored-architecture.md` - Updated the hook size evidence
+
+#### 18:04:06 IST - T46a: Extract completed turn persistence from the React hook
+- Created `src/agent/ChatTurnPersistence.ts` - Assistant-message creation and session-message updates
+- Created `src/agent/__tests__/ChatTurnPersistence.test.ts` - Focused persistence coverage
+- Modified `src/hooks/useMessageActions.ts` - Delegated completed message creation and session updates
+- Modified `memory-bank/tasks/T46.md` - Recorded the persistence slice and current size
+- Modified `memory-bank/tasks/T46a.md` - Recorded the persistence boundary and remaining lifecycle work
+- Modified `memory-bank/activeContext.md` - Recorded the new extraction and verification
+- Modified `memory-bank/session_cache.md` - Recorded the new extraction and next step
+- Modified `memory-bank/progress.md` - Recorded the current implementation milestone
+- Modified `memory-bank/changelog.md` - Updated the current test count
+- Modified `memory-bank/sessions/2026-08-27-architecture-modularity.md` - Appended the persistence update
+- Modified `memory-bank/implementation-details/orchestration-decomposition.md` - Recorded persistence ownership
+- Modified `memory-bank/implementation-details/refactored-architecture.md` - Updated the hook size evidence
+
+#### 17:58:34 IST - T46a: Extract request preparation from the React hook
+- Created `src/agent/ChatTurnRequest.ts` - Prompt, history, budget, attachment, and model-message assembly
+- Modified `src/hooks/useMessageActions.ts` - Delegated request preparation while retaining UI and persistence behavior
+- Modified `memory-bank/tasks/T46.md` - Recorded the request-preparation slice and current size
+- Modified `memory-bank/tasks/T46a.md` - Recorded the request builder and remaining lifecycle work
+- Modified `memory-bank/activeContext.md` - Recorded the new extraction and verification
+- Modified `memory-bank/session_cache.md` - Recorded the new extraction and next step
+- Modified `memory-bank/progress.md` - Added the request-preparation milestone
+- Modified `memory-bank/changelog.md` - Recorded the request builder
+- Modified `memory-bank/sessions/2026-08-27-architecture-modularity.md` - Appended the request-preparation update
+- Modified `memory-bank/implementation-details/orchestration-decomposition.md` - Recorded request assembly ownership
+- Modified `memory-bank/implementation-details/refactored-architecture.md` - Added the request builder and updated sizes
+
+#### 17:53:12 IST - T46: Split capability handlers by domain
+- Created `src/agent/tools/ToolHandlerContext.ts` - Shared host services and continuation state
+- Created `src/agent/tools/handlers/bulkHandlers.ts` - Multi-note creation
+- Created `src/agent/tools/handlers/discoveryHandlers.ts` - Note search and inspection
+- Created `src/agent/tools/handlers/memoryHandlers.ts` - Saved memory operations
+- Created `src/agent/tools/handlers/sessionHandlers.ts` - Past-session search
+- Created `src/agent/tools/handlers/settingsHandlers.ts` - Guarded settings operations
+- Created `src/agent/tools/handlers/vaultHandlers.ts` - Folder and note movement operations
+- Created `src/agent/tools/handlers/webHandlers.ts` - Web search and PDF extraction
+- Modified `src/agent/tools/handlers/noteHandlers.ts` - Shared handler context and bulk separation
+- Modified `src/agent/ToolExecutor.ts` - Constructed and routed domain handlers
+- Deleted `src/agent/tools/ToolHandlers.ts` - Removed the temporary mixed-domain grouping
+- Modified `memory-bank/tasks/T46.md` - Recorded the completed domain split
+- Modified `memory-bank/activeContext.md` - Recorded current implementation state
+- Modified `memory-bank/session_cache.md` - Recorded verification and next step
+- Modified `memory-bank/progress.md` - Added the domain split milestone
+- Modified `memory-bank/changelog.md` - Recorded the handler reorganization
+- Modified `memory-bank/sessions/2026-08-27-architecture-modularity.md` - Appended the domain split update
+- Modified `memory-bank/implementation-details/orchestration-decomposition.md` - Updated the verified structure
+- Modified `memory-bank/implementation-details/refactored-architecture.md` - Added the handler layout
+
+#### 17:41:07 IST - T46: Implement first architecture decomposition slice
+- Created `src/agent/ChatTurnCoordinator.ts` - Shared native and OpenResponses turn runner
+- Created `src/agent/__tests__/ChatTurnCoordinator.test.ts` - React-independent coordinator coverage
+- Created `src/agent/tools/ToolResolver.ts` - Safe path, note, and folder lookup
+- Created `src/agent/tools/ToolHandlers.ts` - Remaining capability handlers during transition
+- Created `src/agent/tools/handlers/noteHandlers.ts` - Note content handlers
+- Modified `src/agent/ToolExecutor.ts` - Reduced to registry construction, validation, and delegation
+- Modified `src/agent/toolRegistry.ts` - Kept resolved definitions and handlers aligned
+- Modified `src/agent/tools/toOpenResponses.ts` - Added resolved-registry projection
+- Modified `src/hooks/useMessageActions.ts` - Used shared turn coordinator and resolved tools
+- Modified `src/lib/systemPrompt.ts` - Used resolved definitions for tool descriptions
+- Modified `memory-bank/tasks/T46.md` - Recorded implementation progress and gates
+- Modified `memory-bank/tasks/T46a.md` - Recorded coordinator progress and branch
+- Modified `memory-bank/tasks/T60a.md` - Recorded completed registry projection gates
+- Modified `memory-bank/activeContext.md` - Recorded branch, implementation, and remaining work
+- Modified `memory-bank/session_cache.md` - Recorded current branch and verification
+- Modified `memory-bank/progress.md` - Added implementation milestone
+- Modified `memory-bank/changelog.md` - Added unreleased architecture entry
+- Modified `memory-bank/sessions/2026-08-27-architecture-modularity.md` - Appended implementation update
+- Modified `memory-bank/implementation-details/orchestration-decomposition.md` - Updated verified structure and sizes
+- Modified `memory-bank/implementation-details/refactored-architecture.md` - Updated current module map and size evidence
+- Modified `memory-bank/implementation-details/tool-capability-registry-and-execution-pipeline.md` - Recorded shared resolved registry boundary
 
 #### 13:21:49 IST - Record architecture modularity review and refactoring plan
 - Pulled remote Memory Bank changes through `85a5f4c` before updating records.

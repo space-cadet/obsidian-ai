@@ -12,9 +12,8 @@ import type {
 import type { ProviderProfile } from "../settings";
 import type { ToolCall, ToolResult } from "../agent/types";
 import { ToolExecutor } from "../agent/ToolExecutor";
-import { AgentLoop } from "../agent/AgentLoop";
-import { AgentApiManager } from "../api/AgentApiManager";
-import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
+import { runChatTurn } from "../agent/ChatTurnCoordinator";
+import { ChatTurnOutput } from "../agent/ChatTurnOutput";
 import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
 import { resolveContextItems } from "../context/ContextEngine";
 import { resolveAttachments } from "../context/AttachmentEngine";
@@ -37,9 +36,6 @@ import { parseSlashCommand } from "../lib/slashCommand";
 import { buildHistoryWithTools } from "../lib/historyBuilder";
 import { handleDebugCommand } from "../lib/debugCommands";
 import { makeId } from "../lib/sessionUtils";
-import { noteTools } from "../agent/tools";
-import { createBuiltInToolRegistry } from "../agent/toolRegistry";
-import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
 import { stripThinkingTags } from "../components/MessageBubble";
 import type { ChatRuntimeState, ChatRuntimePatch } from "../hooks/useChatRuntimeState";
 import type { UseChatUIResult } from "../hooks/useChatUI";
@@ -581,17 +577,18 @@ export class TurnLifecycle {
 		const isAgentProvider = activeProfile.provider === "agent";
 		const useTools =
 			deps.plugin.settings.enableAgentTools || isAgentProvider;
-		const resolvedToolRegistry =
-			deps.plugin.integrationRegistry?.getResolvedToolRegistry(noteTools, {
-				enableMemoryAuditTool:
-					deps.plugin.settings.intelligence?.enableMemoryAuditTool ??
-					false,
-			}) ??
-			createBuiltInToolRegistry({
-				enableMemoryAuditTool:
-					deps.plugin.settings.intelligence?.enableMemoryAuditTool ??
-					false,
-			});
+		const toolExecutor = new ToolExecutor(
+			deps.plugin.app,
+			deps.plugin.settings,
+			deps.plugin.personaLoader ?? undefined,
+			deps.plugin.searchIndex ?? undefined,
+			() => currentActiveId,
+			deps.plugin.integrationRegistry,
+			deps.plugin.saveSettings
+				? deps.plugin.saveSettings.bind(deps.plugin)
+				: undefined,
+		);
+		const resolvedToolRegistry = toolExecutor.getResolvedToolRegistry();
 		const toolRegistry = resolvedToolRegistry.tools;
 		const autoApprove = deps.plugin.settings.autoApply;
 		const maxAgentSteps = deps.plugin.settings.maxAgentSteps;
@@ -611,6 +608,8 @@ export class TurnLifecycle {
 			deps.plugin.personaLoader,
 			slashCmd ?? undefined,
 			useTools && !slashCmd,
+			undefined,
+			resolvedToolRegistry.definitions,
 		);
 		if (compactionSummary) {
 			systemPrompt += `\n\n${compactionSummary}`;
@@ -679,10 +678,8 @@ export class TurnLifecycle {
 		});
 
 		let fullText = "";
-		let toolCallsLog: Array<{ call: ToolCall; result?: ToolResult }> =
-			[];
+		const turnOutput = new ChatTurnOutput(stripThinkingTags);
 		let contentParts: ContentPart[] = [];
-		let textCheckpoint = 0;
 
 		let assistantContent = fullText;
 		let assistantTokenEstimate = 0;
@@ -691,179 +688,15 @@ export class TurnLifecycle {
 			| undefined;
 
 		try {
-			if (isAgentProvider) {
-				// … OpenResponsesLoop path (same as original)
-				if (!activeProfile.endpointUrl) {
-					throw new Error(
-						"Agent endpoint URL is not configured.",
-					);
-				}
-				const agentApi = new AgentApiManager(
-					{
-						id: activeProfile.id,
-						name: activeProfile.name,
-						provider: "agent",
-						model: activeProfile.model,
-						endpointUrl: activeProfile.endpointUrl,
-						agentId: activeProfile.agentId || "main",
-						authToken: activeProfile.apiKey,
-						sessionKey: activeProfile.sessionKey,
-						autoApprove:
-							activeProfile.autoApprove ?? autoApprove,
-						maxSteps: activeProfile.maxSteps ?? maxAgentSteps,
-					},
-					deps.plugin.app,
-				);
-				const openResponsesLoop = new OpenResponsesLoop({
-					agentApi,
-					toolExecutor: new ToolExecutor(
-						deps.plugin.app,
-						deps.plugin.settings,
-						deps.plugin.personaLoader ?? undefined,
-						deps.plugin.searchIndex ?? undefined,
-						() => currentActiveId,
-						deps.plugin.integrationRegistry,
-						deps.plugin.saveSettings.bind(deps.plugin),
-					),
-					maxSteps: activeProfile.maxSteps ?? maxAgentSteps,
-					autoApprove: activeProfile.autoApprove ?? autoApprove,
-					maxToolResultTokens:
-						deps.plugin.settings.maxToolResultTokens ?? 4000,
-					requestResponseReserveTokens:
-						deps.plugin.settings.requestResponseReserveTokens ??
-						4096,
-					onTextDelta: (text) => {
-						fullText = text;
-						deps.patchRuntime(currentActiveId, {
-							currentAiMessage: stripThinkingTags(text),
-						});
-					},
-					onToolCall: (call) => {
-						const pendingText = stripThinkingTags(
-							fullText.slice(textCheckpoint),
-						);
-						if (pendingText) {
-							contentParts.push({
-								type: "text",
-								content: pendingText,
-							});
-						}
-						toolCallsLog.push({ call });
-						contentParts.push({
-							type: "tool_call",
-							call,
-						});
-						deps.patchRuntime(currentActiveId, {
-							currentContentParts: [...contentParts],
-						});
-						textCheckpoint = fullText.length;
-					},
-					requestApproval: async (call) => {
-						const resolved =
-							await new Promise<ToolResult | null>(
-								(resolve) => {
-									deps.patchRuntime(currentActiveId, {
-										pendingToolCall: call,
-										resolveTool: resolve,
-									});
-								},
-							);
-						deps.patchRuntime(currentActiveId, {
-							pendingToolCall: null,
-							resolveTool: null,
-						});
-						const lastIdx = toolCallsLog.length - 1;
-						if (lastIdx >= 0) {
-							toolCallsLog[lastIdx] = {
-								...toolCallsLog[lastIdx],
-								result: resolved || undefined,
-							};
-						}
-						const partIdx = contentParts.findIndex(
-							(p) =>
-								p.type === "tool_call" &&
-								p.call.toolCallId === call.toolCallId,
-						);
-						if (partIdx >= 0 && resolved) {
-							const part = contentParts[partIdx];
-							if (part.type === "tool_call") {
-								contentParts[partIdx] = {
-									...part,
-									result: resolved,
-								};
-							}
-						}
-						return resolved;
-					},
-					onToolResult: (call, result) => {
-						const idx = toolCallsLog.findIndex(
-							(tc) => tc.call.toolCallId === call.toolCallId,
-						);
-						if (idx >= 0) {
-							toolCallsLog[idx] = {
-								...toolCallsLog[idx],
-								result,
-							};
-						}
-						const partIdx = contentParts.findIndex(
-							(p) =>
-								p.type === "tool_call" &&
-								p.call.toolCallId === call.toolCallId,
-						);
-						if (partIdx >= 0) {
-							const part = contentParts[partIdx];
-							if (part.type === "tool_call") {
-								contentParts[partIdx] = {
-									...part,
-									result,
-								};
-								deps.patchRuntime(currentActiveId, {
-									currentContentParts: [...contentParts],
-								});
-							}
-						}
-					},
-					onTokenUpdate: (total) => {
-						deps.patchRuntime(currentActiveId, {
-							runningTokenTotal:
-								fullPayloadTokenEstimate + total,
-						});
-					},
-				});
-				const orTools = noteToolsToOpenResponses(toolRegistry);
-				const resultText = await openResponsesLoop.run(
-					chatMessages as Array<{
-						role: "user" | "assistant" | "system";
-						content: string;
-					}>,
-					orTools,
-					controller.signal,
-				);
-				const sessionLinks = formatPastSessionLinks(
-					toolCallsLog,
-					deps.sessionsRef.current,
-				);
-				assistantContent = resultText + sessionLinks;
-				if (sessionLinks) {
-					contentParts.push({
-						type: "text",
-						content: sessionLinks,
-					});
-				}
-				assistantTokenEstimate = estimateTokens(assistantContent);
-			} else if (useTools && !slashCmd) {
-				// … AgentLoop path
-				const agent = new AgentLoop({
+			if (useTools && !slashCmd) {
+				const result = await runChatTurn({
+					app: deps.plugin.app,
+					profile: activeProfile,
 					chatApi: deps.plugin.chatapi,
-					toolExecutor: new ToolExecutor(
-						deps.plugin.app,
-						deps.plugin.settings,
-						deps.plugin.personaLoader ?? undefined,
-						deps.plugin.searchIndex ?? undefined,
-						() => currentActiveId,
-						deps.plugin.integrationRegistry,
-						deps.plugin.saveSettings.bind(deps.plugin),
-					),
+					toolExecutor,
+					toolRegistry: resolvedToolRegistry,
+					messages: chatMessages,
+					signal: controller.signal,
 					maxSteps: maxAgentSteps,
 					autoApprove,
 					maxRequestTokens:
@@ -876,33 +709,19 @@ export class TurnLifecycle {
 						4096,
 					maxToolResultTokens:
 						deps.plugin.settings.maxToolResultTokens ?? 4000,
-					profile: activeProfile,
 					thinkingEnabled: deps.thinkingEnabled,
 					onTextDelta: (text) => {
 						fullText = text;
+						turnOutput.setText(text);
 						deps.patchRuntime(currentActiveId, {
 							currentAiMessage: stripThinkingTags(text),
 						});
 					},
 					onToolCall: (call) => {
-						const pendingText = stripThinkingTags(
-							fullText.slice(textCheckpoint),
-						);
-						if (pendingText) {
-							contentParts.push({
-								type: "text",
-								content: pendingText,
-							});
-						}
-						toolCallsLog.push({ call });
-						contentParts.push({
-							type: "tool_call",
-							call,
-						});
+						const parts = turnOutput.recordToolCall(call);
 						deps.patchRuntime(currentActiveId, {
-							currentContentParts: [...contentParts],
+							currentContentParts: parts,
 						});
-						textCheckpoint = fullText.length;
 					},
 					requestApproval: async (call) => {
 						const resolved =
@@ -918,56 +737,16 @@ export class TurnLifecycle {
 							pendingToolCall: null,
 							resolveTool: null,
 						});
-						const lastIdx = toolCallsLog.length - 1;
-						if (lastIdx >= 0) {
-							toolCallsLog[lastIdx] = {
-								...toolCallsLog[lastIdx],
-								result: resolved || undefined,
-							};
-						}
-						const partIdx = contentParts.findIndex(
-							(p) =>
-								p.type === "tool_call" &&
-								p.call.toolCallId === call.toolCallId,
-						);
-						if (partIdx >= 0 && resolved) {
-							const part = contentParts[partIdx];
-							if (part.type === "tool_call") {
-								contentParts[partIdx] = {
-									...part,
-									result: resolved,
-								};
-							}
+						if (resolved) {
+							turnOutput.recordToolResult(call, resolved);
 						}
 						return resolved;
 					},
 					onToolResult: (call, result) => {
-						const idx = toolCallsLog.findIndex(
-							(tc) => tc.call.toolCallId === call.toolCallId,
-						);
-						if (idx >= 0) {
-							toolCallsLog[idx] = {
-								...toolCallsLog[idx],
-								result,
-							};
-						}
-						const partIdx = contentParts.findIndex(
-							(p) =>
-								p.type === "tool_call" &&
-								p.call.toolCallId === call.toolCallId,
-						);
-						if (partIdx >= 0) {
-							const part = contentParts[partIdx];
-							if (part.type === "tool_call") {
-								contentParts[partIdx] = {
-									...part,
-									result,
-								};
-								deps.patchRuntime(currentActiveId, {
-									currentContentParts: [...contentParts],
-								});
-							}
-						}
+						const parts = turnOutput.recordToolResult(call, result);
+						deps.patchRuntime(currentActiveId, {
+							currentContentParts: parts,
+						});
 					},
 					onTokenUpdate: (total) => {
 						deps.patchRuntime(currentActiveId, {
@@ -976,23 +755,14 @@ export class TurnLifecycle {
 						});
 					},
 				});
-
-				const result = await agent.run(
-					chatMessages as Array<any>,
-					toolRegistry,
-					controller.signal,
-				);
 				assistantContent = result.text;
 				const sessionLinks = formatPastSessionLinks(
-					toolCallsLog,
+					turnOutput.snapshot().toolCalls,
 					deps.sessionsRef.current,
 				);
 				if (sessionLinks) {
 					assistantContent += sessionLinks;
-					contentParts.push({
-						type: "text",
-						content: sessionLinks,
-					});
+					turnOutput.appendTextPart(sessionLinks);
 				}
 				assistantTokenEstimate = result.tokenEstimate;
 				providerUsage = result.providerUsage;
@@ -1083,18 +853,14 @@ export class TurnLifecycle {
 				assistantTokenEstimate = estimateTokens(assistantContent);
 			}
 
-			// Finalize remaining text for tool paths
+			// Finalize output collected by the tool-enabled turn coordinator.
 			if (useTools && !slashCmd) {
-				const remainingText = stripThinkingTags(
-					fullText.slice(textCheckpoint),
-				);
-				if (remainingText) {
-					contentParts.push({
-						type: "text",
-						content: remainingText,
-					});
-				}
+				turnOutput.setText(fullText);
+				turnOutput.finishToolText();
+				contentParts = turnOutput.snapshot().contentParts;
 			}
+			const finalOutput =
+				useTools && !slashCmd ? turnOutput.snapshot() : null;
 
 			const cleanAssistantContent =
 				stripThinkingTags(assistantContent);
@@ -1110,9 +876,15 @@ export class TurnLifecycle {
 				modelName: activeProfile.model,
 				responseTimeMs: Date.now() - streamStartTime,
 				toolCalls:
-					toolCallsLog.length > 0 ? toolCallsLog : undefined,
+					finalOutput && finalOutput.toolCalls.length > 0
+						? finalOutput.toolCalls
+						: undefined,
 				contentParts:
-					contentParts.length > 0 ? contentParts : undefined,
+					finalOutput && finalOutput.contentParts.length > 0
+						? finalOutput.contentParts
+						: contentParts.length > 0
+							? contentParts
+							: undefined,
 			};
 			deps.setSessions((prev) =>
 				prev.map((s) =>
@@ -1132,10 +904,12 @@ export class TurnLifecycle {
 			if (fullText) {
 				let interruptedParts: ContentPart[] = [];
 				if (useTools && !slashCmd) {
-					interruptedParts = [...contentParts];
-					const remainingText = stripThinkingTags(
-						fullText.slice(textCheckpoint),
-					);
+					turnOutput.setText(fullText);
+					const output = turnOutput.snapshot();
+					interruptedParts = [...output.contentParts];
+					const remainingText = output.text
+						? turnOutput.pendingText()
+						: "";
 					if (remainingText) {
 						interruptedParts.push({
 							type: "text",

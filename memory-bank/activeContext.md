@@ -1,6 +1,83 @@
 # Active Context
 
-*Last Updated: 2026-08-27 13:21 IST*
+*Last Updated: 2026-08-27 22:15 IST*
+
+### 2026-08-27 — T46/T46a reconciliation
+
+The reconciliation branch keeps the main-branch `TurnLifecycle`, `api.ts`, and
+`main.ts` decompositions and integrates the feature branch's decomposed
+`ToolExecutor`, resolved registry, `ChatTurnCoordinator`, and `ChatTurnOutput`.
+`useMessageActions.ts` is 217 lines; `ToolExecutor.ts` is 292 lines;
+`api.ts` is 363 lines; and `main.ts` is 226 lines.
+
+Fresh verification passed: 43 test files / 362 tests, TypeScript, and the
+production build. Provider-switching and real-provider acceptance remain
+runtime gates. The reconciliation branch still needs its final commit and
+remote push.
+
+### 2026-08-27 — T46a turn output extraction
+
+Added `ChatTurnOutput.ts` to collect text, tool calls, tool results, and
+content parts without React or Obsidian services. The hook still owns visible
+streaming updates, interruption display, and approval prompts.
+
+`useMessageActions.ts` is now 1,252 lines. Verification passed: 43 test files,
+362 tests, TypeScript, and the production build. The next boundary is the
+remaining UI callback and approval lifecycle code; `api.ts` and `main.ts`
+remain later phases.
+
+### 2026-08-27 — T46a turn persistence extraction
+
+Added `ChatTurnPersistence.ts` and moved completed assistant-message creation
+and session-message updates out of the hook. `useMessageActions.ts` is now
+1,302 lines. The hook still owns UI-specific interruption display, approval
+state, and runtime cleanup.
+
+Verification remains green: 42 test files, 360 tests, TypeScript, and the
+production build. The next boundary is the remaining UI callback and approval
+lifecycle work; `api.ts` and `main.ts` remain later phases.
+
+### 2026-08-27 — T46a request preparation extraction
+
+Added `src/agent/ChatTurnRequest.ts` on the architecture branch. It now owns
+system-prompt creation, tool-history projection, request budgeting, attachment
+message assembly, and the final model-message list. The hook supplies inputs
+and keeps UI updates and persistence.
+
+`useMessageActions.ts` is now 1,305 lines. Focused tests, the full 359-test
+suite, TypeScript, and the production build pass. The next T46a work is to
+move the remaining turn callbacks and persistence boundary out of the hook.
+
+### 2026-08-27 — T46 capability domains split
+
+The next T46 slice is complete on `feat/t46-architecture-decomposition`.
+The temporary `ToolHandlers.ts` grouping has been replaced with separate
+modules for note, bulk, discovery, vault, web, memory, session, and settings
+work. `ToolHandlerContext.ts` supplies the shared Obsidian services.
+
+`ToolExecutor.ts` is now 292 lines. Focused tool/provider tests, the full
+359-test suite, TypeScript, and the production build all pass. The next step is
+the T46a request-lifecycle extraction; `api.ts` and `main.ts` remain later
+phases.
+
+### 2026-08-27 — T46/T46a implementation branch
+
+Implementation is in progress on `feat/t46-architecture-decomposition`, based
+on `a15c47646e1141239b269c8f608331889b1b32df`.
+
+- `ToolExecutor.ts` is now 265 lines and delegates to the resolved registry.
+- `ToolResolver.ts` and note handlers own path lookup and note changes.
+- `ToolHandlers.ts` temporarily contains the remaining capability areas and is
+  the next physical split.
+- `ChatTurnCoordinator.ts` runs native and OpenResponses turns through one
+  React-independent entry point.
+- Prompt and OpenResponses tools use the same resolved definitions as
+  execution.
+- Verification: 41 test files, 359 tests, TypeScript, production build, and
+  focused coordinator/hook tests pass.
+
+The hook remains 1,350 lines and still owns request preparation, history,
+persistence, and approval state. `api.ts` and `main.ts` remain future phases.
 
 ### 2026-08-27 — T64b Experiment Run: Message Window Simulation
 

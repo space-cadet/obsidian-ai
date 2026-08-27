@@ -12,6 +12,57 @@
 - Commit: `bde9fea`
 - Tests: 355/356 passing (1 pre-existing tools.test.ts failure)
 
+### 2026-08-27 — T46a Turn Persistence Extraction 🔄
+
+- Added `src/agent/ChatTurnPersistence.ts` for completed assistant-message
+  creation and session-message updates.
+- Reduced `useMessageActions.ts` to 1,302 lines.
+- Added focused persistence coverage; the full suite now passes 360 tests.
+- TypeScript and the production build pass.
+- Next: review the remaining UI callback and approval lifecycle boundary.
+
+### 2026-08-27 — T46a Request Preparation Extraction 🔄
+
+- Added `src/agent/ChatTurnRequest.ts` to build the prompt, bounded history,
+  budgeted model messages, and attachment content outside the React hook.
+- Reduced `useMessageActions.ts` to 1,305 lines while preserving its UI updates
+  and persistence behavior.
+- Verified focused tests, all 359 tests, TypeScript, and the production build.
+- Next: extract turn callbacks and final message persistence.
+
+### 2026-08-27 — T46 Capability Domain Split 🔄
+
+- Replaced the temporary `ToolHandlers.ts` grouping with separate handlers for
+  note, bulk, discovery, vault, web, memory, session, and settings work.
+- Added `ToolHandlerContext.ts` for shared host services and continuation state.
+- `ToolExecutor.ts` is now 292 lines.
+- Verified 49 focused tool/provider tests, 359 full-suite tests, TypeScript, and
+  the production build.
+- Next: continue T46a by moving request preparation and lifecycle state out of
+  `useMessageActions.ts`.
+
+### 2026-08-27 — T46/T46a Architecture Decomposition 🔄
+
+- Created branch `feat/t46-architecture-decomposition` from
+  `a15c47646e1141239b269c8f608331889b1b32df`.
+- Reduced `src/agent/ToolExecutor.ts` from 2,159 lines to 265 lines by moving
+  path lookup, note handlers, and the remaining capability handlers out.
+- Added `src/agent/ChatTurnCoordinator.ts` so native and OpenResponses turns
+  share one non-UI entry point.
+- Connected prompt and OpenResponses tool descriptions to the resolved tool
+  registry.
+- Verified 41 test files / 359 tests, TypeScript, production build, and focused
+  coordinator/hook tests.
+- Remaining: split the temporary handler grouping, finish the hook extraction,
+  then address `api.ts` and `main.ts`.
+
+### 2026-08-27 — T46/T46a Reconciliation 🔄
+
+- Kept the main-branch `TurnLifecycle`, `api.ts`, and `main.ts` decompositions.
+- Integrated the feature branch's domain-separated `ToolExecutor`, resolved
+  registry, and React-free `ChatTurnCoordinator` execution path.
+- Fresh verification and final merge status remain pending.
+
 ### 2026-08-27 — Architecture Modularity Review and Plan Recorded 🔄
 
 - Pulled remote Memory Bank updates through `85a5f4c` before reconciliation.
@@ -897,3 +948,12 @@ Implemented the first pass on the three architectural improvements from the T55 
 - No source code changed; implementation remains pending.
 
 ---
+### 2026-08-27 — T46a Turn Output Extraction 🔄
+
+- Added `src/agent/ChatTurnOutput.ts` for text, tool-call, tool-result, and
+  content-part collection outside the React hook.
+- Reduced `useMessageActions.ts` to 1,252 lines.
+- Added focused output-state tests; the full suite passes 43 test files and
+  362 tests.
+- TypeScript and the production build pass.
+- Next: review the remaining UI callback and approval lifecycle boundary.

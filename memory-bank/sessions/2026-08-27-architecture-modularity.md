@@ -43,3 +43,69 @@ modularity plan from the code review and file-size scan.
 - Complete T60a capability ownership/projection work.
 - Use T64b evidence before selecting the T62a elision policy.
 - Implement T46 and T46a as separate, testable refactoring slices.
+
+## Implementation Update — 2026-08-27 17:40 IST
+
+The approved implementation work continued on branch
+`feat/t46-architecture-decomposition`, based on
+`a15c47646e1141239b269c8f608331889b1b32df`.
+
+- Reduced `src/agent/ToolExecutor.ts` to 265 lines.
+- Created `src/agent/tools/ToolResolver.ts` for safe path and note lookup.
+- Created note and remaining-capability handler modules.
+- Created `src/agent/ChatTurnCoordinator.ts` for the shared native and
+  OpenResponses turn path.
+- Connected the prompt and OpenResponses projection to resolved definitions.
+- Added focused tests for the coordinator and resolved tool projections.
+- Full verification passed: 41 test files, 359 tests, TypeScript, production
+  build, and focused coordinator/hook tests.
+
+The remaining handler areas are still grouped temporarily. The hook remains
+responsible for request preparation, history, persistence, and approval state.
+The `api.ts` and `main.ts` phases have not started.
+
+## Capability Domain Split — 2026-08-27 17:52:10 IST
+
+- Replaced `src/agent/tools/ToolHandlers.ts` with separate handler modules for
+  note, bulk, discovery, vault, web, memory, session, and settings work.
+- Added `src/agent/tools/ToolHandlerContext.ts` for shared services.
+- Reduced `ToolExecutor.ts` to 292 lines.
+- Verified 49 focused tool/provider tests, 359 full-suite tests, TypeScript,
+  and the production build.
+- Next step: continue T46a by extracting request preparation and lifecycle
+  state from `useMessageActions.ts`.
+
+## Request Preparation Extraction — 2026-08-27 17:58:34 IST
+
+- Added `src/agent/ChatTurnRequest.ts` for prompt creation, bounded history,
+  request budgeting, attachment assembly, and model-message assembly.
+- Reduced `useMessageActions.ts` to 1,305 lines while leaving UI updates and
+  final persistence in the hook.
+- Verified 31 focused tests, 359 full-suite tests, TypeScript, and the
+  production build.
+- Next step: move turn callbacks and final message persistence behind the
+  coordinator.
+
+## Turn Persistence Extraction — 2026-08-27 18:04:06 IST
+
+- Added `src/agent/ChatTurnPersistence.ts` for completed assistant-message
+  creation and session-message updates.
+- Reduced `useMessageActions.ts` to 1,302 lines while leaving interruption
+  display, approval state, and runtime cleanup in the hook.
+- Added focused persistence tests. The full suite passed 42 test files and 360
+  tests; TypeScript and the production build also passed.
+- Next step: review whether the remaining UI callback and approval lifecycle
+  work can move without weakening the runtime boundary. `api.ts` and `main.ts`
+  remain later phases.
+
+## Turn Output Extraction — 2026-08-27 18:10:37 IST
+
+- Added `src/agent/ChatTurnOutput.ts` to collect text, tool calls, tool results,
+  and content parts without React or Obsidian services.
+- Reduced `useMessageActions.ts` to 1,252 lines while keeping visible streaming
+  updates, interruption display, and approval prompts in the hook.
+- Added focused output-state coverage. The full suite passed 43 test files and
+  362 tests; TypeScript and the production build also passed.
+- Next step: review whether the remaining UI callback and approval lifecycle
+  work can move without weakening the runtime boundary. `api.ts` and `main.ts`
+  remain later phases.

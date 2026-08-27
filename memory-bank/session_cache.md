@@ -1,6 +1,63 @@
 # Session Cache
 
-*Last Updated: 2026-08-27 13:21 IST*
+*Last Updated: 2026-08-27 18:10:37 IST*
+
+## 2026-08-27 T46a Turn Output
+
+- Added `src/agent/ChatTurnOutput.ts` for React-independent output collection.
+- The helper keeps text around tool calls, tool results, and content parts in
+  the same order as before.
+- `useMessageActions.ts` is now 1,252 lines; visible streaming and approval
+  state remain in the hook.
+- Full verification passed: 43 test files / 362 tests, TypeScript, and the
+  production build.
+- Next: review the remaining UI callback and approval lifecycle boundary.
+
+## 2026-08-27 T46a Turn Persistence
+
+- Added `src/agent/ChatTurnPersistence.ts` for completed assistant-message
+  creation and session-message updates.
+- `useMessageActions.ts` is now 1,302 lines; UI interruption display and
+  approval state remain in the hook.
+- Full verification passed: 42 test files / 360 tests, TypeScript, and the
+  production build.
+- Next: decide whether the remaining UI callback and approval lifecycle work
+  can move without weakening the runtime boundary; `api.ts` and `main.ts` are
+  later phases.
+
+## 2026-08-27 T46a Request Preparation
+
+- Added `src/agent/ChatTurnRequest.ts` for prompt creation, history projection,
+  request budgeting, attachment message assembly, and model-message assembly.
+- `useMessageActions.ts` is now 1,305 lines; it still owns UI callbacks and
+  persistence.
+- Focused tests: 31 passed. Full suite: 41 files / 359 tests passed.
+- TypeScript and production build passed.
+- Next: move turn callbacks and final message persistence behind the coordinator.
+
+## 2026-08-27 T46 Capability Domain Split
+
+- Replaced the temporary `ToolHandlers.ts` grouping with separate note, bulk,
+  discovery, vault, web, memory, session, and settings handler modules.
+- Added `ToolHandlerContext.ts` so all handlers share the same host services
+  and continuation store.
+- `ToolExecutor.ts` is now 292 lines and still uses one resolved registry.
+- Focused tool/provider checks: 49 tests passed. Full suite: 41 files / 359
+  tests passed. TypeScript and production build passed.
+- Next: extract request preparation and lifecycle work from `useMessageActions.ts`.
+
+## 2026-08-27 T46/T46a Implementation
+
+- Branch: `feat/t46-architecture-decomposition`
+- Base commit: `a15c47646e1141239b269c8f608331889b1b32df`
+- `ToolExecutor.ts` was reduced from 2,159 lines to 265 lines.
+- Added shared path resolution, note handlers, remaining capability handlers,
+  and a React-independent chat-turn coordinator.
+- The prompt and OpenResponses request use the resolved registry definitions.
+- Verification passed: 41 test files / 359 tests, TypeScript, production build,
+  and focused coordinator/hook tests.
+- Remaining: split `ToolHandlers.ts` by domain, finish T46a request-lifecycle
+  extraction, then address `api.ts` and `main.ts`.
 
 ## 2026-08-27 Architecture Modularity Review Plan
 
@@ -437,4 +494,3 @@ Session started after tool outage (~14:36–15:22 IST). Previous session had com
 *Session: 2026-08-27 ~20:30–21:00 IST*
 *Branch: `main` (2ec863c, 2fa1f85)*
 *Models: kimi/k3*
-
