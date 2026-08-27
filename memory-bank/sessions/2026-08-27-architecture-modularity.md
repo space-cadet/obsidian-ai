@@ -43,3 +43,23 @@ modularity plan from the code review and file-size scan.
 - Complete T60a capability ownership/projection work.
 - Use T64b evidence before selecting the T62a elision policy.
 - Implement T46 and T46a as separate, testable refactoring slices.
+
+## Implementation Update — 2026-08-27 17:40 IST
+
+The approved implementation work continued on branch
+`feat/t46-architecture-decomposition`, based on
+`a15c47646e1141239b269c8f608331889b1b32df`.
+
+- Reduced `src/agent/ToolExecutor.ts` to 265 lines.
+- Created `src/agent/tools/ToolResolver.ts` for safe path and note lookup.
+- Created note and remaining-capability handler modules.
+- Created `src/agent/ChatTurnCoordinator.ts` for the shared native and
+  OpenResponses turn path.
+- Connected the prompt and OpenResponses projection to resolved definitions.
+- Added focused tests for the coordinator and resolved tool projections.
+- Full verification passed: 41 test files, 359 tests, TypeScript, production
+  build, and focused coordinator/hook tests.
+
+The remaining handler areas are still grouped temporarily. The hook remains
+responsible for request preparation, history, persistence, and approval state.
+The `api.ts` and `main.ts` phases have not started.

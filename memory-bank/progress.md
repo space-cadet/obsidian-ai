@@ -1,3 +1,18 @@
+### 2026-08-27 — T46/T46a Architecture Decomposition 🔄
+
+- Created branch `feat/t46-architecture-decomposition` from
+  `a15c47646e1141239b269c8f608331889b1b32df`.
+- Reduced `src/agent/ToolExecutor.ts` from 2,159 lines to 265 lines by moving
+  path lookup, note handlers, and the remaining capability handlers out.
+- Added `src/agent/ChatTurnCoordinator.ts` so native and OpenResponses turns
+  share one non-UI entry point.
+- Connected prompt and OpenResponses tool descriptions to the resolved tool
+  registry.
+- Verified 41 test files / 359 tests, TypeScript, production build, and focused
+  coordinator/hook tests.
+- Remaining: split the temporary handler grouping, finish the hook extraction,
+  then address `api.ts` and `main.ts`.
+
 ### 2026-08-27 — Architecture Modularity Review and Plan Recorded 🔄
 
 - Pulled remote Memory Bank updates through `85a5f4c` before reconciliation.

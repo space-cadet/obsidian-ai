@@ -1,6 +1,25 @@
 # Active Context
 
-*Last Updated: 2026-08-27 13:21 IST*
+*Last Updated: 2026-08-27 17:40:00 IST*
+
+### 2026-08-27 — T46/T46a implementation branch
+
+Implementation is in progress on `feat/t46-architecture-decomposition`, based
+on `a15c47646e1141239b269c8f608331889b1b32df`.
+
+- `ToolExecutor.ts` is now 265 lines and delegates to the resolved registry.
+- `ToolResolver.ts` and note handlers own path lookup and note changes.
+- `ToolHandlers.ts` temporarily contains the remaining capability areas and is
+  the next physical split.
+- `ChatTurnCoordinator.ts` runs native and OpenResponses turns through one
+  React-independent entry point.
+- Prompt and OpenResponses tools use the same resolved definitions as
+  execution.
+- Verification: 41 test files, 359 tests, TypeScript, production build, and
+  focused coordinator/hook tests pass.
+
+The hook remains 1,350 lines and still owns request preparation, history,
+persistence, and approval state. `api.ts` and `main.ts` remain future phases.
 
 ### 2026-08-27 — T64b Experiment Run: Message Window Simulation
 

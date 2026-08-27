@@ -30,13 +30,13 @@ export interface ToolDefinition {
 	title: string;
 	description: string;
 	inputSchema: unknown;
-	/** The AI SDK projection retained for compatibility during T60a. */
+	/** The AI SDK projection used by the native model client. */
 	modelTool: Record<string, unknown>;
 	risk: HostToolRisk;
 	source: "builtin" | "provider";
 	providerId?: string;
 	availability?: (context: ToolResolutionContext) => ToolAvailability;
-	/** Execution remains in ToolExecutor until T60c moves it into the registry. */
+	/** The capability handler for this definition, when the tool is enabled. */
 	execute?: (
 		call: ToolCall,
 		context: ToolResolutionContext,
@@ -51,6 +51,19 @@ export interface ResolvedToolRegistry {
 	definitions: ToolDefinition[];
 	tools: Record<string, Record<string, unknown>>;
 	byId: ReadonlyMap<string, ToolDefinition>;
+}
+
+/**
+ * Return the short, human-readable tool list used in the system prompt.
+ * Keeping this next to the definitions prevents the prompt from drifting
+ * away from the tools that are actually available for this request.
+ */
+export function describeToolsForPrompt(
+	definitions: ReadonlyArray<Pick<ToolDefinition, "id" | "description">>,
+): string {
+	return definitions
+		.map(({ id, description }) => `- ${id}: ${description}`)
+		.join("\n");
 }
 
 const BUILTIN_RISKS: Record<string, HostToolRisk> = {
@@ -323,10 +336,9 @@ export function createBuiltInToolDefinitions(
 /**
  * Create built-in definitions with execute handlers bound.
  *
- * This is the integration point for T60a: ToolExecutor constructs the
- * registry and injects its own private methods as executors. Once the
- * registry is the sole source of truth, this factory moves into the
- * registry module and ToolExecutor becomes a thin facade.
+ * The host supplies the capability handlers. Keeping the definitions and the
+ * handlers together here makes the model-facing contract and execution path
+ * use the same resolved registry.
  */
 export function createBuiltInToolDefinitionsWithExecutors(
 	executors: Record<

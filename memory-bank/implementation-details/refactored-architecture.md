@@ -1,7 +1,7 @@
 # Refactored Architecture Guide
 
 *Created: 2026-05-29*
-*Last Updated: 2026-08-27 13:21 IST*
+*Last Updated: 2026-08-27 17:41:07 IST*
 *Applies to: obsidian-ai plugin codebase*
 
 ## Overview
@@ -58,7 +58,7 @@ src/
 ├── hooks/                         # React hooks
 │   ├── useChatSession.ts          # Session CRUD, persistence, auto-naming
 │   ├── useChatUI.ts               # UI state: modals, toggles, typing indicators
-│   ├── useMessageActions.ts       # Send, retry, edit, apply, tool approval (1,533 lines; T46a)
+│   ├── useMessageActions.ts       # Send, retry, edit, apply, tool approval (1,350 lines; T46a)
 │   ├── useSettings.ts             # Settings access
 │   └── __tests__/                 # Hook tests
 │       ├── useChatUI.test.ts      # 31 tests for UI state
@@ -74,11 +74,13 @@ src/
 │
 ├── agent/                         # Agentic logic
 │   ├── AgentLoop.ts               # Tool calling loop
-│   ├── ToolExecutor.ts            # Registry-backed tool execution facade (2,159 lines; T46)
+│   ├── ChatTurnCoordinator.ts     # Shared native/OpenResponses turn runner (T46a)
+│   ├── ToolExecutor.ts            # Registry-backed tool execution layer (265 lines; T46)
+│   ├── tools/                     # Resolved definitions, lookup, and handlers (T46)
 │   ├── tools.ts                   # Tool definitions (Zod schemas)
 │   └── MentionParser.ts           # @AgentName parsing
 │
-├── api.ts                         # LLM API abstraction (765 lines; T46)
+├── api.ts                         # LLM API abstraction (765 lines; later T46 phase)
 │
 ├── storage/                       # Persistence layer
 │   ├── ChatStorage.ts             # Interface + factory (ChatStorage, createStorage)
@@ -101,7 +103,7 @@ src/
 │       └── source.ts
 │
 ├── types.ts                       # Shared TypeScript types
-├── main.ts                        # Plugin entry point (1,785 lines; T46)
+├── main.ts                        # Plugin entry point (1,785 lines; later T46 phase)
 └── default_prompts.ts             # Default prompt templates
 ```
 
@@ -157,7 +159,7 @@ The section appends its DOM elements to `containerEl`. It does not return anythi
 - `src/hooks/useChatSession.ts` (317 lines): session state, persistence, CRUD
 - `src/hooks/useChatUI.ts` (329 lines): UI state, modals, toggles, participants,
   typing indicators, and attachments
-- `src/hooks/useMessageActions.ts` (1,533 lines): message action handlers and
+- `src/hooks/useMessageActions.ts` (1,350 lines): message action handlers and
   request lifecycle; T46a tracks extraction of the non-UI coordinator
 - `src/hooks/useSessionActions.ts`, `useSettingsActions.ts`,
   `useExportActions.ts`, `useSearch.ts`, and `useContextItems.ts`: extracted
@@ -220,14 +222,15 @@ import { buildContext } from "../lib/contextUtils";
 | React components | 500 lines | 700 | ChatApp.tsx: 1,029 ⚠️ |
 | Hooks | 400 lines | 600 | useMessageActions.ts: 1,533 ❌ |
 | Utilities | 150 lines | 200 | sessionTitle.ts: 137 ✅ |
-| Agent logic | 500 lines | 700 | ToolExecutor.ts: 2,159 ❌ |
+| Agent logic | 500 lines | 700 | ToolExecutor.ts: 265 ✅ |
 | API layer | 400 lines | 500 | api.ts: 765 ⚠️ |
 | Plugin entry | 400 lines | 500 | main.ts: 1,785 ❌ |
 
-**Note**: `ToolExecutor.ts` (2,159), `useMessageActions.ts` (1,533),
-`main.ts` (1,785), and `api.ts` (765) are the current decomposition
-candidates. `ChatApp.tsx` is large but already acts primarily as a composition
-layer. T46 tracks the physical work and T46a tracks the chat-turn coordinator.
+**Note**: `useMessageActions.ts` (1,350), `main.ts` (1,785), and `api.ts`
+(765) remain decomposition candidates. `ToolExecutor.ts` is now 265 lines,
+with its remaining handler domains tracked under T46. `ChatApp.tsx` is large
+but already acts primarily as a composition layer. T46 tracks the physical
+work and T46a tracks the chat-turn coordinator.
 
 ## Testing
 

@@ -1,6 +1,6 @@
 # Tool Capability Registry and Execution Pipeline
 *Created: 2026-08-25 12:52:36 IST*
-*Last Updated: 2026-08-27 13:21 IST*
+*Last Updated: 2026-08-27 17:41:07 IST*
 *Task: T60*
 
 ## Current Boundary
@@ -32,11 +32,12 @@ reduce complete definitions to raw AI SDK tools, serializers can be built from
 separate projections, and callers construct/resolve tool state in more than
 one place.
 
-The remaining implementation gate is ownership consolidation: provider
-metadata, availability context, AI SDK/OpenResponses projections, prompt and
-preview descriptors, and executor construction must derive from one resolved
-registry result. The existing `registry.byId.get('read_note').execute(call)`
-contract remains the execution behavior to preserve.
+The main tool-enabled chat path now keeps provider metadata and built-in
+handlers in one resolved registry result. The system prompt, native model
+tools, OpenResponses tools, and execution all use that result. Preview details
+and the remaining provider-registry construction still need consolidation.
+The existing `registry.byId.get('read_note').execute(call)` contract remains
+the execution behavior to preserve.
 
 ## Architecture Review Update — 2026-08-27
 

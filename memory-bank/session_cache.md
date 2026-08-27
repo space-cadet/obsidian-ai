@@ -1,6 +1,19 @@
 # Session Cache
 
-*Last Updated: 2026-08-27 13:21 IST*
+*Last Updated: 2026-08-27 17:40:00 IST*
+
+## 2026-08-27 T46/T46a Implementation
+
+- Branch: `feat/t46-architecture-decomposition`
+- Base commit: `a15c47646e1141239b269c8f608331889b1b32df`
+- `ToolExecutor.ts` was reduced from 2,159 lines to 265 lines.
+- Added shared path resolution, note handlers, remaining capability handlers,
+  and a React-independent chat-turn coordinator.
+- The prompt and OpenResponses request use the resolved registry definitions.
+- Verification passed: 41 test files / 359 tests, TypeScript, production build,
+  and focused coordinator/hook tests.
+- Remaining: split `ToolHandlers.ts` by domain, finish T46a request-lifecycle
+  extraction, then address `api.ts` and `main.ts`.
 
 ## 2026-08-27 Architecture Modularity Review Plan
 
@@ -437,4 +450,3 @@ Session started after tool outage (~14:36–15:22 IST). Previous session had com
 *Session: 2026-08-27 ~20:30–21:00 IST*
 *Branch: `main` (2ec863c, 2fa1f85)*
 *Models: kimi/k3*
-

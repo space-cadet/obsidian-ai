@@ -4,6 +4,7 @@
 import { asSchema } from "ai";
 
 import type { OpenResponsesTool } from "../../api/AgentApiManager";
+import type { ResolvedToolRegistry, ToolDefinition } from "../toolRegistry";
 
 interface AiSdkTool {
 	description?: string;
@@ -64,6 +65,19 @@ export function toolsToOpenResponses(
 	tools: Array<OpenResponsesToolDefinition | LegacyTool>,
 ): OpenResponsesTool[] {
 	return tools.map(toolToOpenResponses);
+}
+
+/** Convert resolved capability definitions without dropping provider metadata. */
+export function resolvedToolsToOpenResponses(
+	registry: Pick<ResolvedToolRegistry, "definitions">,
+): OpenResponsesTool[] {
+	return registry.definitions.map((definition: ToolDefinition) =>
+		toolToOpenResponses({
+			id: definition.id,
+			description: definition.description,
+			inputSchema: definition.inputSchema,
+		}),
+	);
 }
 
 /**

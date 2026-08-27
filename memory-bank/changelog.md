@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased - 2026-08-27
+
+### Changed
+- Started the T46/T46a architecture decomposition on
+  `feat/t46-architecture-decomposition`: reduced `ToolExecutor.ts` to a
+  265-line registry and validation layer, extracted note/path capabilities,
+  and added a shared chat-turn coordinator.
+- Prompt and OpenResponses tool descriptions now come from the resolved tool
+  definitions used for execution.
+
+### Tests
+- Verified 41 test files / 359 tests, TypeScript, and the production build.
+
 ## Unreleased - 2026-08-23
 
 ### Changed

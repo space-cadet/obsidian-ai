@@ -87,6 +87,11 @@ vi.mock("../../agent/ToolExecutor", () => ({
 		mockToolExecutorConstructor(...args);
 		return {
 			execute: vi.fn().mockResolvedValue({ success: true }),
+			getResolvedToolRegistry: vi.fn(() => ({
+				definitions: [],
+				tools: {},
+				byId: new Map(),
+			})),
 		};
 	}),
 }));
@@ -109,6 +114,7 @@ vi.mock("../agent/OpenResponsesLoop", () => ({
 
 vi.mock("../agent/tools/toOpenResponses", () => ({
 	noteToolsToOpenResponses: vi.fn(() => []),
+	resolvedToolsToOpenResponses: vi.fn(() => []),
 }));
 
 vi.mock("../components/MessageBubble", () => ({
