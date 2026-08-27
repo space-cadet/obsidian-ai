@@ -412,14 +412,29 @@ Session started after tool outage (~14:36–15:22 IST). Previous session had com
 
 ---
 
-## 2026-08-22 Documentation Audit
+## 2026-08-27 Evening: T64b Message Window Experiments + Blog Post
 
-Updated the remote-storage records after comparing the Memory Bank with the current code.
+- **T64b: Message Window Simulation — COMPLETE**
+  - Added `maxContextMessages` simulation to harness
+  - Created real fixture from grammar migration session JSON (26 messages, 13 turns)
+  - Test matrix: caps [unlimited, 10, 25, 50] × modes [elide, preserve] × toolTok [4000, 64000]
+  - **Key result: `maxContextMessages: 10` cuts token exposure by 42%**
+  - Cap 25 is practically unlimited for this fixture
+  - `maxToolResultTokens` difference (64000 vs 4000) is only ~10% at cap=10
+  - Elide mode is 92% cheaper but breaks agent workflows
+  - Data supports auto-preserve for agent mode (T62a)
+  
+- **Documentation — COMPLETE**
+  - `context-optimization-results.md`: Full methodology, results, implications
+  - `sessions/2026-08-27-evening.md`: Session log
+  - Updated T64.md, T64b.md, activeContext.md
+  
+- **Blog Post — PUBLISHED**
+  - "The Simplest Trick to Cut Your AI Token Bill in Half"
+  - Deployed to quantumofgravity.com/cloudy-blog/
+  - Indexed in blog list
 
-- T42 now clearly says the WebDAV baseline is merged but the full sync scope remains open.
-- T42a–T42e now show which parts are implemented and which safety checks remain.
-- T58c now records the later T55 changes instead of presenting its older notes as current.
-- T55 and the sync design docs now state that auxiliary plugin files do not yet share the session encryption and recovery protections.
-- Retry limits and cache invalidation remain open limits; per-file conflict,
-  recovery, and deletion handling are now covered by T57b.
-- No sync code was changed.
+*Session: 2026-08-27 ~20:30–21:00 IST*
+*Branch: `main` (2ec863c, 2fa1f85)*
+*Models: kimi/k3*
+
