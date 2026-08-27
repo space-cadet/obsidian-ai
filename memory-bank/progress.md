@@ -1,3 +1,17 @@
+### 2026-08-27 — T46a: Chat Turn Coordinator Extracted ✅
+
+- Extracted `TurnLifecycle` class from `useMessageActions.ts` into new
+  `src/agent/turnLifecycle.ts` (~1,400 lines)
+- `useMessageActions.ts` slimmed to ~130-line thin wrapper hook delegating
+  all lifecycle actions to `TurnLifecycle` via refs
+- TurnLifecycle is framework-agnostic — plain class with deps getter,
+  testable without React
+- Note actions (append, insert, apply, create) remain in hook
+- Fixed test mock: added `saveSettings: vi.fn()` to mockPlugin for
+  `approveTool` test
+- Commit: `bde9fea`
+- Tests: 355/356 passing (1 pre-existing tools.test.ts failure)
+
 ### 2026-08-27 — Architecture Modularity Review and Plan Recorded 🔄
 
 - Pulled remote Memory Bank updates through `85a5f4c` before reconciliation.
