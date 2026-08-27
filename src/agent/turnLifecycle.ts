@@ -688,7 +688,7 @@ export class TurnLifecycle {
 			| undefined;
 
 		try {
-			if (useTools && !slashCmd) {
+			if (isAgentProvider || (useTools && !slashCmd)) {
 				const result = await runChatTurn({
 					app: deps.plugin.app,
 					profile: activeProfile,
