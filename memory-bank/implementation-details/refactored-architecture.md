@@ -1,7 +1,7 @@
 # Refactored Architecture Guide
 
 *Created: 2026-05-29*
-*Last Updated: 2026-08-27 17:41:07 IST*
+*Last Updated: 2026-08-27 17:53:12 IST*
 *Applies to: obsidian-ai plugin codebase*
 
 ## Overview
@@ -77,6 +77,8 @@ src/
 │   ├── ChatTurnCoordinator.ts     # Shared native/OpenResponses turn runner (T46a)
 │   ├── ToolExecutor.ts            # Registry-backed tool execution layer (265 lines; T46)
 │   ├── tools/                     # Resolved definitions, lookup, and handlers (T46)
+│   │   ├── ToolHandlerContext.ts   # Shared services for capability handlers
+│   │   └── handlers/               # Note, bulk, discovery, vault, web, memory, session, settings
 │   ├── tools.ts                   # Tool definitions (Zod schemas)
 │   └── MentionParser.ts           # @AgentName parsing
 │

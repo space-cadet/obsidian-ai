@@ -1,6 +1,18 @@
 # Active Context
 
-*Last Updated: 2026-08-27 17:40:00 IST*
+*Last Updated: 2026-08-27 17:53:12 IST*
+
+### 2026-08-27 — T46 capability domains split
+
+The next T46 slice is complete on `feat/t46-architecture-decomposition`.
+The temporary `ToolHandlers.ts` grouping has been replaced with separate
+modules for note, bulk, discovery, vault, web, memory, session, and settings
+work. `ToolHandlerContext.ts` supplies the shared Obsidian services.
+
+`ToolExecutor.ts` is now 292 lines. Focused tool/provider tests, the full
+359-test suite, TypeScript, and the production build all pass. The next step is
+the T46a request-lifecycle extraction; `api.ts` and `main.ts` remain later
+phases.
 
 ### 2026-08-27 — T46/T46a implementation branch
 

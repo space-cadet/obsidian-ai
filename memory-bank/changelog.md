@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
   and added a shared chat-turn coordinator.
 - Prompt and OpenResponses tool descriptions now come from the resolved tool
   definitions used for execution.
+- Split the remaining capability handlers into separate domain modules and
+  added a shared handler context.
 
 ### Tests
 - Verified 41 test files / 359 tests, TypeScript, and the production build.

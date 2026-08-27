@@ -1,6 +1,17 @@
 # Session Cache
 
-*Last Updated: 2026-08-27 17:40:00 IST*
+*Last Updated: 2026-08-27 17:53:12 IST*
+
+## 2026-08-27 T46 Capability Domain Split
+
+- Replaced the temporary `ToolHandlers.ts` grouping with separate note, bulk,
+  discovery, vault, web, memory, session, and settings handler modules.
+- Added `ToolHandlerContext.ts` so all handlers share the same host services
+  and continuation store.
+- `ToolExecutor.ts` is now 292 lines and still uses one resolved registry.
+- Focused tool/provider checks: 49 tests passed. Full suite: 41 files / 359
+  tests passed. TypeScript and production build passed.
+- Next: extract request preparation and lifecycle work from `useMessageActions.ts`.
 
 ## 2026-08-27 T46/T46a Implementation
 

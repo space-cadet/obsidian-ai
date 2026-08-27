@@ -1,6 +1,6 @@
 # Orchestration Decomposition Design
 *Created: 2026-08-17 06:07 IST*
-*Last Updated: 2026-08-27 17:30 IST*
+*Last Updated: 2026-08-27 17:53:12 IST*
 *Applies to: obsidian-ai plugin codebase — T46*
 
 ## Overview
@@ -113,16 +113,16 @@ The first implementation slice follows the design above:
   validation, and compatibility dispatch together.
 - `tools/ToolResolver.ts` owns path and note lookup rules.
 - `tools/handlers/noteHandlers.ts` owns note content changes.
-- `tools/ToolHandlers.ts` owns the remaining host capabilities for now. This is
-  a temporary grouping; discovery, vault, web, memory, session, and settings
-  handlers still need their own files.
+- `tools/handlers/` now separates note, bulk, discovery, vault, web, memory,
+  session, and settings capabilities. `ToolHandlerContext.ts` gives them the
+  same host services and continuation store.
 - `ChatTurnCoordinator.ts` provides one React-free entry point for native and
   OpenResponses turns.
 - Prompt text and OpenResponses tools are built from the resolved definitions.
 
-The local test suite, TypeScript check, and production build passed after this
-slice. The remaining work is intentionally open: split the remaining handler
-domains, move request and history preparation out of the hook, then revisit
+The focused tool/provider tests, full test suite, TypeScript check, and
+production build passed after this slice. The remaining work is intentionally
+open: move request and history preparation out of the hook, then revisit
 `api.ts` and `main.ts`.
 
 ## Phase 1a: Chat Turn Coordinator (T46a)

@@ -1,3 +1,14 @@
+### 2026-08-27 — T46 Capability Domain Split 🔄
+
+- Replaced the temporary `ToolHandlers.ts` grouping with separate handlers for
+  note, bulk, discovery, vault, web, memory, session, and settings work.
+- Added `ToolHandlerContext.ts` for shared host services and continuation state.
+- `ToolExecutor.ts` is now 292 lines.
+- Verified 49 focused tool/provider tests, 359 full-suite tests, TypeScript, and
+  the production build.
+- Next: continue T46a by moving request preparation and lifecycle state out of
+  `useMessageActions.ts`.
+
 ### 2026-08-27 — T46/T46a Architecture Decomposition 🔄
 
 - Created branch `feat/t46-architecture-decomposition` from

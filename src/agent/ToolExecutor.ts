@@ -10,17 +10,30 @@ import {
 	validateToolArguments,
 } from "./toolRegistry";
 import type { ResolvedToolRegistry, ToolDefinition } from "./toolRegistry";
-import { ContinuationStore, requestFingerprint } from "./pagination";
+import { ContinuationStore } from "./pagination";
 import { ToolResolver } from "./tools/ToolResolver";
 import { NoteHandlers } from "./tools/handlers/noteHandlers";
-import { ToolHandlers } from "./tools/ToolHandlers";
+import { BulkHandlers } from "./tools/handlers/bulkHandlers";
+import { DiscoveryHandlers } from "./tools/handlers/discoveryHandlers";
+import { MemoryHandlers } from "./tools/handlers/memoryHandlers";
+import { SessionHandlers } from "./tools/handlers/sessionHandlers";
+import { SettingsHandlers } from "./tools/handlers/settingsHandlers";
+import { VaultHandlers } from "./tools/handlers/vaultHandlers";
+import { WebHandlers } from "./tools/handlers/webHandlers";
+import { type ToolHandlerContext } from "./tools/ToolHandlerContext";
 
 export class ToolExecutor {
 	private builtInRegistry: ResolvedToolRegistry;
 	private readonly continuations = new ContinuationStore();
 	private readonly resolver: ToolResolver;
 	private readonly noteHandlers: NoteHandlers;
-	private readonly handlers: ToolHandlers;
+	private readonly bulkHandlers: BulkHandlers;
+	private readonly discoveryHandlers: DiscoveryHandlers;
+	private readonly memoryHandlers: MemoryHandlers;
+	private readonly sessionHandlers: SessionHandlers;
+	private readonly settingsHandlers: SettingsHandlers;
+	private readonly vaultHandlers: VaultHandlers;
+	private readonly webHandlers: WebHandlers;
 
 	constructor(
 		app: App,
@@ -32,18 +45,25 @@ export class ToolExecutor {
 		saveSettings?: () => Promise<void>,
 	) {
 		this.resolver = new ToolResolver(app);
-		this.noteHandlers = new NoteHandlers(app, this.resolver);
-		this.handlers = new ToolHandlers(
+		const context: ToolHandlerContext = {
 			app,
-			this.resolver,
+			resolver: this.resolver,
 			settings,
 			personaLoader,
 			searchIndex,
 			getActiveSessionId,
 			integrationRegistry,
 			saveSettings,
-			this.continuations,
-		);
+			continuations: this.continuations,
+		};
+		this.noteHandlers = new NoteHandlers(context);
+		this.bulkHandlers = new BulkHandlers(context);
+		this.discoveryHandlers = new DiscoveryHandlers(context);
+		this.memoryHandlers = new MemoryHandlers(context);
+		this.sessionHandlers = new SessionHandlers(context);
+		this.settingsHandlers = new SettingsHandlers(context);
+		this.vaultHandlers = new VaultHandlers(context);
+		this.webHandlers = new WebHandlers(context);
 		// Build the same descriptor registry used to expose tools to the model.
 		// Built-in and provider execution both pass through this map.
 		const builtInDefinitions = createBuiltInToolDefinitionsWithExecutors({
@@ -62,7 +82,7 @@ export class ToolExecutor {
 					call.args as { path: string; content: string },
 				),
 			create_notes: (call) =>
-				this.noteHandlers.createNotes(
+				this.bulkHandlers.createNotes(
 					call.args as {
 						notes: Array<{ path: string; content: string }>;
 					},
@@ -85,7 +105,7 @@ export class ToolExecutor {
 					},
 				),
 			search_notes: (call) =>
-				this.handlers.searchNotes(
+				this.discoveryHandlers.searchNotes(
 					call.args as {
 						query: string;
 						sort_by?: string;
@@ -95,7 +115,7 @@ export class ToolExecutor {
 					},
 				),
 			search_note_content: (call) =>
-				this.handlers.searchNoteContent(
+				this.discoveryHandlers.searchNoteContent(
 					call.args as {
 						query: string;
 						folder?: string;
@@ -109,7 +129,7 @@ export class ToolExecutor {
 					},
 				),
 			list_notes: (call) =>
-				this.handlers.listNotes(
+				this.discoveryHandlers.listNotes(
 					call.args as {
 						folder?: string;
 						sort_by?: string;
@@ -120,15 +140,21 @@ export class ToolExecutor {
 					},
 				),
 			count_notes: (call) =>
-				this.handlers.countNotes(call.args as { folder?: string }),
+				this.discoveryHandlers.countNotes(
+					call.args as { folder?: string },
+				),
 			get_note_metadata: (call) =>
-				this.handlers.getNoteMetadata(call.args as { path: string }),
+				this.discoveryHandlers.getNoteMetadata(
+					call.args as { path: string },
+				),
 			list_folders: (call) =>
-				this.handlers.listFolders(call.args as { path?: string }),
+				this.vaultHandlers.listFolders(call.args as { path?: string }),
 			check_paths: (call) =>
-				this.handlers.checkPaths(call.args as { paths: string[] }),
+				this.discoveryHandlers.checkPaths(
+					call.args as { paths: string[] },
+				),
 			search_web: (call) =>
-				this.handlers.searchWeb(
+				this.webHandlers.searchWeb(
 					call.args as {
 						query: string;
 						limit?: number;
@@ -136,7 +162,7 @@ export class ToolExecutor {
 					},
 				),
 			read_pdf: (call) =>
-				this.handlers.readPdf(
+				this.webHandlers.readPdf(
 					call.args as {
 						source: string;
 						max_pages?: number;
@@ -144,7 +170,7 @@ export class ToolExecutor {
 					},
 				),
 			create_memory: (call) =>
-				this.handlers.createMemory(
+				this.memoryHandlers.createMemory(
 					call.args as {
 						category: string;
 						content: string;
@@ -152,7 +178,7 @@ export class ToolExecutor {
 					},
 				),
 			update_memory: (call) =>
-				this.handlers.updateMemory(
+				this.memoryHandlers.updateMemory(
 					call.args as {
 						id: string;
 						category?: string;
@@ -161,9 +187,9 @@ export class ToolExecutor {
 					},
 				),
 			delete_memory: (call) =>
-				this.handlers.deleteMemory(call.args as { id: string }),
+				this.memoryHandlers.deleteMemory(call.args as { id: string }),
 			list_memories: (call) =>
-				this.handlers.listMemories(
+				this.memoryHandlers.listMemories(
 					call.args as {
 						category?: string;
 						tag?: string;
@@ -172,7 +198,7 @@ export class ToolExecutor {
 					},
 				),
 			search_memories: (call) =>
-				this.handlers.searchMemories(
+				this.memoryHandlers.searchMemories(
 					call.args as {
 						query: string;
 						limit?: number;
@@ -180,11 +206,11 @@ export class ToolExecutor {
 					},
 				),
 			read_memory_audit: (call) =>
-				this.handlers.readMemoryAudit(
+				this.memoryHandlers.readMemoryAudit(
 					call.args as { limit?: number; cursor?: string },
 				),
 			search_past_sessions: (call) =>
-				this.handlers.searchPastSessions(
+				this.sessionHandlers.searchPastSessions(
 					call.args as {
 						query: string;
 						limit?: number;
@@ -192,16 +218,16 @@ export class ToolExecutor {
 					},
 				),
 			create_folder: (call) =>
-				this.handlers.createFolder(call.args as { path: string }),
+				this.vaultHandlers.createFolder(call.args as { path: string }),
 			move_note: (call) =>
-				this.handlers.moveNote(
+				this.vaultHandlers.moveNote(
 					call.args as { path: string; new_path: string },
 				),
 			delete_note: (call) =>
-				this.handlers.deleteNote(call.args as { path: string }),
-			read_settings: (call) => this.handlers.readSettings(),
+				this.vaultHandlers.deleteNote(call.args as { path: string }),
+			read_settings: (call) => this.settingsHandlers.readSettings(),
 			update_setting: (call) =>
-				this.handlers.updateSetting(
+				this.settingsHandlers.updateSetting(
 					call.args as { key: string; value: unknown },
 				),
 		});

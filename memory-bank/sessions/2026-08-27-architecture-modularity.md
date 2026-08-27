@@ -63,3 +63,14 @@ The approved implementation work continued on branch
 The remaining handler areas are still grouped temporarily. The hook remains
 responsible for request preparation, history, persistence, and approval state.
 The `api.ts` and `main.ts` phases have not started.
+
+## Capability Domain Split — 2026-08-27 17:52:10 IST
+
+- Replaced `src/agent/tools/ToolHandlers.ts` with separate handler modules for
+  note, bulk, discovery, vault, web, memory, session, and settings work.
+- Added `src/agent/tools/ToolHandlerContext.ts` for shared services.
+- Reduced `ToolExecutor.ts` to 292 lines.
+- Verified 49 focused tool/provider tests, 359 full-suite tests, TypeScript,
+  and the production build.
+- Next step: continue T46a by extracting request preparation and lifecycle
+  state from `useMessageActions.ts`.
