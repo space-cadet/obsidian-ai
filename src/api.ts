@@ -1,26 +1,24 @@
-// api.ts
-import { generateText, streamText, isStepCount } from "ai";
-import type { LanguageModelV4 } from "@ai-sdk/provider";
-
+import { generateText, streamText } from "ai";
 import type { StreamEvent } from "./agent/types";
-import { createOpenAI } from "@ai-sdk/openai";
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createDeepSeek } from "@ai-sdk/deepseek";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import {
 	getActiveProviderProfile,
-	getDefaultEndpoint,
 	ObsidianAISettings,
 	ProviderProfile,
-	ProviderType,
 } from "./settings";
-import { App, MarkdownView, Notice, requestUrl } from "obsidian";
+import { App, MarkdownView, Notice } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import { setGeneratedResponseEffect } from "./modules/AIExtension";
 import { parseCommand } from "./modules/commands/parser";
-import { MessageQueue } from "./modules/messageHistory/queue";
+import { MessageQueue, HistoryMessage } from "./api/history";
 import type { ProviderTokenUsage } from "./types";
+import {
+	createLanguageModel,
+	validateProfile,
+	fetchProviderModels,
+	normalizeProviderUsage,
+	getThinkingProviderOptions,
+} from "./api/providers";
+import { streamChatWithTools as _streamChatWithTools } from "./api/streaming";
 
 /**
  * Content part for multimodal messages — text, image, or file.
@@ -39,324 +37,11 @@ export type SdkMessage =
 	| { role: "user"; content: string | MessageContentPart[] }
 	| { role: "assistant"; content: string | MessageContentPart[] };
 
-export type HistoryMessage = {
-	mode: string;
-	userPrompt: string;
-};
-
-function normalizeProviderUsage(usage: {
-	inputTokens?: number;
-	outputTokens?: number;
-	totalTokens?: number;
-	inputTokenDetails?: { cacheReadTokens?: number };
-	outputTokenDetails?: { reasoningTokens?: number };
-}): ProviderTokenUsage {
-	return {
-		inputTokens: usage.inputTokens,
-		outputTokens: usage.outputTokens,
-		totalTokens: usage.totalTokens,
-		cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens,
-		reasoningTokens: usage.outputTokenDetails?.reasoningTokens,
-	};
-}
-
 /**
  * Maps a provider type to its required credential fields.
  * Returns an error message string if validation fails, or null if valid.
  */
-export function validateProfile(profile: ProviderProfile): string | null {
-	switch (profile.provider) {
-		case "openai":
-			return profile.apiKey ? null : "OpenAI API key is required.";
-		case "anthropic":
-			return profile.apiKey ? null : "Anthropic API key is required.";
-		case "deepseek":
-			return profile.apiKey ? null : "DeepSeek API key is required.";
-		case "kimi":
-			return profile.apiKey ? null : "Kimi API key is required.";
-		case "gemini":
-			return profile.apiKey ? null : "Gemini API key is required.";
-		case "openrouter":
-			return profile.apiKey ? null : "OpenRouter API key is required.";
-		case "azure":
-			if (!profile.apiKey || !profile.azureEndpoint) {
-				return "API key and Azure endpoint are required.";
-			}
-			return null;
-		case "custom":
-			if (!profile.apiKey || !profile.customURL) {
-				return "API key and custom base URL are required.";
-			}
-			return null;
-		case "ollama":
-			return null;
-		default:
-			return `Unsupported provider: ${profile.provider}`;
-	}
-}
-
-/**
- * Creates a Vercel AI SDK language model from a provider profile.
- */
-function getThinkingProviderOptions(
-	profile: ProviderProfile,
-	thinkingEnabled?: boolean,
-): Record<string, any> | undefined {
-	if (!thinkingEnabled) return undefined;
-	switch (profile.provider) {
-		case "deepseek":
-			return { deepseek: { reasoningEffort: "medium" } };
-		case "openai":
-			// Only reasoning models (o1, o3, etc.) support reasoningEffort
-			if (profile.model?.startsWith("o")) {
-				return { openai: { reasoningEffort: "medium" } };
-			}
-			return undefined;
-		case "anthropic":
-			// Claude 3.7 Sonnet supports extended thinking via providerOptions
-			if (profile.model?.includes("claude-3-7")) {
-				return {
-					anthropic: {
-						thinking: { type: "enabled", budgetTokens: 12000 },
-					},
-				};
-			}
-			return undefined;
-		default:
-			return undefined;
-	}
-}
-
-function createLanguageModel(profile: ProviderProfile): LanguageModelV4 | null {
-	const error = validateProfile(profile);
-	if (error) {
-		new Notice(`⚠️ ${error} Please check your settings.`);
-		return null;
-	}
-
-	try {
-		switch (profile.provider) {
-			case "openai": {
-				const provider = createOpenAI({
-					apiKey: profile.apiKey,
-					baseURL:
-						profile.customURL?.trim() ||
-						getDefaultEndpoint("openai"),
-				});
-				return provider.chat(profile.model);
-			}
-
-			case "anthropic": {
-				const provider = createAnthropic({
-					apiKey: profile.apiKey,
-					baseURL:
-						profile.customURL?.trim() ||
-						getDefaultEndpoint("anthropic"),
-				});
-				return provider.chat(profile.model);
-			}
-
-			case "gemini": {
-				const provider = createGoogleGenerativeAI({
-					apiKey: profile.apiKey,
-					baseURL:
-						profile.customURL?.trim() ||
-						getDefaultEndpoint("gemini"),
-				});
-				return provider(profile.model);
-			}
-
-			case "deepseek": {
-				const provider = createDeepSeek({
-					apiKey: profile.apiKey,
-					baseURL:
-						profile.customURL?.trim() ||
-						getDefaultEndpoint("deepseek"),
-				});
-				return provider.chat(profile.model);
-			}
-
-			case "ollama": {
-				const provider = createOpenAI({
-					baseURL:
-						profile.customURL?.trim() ||
-						getDefaultEndpoint("ollama"),
-				});
-				return provider.chat(profile.model);
-			}
-
-			case "openrouter": {
-				const provider = createOpenRouter({
-					apiKey: profile.apiKey,
-					baseURL:
-						profile.customURL?.trim() ||
-						getDefaultEndpoint("openrouter"),
-				});
-				return provider.chat(profile.model);
-			}
-
-			case "kimi": {
-				const provider = createOpenAI({
-					apiKey: profile.apiKey,
-					baseURL:
-						profile.customURL?.trim() || getDefaultEndpoint("kimi"),
-				});
-				return provider.chat(profile.model);
-			}
-
-			case "custom": {
-				const provider = createOpenAI({
-					apiKey: profile.apiKey,
-					baseURL: profile.customURL!.trim(),
-				});
-				return provider.chat(profile.model);
-			}
-
-			case "azure": {
-				const provider = createOpenAI({
-					apiKey: profile.apiKey,
-					baseURL: profile.azureEndpoint!.trim(),
-				});
-				return provider.chat(profile.model);
-			}
-
-			default:
-				new Notice(
-					`⚠️ Unsupported provider: ${(profile as ProviderProfile).provider}`,
-				);
-				return null;
-		}
-	} catch (error: any) {
-		console.error("Error creating language model:", error);
-		new Notice(`❌ Error creating language model: ${error.message}`);
-		return null;
-	}
-}
-
-/**
- * Fetches available models from the provider's API.
- * Returns a list of model IDs or an empty array on error.
- */
-async function fetchProviderModels(
-	profile: ProviderProfile,
-): Promise<string[]> {
-	const requestJson = async (
-		url: string,
-		headers?: Record<string, string>,
-	): Promise<any> => {
-		const response = await requestUrl({ url, method: "GET", headers });
-		return JSON.parse(response.text);
-	};
-	try {
-		switch (profile.provider) {
-			case "openai": {
-				const baseURL =
-					profile.customURL?.trim() || getDefaultEndpoint("openai");
-				const data = await requestJson(`${baseURL}/models`, {
-					Authorization: `Bearer ${profile.apiKey}`,
-				});
-				return (data.data ?? [])
-					.map((m: any) => m.id)
-					.filter((id: string) => id.includes("gpt"));
-			}
-
-			case "anthropic": {
-				// Anthropic has no public models API; return known models.
-				return [
-					"claude-3-5-sonnet-latest",
-					"claude-3-5-sonnet-20241022",
-					"claude-3-5-haiku-latest",
-					"claude-3-5-haiku-20241022",
-					"claude-3-opus-latest",
-					"claude-3-opus-20240229",
-					"claude-3-sonnet-20240229",
-					"claude-3-haiku-20240307",
-				];
-			}
-
-			case "gemini": {
-				const baseURL =
-					profile.customURL?.trim() || getDefaultEndpoint("gemini");
-				const data = await requestJson(
-					`${baseURL}/models?key=${profile.apiKey}`,
-				);
-				return (data.models ?? [])
-					.map((m: any) => m.name.replace("models/", ""))
-					.filter((id: string) => id.startsWith("gemini"));
-			}
-
-			case "deepseek": {
-				const baseURL =
-					profile.customURL?.trim() || getDefaultEndpoint("deepseek");
-				const data = await requestJson(`${baseURL}/models`, {
-					Authorization: `Bearer ${profile.apiKey}`,
-				});
-				return (data.data ?? []).map((m: any) => m.id);
-			}
-
-			case "openrouter": {
-				const baseURL =
-					profile.customURL?.trim() ||
-					getDefaultEndpoint("openrouter");
-				const data = await requestJson(`${baseURL}/models`);
-				return (data.data ?? []).map((m: any) => m.id);
-			}
-
-			case "kimi": {
-				const baseURL =
-					profile.customURL?.trim() || getDefaultEndpoint("kimi");
-				const data = await requestJson(`${baseURL}/models`, {
-					Authorization: `Bearer ${profile.apiKey}`,
-				});
-				return (data.data ?? [])
-					.map((m: any) => m.id)
-					.filter((id: string) => id.includes("kimi"));
-			}
-
-			case "ollama": {
-				const baseURL =
-					profile.customURL?.trim() || getDefaultEndpoint("ollama");
-				const data = await requestJson(
-					`${baseURL.replace("/v1", "")}/api/tags`,
-				);
-				return (data.models ?? []).map((m: any) => m.name);
-			}
-
-			case "custom": {
-				const baseURL = profile.customURL!.trim();
-				const data = await requestJson(`${baseURL}/models`, {
-					Authorization: `Bearer ${profile.apiKey}`,
-				});
-				return (data.data ?? []).map((m: any) => m.id);
-			}
-
-			case "azure": {
-				// Azure OpenAI: list deployments via management API or fallback
-				const endpoint = profile.azureEndpoint!.trim();
-				const instanceMatch = endpoint.match(
-					/https:\/\/([^.]+)\.(?:openai|cognitiveservices)\.azure\.com/,
-				);
-				if (!instanceMatch) {
-					throw new Error(
-						"Could not parse Azure instance name from endpoint.",
-					);
-				}
-				const instance = instanceMatch[1];
-				const data = await requestJson(
-					`https://${instance}.openai.azure.com/openai/deployments?api-version=2023-03-15-preview`,
-					{ "api-key": profile.apiKey! },
-				);
-				return (data.data ?? []).map((m: any) => m.id || m.model);
-			}
-
-			default:
-				return [];
-		}
-	} catch (error: any) {
-		console.error("Error fetching models:", error);
-		throw error;
-	}
-}
+export { validateProfile };
 
 /**
  * Class to manage interactions with different chat APIs.
@@ -494,100 +179,13 @@ export class ChatApiManager {
 		profile?: ProviderProfile,
 		thinkingEnabled?: boolean,
 	): AsyncIterable<StreamEvent> {
-		const activeProfile =
-			profile ?? getActiveProviderProfile(this.settings);
-		const model = createLanguageModel(activeProfile);
-		if (!model) {
-			throw new Error("Chat client is not initialized.");
-		}
-
-		// Extract system messages — SDK 7.x requires them as a separate parameter
-		const systemParts: string[] = [];
-		const chatMessages: SdkMessage[] = [];
-		for (const m of messages) {
-			if (m.role === "system") {
-				systemParts.push(
-					typeof m.content === "string"
-						? m.content
-						: m.content
-								.map((c) => ("text" in c ? c.text : ""))
-								.join(""),
-				);
-			} else {
-				chatMessages.push(m);
-			}
-		}
-		const system =
-			systemParts.length > 0 ? systemParts.join("\n\n") : undefined;
-
-		// ── Gemini-specific: disable structured outputs to avoid thought_signature errors ──
-		const providerOptions = {
-			...getThinkingProviderOptions(activeProfile, thinkingEnabled),
-			// Gemini requires special handling for tool calls
-			...(activeProfile.provider === "gemini"
-				? {
-						google: { structuredOutputs: false },
-					}
-				: {}),
-		};
-
-		const result = streamText({
-			model,
-			system,
-			messages: chatMessages as any,
+		yield* _streamChatWithTools(
+			messages,
 			tools,
-			stopWhen: isStepCount(1),
-			abortSignal: signal,
-			providerOptions,
-		});
-
-		for await (const part of result.stream) {
-			switch (part.type) {
-				case "reasoning-delta":
-					yield { type: "reasoning-delta", text: part.text };
-					break;
-				case "text-delta":
-					yield { type: "text-delta", text: part.text };
-					break;
-				case "tool-call":
-					yield {
-						type: "tool-call",
-						call: {
-							toolCallId: part.toolCallId,
-							toolName: part.toolName,
-							args: part.input as Record<string, unknown>,
-							providerMetadata: part.providerMetadata as
-								| Record<string, unknown>
-								| undefined,
-						},
-					};
-					break;
-				case "tool-result":
-					yield {
-						type: "tool-result",
-						callId: part.toolCallId,
-						result: part.output,
-					};
-					break;
-				case "tool-error":
-					yield {
-						type: "tool-error",
-						callId: part.toolCallId,
-						error: String(part.error),
-					};
-					break;
-				case "finish":
-					yield {
-						type: "finish",
-						reason: part.finishReason,
-						providerUsage: normalizeProviderUsage(part.totalUsage),
-					};
-					break;
-				case "error":
-					yield { type: "error", message: String(part.error) };
-					break;
-			}
-		}
+			signal,
+			profile ?? getActiveProviderProfile(this.settings),
+			thinkingEnabled,
+		);
 	}
 
 	/**
