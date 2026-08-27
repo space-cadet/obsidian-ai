@@ -2,6 +2,17 @@
 
 *Last Updated: 2026-08-27 18:04:06 IST*
 
+## 2026-08-27 T46a Turn Output
+
+- Added `src/agent/ChatTurnOutput.ts` for React-independent output collection.
+- The helper keeps text around tool calls, tool results, and content parts in
+  the same order as before.
+- `useMessageActions.ts` is now 1,252 lines; visible streaming and approval
+  state remain in the hook.
+- Full verification passed: 43 test files / 362 tests, TypeScript, and the
+  production build.
+- Next: review the remaining UI callback and approval lifecycle boundary.
+
 ## 2026-08-27 T46a Turn Persistence
 
 - Added `src/agent/ChatTurnPersistence.ts` for completed assistant-message

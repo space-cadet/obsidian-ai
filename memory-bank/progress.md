@@ -927,3 +927,12 @@ Implemented the first pass on the three architectural improvements from the T55 
 - No source code changed; implementation remains pending.
 
 ---
+### 2026-08-27 — T46a Turn Output Extraction 🔄
+
+- Added `src/agent/ChatTurnOutput.ts` for text, tool-call, tool-result, and
+  content-part collection outside the React hook.
+- Reduced `useMessageActions.ts` to 1,252 lines.
+- Added focused output-state tests; the full suite passes 43 test files and
+  362 tests.
+- TypeScript and the production build pass.
+- Next: review the remaining UI callback and approval lifecycle boundary.

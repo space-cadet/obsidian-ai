@@ -34,6 +34,7 @@ import { makeId } from "../lib/sessionUtils";
 import { getActiveProviderProfile } from "../settings";
 import { stripThinkingTags } from "../components/MessageBubble";
 import { buildChatTurnRequest } from "../agent/ChatTurnRequest";
+import { ChatTurnOutput } from "../agent/ChatTurnOutput";
 import {
 	appendMessageToSession,
 	createAssistantMessage,
@@ -658,10 +659,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			});
 
 			let fullText = "";
-			let toolCallsLog: Array<{ call: ToolCall; result?: ToolResult }> =
-				[];
+			const turnOutput = new ChatTurnOutput(stripThinkingTags);
 			let contentParts: ContentPart[] = [];
-			let textCheckpoint = 0;
 
 			let assistantContent = fullText;
 			let assistantTokenEstimate = 0;
@@ -694,26 +693,17 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						thinkingEnabled,
 						onTextDelta: (text) => {
 							fullText = text;
+							turnOutput.setText(text);
 							patchRuntime(currentActiveId, {
 								currentAiMessage: stripThinkingTags(text),
 							});
 						},
 						onToolCall: (call) => {
-							const pendingText = stripThinkingTags(
-								fullText.slice(textCheckpoint),
-							);
-							if (pendingText) {
-								contentParts.push({
-									type: "text",
-									content: pendingText,
-								});
-							}
-							toolCallsLog.push({ call });
-							contentParts.push({ type: "tool_call", call });
+							const contentParts =
+								turnOutput.recordToolCall(call);
 							patchRuntime(currentActiveId, {
-								currentContentParts: [...contentParts],
+								currentContentParts: contentParts,
 							});
-							textCheckpoint = fullText.length;
 						},
 						requestApproval: async (call) => {
 							const resolved =
@@ -729,54 +719,19 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 								pendingToolCall: null,
 								resolveTool: null,
 							});
-							const lastIdx = toolCallsLog.length - 1;
-							if (lastIdx >= 0) {
-								toolCallsLog[lastIdx] = {
-									...toolCallsLog[lastIdx],
-									result: resolved || undefined,
-								};
-							}
-							const partIdx = contentParts.findIndex(
-								(part) =>
-									part.type === "tool_call" &&
-									part.call.toolCallId === call.toolCallId,
-							);
-							if (partIdx >= 0 && resolved) {
-								const part = contentParts[partIdx];
-								if (part.type === "tool_call") {
-									contentParts[partIdx] = {
-										...part,
-										result: resolved,
-									};
-								}
+							if (resolved) {
+								turnOutput.recordToolResult(call, resolved);
 							}
 							return resolved;
 						},
 						onToolResult: (call, result) => {
-							const idx = toolCallsLog.findIndex(
-								(entry) =>
-									entry.call.toolCallId === call.toolCallId,
+							const contentParts = turnOutput.recordToolResult(
+								call,
+								result,
 							);
-							if (idx >= 0) {
-								toolCallsLog[idx] = {
-									...toolCallsLog[idx],
-									result,
-								};
-							}
-							const partIdx = contentParts.findIndex(
-								(part) =>
-									part.type === "tool_call" &&
-									part.call.toolCallId === call.toolCallId,
-							);
-							if (partIdx >= 0) {
-								const part = contentParts[partIdx];
-								if (part.type === "tool_call") {
-									contentParts[partIdx] = { ...part, result };
-									patchRuntime(currentActiveId, {
-										currentContentParts: [...contentParts],
-									});
-								}
-							}
+							patchRuntime(currentActiveId, {
+								currentContentParts: contentParts,
+							});
 						},
 						onTokenUpdate: (total) => {
 							patchRuntime(currentActiveId, {
@@ -787,15 +742,12 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					});
 					assistantContent = result.text;
 					const sessionLinks = formatPastSessionLinks(
-						toolCallsLog,
+						turnOutput.snapshot().toolCalls,
 						sessionsRef.current,
 					);
 					if (sessionLinks) {
 						assistantContent += sessionLinks;
-						contentParts.push({
-							type: "text",
-							content: sessionLinks,
-						});
+						turnOutput.appendTextPart(sessionLinks);
 					}
 					assistantTokenEstimate = result.tokenEstimate;
 					providerUsage = result.providerUsage;
@@ -883,16 +835,12 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 
 				// Finalize remaining text for tool paths
 				if (useTools && !slashCmd) {
-					const remainingText = stripThinkingTags(
-						fullText.slice(textCheckpoint),
-					);
-					if (remainingText) {
-						contentParts.push({
-							type: "text",
-							content: remainingText,
-						});
-					}
+					turnOutput.setText(fullText);
+					turnOutput.finishToolText();
 				}
+				const output = turnOutput.snapshot();
+				const persistedContentParts =
+					useTools && !slashCmd ? output.contentParts : contentParts;
 
 				const cleanAssistantContent =
 					stripThinkingTags(assistantContent);
@@ -905,9 +853,13 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					modelName: activeProfile.model,
 					responseTimeMs: Date.now() - streamStartTime,
 					toolCalls:
-						toolCallsLog.length > 0 ? toolCallsLog : undefined,
+						output.toolCalls.length > 0
+							? output.toolCalls
+							: undefined,
 					contentParts:
-						contentParts.length > 0 ? contentParts : undefined,
+						persistedContentParts.length > 0
+							? persistedContentParts
+							: undefined,
 				});
 				setSessions((prev) =>
 					appendMessageToSession(
@@ -923,10 +875,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				if (fullText) {
 					let interruptedParts: ContentPart[] = [];
 					if (useTools && !slashCmd) {
-						interruptedParts = [...contentParts];
-						const remainingText = stripThinkingTags(
-							fullText.slice(textCheckpoint),
-						);
+						interruptedParts = turnOutput.snapshot().contentParts;
+						const remainingText = turnOutput.pendingText();
 						if (remainingText) {
 							interruptedParts.push({
 								type: "text",

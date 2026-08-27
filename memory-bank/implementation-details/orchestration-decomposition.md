@@ -1,6 +1,6 @@
 # Orchestration Decomposition Design
 *Created: 2026-08-17 06:07 IST*
-*Last Updated: 2026-08-27 18:04:06 IST*
+*Last Updated: 2026-08-27 18:10:37 IST*
 *Applies to: obsidian-ai plugin codebase — T46*
 
 ## Overview
@@ -122,6 +122,8 @@ The first implementation slice follows the design above:
   model-message list without depending on React.
 - `ChatTurnPersistence.ts` creates completed assistant messages and updates one
   session without depending on React.
+- `ChatTurnOutput.ts` collects text, tool calls, tool results, and content parts
+  without depending on React or Obsidian services.
 - Prompt text and OpenResponses tools are built from the resolved definitions.
 
 The focused tool/provider tests, full test suite, TypeScript check, and

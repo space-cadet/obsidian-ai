@@ -2,6 +2,17 @@
 
 *Last Updated: 2026-08-27 18:04:06 IST*
 
+### 2026-08-27 — T46a turn output extraction
+
+Added `ChatTurnOutput.ts` to collect text, tool calls, tool results, and
+content parts without React or Obsidian services. The hook still owns visible
+streaming updates, interruption display, and approval prompts.
+
+`useMessageActions.ts` is now 1,252 lines. Verification passed: 43 test files,
+362 tests, TypeScript, and the production build. The next boundary is the
+remaining UI callback and approval lifecycle code; `api.ts` and `main.ts`
+remain later phases.
+
 ### 2026-08-27 — T46a turn persistence extraction
 
 Added `ChatTurnPersistence.ts` and moved completed assistant-message creation

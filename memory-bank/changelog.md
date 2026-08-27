@@ -17,9 +17,11 @@ All notable changes to this project will be documented in this file.
   message assembly into `ChatTurnRequest.ts`.
 - Moved completed assistant-message creation and session-message updates into
   `ChatTurnPersistence.ts`.
+- Moved turn output collection into `ChatTurnOutput.ts`, including text around
+  tool calls and tool-result updates.
 
 ### Tests
-- Verified 42 test files / 360 tests, TypeScript, and the production build.
+- Verified 43 test files / 362 tests, TypeScript, and the production build.
 
 ## Unreleased - 2026-08-23
 

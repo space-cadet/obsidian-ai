@@ -97,3 +97,15 @@ The `api.ts` and `main.ts` phases have not started.
 - Next step: review whether the remaining UI callback and approval lifecycle
   work can move without weakening the runtime boundary. `api.ts` and `main.ts`
   remain later phases.
+
+## Turn Output Extraction — 2026-08-27 18:10:37 IST
+
+- Added `src/agent/ChatTurnOutput.ts` to collect text, tool calls, tool results,
+  and content parts without React or Obsidian services.
+- Reduced `useMessageActions.ts` to 1,252 lines while keeping visible streaming
+  updates, interruption display, and approval prompts in the hook.
+- Added focused output-state coverage. The full suite passed 43 test files and
+  362 tests; TypeScript and the production build also passed.
+- Next step: review whether the remaining UI callback and approval lifecycle
+  work can move without weakening the runtime boundary. `api.ts` and `main.ts`
+  remain later phases.
