@@ -124,6 +124,7 @@ function formatPastSessionLinks(
 export class TurnLifecycle {
 	private compactionBySession: Record<string, string> = {};
 	private compactionInFlight: Record<string, boolean> = {};
+	private currentToolExecutor: ToolExecutor | null = null;
 
 	constructor(private getDeps: () => TurnLifecycleDeps) {}
 
@@ -583,6 +584,7 @@ export class TurnLifecycle {
 				? deps.plugin.saveSettings.bind(deps.plugin)
 				: undefined,
 		);
+		this.currentToolExecutor = toolExecutor;
 		const resolvedToolRegistry = toolExecutor.getResolvedToolRegistry();
 		const toolRegistry = resolvedToolRegistry.tools;
 		const autoApprove = deps.plugin.settings.autoApply;
@@ -1123,15 +1125,17 @@ export class TurnLifecycle {
 		const runtime = deps.getRuntime(currentActiveId);
 		const pendingToolCall = runtime.pendingToolCall;
 		if (!pendingToolCall) return;
-		const toolExecutor = new ToolExecutor(
-			deps.plugin.app,
-			deps.plugin.settings,
-			deps.plugin.personaLoader ?? undefined,
-			deps.plugin.searchIndex ?? undefined,
-			() => currentActiveId,
-			deps.plugin.integrationRegistry,
-			deps.plugin.saveSettings.bind(deps.plugin),
-		);
+		const toolExecutor =
+			this.currentToolExecutor ??
+			new ToolExecutor(
+				deps.plugin.app,
+				deps.plugin.settings,
+				deps.plugin.personaLoader ?? undefined,
+				deps.plugin.searchIndex ?? undefined,
+				() => currentActiveId,
+				deps.plugin.integrationRegistry,
+				deps.plugin.saveSettings.bind(deps.plugin),
+			);
 		const result = await toolExecutor.execute(pendingToolCall);
 		runtime.resolveTool?.(result);
 		deps.patchRuntime(currentActiveId, { resolveTool: null });
