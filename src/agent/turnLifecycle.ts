@@ -37,7 +37,10 @@ import { buildHistoryWithTools } from "../lib/historyBuilder";
 import { handleDebugCommand } from "../lib/debugCommands";
 import { makeId } from "../lib/sessionUtils";
 import { stripThinkingTags } from "../components/MessageBubble";
-import type { ChatRuntimeState, ChatRuntimePatch } from "../hooks/useChatRuntimeState";
+import type {
+	ChatRuntimeState,
+	ChatRuntimePatch,
+} from "../hooks/useChatRuntimeState";
 import type { UseChatUIResult } from "../hooks/useChatUI";
 import type { ParticipantRouter } from "../agent/ParticipantRouter";
 
@@ -55,11 +58,15 @@ export interface TurnLifecycleDeps {
 	thinkingEnabled: boolean;
 	sessionsRef: { current: ChatSession[] };
 	activeSessionIdRef: { current: string | null };
-	setSessions: (update: ((prev: ChatSession[]) => ChatSession[]) | ChatSession[]) => void;
+	setSessions: (
+		update: ((prev: ChatSession[]) => ChatSession[]) | ChatSession[],
+	) => void;
 	getRuntime: (sessionId: string | null | undefined) => ChatRuntimeState;
 	patchRuntime: (
 		sessionId: string | null | undefined,
-		patch: ChatRuntimePatch | ((current: ChatRuntimeState) => ChatRuntimePatch),
+		patch:
+			| ChatRuntimePatch
+			| ((current: ChatRuntimeState) => ChatRuntimePatch),
 	) => void;
 	clearRuntime: (sessionId: string | null | undefined) => void;
 	setWasTruncated: (value: boolean) => void;
@@ -156,9 +163,7 @@ export class TurnLifecycle {
 				content: text,
 				timestamp: Date.now(),
 				attachments:
-					groupAttachments.length > 0
-						? groupAttachments
-						: undefined,
+					groupAttachments.length > 0 ? groupAttachments : undefined,
 				resolvedParts:
 					groupResolvedParts.length > 0
 						? (groupResolvedParts as ResolvedMessagePart[])
@@ -215,13 +220,13 @@ export class TurnLifecycle {
 								groupResolvedParts,
 							)
 						: deps.orchestrator!.dispatch(
-									text,
-									deps.sessionsRef.current.find(
-										(s) => s.id === currentActiveId,
-									)?.messages ?? [],
-									controller.signal,
-									groupResolvedParts,
-								);
+								text,
+								deps.sessionsRef.current.find(
+									(s) => s.id === currentActiveId,
+								)?.messages ?? [],
+								controller.signal,
+								groupResolvedParts,
+							);
 
 				for await (const response of stream) {
 					deps.ui.setTypingAgents((prev) => {
@@ -251,10 +256,7 @@ export class TurnLifecycle {
 							s.id === currentActiveId
 								? {
 										...s,
-										messages: [
-											...s.messages,
-											assistantMsg,
-										],
+										messages: [...s.messages, assistantMsg],
 										updatedAt: Date.now(),
 									}
 								: s,
@@ -303,7 +305,8 @@ export class TurnLifecycle {
 			currentSession,
 			deps.resolvedProfile,
 			{
-				toolHistoryMode: deps.plugin.settings.toolHistoryMode ?? "elide",
+				toolHistoryMode:
+					deps.plugin.settings.toolHistoryMode ?? "elide",
 				maxRequestTokens: deps.plugin.settings.maxRequestTokens,
 			},
 		);
@@ -346,10 +349,7 @@ export class TurnLifecycle {
 				slashCmd.prompt ||
 				`Please ${slashCmd.command} ${slashCmd.target}`;
 
-			if (
-				slashCmd.command === "edit" ||
-				slashCmd.command === "append"
-			) {
+			if (slashCmd.command === "edit" || slashCmd.command === "append") {
 				const file = deps.plugin.app.metadataCache.getFirstLinkpathDest(
 					slashCmd.target,
 					"",
@@ -419,8 +419,7 @@ export class TurnLifecycle {
 				: deps.resolvedProfile;
 
 		// Resolve attachments before computing token estimate
-		let resolvedAttachmentParts: import("../api").MessageContentPart[] =
-			[];
+		let resolvedAttachmentParts: import("../api").MessageContentPart[] = [];
 		if (attachments && attachments.length > 0) {
 			resolvedAttachmentParts = await resolveAttachments(
 				attachments,
@@ -431,9 +430,8 @@ export class TurnLifecycle {
 
 		// Compute token estimate: context text + message text + attachments
 		let userTokenEstimate = estimateTokens(
-			(resolved.contextString
-				? resolved.contextString + "\n\n"
-				: "") + sendText,
+			(resolved.contextString ? resolved.contextString + "\n\n" : "") +
+				sendText,
 		);
 		if (resolvedAttachmentParts.length > 0) {
 			userTokenEstimate += estimateContentPartsTokens(
@@ -452,9 +450,7 @@ export class TurnLifecycle {
 			timestamp: Date.now(),
 			contextItems: sendContextItems,
 			attachments:
-				attachments && attachments.length > 0
-					? attachments
-					: undefined,
+				attachments && attachments.length > 0 ? attachments : undefined,
 			resolvedParts:
 				resolvedAttachmentParts.length > 0
 					? (resolvedAttachmentParts as ResolvedMessagePart[])
@@ -488,7 +484,8 @@ export class TurnLifecycle {
 		});
 		const streamStartTime = Date.now();
 
-		const maxContextMessages = deps.plugin.settings.maxContextMessages || 10;
+		const maxContextMessages =
+			deps.plugin.settings.maxContextMessages || 10;
 		const sessionIdForCompaction = deps.activeSessionIdRef.current;
 		let existingSummary = sessionIdForCompaction
 			? this.compactionBySession[sessionIdForCompaction]
@@ -533,26 +530,24 @@ export class TurnLifecycle {
 			!this.compactionInFlight[sessionIdForCompaction]
 		) {
 			// Fire-and-forget: the current request is never delayed by compaction.
+			// Use default provider profile for compaction (agent profiles don't support callApi).
+			const compactionProfile =
+				activeProfile.provider === "agent" ? undefined : activeProfile;
 			this.compactionInFlight[sessionIdForCompaction] = true;
 			void deps.plugin.chatapi
 				.callApi(
 					"You summarize conversation history for another model. Return JSON only.",
 					compactionPlan.prompt,
-					activeProfile,
+					compactionProfile,
 				)
 				.then((rawSummary) => {
 					const parsed = JSON.parse(rawSummary);
 					this.compactionBySession[sessionIdForCompaction] =
 						formatCompactionSummary(parsed);
-					new Notice(
-						"Conversation compacted for future requests.",
-					);
+					new Notice("Conversation compacted for future requests.");
 				})
 				.catch((error) => {
-					console.warn(
-						"[T48c] Semantic compaction skipped:",
-						error,
-					);
+					console.warn("[T48c] Semantic compaction skipped:", error);
 				})
 				.finally(() => {
 					delete this.compactionInFlight[sessionIdForCompaction];
@@ -593,9 +588,8 @@ export class TurnLifecycle {
 		const autoApprove = deps.plugin.settings.autoApply;
 		const maxAgentSteps = deps.plugin.settings.maxAgentSteps;
 
-		let userMessageContent:
-			| string
-			| import("../api").MessageContentPart[] = userContent;
+		let userMessageContent: string | import("../api").MessageContentPart[] =
+			userContent;
 		if (resolvedAttachmentParts.length > 0) {
 			userMessageContent = [
 				{ type: "text", text: userContent },
@@ -619,7 +613,8 @@ export class TurnLifecycle {
 			currentMessage: userMessageContent,
 			history: legacyHistory,
 			options: {
-				maxRequestTokens: deps.plugin.settings.maxRequestTokens ?? 32000,
+				maxRequestTokens:
+					deps.plugin.settings.maxRequestTokens ?? 32000,
 				maxMessages: maxContextMessages,
 				preserveRecentMessages:
 					deps.plugin.settings.preserveRecentMessages ?? 4,
@@ -683,9 +678,7 @@ export class TurnLifecycle {
 
 		let assistantContent = fullText;
 		let assistantTokenEstimate = 0;
-		let providerUsage:
-			| import("../types").ProviderTokenUsage
-			| undefined;
+		let providerUsage: import("../types").ProviderTokenUsage | undefined;
 
 		try {
 			if (isAgentProvider || (useTools && !slashCmd)) {
@@ -724,15 +717,14 @@ export class TurnLifecycle {
 						});
 					},
 					requestApproval: async (call) => {
-						const resolved =
-							await new Promise<ToolResult | null>(
-								(resolve) => {
-									deps.patchRuntime(currentActiveId, {
-										pendingToolCall: call,
-										resolveTool: resolve,
-									});
-								},
-							);
+						const resolved = await new Promise<ToolResult | null>(
+							(resolve) => {
+								deps.patchRuntime(currentActiveId, {
+									pendingToolCall: call,
+									resolveTool: resolve,
+								});
+							},
+						);
 						deps.patchRuntime(currentActiveId, {
 							pendingToolCall: null,
 							resolveTool: null,
@@ -750,8 +742,7 @@ export class TurnLifecycle {
 					},
 					onTokenUpdate: (total) => {
 						deps.patchRuntime(currentActiveId, {
-							runningTokenTotal:
-								fullPayloadTokenEstimate + total,
+							runningTokenTotal: fullPayloadTokenEstimate + total,
 						});
 					},
 				});
@@ -862,8 +853,7 @@ export class TurnLifecycle {
 			const finalOutput =
 				useTools && !slashCmd ? turnOutput.snapshot() : null;
 
-			const cleanAssistantContent =
-				stripThinkingTags(assistantContent);
+			const cleanAssistantContent = stripThinkingTags(assistantContent);
 			const assistantMsg: ChatMessage = {
 				id: makeId(),
 				role: "assistant",
@@ -921,8 +911,7 @@ export class TurnLifecycle {
 						{
 							type: "text",
 							content:
-								stripThinkingTags(fullText) +
-								" [interrupted]",
+								stripThinkingTags(fullText) + " [interrupted]",
 						},
 					];
 				}
@@ -943,10 +932,7 @@ export class TurnLifecycle {
 						s.id === currentActiveId
 							? {
 									...s,
-									messages: [
-										...s.messages,
-										interruptedMsg,
-									],
+									messages: [...s.messages, interruptedMsg],
 									updatedAt: Date.now(),
 									contextItems: sendContextItems,
 								}
