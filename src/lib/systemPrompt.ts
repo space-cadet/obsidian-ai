@@ -2,6 +2,11 @@ import { Platform } from "obsidian";
 import { ContextItem } from "../types";
 import { SlashCommand } from "./slashCommand";
 import { PersonaLoader } from "../intelligence/PersonaLoader";
+import {
+	createBuiltInToolDefinitions,
+	describeToolsForPrompt,
+} from "../agent/toolRegistry";
+import type { ToolDefinition } from "../agent/toolRegistry";
 
 export interface SystemPromptParticipant {
 	name: string;
@@ -14,6 +19,7 @@ export async function buildSystemPrompt(
 	slashCmd?: SlashCommand,
 	toolsEnabled = false,
 	participants?: SystemPromptParticipant[],
+	toolDefinitions?: ReadonlyArray<Pick<ToolDefinition, "id" | "description">>,
 ): Promise<string> {
 	let identityContext = "";
 	if (personaLoader) {
@@ -46,27 +52,8 @@ export async function buildSystemPrompt(
 
 	if (toolsEnabled) {
 		prompt +=
-			"\n\nYou have access to the following tools for managing Obsidian notes:" +
-			"\n- read_note: Read the full content of a note. Use this before editing to understand current content." +
-			"\n- edit_note: Overwrite the entire content of a note. Provide COMPLETE new content." +
-			"\n- append_to_note: Add content to the end of a note without changing existing content." +
-			"\n- create_note: Create a new note in the vault." +
-			"\n- create_notes: Create 2–100 new notes in one approved operation; never overwrites existing notes and skips paths that already exist. Use this for large sets instead of repeatedly calling create_note." +
-			"\n- patch_note: Find and replace text inside a note (small precise edits)." +
-			"\n- edit_section: Rewrite content under a specific heading." +
-			"\n- search_notes: Search for notes by filename or path. Use sort_by=name|modified|created, limit (default 20, max 50), and folder params." +
-			"\n- search_note_content: Search INSIDE note content for text, quotes, or topics the user wrote about. Use this when the user asks to find something they wrote, not just note names. Supports folder filter, sort_by=relevance|modified|created|name, limit, and context_lines." +
-			"\n- list_notes: Browse notes in the vault or a folder. Use sort_by=name|modified|created, limit, and include_subfolders (default true) params. Shows subfolders alongside files." +
-			"\n- count_notes: Count files in a folder or the entire vault. Returns total files, markdown files, direct files, and subfolder counts. Use when the user asks how many notes/files exist or for folder statistics." +
-			"\n- get_note_metadata: Get file stats (size, dates, word count) for a specific note." +
-			"\n- create_folder: Create a new folder in the vault." +
-			"\n- move_note: Move or rename a note to a new folder or name. Creates parent folders if needed." +
-			"\n- delete_note: Delete a note from the vault." +
-			"\n- list_folders: List folders in the vault. Use to understand vault structure." +
-			"\n- search_web: Search the web for current information. Use when the user asks about recent events, news, or facts that may have changed since your training data." +
-			"\n- search_past_sessions: Search the user's saved previous chat conversations by topic or keywords. This is for chat history, not vault notes." +
-			"\n- read_pdf: Read a bounded PDF page range with max_pages and start_page." +
-			"\n- list_memories/search_memories/read_memory_audit: Read bounded memory results and use cursor when another page is available." +
+			"\n\nYou have access to these tools:" +
+			`\n${describeToolsForPrompt(toolDefinitions ?? createBuiltInToolDefinitions())}` +
 			"\n\nWhen the user asks to find, list, or search for notes, ALWAYS use search_notes, list_notes, or search_note_content." +
 			" For several search terms, prefer one search_note_content call with match_mode=and or any instead of separate searches." +
 			" When the user asks whether you can search past sessions, chats, conversations, or what you discussed previously, say that you can search saved chat history and call search_past_sessions with the relevant keywords." +

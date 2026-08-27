@@ -5,6 +5,13 @@ import { emptyChatRuntime, ChatRuntimeState } from "../useChatRuntimeState";
 
 // ── Mocks ─────────────────────────────────────────────────────────
 const mockToolExecutorConstructor = vi.hoisted(() => vi.fn());
+const mockToolExecutorInstances = vi.hoisted(() => [] as any[]);
+const mockRunChatTurn = vi.hoisted(() => vi.fn());
+const mockParseSlashCommand = vi.hoisted(() =>
+	vi.fn<
+		(text: string) => import("../../lib/slashCommand").SlashCommand | null
+	>(() => null),
+);
 const mockNotice = vi.fn();
 const mockCreate = vi.fn();
 const mockGetAbstractFileByPath = vi.fn();
@@ -76,7 +83,7 @@ vi.mock("../lib/systemPrompt", () => ({
 }));
 
 vi.mock("../lib/slashCommand", () => ({
-	parseSlashCommand: vi.fn(() => null),
+	parseSlashCommand: mockParseSlashCommand,
 }));
 
 vi.mock("../lib/sessionUtils", () => ({
@@ -86,10 +93,21 @@ vi.mock("../lib/sessionUtils", () => ({
 vi.mock("../../agent/ToolExecutor", () => ({
 	ToolExecutor: vi.fn().mockImplementation(function (...args) {
 		mockToolExecutorConstructor(...args);
-		return {
+		const instance = {
 			execute: vi.fn().mockResolvedValue({ success: true }),
+			getResolvedToolRegistry: vi.fn(() => ({
+				definitions: [],
+				tools: {},
+				byId: new Map(),
+			})),
 		};
+		mockToolExecutorInstances.push(instance);
+		return instance;
 	}),
+}));
+
+vi.mock("../../agent/ChatTurnCoordinator", () => ({
+	runChatTurn: mockRunChatTurn,
 }));
 
 vi.mock("../agent/AgentLoop", () => ({
@@ -110,6 +128,7 @@ vi.mock("../agent/OpenResponsesLoop", () => ({
 
 vi.mock("../agent/tools/toOpenResponses", () => ({
 	noteToolsToOpenResponses: vi.fn(() => []),
+	resolvedToolsToOpenResponses: vi.fn(() => []),
 }));
 
 vi.mock("../components/MessageBubble", () => ({
@@ -208,6 +227,9 @@ function makeDeps(
 describe("useMessageActions", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockRunChatTurn.mockReset();
+		mockParseSlashCommand.mockReset().mockReturnValue(null);
+		mockToolExecutorInstances.length = 0;
 	});
 
 	describe("handleStop", () => {
@@ -625,6 +647,127 @@ describe("useMessageActions", () => {
 				await result.current.handleSend("hello");
 			});
 			expect(deps.setSessions).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("handleSend — agent slash commands", () => {
+		it("routes agent slash commands through runChatTurn", async () => {
+			const streamChat = vi.fn(async function* () {
+				throw new Error("agent slash command used streamChat");
+			});
+			const agentProfile = {
+				id: "agent-profile",
+				name: "Agent",
+				provider: "agent",
+				model: "agent-model",
+				endpointUrl: "https://agent.example.test",
+				apiKey: "token",
+			} as any;
+			const session = {
+				id: "session-1",
+				messages: [],
+				updatedAt: 0,
+				title: "Test",
+				createdAt: 1,
+				contextItems: [],
+			} as any;
+
+			mockParseSlashCommand.mockReturnValue({
+				command: "create",
+				target: "new-note",
+				prompt: "Write the note",
+			});
+			mockRunChatTurn.mockImplementation(async (options: any) => {
+				options.onTextDelta("Generated note");
+				return { text: "Generated note", tokenEstimate: 12 };
+			});
+
+			const deps = makeDeps({
+				plugin: {
+					...mockPlugin,
+					chatapi: { streamChat },
+					settings: {
+						...mockPlugin.settings,
+						providerProfiles: [agentProfile],
+					},
+				} as any,
+				resolvedProfile: agentProfile,
+				ui: {
+					...makeDeps().ui,
+					selectedProfileIds: new Set([agentProfile.id]),
+				},
+				sessionsRef: { current: [session] },
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+
+			await act(async () => {
+				await result.current.handleSend(
+					"/create new-note Write the note",
+				);
+			});
+
+			expect(mockRunChatTurn).toHaveBeenCalled();
+			expect(streamChat).not.toHaveBeenCalled();
+			expect(mockCreate).toHaveBeenCalledWith(
+				"new-note.md",
+				"Generated note",
+			);
+		});
+	});
+
+	describe("tool approval lifecycle", () => {
+		it("reuses the turn ToolExecutor when approval resumes a turn", async () => {
+			const toolCall = {
+				toolCallId: "tc1",
+				toolName: "read_note",
+				args: { path: "test.md" },
+			};
+			mockRunChatTurn.mockImplementation(async (options: any) => {
+				options.onTextDelta("Before approval");
+				await options.requestApproval(toolCall);
+				return { text: "After approval", tokenEstimate: 12 };
+			});
+			const session = {
+				id: "session-1",
+				messages: [],
+				updatedAt: 0,
+				title: "Test",
+				createdAt: 1,
+				contextItems: [],
+			} as any;
+			const deps = makeDeps({
+				plugin: {
+					...mockPlugin,
+					settings: {
+						...mockPlugin.settings,
+						enableAgentTools: true,
+					},
+				} as any,
+				sessionsRef: { current: [session] },
+				ui: {
+					...makeDeps().ui,
+					selectedProfileIds: new Set(["p1"]),
+				},
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			const sendPromise = result.current.handleSend("hello");
+
+			await vi.waitFor(() => {
+				expect(deps.getRuntime("session-1").pendingToolCall).toEqual(
+					toolCall,
+				);
+			});
+			await act(async () => {
+				await result.current.handleApproveTool();
+			});
+			await act(async () => {
+				await sendPromise;
+			});
+
+			expect(mockToolExecutorInstances).toHaveLength(1);
+			expect(mockToolExecutorInstances[0].execute).toHaveBeenCalledWith(
+				toolCall,
+			);
 		});
 	});
 

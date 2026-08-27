@@ -1,8 +1,18 @@
 # Error Log
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-08-23 17:05:26 IST*
+*Last Updated: 2026-08-27 17:41:07 IST*
 
 *Newest entries first. Each entry documents a development error, its cause, and resolution.*
+
+---
+
+### 2026-08-27 17:41:07 IST — Coordinator test mock construction
+
+- **Symptom:** The new coordinator test failed because the mocked `AgentLoop`
+  was not constructible with `new`.
+- **Cause:** The test used a plain mock function for a class constructor.
+- **Resolution:** Replaced it with a small constructible test class and reran
+  the focused and full suites successfully.
 
 ---
 

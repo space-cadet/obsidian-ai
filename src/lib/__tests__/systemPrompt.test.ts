@@ -68,6 +68,27 @@ describe("buildSystemPrompt", () => {
 		expect(prompt).toContain("search_past_sessions");
 	});
 
+	it("uses the resolved tool descriptions when they are supplied", async () => {
+		const prompt = await buildSystemPrompt(
+			[],
+			null,
+			undefined,
+			true,
+			undefined,
+			[
+				{
+					id: "provider_status",
+					description: "Read the current provider status.",
+				},
+			],
+		);
+
+		expect(prompt).toContain(
+			"- provider_status: Read the current provider status.",
+		);
+		expect(prompt).not.toContain("- read_note:");
+	});
+
 	it("includes edit slash command instruction", async () => {
 		const slashCmd: SlashCommand = {
 			command: "edit",

@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased - 2026-08-27
+
+### Changed
+- Started the T46/T46a architecture decomposition on
+  `feat/t46-architecture-decomposition`: reduced `ToolExecutor.ts` to a
+  265-line registry and validation layer, extracted note/path capabilities,
+  and added a shared chat-turn coordinator.
+- Prompt and OpenResponses tool descriptions now come from the resolved tool
+  definitions used for execution.
+- Split the remaining capability handlers into separate domain modules and
+  added a shared handler context.
+- Moved prompt creation, history projection, request budgeting, and model
+  message assembly into `ChatTurnRequest.ts`.
+- Moved completed assistant-message creation and session-message updates into
+  `ChatTurnPersistence.ts`.
+- Moved turn output collection into `ChatTurnOutput.ts`, including text around
+  tool calls and tool-result updates.
+
+### Tests
+- Verified 43 test files / 362 tests, TypeScript, and the production build.
+
 ## Unreleased - 2026-08-23
 
 ### Changed

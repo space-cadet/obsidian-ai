@@ -29,6 +29,8 @@ const EXPECTED_TOOLS = [
 	"search_memories",
 	"read_memory_audit",
 	"search_past_sessions",
+	"read_settings",
+	"update_setting",
 ];
 
 describe("noteTools", () => {
