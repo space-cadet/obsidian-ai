@@ -1,7 +1,7 @@
 # Refactored Architecture Guide
 
 *Created: 2026-05-29*
-*Last Updated: 2026-08-27 17:57:29 IST*
+*Last Updated: 2026-08-27 18:04:06 IST*
 *Applies to: obsidian-ai plugin codebase*
 
 ## Overview
@@ -76,6 +76,7 @@ src/
 │   ├── AgentLoop.ts               # Tool calling loop
 │   ├── ChatTurnCoordinator.ts     # Shared native/OpenResponses turn runner (T46a)
 │   ├── ChatTurnRequest.ts         # Prompt, history, and request assembly (T46a)
+│   ├── ChatTurnPersistence.ts     # Completed message and session updates (T46a)
 │   ├── ToolExecutor.ts            # Registry-backed tool execution layer (292 lines; T46)
 │   ├── tools/                     # Resolved definitions, lookup, and handlers (T46)
 │   │   ├── ToolHandlerContext.ts   # Shared services for capability handlers
@@ -223,13 +224,13 @@ import { buildContext } from "../lib/contextUtils";
 | Settings config | 400 lines | 500 | settings.ts: 341 ✅ |
 | Settings sections | 200 lines | 300 | diagnostics.ts: 189 ✅ |
 | React components | 500 lines | 700 | ChatApp.tsx: 1,029 ⚠️ |
-| Hooks | 400 lines | 600 | useMessageActions.ts: 1,305 ❌ |
+| Hooks | 400 lines | 600 | useMessageActions.ts: 1,302 ❌ |
 | Utilities | 150 lines | 200 | sessionTitle.ts: 137 ✅ |
 | Agent logic | 500 lines | 700 | ToolExecutor.ts: 265 ✅ |
 | API layer | 400 lines | 500 | api.ts: 765 ⚠️ |
 | Plugin entry | 400 lines | 500 | main.ts: 1,785 ❌ |
 
-**Note**: `useMessageActions.ts` (1,305), `main.ts` (1,785), and `api.ts`
+**Note**: `useMessageActions.ts` (1,302), `main.ts` (1,785), and `api.ts`
 (765) remain decomposition candidates. `ToolExecutor.ts` is now 292 lines,
 with its remaining handler domains tracked under T46. `ChatApp.tsx` is large
 but already acts primarily as a composition layer. T46 tracks the physical

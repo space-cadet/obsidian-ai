@@ -85,3 +85,15 @@ The `api.ts` and `main.ts` phases have not started.
   production build.
 - Next step: move turn callbacks and final message persistence behind the
   coordinator.
+
+## Turn Persistence Extraction — 2026-08-27 18:04:06 IST
+
+- Added `src/agent/ChatTurnPersistence.ts` for completed assistant-message
+  creation and session-message updates.
+- Reduced `useMessageActions.ts` to 1,302 lines while leaving interruption
+  display, approval state, and runtime cleanup in the hook.
+- Added focused persistence tests. The full suite passed 42 test files and 360
+  tests; TypeScript and the production build also passed.
+- Next step: review whether the remaining UI callback and approval lifecycle
+  work can move without weakening the runtime boundary. `api.ts` and `main.ts`
+  remain later phases.

@@ -34,6 +34,10 @@ import { makeId } from "../lib/sessionUtils";
 import { getActiveProviderProfile } from "../settings";
 import { stripThinkingTags } from "../components/MessageBubble";
 import { buildChatTurnRequest } from "../agent/ChatTurnRequest";
+import {
+	appendMessageToSession,
+	createAssistantMessage,
+} from "../agent/ChatTurnPersistence";
 import type { ChatRuntimeState, ChatRuntimePatch } from "./useChatRuntimeState";
 
 function formatPastSessionLinks(
@@ -892,11 +896,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 
 				const cleanAssistantContent =
 					stripThinkingTags(assistantContent);
-				const assistantMsg: ChatMessage = {
-					id: makeId(),
-					role: "assistant",
+				const assistantMsg = createAssistantMessage({
 					content: cleanAssistantContent,
-					timestamp: Date.now(),
 					command: commandMeta,
 					estimatedTokens: assistantTokenEstimate,
 					requestTokenEstimate: fullPayloadTokenEstimate,
@@ -907,17 +908,13 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						toolCallsLog.length > 0 ? toolCallsLog : undefined,
 					contentParts:
 						contentParts.length > 0 ? contentParts : undefined,
-				};
+				});
 				setSessions((prev) =>
-					prev.map((s) =>
-						s.id === currentActiveId
-							? {
-									...s,
-									messages: [...s.messages, assistantMsg],
-									updatedAt: Date.now(),
-									contextItems: sendContextItems,
-								}
-							: s,
+					appendMessageToSession(
+						prev,
+						currentActiveId,
+						assistantMsg,
+						sendContextItems,
 					),
 				);
 			} catch (e: any) {

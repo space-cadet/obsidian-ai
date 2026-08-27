@@ -1,6 +1,18 @@
 # Session Cache
 
-*Last Updated: 2026-08-27 17:58:34 IST*
+*Last Updated: 2026-08-27 18:04:06 IST*
+
+## 2026-08-27 T46a Turn Persistence
+
+- Added `src/agent/ChatTurnPersistence.ts` for completed assistant-message
+  creation and session-message updates.
+- `useMessageActions.ts` is now 1,302 lines; UI interruption display and
+  approval state remain in the hook.
+- Full verification passed: 42 test files / 360 tests, TypeScript, and the
+  production build.
+- Next: decide whether the remaining UI callback and approval lifecycle work
+  can move without weakening the runtime boundary; `api.ts` and `main.ts` are
+  later phases.
 
 ## 2026-08-27 T46a Request Preparation
 

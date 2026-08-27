@@ -15,9 +15,11 @@ All notable changes to this project will be documented in this file.
   added a shared handler context.
 - Moved prompt creation, history projection, request budgeting, and model
   message assembly into `ChatTurnRequest.ts`.
+- Moved completed assistant-message creation and session-message updates into
+  `ChatTurnPersistence.ts`.
 
 ### Tests
-- Verified 41 test files / 359 tests, TypeScript, and the production build.
+- Verified 42 test files / 360 tests, TypeScript, and the production build.
 
 ## Unreleased - 2026-08-23
 

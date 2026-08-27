@@ -1,3 +1,12 @@
+### 2026-08-27 — T46a Turn Persistence Extraction 🔄
+
+- Added `src/agent/ChatTurnPersistence.ts` for completed assistant-message
+  creation and session-message updates.
+- Reduced `useMessageActions.ts` to 1,302 lines.
+- Added focused persistence coverage; the full suite now passes 360 tests.
+- TypeScript and the production build pass.
+- Next: review the remaining UI callback and approval lifecycle boundary.
+
 ### 2026-08-27 — T46a Request Preparation Extraction 🔄
 
 - Added `src/agent/ChatTurnRequest.ts` to build the prompt, bounded history,

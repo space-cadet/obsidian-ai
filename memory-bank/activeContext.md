@@ -1,6 +1,17 @@
 # Active Context
 
-*Last Updated: 2026-08-27 17:58:34 IST*
+*Last Updated: 2026-08-27 18:04:06 IST*
+
+### 2026-08-27 — T46a turn persistence extraction
+
+Added `ChatTurnPersistence.ts` and moved completed assistant-message creation
+and session-message updates out of the hook. `useMessageActions.ts` is now
+1,302 lines. The hook still owns UI-specific interruption display, approval
+state, and runtime cleanup.
+
+Verification remains green: 42 test files, 360 tests, TypeScript, and the
+production build. The next boundary is the remaining UI callback and approval
+lifecycle work; `api.ts` and `main.ts` remain later phases.
 
 ### 2026-08-27 — T46a request preparation extraction
 
