@@ -1,3 +1,26 @@
+### 2026-08-27 — T64: Benchmark Harness Live Mode + Diagnostics Export ✅
+
+**T64 Level 2 (Live API) — COMPLETE**
+- Added `--live` mode to `benchmarks/context-benchmark.ts`
+- Configurable provider support: `--provider openrouter|kimi|kimi-custom`
+- Provider configs loaded from `~/.openclaw/openclaw.json`
+- Added `printLiveReport()` to `benchmarks/report.ts` — shows estimated vs actual tokens
+- **OpenRouter + GPT-4o-mini**: ✅ All 12 fixture/strategy combos successful
+  - Sample: attachment-session-15-turns + preserve → 14,668 actual (est: 19,597, Δ: -25%)
+  - Sample: coding-session-30-turns + elide → 1,379 actual (est: 2,817, Δ: -51%)
+- **Kimi with user key**: ❌ 401 Invalid Authentication (expired/revoked)
+- Added `preserve` strategy to the harness
+
+**T61: Diagnostics Export Button — COMPLETE**
+- Added "Export" button to Diagnostics settings section
+- Downloads JSON with redacted settings, session metadata, usage stats, debug info
+- Committed: `2959ad8`
+
+**Files modified:**
+- `benchmarks/context-benchmark.ts` (+233 lines)
+- `benchmarks/report.ts` (+32 lines)
+- `src/settings-sections/diagnostics.ts` (export button)
+
 ### 2026-08-26 — T64: Context Optimization Benchmark Harness 🔄
 
 - Created standalone top-level task for measuring token optimization strategies

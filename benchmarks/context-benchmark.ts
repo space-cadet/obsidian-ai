@@ -12,7 +12,7 @@ import {
 import { estimateTokens } from "../src/context/tokenEstimator";
 import type { ChatMessage, ContentPart } from "../src/types";
 import type { ToolCall, ToolResult } from "../src/agent/types";
-import { printReport, saveJsonReport } from "./report";
+import { printReport, saveJsonReport, printLiveReport } from "./report";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -38,6 +38,17 @@ export interface BenchmarkResult {
 }
 
 export type StrategyFn = (fixture: Fixture) => StrategyResult;
+
+export interface LiveResult {
+	fixture: string;
+	strategy: string;
+	estimated_tokens: number;
+	actual_prompt_tokens: number;
+	actual_completion_tokens: number;
+	actual_total_tokens: number;
+	delta_percent: number;
+	model: string;
+}
 
 // ─── Token Counting ──────────────────────────────────────────────────────────
 
@@ -114,6 +125,166 @@ const budgetStrategy: StrategyFn = (fixture) => {
 		tool_calls_count: countToolCalls(fixture.messages),
 	};
 };
+
+const preserveStrategy: StrategyFn = (fixture) => {
+	const tokens_before = countTokens(fixture.messages);
+	const history = buildHistoryWithTools(fixture.messages, 1000, 0, "preserve");
+	const tokens_after = countTokens(history);
+	return {
+		tokens_before,
+		tokens_after,
+		savings_percent:
+			tokens_before > 0
+				? Number((((tokens_before - tokens_after) / tokens_before) * 100).toFixed(2))
+				: 0,
+		messages_count: history.length,
+		tool_calls_count: countToolCalls(fixture.messages),
+	};
+};
+
+// ─── Live API Benchmarking ───────────────────────────────────────────────────
+
+interface ProviderConfig {
+	name: string;
+	baseUrl: string;
+	apiKey: string;
+	model: string;
+}
+
+function loadProviderConfig(providerName: string): ProviderConfig | null {
+	try {
+		const configPath = join(process.env.HOME || "/home/cloudy", ".openclaw", "openclaw.json");
+		const config = JSON.parse(readFileSync(configPath, "utf-8"));
+		
+		if (providerName === "openrouter") {
+			const key = config.models?.providers?.openrouter?.apiKey;
+			if (!key) return null;
+			return {
+				name: "openrouter",
+				baseUrl: "https://openrouter.ai/api/v1",
+				apiKey: key,
+				model: "openai/gpt-4o-mini",
+			};
+		} else if (providerName === "kimi") {
+			const key = config.models?.providers?.kimi?.apiKey;
+			if (!key) return null;
+			return {
+				name: "kimi",
+				baseUrl: "https://api.moonshot.ai/v1",
+				apiKey: key,
+				model: "moonshot-v1-8k",
+			};
+		}
+		return null;
+	} catch {
+		return null;
+	}
+}
+
+function loadCustomKimiKey(): string | null {
+	// For testing with the user-provided key
+	return "sk-kim…p63e"; // Will be replaced with actual key from user
+}
+
+async function runLiveBenchmark(
+	fixture: Fixture,
+	strategy: string,
+	provider: ProviderConfig,
+): Promise<LiveResult> {
+	// Build history based on strategy
+	let history: HistoryEntry[];
+	let processedMessages: ChatMessage[];
+	
+	if (strategy === "elide") {
+		history = buildHistoryWithTools(fixture.messages, 1000, 2000, "elide");
+		processedMessages = fixture.messages;
+	} else if (strategy === "preserve") {
+		history = buildHistoryWithTools(fixture.messages, 1000, 0, "preserve");
+		processedMessages = fixture.messages;
+	} else if (strategy === "budget") {
+		const result = buildBudgetedHistory<ChatMessage>({
+			systemPrompt: "You are a helpful assistant.",
+			currentMessage: "Summarize the conversation so far.",
+			history: fixture.messages,
+			options: {
+				maxRequestTokens: 8000,
+				maxMessages: 100,
+				preserveRecentMessages: 4,
+				responseReserveTokens: 2048,
+			},
+		});
+		history = result.history.map((m) => ({
+			role: m.role as "user" | "assistant" | "tool",
+			content: m.content || "",
+		}));
+		processedMessages = result.history;
+	} else {
+		// baseline — raw messages
+		history = fixture.messages.map((m) => ({
+			role: m.role as "user" | "assistant" | "tool",
+			content: m.content || "",
+		}));
+		processedMessages = fixture.messages;
+	}
+	
+	const estimatedTokens = countTokens(processedMessages);
+	
+	// Convert to API format (provider-specific)
+	const messages = provider.name === "openrouter" 
+		? history.map((h) => {
+			// OpenRouter/OpenAI doesn't accept 'tool' role directly
+			// It needs assistant messages with tool_calls, then tool responses
+			if (h.role === "tool") {
+				return {
+					role: "assistant",
+					content: typeof h.content === "string" ? h.content : JSON.stringify(h.content),
+				};
+			}
+			return {
+				role: h.role,
+				content: typeof h.content === "string" ? h.content : JSON.stringify(h.content),
+			};
+		})
+		: history.map((h) => ({
+			role: h.role,
+			content: typeof h.content === "string" ? h.content : JSON.stringify(h.content),
+		}));
+	
+	// Call API
+	const response = await fetch(`${provider.baseUrl}/chat/completions`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${provider.apiKey}`,
+			...(provider.name === "openrouter" ? { "HTTP-Referer": "https://quantumofgravity.com", "X-Title": "Obsidian AI Benchmark" } : {}),
+		},
+		body: JSON.stringify({
+			model: provider.model,
+			messages,
+			max_tokens: 10,
+			temperature: 0,
+		}),
+	});
+	
+	if (!response.ok) {
+		const error = await response.text();
+		throw new Error(`API error: ${response.status} ${error}`);
+	}
+	
+	const data = await response.json();
+	const usage = data.usage;
+	
+	return {
+		fixture: fixture.name,
+		strategy,
+		estimated_tokens: estimatedTokens,
+		actual_prompt_tokens: usage.prompt_tokens,
+		actual_completion_tokens: usage.completion_tokens,
+		actual_total_tokens: usage.total_tokens,
+		delta_percent: Number((((usage.prompt_tokens - estimatedTokens) / estimatedTokens) * 100).toFixed(2)),
+		model: provider.model,
+	};
+}
 
 // ─── Fixture Loading ─────────────────────────────────────────────────────────
 
@@ -428,6 +599,7 @@ function runBenchmark(): BenchmarkResult[] {
 		baseline: baselineStrategy,
 		elide: elideStrategy,
 		budget: budgetStrategy,
+		preserve: preserveStrategy,
 	};
 
 	const results: BenchmarkResult[] = [];
@@ -443,12 +615,69 @@ function runBenchmark(): BenchmarkResult[] {
 	return results;
 }
 
+async function runLiveBenchmarks(providerName: string): Promise<LiveResult[]> {
+	let provider: ProviderConfig | null;
+	
+	if (providerName === "kimi-custom") {
+		// Use the user-provided key for testing
+		provider = {
+			name: "kimi",
+			baseUrl: "https://api.moonshot.ai/v1",
+			apiKey: "sk-kimi-jGDjotFXYpmImbkurFnU8AD4CqyZd0V2gqaFiNwp3XQeNnhg8kE3HUuiCQdnp63e",
+			model: "moonshot-v1-8k",
+		};
+	} else {
+		provider = loadProviderConfig(providerName);
+	}
+	
+	if (!provider) {
+		console.error(`❌ No API key found for provider: ${providerName}`);
+		console.error("   Supported: openrouter, kimi, kimi-custom");
+		process.exit(1);
+	}
+
+	const fixtures = loadFixtures();
+	const strategies = ["baseline", "elide", "preserve", "budget"];
+	const results: LiveResult[] = [];
+
+	console.log(`\n🚀 Running LIVE benchmark against ${provider.name} (${provider.model})...\n`);
+	console.log("This will send fixture conversations to the API and measure actual token usage.");
+	console.log("Estimated cost: ~$0.01-0.05 per fixture (minimal completions).\n");
+
+	for (const fixture of fixtures) {
+		for (const strategy of strategies) {
+			process.stdout.write(`  ${fixture.name} + ${strategy} ... `);
+			try {
+				const result = await runLiveBenchmark(fixture, strategy, provider);
+				results.push(result);
+				console.log(`✓ ${result.actual_prompt_tokens} tokens (est: ${result.estimated_tokens}, Δ: ${result.delta_percent}%)`);
+			} catch (err) {
+				console.log(`✗ ${err instanceof Error ? err.message : String(err)}`);
+			}
+			// Rate limit: be polite
+			await new Promise((r) => setTimeout(r, 500));
+		}
+	}
+
+	return results;
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
-function main() {
+async function main() {
 	const args = process.argv.slice(2);
+
 	if (args.includes("--generate-fixtures")) {
 		generateFixtures();
+		return;
+	}
+
+	if (args.includes("--live")) {
+		// Find --provider flag
+		const providerIdx = args.indexOf("--provider");
+		const providerName = providerIdx >= 0 ? args[providerIdx + 1] : "openrouter";
+		const liveResults = await runLiveBenchmarks(providerName);
+		printLiveReport(liveResults);
 		return;
 	}
 

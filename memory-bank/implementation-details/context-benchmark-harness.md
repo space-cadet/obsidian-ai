@@ -104,25 +104,37 @@ cd benchmarks
 npx tsx context-benchmark.ts --fixture fixtures/coding-session-50-turns.json
 ```
 
-## Level 2: Live Token Benchmark (Optional)
+## Level 2: Live Token Benchmark
 
 Validates that estimates match reality by replaying fixtures through actual
 API calls.
 
 ```bash
-npx tsx live-benchmark.ts \
-  --fixture fixtures/coding-session-50-turns.json \
-  --provider openai \
-  --model gpt-4o
+npx tsx benchmarks/context-benchmark.ts --live --provider openrouter
 ```
+
+**Supported providers:**
+- `openrouter` — Uses OpenRouter API (GPT-4o-mini by default, cheap for testing)
+- `kimi` — Uses Kimi API (reads key from `~/.openclaw/openclaw.json`)
+- `kimi-custom` — Uses a manually provided key for testing
 
 Captures:
 - Provider-reported `prompt_tokens` / `completion_tokens` / `total_tokens`
-- Comparison: estimated vs. actual
-- Per-tool-call overhead measurement
+- Comparison: estimated vs. actual (delta %)
+- Per-fixture/strategy breakdown
+
+**Example output:**
+```
+Fixture                      | Strategy   | Est.     | Actual   | Δ%       | Model
+───────────────────────────────────────────────────────────────────────────────────────
+attachment-session-15-turn   | baseline   |    19597 |      220 |   -98.88% | openai/gpt
+coding-session-30-turns      | elide      |     2817 |     1379 |   -51.05% | openai/gpt
+research-session-20-turns    | preserve   |     2200 |     1668 |   -24.18% | openai/gpt
+```
 
 This costs money and should be used sparingly — primarily to validate the
-estimator's accuracy, not for rapid iteration.
+estimator's accuracy, not for rapid iteration. Estimated cost: ~$0.01-0.05
+per fixture (uses `max_tokens: 10` for minimal completions).
 
 ## Integration with Existing Workstreams
 
