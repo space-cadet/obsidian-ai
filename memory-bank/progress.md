@@ -1,3 +1,18 @@
+### 2026-08-27 — Architecture Modularity Review and Plan Recorded 🔄
+
+- Pulled remote Memory Bank updates through `85a5f4c` before reconciliation.
+- Recorded the architecture review findings in T46, T60/T60a, T48b/T48c,
+  T62a, T64, and T22.
+- Created proposed subtask T46a for extracting a testable chat-turn
+  coordinator from `useMessageActions.ts`.
+- Refreshed current size evidence: `ToolExecutor.ts` 2,159 lines,
+  `useMessageActions.ts` 1,533, `main.ts` 1,785, `api.ts` 765, and
+  `ChatApp.tsx` 1,029.
+- Updated the canonical architecture and orchestration design records. The
+  plan is capability ownership, model-history policy, turn coordination, then
+  later API/plugin-lifecycle decomposition; sync remains speculative.
+- No source implementation was made in this pass.
+
 ### 2026-08-27 — T64: Experiment Framework Designed 🔄
 
 **T64 Experiment Framework — PLANNED**

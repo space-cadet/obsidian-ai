@@ -1,6 +1,28 @@
 # Active Context
 
-*Last Updated: 2026-08-27 12:53 IST*
+*Last Updated: 2026-08-27 13:21 IST*
+
+### 2026-08-27 — Architecture Modularity Review and Refactoring Plan
+
+The read-only architecture review and file-size scan identified responsibility
+concentration, not merely large files. Current primary candidates are
+`ToolExecutor.ts` (2,159 lines), `useMessageActions.ts` (1,533), `main.ts`
+(1,785), and `api.ts` (765). `ChatApp.tsx` is 1,029 lines but remains mostly
+a composition layer after T22.
+
+Durable ownership is now recorded as follows:
+
+- T60/T60a own capability semantics, resolved availability, and execution
+  pipeline; T46 owns their physical decomposition.
+- T46a owns the proposed extraction of a testable chat-turn coordinator from
+  `useMessageActions.ts`.
+- T48b/T48c/T62a own model-history representation, compaction/retrieval, and
+  elision policy; T64a-T64d provide benchmark evidence for the decision.
+- Sync decomposition remains speculative and no new sync task is created.
+
+Implementation order: complete T60a ownership/projection work, decompose
+`ToolExecutor.ts`, select and consolidate model-history policy using T64b,
+extract the T46a turn coordinator, then reassess `api.ts` and `main.ts`.
 
 ### 2026-08-27 — T64: Experiment Framework Design Complete
 

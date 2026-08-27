@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-26 20:23 IST*
+*Last Updated: 2026-08-27 13:21 IST*
 
 ## Overview
 
@@ -36,6 +36,8 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T57c | Sync Identity, Retry, and Failure Reporting | ✅ | HIGH | 2026-08-22 | 2026-08-23 | T57, T42d | [Details](tasks/T57c.md) |
 | T57d | Data-Sync Provider Contract with SyncIt | 🔄 | MEDIUM | 2026-08-22 | — | T57, T39a | [Details](tasks/T57d.md) |
 | T44 | Standalone UI Preview and Obsidian Host Boundary | 🔄 | MEDIUM | 2026-08-12 | T1, T22 | [Details](tasks/T44.md) |
+| T46 | Core Orchestration Decomposition | 🔄 | MEDIUM | 2026-08-17 | T22, T23, T60a, T48b, T48c | [Details](tasks/T46.md) |
+| T46a | Chat Turn Coordinator Decomposition | 🔄 | HIGH | 2026-08-27 | T46, T60a, T48b, T48c, T62a | [Details](tasks/T46a.md) |
 | T6a | Token Counter Accuracy Fix | 🔄 | HIGH | — | T6 | [Details](tasks/T6a.md) |
 | T48 | Conversation Compaction Mechanism | 🔄 | HIGH | 2026-08-23 | T6a | [Details](tasks/T48.md) |
 | T48a | Token-Budgeted Context Builder | 🔄 | HIGH | 2026-08-23 | T6a, T48 | [Details](tasks/T48a.md) |
@@ -90,7 +92,6 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T20 | Message Selection and Chat History Exports | ✅ | HIGH | 2026-08-14 | 2026-08-14 | T2, T5, T19 | [Details](tasks/T20.md) |
 | T13a | Tool Call Context Persistence Bug Fix | ✅ | HIGH | 2026-08-16 | 2026-08-16 | T13 | [Details](tasks/T13a.md) |
 | T45 | PDF Text Extraction Tool | ✅ | HIGH | 2026-08-16 | 2026-08-16 | T13, T19 | [Details](tasks/T45.md) |
-| T46 | Core Orchestration Decomposition | 🔄 | MEDIUM | 2026-08-17 | — | T22, T23 | [Details](tasks/T46.md) |
 | T60b | Cross-Loop Tool Transport Parity | ✅ | HIGH | 2026-08-25 | 2026-08-25 | T60, T60a, T14, T48b | [Details](tasks/T60b.md) |
 
 ## Task Relationships
@@ -148,6 +149,19 @@ T20: Message Selection and Chat History Exports
 T45: PDF Text Extraction Tool
   └── T13
   └── T19
+T46: Core Orchestration Decomposition
+  └── T22
+  └── T23
+  └── T60a
+  └── T48b
+  └── T48c
+  └── T46a
+T46a: Chat Turn Coordinator Decomposition
+  └── T46
+  └── T60a
+  └── T48b
+  └── T48c
+  └── T62a
 T60: Tool Capability Registry and Execution-Pipeline Hardening
   └── T13
   └── T13a

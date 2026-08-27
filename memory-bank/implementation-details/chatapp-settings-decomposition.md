@@ -1,23 +1,24 @@
 # Implementation Detail: ChatApp + Settings Decomposition
 *Created: 2026-05-28 23:10 IST*
-*Last Updated: 2026-08-12 11:11:56 IST*
-*Related Tasks: T22, T23*
+*Last Updated: 2026-08-27 13:21 IST*
+*Related Tasks: T22, T23, T46, T46a*
 
 ## Context
 Deepak identified that `ChatApp.tsx` (1,948 lines) and `settings.ts` (1,187 lines) are unmaintainably large. This doc records the full analysis and refactoring strategy.
 
-## Current State Reconciliation (2026-08-12)
+## Current State Reconciliation (2026-08-27)
 
 T22 Phase 4 was implemented in commit `da4af7d`, but the original task notes
 were not updated at the time. The repository now contains the session,
 settings, export, search, and context hooks planned for that phase.
 
-The remaining T22 Phase 5 work is the layout extraction: `ChatLayout`,
-`ChatToolbar`, `ChatMainArea`, and `ChatOverlays`. Later T43 participant and
-mobile work means the current `ChatApp.tsx` is 1,022 lines rather than the
+T22 Phase 5 layout extraction is complete: `ChatLayout`, `ChatToolbar`,
+`ChatMainArea`, and `ChatOverlays` are present. Later T43 participant and
+mobile work means the current `ChatApp.tsx` is 1,029 lines rather than the
 historical 551-line Phase 4 result. T44 separately tracks the host boundary
 and standalone browser preview; it should consume the extracted layout rather
-than force the entire controller into a browser fixture.
+than force the entire controller into a browser fixture. The current request
+lifecycle concern is inside `useMessageActions.ts` and is tracked by T46a.
 
 ## File Size Report (Pre-Refactor — Historical)
 
@@ -39,16 +40,18 @@ subsequent T43/T44 surface growth:
 
 | File | Lines | Status |
 |------|-------|--------|
-| `src/components/ChatApp.tsx` | **1,002** | 🔄 Decomposed from 1,948 → ~550 → regrew to 1,002 after T43/T44 additions |
+| `src/components/ChatApp.tsx` | **1,029** | 🔄 Decomposed from 1,948 → ~550 → regrew after T43/T44 additions; still a composition layer |
 | `src/settings.ts` | **341** | ✅ Decomposed from 1,187 |
-| `src/hooks/useMessageActions.ts` | **1,309** | ⚠️ Grew during agentic work; deferred from T22 scope |
-| `src/agent/ToolExecutor.ts` | **1,383** | ❌ Grew 60% during agentic tool calling (T43/T44) |
-| `src/api.ts` | **740** | ⚠️ Grew ~7% during provider additions |
-| `src/main.ts` | **695** | ⚠️ Plugin entry point; never decomposed |
+| `src/hooks/useMessageActions.ts` | **1,533** | ❌ Owns request lifecycle in addition to message actions; T46a |
+| `src/agent/ToolExecutor.ts` | **2,159** | ❌ Capability construction, dispatch, validation, and tool domains; T46/T60a |
+| `src/api.ts` | **765** | ⚠️ Broad provider/history/streaming surface; later T46 phase |
+| `src/main.ts` | **1,785** | ❌ Plugin lifecycle and integration setup remain concentrated; later T46 phase |
 
 **Note**: The "Critical" files from the pre-refactor report (ChatApp.tsx,
-settings.ts) have been addressed. The new critical files are the orchestration
-monoliths: ToolExecutor.ts, api.ts, main.ts. These are tracked under **T46**.
+settings.ts) have been addressed through T22/T23. The current critical files
+are the orchestration modules: `ToolExecutor.ts`, `useMessageActions.ts`, and
+`main.ts`, with `api.ts` as a later candidate. These are tracked under
+**T46/T46a** and must preserve T60/T48/T62 ownership boundaries.
 
 ### Build Artifacts (expected)
 | File | Size | Notes |

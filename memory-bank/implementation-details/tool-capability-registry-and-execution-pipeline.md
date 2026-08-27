@@ -1,6 +1,6 @@
 # Tool Capability Registry and Execution Pipeline
 *Created: 2026-08-25 12:52:36 IST*
-*Last Updated: 2026-08-25 13:47:27 IST*
+*Last Updated: 2026-08-27 13:21 IST*
 *Task: T60*
 
 ## Current Boundary
@@ -22,18 +22,32 @@ The audit found these primary gaps:
 - Disabled runtime capabilities remain model-visible.
 - Existing-content mutations have no approval-time content fingerprint.
 
-## Implemented Versus Target — 2026-08-25
+## Implemented Versus Target — 2026-08-27
 
-Commit `68dc915` implements a bounded registry adapter, provider
-normalization, availability filtering, and projection tests. It does not yet
-make the registry the execution source of truth. `ToolExecutor` still owns
-the main dispatch path, and provider resolution can still reduce complete
-definitions to raw AI SDK tools.
+The registry adapter, provider normalization, availability filtering, and
+registry-backed dispatch are implemented. `ToolExecutor.execute()` delegates
+through the resolved registry rather than a name-based switch. The registry is
+not yet the sole owner of capability assembly: provider resolution can still
+reduce complete definitions to raw AI SDK tools, serializers can be built from
+separate projections, and callers construct/resolve tool state in more than
+one place.
 
-The next implementation gate is test-first registry integration:
-`registry.byId.get('read_note').execute(call)` must have a defined result
-contract and match the existing `ToolExecutor` result before transport parity
-or the full validation pipeline begins.
+The remaining implementation gate is ownership consolidation: provider
+metadata, availability context, AI SDK/OpenResponses projections, prompt and
+preview descriptors, and executor construction must derive from one resolved
+registry result. The existing `registry.byId.get('read_note').execute(call)`
+contract remains the execution behavior to preserve.
+
+## Architecture Review Update — 2026-08-27
+
+The review identified `ToolExecutor.ts` as the primary physical decomposition
+target under T46. T60a owns the capability meaning and resolved context; T46
+owns the extraction of handlers, pipeline, serializers, and formatters. T46a
+owns the separate request-lifecycle extraction from `useMessageActions.ts`.
+
+The desired result is one deep capability module with locality for a tool
+change. Protocol loops and UI callers should consume its resolved definitions
+without reconstructing descriptors, availability, or dispatch ownership.
 
 ## Canonical Definition
 

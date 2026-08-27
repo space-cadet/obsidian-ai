@@ -1,6 +1,20 @@
 # Session Cache
 
-*Last Updated: 2026-08-27 12:53 IST*
+*Last Updated: 2026-08-27 13:21 IST*
+
+## 2026-08-27 Architecture Modularity Review Plan
+
+- Pulled remote Memory Bank changes through `85a5f4c` before reconciliation.
+- Recorded the architecture review and current file-size evidence.
+- Created proposed `T46a` for the chat-turn coordinator extracted from
+  `useMessageActions.ts`.
+- Updated T46, T60/T60a/T60c, T48b/T48c, T62a, T64, and T22 ownership notes,
+  plus the task index and architecture design records.
+- No source code changes in this session; documentation changes remain to be
+  committed and pushed.
+
+*Session: 2026-08-27 13:21 IST*
+*Branch: `main` (85a5f4c + local Memory Bank updates)*
 
 ## 2026-08-27 T64: Experiment Framework Design
 

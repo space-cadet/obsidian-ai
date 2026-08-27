@@ -1,14 +1,16 @@
 # Orchestration Decomposition Design
 *Created: 2026-08-17 06:07 IST*
-*Last Updated: 2026-08-25 12:52:36 IST*
+*Last Updated: 2026-08-27 13:21 IST*
 *Applies to: obsidian-ai plugin codebase — T46*
 
 ## Overview
 
-This document describes the planned decomposition of the three remaining
-monoliths in the obsidian-ai codebase: `ToolExecutor.ts`, `api.ts`, and
-`main.ts`. These files grew during agentic tool calling work (T43/T44) and
-are now the primary maintainability risks.
+This document describes the planned decomposition of the primary orchestration
+modules in the obsidian-ai codebase: `ToolExecutor.ts`,
+`useMessageActions.ts`, `api.ts`, and `main.ts`. These files grew during
+agentic tool calling work (T43/T44) and are now the primary maintainability
+risks. T60/T60a own capability semantics; T46/T46a own the physical module
+arrangement and turn-lifecycle extraction.
 
 ## Guiding Principles
 
@@ -22,7 +24,7 @@ are now the primary maintainability risks.
 
 ---
 
-## Phase 1: ToolExecutor.ts (1,383 → ~400 lines)
+## Phase 1: ToolExecutor.ts (2,159 → ~400 lines)
 
 T60 changes this from a handler-only extraction into a registry-and-pipeline
 decomposition. The target modules must include the canonical capability
@@ -103,9 +105,21 @@ Move `formatToolResult()` from `AgentLoop.ts` to a dedicated formatter or keep
 it in `AgentLoop.ts` (which is already a separate orchestrator). The key rule:
 formatting is an orchestration concern, not a handler concern.
 
+## Phase 1a: Chat Turn Coordinator (T46a)
+
+`useMessageActions.ts` is approximately 1,533 lines. It coordinates UI state
+with request assembly, context and history policy, protocol selection, stream
+events, persistence, tool execution, and approval. T46a owns the follow-up
+extraction of a testable turn coordinator.
+
+The coordinator must consume the resolved T60 capability set and the shared
+T48b/T48c/T62a model-history policy. It must not reimplement availability,
+elision, truncation, compaction, or approval rules. The hook remains the UI
+state and command adapter.
+
 ---
 
-## Phase 2: api.ts (740 → ~300 lines)
+## Phase 2: api.ts (765 → ~300 lines)
 
 ### Current State
 `ChatAPIManager` does:
@@ -175,7 +189,7 @@ export class ProviderFactory {
 
 ---
 
-## Phase 3: main.ts (695 → ~300 lines)
+## Phase 3: main.ts (1,785 → ~300–400 lines)
 
 ### Current State
 `ObsidianAIPlugin` does:
@@ -224,12 +238,15 @@ export default class ObsidianAIPlugin extends Plugin {
 
 ## Dependencies and Order
 
-1. **Phase 1 (ToolExecutor)** can start immediately. It has no dependencies on
-   Phase 2 or 3.
-2. **Phase 2 (api.ts)** can start after Phase 1 or in parallel. The streaming
-   layer depends on the provider factory, but not on ToolExecutor.
-3. **Phase 3 (main.ts)** should come last. It needs to know the final shapes
-   of the storage, API, and UI modules.
+1. **T60a completion and Phase 1 (ToolExecutor)** establish capability
+   ownership and the shared execution pipeline.
+2. **T48b/T48c/T62a plus T64b** establish the model-history policy and its
+   retention evidence.
+3. **Phase 1a (T46a)** extracts the chat-turn coordinator using those owners.
+4. **Phase 2 (api.ts)** can follow as an independent provider/history/streaming
+   decomposition.
+5. **Phase 3 (main.ts)** should come last because it coordinates the final
+   storage, API, and UI module shapes.
 
 ## Risk Mitigation
 
@@ -244,6 +261,7 @@ export default class ObsidianAIPlugin extends Plugin {
 
 | File | Current | Target | Hard Limit |
 |------|---------|--------|------------|
-| ToolExecutor.ts | 1,383 | ~400 | 500 |
-| api.ts | 740 | ~300 | 400 |
-| main.ts | 695 | ~300 | 400 |
+| ToolExecutor.ts | 2,159 | ~400 | 500 |
+| useMessageActions.ts | 1,533 | thin UI adapter; see T46a | — |
+| api.ts | 765 | ~300 | 400 |
+| main.ts | 1,785 | ~300–400 | 400 |
