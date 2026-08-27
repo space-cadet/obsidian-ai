@@ -1,4 +1,4 @@
-import { App, Modal, Notice, Platform, Setting } from "obsidian";
+import { App, Modal, Notice, Platform, Setting, TFile } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection } from "./helpers";
 import { summarizeLlmUsage } from "../lib/usageStats";
@@ -9,6 +9,34 @@ interface DiskUsageBreakdown {
 	attachments: number;
 	settings: number;
 	other: number;
+}
+
+interface DiagnosticsExport {
+	exportVersion: string;
+	exportedAt: string;
+	pluginVersion: string;
+	settings: Record<string, unknown>;
+	sessions: {
+		id: string;
+		title: string;
+		createdAt: number;
+		updatedAt: number;
+		messageCount: number;
+		model?: string;
+	}[];
+	usage: ReturnType<typeof summarizeLlmUsage>;
+	memoryStats?: {
+		totalMemories: number;
+		byCategory: Record<string, number>;
+	};
+	debugInfo: {
+		platform: string;
+		obsidianVersion: string;
+		pluginVersion: string;
+		heapUsedMB: number | null;
+		heapTotalMB: number | null;
+		domNodes: number;
+	};
 }
 
 /** Calculate disk usage of the plugin directory using Node fs APIs (Electron environment). */
@@ -308,6 +336,73 @@ export function renderDiagnosticsSection(
 					refreshMetrics().then(() => {
 						btn.setDisabled(false);
 					});
+				}),
+		);
+
+	new Setting(sectionEl)
+		.setName("Export diagnostics")
+		.setDesc("Download a JSON file with plugin diagnostics, settings (redacted), and session metadata for debugging or benchmark fixtures.")
+		.addButton((btn) =>
+			btn
+				.setButtonText("Export")
+				.setIcon("download")
+				.onClick(async () => {
+					btn.setDisabled(true);
+					try {
+						const chatData = await plugin.loadChatData();
+						const usage = summarizeLlmUsage(chatData.sessions);
+
+						// Redact sensitive settings
+						const redactedSettings = { ...plugin.settings };
+						for (const key of Object.keys(redactedSettings)) {
+							if (/key|token|password|secret|credential/i.test(key)) {
+								(redactedSettings as Record<string, unknown>)[key] = "<redacted>";
+							}
+						}
+						if ((redactedSettings as Record<string, unknown>).apiProfiles) {
+							const profiles = (redactedSettings as Record<string, unknown>).apiProfiles as Array<Record<string, unknown>>;
+							(redactedSettings as Record<string, unknown>).apiProfiles = profiles.map((p) => ({
+								...p,
+								apiKey: "<redacted>",
+							}));
+						}
+
+						const mem = (performance as any).memory;
+						const exportData: DiagnosticsExport = {
+							exportVersion: "1.0",
+							exportedAt: new Date().toISOString(),
+							pluginVersion: plugin.manifest.version,
+							settings: redactedSettings,
+							sessions: chatData.sessions.map((s) => ({
+								id: s.id,
+								title: s.title,
+								createdAt: s.createdAt,
+								updatedAt: s.updatedAt,
+								messageCount: s.messages.length,
+								model: (s as any).model ?? "unknown",
+							})),
+							usage,
+							debugInfo: {
+								platform: Platform.isMobile ? "mobile" : "desktop",
+								obsidianVersion: (app as any).version ?? "unknown",
+								pluginVersion: plugin.manifest.version,
+								heapUsedMB: mem ? Math.round(mem.usedJSHeapSize / 1024 / 1024) : null,
+								heapTotalMB: mem ? Math.round(mem.totalJSHeapSize / 1024 / 1024) : null,
+								domNodes: document.getElementsByTagName("*").length,
+							},
+						};
+
+						// Write to vault
+						const filename = `obsidian-ai-diagnostics-${new Date().toISOString().slice(0, 10)}.json`;
+						const content = JSON.stringify(exportData, null, 2);
+						const file = await app.vault.create(filename, content);
+
+						new Notice(`✓ Exported to ${filename}`);
+					} catch (err) {
+						new Notice(`Export failed: ${err instanceof Error ? err.message : String(err)}`);
+					} finally {
+						btn.setDisabled(false);
+					}
 				}),
 		);
 
