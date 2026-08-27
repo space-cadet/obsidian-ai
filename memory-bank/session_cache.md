@@ -1,6 +1,17 @@
 # Session Cache
 
-*Last Updated: 2026-08-27 18:10:37 IST*
+*Last Updated: 2026-08-28 00:04:01 IST*
+
+## 2026-08-28 T46/T46a Review Closeout and Merge
+
+- Reviewed the pushed PR #7 head and confirmed the review fixes for agent
+  slash-command routing, manual-approval executor reuse, and formatting.
+- Added focused hook coverage for both fixes.
+- Verified 42 test files / 363 tests, TypeScript, production build, changed
+  file Prettier, and `git diff --check`.
+- Merged PR #7 into `main` as `975bb7e` and fast-forwarded the local checkout.
+- T46 remains active because provider-switching and real-provider acceptance
+  are still runtime gates; T46a remains complete.
 
 ## 2026-08-27 T46a Turn Output
 

@@ -51,3 +51,20 @@ The extraction sets up the codebase well:
 - `ChatTurnCoordinator` can be extended with memory context loading
 
 The hot/cold memory + TF-IDF work can layer cleanly on top of this foundation.
+
+## Post-Review Resolution — 2026-08-28
+
+PR #7 was merged into `main` as `975bb7e`.
+
+- Agent-provider slash commands now use `runChatTurn()` and the OpenResponses
+  path instead of falling through to `streamChat()`.
+- `TurnLifecycle.approveTool()` reuses the active `ToolExecutor`, preserving
+  continuation and pagination state across manual approval.
+- `turnLifecycle.ts` was formatted.
+- Regression coverage was added for both review fixes.
+- Verification passed: 42 test files / 363 tests, TypeScript, production
+  build, changed-file Prettier, and `git diff --check`.
+
+The remaining T46 gate is runtime validation of provider switching and real
+providers; the original cosmetic and type-tightening recommendations remain
+non-blocking follow-ups.

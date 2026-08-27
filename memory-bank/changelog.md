@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased - 2026-08-28
+
+### Fixed
+- Routed agent-provider slash commands through the OpenResponses turn
+  coordinator so `/create`, `/edit`, and `/append` do not use the unsupported
+  standard `streamChat()` path — T46.
+- Reused the active `ToolExecutor` when manually approving a tool call so
+  continuation and pagination state survive approval — T46/T46a.
+
+### Tests
+- Added regression coverage for agent slash-command routing and approval
+  executor reuse.
+- Verified 42 test files / 363 tests, TypeScript, production build, and the
+  changed-file Prettier check after PR #7 was merged as `975bb7e`.
+
 ## Unreleased - 2026-08-27
 
 ### Changed

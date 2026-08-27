@@ -1,6 +1,19 @@
 # Active Context
 
-*Last Updated: 2026-08-27 22:15 IST*
+*Last Updated: 2026-08-28 00:04:01 IST*
+
+### 2026-08-28 — T46/T46a review closeout and merge
+
+PR #7 (`T46: Reconcile orchestration decomposition`) was merged into `main`
+as `975bb7e`. Review follow-ups routed agent-provider slash commands through
+`runChatTurn()`, reused the turn `ToolExecutor` across manual approvals, and
+formatted `turnLifecycle.ts`.
+
+Added regression coverage for the slash-command route and approval-resume
+executor reuse. Verification passed with 42 test files / 363 tests,
+TypeScript, the production build, the changed-file Prettier check, and
+`git diff --check`. Provider-switching and real-provider acceptance remain
+runtime gates for T46.
 
 ### 2026-08-27 — T46/T46a reconciliation
 
@@ -12,8 +25,7 @@ The reconciliation branch keeps the main-branch `TurnLifecycle`, `api.ts`, and
 
 Fresh verification passed: 43 test files / 362 tests, TypeScript, and the
 production build. Provider-switching and real-provider acceptance remain
-runtime gates. The reconciliation branch still needs its final commit and
-remote push.
+runtime gates. The reconciliation branch was subsequently merged into `main`.
 
 ### 2026-08-27 — T46a turn output extraction
 

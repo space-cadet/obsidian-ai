@@ -1,3 +1,15 @@
+### 2026-08-28 — T46/T46a PR Review and Merge ✅
+
+- Reviewed PR #7 after the pushed review fixes and confirmed the reconciled
+  orchestration decomposition was mergeable.
+- Added regression coverage for agent-provider slash commands and reuse of the
+  same `ToolExecutor` across manual approval.
+- Merged PR #7 into `main` as `975bb7e`.
+- Verification passed: 42 test files / 363 tests, TypeScript, production
+  build, changed-file Prettier, and `git diff --check`.
+- T46 remains active for provider-switching and real-provider acceptance;
+  T46a is complete.
+
 ### 2026-08-27 — T46a: Chat Turn Coordinator Extracted ✅
 
 - Extracted `TurnLifecycle` class from `useMessageActions.ts` into new

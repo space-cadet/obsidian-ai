@@ -62,3 +62,16 @@
 - All 359 tests must pass
 - Build must succeed
 - No functional regressions
+
+## Reconciliation Review and Merge — 2026-08-28
+
+The T46/T46a reconciliation was merged into `main` as PR #7 / `975bb7e`.
+Review fixes route agent-provider slash commands through the shared turn
+coordinator and preserve the active `ToolExecutor` across manual approval.
+Focused regression tests cover both boundaries. Verification passed with 42
+test files / 363 tests, TypeScript, the production build, and the changed-file
+Prettier check.
+
+Remaining work is runtime acceptance of provider switching and real providers;
+the decomposition itself is merged. T46 remains active until those gates are
+verified.

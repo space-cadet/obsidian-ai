@@ -109,3 +109,25 @@ The `api.ts` and `main.ts` phases have not started.
 - Next step: review whether the remaining UI callback and approval lifecycle
   work can move without weakening the runtime boundary. `api.ts` and `main.ts`
   remain later phases.
+
+## Review Fixes and Merge — 2026-08-28 00:04:01 IST
+
+- Reviewed the pushed PR #7 head and confirmed it was mergeable with all
+  GitHub checks successful.
+- Confirmed the agent-provider slash-command fix: `/create`, `/edit`, and
+  `/append` use `runChatTurn()` and do not fall through to `streamChat()`.
+- Confirmed the manual-approval fix: `TurnLifecycle` reuses the active
+  `ToolExecutor` so continuation and pagination state survive approval.
+- Formatted `src/agent/turnLifecycle.ts` and added focused regression tests for
+  both review fixes.
+- Verified 42 test files / 363 tests, TypeScript, production build,
+  changed-file Prettier, and `git diff --check`.
+- Merged PR #7 into `main` as `975bb7e`; local `main` was fast-forwarded and
+  the merged feature branch's remote-tracking reference was pruned.
+
+## Remaining Gates
+
+- Provider-switching and real-provider acceptance remain runtime checks for
+  T46.
+- T46a is complete; further decomposition work should follow the remaining
+  boundaries recorded in T46 rather than reopen the merged slice.
