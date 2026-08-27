@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
   definitions used for execution.
 - Split the remaining capability handlers into separate domain modules and
   added a shared handler context.
+- Moved prompt creation, history projection, request budgeting, and model
+  message assembly into `ChatTurnRequest.ts`.
 
 ### Tests
 - Verified 41 test files / 359 tests, TypeScript, and the production build.

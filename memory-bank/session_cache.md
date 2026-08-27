@@ -1,6 +1,16 @@
 # Session Cache
 
-*Last Updated: 2026-08-27 17:53:12 IST*
+*Last Updated: 2026-08-27 17:58:34 IST*
+
+## 2026-08-27 T46a Request Preparation
+
+- Added `src/agent/ChatTurnRequest.ts` for prompt creation, history projection,
+  request budgeting, attachment message assembly, and model-message assembly.
+- `useMessageActions.ts` is now 1,305 lines; it still owns UI callbacks and
+  persistence.
+- Focused tests: 31 passed. Full suite: 41 files / 359 tests passed.
+- TypeScript and production build passed.
+- Next: move turn callbacks and final message persistence behind the coordinator.
 
 ## 2026-08-27 T46 Capability Domain Split
 

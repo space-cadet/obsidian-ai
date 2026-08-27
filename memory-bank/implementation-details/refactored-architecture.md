@@ -1,7 +1,7 @@
 # Refactored Architecture Guide
 
 *Created: 2026-05-29*
-*Last Updated: 2026-08-27 17:53:12 IST*
+*Last Updated: 2026-08-27 17:57:29 IST*
 *Applies to: obsidian-ai plugin codebase*
 
 ## Overview
@@ -75,7 +75,8 @@ src/
 ├── agent/                         # Agentic logic
 │   ├── AgentLoop.ts               # Tool calling loop
 │   ├── ChatTurnCoordinator.ts     # Shared native/OpenResponses turn runner (T46a)
-│   ├── ToolExecutor.ts            # Registry-backed tool execution layer (265 lines; T46)
+│   ├── ChatTurnRequest.ts         # Prompt, history, and request assembly (T46a)
+│   ├── ToolExecutor.ts            # Registry-backed tool execution layer (292 lines; T46)
 │   ├── tools/                     # Resolved definitions, lookup, and handlers (T46)
 │   │   ├── ToolHandlerContext.ts   # Shared services for capability handlers
 │   │   └── handlers/               # Note, bulk, discovery, vault, web, memory, session, settings
@@ -222,14 +223,14 @@ import { buildContext } from "../lib/contextUtils";
 | Settings config | 400 lines | 500 | settings.ts: 341 ✅ |
 | Settings sections | 200 lines | 300 | diagnostics.ts: 189 ✅ |
 | React components | 500 lines | 700 | ChatApp.tsx: 1,029 ⚠️ |
-| Hooks | 400 lines | 600 | useMessageActions.ts: 1,533 ❌ |
+| Hooks | 400 lines | 600 | useMessageActions.ts: 1,305 ❌ |
 | Utilities | 150 lines | 200 | sessionTitle.ts: 137 ✅ |
 | Agent logic | 500 lines | 700 | ToolExecutor.ts: 265 ✅ |
 | API layer | 400 lines | 500 | api.ts: 765 ⚠️ |
 | Plugin entry | 400 lines | 500 | main.ts: 1,785 ❌ |
 
-**Note**: `useMessageActions.ts` (1,350), `main.ts` (1,785), and `api.ts`
-(765) remain decomposition candidates. `ToolExecutor.ts` is now 265 lines,
+**Note**: `useMessageActions.ts` (1,305), `main.ts` (1,785), and `api.ts`
+(765) remain decomposition candidates. `ToolExecutor.ts` is now 292 lines,
 with its remaining handler domains tracked under T46. `ChatApp.tsx` is large
 but already acts primarily as a composition layer. T46 tracks the physical
 work and T46a tracks the chat-turn coordinator.

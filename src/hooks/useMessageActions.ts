@@ -21,23 +21,19 @@ import {
 	estimateContentPartsTokens,
 	estimateAttachmentTokens,
 } from "../context/tokenEstimator";
-import {
-	buildBudgetedHistory,
-	truncateTextForTokens,
-} from "../context/contextBudget";
+import { truncateTextForTokens } from "../context/contextBudget";
 import {
 	compactionHysteresisReleased,
 	formatCompactionSummary,
 	planSemanticCompaction,
 } from "../context/semanticCompaction";
 import { appendPendingText, finalizeContentParts } from "../lib/streamingUtils";
-import { buildSystemPrompt } from "../lib/systemPrompt";
 import { parseSlashCommand } from "../lib/slashCommand";
-import { buildHistoryWithTools } from "../lib/historyBuilder";
 import { handleDebugCommand } from "../lib/debugCommands";
 import { makeId } from "../lib/sessionUtils";
 import { getActiveProviderProfile } from "../settings";
 import { stripThinkingTags } from "../components/MessageBubble";
+import { buildChatTurnRequest } from "../agent/ChatTurnRequest";
 import type { ChatRuntimeState, ChatRuntimePatch } from "./useChatRuntimeState";
 
 function formatPastSessionLinks(
@@ -606,18 +602,6 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					-Math.max(3, plugin.settings.preserveRecentMessages ?? 4),
 				);
 			}
-			const legacyHistory = buildHistoryWithTools(
-				modelHistory,
-				maxContextMessages,
-				plugin.settings.maxToolResultTokens ?? 4000,
-				plugin.settings.toolHistoryMode ?? "elide",
-			);
-
-			let userContent = sendText;
-			if (resolved.contextString) {
-				userContent = `${resolved.contextString}\n\n${sendText}`;
-			}
-
 			const isAgentProvider = activeProfile.provider === "agent";
 			const useTools =
 				plugin.settings.enableAgentTools || isAgentProvider;
@@ -637,61 +621,32 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 			const autoApprove = plugin.settings.autoApply;
 			const maxAgentSteps = plugin.settings.maxAgentSteps;
 
-			let userMessageContent:
-				| string
-				| import("../api").MessageContentPart[] = userContent;
-			if (resolvedAttachmentParts.length > 0) {
-				userMessageContent = [
-					{ type: "text", text: userContent },
-					...resolvedAttachmentParts,
-				];
-			}
-
-			let systemPrompt = await buildSystemPrompt(
-				sendContextItems,
-				plugin.personaLoader,
-				slashCmd ?? undefined,
-				useTools && !slashCmd,
-				undefined,
-				resolvedToolRegistry.definitions,
-			);
-			if (compactionSummary) {
-				systemPrompt += `\n\n${compactionSummary}`;
-			}
-			const budgetedHistory = buildBudgetedHistory({
-				systemPrompt,
-				currentMessage: userMessageContent,
-				history: legacyHistory,
-				options: {
+			const { chatMessages, fullPayloadTokenEstimate } =
+				await buildChatTurnRequest({
+					contextItems: sendContextItems,
+					personaLoader: plugin.personaLoader,
+					slashCommand: slashCmd ?? undefined,
+					useTools,
+					toolDefinitions: resolvedToolRegistry.definitions,
+					compactionSummary,
+					sendText,
+					resolvedContextString: resolved.contextString,
+					resolvedAttachmentParts,
+					history: modelHistory,
+					maxContextMessages,
+					maxToolResultTokens:
+						plugin.settings.maxToolResultTokens ?? 4000,
+					toolHistoryMode: plugin.settings.toolHistoryMode ?? "elide",
 					maxRequestTokens: plugin.settings.maxRequestTokens ?? 32000,
-					maxMessages: maxContextMessages,
 					preserveRecentMessages:
 						plugin.settings.preserveRecentMessages ?? 4,
 					responseReserveTokens:
 						plugin.settings.requestResponseReserveTokens ?? 4096,
-					additionalTokens: useTools
-						? estimateTokens(JSON.stringify(toolRegistry) ?? "")
-						: 0,
-				},
-			});
-			if (budgetedHistory.overBudget) {
-				throw new Error(
-					"The request exceeds the configured model context budget. Reduce the prompt or increase the request budget.",
-				);
-			}
-			const chatMessages = [
-				{ role: "system" as const, content: systemPrompt },
-				...budgetedHistory.history,
-				{
-					role: "user" as const,
-					content: userMessageContent,
-				},
-			];
-
-			const fullPayloadTokenEstimate = plugin.settings
-				.showFullRequestTokens
-				? estimateTokens(JSON.stringify(chatMessages))
-				: userTokenEstimate;
+					showFullRequestTokens:
+						plugin.settings.showFullRequestTokens,
+					userTokenEstimate,
+					toolRegistry,
+				});
 
 			// Update runtime with full payload estimate so UI shows correct starting count
 			patchRuntime(currentActiveId, {

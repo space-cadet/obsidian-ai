@@ -1,8 +1,21 @@
 # Edit History
 
-*Last Updated: 2026-08-27 17:53:12 IST*
+*Last Updated: 2026-08-27 17:58:34 IST*
 
 ## 2026-08-27
+
+#### 17:58:34 IST - T46a: Extract request preparation from the React hook
+- Created `src/agent/ChatTurnRequest.ts` - Prompt, history, budget, attachment, and model-message assembly
+- Modified `src/hooks/useMessageActions.ts` - Delegated request preparation while retaining UI and persistence behavior
+- Modified `memory-bank/tasks/T46.md` - Recorded the request-preparation slice and current size
+- Modified `memory-bank/tasks/T46a.md` - Recorded the request builder and remaining lifecycle work
+- Modified `memory-bank/activeContext.md` - Recorded the new extraction and verification
+- Modified `memory-bank/session_cache.md` - Recorded the new extraction and next step
+- Modified `memory-bank/progress.md` - Added the request-preparation milestone
+- Modified `memory-bank/changelog.md` - Recorded the request builder
+- Modified `memory-bank/sessions/2026-08-27-architecture-modularity.md` - Appended the request-preparation update
+- Modified `memory-bank/implementation-details/orchestration-decomposition.md` - Recorded request assembly ownership
+- Modified `memory-bank/implementation-details/refactored-architecture.md` - Added the request builder and updated sizes
 
 #### 17:53:12 IST - T46: Split capability handlers by domain
 - Created `src/agent/tools/ToolHandlerContext.ts` - Shared host services and continuation state

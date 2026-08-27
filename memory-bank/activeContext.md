@@ -1,6 +1,17 @@
 # Active Context
 
-*Last Updated: 2026-08-27 17:53:12 IST*
+*Last Updated: 2026-08-27 17:58:34 IST*
+
+### 2026-08-27 — T46a request preparation extraction
+
+Added `src/agent/ChatTurnRequest.ts` on the architecture branch. It now owns
+system-prompt creation, tool-history projection, request budgeting, attachment
+message assembly, and the final model-message list. The hook supplies inputs
+and keeps UI updates and persistence.
+
+`useMessageActions.ts` is now 1,305 lines. Focused tests, the full 359-test
+suite, TypeScript, and the production build pass. The next T46a work is to
+move the remaining turn callbacks and persistence boundary out of the hook.
 
 ### 2026-08-27 — T46 capability domains split
 

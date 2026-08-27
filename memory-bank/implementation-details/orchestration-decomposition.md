@@ -1,6 +1,6 @@
 # Orchestration Decomposition Design
 *Created: 2026-08-17 06:07 IST*
-*Last Updated: 2026-08-27 17:53:12 IST*
+*Last Updated: 2026-08-27 17:57:29 IST*
 *Applies to: obsidian-ai plugin codebase — T46*
 
 ## Overview
@@ -118,6 +118,8 @@ The first implementation slice follows the design above:
   same host services and continuation store.
 - `ChatTurnCoordinator.ts` provides one React-free entry point for native and
   OpenResponses turns.
+- `ChatTurnRequest.ts` builds the prompt, bounded history, request budget, and
+  model-message list without depending on React.
 - Prompt text and OpenResponses tools are built from the resolved definitions.
 
 The focused tool/provider tests, full test suite, TypeScript check, and

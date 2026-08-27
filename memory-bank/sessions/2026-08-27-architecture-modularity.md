@@ -74,3 +74,14 @@ The `api.ts` and `main.ts` phases have not started.
   and the production build.
 - Next step: continue T46a by extracting request preparation and lifecycle
   state from `useMessageActions.ts`.
+
+## Request Preparation Extraction — 2026-08-27 17:58:34 IST
+
+- Added `src/agent/ChatTurnRequest.ts` for prompt creation, bounded history,
+  request budgeting, attachment assembly, and model-message assembly.
+- Reduced `useMessageActions.ts` to 1,305 lines while leaving UI updates and
+  final persistence in the hook.
+- Verified 31 focused tests, 359 full-suite tests, TypeScript, and the
+  production build.
+- Next step: move turn callbacks and final message persistence behind the
+  coordinator.

@@ -1,3 +1,12 @@
+### 2026-08-27 — T46a Request Preparation Extraction 🔄
+
+- Added `src/agent/ChatTurnRequest.ts` to build the prompt, bounded history,
+  budgeted model messages, and attachment content outside the React hook.
+- Reduced `useMessageActions.ts` to 1,305 lines while preserving its UI updates
+  and persistence behavior.
+- Verified focused tests, all 359 tests, TypeScript, and the production build.
+- Next: extract turn callbacks and final message persistence.
+
 ### 2026-08-27 — T46 Capability Domain Split 🔄
 
 - Replaced the temporary `ToolHandlers.ts` grouping with separate handlers for
