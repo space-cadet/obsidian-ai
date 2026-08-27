@@ -30,6 +30,7 @@ const mockPlugin = {
 		enableAgentTools: false,
 	},
 	chatapi: {},
+	saveSettings: vi.fn(),
 };
 
 vi.mock("obsidian", () => ({
