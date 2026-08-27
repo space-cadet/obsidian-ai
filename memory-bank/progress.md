@@ -1,3 +1,37 @@
+### 2026-08-27 — T64: Experiment Framework Designed 🔄
+
+**T64 Experiment Framework — PLANNED**
+- Designed 7 experiments for the benchmark harness to determine optimal settings
+  configurations for minimum token use and maximum chat fidelity
+- Defined parameter sweep space: `maxToolResultTokens`, `toolHistoryMode`,
+  `maxContextMessages`, `maxRequestTokens`, `preserveRecentMessages`,
+  `requestResponseReserveTokens`
+- Defined fidelity metrics: `recent_preservation`, `content_retention`,
+  `tool_call_coverage`
+- Proposed composite scoring: `score = 0.5*savings + 0.3*recent + 0.2*retention`
+- Created sub-tasks: T64a (Pareto sweep), T64b (Preserve retention),
+  T64c (Fidelity scoring), T64d (Live validation)
+
+**Key decisions:**
+- Start with Experiment 2 (preserve mode retention) — addresses active T62a bug
+- Then Experiment 1 (Pareto frontier) — most actionable data
+- Both are Level 1 (free, fast, no API calls)
+
+**Files modified (memory-bank only):**
+- `memory-bank/tasks/T64.md` — Added experiment acceptance criteria, sub-tasks
+- `memory-bank/tasks/T62a.md` — Added T64b validation reference
+- `memory-bank/implementation-details/context-benchmark-harness.md` — Added
+  Experiment Framework, Fidelity Metrics, Composite Scoring, Experiments 1–7
+- `memory-bank/tasks/T64a.md` — Created
+- `memory-bank/tasks/T64b.md` — Created
+- `memory-bank/tasks/T64c.md` — Created
+- `memory-bank/tasks/T64d.md` — Created
+- `memory-bank/progress.md` — This entry
+- `memory-bank/activeContext.md` — Updated focus
+- `memory-bank/tasks.md` — Added T64a–T64d rows
+- `memory-bank/edits/2026-08-27/1253-T64-experiment-framework.md` — Edit chunk
+- `memory-bank/sessions/2026-08-27-afternoon.md` — Session log
+
 ### 2026-08-27 — T64: Benchmark Harness Live Mode + Diagnostics Export ✅
 
 **T64 Level 2 (Live API) — COMPLETE**

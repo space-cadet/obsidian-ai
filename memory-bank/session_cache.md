@@ -1,6 +1,54 @@
 # Session Cache
 
-*Last Updated: 2026-08-26 03:23:54 IST*
+*Last Updated: 2026-08-27 12:53 IST*
+
+## 2026-08-27 T64: Experiment Framework Design
+
+- Designed 7 experiments for T64 benchmark harness to find optimal settings
+  configurations for minimum token use and maximum chat fidelity
+- Defined parameter sweep space: `maxToolResultTokens`, `toolHistoryMode`,
+  `maxContextMessages`, `maxRequestTokens`, `preserveRecentMessages`,
+  `requestResponseReserveTokens`
+- Defined fidelity metrics: `recent_preservation`, `content_retention`,
+  `tool_call_coverage`
+- Proposed composite scoring: `score = 0.5*savings + 0.3*recent + 0.2*retention`
+- Created sub-tasks: T64a (Pareto sweep), T64b (Preserve retention),
+  T64c (Fidelity scoring), T64d (Live validation)
+- Priority: T64b first (active T62a bug), then T64a (most actionable data)
+- Memory-bank updated: T64, T62a, harness design doc, progress, activeContext,
+  tasks registry, session log, edit chunk
+- New task files: T64a.md, T64b.md, T64c.md, T64d.md
+- No source code changes in this session
+
+*Session: 2026-08-27 12:53 IST*
+*Branch: `main` (759af20)*
+*Models: kimi/k3*
+
+---
+
+## 2026-08-27 T64: Benchmark Harness Live Mode + T61 Export Button
+
+- **T64 Level 2 (live API) — COMPLETE**
+  - Added `--live` mode to `benchmarks/context-benchmark.ts`
+  - Configurable providers: `--provider openrouter|kimi|kimi-custom`
+  - Provider configs loaded from `~/.openclaw/openclaw.json`
+  - **OpenRouter + GPT-4o-mini: ✅ All 12 fixture/strategy combos pass**
+    - e.g. attachment+preserve: 14,668 actual (est: 19,597, Δ: -25%)
+    - Average over-estimation: ~64%
+  - **Kimi: ❌ 401 Invalid Authentication** — both config key and user key fail
+- **T61 Export Button — COMPLETE**
+  - Added "Export" button to Diagnostics settings
+  - Downloads JSON with redacted settings, session metadata, usage stats, debug info
+  - Committed: `2959ad8`
+- **Prerelease cleanup** — deleted 5 stale prereleases + 6 tags, kept 3 latest
+- **Bug discovered**: `preserve` mode still truncates via `maxToolResultTokens`
+  — fix deferred pending harness experiments
+- Memory-bank updated: T64 task status, implementation docs, progress, edit chunk
+- Commits: `2959ad8` (export), `759af20` (benchmark live mode + docs)
+
+*Session: 2026-08-27 04:00–06:47 UTC*
+*Branch: `main`*
+*Models: kimi/k3*
 
 ## 2026-08-26 T60 implementation and live validation
 

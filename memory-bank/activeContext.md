@@ -1,6 +1,22 @@
 # Active Context
 
-*Last Updated: 2026-08-26 03:23:54 IST*
+*Last Updated: 2026-08-27 12:53 IST*
+
+### 2026-08-27 — T64: Experiment Framework Design Complete
+
+**Current focus:** Implementing T64 benchmark experiment framework.
+
+Experiment framework designed with 7 experiments to determine optimal context
+optimization settings. Priority order:
+1. **T64b** — Preserve mode content retention (addresses active T62a bug)
+2. **T64a** — Pareto frontier sweep (most actionable config data)
+3. **T64c** — Fidelity-weighted scoring (quality-aware rankings)
+4. **T64d** — Live estimator validation (costs money, deferred)
+
+**Next step:** Implement harness extensions for parameterized strategies and
+fidelity metrics, then run Experiment 2 (preserve retention).
+
+---
 
 ### 2026-08-26 — T62 Elision Regression Discovered
 

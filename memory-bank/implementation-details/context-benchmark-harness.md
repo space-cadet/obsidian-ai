@@ -146,9 +146,56 @@ per fixture (uses `max_tokens: 10` for minimal completions).
 | T6a (token accuracy) | Compares `estimateTokens()` against provider-reported usage |
 | T60d (search defaults) | Measures impact of lowering `search_notes` default limit |
 
-## Acceptance Criteria
+## Experiment Framework
 
-See `memory-bank/tasks/T64.md` for full acceptance criteria.
+The harness supports structured experiments for finding optimal settings
+configurations. Experiments are parameterized sweeps over the context
+optimization space, producing ranked recommendations.
+
+### Parameter Space
+
+| Setting | Default | Range to Test |
+|---------|---------|---------------|
+| `maxToolResultTokens` | 4000 | 0, 1000, 2000, 4000, 8000 |
+| `toolHistoryMode` | "elide" | "elide", "preserve" |
+| `maxContextMessages` | 10 | 5, 10, 20, 50, 100 |
+| `maxRequestTokens` | 32000 | 8000, 16000, 32000, 64000 |
+| `preserveRecentMessages` | 4 | 2, 4, 8 |
+| `requestResponseReserveTokens` | 2048 | 1024, 2048, 4096 |
+
+### Fidelity Metrics
+
+Beyond raw token counts, experiments measure:
+
+- **`recent_preservation`** — % of last N messages (`preserveRecentMessages`)
+  kept intact (not truncated or dropped from history)
+- **`content_retention`** — % of original tool result text preserved in
+  history replay after truncation/elision
+- **`tool_call_coverage`** — % of tool calls whose results remain visible
+  to the model (not fully elided)
+
+### Composite Scoring
+
+```
+score = 0.5 × savings_percent
+      + 0.3 × recent_preservation
+      + 0.2 × content_retention
+```
+
+Weights are provisional. The score penalizes both waste and information loss,
+ranking configurations by "optimal" rather than just "cheapest."
+
+### Planned Experiments
+
+| # | Title | Parameters Swept | Output |
+|---|-------|-----------------|--------|
+| 1 | Pareto Frontier Sweep | `maxToolResultTokens` × `toolHistoryMode` × `maxContextMessages` | Non-dominated configs per fixture |
+| 2 | Preserve Mode Retention | `maxToolResultTokens` ∈ [0, 1000, 2000, 4000, 8000, 16000, ∞] | Retention % curve per fixture |
+| 3 | Budget × Elide Interaction | baseline, elide-only, budget-only, elide+budget | 4×3 token matrix |
+| 4 | Fidelity-Weighted Score | All configs scored with composite function | Ranked recommendation list |
+| 5 | Live Estimator Validation | 5 frontier configs × 3 fixtures × OpenRouter | Estimated vs actual scatter |
+| 6 | Semantic Compaction | no-compaction, compaction at (8000/4000), compaction + elide | Tokens + summary quality |
+| 7 | Real Session Replay | 3–5 anonymized real sessions as fixtures | Real-world distribution |
 
 ## Open Questions
 
