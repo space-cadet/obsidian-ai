@@ -1,3 +1,13 @@
+### 2026-08-28 — T41 v1.4.1 Community Review Fixes ✅
+
+- Released v1.4.1 to fix blocking Obsidian Community Review errors found in v1.4.0:
+  - `no-unsupported-api` (4 instances in SyncLogger.ts, storage.ts)
+  - `no-static-styles-assignment` (~49 instances in SyncProgressModal.ts, syncComponents.ts, remoteStorageSettings.ts)
+- Refactored all inline styles to CSS classes; added `.is-hidden` utility class
+- Replaced `app.loadLocalStorage/saveLocalStorage` with browser `localStorage`
+- Fixed release tag naming: deleted `v1.4.1`, recreated as `1.4.1` to match manifest version
+- Review status: ✅ Passed
+
 ### 2026-08-28 — T46/T46a PR Review and Merge ✅
 
 - Reviewed PR #7 after the pushed review fixes and confirmed the reconciled

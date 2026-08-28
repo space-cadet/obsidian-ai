@@ -1,10 +1,23 @@
 # Error Log
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-08-27 17:41:07 IST*
+*Last Updated: 2026-08-28 18:39 IST*
 
 *Newest entries first. Each entry documents a development error, its cause, and resolution.*
 
 ---
+
+### 2026-08-28 18:39 IST — Community Review Blocking Errors (ERR-20260828-001)
+
+- **Symptom:** Obsidian Community Directory review failed with `no-unsupported-api` and `no-static-styles-assignment` errors after v1.4.0 release.
+- **Cause:** 
+  1. Code used `app.loadLocalStorage/saveLocalStorage` which requires newer Obsidian than `minAppVersion: 1.4.5`
+  2. ~49 inline `element.style.property` assignments across multiple files
+  3. Release tag created as `v1.4.1` instead of `1.4.1` (doesn't match manifest version)
+- **Resolution:** 
+  1. Replaced with browser `localStorage` + `obsidian-ai:` namespace
+  2. Refactored all inline styles to CSS classes in `styles.css`
+  3. Deleted bad release, recreated with correct tag `1.4.1`
+- **Status:** ✅ Fixed in v1.4.1, review passed
 
 ### 2026-08-27 17:41:07 IST — Coordinator test mock construction
 

@@ -1,6 +1,14 @@
 # Active Context
 
-*Last Updated: 2026-08-28 00:04:01 IST*
+*Last Updated: 2026-08-28 18:39 IST*
+
+### 2026-08-28 — T41 v1.4.1 Community Review Fixes
+
+Released v1.4.1 to fix blocking Obsidian Community Review errors:
+- `no-unsupported-api`: Replaced `app.loadLocalStorage/saveLocalStorage` with browser `localStorage`
+- `no-static-styles-assignment`: Refactored ~49 inline styles to CSS classes
+- Fixed release tag from `v1.4.1` to `1.4.1` (Obsidian requires exact match with manifest version)
+- Review status: ✅ Passed
 
 ### 2026-08-28 — T46/T46a review closeout and merge
 

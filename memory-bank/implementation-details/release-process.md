@@ -196,6 +196,8 @@ git push origin main
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| 1.4.1 | 2026-08-28 | Community Review blocking errors fixed (API compatibility, CSS class refactor) |
+| 1.4.0 | 2026-08-28 | Orchestration decomposition (T46), context efficiency (T48/T62/T64), tool hardening (T60), sync system (T43/T58) |
 | 1.3.5 | 2026-08-16 | Last release before 1.4.0 cycle |
 | 1.3.4 | 2026-08-15 | Community Directory review passed |
 | 1.3.3 | 2026-08-15 | Review remediation (T8a) |
@@ -208,3 +210,19 @@ git push origin main
 - **Ollama integration:** Deferred due to `nanoid` vulnerability chain. Custom OpenAI-compatible endpoints remain supported.
 - **Plugin data rebuild:** T58d — separate plugin-data rebuild phase not yet implemented (chat-session rebuild only)
 - **Telemetry:** T51 implemented but opt-in only; no data collected without explicit consent
+
+## Lessons Learned
+
+### 2026-08-28: Tag naming — "v" prefix breaks Obsidian release matching
+
+**Mistake:** Created GitHub release tag as `v1.4.1` instead of `1.4.1`.
+
+**Consequence:** Obsidian Community Directory rejected the release with:
+> "No release matches your manifest version. Your manifest.json points at a version that doesn't have a matching GitHub release."
+
+**Root cause:** Obsidian requires the GitHub release tag to **exactly match** the manifest `version` field. The manifest had `"version": "1.4.1"`, but the release was tagged `v1.4.1`.
+
+**Fix:** Deleted the `v1.4.1` release and tag, recreated as `1.4.1` (no "v" prefix).
+
+**Prevention:** The convention was already documented in this file ("tag = version (no `v` prefix)"), but the muscle memory from git conventions (`git tag v1.0.0`) overrode it. Future releases: use `pnpm version` which bumps manifest and creates the correct tag automatically, or double-check tag name before pushing.
+

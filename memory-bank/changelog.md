@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1] - 2026-08-28
+
+### Community Review Compliance
+- Fixed `no-unsupported-api` errors: replaced `app.loadLocalStorage/saveLocalStorage` with browser `localStorage` + namespace (SyncLogger.ts, storage.ts)
+- Fixed `no-static-styles-assignment` errors: refactored ~49 inline style assignments to CSS classes (SyncProgressModal.ts, syncComponents.ts, remoteStorageSettings.ts)
+- Added `.is-hidden` utility class for dynamic visibility toggling
+- Corrected release tag from `v1.4.1` to `1.4.1` to match manifest version (Obsidian requires exact match)
+
 ## [1.4.0] - 2026-08-28
 
 ### Architecture

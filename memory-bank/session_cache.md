@@ -1,6 +1,15 @@
 # Session Cache
 
-*Last Updated: 2026-08-28 00:04:01 IST*
+*Last Updated: 2026-08-28 18:39 IST*
+
+## 2026-08-28 Evening — T41 v1.4.1 Community Review Fixes
+
+- Fixed blocking Obsidian Community Review errors in v1.4.0:
+  - `no-unsupported-api`: replaced `app.loadLocalStorage/saveLocalStorage` with browser `localStorage`
+  - `no-static-styles-assignment`: refactored ~49 inline styles to CSS classes
+- Released v1.4.1 with corrected tag (`1.4.1`, not `v1.4.1`)
+- Review status: ✅ Passed
+- Memory-bank updated: changelog, progress, activeContext, errorLog, T41, community-review-remediation, release-process
 
 ## 2026-08-28 T46/T46a Review Closeout and Merge
 

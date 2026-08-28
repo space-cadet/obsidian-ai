@@ -112,3 +112,40 @@ The Community Directory review passed against release `1.3.4`. Follow-up dev pol
 - Added command-identity and sidebar-title regression tests.
 - Verification passed: 25 test files, 236 tests, TypeScript, production build, and `git diff --check`.
 - Stable release `1.3.4` was not changed. Manual desktop/mobile smoke testing remains the final closeout item.
+
+---
+
+## 2026-08-28 — v1.4.1 Community Review Blocking Errors
+
+Release `1.4.0` passed initial review but raised **two blocking errors** during Community Directory re-scan after the v1.4.0 tag was published.
+
+### Blocking Errors Found
+
+| Error | Rule | Files | Count |
+|---|---|---|---|
+| `no-unsupported-api` | `obsidianmd/no-unsupported-api` | `src/sync/SyncLogger.ts`, `src/lifecycle/storage.ts` | 4 |
+| `no-static-styles-assignment` | `obsidianmd/no-static-styles-assignment` | `src/modals/SyncProgressModal.ts`, `src/settings-sections/syncComponents.ts`, `src/settings-sections/remoteStorageSettings.ts` | ~49 |
+
+### Fixes Applied in v1.4.1
+
+1. **`no-unsupported-api`** — Replaced `app.loadLocalStorage()` / `app.saveLocalStorage()` with browser `localStorage` + `obsidian-ai:` namespace. These Obsidian APIs require a newer `minAppVersion` than declared (`1.4.5`). Using browser `localStorage` maintains compatibility.
+
+2. **`no-static-styles-assignment`** — Refactored all inline `element.style.property = "value"` assignments to CSS classes in `styles.css`:
+   - `SyncProgressModal.ts`: ~47 instances → `.sync-progress-modal .sync-header`, `.sync-progress-fill`, `.sync-btn-row`, `.sync-btn-hidden`, etc.
+   - `syncComponents.ts`: warning color → `.setting-item-warning`
+   - `remoteStorageSettings.ts`: margin + dynamic display toggles → `.sync-info-margin` + `.is-hidden` utility class
+
+### Tag Naming Lesson
+
+Created release tag as `v1.4.1` (with "v" prefix) — **this does NOT match manifest version `1.4.1`**. Obsidian requires the GitHub release tag to exactly match the manifest `version` field.
+
+**Correct:** Tag = `1.4.1` (no "v")  
+**Incorrect:** Tag = `v1.4.1`
+
+Deleted bad `v1.4.1` release/tag, recreated as `1.4.1`. Release now matches manifest and passes review.
+
+### Release
+- **Commit:** `4300ec3`
+- **Tag:** `1.4.1`
+- **Review Status:** ✅ Passed
+

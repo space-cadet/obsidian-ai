@@ -47,4 +47,4 @@
 6. Verify with `pnpm lint:eslint`
 7. Release as v1.4.1
 
-**Status:** 🔄 In Progress
+**Status:** ✅ COMPLETE - Released in v1.4.1
