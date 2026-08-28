@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-08-28
+
+### Architecture
+- **T46/T46a — Orchestration Decomposition**: Extracted `TurnLifecycle` from `useMessageActions.ts` (1,300+ line hook → modular coordinator). Split tool handlers by domain (note, bulk, discovery, vault, web, memory, session, settings). Added `ChatTurnRequest`, `ChatTurnOutput`, `ChatTurnPersistence` for React-independent turn processing. (PR #7, `975bb7e`)
+- Merged `api.ts` and `main.ts` into modular files.
+
+### Context Efficiency
+- **T48 — Token Budgeting**: Budgeted model context with bounded tool-result replay. Semantic conversation compaction (`8000/4000` trigger, four recent messages preserved). (PR #5, `6a205b9`)
+- **T64 — Benchmark Harness**: Live API mode with OpenRouter, Kimi, Kimi-custom providers. `maxContextMessages: 10` → **42% token reduction**. Auto-preserve for agent mode supported by data.
+- **T62 — Tool Payload Elision**: Elide tool results in history replay (⚠️ regression in agent mode — workaround: `toolHistoryMode: "preserve"`)
+
+### Tool System
+- **T60 — Tool Hardening**: Canonical tool registry adapter + execution wiring. Registry is now sole dispatch source. Added `search_note_content` tool. Hardened validation (provider JSON schemas, integer inputs, search limits). Bounded result pagination (cursors for searches, memory, web results, PDF ranges).
+- **T60b — OpenResponses Loop Fix**: Stateful continuations, ~140× token reduction (500K → 3.6K).
+
+### Sync & Storage
+- **T43/T58 — Sync System**: Rich progress UI with planning, rebuild, completion, error states. Dry-run mode with plugin-data planning. Sync record rebuild with conflict resolution. Rebuild cancellation + stable operation rows.
+- **T57 — Plugin Data Sync**: Identity-scoped cache/index/plugin state. Durable retry records. Encrypted/checksummed envelopes. Atomic writes + conflict reporting.
+
+### Diagnostics & UX
+- **T61 — Debug Commands**: `!debug history/tokens/context/help` commands.
+- **T49 — Settings Export/Import**: Vault-native, redacts API keys.
+- **T51 — Opt-in Telemetry**: Disabled by default, first-run disclosure.
+- **T41 — Updater Fix**: Cache-busting for GitHub API, intermittent update detection resolved.
+
+### Tests
+- 363 tests across 42 files (T46 merge)
+- TypeScript clean, production builds passing
+
+---
+
+## [1.3.5] - 2026-08-16
+
+Last release before 1.4.0 development cycle.
+
 ## Unreleased - 2026-08-28
 
 ### Fixed
