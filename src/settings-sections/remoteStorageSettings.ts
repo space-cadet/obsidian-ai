@@ -395,7 +395,7 @@ export function renderRemoteStorageSection(
 				? `Last sync: ${new Date(rs.lastSyncTime).toLocaleString()}`
 				: "Never synced.",
 	});
-	infoEl.style.marginTop = "12px";
+	infoEl.addClass("sync-info-margin");
 
 	// ── Visibility toggling ──
 	function updateVisibility() {
@@ -403,15 +403,14 @@ export function renderRemoteStorageSection(
 		const backend = rs.backend;
 		const encryptEnabled = rs.passphrase !== "";
 
-		passphraseSetting.settingEl.style.display = enabled ? "" : "none";
+		passphraseSetting.settingEl.toggleClass("is-hidden", !enabled);
 		passphraseSetting.setDesc(
 			enabled && !encryptEnabled
 				? "⚠️ Warning: No passphrase set. Data will be stored unencrypted on the remote server."
 				: "Used to encrypt/decrypt your data. Never stored on the server. Required on every device.",
 		);
 
-		webdavSection.style.display =
-			enabled && backend === "webdav" ? "" : "none";
+		webdavSection.toggleClass("is-hidden", !(enabled && backend === "webdav"));
 	}
 
 	updateVisibility();

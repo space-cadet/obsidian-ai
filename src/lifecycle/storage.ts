@@ -1231,7 +1231,7 @@ export async function loadSettings(plugin: ObsidianAIPlugin) {
 	plugin.settings = normalizeSettings(raw);
 
 	// Restore WebDAV password from localStorage (not synced, not in data.json)
-	const savedPassword = plugin.app.loadLocalStorage(
+	const savedPassword = localStorage.getItem(
 		"obsidian-ai:webdav-password",
 	);
 	if (savedPassword && plugin.settings.remoteStorage.webdav) {
@@ -1259,7 +1259,7 @@ export async function saveSettings(plugin: ObsidianAIPlugin) {
 	// Save password to localStorage (or clear if empty)
 	const webdavPassword = plugin.settings.remoteStorage.webdav?.password;
 	if (webdavPassword) {
-		plugin.app.saveLocalStorage(
+		localStorage.setItem(
 			"obsidian-ai:webdav-password",
 			webdavPassword,
 		);

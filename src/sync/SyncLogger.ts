@@ -38,10 +38,10 @@ export class SyncLogger {
 
 	private getDeviceId(): string {
 		const key = `obsidian-ai:device-id`;
-		let id = this.app.loadLocalStorage(key);
+		let id = localStorage.getItem(key);
 		if (!id) {
 			id = Math.random().toString(36).slice(2, 10);
-			this.app.saveLocalStorage(key, id);
+			localStorage.setItem(key, id);
 		}
 		return id;
 	}

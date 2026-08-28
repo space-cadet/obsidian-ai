@@ -18,12 +18,10 @@ export class SyncProgressModal extends Modal {
 
 	// DOM refs
 	private headerEl!: HTMLElement;
-	private progressBarEl!: HTMLElement;
 	private progressFillEl!: HTMLElement;
 	private progressTextEl!: HTMLElement;
 	private logEl!: HTMLElement;
 	private summaryEl!: HTMLElement;
-	private btnRow!: HTMLElement;
 	private cancelBtn!: HTMLElement;
 	private backgroundBtn!: HTMLElement;
 	private doneBtn!: HTMLElement;
@@ -53,78 +51,45 @@ export class SyncProgressModal extends Modal {
 
 		// Header with progress
 		this.headerEl = contentEl.createDiv("sync-header");
-		this.headerEl.style.display = "flex";
-		this.headerEl.style.justifyContent = "space-between";
-		this.headerEl.style.alignItems = "center";
-		this.headerEl.style.marginBottom = "0.5em";
 
-		const title = this.headerEl.createEl("span");
-		title.style.fontWeight = "600";
+		const title = this.headerEl.createEl("span", "sync-header-title");
 		title.setText(`🔄 Syncing ${this.totalSessions} sessions`);
 
-		this.progressTextEl = this.headerEl.createEl("span");
-		this.progressTextEl.style.color = "var(--text-muted)";
+		this.progressTextEl = this.headerEl.createEl("span", "sync-header-progress");
 		this.progressTextEl.setText(`0/${this.totalSessions}`);
 
 		// Progress bar
 		const progressContainer = contentEl.createDiv("sync-progress-bar");
-		progressContainer.style.height = "6px";
-		progressContainer.style.background =
-			"var(--background-modifier-border)";
-		progressContainer.style.borderRadius = "3px";
-		progressContainer.style.marginBottom = "1em";
-		progressContainer.style.overflow = "hidden";
 
 		this.progressFillEl = progressContainer.createDiv("sync-progress-fill");
-		this.progressFillEl.style.height = "100%";
-		this.progressFillEl.style.width = "0%";
-		this.progressFillEl.style.background = "var(--interactive-accent)";
-		this.progressFillEl.style.transition = "width 0.2s ease";
-		this.progressFillEl.style.borderRadius = "3px";
+		this.progressFillEl.setCssProps({ "--sync-progress-width": "0%" });
 
 		// Log container (terminal style)
 		this.logEl = contentEl.createDiv("sync-log");
-		this.logEl.style.maxHeight = "300px";
-		this.logEl.style.overflowY = "auto";
-		this.logEl.style.fontFamily = "var(--font-monospace)";
-		this.logEl.style.fontSize = "0.85em";
-		this.logEl.style.lineHeight = "1.6";
-		this.logEl.style.background = "var(--background-primary-alt)";
-		this.logEl.style.padding = "8px 10px";
-		this.logEl.style.borderRadius = "4px";
-		this.logEl.style.border = "1px solid var(--background-modifier-border)";
 
 		// Summary line
 		this.summaryEl = contentEl.createDiv("sync-summary");
-		this.summaryEl.style.marginTop = "0.75em";
-		this.summaryEl.style.color = "var(--text-muted)";
-		this.summaryEl.style.fontSize = "0.85em";
 		this.summaryEl.setText("⏱️ Starting...");
 
 		// Buttons
-		this.btnRow = contentEl.createDiv("sync-btn-row");
-		this.btnRow.style.marginTop = "1em";
-		this.btnRow.style.display = "flex";
-		this.btnRow.style.gap = "0.5em";
-		this.btnRow.style.justifyContent = "flex-end";
+		const btnRow = contentEl.createDiv("sync-btn-row");
 
-		this.cancelBtn = this.btnRow.createEl("button", { text: "Cancel" });
+		this.cancelBtn = btnRow.createEl("button", { text: "Cancel" });
 		this.cancelBtn.addEventListener("click", () => {
 			this.onCancel?.();
-			// Don't close immediately — let sync finish current session, then it will stop
 			this.cancelBtn.setText("Cancelling...");
 			(this.cancelBtn as HTMLButtonElement).disabled = true;
 		});
 
-		this.backgroundBtn = this.btnRow.createEl("button", {
+		this.backgroundBtn = btnRow.createEl("button", {
 			text: "Background",
 		});
 		this.backgroundBtn.addEventListener("click", () => {
 			this.close();
 		});
 
-		this.doneBtn = this.btnRow.createEl("button", { text: "Done" });
-		this.doneBtn.style.display = "none";
+		this.doneBtn = btnRow.createEl("button", { text: "Done" });
+		this.doneBtn.addClass("sync-btn-hidden");
 		this.doneBtn.addEventListener("click", () => {
 			this.close();
 		});
@@ -158,23 +123,18 @@ export class SyncProgressModal extends Modal {
 
 		// Render the entry
 		const line = this.logEl.createDiv("sync-log-line");
-		line.style.display = "flex";
-		line.style.gap = "6px";
-		line.style.opacity = meta?.done ? "0.6" : "1";
-		if (meta?.error) line.style.color = "var(--text-error)";
+		if (meta?.done) line.addClass("is-done");
+		if (meta?.error) line.addClass("is-error");
 
-		const icon = line.createEl("span");
-		icon.style.minWidth = "1em";
+		const icon = line.createEl("span", "sync-log-icon");
 		icon.setText(entry.icon);
 
-		const text = line.createEl("span");
-		text.style.flex = "1";
+		const text = line.createEl("span", "sync-log-text");
 		text.setText(message);
 
 		if (meta?.done) {
-			const done = line.createEl("span");
+			const done = line.createEl("span", "sync-log-done");
 			done.setText("✓");
-			done.style.color = "var(--text-success)";
 		}
 
 		// Auto-scroll
@@ -195,7 +155,7 @@ export class SyncProgressModal extends Modal {
 		this.progressTextEl.setText(
 			`${this.completedCount}/${this.totalSessions} (${pct}%)`,
 		);
-		this.progressFillEl.style.width = `${pct}%`;
+		this.progressFillEl.setCssProps({ "--sync-progress-width": `${pct}%` });
 		this.updateSummary();
 	}
 
@@ -211,14 +171,13 @@ export class SyncProgressModal extends Modal {
 		const elapsed = ((Date.now() - this.startTime) / 1000).toFixed(1);
 
 		this.headerEl.empty();
-		const title = this.headerEl.createEl("span");
-		title.style.fontWeight = "600";
+		const title = this.headerEl.createEl("span", "sync-header-title");
 		const ok = result.errors.length === 0;
 		title.setText(ok ? "✅ Sync complete" : "⚠️ Sync finished with errors");
-		if (!ok) title.style.color = "var(--text-error)";
+		if (!ok) title.addClass("is-error");
 
 		this.progressTextEl.setText(result.message);
-		this.progressFillEl.style.width = "100%";
+		this.progressFillEl.setCssProps({ "--sync-progress-width": "100%" });
 
 		this.addLog("system", `Done in ${elapsed}s — ${result.message}`);
 
@@ -240,9 +199,9 @@ export class SyncProgressModal extends Modal {
 		);
 
 		// Swap buttons
-		this.cancelBtn.style.display = "none";
-		this.backgroundBtn.style.display = "none";
-		this.doneBtn.style.display = "inline-block";
+		this.cancelBtn.addClass("sync-btn-hidden");
+		this.backgroundBtn.addClass("sync-btn-hidden");
+		this.doneBtn.removeClass("sync-btn-hidden");
 	}
 
 	onClose() {

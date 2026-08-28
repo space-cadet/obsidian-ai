@@ -38,7 +38,6 @@ export function renderSyncComponentsSection(
 			const warningEl = setting.descEl.createEl("span", {
 				cls: "setting-item-warning",
 			});
-			warningEl.style.color = "var(--text-warning)";
 			warningEl.textContent = ` ⚠️ ${warning}`;
 		}
 		return setting;
