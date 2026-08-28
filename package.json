@@ -1,6 +1,6 @@
 {
 	"name": "chat-lab",
-	"version": "1.4.0",
+	"version": "1.4.1",
 	"description": "AI-powered assistant for Obsidian with inline editing and persistent chat",
 	"main": "main.js",
 	"scripts": {
