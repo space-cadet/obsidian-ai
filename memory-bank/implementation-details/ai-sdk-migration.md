@@ -139,3 +139,37 @@ The LangChain-based architecture served the plugin well from v1.0 through v1.2.4
 - Implement Stop button with AbortController lifecycle
 - Handle abort and error UI states
 - Manual streaming test across all 9 providers
+
+---
+
+## Future Alternatives: Mastra (2026-08-28)
+
+**Context:** Evaluated Mastra as potential alternative to Vercel AI SDK for workflow orchestration with human-in-the-loop approval.
+
+**What Mastra offers:**
+- `suspend()` / `resume()` — native per-step pausing for human approval
+- State snapshots — survive page reloads/app restarts
+- Type-safe workflows — `resumeSchema` + `suspendSchema`
+- Built by Vercel team — familiar streaming patterns
+
+**Trade-offs vs. current approach:**
+
+| Aspect | Vercel AI SDK (current) | Mastra |
+|--------|------------------------|--------|
+| Per-tool approval | Manual loop + `PendingToolCard` | Native `suspend()` |
+| State persistence | Manual (React state) | Built-in snapshots |
+| Bundle size | Small (~ai package only) | Larger (`@mastra/core`) |
+| Maturity | Stable, v7 | Early, rapidly changing |
+| Migration cost | None | Rewrite `AgentLoop`, `Orchestrator` |
+
+**Verdict:** Not migrating now. Current manual loop with `PendingToolCard` achieves same pattern as Mastra's `suspend()` — just more code. If workflow complexity grows (multi-agent, branching, persistent state), reconsider.
+
+**Key insight:** The streaming "chunkiness" with Kimi/Gemini is a **provider-level behavior** (server-side buffering), not fixable by switching SDKs. OpenAI/Anthropic stream `tool-call-delta` incrementally; Kimi/Gemini don't. This limitation persists across all SDKs.
+
+**Reference docs:**
+- https://mastra.ai/docs/workflows/suspend-and-resume
+- https://mastra.ai/docs/workflows/human-in-the-loop
+
+---
+
+*Last Updated: 2026-08-28 23:47 IST*

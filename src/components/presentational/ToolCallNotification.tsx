@@ -231,6 +231,23 @@ function ToolCallDetail({
 		);
 	}
 
+	if (toolName === "web_search" && result.content) {
+		const count = result.count ?? "?";
+		const total = result.total_count ?? count;
+		const query = result.query ?? "";
+		return (
+			<div className="tool-call-detail-content">
+				<div className="tool-call-success">
+					{count} of {total} results for "{query}"
+				</div>
+				<pre className="tool-call-preview">
+					{result.content.slice(0, 500)}
+					{result.content.length > 500 ? "…" : ""}
+				</pre>
+			</div>
+		);
+	}
+
 	// Generic fallback chain: content → path → matches → success
 	if (result.content) {
 		return (

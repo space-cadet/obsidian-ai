@@ -511,58 +511,67 @@ interface PendingToolCardProps {
 
 ---
 
-## Tool Call Notification Display Gap — T13b
+## Tool Call Notification Display — T13b ✅ COMPLETE
 
 ### `ToolCallNotification.tsx` — Detail View Rendering (2026-08-28)
 
-The `ToolCallDetail()` function inside `ToolCallNotification.tsx` renders
-expanded tool result details in the chat history. Currently only **6 tools**
-have dedicated rendering; all others fall through to a generic
-`"{tool_name} completed successfully"` string with no actionable detail.
+The `ToolCallDetail()` function renders expanded tool result details in chat
+history. After T13b, all tools show meaningful detail via a smart fallback
+chain.
 
-| Tool | Current Detail View | What `ToolResult` Contains |
-|------|--------------------|---------------------------|
-| `read_note` | Truncated content preview (500 chars) | `content`, `path` |
-| `search_notes` | Full matches table | `matches[]` |
-| `list_notes` | Full notes table | `notes[]` |
-| `list_folders` | Full folder list | `folders[]`, `parent` |
-| `get_note_metadata` | Structured metadata | `size`, `wordCount`, `created`, `modified` |
-| `create_notes` | Created count + skipped paths | `created[]`, `skipped[]` |
-| `edit_note` | `"edit note completed successfully"` | `success`, `path` |
-| `append_to_note` | `"append to note completed successfully"` | `success`, `path` |
-| `patch_note` | `"patch note completed successfully"` | `success`, `path` |
-| `create_note` | `"create note completed successfully"` | `success`, `path` |
-| `move_note` | `"move note completed successfully"` | `success`, `path`, `oldPath` |
-| `delete_note` | `"delete note completed successfully"` | `success` |
-| `edit_section` | `"edit section completed successfully"` | `success`, `path` |
-| `web_search` | `"web search completed successfully"` | `content` |
-| `search_note_content` | `"search note content completed successfully"` | `matches[]`, `total_matches`, `truncated` |
-| `read_pdf` | `"read pdf completed successfully"` | `content`, `page_start`, `page_end`, `total_pages` |
-| `read_web_page` | `"read web page completed successfully"` | `content` |
-| `read_memory` / `search_memories` / etc. | Generic success | `content` or `matches[]` |
+### Exact Display Per Tool
 
-### Root Cause
+| Tool | Inline Summary (Collapsed) | Expanded Detail View |
+|------|---------------------------|----------------------|
+| `read_note` | ✓ Read note `path` | First 500 chars of content + `…` if truncated |
+| `edit_note` | ✓ Edited note `path` | Affected path: `path` |
+| `append_to_note` | ✓ Appended to note `path` | Affected path: `path` |
+| `patch_note` | ✓ Patched note `path` | Affected path: `path` |
+| `create_note` | ✓ Created note `path` | Affected path: `path` |
+| `move_note` | ✓ Moved note `from → to` | Path change: `oldPath → path` |
+| `delete_note` | ✓ Deleted note `path` | Deleted path: `path` |
+| `edit_section` | ✓ Edited section `path — "heading"` | Affected path: `path` |
+| `create_notes` | ✓ Created notes `N created · M skipped` | List of created paths + skipped paths |
+| `search_notes` | ✓ Searched notes `Query: "…"` | Matches table: `[[basename]]` + size |
+| `search_note_content` | ✓ Searched note content `Query: "…"` | Matches table: `[[basename]]` + size |
+| `list_notes` | ✓ Listed notes | Table of `[[basename]]` + size |
+| `list_folders` | ✓ Listed folders | Bullet list of folder names |
+| `get_note_metadata` | ✓ Got metadata `path` | Size, words, created, modified dates |
+| `web_search` | ✓ Web search `path` | Result count header + first 500 chars of results |
+| `read_pdf` | ✓ Read pdf `path` | First 500 chars (includes page range header) |
+| `read_web_page` | ✓ Read web page `path` | First 500 chars of page content |
+| `read_memory` / `search_memories` | ✓ read memory / search memories | First 500 chars of content |
 
-The catch-all fallback at the end of `ToolCallDetail()` does not inspect
-`result.content`, `result.path`, or `result.matches` before emitting the
-generic string. This is a presentation-layer gap, not a data-layer gap —
-`ToolExecutor` already returns the correct fields; they are simply not
-rendered.
+### Fallback Chain (in order)
 
-### Target Fix
+1. **Error?** → Red error text
+2. **`read_note` + `content`** → 500-char preview
+3. **`search_notes` or `search_note_content` + `matches`** → Table of `[[basename]]` + size
+4. **`list_notes` + `notes`** → Table of `[[basename]]` + size
+5. **`list_folders` + `folders`** → Bullet list
+6. **`get_note_metadata`** → Size, words, dates
+7. **`create_notes`** → "Created N notes" + skipped list
+8. **`web_search` + `content`** → "N of total results for 'query'" + preview
+9. **`result.content`** → 500-char preview (catches read_pdf, read_web_page, memory tools)
+10. **`result.path`** → Path (with `oldPath → path` for moves)
+11. **`result.matches`** → Matches table (fallback for future tools)
+12. **Nothing matched** → "{tool_name} completed successfully"
 
-Replace the final catch-all with a smart fallback chain:
-1. If `result.content` exists → render truncated preview (same as `read_note`)
-2. If `result.path` exists → render affected path (with `oldPath → path` for moves)
-3. If `result.matches` exists → render matches table (same as `search_notes`)
-4. Else → generic success text
+### Implementation
 
-Also add explicit `search_note_content` handling since it returns the same
-`matches[]` shape as `search_notes`.
+**File:** `src/components/presentational/ToolCallNotification.tsx`
 
-**Owner:** T13b  
-**File:** `src/components/presentational/ToolCallNotification.tsx`  
-**Estimated change:** ~20 lines in the `ToolCallDetail()` function.
+Two changes:
+1. `search_note_content` shares `matches[]` table rendering with `search_notes`
+2. Generic fallback chain added before final catch-all:
+   - `result.content` → truncated preview (500 chars)
+   - `result.path` → affected path (with `oldPath → path` for moves)
+   - `result.matches` → matches table
+   - Else → generic success text
+
+**Impact:** ~10 tools now show meaningful detail. Future tools returning `content`, `path`, or `matches` auto-render without code changes.
+
+**Owner:** T13b
 
 ---
 
