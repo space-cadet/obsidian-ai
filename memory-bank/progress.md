@@ -8,6 +8,17 @@
 - Fixed release tag naming: deleted `v1.4.1`, recreated as `1.4.1` to match manifest version
 - Review status: ✅ Passed
 
+### 2026-08-28 — T13b: Tool Call Result Display Consistency ✅
+
+- Fixed `ToolCallNotification.tsx` to show meaningful detail for all 18 built-in tools
+- Added explicit `web_search` rendering with result count header: *"N of total results for 'query'"*
+- `search_note_content` now shares matches table rendering with `search_notes`
+- Generic fallback chain: `result.content` → `result.path` → `result.matches` → success
+- All future tools returning `content`/`path`/`matches` auto-render without code changes
+- Build passes cleanly
+- Commits: `abde5df`, `84b4ad9`
+- Reference: `memory-bank/implementation-details/agentic-tool-calling.md`
+
 ### 2026-08-28 — T46/T46a PR Review and Merge ✅
 
 - Reviewed PR #7 after the pushed review fixes and confirmed the reconciled

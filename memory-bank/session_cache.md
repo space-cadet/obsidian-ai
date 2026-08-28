@@ -1,6 +1,17 @@
 # Session Cache
 
-*Last Updated: 2026-08-28 18:39 IST*
+*Last Updated: 2026-08-29 00:01 IST*
+
+## 2026-08-28 Late Evening — T13b + Mastra Evaluation
+
+- **T13b Complete:** Fixed `ToolCallNotification.tsx` to show meaningful detail for all 18 built-in tools
+  - Added `web_search` result count header: *"N of total results for 'query'"*
+  - Smart fallback chain: `content` → `path` → `matches` → success
+  - Commits: `abde5df`, `84b4ad9`
+- **Mastra Evaluation:** Decided not to migrate from Vercel AI SDK
+  - Current `PendingToolCard` + manual loop achieves same human-in-the-loop pattern
+  - Streaming chunkiness is provider-level behavior (Kimi/Gemini), not SDK-fixable
+- **T8a Complete:** v1.4.1 published in Obsidian Community Directory (confirmed 18:57 IST)
 
 ## 2026-08-28 Evening — T41 v1.4.1 Community Review Fixes
 

@@ -1,6 +1,38 @@
 # Active Context
 
-*Last Updated: 2026-08-28 18:39 IST*
+*Last Updated: 2026-08-28 23:59 IST*
+
+### 2026-08-28 — T13b: Tool Call Result Display Consistency ✅
+
+Fixed `ToolCallNotification.tsx` to show meaningful detail for all 18 built-in
+tools instead of generic `"completed successfully"` text.
+
+**Implementation:**
+- Added explicit `web_search` rendering with result count header
+- `search_note_content` shares matches table rendering with `search_notes`
+- Generic fallback chain: `content` → `path` → `matches` → success
+- All future tools returning these fields auto-render without code changes
+
+**Commits:**
+- `abde5df` — `(fix)T13b: Add smart tool result display, fix auto-sync toggle`
+- `84b4ad9` — `(fix)T13b: Enhance tool result display + document exact behavior`
+
+**Reference:** `memory-bank/implementation-details/agentic-tool-calling.md` → "Tool Call Notification Display — T13b"
+
+### 2026-08-28 — Mastra SDK Evaluation 📋
+
+Evaluated Mastra (by Vercel team) as alternative to Vercel AI SDK for workflow
+orchestration with human-in-the-loop approval.
+
+**Key features:** `suspend()`/`resume()`, state snapshots, type-safe workflows
+**Verdict:** Not migrating. Current `PendingToolCard` + manual loop achieves
+the same pattern — just with more code. Revisit if workflow complexity grows
+(multi-agent, branching, persistent state).
+
+**Key insight:** Streaming "chunkiness" with Kimi/Gemini is provider-level
+behavior (server-side buffering), not fixable by switching SDKs.
+
+**Reference:** `memory-bank/implementation-details/ai-sdk-migration.md` → "Future Alternatives: Mastra"
 
 ### 2026-08-28 — T41 v1.4.1 Community Review Fixes
 

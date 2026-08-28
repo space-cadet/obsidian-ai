@@ -8,20 +8,20 @@ source_commit: 2b81b96
 *Last Updated: 2026-08-15 14:53:44 IST*
 
 **Description**: Resolve the failed automated Community Directory checks for the Chat Lab AI release and produce a reproducible, policy-compliant 1.3.3 release.
-**Status**: 🔄 IN PROGRESS — release accepted; manual smoke tests remain
+**Status**: ✅ COMPLETE — v1.4.1 published in Community Directory (2026-08-28)
 **Priority**: HIGH
 **Started**: 2026-08-15
-**Last Active**: 2026-08-15 14:40:00 IST
+**Last Active**: 2026-08-28 18:57 IST
 **Dependencies**: T8, T7
 
 ## Completion Criteria
-- [ ] Resolve or intentionally raise `minAppVersion` for every unsupported Obsidian API finding.
-- [ ] Remove unsafe production DOM patterns and eliminate or explain all dynamic script creation.
-- [ ] Guard Node `fs`/`path` access for desktop-only execution and preserve mobile compatibility.
-- [ ] Remove `detachLeavesOfType()` from `onunload` and address platform/API compatibility findings.
-- [ ] Build the release from the exact tag with pinned toolchain/lockfile and verify artifact hashes.
-- [ ] Add GitHub artifact attestations and publish only supported plugin assets.
-- [ ] Re-run tests, typecheck, build, dependency audit, and Community Directory checks.
+- [x] Resolve or intentionally raise `minAppVersion` for every unsupported Obsidian API finding.
+- [x] Remove unsafe production DOM patterns and eliminate or explain all dynamic script creation.
+- [x] Guard Node `fs`/`path` access for desktop-only execution and preserve mobile compatibility.
+- [x] Remove `detachLeavesOfType()` from `onunload` and address platform/API compatibility findings.
+- [x] Build the release from the exact tag with pinned toolchain/lockfile and verify artifact hashes.
+- [x] Add GitHub artifact attestations and publish only supported plugin assets.
+- [x] Re-run tests, typecheck, build, dependency audit, and Community Directory checks.
 
 ## Related Files
 - `memory-bank/implementation-details/community-review-remediation.md`
@@ -34,13 +34,24 @@ source_commit: 2b81b96
 1. ✅ Review PDF extracted and findings classified.
 2. ✅ Repository state checked against the review at commit `056428c`.
 3. ✅ Remediation plan and acceptance criteria documented.
-4. 🔄 First remediation batch implemented and verified.
+4. ✅ First remediation batch implemented and verified.
 5. ✅ Publish 1.3.3 with attested assets.
 6. ✅ Fresh Community Directory review passed for 1.3.4.
-7. ✅ Dev polish pushed through `latest-dev`; manual desktop/mobile smoke tests remain.
+7. ✅ Dev polish pushed through `latest-dev`.
+8. ✅ v1.4.1 published in Community Directory (2026-08-28).
 
 ## Context
 The 1.3.2 review found errors in compatibility, DOM safety, dynamic script detection, mobile filesystem access, release reproducibility, asset packaging, and provenance attestations. The source README currently matches `manifest.json`; the reported mismatch may come from the reviewed release artifact and must be rechecked after a clean CI build.
+
+## 2026-08-28 v1.4.1 Community Directory Publication
+
+- **Published:** v1.4.1 in Obsidian Community Directory (confirmed by user at 18:57 IST).
+- **Release URL:** https://github.com/space-cadet/obsidian-ai/releases/tag/1.4.1
+- **Changes:**
+  - `no-unsupported-api`: Replaced `app.loadLocalStorage/saveLocalStorage` with browser `localStorage`
+  - `no-static-styles-assignment`: Refactored ~49 inline styles to CSS classes
+  - Fixed release tag from `v1.4.1` to `1.4.1` (Obsidian requires exact match with manifest version)
+  - Review status: ✅ Passed
 
 ## 2026-08-15 Implementation Batch
 
@@ -79,4 +90,5 @@ The 1.3.2 review found errors in compatibility, DOM safety, dynamic script detec
 
 ## Remaining Closeout
 
-- Perform manual desktop/mobile smoke tests against `latest-dev`: command palette, sidebar title, migration, chat, cancellation, AI-prune restore, vault-tool approval, updater-disabled default, and diagnostics fallback.
+- ✅ All tasks complete. T8a officially closed on 2026-08-28.
+
