@@ -231,6 +231,42 @@ When updating memory bank files:
 
 ---
 
+## Versioning Convention
+
+**Release versions:** SemVer (`MAJOR.MINOR.PATCH`)
+- `1.4.0` — clean release (no prerelease suffix)
+- Obsidian release tag must exactly match manifest version, without `v` prefix
+
+**Dev builds:** `{NEXT_VERSION}-{BRANCH_TAG}.{SHORT_SHA}`
+- `main` → `1.4.0-dev.5db4e1d`
+- `feat/t46` → `1.4.0-feat-t46.5db4e1d`
+- `hotfix/x` → `1.4.0-hotfix-x.5db4e1d`
+- `release/x` → `1.4.0-rc.5db4e1d`
+
+**Build script:**
+```bash
+VERSION="1.4.0"
+SHA=$(git rev-parse --short HEAD)
+BRANCH=$(git rev-parse --abbrev-ref HEAD | sed 's/\//-/g')
+
+if [ "$BRANCH" = "main" ]; then
+    TAG="dev"
+elif [[ "$BRANCH" == release/* ]]; then
+    TAG="rc"
+else
+    TAG="${BRANCH}"
+fi
+
+echo "${VERSION}-${TAG}.${SHA}"
+```
+
+**Bumping rules:**
+- `main` manifest stays at last release version until release decision
+- Dev versions computed at build time, not committed to repo
+- Release: bump manifest, commit, tag, build
+
+---
+
 ## Timestamp Format
 
 All timestamps use: `YYYY-MM-DD HH:MM:SS IST`
