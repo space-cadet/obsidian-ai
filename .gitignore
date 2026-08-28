@@ -41,3 +41,4 @@ benchmarks/benchmark-report.json
 .dolt/
 *.db
 .beads-credential-key
+.session-state.json

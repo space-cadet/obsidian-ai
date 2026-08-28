@@ -1,9 +1,5 @@
 // src/ui/registration.ts
-import {
-	MarkdownView,
-	Notice,
-	WorkspaceLeaf,
-} from "obsidian";
+import { MarkdownView, Notice, WorkspaceLeaf } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import {
 	acceptTooltipEffect,
@@ -59,8 +55,7 @@ export function registerCommands(plugin: ObsidianAIPlugin): void {
 			const markdownView =
 				plugin.app.workspace.getActiveViewOfType(MarkdownView);
 			if (markdownView) {
-				const cmEditor = (markdownView.editor as any)
-					.cm as EditorView;
+				const cmEditor = (markdownView.editor as any).cm as EditorView;
 
 				// Grab the main selection range
 				const { from, to } = cmEditor.state.selection.main;
@@ -102,8 +97,7 @@ export function registerCommands(plugin: ObsidianAIPlugin): void {
 			const markdownView =
 				plugin.app.workspace.getActiveViewOfType(MarkdownView);
 			if (markdownView) {
-				const cmEditor = (markdownView.editor as any)
-					.cm as EditorView;
+				const cmEditor = (markdownView.editor as any).cm as EditorView;
 
 				const response = cmEditor.state.field(
 					generatedResponseState,
@@ -127,8 +121,7 @@ export function registerCommands(plugin: ObsidianAIPlugin): void {
 			const markdownView =
 				plugin.app.workspace.getActiveViewOfType(MarkdownView);
 			if (markdownView) {
-				const cmEditor = (markdownView.editor as any)
-					.cm as EditorView;
+				const cmEditor = (markdownView.editor as any).cm as EditorView;
 				const response = cmEditor.state.field(
 					generatedResponseState,
 					false,
@@ -342,10 +335,7 @@ export async function checkForUpdates(
 					6000,
 				);
 			} else {
-				new Notice(
-					`❌ Update check failed: ${error.message}`,
-					5000,
-				);
+				new Notice(`❌ Update check failed: ${error.message}`, 5000);
 			}
 		}
 	}

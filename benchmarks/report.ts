@@ -1,5 +1,9 @@
 import { writeFileSync } from "fs";
-import type { BenchmarkResult, StrategyResult, LiveResult } from "./context-benchmark";
+import type {
+	BenchmarkResult,
+	StrategyResult,
+	LiveResult,
+} from "./context-benchmark";
 
 interface ReportMatrix {
 	fixtures: string[];
@@ -36,9 +40,15 @@ function formatPercent(n: number, width = 10): string {
 export function printReport(results: BenchmarkResult[]): void {
 	const { fixtures, strategies, data } = buildMatrix(results);
 
-	console.log("\n╔══════════════════════════════════════════════════════════════════════════════╗");
-	console.log("║           Context Optimization Benchmark Harness — Level 1 Report            ║");
-	console.log("╚══════════════════════════════════════════════════════════════════════════════╝\n");
+	console.log(
+		"\n╔══════════════════════════════════════════════════════════════════════════════╗",
+	);
+	console.log(
+		"║           Context Optimization Benchmark Harness — Level 1 Report            ║",
+	);
+	console.log(
+		"╚══════════════════════════════════════════════════════════════════════════════╝\n",
+	);
 
 	// Per-fixture detail tables
 	for (const fixture of fixtures) {
@@ -65,7 +75,9 @@ export function printReport(results: BenchmarkResult[]): void {
 		}
 
 		console.log("─".repeat(80));
-		console.log(`🏆 Best strategy for ${fixture}: ${bestStrategy} (${bestSavings.toFixed(1)}% savings)\n`);
+		console.log(
+			`🏆 Best strategy for ${fixture}: ${bestStrategy} (${bestSavings.toFixed(1)}% savings)\n`,
+		);
 	}
 
 	// Summary matrix
@@ -104,9 +116,15 @@ export interface JsonReport {
 }
 
 export function printLiveReport(results: LiveResult[]): void {
-	console.log("\n╔══════════════════════════════════════════════════════════════════════════════╗");
-	console.log("║              LIVE Benchmark — Estimated vs Actual Token Usage                ║");
-	console.log("╚══════════════════════════════════════════════════════════════════════════════╝\n");
+	console.log(
+		"\n╔══════════════════════════════════════════════════════════════════════════════╗",
+	);
+	console.log(
+		"║              LIVE Benchmark — Estimated vs Actual Token Usage                ║",
+	);
+	console.log(
+		"╚══════════════════════════════════════════════════════════════════════════════╝\n",
+	);
 
 	const header = `${pad("Fixture", 28)} | ${pad("Strategy", 10)} | ${pad("Est.", 8)} | ${pad("Actual", 8)} | ${pad("Δ%", 8)} | ${pad("Model", 12)}`;
 	console.log(header);
@@ -122,12 +140,19 @@ export function printLiveReport(results: LiveResult[]): void {
 
 	// Summary stats
 	if (results.length > 0) {
-		const avgDelta = results.reduce((s, r) => s + r.delta_percent, 0) / results.length;
+		const avgDelta =
+			results.reduce((s, r) => s + r.delta_percent, 0) / results.length;
 		const minDelta = Math.min(...results.map((r) => r.delta_percent));
 		const maxDelta = Math.max(...results.map((r) => r.delta_percent));
-		console.log(`\n📊 Delta summary: avg=${avgDelta.toFixed(1)}%, min=${minDelta}%, max=${maxDelta}%`);
-		console.log(`   Negative delta = our estimate was higher than actual (over-estimating)`);
-		console.log(`   Positive delta = our estimate was lower than actual (under-estimating)`);
+		console.log(
+			`\n📊 Delta summary: avg=${avgDelta.toFixed(1)}%, min=${minDelta}%, max=${maxDelta}%`,
+		);
+		console.log(
+			`   Negative delta = our estimate was higher than actual (over-estimating)`,
+		);
+		console.log(
+			`   Positive delta = our estimate was lower than actual (under-estimating)`,
+		);
 	}
 
 	console.log("");

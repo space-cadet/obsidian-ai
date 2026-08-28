@@ -125,9 +125,7 @@ export function buildHistoryWithTools(
 					toolCallId: tc.call.toolCallId,
 					toolName: tc.call.toolName,
 					input:
-						toolHistoryMode === "elide"
-							? "[elided]"
-							: tc.call.args,
+						toolHistoryMode === "elide" ? "[elided]" : tc.call.args,
 					...(tc.call.providerMetadata
 						? {
 								providerOptions: tc.call.providerMetadata,

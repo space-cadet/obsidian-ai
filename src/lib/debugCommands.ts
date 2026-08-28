@@ -16,7 +16,10 @@ export function handleDebugCommand(
 	text: string,
 	session: ChatSession | undefined,
 	profile: ProviderProfile,
-	settings: { toolHistoryMode: "elide" | "preserve"; maxRequestTokens?: number },
+	settings: {
+		toolHistoryMode: "elide" | "preserve";
+		maxRequestTokens?: number;
+	},
 ): DebugCommandResult {
 	const trimmed = text.trim();
 	if (!trimmed.startsWith("!")) return { handled: false };
@@ -32,7 +35,11 @@ export function handleDebugCommand(
 		case "debug tokens":
 			return {
 				handled: true,
-				response: formatTokenDebug(session, profile, settings.maxRequestTokens),
+				response: formatTokenDebug(
+					session,
+					profile,
+					settings.maxRequestTokens,
+				),
 			};
 		case "debug context":
 			return {

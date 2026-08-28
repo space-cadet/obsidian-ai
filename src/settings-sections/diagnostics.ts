@@ -341,7 +341,9 @@ export function renderDiagnosticsSection(
 
 	new Setting(sectionEl)
 		.setName("Export diagnostics")
-		.setDesc("Download a JSON file with plugin diagnostics, settings (redacted), and session metadata for debugging or benchmark fixtures.")
+		.setDesc(
+			"Download a JSON file with plugin diagnostics, settings (redacted), and session metadata for debugging or benchmark fixtures.",
+		)
 		.addButton((btn) =>
 			btn
 				.setButtonText("Export")
@@ -355,13 +357,26 @@ export function renderDiagnosticsSection(
 						// Redact sensitive settings
 						const redactedSettings = { ...plugin.settings };
 						for (const key of Object.keys(redactedSettings)) {
-							if (/key|token|password|secret|credential/i.test(key)) {
-								(redactedSettings as Record<string, unknown>)[key] = "<redacted>";
+							if (
+								/key|token|password|secret|credential/i.test(
+									key,
+								)
+							) {
+								(redactedSettings as Record<string, unknown>)[
+									key
+								] = "<redacted>";
 							}
 						}
-						if ((redactedSettings as Record<string, unknown>).apiProfiles) {
-							const profiles = (redactedSettings as Record<string, unknown>).apiProfiles as Array<Record<string, unknown>>;
-							(redactedSettings as Record<string, unknown>).apiProfiles = profiles.map((p) => ({
+						if (
+							(redactedSettings as Record<string, unknown>)
+								.apiProfiles
+						) {
+							const profiles = (
+								redactedSettings as Record<string, unknown>
+							).apiProfiles as Array<Record<string, unknown>>;
+							(
+								redactedSettings as Record<string, unknown>
+							).apiProfiles = profiles.map((p) => ({
 								...p,
 								apiKey: "<redacted>",
 							}));
@@ -383,12 +398,24 @@ export function renderDiagnosticsSection(
 							})),
 							usage,
 							debugInfo: {
-								platform: Platform.isMobile ? "mobile" : "desktop",
-								obsidianVersion: (app as any).version ?? "unknown",
+								platform: Platform.isMobile
+									? "mobile"
+									: "desktop",
+								obsidianVersion:
+									(app as any).version ?? "unknown",
 								pluginVersion: plugin.manifest.version,
-								heapUsedMB: mem ? Math.round(mem.usedJSHeapSize / 1024 / 1024) : null,
-								heapTotalMB: mem ? Math.round(mem.totalJSHeapSize / 1024 / 1024) : null,
-								domNodes: document.getElementsByTagName("*").length,
+								heapUsedMB: mem
+									? Math.round(
+											mem.usedJSHeapSize / 1024 / 1024,
+										)
+									: null,
+								heapTotalMB: mem
+									? Math.round(
+											mem.totalJSHeapSize / 1024 / 1024,
+										)
+									: null,
+								domNodes:
+									document.getElementsByTagName("*").length,
 							},
 						};
 
@@ -399,7 +426,9 @@ export function renderDiagnosticsSection(
 
 						new Notice(`✓ Exported to ${filename}`);
 					} catch (err) {
-						new Notice(`Export failed: ${err instanceof Error ? err.message : String(err)}`);
+						new Notice(
+							`Export failed: ${err instanceof Error ? err.message : String(err)}`,
+						);
 					} finally {
 						btn.setDisabled(false);
 					}

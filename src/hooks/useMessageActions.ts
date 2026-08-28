@@ -75,19 +75,13 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 		lifecycleRef.current!.stop();
 	}, []);
 
-	const handleRetry = useCallback(
-		(messageId: string) => {
-			lifecycleRef.current!.retry(messageId);
-		},
-		[],
-	);
+	const handleRetry = useCallback((messageId: string) => {
+		lifecycleRef.current!.retry(messageId);
+	}, []);
 
-	const handleEditMessage = useCallback(
-		(messageId: string) => {
-			lifecycleRef.current!.edit(messageId);
-		},
-		[],
-	);
+	const handleEditMessage = useCallback((messageId: string) => {
+		lifecycleRef.current!.edit(messageId);
+	}, []);
 
 	const handleCancelEdit = useCallback(() => {
 		lifecycleRef.current!.cancelEdit();
@@ -115,7 +109,11 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 				new Notice("⚠️ No active note to append to.");
 				return;
 			}
-			await NoteEditingBridge.appendToNote(deps.plugin.app, file, content);
+			await NoteEditingBridge.appendToNote(
+				deps.plugin.app,
+				file,
+				content,
+			);
 		},
 		[deps.plugin, deps.lastMarkdownLeafRef],
 	);
@@ -182,16 +180,21 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 		async (content: string, target: string) => {
 			let file = deps.plugin.app.vault.getAbstractFileByPath(target);
 			if (!file || !(file instanceof TFile)) {
-				const resolved = deps.plugin.app.metadataCache.getFirstLinkpathDest(
-					target,
-					"",
-				);
+				const resolved =
+					deps.plugin.app.metadataCache.getFirstLinkpathDest(
+						target,
+						"",
+					);
 				if (resolved && resolved instanceof TFile) {
 					file = resolved;
 				}
 			}
 			if (file && file instanceof TFile) {
-				await NoteEditingBridge.appendToNote(deps.plugin.app, file, content);
+				await NoteEditingBridge.appendToNote(
+					deps.plugin.app,
+					file,
+					content,
+				);
 			} else {
 				new Notice(`⚠️ Note not found: ${target}`);
 			}

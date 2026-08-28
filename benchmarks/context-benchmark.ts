@@ -49,7 +49,12 @@ export interface ExperimentResult {
 	messagesDropped: number;
 }
 
-export type ExperimentFn = (fixture: Fixture, maxMsg: number, maxToolTokens: number, mode: string) => ExperimentResult;
+export type ExperimentFn = (
+	fixture: Fixture,
+	maxMsg: number,
+	maxToolTokens: number,
+	mode: string,
+) => ExperimentResult;
 
 export interface LiveResult {
 	fixture: string;
@@ -75,7 +80,9 @@ function countToolCalls(messages: ChatMessage[]): number {
 	let count = 0;
 	for (const m of messages) {
 		if (m.contentParts) {
-			count += m.contentParts.filter((p) => p.type === "tool_call").length;
+			count += m.contentParts.filter(
+				(p) => p.type === "tool_call",
+			).length;
 		} else if (m.toolCalls) {
 			count += m.toolCalls.length;
 		}
@@ -98,14 +105,24 @@ const baselineStrategy: StrategyFn = (fixture) => {
 
 const elideStrategy: StrategyFn = (fixture) => {
 	const tokens_before = countTokens(fixture.messages);
-	const history = buildHistoryWithTools(fixture.messages, 1000, 2000, "elide");
+	const history = buildHistoryWithTools(
+		fixture.messages,
+		1000,
+		2000,
+		"elide",
+	);
 	const tokens_after = countTokens(history);
 	return {
 		tokens_before,
 		tokens_after,
 		savings_percent:
 			tokens_before > 0
-				? Number((((tokens_before - tokens_after) / tokens_before) * 100).toFixed(2))
+				? Number(
+						(
+							((tokens_before - tokens_after) / tokens_before) *
+							100
+						).toFixed(2),
+					)
 				: 0,
 		messages_count: history.length,
 		tool_calls_count: countToolCalls(fixture.messages),
@@ -131,7 +148,12 @@ const budgetStrategy: StrategyFn = (fixture) => {
 		tokens_after,
 		savings_percent:
 			tokens_before > 0
-				? Number((((tokens_before - tokens_after) / tokens_before) * 100).toFixed(2))
+				? Number(
+						(
+							((tokens_before - tokens_after) / tokens_before) *
+							100
+						).toFixed(2),
+					)
 				: 0,
 		messages_count: budgetResult.history.length,
 		tool_calls_count: countToolCalls(fixture.messages),
@@ -140,14 +162,24 @@ const budgetStrategy: StrategyFn = (fixture) => {
 
 const preserveStrategy: StrategyFn = (fixture) => {
 	const tokens_before = countTokens(fixture.messages);
-	const history = buildHistoryWithTools(fixture.messages, 1000, 0, "preserve");
+	const history = buildHistoryWithTools(
+		fixture.messages,
+		1000,
+		0,
+		"preserve",
+	);
 	const tokens_after = countTokens(history);
 	return {
 		tokens_before,
 		tokens_after,
 		savings_percent:
 			tokens_before > 0
-				? Number((((tokens_before - tokens_after) / tokens_before) * 100).toFixed(2))
+				? Number(
+						(
+							((tokens_before - tokens_after) / tokens_before) *
+							100
+						).toFixed(2),
+					)
 				: 0,
 		messages_count: history.length,
 		tool_calls_count: countToolCalls(fixture.messages),
@@ -169,7 +201,9 @@ function runMessageWindowExperiment(
 
 	// Simulate turn-by-turn: for each assistant message, build history
 	// as it would exist at that point in the conversation
-	const assistantTurns = fixture.messages.filter((m) => m.role === "assistant");
+	const assistantTurns = fixture.messages.filter(
+		(m) => m.role === "assistant",
+	);
 
 	for (let i = 0; i < assistantTurns.length; i++) {
 		// Take all messages up to and including this assistant turn
@@ -222,9 +256,13 @@ interface ProviderConfig {
 
 function loadProviderConfig(providerName: string): ProviderConfig | null {
 	try {
-		const configPath = join(process.env.HOME || "/home/cloudy", ".openclaw", "openclaw.json");
+		const configPath = join(
+			process.env.HOME || "/home/cloudy",
+			".openclaw",
+			"openclaw.json",
+		);
 		const config = JSON.parse(readFileSync(configPath, "utf-8"));
-		
+
 		if (providerName === "openrouter") {
 			const key = config.models?.providers?.openrouter?.apiKey;
 			if (!key) return null;
@@ -263,7 +301,7 @@ async function runLiveBenchmark(
 	// Build history based on strategy
 	let history: HistoryEntry[];
 	let processedMessages: ChatMessage[];
-	
+
 	if (strategy === "elide") {
 		history = buildHistoryWithTools(fixture.messages, 1000, 2000, "elide");
 		processedMessages = fixture.messages;
@@ -295,37 +333,52 @@ async function runLiveBenchmark(
 		}));
 		processedMessages = fixture.messages;
 	}
-	
+
 	const estimatedTokens = countTokens(processedMessages);
-	
+
 	// Convert to API format (provider-specific)
-	const messages = provider.name === "openrouter" 
-		? history.map((h) => {
-			// OpenRouter/OpenAI doesn't accept 'tool' role directly
-			// It needs assistant messages with tool_calls, then tool responses
-			if (h.role === "tool") {
-				return {
-					role: "assistant",
-					content: typeof h.content === "string" ? h.content : JSON.stringify(h.content),
-				};
-			}
-			return {
-				role: h.role,
-				content: typeof h.content === "string" ? h.content : JSON.stringify(h.content),
-			};
-		})
-		: history.map((h) => ({
-			role: h.role,
-			content: typeof h.content === "string" ? h.content : JSON.stringify(h.content),
-		}));
-	
+	const messages =
+		provider.name === "openrouter"
+			? history.map((h) => {
+					// OpenRouter/OpenAI doesn't accept 'tool' role directly
+					// It needs assistant messages with tool_calls, then tool responses
+					if (h.role === "tool") {
+						return {
+							role: "assistant",
+							content:
+								typeof h.content === "string"
+									? h.content
+									: JSON.stringify(h.content),
+						};
+					}
+					return {
+						role: h.role,
+						content:
+							typeof h.content === "string"
+								? h.content
+								: JSON.stringify(h.content),
+					};
+				})
+			: history.map((h) => ({
+					role: h.role,
+					content:
+						typeof h.content === "string"
+							? h.content
+							: JSON.stringify(h.content),
+				}));
+
 	// Call API
 	const response = await fetch(`${provider.baseUrl}/chat/completions`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
 			Authorization: `Bearer ${provider.apiKey}`,
-			...(provider.name === "openrouter" ? { "HTTP-Referer": "https://quantumofgravity.com", "X-Title": "Obsidian AI Benchmark" } : {}),
+			...(provider.name === "openrouter"
+				? {
+						"HTTP-Referer": "https://quantumofgravity.com",
+						"X-Title": "Obsidian AI Benchmark",
+					}
+				: {}),
 		},
 		body: JSON.stringify({
 			model: provider.model,
@@ -334,15 +387,15 @@ async function runLiveBenchmark(
 			temperature: 0,
 		}),
 	});
-	
+
 	if (!response.ok) {
 		const error = await response.text();
 		throw new Error(`API error: ${response.status} ${error}`);
 	}
-	
+
 	const data = await response.json();
 	const usage = data.usage;
-	
+
 	return {
 		fixture: fixture.name,
 		strategy,
@@ -350,7 +403,12 @@ async function runLiveBenchmark(
 		actual_prompt_tokens: usage.prompt_tokens,
 		actual_completion_tokens: usage.completion_tokens,
 		actual_total_tokens: usage.total_tokens,
-		delta_percent: Number((((usage.prompt_tokens - estimatedTokens) / estimatedTokens) * 100).toFixed(2)),
+		delta_percent: Number(
+			(
+				((usage.prompt_tokens - estimatedTokens) / estimatedTokens) *
+				100
+			).toFixed(2),
+		),
 		model: provider.model,
 	};
 }
@@ -362,22 +420,78 @@ function loadFixtures(): Fixture[] {
 	const files = readdirSync(fixturesDir).filter((f) => f.endsWith(".json"));
 	return files.map((f) => ({
 		name: f.replace(".json", ""),
-		messages: JSON.parse(readFileSync(join(fixturesDir, f), "utf-8")) as ChatMessage[],
+		messages: JSON.parse(
+			readFileSync(join(fixturesDir, f), "utf-8"),
+		) as ChatMessage[],
 	}));
 }
 
 // ─── Fixture Generation ──────────────────────────────────────────────────────
 
 const LOREM_WORDS = [
-	"lorem", "ipsum", "dolor", "sit", "amet", "consectetur", "adipiscing",
-	"elit", "sed", "do", "eiusmod", "tempor", "incididunt", "ut", "labore",
-	"et", "dolore", "magna", "aliqua", "ut", "enim", "ad", "minim", "veniam",
-	"quis", "nostrud", "exercitation", "ullamco", "laboris", "nisi", "aliquip",
-	"ex", "ea", "commodo", "consequat", "duis", "aute", "irure", "in",
-	"reprehenderit", "voluptate", "velit", "esse", "cillum", "fugiat",
-	"nulla", "pariatur", "excepteur", "sint", "occaecat", "cupidatat",
-	"non", "proident", "sunt", "culpa", "qui", "officia", "deserunt",
-	"mollit", "anim", "id", "est", "laborum",
+	"lorem",
+	"ipsum",
+	"dolor",
+	"sit",
+	"amet",
+	"consectetur",
+	"adipiscing",
+	"elit",
+	"sed",
+	"do",
+	"eiusmod",
+	"tempor",
+	"incididunt",
+	"ut",
+	"labore",
+	"et",
+	"dolore",
+	"magna",
+	"aliqua",
+	"ut",
+	"enim",
+	"ad",
+	"minim",
+	"veniam",
+	"quis",
+	"nostrud",
+	"exercitation",
+	"ullamco",
+	"laboris",
+	"nisi",
+	"aliquip",
+	"ex",
+	"ea",
+	"commodo",
+	"consequat",
+	"duis",
+	"aute",
+	"irure",
+	"in",
+	"reprehenderit",
+	"voluptate",
+	"velit",
+	"esse",
+	"cillum",
+	"fugiat",
+	"nulla",
+	"pariatur",
+	"excepteur",
+	"sint",
+	"occaecat",
+	"cupidatat",
+	"non",
+	"proident",
+	"sunt",
+	"culpa",
+	"qui",
+	"officia",
+	"deserunt",
+	"mollit",
+	"anim",
+	"id",
+	"est",
+	"laborum",
 ];
 
 function loremWords(count: number): string {
@@ -388,7 +502,10 @@ function loremWords(count: number): string {
 	return words.join(" ") + ".";
 }
 
-function loremParagraphs(paragraphs: number, wordsPerParagraph: number): string {
+function loremParagraphs(
+	paragraphs: number,
+	wordsPerParagraph: number,
+): string {
 	const paras: string[] = [];
 	for (let p = 0; p < paragraphs; p++) {
 		paras.push(loremWords(wordsPerParagraph));
@@ -412,7 +529,11 @@ function makeToolCall(
 	};
 }
 
-function makeUserMessage(id: string, content: string, timestamp: number): ChatMessage {
+function makeUserMessage(
+	id: string,
+	content: string,
+	timestamp: number,
+): ChatMessage {
 	return {
 		id,
 		role: "user",
@@ -463,18 +584,26 @@ function generateCodingSession(): ChatMessage[] {
 	for (let turn = 0; turn < 15; turn++) {
 		const t = baseTime + turn * 2 * 60 * 1000;
 		messages.push(
-			makeUserMessage(`u-${turn}`, userQueries[turn % userQueries.length], t),
+			makeUserMessage(
+				`u-${turn}`,
+				userQueries[turn % userQueries.length],
+				t,
+			),
 		);
 
 		const hasTools = turn % 2 === 0; // 50% have tool calls
 		if (hasTools) {
 			const tools: ContentPart[] = [];
-			const toolName = ["read_note", "search_notes", "write_note"][turn % 3];
+			const toolName = ["read_note", "search_notes", "write_note"][
+				turn % 3
+			];
 			if (toolName === "read_note") {
 				tools.push(
 					makeToolCall(
 						"read_note",
-						{ path: `notes/${["grammar", "config", "utils", "readme"][turn % 4]}.md` },
+						{
+							path: `notes/${["grammar", "config", "utils", "readme"][turn % 4]}.md`,
+						},
 						{ content: loremParagraphs(3 + (turn % 5), 40) },
 					),
 				);
@@ -484,12 +613,15 @@ function generateCodingSession(): ChatMessage[] {
 						"search_notes",
 						{ query: "refactor", limit: 20 },
 						{
-							matches: Array.from({ length: 5 + (turn % 5) }, (_, i) => ({
-								path: `notes/note-${i}.md`,
-								basename: `note-${i}.md`,
-								modified: t - i * 86400000,
-								size: 1000 + i * 500,
-							})),
+							matches: Array.from(
+								{ length: 5 + (turn % 5) },
+								(_, i) => ({
+									path: `notes/note-${i}.md`,
+									basename: `note-${i}.md`,
+									modified: t - i * 86400000,
+									size: 1000 + i * 500,
+								}),
+							),
 						},
 					),
 				);
@@ -497,7 +629,9 @@ function generateCodingSession(): ChatMessage[] {
 				tools.push(
 					makeToolCall(
 						"write_note",
-						{ path: `notes/${["summary", "api-design", "history"][turn % 3]}.md` },
+						{
+							path: `notes/${["summary", "api-design", "history"][turn % 3]}.md`,
+						},
 						{ success: true },
 					),
 				);
@@ -542,7 +676,11 @@ function generateResearchSession(): ChatMessage[] {
 	for (let turn = 0; turn < 10; turn++) {
 		const t = baseTime + turn * 2 * 60 * 1000;
 		messages.push(
-			makeUserMessage(`u-${turn}`, userQueries[turn % userQueries.length], t),
+			makeUserMessage(
+				`u-${turn}`,
+				userQueries[turn % userQueries.length],
+				t,
+			),
 		);
 
 		const hasTools = turn % 2 === 0;
@@ -553,7 +691,13 @@ function generateResearchSession(): ChatMessage[] {
 				tools.push(
 					makeToolCall(
 						"web_search",
-						{ query: userQueries[turn].replace(/\.$/, "").split(" ").slice(1).join(" ") },
+						{
+							query: userQueries[turn]
+								.replace(/\.$/, "")
+								.split(" ")
+								.slice(1)
+								.join(" "),
+						},
 						{
 							content: `Search results:\n${Array.from(
 								{ length: 3 + (turn % 4) },
@@ -612,7 +756,11 @@ function generateAttachmentSession(): ChatMessage[] {
 	for (let turn = 0; turn < 8; turn++) {
 		const t = baseTime + turn * 2 * 60 * 1000;
 		messages.push(
-			makeUserMessage(`u-${turn}`, userQueries[turn % userQueries.length], t),
+			makeUserMessage(
+				`u-${turn}`,
+				userQueries[turn % userQueries.length],
+				t,
+			),
 		);
 
 		const tools: ContentPart[] = [];
@@ -646,8 +794,14 @@ export function generateFixtures(): void {
 
 	const fixtures = [
 		{ name: "coding-session-30-turns", generator: generateCodingSession },
-		{ name: "research-session-20-turns", generator: generateResearchSession },
-		{ name: "attachment-session-15-turns", generator: generateAttachmentSession },
+		{
+			name: "research-session-20-turns",
+			generator: generateResearchSession,
+		},
+		{
+			name: "attachment-session-15-turns",
+			generator: generateAttachmentSession,
+		},
 	];
 
 	for (const { name, generator } of fixtures) {
@@ -656,7 +810,9 @@ export function generateFixtures(): void {
 			join(fixturesDir, `${name}.json`),
 			JSON.stringify(messages, null, 2),
 		);
-		console.log(`Generated fixture: ${name}.json (${messages.length} messages)`);
+		console.log(
+			`Generated fixture: ${name}.json (${messages.length} messages)`,
+		);
 	}
 }
 
@@ -700,27 +856,49 @@ function runMessageWindowExperiments(): ExperimentResult[] {
 }
 
 function printExperimentResults(results: ExperimentResult[]) {
-	console.log("\n═══════════════════════════════════════════════════════════════");
+	console.log(
+		"\n═══════════════════════════════════════════════════════════════",
+	);
 	console.log("  MESSAGE WINDOW EXPERIMENT RESULTS");
-	console.log("═══════════════════════════════════════════════════════════════\n");
+	console.log(
+		"═══════════════════════════════════════════════════════════════\n",
+	);
 
 	for (const result of results) {
-		const capLabel = result.maxContextMessages === 0 ? "unlimited" : `${result.maxContextMessages}`;
+		const capLabel =
+			result.maxContextMessages === 0
+				? "unlimited"
+				: `${result.maxContextMessages}`;
 		console.log(`📁 ${result.fixture}`);
-		console.log(`   Mode: ${result.toolHistoryMode} | MaxToolTokens: ${result.maxToolResultTokens} | MsgCap: ${capLabel}`);
-		console.log(`   Turns: ${result.perTurnTokens.length} | Total: ${result.totalTokens.toLocaleString()} tokens | Peak: ${result.peakTurnTokens.toLocaleString()}`);
+		console.log(
+			`   Mode: ${result.toolHistoryMode} | MaxToolTokens: ${result.maxToolResultTokens} | MsgCap: ${capLabel}`,
+		);
+		console.log(
+			`   Turns: ${result.perTurnTokens.length} | Total: ${result.totalTokens.toLocaleString()} tokens | Peak: ${result.peakTurnTokens.toLocaleString()}`,
+		);
 		console.log(`   Messages dropped: ${result.messagesDropped}`);
-		console.log(`   Per-turn: [${result.perTurnTokens.map((t) => t.toLocaleString()).join(", ")}]`);
+		console.log(
+			`   Per-turn: [${result.perTurnTokens.map((t) => t.toLocaleString()).join(", ")}]`,
+		);
 		console.log("");
 	}
 
 	// Summary table
 	console.log("\n─── Summary: Grammar Migration Fixture ───\n");
-	const gmResults = results.filter((r) => r.fixture === "grammar-migration-13-turns");
-	console.log("MsgCap | Mode      | ToolTok | Total Tokens | Peak/Turn | Dropped");
-	console.log("-------|-----------|---------|--------------|-----------|--------");
+	const gmResults = results.filter(
+		(r) => r.fixture === "grammar-migration-13-turns",
+	);
+	console.log(
+		"MsgCap | Mode      | ToolTok | Total Tokens | Peak/Turn | Dropped",
+	);
+	console.log(
+		"-------|-----------|---------|--------------|-----------|--------",
+	);
 	for (const r of gmResults) {
-		const cap = r.maxContextMessages === 0 ? "∞" : r.maxContextMessages.toString().padStart(2);
+		const cap =
+			r.maxContextMessages === 0
+				? "∞"
+				: r.maxContextMessages.toString().padStart(2);
 		console.log(
 			`${cap.padEnd(6)} | ${r.toolHistoryMode.padEnd(9)} | ${r.maxToolResultTokens.toString().padStart(7)} | ${r.totalTokens.toLocaleString().padStart(12)} | ${r.peakTurnTokens.toLocaleString().padStart(9)} | ${r.messagesDropped.toString().padStart(7)}`,
 		);
@@ -751,7 +929,7 @@ function runBenchmark(): BenchmarkResult[] {
 
 async function runLiveBenchmarks(providerName: string): Promise<LiveResult[]> {
 	let provider: ProviderConfig | null;
-	
+
 	if (providerName === "kimi-custom") {
 		// Use the user-provided key for testing
 		provider = {
@@ -763,7 +941,7 @@ async function runLiveBenchmarks(providerName: string): Promise<LiveResult[]> {
 	} else {
 		provider = loadProviderConfig(providerName);
 	}
-	
+
 	if (!provider) {
 		console.error(`❌ No API key found for provider: ${providerName}`);
 		console.error("   Supported: openrouter, kimi, kimi-custom");
@@ -774,19 +952,33 @@ async function runLiveBenchmarks(providerName: string): Promise<LiveResult[]> {
 	const strategies = ["baseline", "elide", "preserve", "budget"];
 	const results: LiveResult[] = [];
 
-	console.log(`\n🚀 Running LIVE benchmark against ${provider.name} (${provider.model})...\n`);
-	console.log("This will send fixture conversations to the API and measure actual token usage.");
-	console.log("Estimated cost: ~$0.01-0.05 per fixture (minimal completions).\n");
+	console.log(
+		`\n🚀 Running LIVE benchmark against ${provider.name} (${provider.model})...\n`,
+	);
+	console.log(
+		"This will send fixture conversations to the API and measure actual token usage.",
+	);
+	console.log(
+		"Estimated cost: ~$0.01-0.05 per fixture (minimal completions).\n",
+	);
 
 	for (const fixture of fixtures) {
 		for (const strategy of strategies) {
 			process.stdout.write(`  ${fixture.name} + ${strategy} ... `);
 			try {
-				const result = await runLiveBenchmark(fixture, strategy, provider);
+				const result = await runLiveBenchmark(
+					fixture,
+					strategy,
+					provider,
+				);
 				results.push(result);
-				console.log(`✓ ${result.actual_prompt_tokens} tokens (est: ${result.estimated_tokens}, Δ: ${result.delta_percent}%)`);
+				console.log(
+					`✓ ${result.actual_prompt_tokens} tokens (est: ${result.estimated_tokens}, Δ: ${result.delta_percent}%)`,
+				);
 			} catch (err) {
-				console.log(`✗ ${err instanceof Error ? err.message : String(err)}`);
+				console.log(
+					`✗ ${err instanceof Error ? err.message : String(err)}`,
+				);
 			}
 			// Rate limit: be polite
 			await new Promise((r) => setTimeout(r, 500));
@@ -795,7 +987,7 @@ async function runLiveBenchmarks(providerName: string): Promise<LiveResult[]> {
 
 	return results;
 }
-	// ─── Main ────────────────────────────────────────────────────────────────────
+// ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
 	const args = process.argv.slice(2);
@@ -814,7 +1006,8 @@ async function main() {
 	if (args.includes("--live")) {
 		// Find --provider flag
 		const providerIdx = args.indexOf("--provider");
-		const providerName = providerIdx >= 0 ? args[providerIdx + 1] : "openrouter";
+		const providerName =
+			providerIdx >= 0 ? args[providerIdx + 1] : "openrouter";
 		const liveResults = await runLiveBenchmarks(providerName);
 		printLiveReport(liveResults);
 		return;

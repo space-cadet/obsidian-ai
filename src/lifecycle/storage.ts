@@ -8,7 +8,11 @@ import {
 import { StoredChatData, ChatSession } from "../types";
 import type { SyncLogEntry, SyncProgressSnapshot } from "../sync/SyncProgress";
 import { createFileLogger, FileLogger } from "../logger";
-import { createStorage, ChatStorage, StorageDeps } from "../storage/ChatStorage";
+import {
+	createStorage,
+	ChatStorage,
+	StorageDeps,
+} from "../storage/ChatStorage";
 import { ChatStorageMigration } from "../storage/Migration";
 import { MigrationPromptModal } from "../modals/MigrationPromptModal";
 import { requestPluginFileConflictChoice } from "../modals/PluginFileConflictModal";
@@ -40,7 +44,9 @@ import { ProviderRegistry } from "../integrations/ProviderRegistry";
 import { ChatApiManager } from "../api";
 import type ObsidianAIPlugin from "../main";
 
-export async function initializeStorage(plugin: ObsidianAIPlugin): Promise<void> {
+export async function initializeStorage(
+	plugin: ObsidianAIPlugin,
+): Promise<void> {
 	await migrateStorage(plugin);
 
 	// Initialize file logger FIRST so any crash during load is captured.
@@ -183,10 +189,7 @@ export async function onSessionEnd(
 	const minMessages =
 		plugin.settings.intelligence.autoSummarizeMinMessages ?? 4;
 	if (
-		!plugin.sessionSummarizer.shouldSummarize(
-			session.messages,
-			minMessages,
-		)
+		!plugin.sessionSummarizer.shouldSummarize(session.messages, minMessages)
 	) {
 		return;
 	}
@@ -195,8 +198,7 @@ export async function onSessionEnd(
 		plugin.settings.providerProfiles.find(
 			(p) =>
 				p.id ===
-				(session.profileId ||
-					plugin.settings.activeProviderProfileId),
+				(session.profileId || plugin.settings.activeProviderProfileId),
 		) || plugin.settings.providerProfiles[0];
 
 	if (!activeProfile) return;
@@ -217,10 +219,7 @@ export async function onSessionEnd(
 			`[onSessionEnd] Saved ${entries.length} memory entries`,
 		);
 	} catch (e) {
-		plugin.logger?.log(
-			"warn",
-			`[onSessionEnd] Summarization failed: ${e}`,
-		);
+		plugin.logger?.log("warn", `[onSessionEnd] Summarization failed: ${e}`);
 	}
 }
 
@@ -618,8 +617,7 @@ export async function triggerSync(
 				} else if (event.status === "done") {
 					completedOps++;
 					if (event.direction === "upload") progressUploaded++;
-					if (event.direction === "download")
-						progressDownloaded++;
+					if (event.direction === "download") progressDownloaded++;
 					if (event.direction === "conflict") progressConflicts++;
 					if (event.direction) {
 						modal?.addLog(event.direction, `${title}`, {
@@ -754,8 +752,7 @@ export async function triggerSync(
 		if (result.downloaded > 0) parts.push(`↓${result.downloaded}`);
 		if (result.conflicts > 0) parts.push(`⚡${result.conflicts}`);
 		if (result.skipped > 0) parts.push(`⊘${result.skipped}`);
-		if (result.errors.length > 0)
-			parts.push(`⚠️ ${result.errors.length}`);
+		if (result.errors.length > 0) parts.push(`⚠️ ${result.errors.length}`);
 		if (pluginDataResult) {
 			if (pluginDataResult.uploaded) parts.push("plugin ↑");
 			if (pluginDataResult.downloaded) parts.push("plugin ↓");
@@ -901,9 +898,7 @@ function _getSessionTitle(
 	// Look up from loaded chat data
 	const chatData = (plugin as any)._chatData;
 	if (chatData?.sessions) {
-		const session = chatData.sessions.find(
-			(s: any) => s.id === sessionId,
-		);
+		const session = chatData.sessions.find((s: any) => s.id === sessionId);
 		if (session?.title) return session.title;
 	}
 	// Fallback to sync engine cache if available
@@ -1143,10 +1138,7 @@ export async function syncPluginData(
 
 		if (!options?.dryRun) {
 			for (const item of syncResult.items) {
-				if (
-					item.status === "failed" ||
-					item.status === "conflict"
-				) {
+				if (item.status === "failed" || item.status === "conflict") {
 					plugin.logger?.log(
 						"warn",
 						`[T57a] Failed ${item.id}: ${item.error}`,
@@ -1303,10 +1295,7 @@ export async function saveSettings(plugin: ObsidianAIPlugin) {
 	plugin.logger?.log("info", "saveSettings: writing data.json to disk");
 	await _ensureRollingBackup(plugin, existing);
 	await plugin.saveData(payload);
-	plugin.logger?.log(
-		"info",
-		"saveSettings: data.json written successfully",
-	);
+	plugin.logger?.log("info", "saveSettings: data.json written successfully");
 }
 
 export async function loadChatData(

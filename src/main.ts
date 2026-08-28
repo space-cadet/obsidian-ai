@@ -1,9 +1,6 @@
 // main.ts
 import { Plugin } from "obsidian";
-import {
-	ObsidianAISettings,
-	DEFAULT_SETTINGS,
-} from "./settings";
+import { ObsidianAISettings, DEFAULT_SETTINGS } from "./settings";
 import { ChatApiManager } from "./api";
 import { FileLogger } from "./logger";
 import { SessionStorage } from "./storage/session-storage";
@@ -66,7 +63,9 @@ export default class ObsidianAIPlugin extends Plugin {
 	integrationRegistry!: ProviderRegistry;
 	syncEngine: SyncEngine | null = null;
 	syncIdentity: string | null = null;
-	syncRetryStore: import("./sync/SyncRetryStore").DurableSyncRetryStore | null = null;
+	syncRetryStore:
+		| import("./sync/SyncRetryStore").DurableSyncRetryStore
+		| null = null;
 
 	// Data integrity guards
 	_backupCreated = false;
@@ -109,7 +108,10 @@ export default class ObsidianAIPlugin extends Plugin {
 		return activateChatView(this);
 	}
 
-	async openSessionInNewTab(sessionId: string, messageId: string): Promise<void> {
+	async openSessionInNewTab(
+		sessionId: string,
+		messageId: string,
+	): Promise<void> {
 		return openSessionInNewTab(this, sessionId, messageId);
 	}
 

@@ -42,7 +42,10 @@ export interface IndexStorage {
 
 /** Build an Obsidian Plugin-backed IndexStorage from a Plugin instance. */
 export function createPluginIndexStorage(
-	plugin: { loadData(): Promise<Record<string, unknown> | null>; saveData(data: Record<string, unknown>): Promise<void> },
+	plugin: {
+		loadData(): Promise<Record<string, unknown> | null>;
+		saveData(data: Record<string, unknown>): Promise<void>;
+	},
 	key = "syncIndex",
 ): IndexStorage {
 	return {
@@ -51,7 +54,10 @@ export function createPluginIndexStorage(
 			return (data as Record<string, unknown> | null) ?? null;
 		},
 		async save(indexData) {
-			const data = ((await plugin.loadData()) ?? {}) as Record<string, unknown>;
+			const data = ((await plugin.loadData()) ?? {}) as Record<
+				string,
+				unknown
+			>;
 			data[key] = indexData;
 			await plugin.saveData(data);
 		},

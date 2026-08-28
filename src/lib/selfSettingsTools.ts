@@ -68,7 +68,11 @@ function sanitizeValue(value: unknown, keyPath: string): unknown {
 		return value;
 	}
 
-	if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+	if (
+		typeof value === "string" ||
+		typeof value === "number" ||
+		typeof value === "boolean"
+	) {
 		// Redact if the key path contains a sensitive fragment
 		const lastKey = keyPath.split(".").pop() ?? "";
 		if (isSensitiveKey(lastKey)) {
@@ -132,7 +136,11 @@ export function validateSettingUpdate(
 		case "maxContextMessages":
 		case "maxToolResultTokens":
 		case "messageHistory": {
-			if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+			if (
+				typeof value !== "number" ||
+				!Number.isFinite(value) ||
+				value <= 0
+			) {
 				return {
 					ok: false,
 					error: `"${key}" must be a positive number.`,

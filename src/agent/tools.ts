@@ -610,7 +610,11 @@ export const updateSettingTool = t({
 			.describe(
 				"The setting key to update. Whitelisted: maxContextMessages, maxToolResultTokens, enableAgentTools, autoApply, showFullRequestTokens, pressEnterToSend, autoNameSessions, messageHistory, includeActiveNote, toolHistoryMode, developerMode",
 			),
-		value: z.any().describe("The new value for the setting. Must match the expected type."),
+		value: z
+			.any()
+			.describe(
+				"The new value for the setting. Must match the expected type.",
+			),
 	}),
 });
 

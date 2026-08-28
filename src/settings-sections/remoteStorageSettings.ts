@@ -208,9 +208,7 @@ export function renderRemoteStorageSection(
 	// ── Sync direction (T43) ──
 	new Setting(section)
 		.setName("Sync Direction")
-		.setDesc(
-			"Control whether to upload, download, or sync both ways.",
-		)
+		.setDesc("Control whether to upload, download, or sync both ways.")
 		.addDropdown((dropdown) => {
 			dropdown
 				.addOption("both", "↕️ Both ways")

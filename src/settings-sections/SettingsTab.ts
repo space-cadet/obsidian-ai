@@ -114,7 +114,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Web Search", "Web Search"],
 				["Sync", "Multi-User Chat Relay"],
 				["Sync Components", "Sync Components"],
-			["Remote Storage", "Remote Storage"],
+				["Remote Storage", "Remote Storage"],
 				["Updates", "Updates"],
 				["Telemetry & Privacy", "Telemetry & Privacy"],
 				["Advanced", "Advanced"],
@@ -186,11 +186,11 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				this.saveSettings.bind(this),
 			);
 			renderSyncComponentsSection(
-			containerEl,
-			this.plugin,
-			this.saveSettings.bind(this),
-		);
-		renderRemoteStorageSection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
+			renderRemoteStorageSection(
 				containerEl,
 				this.plugin,
 				this.saveSettings.bind(this),

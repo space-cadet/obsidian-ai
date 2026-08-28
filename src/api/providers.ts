@@ -5,10 +5,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import {
-	getDefaultEndpoint,
-	ProviderProfile,
-} from "../settings";
+import { getDefaultEndpoint, ProviderProfile } from "../settings";
 import type { ProviderTokenUsage } from "../types";
 
 export function normalizeProviderUsage(usage: {
@@ -94,7 +91,9 @@ export function getThinkingProviderOptions(
 /**
  * Creates a Vercel AI SDK language model from a provider profile.
  */
-export function createLanguageModel(profile: ProviderProfile): LanguageModelV4 | null {
+export function createLanguageModel(
+	profile: ProviderProfile,
+): LanguageModelV4 | null {
 	const error = validateProfile(profile);
 	if (error) {
 		new Notice(`⚠️ ${error} Please check your settings.`);

@@ -130,7 +130,9 @@ describe("sanitizeSettings", () => {
 	it("redacts apiKey from provider profiles", () => {
 		const settings = makeTestSettings();
 		const sanitized = sanitizeSettings(settings);
-		const profiles = sanitized.providerProfiles as Array<Record<string, unknown>>;
+		const profiles = sanitized.providerProfiles as Array<
+			Record<string, unknown>
+		>;
 		expect(profiles[0].apiKey).toBe("[REDACTED]");
 	});
 
@@ -233,7 +235,9 @@ describe("validateSettingUpdate", () => {
 		const result = validateSettingUpdate("toolHistoryMode", "full");
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.error).toContain('must be either "elide" or "preserve"');
+			expect(result.error).toContain(
+				'must be either "elide" or "preserve"',
+			);
 		}
 	});
 
