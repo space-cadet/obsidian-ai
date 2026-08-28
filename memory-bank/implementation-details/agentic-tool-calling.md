@@ -511,6 +511,61 @@ interface PendingToolCardProps {
 
 ---
 
+## Tool Call Notification Display Gap — T13b
+
+### `ToolCallNotification.tsx` — Detail View Rendering (2026-08-28)
+
+The `ToolCallDetail()` function inside `ToolCallNotification.tsx` renders
+expanded tool result details in the chat history. Currently only **6 tools**
+have dedicated rendering; all others fall through to a generic
+`"{tool_name} completed successfully"` string with no actionable detail.
+
+| Tool | Current Detail View | What `ToolResult` Contains |
+|------|--------------------|---------------------------|
+| `read_note` | Truncated content preview (500 chars) | `content`, `path` |
+| `search_notes` | Full matches table | `matches[]` |
+| `list_notes` | Full notes table | `notes[]` |
+| `list_folders` | Full folder list | `folders[]`, `parent` |
+| `get_note_metadata` | Structured metadata | `size`, `wordCount`, `created`, `modified` |
+| `create_notes` | Created count + skipped paths | `created[]`, `skipped[]` |
+| `edit_note` | `"edit note completed successfully"` | `success`, `path` |
+| `append_to_note` | `"append to note completed successfully"` | `success`, `path` |
+| `patch_note` | `"patch note completed successfully"` | `success`, `path` |
+| `create_note` | `"create note completed successfully"` | `success`, `path` |
+| `move_note` | `"move note completed successfully"` | `success`, `path`, `oldPath` |
+| `delete_note` | `"delete note completed successfully"` | `success` |
+| `edit_section` | `"edit section completed successfully"` | `success`, `path` |
+| `web_search` | `"web search completed successfully"` | `content` |
+| `search_note_content` | `"search note content completed successfully"` | `matches[]`, `total_matches`, `truncated` |
+| `read_pdf` | `"read pdf completed successfully"` | `content`, `page_start`, `page_end`, `total_pages` |
+| `read_web_page` | `"read web page completed successfully"` | `content` |
+| `read_memory` / `search_memories` / etc. | Generic success | `content` or `matches[]` |
+
+### Root Cause
+
+The catch-all fallback at the end of `ToolCallDetail()` does not inspect
+`result.content`, `result.path`, or `result.matches` before emitting the
+generic string. This is a presentation-layer gap, not a data-layer gap —
+`ToolExecutor` already returns the correct fields; they are simply not
+rendered.
+
+### Target Fix
+
+Replace the final catch-all with a smart fallback chain:
+1. If `result.content` exists → render truncated preview (same as `read_note`)
+2. If `result.path` exists → render affected path (with `oldPath → path` for moves)
+3. If `result.matches` exists → render matches table (same as `search_notes`)
+4. Else → generic success text
+
+Also add explicit `search_note_content` handling since it returns the same
+`matches[]` shape as `search_notes`.
+
+**Owner:** T13b  
+**File:** `src/components/presentational/ToolCallNotification.tsx`  
+**Estimated change:** ~20 lines in the `ToolCallDetail()` function.
+
+---
+
 ## Approval Flow
 
 ### autoApply = false (default)

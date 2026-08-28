@@ -136,7 +136,10 @@ function ToolCallDetail({
 		);
 	}
 
-	if (toolName === "search_notes" && result.matches) {
+	if (
+		(toolName === "search_notes" || toolName === "search_note_content") &&
+		result.matches
+	) {
 		return (
 			<div className="tool-call-detail-content">
 				<div className="tool-call-result-table">
@@ -224,6 +227,49 @@ function ToolCallDetail({
 						{skipped.length === 1 ? "" : "s"}: {skipped.join(", ")}
 					</div>
 				)}
+			</div>
+		);
+	}
+
+	// Generic fallback chain: content → path → matches → success
+	if (result.content) {
+		return (
+			<div className="tool-call-detail-content">
+				<pre className="tool-call-preview">
+					{result.content.slice(0, 500)}
+					{result.content.length > 500 ? "…" : ""}
+				</pre>
+			</div>
+		);
+	}
+
+	if (result.path) {
+		return (
+			<div className="tool-call-detail-content">
+				<span className="tool-call-success">
+					{result.oldPath
+						? `${result.oldPath} → ${result.path}`
+						: result.path}
+				</span>
+			</div>
+		);
+	}
+
+	if (result.matches) {
+		return (
+			<div className="tool-call-detail-content">
+				<div className="tool-call-result-table">
+					{result.matches.map((m: any, i: number) => (
+						<div key={i} className="tool-call-result-row">
+							<span className="tool-call-result-name">
+								[[{m.basename}]]
+							</span>
+							<span className="tool-call-result-meta">
+								{m.size ? `${m.size} bytes` : ""}
+							</span>
+						</div>
+					))}
+				</div>
 			</div>
 		);
 	}
