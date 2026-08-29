@@ -1,6 +1,14 @@
 # Edit History
 
-*Last Updated: 2026-08-29 23:08:00 IST*
+*Last Updated: 2026-08-30 01:07:32 IST*
+
+#### 01:07:32 IST - T34: Record settings and runtime follow-up
+- Updated `memory-bank/tasks/T34.md` - Recorded the follow-up
+- Updated `memory-bank/activeContext.md` - Added the handoff
+- Updated `memory-bank/session_cache.md` - Added the session summary
+- Updated `memory-bank/changelog.md` - Documented the changes
+- Updated `memory-bank/progress.md` - Recorded the milestone
+- Created `memory-bank/sessions/2026-08-30-night.md` - Recorded the session
 
 #### 23:08:00 IST - T65: Memory-bank fix — recovered overwritten session
 - Restored `memory-bank/sessions/2026-08-29-evening.md` from commit `a8e4b33`

@@ -1,6 +1,14 @@
 # Active Context
 
-*Last Updated: 2026-08-29 22:58:00 IST*
+*Last Updated: 2026-08-30 01:07:32 IST*
+
+### 2026-08-30 — T34 settings/runtime follow-up ✅
+
+Completed and pushed the settings UX and runtime fixes: search navigation,
+API-key reveal/copy, slider values, heading consistency, Custom Commands layout,
+persistent collapsible sections, runtime manifest lookup, and deferred sync
+initialization. Verification: 46 test files / 403 tests and production build.
+Commit: `887480b`.
 
 ### 2026-08-29 — T65: Three-tier memory system (late evening) 🔄
 

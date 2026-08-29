@@ -1083,3 +1083,8 @@ Implemented the first pass on the three architectural improvements from the T55 
   362 tests.
 - TypeScript and the production build pass.
 - Next: review the remaining UI callback and approval lifecycle boundary.
+### 2026-08-30 — T34 settings/runtime follow-up ✅
+
+- Completed settings UX, collapsible sections, manifest lookup, and deferred sync startup fixes.
+- Verification passed: 46 test files / 403 tests and production build.
+- Commit `887480b` pushed to `origin/main`.

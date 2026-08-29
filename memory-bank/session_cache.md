@@ -1,6 +1,15 @@
 # Session Cache
 
-*Last Updated: 2026-08-29 22:58:00 IST*
+*Last Updated: 2026-08-30 01:07:32 IST*
+
+## 2026-08-30 — T34 settings/runtime follow-up
+
+- Completed settings UX fixes and persistent collapsible sections.
+- Fixed runtime manifest lookup and deferred sync initialization.
+- Verification: 403 tests and production build passed.
+- Pushed as `887480b`; repository is clean.
+
+See `sessions/2026-08-30-night.md`.
 
 ## 2026-08-29 — T65: Three-tier memory system (late evening)
 

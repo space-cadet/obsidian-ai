@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased - 2026-08-29
 
+### Settings and startup follow-up — 2026-08-30
+- Added persistent collapsible settings sections and expand/collapse-all controls.
+- Fixed search navigation, API-key reveal/copy, slider values, headings, and Custom Commands layout.
+- Fixed runtime manifest lookup and deferred sync initialization.
+- Verification: 403 tests and production build passed (`887480b`).
+
 ### Context benchmark validation
 - Recorded the live T64/T64d harness run using OpenRouter and
   `openai/gpt-4o-mini`: 16 requests across four fixtures and four strategies.
