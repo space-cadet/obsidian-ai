@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
 	sanitizeSettings,
 	validateSettingUpdate,
+	resolveSettingPath,
 	MUTABLE_SETTING_KEYS,
 } from "../selfSettingsTools";
 import type { ObsidianAISettings } from "../../settings";
@@ -235,9 +236,7 @@ describe("validateSettingUpdate", () => {
 		const result = validateSettingUpdate("toolHistoryMode", "full");
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.error).toContain(
-				'must be either "elide" or "preserve"',
-			);
+			expect(result.error).toContain('must be one of: elide, preserve');
 		}
 	});
 
@@ -297,6 +296,116 @@ describe("MUTABLE_SETTING_KEYS", () => {
 			"includeActiveNote",
 			"toolHistoryMode",
 			"developerMode",
+			"intelligence.identityContextBudget",
+			"intelligence.enableIntelligence",
+			"intelligence.autoSummarize",
+			"intelligence.autoSummarizeMinMessages",
+			"intelligence.enableMemoryAuditTool",
+			"syncRelayUrl",
+			"syncRoomId",
+			"syncUserName",
+			"remoteStorage.enabled",
+			"remoteStorage.autoSync",
+			"remoteStorage.syncIntervalMinutes",
+			"remoteStorage.syncDirection",
 		]);
+	});
+});
+
+describe("nested key support", () => {
+	const settings = makeTestSettings();
+
+	describe("validateSettingUpdate", () => {
+		it("accepts nested intelligence.identityContextBudget", () => {
+			const result = validateSettingUpdate(
+				"intelligence.identityContextBudget",
+				3000,
+			);
+			expect(result.ok).toBe(true);
+			if (result.ok) {
+				expect(result.value).toBe(3000);
+			}
+		});
+
+		it("rejects non-number for intelligence.identityContextBudget", () => {
+			const result = validateSettingUpdate(
+				"intelligence.identityContextBudget",
+				"3000",
+			);
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.error).toContain("must be a positive number");
+			}
+		});
+
+		it("accepts nested intelligence.enableIntelligence", () => {
+			const result = validateSettingUpdate(
+				"intelligence.enableIntelligence",
+				true,
+			);
+			expect(result.ok).toBe(true);
+			if (result.ok) {
+				expect(result.value).toBe(true);
+			}
+		});
+
+		it("accepts nested remoteStorage.syncDirection", () => {
+			const result = validateSettingUpdate(
+				"remoteStorage.syncDirection",
+				"upload",
+			);
+			expect(result.ok).toBe(true);
+			if (result.ok) {
+				expect(result.value).toBe("upload");
+			}
+		});
+
+		it("rejects invalid enum for remoteStorage.syncDirection", () => {
+			const result = validateSettingUpdate(
+				"remoteStorage.syncDirection",
+				"invalid",
+			);
+			expect(result.ok).toBe(false);
+			if (!result.ok) {
+				expect(result.error).toContain("must be one of");
+			}
+		});
+	});
+
+	describe("resolveSettingPath", () => {
+		it("resolves top-level key", () => {
+			const resolved = resolveSettingPath(settings, "maxContextMessages");
+			expect(resolved).not.toBeNull();
+			expect(resolved!.parent).toBe(settings);
+			expect(resolved!.key).toBe("maxContextMessages");
+		});
+
+		it("resolves nested intelligence.identityContextBudget", () => {
+			const resolved = resolveSettingPath(
+				settings,
+				"intelligence.identityContextBudget",
+			);
+			expect(resolved).not.toBeNull();
+			expect(resolved!.parent).toBe(settings.intelligence);
+			expect(resolved!.key).toBe("identityContextBudget");
+		});
+
+		it("resolves nested remoteStorage.enabled", () => {
+			const resolved = resolveSettingPath(
+				settings,
+				"remoteStorage.enabled",
+			);
+			expect(resolved).not.toBeNull();
+			expect(resolved!.parent).toBe(settings.remoteStorage);
+			expect(resolved!.key).toBe("enabled");
+		});
+
+		it("returns null for non-existent path", () => {
+			const resolved = resolveSettingPath(
+				settings,
+				"intelligence.nonExistent.deep",
+			);
+			expect(resolved).toBeNull();
+		});
 	});
 });

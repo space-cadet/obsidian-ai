@@ -2,6 +2,7 @@ import type { ToolResult } from "../../types";
 import {
 	sanitizeSettings,
 	validateSettingUpdate,
+	resolveSettingPath,
 } from "../../../lib/selfSettingsTools";
 import {
 	ToolHandlerBase,
@@ -44,9 +45,14 @@ export class SettingsHandlers extends ToolHandlerBase {
 			return { error: validation.error };
 		}
 
+		// Resolve nested path for assignment
+		const resolved = resolveSettingPath(this.settings, args.key);
+		if (!resolved) {
+			return { error: `Failed to resolve path "${args.key}" in settings.` };
+		}
+
 		// Apply the update
-		(this.settings as unknown as Record<string, unknown>)[validation.key] =
-			validation.value;
+		resolved.parent[resolved.key] = validation.value;
 
 		// Persist
 		if (this.saveSettings) {

@@ -1,7 +1,10 @@
 import type { ObsidianAISettings } from "../settings";
 
-/** Keys that can be updated via the update_setting tool. */
+/** Keys that can be updated via the update_setting tool.
+ * Supports dot-notation for nested paths, e.g. "intelligence.identityContextBudget".
+ */
 export const MUTABLE_SETTING_KEYS = [
+	// Top-level keys
 	"maxContextMessages",
 	"maxToolResultTokens",
 	"enableAgentTools",
@@ -13,6 +16,21 @@ export const MUTABLE_SETTING_KEYS = [
 	"includeActiveNote",
 	"toolHistoryMode",
 	"developerMode",
+	// Nested intelligence settings
+	"intelligence.identityContextBudget",
+	"intelligence.enableIntelligence",
+	"intelligence.autoSummarize",
+	"intelligence.autoSummarizeMinMessages",
+	"intelligence.enableMemoryAuditTool",
+	// Nested sync settings (T43)
+	"syncRelayUrl",
+	"syncRoomId",
+	"syncUserName",
+	// Nested remoteStorage settings
+	"remoteStorage.enabled",
+	"remoteStorage.autoSync",
+	"remoteStorage.syncIntervalMinutes",
+	"remoteStorage.syncDirection",
 ] as const;
 
 export type MutableSettingKey = (typeof MUTABLE_SETTING_KEYS)[number];
@@ -105,16 +123,61 @@ function sanitizeValue(value: unknown, keyPath: string): unknown {
 	return value;
 }
 
-/** Validation result for an update request. */
 export interface SettingValidationResult {
 	ok: true;
 	key: MutableSettingKey;
 	value: unknown;
+	/** Resolved path info for nested assignments */
+	path?: {
+		parent: Record<string, unknown>;
+		key: string;
+	};
 }
 
 export interface SettingValidationError {
 	ok: false;
 	error: string;
+}
+
+/**
+ * Resolve a dot-notation path within the settings object.
+ * Returns the parent object and the final key for assignment.
+ */
+export function resolveSettingPath(
+	settings: ObsidianAISettings,
+	path: string,
+): { parent: Record<string, unknown>; key: string } | null {
+	const parts = path.split(".");
+	if (parts.length === 1) {
+		return { parent: settings as unknown as Record<string, unknown>, key: path };
+	}
+
+	let current: unknown = settings;
+	for (let i = 0; i < parts.length - 1; i++) {
+		if (
+			current === null ||
+			current === undefined ||
+			typeof current !== "object" ||
+			Array.isArray(current)
+		) {
+			return null;
+		}
+		current = (current as Record<string, unknown>)[parts[i]];
+	}
+
+	if (
+		current === null ||
+		current === undefined ||
+		typeof current !== "object" ||
+		Array.isArray(current)
+	) {
+		return null;
+	}
+
+	return {
+		parent: current as Record<string, unknown>,
+		key: parts[parts.length - 1],
+	};
 }
 
 /**
@@ -132,51 +195,87 @@ export function validateSettingUpdate(
 		};
 	}
 
+	// Type validators
+	const assertPositiveNumber = (k: string, v: unknown) => {
+		if (typeof v !== "number" || !Number.isFinite(v) || v <= 0) {
+			return { ok: false as const, error: `"${k}" must be a positive number.` };
+		}
+		return { ok: true as const };
+	};
+
+	const assertBoolean = (k: string, v: unknown) => {
+		if (typeof v !== "boolean") {
+			return { ok: false as const, error: `"${k}" must be a boolean.` };
+		}
+		return { ok: true as const };
+	};
+
+	const assertEnum = (k: string, v: unknown, values: string[]) => {
+		if (!values.includes(v as string)) {
+			return {
+				ok: false as const,
+				error: `"${k}" must be one of: ${values.join(", ")}.`,
+			};
+		}
+		return { ok: true as const };
+	};
+
+	const assertString = (k: string, v: unknown) => {
+		if (typeof v !== "string") {
+			return { ok: false as const, error: `"${k}" must be a string.` };
+		}
+		return { ok: true as const };
+	};
+
+	// Validation dispatch by key (including dot-notation paths)
+	let validation: { ok: boolean; error?: string } = { ok: false, error: `Unhandled key "${key}".` };
+
 	switch (key) {
+		// Positive number keys
 		case "maxContextMessages":
 		case "maxToolResultTokens":
-		case "messageHistory": {
-			if (
-				typeof value !== "number" ||
-				!Number.isFinite(value) ||
-				value <= 0
-			) {
-				return {
-					ok: false,
-					error: `"${key}" must be a positive number.`,
-				};
-			}
-			return { ok: true, key: key as MutableSettingKey, value };
-		}
+		case "messageHistory":
+		case "intelligence.identityContextBudget":
+		case "intelligence.autoSummarizeMinMessages":
+		case "remoteStorage.syncIntervalMinutes":
+			validation = assertPositiveNumber(key, value);
+			break;
+
+		// Boolean keys
 		case "enableAgentTools":
 		case "autoApply":
 		case "showFullRequestTokens":
 		case "pressEnterToSend":
 		case "autoNameSessions":
 		case "includeActiveNote":
-		case "developerMode": {
-			if (typeof value !== "boolean") {
-				return {
-					ok: false,
-					error: `"${key}" must be a boolean.`,
-				};
-			}
-			return { ok: true, key: key as MutableSettingKey, value };
-		}
-		case "toolHistoryMode": {
-			if (value !== "elide" && value !== "preserve") {
-				return {
-					ok: false,
-					error: `"toolHistoryMode" must be either "elide" or "preserve".`,
-				};
-			}
-			return { ok: true, key: key as MutableSettingKey, value };
-		}
-		default: {
-			return {
-				ok: false,
-				error: `Unhandled key "${key}".`,
-			};
-		}
+		case "developerMode":
+		case "intelligence.enableIntelligence":
+		case "intelligence.autoSummarize":
+		case "intelligence.enableMemoryAuditTool":
+		case "remoteStorage.enabled":
+		case "remoteStorage.autoSync":
+			validation = assertBoolean(key, value);
+			break;
+
+		// Enum keys
+		case "toolHistoryMode":
+			validation = assertEnum(key, value, ["elide", "preserve"]);
+			break;
+		case "remoteStorage.syncDirection":
+			validation = assertEnum(key, value, ["both", "upload", "download"]);
+			break;
+
+		// String keys
+		case "syncRelayUrl":
+		case "syncRoomId":
+		case "syncUserName":
+			validation = assertString(key, value);
+			break;
 	}
+
+	if (!validation.ok) {
+		return { ok: false, error: validation.error! };
+	}
+
+	return { ok: true, key: key as MutableSettingKey, value };
 }
