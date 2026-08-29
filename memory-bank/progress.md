@@ -1,18 +1,21 @@
-### 2026-08-29 — Architecture status handoff ✅
+### 2026-08-29 — Fresh architecture review and plan ✅
 
-- Reconciled the architecture review with the current checkout and remote:
-  both point to `b49ad7d` and the worktree is clean.
+- Archived the August 27 baseline and the August 29 fresh read-only review.
+- The fresh review examined source commit `63bce58`; the documentation archive
+  is synchronized on `main` and `origin/main` at `a08430b`.
 - Confirmed the main reorganization: `ToolExecutor.ts` 326 lines,
   `useMessageActions.ts` 220, `api.ts` 363, and `main.ts` 228, with the
   extracted handler, turn, provider, history, streaming, registration, event,
   and storage modules present.
 - Recorded T46a as complete and T46 as still open only for provider switching
-  and real-provider runtime acceptance. Non-blocking review cleanup items and
-  stale architecture-guide text remain visible for the next review.
+  and real-provider runtime acceptance.
 - Recorded the T48b/T48c replay and compaction work plus the T64b retention
   sweep from `b49ad7d`. T64b is complete; exact history retrieval and an
   inspectable compaction record remain open.
-- Next session: rerun Matt Pocock's code review skill on the current tree.
+- Fresh finding: make model-history policy one deep module before deciding
+  whether `TurnLifecycle` needs further extraction. Capability construction is
+  a secondary T60/T60a cleanup; sync decomposition remains deferred.
+- No new task or subtask was created.
 
 ### 2026-08-29 — T61 self-settings integration acceptance ✅
 

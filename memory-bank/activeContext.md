@@ -1,11 +1,13 @@
 # Active Context
 
-*Last Updated: 2026-08-29 11:41:51 IST*
+*Last Updated: 2026-08-29 17:08:29 IST*
 
-### 2026-08-29 — Architecture status and next review
+### 2026-08-29 — Fresh architecture review and implementation plan
 
-The main architecture reorganization is present on `main` and `origin/main`
-at `b49ad7d`. The four review targets are now small coordinators or adapters:
+The fresh read-only review examined the post-refactor source at `63bce58`; the
+dated reports are archived under `memory-bank/architecture-reviews/`. The
+documentation archive is now on `main` and `origin/main` at `a08430b`. The
+four review targets are now small coordinators or adapters:
 `ToolExecutor.ts` is 326 lines, `useMessageActions.ts` is 220 lines,
 `api.ts` is 363 lines, and `main.ts` is 228 lines. The extracted handler,
 turn, provider, history, streaming, registration, event, and storage modules
@@ -13,8 +15,8 @@ are present.
 
 T46a is complete. T46 remains active only for provider-switching and real-
 provider runtime acceptance. The review's non-blocking cleanup items remain:
-the long executor setup, the temporary `__ambiguous` file property, the
-late cancellation check, pagination documentation, and a few `any` casts.
+the long executor setup, the temporary `__ambiguous` file property, the late
+cancellation check, pagination documentation, and a few `any` casts.
 `ChatApp.tsx` remains about 1,023 lines but is still treated as a composition
 layer rather than a new T46 extraction target.
 
@@ -24,8 +26,11 @@ derived-summary marking, and the T64b retention sweep. T64b is complete.
 Exact historical retrieval, an inspectable compaction record, and provider or
 plugin acceptance remain open.
 
-Next session: rerun Matt Pocock's code review skill against the current tree
-and refresh this status from new evidence.
+Current plan: consolidate model-history policy behind one model-ready history
+boundary under T48/T48a/T48b/T48c/T62a, then reassess whether `TurnLifecycle`
+needs another extraction. Capability-construction cleanup remains with
+T60/T60a, and sync decomposition remains deferred. No new task or subtask was
+created.
 
 ### 2026-08-29 — T61 self-settings integration acceptance ✅
 

@@ -1,6 +1,6 @@
 # Conversation Compaction Design
 *Created: 2026-08-19 13:31:15 IST*
-*Last Updated: 2026-08-23 04:24:00 IST*
+*Last Updated: 2026-08-29 17:08:29 IST*
 
 ## Implemented Slice and Current Boundary — 2026-08-23 17:05:26 IST
 
@@ -266,6 +266,14 @@ canonical replay behavior.
 The first implementation should preserve source IDs even before retrieval is
 available. Bounded trimming remains the safe fallback; retrieval upgrades
 precision later without changing the projection contract.
+
+## Fresh Architecture Review Cross-Reference — 2026-08-29
+
+The fresh architecture review confirms that this design is the policy home for
+the model-history projection. Its replay, budget, compaction, provenance, and
+retrieval rules should be exposed through one boundary consumed by T46's turn
+coordination and both protocol loops. Do not move those rules into
+`TurnLifecycle`, `AgentLoop`, or `OpenResponsesLoop` as parallel policies.
 
 ---
 

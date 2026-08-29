@@ -1,6 +1,6 @@
 # Orchestration Decomposition Design
 *Created: 2026-08-17 06:07 IST*
-*Last Updated: 2026-08-29 11:41:51 IST*
+*Last Updated: 2026-08-29 17:08:29 IST*
 *Applies to: obsidian-ai plugin codebase — T46*
 
 ## Overview
@@ -296,15 +296,21 @@ export default class ObsidianAIPlugin extends Plugin {
 | api.ts | 363 | ~300 | 400 |
 | main.ts | 228 | ~300–400 | 400 |
 
-## Reconciliation and next review — 2026-08-29
+## Fresh Review Reconciliation — 2026-08-29
 
 The current tree contains the domain handler split, shared tool context,
 resolved registry, React-free turn coordinator, provider/history/streaming
 modules, and registration/event/storage modules. `ChatApp.tsx` remains about
 1,023 lines as a composition layer.
 
-The remaining review follow-ups are non-blocking cleanup: simplify the long
-executor setup, remove the temporary `__ambiguous` file property, move the
-cancellation check earlier, document pagination lifetime, and tighten a few
-`any` casts. The next session will rerun Matt Pocock's code review skill on
-the current tree before deciding whether any of these still matter.
+The fresh `improve-codebase-architecture` review examined source commit
+`63bce58` and confirmed that the original tool-registry and hook-level
+send/request findings are addressed. The strongest remaining concern is that
+model-history policy still crosses replay, budgeting, truncation, compaction,
+and protocol-loop seams. T48/T48a/T48b/T48c/T62a own that policy; T46 should
+consume one model-ready projection.
+
+`TurnLifecycle` remains a secondary reassessment boundary at about 1,170
+lines. Capability construction remains a T60/T60a cleanup. Sync decomposition
+is deferred until concrete pressure appears. T46's provider-switching and
+real-provider runtime acceptance remain open.

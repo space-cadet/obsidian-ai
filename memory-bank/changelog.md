@@ -5,13 +5,15 @@ All notable changes to this project will be documented in this file.
 ## Unreleased - 2026-08-29
 
 ### Architecture status
-- Recorded the current T46/T46a reorganization state after reconciling the
-  checked-out tree with `origin/main` at `b49ad7d`.
-- Recorded that the main structural split is complete while provider runtime
-  acceptance and several non-blocking review cleanup items remain open.
-- Recorded the T48b/T48c replay and compaction checks and the completed T64b
-  retention sweep.
-- Scheduled a fresh Matt Pocock code review pass for the next session.
+- Archived the August 27 baseline and August 29 fresh
+  `improve-codebase-architecture` review reports.
+- The fresh review examined source commit `63bce58` and confirms that the
+  T46/T46a structural split is complete at the original target level.
+- The top follow-up is one model-history policy boundary across T48/T48a/T48b/
+  T48c/T62a; `TurnLifecycle` and capability construction are secondary review
+  boundaries, while sync decomposition remains deferred.
+- T46 remains open for provider switching and real-provider runtime
+  acceptance. No new task or subtask was created.
 
 ## [1.4.1] - 2026-08-28
 

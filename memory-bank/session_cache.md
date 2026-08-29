@@ -1,24 +1,25 @@
 # Session Cache
 
-*Last Updated: 2026-08-29 11:41:51 IST*
+*Last Updated: 2026-08-29 17:08:29 IST*
 
-## 2026-08-29 — Architecture status handoff
+## 2026-08-29 — Fresh architecture review handoff
 
-**Session title:** T46, T46a, T48b, T48c, T60a, T60c, T61, T64b: Record architecture status and defer fresh code review
+**Session title:** T46, T48, T48a, T48b, T48c, T62a: Fresh architecture review and implementation plan
 
-- Main and `origin/main` are synchronized at `b49ad7d`.
-- The T46/T46a structural work is present: domain handlers, shared tool
-  context, turn coordinator, turn output/persistence modules, provider/history/
-  streaming modules, and lifecycle modules.
+- The fresh read-only review examined source at `63bce58`; both dated reports
+  are retained under `memory-bank/architecture-reviews/`.
+- Documentation is now synchronized at `a08430b`.
 - Current file sizes: `ToolExecutor.ts` 326 lines,
   `useMessageActions.ts` 220, `api.ts` 363, `main.ts` 228.
 - T46a is complete. T46 still awaits provider-switching and real-provider
-  runtime acceptance. Several non-blocking review cleanup items remain.
+  runtime acceptance. The fresh review leaves model-history policy as the top
+  follow-up and treats `TurnLifecycle` as a reassessment boundary.
 - T48b/T48c and T64b changes and verification are recorded in commit
   `b49ad7d`; T64b is complete. Exact history retrieval and an inspectable
   compaction record remain open.
-- Next session action: rerun Matt Pocock's code review skill and refresh the
-  architecture status.
+- Next action: define the single model-history projection boundary under the
+  existing T48/T62a owners, then reassess lifecycle extraction. No new task or
+  subtask was created; sync decomposition remains deferred.
 
 ## 2026-08-29 — Memory Bank Task Registry Cleanup
 

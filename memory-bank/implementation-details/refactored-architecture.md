@@ -1,7 +1,7 @@
 # Refactored Architecture Guide
 
 *Created: 2026-05-29*
-*Last Updated: 2026-08-29 11:41:51 IST*
+*Last Updated: 2026-08-29 17:08:29 IST*
 *Applies to: obsidian-ai plugin codebase*
 
 ## Overview
@@ -75,8 +75,6 @@ src/
 ├── agent/                         # Agentic logic
 │   ├── AgentLoop.ts               # Tool calling loop
 │   ├── ChatTurnCoordinator.ts     # Shared native/OpenResponses turn runner (T46a)
-│   ├── ChatTurnRequest.ts         # Prompt, history, and request assembly (T46a)
-│   ├── ChatTurnPersistence.ts     # Completed message and session updates (T46a)
 │   ├── ChatTurnOutput.ts           # Text and tool-result collection (T46a)
 │   ├── ToolExecutor.ts            # Registry-backed tool execution layer (326 lines; T46)
 │   ├── tools/                     # Resolved definitions, lookup, and handlers (T46)
@@ -287,6 +285,18 @@ When a file grows beyond its target size:
   T60/T60a; model-history policy remains under T48b/T48c/T62a with T64b
   supplying retention evidence.
 - **2026-08-29**: Reconciled this guide with the merged T46/T46a source. The
-  four main targets are now 326, 220, 363, and 228 lines respectively. A fresh
-  Matt Pocock code review is planned for the next session; provider runtime
-  acceptance and the listed non-blocking cleanup items remain open.
+  four main targets are now 326, 220, 363, and 228 lines respectively. The
+  fresh `improve-codebase-architecture` review keeps model-history policy as
+  the top follow-up, with T48/T48a/T48b/T48c/T62a as owners. `TurnLifecycle`
+  is a reassessment boundary, provider runtime acceptance remains open, and
+  sync decomposition is deferred.
+
+## Fresh Review Boundary — 2026-08-29
+
+The current source contains `ChatTurnCoordinator.ts` and `ChatTurnOutput.ts`
+under `src/agent/`. The intermediate `ChatTurnRequest.ts` and
+`ChatTurnPersistence.ts` files are not present in the current checkout; older
+dated sections in this document describe their historical branch state.
+
+The full dated findings and implementation order are recorded in
+`T46-architecture-review-2026-08-29.md` and the archived HTML reports.

@@ -1,7 +1,8 @@
 # T46 Remaining Work Plan
 
-**Date**: 2026-08-27
-**Scope**: Complete remaining T46 extractions
+**Date**: 2026-08-27 (historical extraction plan)
+**Scope**: The extraction work described here is merged; current follow-up is
+recorded below.
 
 ## Extraction 1: useMessageActions.ts → Turn Lifecycle Module
 
@@ -75,3 +76,16 @@ Prettier check.
 Remaining work is runtime acceptance of provider switching and real providers;
 the decomposition itself is merged. T46 remains active until those gates are
 verified.
+
+## Current Follow-up After Fresh Review — 2026-08-29
+
+The fresh read-only architecture review examined source commit `63bce58` and
+confirmed the original T46/T46a decomposition at the target level. The next
+architecture step is not another automatic extraction: T48/T48a/T48b/T48c/T62a
+should first define one model-ready history projection for replay, budgeting,
+truncation, and compaction.
+
+After that seam is tested, reassess whether `TurnLifecycle` still needs a
+narrower interface. Keep capability-construction cleanup with T60/T60a, keep
+sync decomposition deferred, and retain T46's provider-switching and
+real-provider runtime acceptance as separate gates.
