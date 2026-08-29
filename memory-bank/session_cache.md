@@ -1,6 +1,20 @@
 # Session Cache
 
-*Last Updated: 2026-08-29 00:01 IST*
+*Last Updated: 2026-08-29 09:45:48 IST*
+
+## 2026-08-29 — Memory Bank Task Registry Cleanup
+
+- Reconciled `tasks.md` with the individual task records after pulling commit
+  `8563009`.
+- Moved completed release, UI, sync, architecture, tool, and settings tasks
+  out of the active table.
+- Kept T46 active only for provider-switching and real-provider acceptance;
+  T46a is complete.
+- Recorded T61 as in progress because the implementation is present but its
+  integration acceptance tests remain open.
+- Preserved T60e and T18a as paused and corrected the registry totals to 35
+  active, 40 completed, 2 paused, 77 total entries.
+- No source code changes were made in this cleanup.
 
 ## 2026-08-28 Late Evening — T13b + Mastra Evaluation
 

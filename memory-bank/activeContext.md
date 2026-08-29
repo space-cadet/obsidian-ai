@@ -1,6 +1,19 @@
 # Active Context
 
-*Last Updated: 2026-08-28 23:59 IST*
+*Last Updated: 2026-08-29 09:45:48 IST*
+
+### 2026-08-29 — Memory Bank task registry cleanup ✅
+
+Reconciled `memory-bank/tasks.md` with the individual task records after the
+2026-08-29 pull and review.
+
+- Moved completed tasks out of the active table, including T8, T8a, T13b, T44,
+  T46a, T49, T55, T56, T57a–T57c, T58a–T58c, T60b, T60d, T60f, and T62.
+- Kept T46 active only for provider-switching and real-provider acceptance.
+- Recorded T61 as in progress: the implementation exists, but integration
+  tests and final acceptance are still open.
+- Preserved T60e and T18a as paused tasks and corrected the registry totals.
+- No source code was changed.
 
 ### 2026-08-28 — T13b: Tool Call Result Display Consistency ✅
 

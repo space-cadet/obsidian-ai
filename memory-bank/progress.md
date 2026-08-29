@@ -1,3 +1,13 @@
+### 2026-08-29 — Memory Bank Task Registry Cleanup ✅
+
+- Reconciled the master task table with individual task records.
+- Moved completed tasks out of the active list, including T8/T8a, T13b, T44,
+  T46a, T49, T55/T56, T57a–T57c, T58a–T58c, T60b/T60d/T60f, and T62.
+- Updated T8 with the current v1.4.1 publication and acceptance state.
+- Updated T61 to reflect its implemented code and remaining integration tests.
+- Corrected the registry summary: 35 active, 40 completed, 2 paused, 77 total.
+- No source code changes.
+
 ### 2026-08-28 — T41 v1.4.1 Community Review Fixes ✅
 
 - Released v1.4.1 to fix blocking Obsidian Community Review errors found in v1.4.0:

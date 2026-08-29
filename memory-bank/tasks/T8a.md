@@ -5,7 +5,7 @@ source_commit: 2b81b96
 
 # T8a: Community Directory Review Remediation
 *Created: 2026-08-15 13:19:00 IST*
-*Last Updated: 2026-08-15 14:53:44 IST*
+*Last Updated: 2026-08-29 09:45:48 IST*
 
 **Description**: Resolve the failed automated Community Directory checks for the Chat Lab AI release and produce a reproducible, policy-compliant 1.3.3 release.
 **Status**: ✅ COMPLETE — v1.4.1 published in Community Directory (2026-08-28)
@@ -91,4 +91,3 @@ The 1.3.2 review found errors in compatibility, DOM safety, dynamic script detec
 ## Remaining Closeout
 
 - ✅ All tasks complete. T8a officially closed on 2026-08-28.
-

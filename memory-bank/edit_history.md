@@ -1,6 +1,19 @@
 # Edit History
 
-*Last Updated: 2026-08-28 00:08:06 IST*
+*Last Updated: 2026-08-29 09:45:48 IST*
+
+## 2026-08-29
+
+#### 09:45:48 IST - META-1: Reconcile Memory Bank task registry
+- Modified `memory-bank/tasks.md` - Reconciled active, completed, and paused task rows and corrected registry totals
+- Modified `memory-bank/tasks/T8.md` - Recorded current v1.4.1 publication and completion state
+- Modified `memory-bank/tasks/T8a.md` - Refreshed the current completion timestamp
+- Modified `memory-bank/tasks/T61.md` - Recorded implemented self-settings tools and remaining integration acceptance
+- Modified `memory-bank/activeContext.md` - Recorded the task registry cleanup and current T46/T61 boundaries
+- Modified `memory-bank/session_cache.md` - Recorded the cleanup and corrected task counts
+- Modified `memory-bank/progress.md` - Recorded the task registry reconciliation milestone
+- Modified `memory-bank/sessions/2026-08-28-late-evening.md` - Appended the cleanup outcome
+- Created `memory-bank/edits/2026-08-29/094548-memory-bank-task-registry-cleanup.md` - Recorded the canonical edit chunk
 
 ## 2026-08-28
 

@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-27 13:21 IST*
+*Last Updated: 2026-08-29 09:45 IST*
 
 ## Overview
 
@@ -24,21 +24,10 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T42d | Server Signature and Cache Invalidation | 🔄 | HIGH | 2026-08-19 | T42 | [Details](tasks/T42d.md) |
 | T42e | Sync Dry Run | 🔄 | MEDIUM | 2026-08-19 | T42 | [Details](tasks/T42e.md) |
 | T58 | Integrated Sync UI into Chat Lab | 🔄 | HIGH | 2026-08-23 | T42 | [Details](tasks/T58.md) |
-| T58a | Fix Rebuild Sync Index Title Resolution | ✅ | HIGH | 2026-08-21 | T58 | [Details](tasks/T58a.md) |
-| T58b | Add Activity Indicators to Sync UI | ✅ | HIGH | 2026-08-21 | T58 | [Details](tasks/T58b.md) |
-| T58c | Extend Sync to All Plugin Data | ✅ | HIGH | 2026-08-21 | T58, T42 | [Details](tasks/T58c.md) |
 | T58d | Unified Sync Progress, Dry-Run Planning, and Index Rebuild UX | 🔄 | HIGH | 2026-08-23 | T42a, T42c, T42e, T57a, T57b, T57c | [Details](tasks/T58d.md) |
-| T55 | Component-Level Sync Selection | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T58, T42, T49 | [Details](tasks/T55.md) |
-| T56 | Unify Plugin Data Management Layer | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T58, T49, T55 | [Details](tasks/T56.md) |
 | T57 | Plugin Data Sync Safety and SyncIt Boundary | 🔄 | HIGH | 2026-08-22 | — | T42, T39a | [Details](tasks/T57.md) |
-| T57a | Common Plugin-File Sync Layer | ✅ | HIGH | 2026-08-22 | 2026-08-22 | T57, T42b | [Details](tasks/T57a.md) |
-| T57b | Two-Way Conflicts, Recovery, and Deletions | ✅ | HIGH | 2026-08-22 | 2026-08-22 | T57, T57a | [Details](tasks/T57b.md) |
-| T57c | Sync Identity, Retry, and Failure Reporting | ✅ | HIGH | 2026-08-22 | 2026-08-23 | T57, T42d | [Details](tasks/T57c.md) |
 | T57d | Data-Sync Provider Contract with SyncIt | 🔄 | MEDIUM | 2026-08-22 | — | T57, T39a | [Details](tasks/T57d.md) |
-| T44 | Standalone UI Preview and Obsidian Host Boundary | 🔄 | MEDIUM | 2026-08-12 | T1, T22 | [Details](tasks/T44.md) |
 | T46 | Core Orchestration Decomposition | 🔄 | MEDIUM | 2026-08-17 | T22, T23, T60a, T48b, T48c | [Details](tasks/T46.md) |
-| T46a | Chat Turn Coordinator Decomposition | ✅ | HIGH | 2026-08-27 | T46, T60a, T48b, T48c, T62a | [Details](tasks/T46a.md) |
-| T6a | Token Counter Accuracy Fix | 🔄 | HIGH | — | T6 | [Details](tasks/T6a.md) |
 | T48 | Conversation Compaction Mechanism | 🔄 | HIGH | 2026-08-23 | T6a | [Details](tasks/T48.md) |
 | T48a | Token-Budgeted Context Builder | 🔄 | HIGH | 2026-08-23 | T6a, T48 | [Details](tasks/T48a.md) |
 | T48b | Tool-Result Replay Limits and Canonical Serialization | 🔄 | HIGH | 2026-08-23 | T13a, T48a | [Details](tasks/T48b.md) |
@@ -46,12 +35,9 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T48d | Context-Aware Usage Display and Provider Reconciliation | 🔄 | HIGH | 2026-08-23 | T6a, T48a | [Details](tasks/T48d.md) |
 | T60 | Tool Capability Registry and Execution-Pipeline Hardening | 🔄 | HIGH | 2026-08-25 | T13, T13a | [Details](tasks/T60.md) |
 | T60a | Canonical Tool Registry and Dynamic Exposure | 🔄 | HIGH | 2026-08-25 | T60, T39a | [Details](tasks/T60a.md) |
-| T60b | Cross-Loop Tool Transport Parity | ✅ | HIGH | 2026-08-25 | T60, T60a, T14, T48b | [Details](tasks/T60b.md) |
 | T60c | Validated Execution Boundary and Reliability | 🔄 | HIGH | 2026-08-25 | T60, T60a, T60b | [Details](tasks/T60c.md) |
-| T60d | Token-Efficient Search Defaults | ✅ | MEDIUM | 2026-08-25 | T60 | [Details](tasks/T60d.md) |
 | T60e | Provider-Adaptive Streaming and Tool-Call Progress UI | ⏸️ | HIGH | 2026-08-25 | T60b, T15, T25 | [Details](tasks/T60e.md) |
 | T61 | Self-Settings Agent Tools | 🔄 | HIGH | 2026-08-26 | — | [Details](tasks/T61.md) |
-| T62 | Tool Payload Elision in History Replay | ✅ | HIGH | 2026-08-26 | T48b | [Details](tasks/T62.md) |
 | T62a | T62 Elision Regression — Agent Workflow Breakage | 🔄 | HIGH | 2026-08-26 | T62 | [Details](tasks/T62a.md) |
 | T63 | Context Item Caching | 🔄 | MEDIUM | 2026-08-26 | — | [Details](tasks/T63.md) |
 | T64 | Context Optimization Benchmark Harness | 🔄 | HIGH | 2026-08-26 | T48a | [Details](tasks/T64.md) |
@@ -59,13 +45,9 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T64b | Preserve Mode Content Retention | 🔄 | HIGH | 2026-08-27 | T64 | [Details](tasks/T64b.md) |
 | T64c | Fidelity-Weighted Scoring | 🔄 | MEDIUM | 2026-08-27 | T64, T64b | [Details](tasks/T64c.md) |
 | T64d | Live Estimator Validation | 🔄 | MEDIUM | 2026-08-27 | T64, T6a | [Details](tasks/T64d.md) |
-| T60f | Bounded Result Pagination and Continuations | ✅ | MEDIUM | 2026-08-26 | T60a, T60b, T60c | [Details](tasks/T60f.md) |
 | T18a | Bounded Web Page Retrieval Tool | ⏸️ | MEDIUM | 2026-08-25 | T18, T60a, T60c | [Details](tasks/T18a.md) |
-| T49 | Settings Export and Import | 🔄 | MEDIUM | — | T23 | [Details](tasks/T49.md) |
 | T50 | OpenAI Responses API / Threads Support | 🔄 | MEDIUM | — | T14 | [Details](tasks/T50.md) |
 | T51 | Opt-in Telemetry and Usage Data Collection | 🔄 | MEDIUM | — | T38 | [Details](tasks/T51.md) |
-| T8 | Open Source Release with Branding | 🔄 | HIGH | 2026-05-02 | T7 | [Details](tasks/T8.md) |
-| T8a | Community Directory Review Remediation | 🔄 | HIGH | 2026-08-15 | T8, T7 | [Details](tasks/T8a.md) |
 
 ## Completed Tasks
 
@@ -92,6 +74,24 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T20 | Message Selection and Chat History Exports | ✅ | HIGH | 2026-08-14 | 2026-08-14 | T2, T5, T19 | [Details](tasks/T20.md) |
 | T13a | Tool Call Context Persistence Bug Fix | ✅ | HIGH | 2026-08-16 | 2026-08-16 | T13 | [Details](tasks/T13a.md) |
 | T45 | PDF Text Extraction Tool | ✅ | HIGH | 2026-08-16 | 2026-08-16 | T13, T19 | [Details](tasks/T45.md) |
+| T6a | Token Counter Accuracy Fix | ✅ | HIGH | 2026-08-19 | 2026-08-19 | T6 | [Details](tasks/T6a.md) |
+| T8 | Open Source Release with Branding | ✅ | HIGH | 2026-05-02 | 2026-08-28 | T7, T8a | [Details](tasks/T8.md) |
+| T8a | Community Directory Review Remediation | ✅ | HIGH | 2026-08-15 | 2026-08-28 | T8, T7 | [Details](tasks/T8a.md) |
+| T13b | Tool Call Result Display Consistency | ✅ | MEDIUM | 2026-08-28 | 2026-08-28 | T13 | [Details](tasks/T13b.md) |
+| T44 | Standalone UI Preview and Obsidian Host Boundary | ✅ | MEDIUM | 2026-08-12 | 2026-08-14 | T1, T22 | [Details](tasks/T44.md) |
+| T46a | Chat Turn Coordinator Decomposition | ✅ | HIGH | 2026-08-27 | 2026-08-28 | T46, T60a, T48b, T48c, T62a | [Details](tasks/T46a.md) |
+| T49 | Settings Export and Import | ✅ | MEDIUM | 2026-08-19 | 2026-08-19 | T23 | [Details](tasks/T49.md) |
+| T55 | Component-Level Sync Selection | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T58, T42, T49 | [Details](tasks/T55.md) |
+| T56 | Unify Plugin Data Management Layer | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T58, T49, T55 | [Details](tasks/T56.md) |
+| T57a | Common Plugin-File Sync Layer | ✅ | HIGH | 2026-08-22 | 2026-08-22 | T57, T42b | [Details](tasks/T57a.md) |
+| T57b | Two-Way Conflicts, Recovery, and Deletions | ✅ | HIGH | 2026-08-22 | 2026-08-22 | T57, T57a | [Details](tasks/T57b.md) |
+| T57c | Sync Identity, Retry, and Failure Reporting | ✅ | HIGH | 2026-08-22 | 2026-08-23 | T57, T42d | [Details](tasks/T57c.md) |
+| T58a | Fix Rebuild Sync Index Title Resolution | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T58 | [Details](tasks/T58a.md) |
+| T58b | Add Activity Indicators to Sync UI | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T58 | [Details](tasks/T58b.md) |
+| T58c | Extend Sync to All Plugin Data | ✅ | HIGH | 2026-08-21 | 2026-08-21 | T58, T42 | [Details](tasks/T58c.md) |
+| T60d | Token-Efficient Search Defaults | ✅ | MEDIUM | 2026-08-25 | 2026-08-26 | T60 | [Details](tasks/T60d.md) |
+| T60f | Bounded Result Pagination and Continuations | ✅ | MEDIUM | 2026-08-26 | 2026-08-26 | T60a, T60b, T60c | [Details](tasks/T60f.md) |
+| T62 | Tool Payload Elision in History Replay | ✅ | HIGH | 2026-08-26 | 2026-08-26 | T48b | [Details](tasks/T62.md) |
 | T60b | Cross-Loop Tool Transport Parity | ✅ | HIGH | 2026-08-25 | 2026-08-25 | T60, T60a, T14, T48b | [Details](tasks/T60b.md) |
 
 ## Task Relationships
@@ -112,6 +112,8 @@ T13: Agentic Tool Calling for Note Editing
   └── T5
   └── T9
 T13a: Tool Call Context Persistence Bug Fix
+  └── T13
+T13b: Tool Call Result Display Consistency
   └── T13
 T14: Remote Agent Connectivity (OpenResponses)
   └── T1
@@ -237,7 +239,7 @@ T64: Context Optimization Benchmark Harness
 
 ## Status Summary
 
-- **Active**: 28
-- **Completed**: 30
-- **Paused**: 0
-- **Total**: 58
+- **Active**: 35
+- **Completed**: 40
+- **Paused**: 2
+- **Total**: 77

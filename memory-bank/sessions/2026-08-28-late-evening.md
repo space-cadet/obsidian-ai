@@ -31,3 +31,16 @@ Evening session focused on plugin publication, tool display consistency, and SDK
 - `agentic-tool-calling.md` — Complete per-tool display matrix
 - `ai-sdk-migration.md` — Mastra future alternative analysis
 - `edits/2026-08-29/000100-T13b-web-search-display.md` — Edit chunk
+
+## 2026-08-29 Morning — Memory Bank Task Registry Cleanup
+
+- Reconciled `memory-bank/tasks.md` with the individual task files after the
+  remote pull.
+- Moved completed tasks out of the active list and added T13b to the completed
+  records.
+- Updated T8 to show the v1.4.1 release and Community Directory acceptance.
+- Updated T61 to show that its implementation is present while integration
+  acceptance remains open.
+- Corrected the registry totals to 35 active, 40 completed, 2 paused, and 77
+  total entries.
+- No source code changes were made.
