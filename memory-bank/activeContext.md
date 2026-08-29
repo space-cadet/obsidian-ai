@@ -1,6 +1,21 @@
 # Active Context
 
-*Last Updated: 2026-08-29 17:08:29 IST*
+*Last Updated: 2026-08-29 17:29:07 IST*
+
+### 2026-08-29 — T62a automatic agent-mode preservation ✅
+
+The selected automatic agent-mode preservation policy is implemented.
+`src/context/modelHistory.ts` is now the shared
+entry point for model-facing history: it applies replay mode, checks tool
+pairing, applies the request budget, and returns the messages sent to the
+model. Agent turns automatically use preserve mode; normal chat keeps its
+configured setting.
+
+`TurnLifecycle`, `AgentLoop`, and `OpenResponsesLoop` now use the shared
+history path or its continuation helpers. The saved transcript is unchanged.
+Verification passed: 45 test files / 381 tests, TypeScript, formatting, and
+the production bundle. Full provider acceptance, pairing through compaction,
+and exact historical retrieval remain open.
 
 ### 2026-08-29 — Fresh architecture review and implementation plan
 

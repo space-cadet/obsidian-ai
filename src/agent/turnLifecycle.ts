@@ -23,10 +23,7 @@ import {
 	estimateContentPartsTokens,
 	estimateAttachmentTokens,
 } from "../context/tokenEstimator";
-import {
-	buildBudgetedHistory,
-	truncateTextForTokens,
-} from "../context/contextBudget";
+import { buildModelHistory } from "../context/modelHistory";
 import {
 	compactionHysteresisReleased,
 	formatCompactionSummary,
@@ -35,7 +32,6 @@ import {
 } from "../context/semanticCompaction";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { parseSlashCommand } from "../lib/slashCommand";
-import { buildHistoryWithTools } from "../lib/historyBuilder";
 import { handleDebugCommand } from "../lib/debugCommands";
 import { makeId } from "../lib/sessionUtils";
 import { stripThinkingTags } from "../components/MessageBubble";
@@ -569,13 +565,6 @@ export class TurnLifecycle {
 				-Math.max(3, deps.plugin.settings.preserveRecentMessages ?? 4),
 			);
 		}
-		const legacyHistory = buildHistoryWithTools(
-			modelHistory,
-			maxContextMessages,
-			deps.plugin.settings.maxToolResultTokens ?? 4000,
-			deps.plugin.settings.toolHistoryMode ?? "elide",
-		);
-
 		let userContent = sendText;
 		if (resolved.contextString) {
 			userContent = `${resolved.contextString}\n\n${sendText}`;
@@ -621,11 +610,16 @@ export class TurnLifecycle {
 		if (compactionSummary) {
 			systemPrompt += `\n\n${compactionSummary}`;
 		}
-		const budgetedHistory = buildBudgetedHistory({
+		const modelHistoryResult = buildModelHistory({
 			systemPrompt,
 			currentMessage: userMessageContent,
-			history: legacyHistory,
-			options: {
+			history: modelHistory,
+			maxMessages: maxContextMessages,
+			maxToolResultTokens:
+				deps.plugin.settings.maxToolResultTokens ?? 4000,
+			toolHistoryMode: deps.plugin.settings.toolHistoryMode ?? "elide",
+			agentMode: isAgentProvider || (useTools && !slashCmd),
+			budget: {
 				maxRequestTokens:
 					deps.plugin.settings.maxRequestTokens ?? 32000,
 				maxMessages: maxContextMessages,
@@ -638,42 +632,13 @@ export class TurnLifecycle {
 					: 0,
 			},
 		});
-		if (budgetedHistory.overBudget) {
+		if (modelHistoryResult.overBudget) {
 			throw new Error(
 				"The request exceeds the configured model context budget. Reduce the prompt or increase the request budget.",
 			);
 		}
 
-		// Build replay content for history
-		const buildReplayContent = (
-			message: ChatMessage,
-		): string | import("../api").MessageContentPart[] => {
-			const replayText =
-				message.remote && message.fromUserId
-					? `[Remote User ${message.fromUserId}]: ${message.content}`
-					: message.content;
-
-			if (!message.resolvedParts || message.resolvedParts.length === 0) {
-				return replayText;
-			}
-
-			return [
-				{ type: "text", text: replayText },
-				...(message.resolvedParts as import("../api").MessageContentPart[]),
-			];
-		};
-
-		const chatMessages = [
-			{ role: "system" as const, content: systemPrompt },
-			...budgetedHistory.history.map((msg) => ({
-				...msg,
-				content: buildReplayContent(msg as ChatMessage),
-			})),
-			{
-				role: "user" as const,
-				content: userMessageContent,
-			},
-		];
+		const chatMessages = modelHistoryResult.messages;
 
 		const fullPayloadTokenEstimate = deps.plugin.settings
 			.showFullRequestTokens

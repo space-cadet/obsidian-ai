@@ -96,7 +96,8 @@ src/
 │
 ├── context/                       # Context management
 │   ├── ContextEngine.ts           # Folder/tag/note resolution
-│   └── ChatContext.ts             # Chat context building
+│   ├── ChatContext.ts             # Chat context building
+│   └── modelHistory.ts            # Shared history sent to the model (T48/T62a)
 │
 ├── utils/                         # Utilities
 │   └── PdfExtractor.ts            # PDF text extraction

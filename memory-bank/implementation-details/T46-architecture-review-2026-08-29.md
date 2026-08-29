@@ -64,3 +64,22 @@ The current checkout contains `ChatTurnCoordinator.ts` and `ChatTurnOutput.ts`
 under `src/agent/`; it does not contain `ChatTurnRequest.ts` or
 `ChatTurnPersistence.ts`. Earlier references to those files are historical
 records of an intermediate branch and are not current source claims.
+
+## Implementation Slice — 2026-08-29
+
+The selected automatic agent-mode preservation policy (T62a candidate Option
+2; user-selected choice 1 in the implementation discussion) preserves tool
+details for agent turns. The first implementation adds
+`src/context/modelHistory.ts` as the shared entry point. It applies the
+selected replay mode, checks tool pairing,
+applies the request budget, and returns the exact messages sent to the model.
+
+`TurnLifecycle` now uses that entry point. `AgentLoop` and
+`OpenResponsesLoop` use its shared budget and result-limit helpers for their
+in-progress tool turns. The saved transcript is unchanged. Normal chat still
+uses its configured `elide` or `preserve` setting.
+
+Verification completed: 45 test files / 381 tests, TypeScript, formatting, and
+the production bundle passed. Provider switching and real-provider acceptance
+remain separate T46 gates. Pairing through compaction and real agent-provider
+workflow acceptance remain open under T48b/T48c/T62a.

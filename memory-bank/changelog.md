@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased - 2026-08-29
 
+### Agent context
+- **T62a — Automatic agent-mode preservation**: Added a shared model-history
+  entry point that preserves tool details for agent turns, checks tool pairing,
+  and applies request limits without changing the saved transcript.
+- Routed `TurnLifecycle`, `AgentLoop`, and `OpenResponsesLoop` through the
+  shared history path or continuation helpers.
+- Verification passed: 45 test files / 381 tests, TypeScript, formatting, and
+  the production bundle.
+
 ### Architecture status
 - Archived the August 27 baseline and August 29 fresh
   `improve-codebase-architecture` review reports.

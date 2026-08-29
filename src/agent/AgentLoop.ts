@@ -3,9 +3,9 @@ import { ToolExecutor } from "./ToolExecutor";
 import type { ToolCall, ToolResult, StreamEvent } from "./types";
 import { estimateTokens } from "../context/tokenEstimator";
 import {
-	buildBudgetedHistory,
-	truncateTextForTokens,
-} from "../context/contextBudget";
+	buildBudgetedModelMessages,
+	truncateModelText,
+} from "../context/modelHistory";
 import type { ProviderProfile } from "../settings";
 import type { ProviderTokenUsage } from "../types";
 
@@ -232,7 +232,7 @@ export class AgentLoop {
 					overBudget: false,
 				};
 			}
-			const budgeted = buildBudgetedHistory({
+			const budgeted = buildBudgetedModelMessages({
 				systemPrompt: systemMessage?.content,
 				currentMessage: currentMessage?.content,
 				history: fullHistory,
@@ -404,7 +404,7 @@ export class AgentLoop {
 			);
 			// Keep the complete result in the callbacks/persisted transcript, but
 			// never feed an oversized result into the immediate continuation.
-			const modelResult = truncateTextForTokens(
+			const modelResult = truncateModelText(
 				formattedResult,
 				maxToolResultTokens,
 			);

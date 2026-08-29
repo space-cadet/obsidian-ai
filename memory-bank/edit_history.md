@@ -1,8 +1,20 @@
 # Edit History
 
-*Last Updated: 2026-08-29 17:08:29 IST*
+*Last Updated: 2026-08-29 17:29:07 IST*
 
 ## 2026-08-29
+
+#### 17:29:07 IST - T62a: Implement automatic agent-mode tool-result preservation
+- Created `src/context/modelHistory.ts` - Shared model-history assembly, pairing validation, request budgeting, and model-facing result limits
+- Created `src/context/__tests__/modelHistory.test.ts` - Agent-mode preservation, normal-chat mode, message assembly, pairing, and transcript immutability coverage
+- Created `memory-bank/sessions/2026-08-29-t62a-model-history.md` - Recorded the implementation session and verification
+- Created `memory-bank/edits/2026-08-29/172907-T62a-model-history-preservation.md` - Recorded the canonical edit chunk
+- Modified `src/agent/turnLifecycle.ts` - Routed replay and request-budget construction through the shared model-history entry point
+- Modified `src/agent/AgentLoop.ts` - Routed continuation budgeting and result limits through shared model-history helpers
+- Modified `src/agent/OpenResponsesLoop.ts` - Routed continuation result limits through the shared model-history helper
+- Updated `memory-bank/implementation-details/T46-architecture-review-2026-08-29.md` - Recorded the selected option and implementation result
+- Updated `memory-bank/tasks/T46.md`, `T48.md`, `T48a.md`, `T48b.md`, `T48c.md`, and `T62a.md` - Recorded implementation status and remaining acceptance gates
+- Updated `memory-bank/activeContext.md`, `session_cache.md`, `progress.md`, `changelog.md`, and `edit_history.md` - Recorded the implementation and verification
 
 #### 17:08:29 IST - T46/T48: Record fresh architecture review and implementation plan
 - Created `memory-bank/implementation-details/T46-architecture-review-2026-08-29.md` - Preserved the fresh review findings, existing task ownership, and planned implementation order

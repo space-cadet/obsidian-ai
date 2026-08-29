@@ -314,3 +314,11 @@ consume one model-ready projection.
 lines. Capability construction remains a T60/T60a cleanup. Sync decomposition
 is deferred until concrete pressure appears. T46's provider-switching and
 real-provider runtime acceptance remain open.
+
+## Implementation Slice — 2026-08-29
+
+`src/context/modelHistory.ts` is now the shared entry point for the history
+sent to the model. It automatically preserves tool details for agent turns,
+checks pairing before and after applying limits, and leaves the saved
+transcript unchanged. `TurnLifecycle`, `AgentLoop`, and
+`OpenResponsesLoop` now use this path or its continuation helpers.

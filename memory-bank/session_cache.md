@@ -1,6 +1,21 @@
 # Session Cache
 
-*Last Updated: 2026-08-29 17:08:29 IST*
+*Last Updated: 2026-08-29 17:29:07 IST*
+
+## 2026-08-29 — T62a automatic agent-mode preservation
+
+**Session title:** T62a: Implement automatic agent-mode tool-result preservation
+
+- Automatic agent-mode preservation is selected and implemented: agent turns
+  use preserve mode automatically, while normal chat keeps its configured mode.
+- `src/context/modelHistory.ts` is the shared entry point for replay, pairing
+  checks, request budgeting, and model-facing message assembly.
+- `TurnLifecycle`, `AgentLoop`, and `OpenResponsesLoop` use the shared path or
+  its continuation helpers. The saved transcript remains unchanged.
+- Verification passed: 45 test files / 381 tests, TypeScript, formatting, and
+  the production bundle.
+- Remaining: provider acceptance, pairing through compaction, exact retrieval,
+  and inspectable compaction metadata.
 
 ## 2026-08-29 — Fresh architecture review handoff
 

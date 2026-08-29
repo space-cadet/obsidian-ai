@@ -6,7 +6,7 @@ import type { OpenResponsesEvent } from "../api/OpenResponsesParser";
 import type { ToolExecutor } from "./ToolExecutor";
 import type { ToolCall, ToolResult } from "./types";
 import { estimateTokens } from "../context/tokenEstimator";
-import { truncateTextForTokens } from "../context/contextBudget";
+import { truncateModelText } from "../context/modelHistory";
 import type { OpenResponsesTool } from "../api/AgentApiManager";
 
 interface OpenResponsesLoopOptions {
@@ -257,10 +257,7 @@ export class OpenResponsesLoop {
 			const functionCallOutputs = rawFunctionCallOutputs.map(
 				(output) => ({
 					call_id: output.call_id,
-					output: truncateTextForTokens(
-						output.output,
-						perOutputBudget,
-					),
+					output: truncateModelText(output.output, perOutputBudget),
 				}),
 			);
 

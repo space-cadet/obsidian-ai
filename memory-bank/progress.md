@@ -1,3 +1,19 @@
+### 2026-08-29 — T62a automatic agent-mode preservation ✅
+
+- Implemented `src/context/modelHistory.ts` as the shared model-facing history
+  entry point.
+- Agent turns automatically preserve tool-call arguments and results; normal
+  chat continues to use its configured history mode.
+- Routed `TurnLifecycle`, `AgentLoop`, and `OpenResponsesLoop` through the
+  shared history path or continuation helpers without changing the saved
+  transcript.
+- Added focused coverage for agent-mode preservation, normal-chat behavior,
+  message assembly, pairing, and transcript immutability.
+- Verification passed: 45 test files / 381 tests, TypeScript, formatting, and
+  the production bundle.
+- Remaining: provider acceptance, pairing through compaction, exact retrieval,
+  and inspectable compaction metadata.
+
 ### 2026-08-29 — Fresh architecture review and plan ✅
 
 - Archived the August 27 baseline and the August 29 fresh read-only review.
