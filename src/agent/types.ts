@@ -15,6 +15,8 @@ import type { ProviderTokenUsage } from "../types";
 export interface ToolResult {
 	success?: boolean;
 	content?: string;
+	/** Fingerprint returned with note reads for safe follow-up edits. */
+	content_fingerprint?: string;
 	error?: string;
 	warning?: string;
 	path?: string;

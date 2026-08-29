@@ -57,9 +57,9 @@ function readProvider(value: unknown): IntegrationProvider | null {
 }
 
 /**
- * Discovers public peer-plugin provider APIs and keeps their availability
- * separate from the built-in note-tool registry. Only read capabilities are
- * exposed in this first host increment; T38 owns provider mutation policy.
+ * Discovers public peer-plugin provider APIs and exposes their availability
+ * through the same descriptor registry used by built-in tools. T38 still
+ * owns provider mutation policy, so non-read capabilities remain hidden.
  */
 export class ProviderRegistry {
 	private providers = new Map<string, IntegrationProvider>();
@@ -161,7 +161,7 @@ export class ProviderRegistry {
 
 	/** Return the complete descriptors used to expose and execute provider tools. */
 	getToolDefinitions(): ToolDefinition[] {
-		return this.getEnabledReadCapabilities().map((capability) => {
+		return this.getAllCapabilities().map((capability) => {
 			const provider = this.getProviderForCapability(capability.id);
 			if (!provider) {
 				throw new Error(
@@ -174,6 +174,16 @@ export class ProviderRegistry {
 			);
 			return {
 				...definition,
+				providerName: provider.displayName,
+				availability: () =>
+					!this.settings.enabledIntegrationProviderIds.includes(provider.id)
+						? "disabled"
+						: capability.risk !== "read"
+							? "disabled"
+							: capability.availability === "disabled" ||
+								  capability.availability === "misconfigured"
+								? capability.availability
+								: "available",
 				execute: async (call: ToolCall) =>
 					(await this.execute(call)) ?? {
 						error: `Integration provider for ${call.toolName} is unavailable.`,
@@ -241,9 +251,6 @@ export class ProviderRegistry {
 
 	getCapability(toolName: string): ProviderCapability | null {
 		return (
-			this.getEnabledReadCapabilities().find(
-				(capability) => capability.id === toolName,
-			) ??
 			this.getAllCapabilities().find(
 				(capability) => capability.id === toolName,
 			) ??
@@ -262,21 +269,6 @@ export class ProviderRegistry {
 			title: capability.title,
 			risk: capability.risk,
 		};
-	}
-
-	private getEnabledReadCapabilities(): ProviderCapability[] {
-		return this.getAllCapabilities().filter((capability) => {
-			const provider = this.getProviderForCapability(capability.id);
-			return (
-				provider !== null &&
-				this.settings.enabledIntegrationProviderIds.includes(
-					provider.id,
-				) &&
-				capability.risk === "read" &&
-				capability.availability !== "disabled" &&
-				capability.availability !== "misconfigured"
-			);
-		});
 	}
 
 	private getAllCapabilities(): ProviderCapability[] {

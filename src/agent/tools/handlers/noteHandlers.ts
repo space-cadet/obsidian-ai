@@ -5,6 +5,13 @@ import {
 	ToolHandlerBase,
 	type ToolHandlerContext,
 } from "../ToolHandlerContext";
+import { contentFingerprint } from "../../contentFingerprint";
+
+function changedSinceRead(path: string): ToolResult {
+	return {
+		error: `Note changed since it was read: ${path}. Read it again and retry so no newer content is overwritten.`,
+	};
+}
 
 /** Operations that read or change note content. */
 export class NoteHandlers extends ToolHandlerBase {
@@ -17,10 +24,12 @@ export class NoteHandlers extends ToolHandlerBase {
 		const file = this.resolver.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
 		const content = await this.app.vault.read(file);
+		const fingerprint = await contentFingerprint(content);
 		const ambiguous = (file as any).__ambiguous as string[] | undefined;
 		if (ambiguous && ambiguous.length > 1) {
 			return {
 				content,
+				content_fingerprint: fingerprint,
 				path: file.path,
 				warning:
 					`⚠️ Ambiguous name: ${ambiguous.length} notes share the basename "${file.basename}". ` +
@@ -28,16 +37,26 @@ export class NoteHandlers extends ToolHandlerBase {
 					`Use the full path (e.g. "Folder/${file.basename}") to target a specific note.`,
 			};
 		}
-		return { content, path: file.path };
+		return { content, content_fingerprint: fingerprint, path: file.path };
 	}
 
 	async editNote(args: {
 		path: string;
 		content: string;
+		expected_content_fingerprint?: string;
 	}): Promise<ToolResult> {
 		if (!isPathAllowed(args.path)) return denyPath(args.path);
 		const file = this.resolver.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
+		if (args.expected_content_fingerprint) {
+			const current = await this.app.vault.read(file);
+			if (
+				(await contentFingerprint(current)) !==
+				args.expected_content_fingerprint
+			) {
+				return changedSinceRead(file.path);
+			}
+		}
 		await this.app.vault.modify(file, args.content);
 		new Notice(`✓ Edited ${file.basename}`);
 		return { success: true, path: file.path };
@@ -46,11 +65,19 @@ export class NoteHandlers extends ToolHandlerBase {
 	async appendToNote(args: {
 		path: string;
 		content: string;
+		expected_content_fingerprint?: string;
 	}): Promise<ToolResult> {
 		if (!isPathAllowed(args.path)) return denyPath(args.path);
 		const file = this.resolver.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
 		const existing = await this.app.vault.read(file);
+		if (
+			args.expected_content_fingerprint &&
+			(await contentFingerprint(existing)) !==
+				args.expected_content_fingerprint
+		) {
+			return changedSinceRead(file.path);
+		}
 		await this.app.vault.modify(file, existing + "\n\n" + args.content);
 		new Notice(`✓ Appended to ${file.basename}`);
 		return { success: true, path: file.path };
@@ -79,12 +106,20 @@ export class NoteHandlers extends ToolHandlerBase {
 		search: string;
 		replace: string;
 		replace_all?: boolean;
+		expected_content_fingerprint?: string;
 	}): Promise<ToolResult> {
 		if (!isPathAllowed(args.path)) return denyPath(args.path);
 		const file = this.resolver.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
 
 		const content = await this.app.vault.read(file);
+		if (
+			args.expected_content_fingerprint &&
+			(await contentFingerprint(content)) !==
+				args.expected_content_fingerprint
+		) {
+			return changedSinceRead(file.path);
+		}
 		if (!content.includes(args.search)) {
 			return {
 				error: "Search text not found in note. Consider read_note first to see exact content.",
@@ -109,12 +144,20 @@ export class NoteHandlers extends ToolHandlerBase {
 		path: string;
 		section_heading: string;
 		new_content: string;
+		expected_content_fingerprint?: string;
 	}): Promise<ToolResult> {
 		if (!isPathAllowed(args.path)) return denyPath(args.path);
 		const file = this.resolver.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
 
 		const content = await this.app.vault.read(file);
+		if (
+			args.expected_content_fingerprint &&
+			(await contentFingerprint(content)) !==
+				args.expected_content_fingerprint
+		) {
+			return changedSinceRead(file.path);
+		}
 		const lines = content.split("\n");
 		const targetText = args.section_heading.startsWith("#")
 			? args.section_heading.replace(/^#+\s*/, "").trim()

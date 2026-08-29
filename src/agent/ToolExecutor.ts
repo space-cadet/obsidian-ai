@@ -21,6 +21,13 @@ import { SettingsHandlers } from "./tools/handlers/settingsHandlers";
 import { VaultHandlers } from "./tools/handlers/vaultHandlers";
 import { WebHandlers } from "./tools/handlers/webHandlers";
 import { type ToolHandlerContext } from "./tools/ToolHandlerContext";
+import {
+	mutationTargets,
+	TargetLockManager,
+	ToolLockCancelledError,
+} from "./targetLocks";
+
+const sharedTargetLocks = new TargetLockManager();
 
 export class ToolExecutor {
 	private builtInRegistry: ResolvedToolRegistry;
@@ -34,6 +41,7 @@ export class ToolExecutor {
 	private readonly settingsHandlers: SettingsHandlers;
 	private readonly vaultHandlers: VaultHandlers;
 	private readonly webHandlers: WebHandlers;
+	private readonly targetLocks: TargetLockManager;
 
 	constructor(
 		app: App,
@@ -43,7 +51,9 @@ export class ToolExecutor {
 		getActiveSessionId?: () => string | null,
 		private integrationRegistry?: ProviderRegistry,
 		saveSettings?: () => Promise<void>,
+		targetLocks: TargetLockManager = sharedTargetLocks,
 	) {
+		this.targetLocks = targetLocks;
 		this.resolver = new ToolResolver(app);
 		const context: ToolHandlerContext = {
 			app,
@@ -71,11 +81,19 @@ export class ToolExecutor {
 				this.noteHandlers.readNote(call.args as { path: string }),
 			edit_note: (call) =>
 				this.noteHandlers.editNote(
-					call.args as { path: string; content: string },
+					call.args as {
+						path: string;
+						content: string;
+						expected_content_fingerprint?: string;
+					},
 				),
 			append_to_note: (call) =>
 				this.noteHandlers.appendToNote(
-					call.args as { path: string; content: string },
+					call.args as {
+						path: string;
+						content: string;
+						expected_content_fingerprint?: string;
+					},
 				),
 			create_note: (call) =>
 				this.noteHandlers.createNote(
@@ -94,6 +112,7 @@ export class ToolExecutor {
 						search: string;
 						replace: string;
 						replace_all?: boolean;
+						expected_content_fingerprint?: string;
 					},
 				),
 			edit_section: (call) =>
@@ -102,6 +121,7 @@ export class ToolExecutor {
 						path: string;
 						section_heading: string;
 						new_content: string;
+						expected_content_fingerprint?: string;
 					},
 				),
 			search_notes: (call) =>
@@ -276,16 +296,30 @@ export class ToolExecutor {
 					error: `Invalid arguments for ${call.toolName}: ${validation.error}`,
 				};
 			}
+			if (signal?.aborted) {
+				return { error: "Tool call cancelled before execution." };
+			}
 
-			const result = await registryDef.execute(
-				{ ...call, args: validation.args },
-				{
+			const validatedCall = { ...call, args: validation.args };
+			const execute = () =>
+				registryDef.execute!(validatedCall, {
 					enableMemoryAuditTool:
 						this.settings?.intelligence?.enableMemoryAuditTool,
-				},
-			);
+				});
+			const result =
+				registryDef.risk === "read" ||
+				registryDef.risk === "remote-read"
+					? await execute()
+					: await this.targetLocks.runExclusive(
+							mutationTargets(call.toolName, validation.args),
+							execute,
+							signal,
+						);
 			return result;
 		} catch (e: any) {
+			if (e instanceof ToolLockCancelledError) {
+				return { error: e.message };
+			}
 			return { error: e.message || String(e) };
 		}
 	}

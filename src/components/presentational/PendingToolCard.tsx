@@ -1,27 +1,32 @@
 import React from "react";
 import type { ToolCall } from "../../agent/types";
+import type { ToolDisplayDescriptor } from "../../agent/toolRegistry";
 
 interface PendingToolCardProps {
 	toolCall: ToolCall;
 	onApprove: () => void;
 	onReject: () => void;
-	providerDisplay?: {
-		providerName: string;
-		title: string;
-		risk: string;
-	} | null;
+	toolDisplay?: ToolDisplayDescriptor | null;
 }
 
 /** Summarizes a pending tool call for the approval UI — never dumps full content */
 function PendingToolCallPreview({
 	toolCall,
-	providerDisplay,
-}: Pick<
-	PendingToolCardProps,
-	"toolCall" | "providerDisplay"
->): React.ReactElement {
+	toolDisplay,
+}: Pick<PendingToolCardProps, "toolCall" | "toolDisplay">): React.ReactElement {
 	const { toolName, args } = toolCall;
-	const path = (args as any).path ?? (args as any).noteName ?? "—";
+	const path = String(args.path ?? args.noteName ?? "—");
+	const presentation = toolDisplay?.presentation ?? "generic";
+	const title = toolDisplay?.title ?? toolName;
+	const providerTitle = toolDisplay?.providerName
+		? `${toolDisplay.providerName} · ${title}`
+		: title;
+	const riskLabel =
+		toolDisplay?.risk === "read" || toolDisplay?.risk === "remote-read"
+			? "Read-only operation"
+			: toolDisplay?.risk
+				? `${toolDisplay.risk} operation`
+				: "Operation";
 
 	const summarizeText = (
 		text: string | undefined,
@@ -34,41 +39,26 @@ function PendingToolCallPreview({
 		return { lines, preview };
 	};
 
-	if (providerDisplay) {
+	if (presentation === "note-read") {
 		return (
 			<div className="pending-tool-summary">
-				<div className="pending-tool-title">
-					{providerDisplay.providerName} · {providerDisplay.title}
-				</div>
-				<div className="pending-tool-meta">
-					{providerDisplay.risk === "read"
-						? "Read-only operation"
-						: `${providerDisplay.risk} operation`}
-				</div>
-			</div>
-		);
-	}
-
-	if (toolName === "read_note") {
-		return (
-			<div className="pending-tool-summary">
-				<div className="pending-tool-title">📖 Read Note</div>
+				<div className="pending-tool-title">📖 {providerTitle}</div>
 				<div className="pending-tool-meta">{path}</div>
 			</div>
 		);
 	}
 
 	if (
-		toolName === "edit_note" ||
-		toolName === "create_note" ||
-		toolName === "append_to_note"
+		presentation === "text-overwrite" ||
+		presentation === "text-create" ||
+		presentation === "text-append"
 	) {
-		const content = (args as any).content ?? "";
+		const content = typeof args.content === "string" ? args.content : "";
 		const { lines, preview } = summarizeText(content);
 		const action =
-			toolName === "edit_note"
+			presentation === "text-overwrite"
 				? "📝 Overwrite"
-				: toolName === "create_note"
+				: presentation === "text-create"
 					? "➕ Create"
 					: "⬇️ Append to";
 		return (
@@ -87,13 +77,15 @@ function PendingToolCallPreview({
 		);
 	}
 
-	if (toolName === "create_notes") {
-		const notes = Array.isArray((args as any).notes)
-			? (args as any).notes
-			: [];
+	if (presentation === "batch-create") {
+		const notes = Array.isArray(args.notes) ? args.notes : [];
 		const names = notes
 			.slice(0, 5)
-			.map((note: { path?: string }) => note.path || "(unnamed)");
+			.map((note) =>
+				note && typeof note === "object" && "path" in note
+					? String(note.path || "(unnamed)")
+					: "(unnamed)",
+			);
 		return (
 			<div className="pending-tool-summary">
 				<div className="pending-tool-title">
@@ -114,10 +106,10 @@ function PendingToolCallPreview({
 		);
 	}
 
-	if (toolName === "patch_note") {
-		const search = (args as any).search ?? "";
-		const replace = (args as any).replace ?? "";
-		const replaceAll = (args as any).replace_all ?? false;
+	if (presentation === "patch") {
+		const search = typeof args.search === "string" ? args.search : "";
+		const replace = typeof args.replace === "string" ? args.replace : "";
+		const replaceAll = args.replace_all === true;
 		return (
 			<div className="pending-tool-summary">
 				<div className="pending-tool-title">
@@ -148,9 +140,10 @@ function PendingToolCallPreview({
 		);
 	}
 
-	if (toolName === "edit_section") {
-		const heading = (args as any).section_heading ?? "";
-		const content = (args as any).new_content ?? "";
+	if (presentation === "section") {
+		const heading = String(args.section_heading ?? "");
+		const content =
+			typeof args.new_content === "string" ? args.new_content : "";
 		const { lines, preview } = summarizeText(content);
 		return (
 			<div className="pending-tool-summary">
@@ -168,11 +161,11 @@ function PendingToolCallPreview({
 		);
 	}
 
-	if (toolName === "search_notes") {
-		const query = (args as any).query ?? "";
+	if (presentation === "search") {
+		const query = String(args.query ?? "");
 		return (
 			<div className="pending-tool-summary">
-				<div className="pending-tool-title">🔍 Search Notes</div>
+				<div className="pending-tool-title">🔍 {providerTitle}</div>
 				<div className="pending-tool-meta">
 					Query: <code>{query}</code>
 				</div>
@@ -180,11 +173,11 @@ function PendingToolCallPreview({
 		);
 	}
 
-	if (toolName === "create_folder") {
-		const folderPath = (args as any).path ?? "";
+	if (presentation === "folder-create") {
+		const folderPath = String(args.path ?? "");
 		return (
 			<div className="pending-tool-summary">
-				<div className="pending-tool-title">📁 Create Folder</div>
+				<div className="pending-tool-title">📁 {providerTitle}</div>
 				<div className="pending-tool-meta">
 					<code>{folderPath}</code>
 				</div>
@@ -192,12 +185,12 @@ function PendingToolCallPreview({
 		);
 	}
 
-	if (toolName === "move_note") {
-		const from = (args as any).path ?? "";
-		const to = (args as any).new_path ?? "";
+	if (presentation === "move") {
+		const from = String(args.path ?? "");
+		const to = String(args.new_path ?? "");
 		return (
 			<div className="pending-tool-summary">
-				<div className="pending-tool-title">📦 Move Note</div>
+				<div className="pending-tool-title">📦 {providerTitle}</div>
 				<div className="pending-tool-meta">
 					{from} → {to}
 				</div>
@@ -205,11 +198,11 @@ function PendingToolCallPreview({
 		);
 	}
 
-	if (toolName === "delete_note") {
-		const notePath = (args as any).path ?? "";
+	if (presentation === "delete") {
+		const notePath = String(args.path ?? "");
 		return (
 			<div className="pending-tool-summary">
-				<div className="pending-tool-title">🗑️ Delete Note</div>
+				<div className="pending-tool-title">🗑️ {providerTitle}</div>
 				<div className="pending-tool-meta">
 					<code>{notePath}</code>
 				</div>
@@ -217,11 +210,11 @@ function PendingToolCallPreview({
 		);
 	}
 
-	if (toolName === "list_folders") {
-		const parent = (args as any).path ?? "(root)";
+	if (presentation === "folders") {
+		const parent = String(args.path ?? "(root)");
 		return (
 			<div className="pending-tool-summary">
-				<div className="pending-tool-title">📂 List Folders</div>
+				<div className="pending-tool-title">📂 {providerTitle}</div>
 				<div className="pending-tool-meta">
 					Under: <code>{parent}</code>
 				</div>
@@ -232,9 +225,11 @@ function PendingToolCallPreview({
 	return (
 		<div className="pending-tool-summary">
 			<div className="pending-tool-title">
-				🤖 <strong>{toolName}</strong>
+				🤖 <strong>{providerTitle}</strong>
 			</div>
-			<div className="pending-tool-meta">{path}</div>
+			<div className="pending-tool-meta">
+				{riskLabel} · {path}
+			</div>
 		</div>
 	);
 }
@@ -243,13 +238,13 @@ const PendingToolCard: React.FC<PendingToolCardProps> = ({
 	toolCall,
 	onApprove,
 	onReject,
-	providerDisplay,
+	toolDisplay,
 }) => {
 	return (
 		<div className="pending-tool-call">
 			<PendingToolCallPreview
 				toolCall={toolCall}
-				providerDisplay={providerDisplay}
+				toolDisplay={toolDisplay}
 			/>
 			<div className="pending-tool-actions">
 				<button className="mod-cta" onClick={onApprove}>

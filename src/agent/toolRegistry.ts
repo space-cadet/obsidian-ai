@@ -19,6 +19,32 @@ export type HostToolRisk =
 
 export type ToolAvailability = "available" | "disabled" | "misconfigured";
 
+/** Small, safe description used by prompts and the approval card. */
+export type ToolPresentation =
+	| "note-read"
+	| "text-overwrite"
+	| "text-append"
+	| "text-create"
+	| "batch-create"
+	| "patch"
+	| "section"
+	| "search"
+	| "folder-create"
+	| "move"
+	| "delete"
+	| "folders"
+	| "generic";
+
+export interface ToolDisplayDescriptor {
+	id: string;
+	title: string;
+	risk: HostToolRisk;
+	source: ToolDefinition["source"];
+	providerId?: string;
+	providerName?: string;
+	presentation?: ToolPresentation;
+}
+
 export interface ToolResolutionContext {
 	enableMemoryAuditTool?: boolean;
 	developerMode?: boolean;
@@ -35,6 +61,8 @@ export interface ToolDefinition {
 	risk: HostToolRisk;
 	source: "builtin" | "provider";
 	providerId?: string;
+	providerName?: string;
+	presentation?: ToolPresentation;
 	availability?: (context: ToolResolutionContext) => ToolAvailability;
 	/** The capability handler for this definition, when the tool is enabled. */
 	execute?: (
@@ -100,6 +128,40 @@ function titleForTool(id: string): string {
 		.split("_")
 		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
 		.join(" ");
+}
+
+function presentationForTool(id: string): ToolPresentation {
+	const presentations: Record<string, ToolPresentation> = {
+		read_note: "note-read",
+		edit_note: "text-overwrite",
+		append_to_note: "text-append",
+		create_note: "text-create",
+		create_notes: "batch-create",
+		patch_note: "patch",
+		edit_section: "section",
+		search_notes: "search",
+		search_note_content: "search",
+		create_folder: "folder-create",
+		move_note: "move",
+		delete_note: "delete",
+		list_folders: "folders",
+	};
+	return presentations[id] ?? "generic";
+}
+
+export function toToolDisplayDescriptor(
+	definition: ToolDefinition | undefined,
+): ToolDisplayDescriptor | null {
+	if (!definition) return null;
+	return {
+		id: definition.id,
+		title: definition.title,
+		risk: definition.risk,
+		source: definition.source,
+		providerId: definition.providerId,
+		providerName: definition.providerName,
+		presentation: definition.presentation ?? "generic",
+	};
 }
 
 function memoryAuditAvailability(
@@ -323,6 +385,7 @@ export function createBuiltInToolDefinitions(
 			modelTool,
 			risk: BUILTIN_RISKS[id] ?? "read",
 			source: "builtin",
+			presentation: presentationForTool(id),
 			availability:
 				id === "read_memory_audit"
 					? memoryAuditAvailability
@@ -394,6 +457,7 @@ export function providerCapabilityToToolDefinition(
 		risk: normalizeProviderRisk(capability.risk),
 		source: "provider",
 		providerId,
+		presentation: "generic",
 		availability: () =>
 			capability.availability === "disabled" ||
 			capability.availability === "misconfigured"

@@ -6,6 +6,9 @@ import {
 } from "../ToolHandlerContext";
 import { requestFingerprint } from "../../pagination";
 import { isPathAllowed } from "../ToolResolver";
+import { mapWithConcurrency } from "../../boundedConcurrency";
+
+const MAX_READ_CONCURRENCY = 8;
 
 /** Search, list, count, and inspect notes in the vault. */
 export class DiscoveryHandlers extends ToolHandlerBase {
@@ -62,14 +65,16 @@ export class DiscoveryHandlers extends ToolHandlerBase {
 		// Sort
 		files = this.resolver.sortFiles(files, sortBy);
 
-		const matches = await Promise.all(
-			files.map(async (f) => ({
+		const matches = await mapWithConcurrency(
+			files,
+			MAX_READ_CONCURRENCY,
+			async (f) => ({
 				path: f.path,
 				basename: f.basename,
 				modified: f.stat.mtime,
 				created: f.stat.ctime,
 				size: f.stat.size,
-			})),
+			}),
 		);
 		const page = this.continuations.page({
 			toolName: "search_notes",
@@ -415,14 +420,16 @@ export class DiscoveryHandlers extends ToolHandlerBase {
 
 		files = this.resolver.sortFiles(files, sortBy);
 
-		const notes = await Promise.all(
-			files.map(async (f) => ({
+		const notes = await mapWithConcurrency(
+			files,
+			MAX_READ_CONCURRENCY,
+			async (f) => ({
 				path: f.path,
 				basename: f.basename,
 				modified: f.stat.mtime,
 				created: f.stat.ctime,
 				size: f.stat.size,
-			})),
+			}),
 		);
 		const page = this.continuations.page({
 			toolName: "list_notes",
@@ -595,8 +602,10 @@ export class DiscoveryHandlers extends ToolHandlerBase {
 			return { error: "Maximum 100 paths per check_paths call." };
 		}
 
-		const results = await Promise.all(
-			args.paths.map(async (path) => {
+		const results = await mapWithConcurrency(
+			args.paths,
+			MAX_READ_CONCURRENCY,
+			async (path) => {
 				if (!isPathAllowed(path)) {
 					return {
 						path,
@@ -628,7 +637,7 @@ export class DiscoveryHandlers extends ToolHandlerBase {
 					word_count: wordCount,
 					modified: file.stat.mtime,
 				};
-			}),
+			},
 		);
 
 		const found = results.filter((r) => r.exists).length;

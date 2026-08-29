@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-29 09:45 IST*
+*Last Updated: 2026-08-29 10:36 IST*
 
 ## Overview
 
@@ -34,8 +34,6 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T48c | Rolling Conversation Summary and Compaction | 🔄 | HIGH | 2026-08-23 | T48a, T48b | [Details](tasks/T48c.md) |
 | T48d | Context-Aware Usage Display and Provider Reconciliation | 🔄 | HIGH | 2026-08-23 | T6a, T48a | [Details](tasks/T48d.md) |
 | T60 | Tool Capability Registry and Execution-Pipeline Hardening | 🔄 | HIGH | 2026-08-25 | T13, T13a | [Details](tasks/T60.md) |
-| T60a | Canonical Tool Registry and Dynamic Exposure | 🔄 | HIGH | 2026-08-25 | T60, T39a | [Details](tasks/T60a.md) |
-| T60c | Validated Execution Boundary and Reliability | 🔄 | HIGH | 2026-08-25 | T60, T60a, T60b | [Details](tasks/T60c.md) |
 | T60e | Provider-Adaptive Streaming and Tool-Call Progress UI | ⏸️ | HIGH | 2026-08-25 | T60b, T15, T25 | [Details](tasks/T60e.md) |
 | T61 | Self-Settings Agent Tools | 🔄 | HIGH | 2026-08-26 | — | [Details](tasks/T61.md) |
 | T62a | T62 Elision Regression — Agent Workflow Breakage | 🔄 | HIGH | 2026-08-26 | T62 | [Details](tasks/T62a.md) |
@@ -93,6 +91,8 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T60f | Bounded Result Pagination and Continuations | ✅ | MEDIUM | 2026-08-26 | 2026-08-26 | T60a, T60b, T60c | [Details](tasks/T60f.md) |
 | T62 | Tool Payload Elision in History Replay | ✅ | HIGH | 2026-08-26 | 2026-08-26 | T48b | [Details](tasks/T62.md) |
 | T60b | Cross-Loop Tool Transport Parity | ✅ | HIGH | 2026-08-25 | 2026-08-25 | T60, T60a, T14, T48b | [Details](tasks/T60b.md) |
+| T60a | Canonical Tool Registry and Dynamic Exposure | ✅ | HIGH | 2026-08-25 | 2026-08-29 | T60, T39a | [Details](tasks/T60a.md) |
+| T60c | Validated Execution Boundary and Reliability | ✅ | HIGH | 2026-08-25 | 2026-08-29 | T60, T60a, T60b | [Details](tasks/T60c.md) |
 
 ## Task Relationships
 
@@ -239,7 +239,7 @@ T64: Context Optimization Benchmark Harness
 
 ## Status Summary
 
-- **Active**: 35
-- **Completed**: 40
+- **Active**: 33
+- **Completed**: 42
 - **Paused**: 2
 - **Total**: 77

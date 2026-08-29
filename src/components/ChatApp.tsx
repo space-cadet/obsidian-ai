@@ -928,13 +928,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 							: undefined
 					}
 					pendingToolCall={activeRuntime.pendingToolCall}
-					pendingToolDisplay={
-						activeRuntime.pendingToolCall?.toolName
-							? (plugin.integrationRegistry?.getCapabilityDisplay(
-									activeRuntime.pendingToolCall.toolName,
-								) ?? null)
-							: null
-					}
+					pendingToolDisplay={activeRuntime.pendingToolDisplay}
 					typingUsers={typingUsers}
 					onSend={handleSendWithSync}
 					onStop={actions.handleStop}

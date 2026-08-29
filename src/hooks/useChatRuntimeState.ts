@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ContentPart } from "../types";
 import type { ToolCall, ToolResult } from "../agent/types";
+import type { ToolDisplayDescriptor } from "../agent/toolRegistry";
 
 export interface ChatRuntimeState {
 	isStreaming: boolean;
 	currentAiMessage: string;
 	currentContentParts: ContentPart[];
 	pendingToolCall: ToolCall | null;
+	pendingToolDisplay: ToolDisplayDescriptor | null;
 	controller: AbortController | null;
 	resolveTool: ((result: ToolResult | null) => void) | null;
 	runningTokenTotal: number;
@@ -19,6 +21,7 @@ export const emptyChatRuntime: ChatRuntimeState = {
 	currentAiMessage: "",
 	currentContentParts: [],
 	pendingToolCall: null,
+	pendingToolDisplay: null,
 	controller: null,
 	resolveTool: null,
 	runningTokenTotal: 0,

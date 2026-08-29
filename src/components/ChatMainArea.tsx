@@ -7,6 +7,7 @@ import type {
 	Attachment,
 } from "../types";
 import type { ToolCall } from "../agent/types";
+import type { ToolDisplayDescriptor } from "../agent/toolRegistry";
 import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
 import PendingToolCard from "./presentational/PendingToolCard";
@@ -31,11 +32,7 @@ interface ChatMainAreaProps {
 	scrollToMessageId?: string;
 	restoreScrollTop?: number;
 	pendingToolCall: ToolCall | null;
-	pendingToolDisplay: {
-		providerName: string;
-		title: string;
-		risk: string;
-	} | null;
+	pendingToolDisplay: ToolDisplayDescriptor | null;
 	typingUsers: string[];
 	onSend: (text: string, attachments?: Attachment[]) => void;
 	onStop: () => void;
@@ -150,7 +147,7 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 					toolCall={pendingToolCall}
 					onApprove={onApproveTool}
 					onReject={onRejectTool}
-					providerDisplay={pendingToolDisplay}
+					toolDisplay={pendingToolDisplay}
 				/>
 			)}
 			<ChatInput

@@ -13,6 +13,7 @@ import { AgentLoop } from "./AgentLoop";
 import { ToolExecutor } from "./ToolExecutor";
 import { estimateTokens } from "../context/tokenEstimator";
 import { buildBudgetedHistory } from "../context/contextBudget";
+import { describeToolsForPrompt } from "./toolRegistry";
 
 export type DispatchMode = "sequential" | "parallel";
 export type ContextStrategy = "full" | "isolated";
@@ -552,32 +553,20 @@ export class Orchestrator {
 			"\n\nMessages from other participants will be prefixed with their name.";
 
 		if (this.enableTools) {
+			const definitions =
+				this.toolExecutor?.getResolvedToolRegistry().definitions ?? [];
 			prompt +=
-				"\n\nYou have access to the following tools for managing Obsidian notes:" +
-				"\n- read_note: Read the full content of a note. Use this before editing to understand current content." +
-				"\n- edit_note: Overwrite the entire content of a note. Provide COMPLETE new content." +
-				"\n- append_to_note: Add content to the end of a note without changing existing content." +
-				"\n- create_note: Create a new note in the vault." +
-				"\n- patch_note: Find and replace text inside a note (small precise edits)." +
-				"\n- edit_section: Rewrite content under a specific heading." +
-				"\n- search_notes: Search for notes by filename or path; use first for note discovery and atomic-note coverage. Default limit is 20, maximum 50." +
-				"\n- search_note_content: Search inside note content for text, quotes, or topics. Use for prose after narrowing the folder; results may include logs, lesson notes, or generated indexes." +
-				"\n- list_notes: Browse all notes in the vault or a folder; use before content search when checking which notes exist." +
-				"\n- get_note_metadata: Get file stats (size, dates, word count) for a specific note." +
-				"\n- create_folder: Create a new folder in the vault." +
-				"\n- move_note: Move or rename a note to a new folder or name." +
-				"\n- delete_note: Delete a note from the vault." +
-				"\n- list_folders: List folders in the vault." +
-				"\n- check_paths: Batch-check note paths or basenames; prefer this for atomic-note existence checks." +
-				"\n- search_past_sessions: Search the user's saved previous chat conversations by topic or keywords. This is for chat history, not vault notes." +
-				"\n- read_pdf: Read a bounded PDF page range with max_pages and start_page." +
-				"\n- list_memories/search_memories/read_memory_audit: Read bounded memory results and use cursor when another page is available." +
+				"\n\nYou have access to these currently available tools for managing Obsidian notes:" +
+				(definitions.length > 0
+					? `\n${describeToolsForPrompt(definitions)}`
+					: "\n(No tools are currently available.)") +
 				"\n\nWhen the user asks to find, list, or search for notes, ALWAYS use search_notes, list_notes, or search_note_content." +
 				" For several search terms, prefer one search_note_content call with match_mode=and or any instead of separate searches." +
 				" When the user asks whether you can search past sessions, chats, conversations, or what you discussed previously, say that you can search saved chat history and call search_past_sessions with the relevant keywords." +
 				" Do not say you cannot search — you have the search_notes, list_notes, and search_note_content tools." +
 				" When a bounded tool returns has_more=true, call the same tool again with its next_cursor only if the user needs more results; keep the original filters unchanged. For PDFs, request the returned next_page with start_page." +
 				" Before editing a note you are unfamiliar with, use read_note to see its current content." +
+				" When read_note returns a content_fingerprint, pass it as expected_content_fingerprint on a follow-up edit." +
 				"\n\nImportant: When using edit_note, provide the COMPLETE new note content." +
 				" Do not use diff syntax or markdown code blocks.";
 		}

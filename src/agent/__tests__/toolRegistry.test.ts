@@ -5,6 +5,7 @@ import {
 	createBuiltInToolRegistry,
 	providerCapabilityToToolDefinition,
 	resolveToolRegistry,
+	toToolDisplayDescriptor,
 	validateToolArguments,
 } from "../toolRegistry";
 
@@ -61,6 +62,20 @@ describe("canonical tool registry", () => {
 			risk: "read",
 		});
 		expect(definition.modelTool).toHaveProperty("inputSchema");
+	});
+
+	it("provides safe display metadata from the same descriptor", () => {
+		const definition = createBuiltInToolDefinitions().find(
+			(item) => item.id === "edit_note",
+		)!;
+
+		expect(toToolDisplayDescriptor(definition)).toMatchObject({
+			id: "edit_note",
+			title: "Edit Note",
+			risk: "local-write",
+			presentation: "text-overwrite",
+			source: "builtin",
+		});
 	});
 
 	it("validates arguments against the canonical schema", async () => {

@@ -1,6 +1,23 @@
 # Active Context
 
-*Last Updated: 2026-08-29 09:45:48 IST*
+*Last Updated: 2026-08-29 10:36 IST*
+
+### 2026-08-29 — T60a/T60c safety and registry completion ✅
+
+Completed both requested architecture-review follow-ups.
+
+- T60a now uses the resolved tool descriptors for group-chat prompts and the
+  pending approval card. Provider names, titles, risk, and preview styles come
+  from the same descriptor captured for the pending call.
+- Provider enablement and read-only availability are resolved through the
+  shared registry filter. Native, OpenResponses, group-chat, and approval
+  paths use the same resolved definitions.
+- T60c now limits batch reads to eight at a time, serializes conflicting
+  mutations by normalized target, and returns a content fingerprint from
+  `read_note` for optional stale-write checks.
+- Full verification passed: 43 test files / 369 tests and TypeScript.
+- T46 remains active only for provider-switching and real-provider acceptance;
+  the user confirmed that its tests pass.
 
 ### 2026-08-29 — Memory Bank task registry cleanup ✅
 

@@ -26,6 +26,12 @@ export const editNoteTool = t({
 	inputSchema: z.object({
 		path: z.string().describe('Note name or path, e.g. "Project Notes"'),
 		content: z.string().describe("The complete new note content"),
+		expected_content_fingerprint: z
+			.string()
+			.optional()
+			.describe(
+				"Fingerprint from read_note; refuse the edit if the note changed.",
+			),
 	}),
 });
 
@@ -36,6 +42,12 @@ export const appendToNoteTool = t({
 	inputSchema: z.object({
 		path: z.string().describe('Note name or path, e.g. "Project Notes"'),
 		content: z.string().describe("Content to append"),
+		expected_content_fingerprint: z
+			.string()
+			.optional()
+			.describe(
+				"Fingerprint from read_note; refuse the edit if the note changed.",
+			),
 	}),
 });
 
@@ -92,6 +104,12 @@ export const patchNoteTool = t({
 			.boolean()
 			.optional()
 			.describe("Replace every occurrence instead of just the first."),
+		expected_content_fingerprint: z
+			.string()
+			.optional()
+			.describe(
+				"Fingerprint from read_note; refuse the edit if the note changed.",
+			),
 	}),
 });
 
@@ -111,6 +129,12 @@ export const editSectionTool = t({
 			.string()
 			.describe(
 				"The complete replacement text for this section, including the heading line.",
+			),
+		expected_content_fingerprint: z
+			.string()
+			.optional()
+			.describe(
+				"Fingerprint from read_note; refuse the edit if the note changed.",
 			),
 	}),
 });

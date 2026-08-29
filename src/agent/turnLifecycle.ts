@@ -11,6 +11,7 @@ import type {
 } from "../types";
 import type { ProviderProfile } from "../settings";
 import type { ToolCall, ToolResult } from "../agent/types";
+import { toToolDisplayDescriptor } from "../agent/toolRegistry";
 import { ToolExecutor } from "../agent/ToolExecutor";
 import { runChatTurn } from "../agent/ChatTurnCoordinator";
 import { ChatTurnOutput } from "../agent/ChatTurnOutput";
@@ -191,6 +192,7 @@ export class TurnLifecycle {
 				currentAiMessage: "",
 				currentContentParts: [],
 				pendingToolCall: null,
+				pendingToolDisplay: null,
 				resolveTool: null,
 				runningTokenTotal: 0,
 			});
@@ -479,6 +481,7 @@ export class TurnLifecycle {
 			currentAiMessage: "",
 			currentContentParts: [],
 			pendingToolCall: null,
+			pendingToolDisplay: null,
 			controller,
 			resolveTool: null,
 			runningTokenTotal: 0,
@@ -723,12 +726,18 @@ export class TurnLifecycle {
 							(resolve) => {
 								deps.patchRuntime(currentActiveId, {
 									pendingToolCall: call,
+									pendingToolDisplay: toToolDisplayDescriptor(
+										resolvedToolRegistry.byId.get(
+											call.toolName,
+										),
+									),
 									resolveTool: resolve,
 								});
 							},
 						);
 						deps.patchRuntime(currentActiveId, {
 							pendingToolCall: null,
+							pendingToolDisplay: null,
 							resolveTool: null,
 						});
 						if (resolved) {
@@ -971,6 +980,7 @@ export class TurnLifecycle {
 				currentAiMessage: "",
 				currentContentParts: [],
 				pendingToolCall: null,
+				pendingToolDisplay: null,
 				controller: null,
 				resolveTool: null,
 				runningTokenTotal: 0,

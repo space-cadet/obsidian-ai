@@ -1,3 +1,19 @@
+### 2026-08-29 — T60a/T60c completion ✅
+
+- Replaced the group-chat hand-written tool list with the resolved registry
+  descriptions.
+- Replaced the approval card's provider lookup and tool-name display branches
+  with descriptor-owned title, risk, provider, and preview metadata.
+- Kept provider enablement and read-only filtering in the shared descriptor
+  availability path.
+- Added bounded batch reads, shared target locks for conflicting mutations,
+  and optional content fingerprints for note edits, appends, patches, and
+  section edits.
+- Added focused tests for the registry display contract, bounded reads,
+  target locking, cancellation while waiting, stale edits, and serialized
+  writes.
+- Verification: 43 test files / 369 tests passed; TypeScript passed.
+
 ### 2026-08-29 — Memory Bank Task Registry Cleanup ✅
 
 - Reconciled the master task table with individual task records.
