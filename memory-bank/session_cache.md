@@ -1,6 +1,20 @@
 # Session Cache
 
-*Last Updated: 2026-08-29 17:29:07 IST*
+*Last Updated: 2026-08-29 18:30:40 IST*
+
+## 2026-08-29 — T46, T48, T48a, T48b, T48c, T62a, T64, T64d, T48d closeout
+
+**Session title:** T46, T48, T48a, T48b, T48c, T62a, T64, T64d, T48d: Model-history implementation, live token validation, and Memory Bank closeout
+
+- Recorded the separate live benchmark session against OpenRouter using
+  `openai/gpt-4o-mini`.
+- The run completed 16 requests across four fixtures and four strategies.
+- The average difference between local estimates and provider prompt usage was
+  -65.2%, ranging from -98.88% to +6.35%.
+- T48d should use provider usage when available and label local values as
+  estimates otherwise. No global estimator correction is recommended yet.
+- T64d remains active for a fifth compaction configuration and provider-cost
+  evidence.
 
 ## 2026-08-29 — T62a automatic agent-mode preservation
 

@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased - 2026-08-29
 
+### Context benchmark validation
+- Recorded the live T64/T64d harness run using OpenRouter and
+  `openai/gpt-4o-mini`: 16 requests across four fixtures and four strategies.
+- Provider prompt usage differed from local estimates by an average of -65.2%,
+  ranging from -98.88% to +6.35%.
+- Kept T64d open for the compaction configuration and provider-cost evidence.
+- Recorded the T48d recommendation to prefer provider usage and label local
+  values as estimates; no global estimator correction was applied.
+
 ### Agent context
 - **T62a — Automatic agent-mode preservation**: Added a shared model-history
   entry point that preserves tool details for agent turns, checks tool pairing,

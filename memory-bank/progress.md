@@ -1,3 +1,14 @@
+### 2026-08-29 — T64, T64d, T48d live token validation
+
+- Recorded the live OpenRouter run using `openai/gpt-4o-mini`.
+- Completed 16 requests across four fixtures and four strategies.
+- Recorded provider usage, local estimates, per-request differences, and the
+  recommendation not to apply a global estimator correction yet.
+- T64d remains active for the compaction configuration and provider-cost
+  evidence.
+- No implementation-details document was created; this is session and task
+  evidence rather than a new feature-design document.
+
 ### 2026-08-29 — T62a automatic agent-mode preservation ✅
 
 - Implemented `src/context/modelHistory.ts` as the shared model-facing history
