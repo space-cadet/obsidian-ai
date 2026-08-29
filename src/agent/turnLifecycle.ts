@@ -30,6 +30,7 @@ import {
 import {
 	compactionHysteresisReleased,
 	formatCompactionSummary,
+	parseCompactionSummary,
 	planSemanticCompaction,
 } from "../context/semanticCompaction";
 import { buildSystemPrompt } from "../lib/systemPrompt";
@@ -545,7 +546,14 @@ export class TurnLifecycle {
 					compactionProfile,
 				)
 				.then((rawSummary) => {
-					const parsed = JSON.parse(rawSummary);
+					const parsed = parseCompactionSummary(
+						JSON.parse(rawSummary),
+					);
+					if (!parsed) {
+						throw new Error(
+							"Compaction response did not match the expected format",
+						);
+					}
 					this.compactionBySession[sessionIdForCompaction] =
 						formatCompactionSummary(parsed);
 					new Notice("Conversation compacted for future requests.");

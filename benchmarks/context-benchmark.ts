@@ -47,6 +47,9 @@ export interface ExperimentResult {
 	totalTokens: number;
 	peakTurnTokens: number;
 	messagesDropped: number;
+	toolContentCharsBefore: number;
+	toolContentCharsAfter: number;
+	toolContentRetentionPercent: number;
 }
 
 export type ExperimentFn = (
@@ -88,6 +91,61 @@ function countToolCalls(messages: ChatMessage[]): number {
 		}
 	}
 	return count;
+}
+
+function toolResultText(result: ToolResult): string {
+	return result.error ? `Error: ${result.error}` : result.content || "";
+}
+
+function toolContentTexts(messages: ChatMessage[]): string[] {
+	return messages.flatMap((message) => {
+		if (message.contentParts && message.contentParts.length > 0) {
+			return message.contentParts
+				.filter(
+					(part): part is ContentPart & { type: "tool_call" } =>
+						part.type === "tool_call" && Boolean(part.result),
+				)
+				.map((part) => toolResultText(part.result!));
+		}
+		return (message.toolCalls ?? [])
+			.filter((part) => Boolean(part.result))
+			.map((part) => toolResultText(part.result!));
+	});
+}
+
+function historyToolContentTexts(history: HistoryEntry[]): string[] {
+	return history.flatMap((entry) => {
+		if (entry.role !== "tool" || !Array.isArray(entry.content)) return [];
+		return entry.content
+			.filter(
+				(part: { type?: string; output?: { value?: unknown } }) =>
+					part.type === "tool-result" &&
+					typeof part.output?.value === "string",
+			)
+			.map((part: { output: { value: string } }) => part.output.value);
+	});
+}
+
+function retainedCharacters(original: string, replay: string): number {
+	if (original === replay) return original.length;
+	let prefix = 0;
+	while (
+		prefix < original.length &&
+		prefix < replay.length &&
+		original[prefix] === replay[prefix]
+	) {
+		prefix++;
+	}
+	let suffix = 0;
+	while (
+		suffix < original.length - prefix &&
+		suffix < replay.length - prefix &&
+		original[original.length - 1 - suffix] ===
+			replay[replay.length - 1 - suffix]
+	) {
+		suffix++;
+	}
+	return prefix + suffix;
 }
 
 // ─── Strategies ──────────────────────────────────────────────────────────────
@@ -198,6 +256,8 @@ function runMessageWindowExperiment(
 	let totalTokens = 0;
 	let peakTurnTokens = 0;
 	let messagesDropped = 0;
+	let toolContentCharsBefore = 0;
+	let toolContentCharsAfter = 0;
 
 	// Simulate turn-by-turn: for each assistant message, build history
 	// as it would exist at that point in the conversation
@@ -227,6 +287,17 @@ function runMessageWindowExperiment(
 		);
 
 		const turnTokens = countTokens(history);
+		const before = toolContentTexts(windowedMessages);
+		const after = historyToolContentTexts(history);
+		toolContentCharsBefore += before.reduce(
+			(sum, text) => sum + text.length,
+			0,
+		);
+		toolContentCharsAfter += before.reduce(
+			(sum, text, index) =>
+				sum + retainedCharacters(text, after[index] ?? ""),
+			0,
+		);
 		perTurnTokens.push(turnTokens);
 		totalTokens += turnTokens;
 		peakTurnTokens = Math.max(peakTurnTokens, turnTokens);
@@ -242,6 +313,12 @@ function runMessageWindowExperiment(
 		totalTokens,
 		peakTurnTokens,
 		messagesDropped,
+		toolContentCharsBefore,
+		toolContentCharsAfter,
+		toolContentRetentionPercent:
+			toolContentCharsBefore > 0
+				? (toolContentCharsAfter / toolContentCharsBefore) * 100
+				: 100,
 	};
 }
 
@@ -878,6 +955,9 @@ function printExperimentResults(results: ExperimentResult[]) {
 		);
 		console.log(`   Messages dropped: ${result.messagesDropped}`);
 		console.log(
+			`   Tool text retained: ${result.toolContentCharsAfter.toLocaleString()} / ${result.toolContentCharsBefore.toLocaleString()} chars (${result.toolContentRetentionPercent.toFixed(1)}%)`,
+		);
+		console.log(
 			`   Per-turn: [${result.perTurnTokens.map((t) => t.toLocaleString()).join(", ")}]`,
 		);
 		console.log("");
@@ -889,10 +969,10 @@ function printExperimentResults(results: ExperimentResult[]) {
 		(r) => r.fixture === "grammar-migration-13-turns",
 	);
 	console.log(
-		"MsgCap | Mode      | ToolTok | Total Tokens | Peak/Turn | Dropped",
+		"MsgCap | Mode      | ToolTok | Total Tokens | Peak/Turn | Retained | Dropped",
 	);
 	console.log(
-		"-------|-----------|---------|--------------|-----------|--------",
+		"-------|-----------|---------|--------------|-----------|----------|--------",
 	);
 	for (const r of gmResults) {
 		const cap =
@@ -900,7 +980,40 @@ function printExperimentResults(results: ExperimentResult[]) {
 				? "∞"
 				: r.maxContextMessages.toString().padStart(2);
 		console.log(
-			`${cap.padEnd(6)} | ${r.toolHistoryMode.padEnd(9)} | ${r.maxToolResultTokens.toString().padStart(7)} | ${r.totalTokens.toLocaleString().padStart(12)} | ${r.peakTurnTokens.toLocaleString().padStart(9)} | ${r.messagesDropped.toString().padStart(7)}`,
+			`${cap.padEnd(6)} | ${r.toolHistoryMode.padEnd(9)} | ${r.maxToolResultTokens.toString().padStart(7)} | ${r.totalTokens.toLocaleString().padStart(12)} | ${r.peakTurnTokens.toLocaleString().padStart(9)} | ${(r.toolContentRetentionPercent.toFixed(1) + "%").padStart(8)} | ${r.messagesDropped.toString().padStart(7)}`,
+		);
+	}
+}
+
+function runRetentionExperiments(): ExperimentResult[] {
+	const thresholds = [0, 1000, 2000, 4000, 8000, 16000, 64000];
+	return loadFixtures().flatMap((fixture) =>
+		thresholds.map((maxToolResultTokens) =>
+			runMessageWindowExperiment(
+				fixture,
+				0,
+				maxToolResultTokens,
+				"preserve",
+			),
+		),
+	);
+}
+
+function printRetentionResults(results: ExperimentResult[]) {
+	console.log("\nPRESERVE MODE TOOL CONTENT RETENTION\n");
+	console.log(
+		"Fixture                          | ToolTok | Retained | Tokens",
+	);
+	console.log(
+		"---------------------------------|---------|----------|--------",
+	);
+	for (const result of results) {
+		const threshold =
+			result.maxToolResultTokens === 0
+				? "∞"
+				: String(result.maxToolResultTokens);
+		console.log(
+			`${result.fixture.padEnd(33).slice(0, 33)} | ${threshold.padStart(7)} | ${(result.toolContentRetentionPercent.toFixed(1) + "%").padStart(8)} | ${result.totalTokens.toLocaleString().padStart(7)}`,
 		);
 	}
 }
@@ -1000,6 +1113,12 @@ async function main() {
 	if (args.includes("--experiment")) {
 		const results = runMessageWindowExperiments();
 		printExperimentResults(results);
+		return;
+	}
+
+	if (args.includes("--retention")) {
+		const results = runRetentionExperiments();
+		printRetentionResults(results);
 		return;
 	}
 

@@ -139,6 +139,32 @@ describe("buildBudgetedHistory", () => {
 		expect(result.overBudget).toBe(true);
 	});
 
+	it("keeps multiple tool exchanges whole when older history is dropped", () => {
+		const history = [
+			{ role: "user", content: "old" },
+			{ role: "assistant", content: "first call" },
+			{ role: "tool", content: "first result" },
+			{ role: "assistant", content: "second call" },
+			{ role: "tool", content: "second result" },
+		];
+		const result = buildBudgetedHistory({
+			systemPrompt: "s",
+			currentMessage: "c",
+			history,
+			options: {
+				maxRequestTokens: 100,
+				maxMessages: 4,
+				preserveRecentMessages: 3,
+				responseReserveTokens: 0,
+			},
+		});
+
+		expect(result.history).toEqual(history.slice(1));
+		expect(
+			result.history.filter((message) => message.role === "tool"),
+		).toHaveLength(2);
+	});
+
 	it("keeps tiny truncations within their token limit", () => {
 		const result = truncateTextForTokens("a very long result", 1);
 

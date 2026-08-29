@@ -31,22 +31,57 @@ const emptySummary: CompactionSummary = {
 	openQuestions: [],
 };
 
+function stringArray(value: unknown): string[] | null {
+	if (
+		!Array.isArray(value) ||
+		!value.every((item) => typeof item === "string")
+	) {
+		return null;
+	}
+	return value;
+}
+
+/** Accept only the four fields the compaction prompt asks the model to return. */
+export function parseCompactionSummary(
+	value: unknown,
+): CompactionSummary | null {
+	if (typeof value !== "object" || value === null) return null;
+	const candidate = value as Record<string, unknown>;
+	const keyDecisions = stringArray(candidate.keyDecisions);
+	const toolResults = stringArray(candidate.toolResults);
+	const userIntent = stringArray(candidate.userIntent);
+	const openQuestions = stringArray(candidate.openQuestions);
+	if (!keyDecisions || !toolResults || !userIntent || !openQuestions) {
+		return null;
+	}
+	return { keyDecisions, toolResults, userIntent, openQuestions };
+}
+
 function textOf(message: ChatMessage): string {
-	const tools = (message.contentParts ?? [])
-		.filter((part) => part.type === "tool_call")
-		.map((part) => {
-			const result =
-				part.result?.error ?? part.result?.content ?? "pending";
-			return `${part.call.toolName}: ${result}`;
-		});
+	const toolCalls =
+		message.contentParts && message.contentParts.length > 0
+			? message.contentParts
+					.filter((part) => part.type === "tool_call")
+					.map((part) => ({
+						call: part.call,
+						result: part.result,
+					}))
+			: (message.toolCalls ?? []);
+	const tools = toolCalls.map(({ call, result }) => {
+		const resultText = result?.error ?? result?.content ?? "pending";
+		return `${call.toolName} (${call.toolCallId}): ${resultText}`;
+	});
 	return [message.content, ...tools].filter(Boolean).join("\n");
 }
 
 export function buildCompactionPrompt(messages: ChatMessage[]): string {
 	const transcript = messages
-		.map((message) => `${message.role}: ${textOf(message)}`)
+		.map(
+			(message) =>
+				`[Message ${message.id}] ${message.role}: ${textOf(message)}`,
+		)
 		.join("\n\n");
-	return `Summarize this conversation for a future model turn. Preserve concrete decisions, tool outcomes, user goals, unresolved questions, names, paths, and constraints. Do not invent facts. Return JSON only with arrays named keyDecisions, toolResults, userIntent, and openQuestions.\n\n${transcript}`;
+	return `Summarize this conversation for a future model turn. Preserve concrete decisions, tool outcomes, user goals, unresolved questions, names, paths, and constraints. Do not invent facts. Treat the message IDs below as source references, not conversation content. Return JSON only with arrays named keyDecisions, toolResults, userIntent, and openQuestions.\n\n${transcript}`;
 }
 
 export function formatCompactionSummary(
@@ -56,7 +91,7 @@ export function formatCompactionSummary(
 	const section = (title: string, items: string[]) =>
 		`## ${title}\n${items.length ? items.map((item) => `- ${item}`).join("\n") : "- None recorded"}`;
 	return [
-		"[Prior conversation summary]",
+		"[Derived summary of earlier conversation - verify important details against the full transcript]",
 		section("Key Decisions", value.keyDecisions),
 		section("Tool Results", value.toolResults),
 		section("User Intent", value.userIntent),

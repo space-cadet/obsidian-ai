@@ -7,6 +7,16 @@ export interface HistoryEntry {
 	content: any;
 }
 
+export interface ToolHistoryPairingCheck {
+	valid: boolean;
+	errors: string[];
+}
+
+type PersistedToolCall = {
+	call: ToolCall;
+	result?: ToolResult;
+};
+
 /**
  * Build conversation history preserving tool call/result context.
  *
@@ -39,78 +49,30 @@ export function buildHistoryWithTools(
 		}
 
 		// Assistant message — check for tool calls
-		const toolCalls = m.contentParts?.filter(
+		const contentPartToolCalls = m.contentParts?.filter(
 			(p): p is import("../types").ContentPart & { type: "tool_call" } =>
 				p.type === "tool_call",
 		);
 
-		if (toolCalls && toolCalls.length > 0) {
-			const assistantContent: any[] = [];
-			const toolResults: any[] = [];
-
-			for (const part of m.contentParts!) {
-				if (part.type === "text") {
-					assistantContent.push({
-						type: "text",
-						text: part.content,
-					});
-				} else if (part.type === "tool_call") {
-					assistantContent.push({
-						type: "tool-call",
-						toolCallId: part.call.toolCallId,
-						toolName: part.call.toolName,
-						input:
-							toolHistoryMode === "elide"
-								? "[elided]"
-								: part.call.args,
-						...(part.call.providerMetadata
-							? {
-									providerOptions: part.call.providerMetadata,
-								}
-							: {}),
-					});
-
-					if (part.result) {
-						const rawResult = part.result.error
-							? `Error: ${part.result.error}`
-							: part.result.content || "";
-						const resultText =
-							toolHistoryMode === "elide"
-								? `[${rawResult.length} chars, elided]`
-								: truncateTextForTokens(
-										rawResult,
-										maxToolResultTokens,
-									);
-						toolResults.push({
-							type: "tool-result",
-							toolCallId: part.call.toolCallId,
-							toolName: part.call.toolName,
-							output: {
-								type: "text",
-								value: resultText,
-							},
-						});
-					}
-				}
-			}
-
-			if (assistantContent.length > 0) {
-				result.push({
-					role: "assistant",
-					content: assistantContent,
-				});
-			}
-
-			if (toolResults.length > 0) {
-				result.push({
-					role: "tool",
-					content: toolResults,
-				});
-			}
+		if (contentPartToolCalls && contentPartToolCalls.length > 0) {
+			const assistantContent: any[] = m.contentParts!.map((part): any =>
+				part.type === "text"
+					? { type: "text", text: part.content }
+					: buildToolCallContent(part.call, toolHistoryMode),
+			);
+			const toolCalls: PersistedToolCall[] = contentPartToolCalls.map(
+				(part) => ({ call: part.call, result: part.result }),
+			);
+			const entries = buildToolHistoryEntries(
+				assistantContent,
+				toolCalls,
+				toolHistoryMode,
+				maxToolResultTokens,
+			);
+			result.push(...entries);
 		} else if (m.toolCalls && m.toolCalls.length > 0) {
 			// Fallback: reconstruct from toolCalls (older format)
 			const assistantContent: any[] = [];
-			const toolResults: any[] = [];
 
 			if (m.content) {
 				assistantContent.push({
@@ -118,57 +80,20 @@ export function buildHistoryWithTools(
 					text: m.content,
 				});
 			}
+			assistantContent.push(
+				...m.toolCalls.map(({ call }) =>
+					buildToolCallContent(call, toolHistoryMode),
+				),
+			);
 
-			for (const tc of m.toolCalls) {
-				assistantContent.push({
-					type: "tool-call",
-					toolCallId: tc.call.toolCallId,
-					toolName: tc.call.toolName,
-					input:
-						toolHistoryMode === "elide" ? "[elided]" : tc.call.args,
-					...(tc.call.providerMetadata
-						? {
-								providerOptions: tc.call.providerMetadata,
-							}
-						: {}),
-				});
-
-				if (tc.result) {
-					const rawResult = tc.result.error
-						? `Error: ${tc.result.error}`
-						: tc.result.content || "";
-					const resultText =
-						toolHistoryMode === "elide"
-							? `[${rawResult.length} chars, elided]`
-							: truncateTextForTokens(
-									rawResult,
-									maxToolResultTokens,
-								);
-					toolResults.push({
-						type: "tool-result",
-						toolCallId: tc.call.toolCallId,
-						toolName: tc.call.toolName,
-						output: {
-							type: "text",
-							value: resultText,
-						},
-					});
-				}
-			}
-
-			if (assistantContent.length > 0) {
-				result.push({
-					role: "assistant",
-					content: assistantContent,
-				});
-			}
-
-			if (toolResults.length > 0) {
-				result.push({
-					role: "tool",
-					content: toolResults,
-				});
-			}
+			result.push(
+				...buildToolHistoryEntries(
+					assistantContent,
+					m.toolCalls,
+					toolHistoryMode,
+					maxToolResultTokens,
+				),
+			);
 		} else {
 			// Plain text message
 			result.push({
@@ -179,6 +104,96 @@ export function buildHistoryWithTools(
 	}
 
 	return result;
+}
+
+function buildToolHistoryEntries(
+	textParts: any[],
+	toolCalls: PersistedToolCall[],
+	toolHistoryMode: "elide" | "preserve",
+	maxToolResultTokens: number,
+): HistoryEntry[] {
+	const assistantContent: any[] = textParts;
+	const toolResults = toolCalls
+		.filter(({ result }) => result)
+		.map(({ call, result }) => {
+			const rawResult = result!.error
+				? `Error: ${result!.error}`
+				: result!.content || "";
+			const resultText =
+				toolHistoryMode === "elide"
+					? `[${rawResult.length} chars, elided]`
+					: truncateTextForTokens(rawResult, maxToolResultTokens);
+			return {
+				type: "tool-result",
+				toolCallId: call.toolCallId,
+				toolName: call.toolName,
+				output: { type: "text", value: resultText },
+			};
+		});
+
+	return [
+		...(assistantContent.length > 0
+			? [{ role: "assistant" as const, content: assistantContent }]
+			: []),
+		...(toolResults.length > 0
+			? [{ role: "tool" as const, content: toolResults }]
+			: []),
+	];
+}
+
+function buildToolCallContent(
+	call: ToolCall,
+	toolHistoryMode: "elide" | "preserve",
+) {
+	return {
+		type: "tool-call",
+		toolCallId: call.toolCallId,
+		toolName: call.toolName,
+		input: toolHistoryMode === "elide" ? "[elided]" : call.args,
+		...(call.providerMetadata
+			? { providerOptions: call.providerMetadata }
+			: {}),
+	};
+}
+
+/** Check that every replayed tool result follows a matching tool call. */
+export function validateToolHistoryPairing(
+	history: HistoryEntry[],
+): ToolHistoryPairingCheck {
+	const callIds = new Set<string>();
+	const errors: string[] = [];
+
+	for (const entry of history) {
+		if (!Array.isArray(entry.content)) continue;
+		if (entry.role === "assistant") {
+			for (const part of entry.content) {
+				if (part?.type !== "tool-call") continue;
+				if (typeof part.toolCallId !== "string") {
+					errors.push("A tool call has no call ID.");
+					continue;
+				}
+				if (callIds.has(part.toolCallId)) {
+					errors.push(`Tool call ID repeated: ${part.toolCallId}`);
+				}
+				callIds.add(part.toolCallId);
+			}
+		}
+		if (entry.role === "tool") {
+			for (const part of entry.content) {
+				if (part?.type !== "tool-result") continue;
+				if (
+					typeof part.toolCallId !== "string" ||
+					!callIds.has(part.toolCallId)
+				) {
+					errors.push(
+						`Tool result has no preceding call: ${String(part.toolCallId)}`,
+					);
+				}
+			}
+		}
+	}
+
+	return { valid: errors.length === 0, errors };
 }
 
 function buildReplayContent(

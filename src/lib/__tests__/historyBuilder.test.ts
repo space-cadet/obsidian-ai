@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { buildHistoryWithTools } from "../historyBuilder";
+import {
+	buildHistoryWithTools,
+	validateToolHistoryPairing,
+} from "../historyBuilder";
 import type { ChatMessage } from "../../types";
 
 describe("buildHistoryWithTools", () => {
@@ -220,5 +223,73 @@ describe("buildHistoryWithTools", () => {
 		const history = buildHistoryWithTools([message], 10, 4000, "preserve");
 		expect(history[0].content[1].input).toEqual({ path: "test.md" });
 		expect(history[1].content[0].output.value).toBe("Note content here");
+	});
+
+	it("keeps several tool calls and results matched", () => {
+		const message: ChatMessage = {
+			id: "msg-many",
+			role: "assistant",
+			content: "I found both results",
+			timestamp: Date.now(),
+			contentParts: [
+				{ type: "text", content: "I found both results" },
+				{
+					type: "tool_call",
+					call: {
+						toolCallId: "call-a",
+						toolName: "search_notes",
+						args: { query: "first" },
+					},
+					result: { content: "first result" },
+				},
+				{
+					type: "tool_call",
+					call: {
+						toolCallId: "call-b",
+						toolName: "search_notes",
+						args: { query: "second" },
+					},
+					result: { content: "second result" },
+				},
+			],
+		};
+
+		const history = buildHistoryWithTools([message], 10, 4000, "preserve");
+		const calls = history[0].content.filter(
+			(part: { type?: string }) => part.type === "tool-call",
+		);
+		const results = history[1].content.filter(
+			(part: { type?: string }) => part.type === "tool-result",
+		);
+
+		expect(
+			calls.map((part: { toolCallId: string }) => part.toolCallId),
+		).toEqual(["call-a", "call-b"]);
+		expect(
+			results.map((part: { toolCallId: string }) => part.toolCallId),
+		).toEqual(["call-a", "call-b"]);
+		expect(validateToolHistoryPairing(history)).toEqual({
+			valid: true,
+			errors: [],
+		});
+	});
+
+	it("detects a result that lost its matching call", () => {
+		expect(
+			validateToolHistoryPairing([
+				{
+					role: "tool",
+					content: [
+						{
+							type: "tool-result",
+							toolCallId: "missing",
+						},
+					],
+				},
+			]),
+		).toEqual({
+			valid: false,
+			errors: ["Tool result has no preceding call: missing"],
+		});
 	});
 });

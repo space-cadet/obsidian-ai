@@ -4,6 +4,7 @@ import {
 	buildCompactionPrompt,
 	compactionHysteresisReleased,
 	formatCompactionSummary,
+	parseCompactionSummary,
 	planSemanticCompaction,
 } from "../semanticCompaction";
 
@@ -60,5 +61,47 @@ describe("semantic compaction", () => {
 		expect(formatted).toContain("## Key Decisions");
 		expect(formatted).toContain("- Use bounded replay");
 		expect(formatted).toContain("## Open Questions");
+		expect(formatted).toContain("Derived summary");
+	});
+
+	it("marks source messages and tool calls in the summary prompt", () => {
+		const toolMessage: ChatMessage = {
+			id: "assistant-tool-1",
+			role: "assistant",
+			content: "Done",
+			timestamp: 0,
+			toolCalls: [
+				{
+					call: {
+						toolCallId: "call-1",
+						toolName: "read_note",
+						args: { path: "README.md" },
+					},
+					result: { content: "note text" },
+				},
+			],
+		};
+		const prompt = buildCompactionPrompt([toolMessage]);
+
+		expect(prompt).toContain("Message assistant-tool-1");
+		expect(prompt).toContain("read_note (call-1)");
+		expect(prompt).toContain("message IDs below as source references");
+	});
+
+	it("rejects compaction output with missing or non-text fields", () => {
+		expect(parseCompactionSummary({ keyDecisions: [] })).toBeNull();
+		expect(
+			parseCompactionSummary({
+				keyDecisions: ["Use bounded replay"],
+				toolResults: ["Read the note"],
+				userIntent: ["Keep costs down"],
+				openQuestions: ["Need provider testing"],
+			}),
+		).toEqual({
+			keyDecisions: ["Use bounded replay"],
+			toolResults: ["Read the note"],
+			userIntent: ["Keep costs down"],
+			openQuestions: ["Need provider testing"],
+		});
 	});
 });
