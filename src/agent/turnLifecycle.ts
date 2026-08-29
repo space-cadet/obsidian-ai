@@ -606,6 +606,7 @@ export class TurnLifecycle {
 			useTools && !slashCmd,
 			undefined,
 			resolvedToolRegistry.definitions,
+			deps.plugin.settings.intelligence?.identityContextBudget,
 		);
 		if (compactionSummary) {
 			systemPrompt += `\n\n${compactionSummary}`;

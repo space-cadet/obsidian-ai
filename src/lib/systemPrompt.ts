@@ -20,11 +20,16 @@ export async function buildSystemPrompt(
 	toolsEnabled = false,
 	participants?: SystemPromptParticipant[],
 	toolDefinitions?: ReadonlyArray<Pick<ToolDefinition, "id" | "description">>,
+	identityContextBudget?: number,
 ): Promise<string> {
 	let identityContext = "";
 	if (personaLoader) {
 		try {
-			identityContext = await personaLoader.loadFullContext();
+			identityContext = await personaLoader.loadFullContext(
+				identityContextBudget !== undefined
+					? { maxTokens: identityContextBudget }
+					: undefined,
+			);
 		} catch {
 			// Graceful fallback if persona loading fails
 		}

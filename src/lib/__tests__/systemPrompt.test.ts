@@ -5,7 +5,8 @@ import { SlashCommand } from "../slashCommand";
 
 function createMockPersonaLoader(context: string): PersonaLoader {
 	return {
-		loadFullContext: async () => context,
+		loadFullContext: async (options?: { maxTokens?: number }) =>
+			options?.maxTokens ? `(${options.maxTokens}) ${context}` : context,
 	} as unknown as PersonaLoader;
 }
 
@@ -33,6 +34,23 @@ describe("buildSystemPrompt", () => {
 		expect(prompt.startsWith(persona)).toBe(true);
 		expect(prompt).toContain(
 			"You are a helpful assistant integrated into an Obsidian note-taking app.",
+		);
+	});
+
+	it("passes identityContextBudget to personaLoader when provided", async () => {
+		const persona = "You are a quantum physicist.";
+		const loader = createMockPersonaLoader(persona);
+		const prompt = await buildSystemPrompt(
+			[],
+			loader,
+			undefined,
+			false,
+			undefined,
+			undefined,
+			500,
+		);
+		expect(prompt.startsWith("(500) You are a quantum physicist.")).toBe(
+			true,
 		);
 	});
 
