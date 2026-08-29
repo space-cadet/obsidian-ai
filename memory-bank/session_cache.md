@@ -1,6 +1,23 @@
 # Session Cache
 
-*Last Updated: 2026-08-29 19:04:00 IST*
+*Last Updated: 2026-08-29 21:26:31 IST*
+
+## 2026-08-29 — T26 agentic-memory implementation audit and session closeout
+
+**Session title:** T26: Agentic memory implementation audit and session closeout
+
+- Confirmed the flat persistent memory foundation is implemented: structured
+  storage, persona loading, CRUD/search tools, audit logging, duplicate
+  pruning, optional session-end summarization, and explicit past-session search.
+- Reconciled stale T26 wording with the actual source tree.
+- Recorded the concrete wiring gap: `identityContextBudget` is editable but is
+  not passed from `buildSystemPrompt()` to `loadFullContext()`.
+- Kept the larger hot/cold tiered memory design, ranked search, proactive
+  memory, automatic past-session injection, and peer-plugin bridges deferred.
+- No source code changed. The repository remains clean at `4cd448d` before
+  this documentation-only closeout.
+
+See `sessions/2026-08-29-night.md` for the complete session record.
 
 ## 2026-08-29 — T64d expanded live validation closeout
 

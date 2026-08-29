@@ -1,6 +1,7 @@
 # Agentic Memory Architecture
 
-**Status**: Design phase
+**Status**: Design phase for tiered architecture; flat persistent store implemented
+*Last Updated: 2026-08-29 21:26:31 IST*
 **Related**: T46 (orchestration decomposition), T60a (capability registry)
 
 ## Problem
@@ -71,3 +72,18 @@ score = 0.4 × recency + 0.3 × importance + 0.3 × frequency
 - Browser-only: no Node fs. Use Obsidian `vault.adapter`.
 - TF-IDF in pure JS: ~200 lines, no dependencies
 - Index rebuild: async, triggered on write batch or manual
+
+## Implementation Audit — 2026-08-29
+
+The current source implements the flat `memory.json` store, generated
+`memory.md`, audit log, CRUD/search tools, duplicate pruning, optional
+end-of-session summarization, and explicit `search_past_sessions` through the
+existing `SearchIndex`. It does not implement the hot/cold split, ranked
+memory index, automatic core curation, or phrase-based automatic past-session
+injection described above.
+
+The `identityContextBudget` setting is present in settings and the UI but is
+not passed by `buildSystemPrompt()` to `PersonaLoader.loadFullContext()`. The
+loader consequently uses its 2,000-token default. This is the clearest small
+wiring follow-up; the larger tiered design should remain deferred until the
+flat store demonstrates a scale or relevance problem.

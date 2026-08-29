@@ -1,6 +1,22 @@
 # Active Context
 
-*Last Updated: 2026-08-29 19:04:00 IST*
+*Last Updated: 2026-08-29 21:26:31 IST*
+
+### 2026-08-29 — T26 agentic-memory implementation audit
+
+The agentic-memory review found that the flat persistent memory foundation is
+implemented: `MemoryStore`, persona loading, CRUD/search tools, audit logging,
+duplicate pruning, optional session-end summarization, and explicit
+`search_past_sessions` are present in source. The T26 record had stale wording
+that treated some of these as entirely missing; it now distinguishes
+implemented, unverified, and future work.
+
+The clearest small follow-up is wiring the editable
+`identityContextBudget` setting into `buildSystemPrompt()`. The hot/cold
+`core.json` / `archive.json` architecture, ranked search, automatic memory
+curation, proactive memory, phrase-based past-session injection, and peer
+plugin bridges remain deferred design work. No source code changed in this
+audit.
 
 ### 2026-08-29 — T64d expanded live token validation ✅
 
