@@ -583,6 +583,7 @@ export class TurnLifecycle {
 			deps.plugin.saveSettings
 				? deps.plugin.saveSettings.bind(deps.plugin)
 				: undefined,
+			deps.plugin.manifest?.id,
 		);
 		this.currentToolExecutor = toolExecutor;
 		const resolvedToolRegistry = toolExecutor.getResolvedToolRegistry();
@@ -1119,6 +1120,7 @@ export class TurnLifecycle {
 				() => currentActiveId,
 				deps.plugin.integrationRegistry,
 				deps.plugin.saveSettings.bind(deps.plugin),
+				deps.plugin.manifest?.id,
 			);
 		const result = await toolExecutor.execute(pendingToolCall);
 		runtime.resolveTool?.(result);

@@ -77,7 +77,8 @@ export class SettingsHandlers extends ToolHandlerBase {
 
 	async getPluginInfo(): Promise<ToolResult> {
 		// Read manifest.json from the plugin directory
-		const manifestPath = `${this.app.vault.configDir}/plugins/obsidian-ai/manifest.json`;
+		const pluginId = this.pluginId ?? "obsidian-ai";
+		const manifestPath = `${this.app.vault.configDir}/plugins/${pluginId}/manifest.json`;
 		try {
 			const adapter = this.app.vault.adapter;
 			if (!(await adapter.exists(manifestPath))) {

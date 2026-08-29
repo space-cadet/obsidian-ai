@@ -97,7 +97,11 @@ export default class ObsidianAIPlugin extends Plugin {
 
 		setupEventHandlers(this);
 
-		await initSyncEngine(this);
+		// Defer sync engine init to avoid blocking plugin load with network calls
+		// (can take 10+ seconds if WebDAV server is slow or unreachable)
+		initSyncEngine(this).catch((err) => {
+			console.error("[ObsidianAI] Deferred SyncEngine init failed:", err);
+		});
 	}
 
 	onunload() {

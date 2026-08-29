@@ -4969,3 +4969,96 @@
 .is-hidden {
 	display: none !important;
 }
+
+/* ── Collapsible Settings Sections ── */
+.obsidian-ai-settings-section {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	margin-bottom: 16px;
+	overflow: hidden;
+}
+
+.obsidian-ai-settings-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	background: var(--background-secondary);
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.obsidian-ai-settings-section-header:hover {
+	background: var(--background-modifier-hover);
+}
+
+.obsidian-ai-settings-section-header h2,
+.obsidian-ai-settings-section-header h3,
+.obsidian-ai-settings-section-header h4 {
+	margin: 0;
+	font-size: 1.1em;
+	font-weight: 600;
+}
+
+.obsidian-ai-settings-section-toggle {
+	background: transparent;
+	border: none;
+	font-size: 1.2em;
+	cursor: pointer;
+	padding: 0 4px;
+	color: var(--text-muted);
+	line-height: 1;
+	width: 28px;
+	height: 28px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 4px;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.obsidian-ai-settings-section-toggle:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.obsidian-ai-settings-section-body {
+	padding: 16px;
+}
+
+.obsidian-ai-settings-section.is-collapsed {
+	border-color: var(--background-modifier-border-hover);
+}
+
+.obsidian-ai-settings-section.is-collapsed .obsidian-ai-settings-section-header {
+	background: var(--background-primary);
+}
+
+/* Collapse bar */
+.obsidian-ai-settings-collapse-bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 12px 0;
+	padding: 8px 12px;
+	background: var(--background-secondary);
+	border-radius: 6px;
+	font-size: 0.9em;
+	color: var(--text-muted);
+}
+
+.obsidian-ai-settings-collapse-bar button {
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 2px 10px;
+	font-size: 0.85em;
+	cursor: pointer;
+	color: var(--text-normal);
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.obsidian-ai-settings-collapse-bar button:hover {
+	background: var(--background-modifier-hover);
+	border-color: var(--background-modifier-border-hover);
+}

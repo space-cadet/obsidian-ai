@@ -9,6 +9,7 @@ import { ToolResolver } from "./ToolResolver";
 /** Services shared by the capability-specific handlers. */
 export interface ToolHandlerContext {
 	app: App;
+	pluginId?: string;
 	resolver: ToolResolver;
 	settings?: ObsidianAISettings;
 	personaLoader?: PersonaLoader;
@@ -22,6 +23,7 @@ export interface ToolHandlerContext {
 /** Give each handler the same host services without repeating constructors. */
 export abstract class ToolHandlerBase {
 	protected readonly app: App;
+	protected readonly pluginId?: string;
 	protected readonly resolver: ToolResolver;
 	protected readonly settings?: ObsidianAISettings;
 	protected readonly personaLoader?: PersonaLoader;
@@ -33,6 +35,7 @@ export abstract class ToolHandlerBase {
 
 	protected constructor(context: ToolHandlerContext) {
 		this.app = context.app;
+		this.pluginId = context.pluginId;
 		this.resolver = context.resolver;
 		this.settings = context.settings;
 		this.personaLoader = context.personaLoader;

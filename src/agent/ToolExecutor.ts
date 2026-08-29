@@ -51,12 +51,14 @@ export class ToolExecutor {
 		getActiveSessionId?: () => string | null,
 		private integrationRegistry?: ProviderRegistry,
 		saveSettings?: () => Promise<void>,
+		pluginId?: string,
 		targetLocks: TargetLockManager = sharedTargetLocks,
 	) {
 		this.targetLocks = targetLocks;
 		this.resolver = new ToolResolver(app);
 		const context: ToolHandlerContext = {
 			app,
+			pluginId,
 			resolver: this.resolver,
 			settings,
 			personaLoader,

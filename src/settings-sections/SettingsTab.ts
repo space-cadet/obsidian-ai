@@ -64,6 +64,56 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
+	/** Check if a section is currently collapsed */
+	private isCollapsed(sectionId: string): boolean {
+		return this.plugin.settings.collapsedSections?.[sectionId] ?? false;
+	}
+
+	/** Toggle section collapse state and persist */
+	private async toggleSection(sectionId: string, sectionEl: HTMLElement, collapsed: boolean): Promise<void> {
+		const sections = this.plugin.settings.collapsedSections ?? {};
+		if (collapsed) {
+			sections[sectionId] = true;
+		} else {
+			delete sections[sectionId];
+		}
+		this.plugin.settings.collapsedSections = sections;
+		await this.plugin.saveSettings();
+
+		sectionEl.toggleClass('is-collapsed', collapsed);
+		const body = sectionEl.querySelector<HTMLElement>('.obsidian-ai-settings-section-body');
+		if (body) {
+			body.style.display = collapsed ? 'none' : '';
+		}
+	}
+
+	/** Expand or collapse all sections */
+	private async setAllCollapsed(collapsed: boolean): Promise<void> {
+		const sections = this.plugin.settings.collapsedSections ?? {};
+		const containerEl = this.containerEl;
+		containerEl.querySelectorAll<HTMLElement>('.obsidian-ai-settings-section').forEach((sectionEl) => {
+			const sectionId = sectionEl.id;
+			if (!sectionId) return;
+			if (collapsed) {
+				sections[sectionId] = true;
+			} else {
+				delete sections[sectionId];
+			}
+			sectionEl.toggleClass('is-collapsed', collapsed);
+			const body = sectionEl.querySelector<HTMLElement>('.obsidian-ai-settings-section-body');
+			if (body) {
+				body.style.display = collapsed ? 'none' : '';
+			}
+			const btn = sectionEl.querySelector<HTMLElement>('.obsidian-ai-settings-section-toggle');
+			if (btn) {
+				btn.setAttribute('aria-expanded', String(!collapsed));
+				btn.textContent = collapsed ? '▸' : '▾';
+			}
+		});
+		this.plugin.settings.collapsedSections = sections;
+		await this.plugin.saveSettings();
+	}
+
 	private get activeProfile(): ProviderProfile {
 		return getActiveProviderProfile(this.plugin.settings);
 	}
@@ -326,7 +376,23 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				renderDropdown(query);
 			});
 
-			// Hide dropdown on outside click
+			// ── Expand / Collapse All ──
+		const collapseWrap = containerEl.createDiv({
+			cls: 'obsidian-ai-settings-collapse-bar',
+		});
+		collapseWrap.createEl('span', { text: 'Sections:' });
+		const expandBtn = collapseWrap.createEl('button', {
+			text: 'Expand all',
+			attr: { type: 'button' },
+		});
+		const collapseBtn = collapseWrap.createEl('button', {
+			text: 'Collapse all',
+			attr: { type: 'button' },
+		});
+		expandBtn.addEventListener('click', () => this.setAllCollapsed(false));
+		collapseBtn.addEventListener('click', () => this.setAllCollapsed(true));
+
+		// Hide dropdown on outside click
 			document.addEventListener("click", (e) => {
 				if (!searchWrap.contains(e.target as Node)) {
 					searchDropdown.style.display = "none";
@@ -362,6 +428,57 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				const id = `obsidian-ai-settings-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 				const el = containerEl.querySelector<HTMLElement>(`#${id}`);
 				if (!el) return;
+
+				// Wrap existing section content in collapsible container
+				const headerId = `${id}-header`;
+				const bodyId = `${id}-body`;
+				const collapsed = this.isCollapsed(id);
+
+				// Create header row with toggle button
+				const header = el.createEl('div', {
+					cls: 'obsidian-ai-settings-section-header',
+					attr: { id: headerId },
+				});
+				// Move the existing heading into header
+				const existingHeading = el.querySelector<HTMLElement>('h2, h3, h4');
+				if (existingHeading) {
+					header.appendChild(existingHeading);
+				} else {
+					header.createEl('h2', { text: title });
+				}
+				const toggleBtn = header.createEl('button', {
+					cls: 'obsidian-ai-settings-section-toggle',
+					text: collapsed ? '▸' : '▾',
+					attr: {
+						type: 'button',
+						'aria-expanded': String(!collapsed),
+						'aria-controls': bodyId,
+					},
+				});
+				toggleBtn.addEventListener('click', () => {
+					const nowCollapsed = !el.hasClass('is-collapsed');
+					void this.toggleSection(id, el, nowCollapsed);
+					toggleBtn.setAttribute('aria-expanded', String(!nowCollapsed));
+					toggleBtn.textContent = nowCollapsed ? '▸' : '▾';
+				});
+
+				// Wrap all existing children (except header) in body
+				const body = el.createEl('div', {
+					cls: 'obsidian-ai-settings-section-body',
+					attr: { id: bodyId },
+				});
+				// Move all non-header children into body
+				Array.from(el.children).forEach((child) => {
+					if (child !== header && !(child as HTMLElement).hasClass('obsidian-ai-settings-section-header')) {
+						body.appendChild(child);
+					}
+				});
+
+				if (collapsed) {
+					el.addClass('is-collapsed');
+					body.style.display = 'none';
+				}
+
 				sections.push({ title, el });
 				registerSearchItems(el, title);
 			};

@@ -194,6 +194,9 @@ export interface ObsidianAISettings {
 	remoteStorage: RemoteStorageConfig;
 	// Component-level sync selection (T55)
 	syncComponents: SyncComponentConfig;
+
+	/** Which settings sections are collapsed (persisted UI state) */
+	collapsedSections?: Record<string, boolean>;
 }
 
 type LegacySettings = Partial<ObsidianAISettings> & {
@@ -456,6 +459,8 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 		persona: true,
 		usageStats: false,
 	},
+	// Collapsible section state (persisted)
+	collapsedSections: {},
 };
 
 export const normalizeSettings = (
@@ -651,6 +656,10 @@ export const normalizeSettings = (
 			persona: Boolean(merged.syncComponents?.persona ?? true),
 			usageStats: Boolean(merged.syncComponents?.usageStats ?? false),
 		},
+		collapsedSections:
+			typeof merged.collapsedSections === 'object' && merged.collapsedSections !== null
+				? merged.collapsedSections
+				: {},
 	};
 };
 
