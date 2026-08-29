@@ -6,6 +6,8 @@ export interface IntelligenceSettings {
 	personaPath: string;
 	memoryPath: string;
 	identityContextBudget: number;
+	/** Core memory size: small (50), medium (100), large (200) entries */
+	memoryCoreSize: "small" | "medium" | "large";
 	/** Auto-summarize sessions when they end (e.g. user starts new session) */
 	autoSummarize: boolean;
 	/** Min messages before auto-summarization triggers */
@@ -396,6 +398,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 		personaPath: "intelligence/persona.md",
 		memoryPath: "intelligence/memory.md",
 		identityContextBudget: 2000,
+		memoryCoreSize: "medium",
 		autoSummarize: false,
 		autoSummarizeMinMessages: 4,
 		enableMemoryAuditTool: false,
@@ -566,6 +569,8 @@ export const normalizeSettings = (
 				merged.intelligence?.memoryPath ?? "intelligence/memory.md",
 			identityContextBudget:
 				merged.intelligence?.identityContextBudget ?? 2000,
+			memoryCoreSize:
+				merged.intelligence?.memoryCoreSize ?? "medium",
 			autoSummarize: Boolean(merged.intelligence?.autoSummarize ?? false),
 			autoSummarizeMinMessages:
 				merged.intelligence?.autoSummarizeMinMessages ?? 4,

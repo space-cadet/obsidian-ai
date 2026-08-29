@@ -73,6 +73,27 @@ export function renderIntelligenceSection(
 		});
 
 	new Setting(sectionEl)
+		.setName("Memory core size")
+		.setDesc(
+			"How many memories stay in the 'hot' tier (always loaded into system prompt). " +
+				"Small = 50, Medium = 100, Large = 200. Larger = more context but slower loads.",
+		)
+		.addDropdown((dropdown) => {
+			dropdown
+				.addOption("small", "Small (50)")
+				.addOption("medium", "Medium (100)")
+				.addOption("large", "Large (200)")
+				.setValue(plugin.settings.intelligence.memoryCoreSize)
+				.onChange(async (value) => {
+					plugin.settings.intelligence.memoryCoreSize = value as
+						| "small"
+						| "medium"
+						| "large";
+					await saveSettings();
+				});
+		});
+
+	new Setting(sectionEl)
 		.setName("Persona file path")
 		.setDesc(
 			"Path to the AI's static identity file, relative to the plugin folder. " +
