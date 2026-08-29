@@ -1,6 +1,6 @@
 # Orchestration Decomposition Design
 *Created: 2026-08-17 06:07 IST*
-*Last Updated: 2026-08-27 18:10:37 IST*
+*Last Updated: 2026-08-29 11:41:51 IST*
 *Applies to: obsidian-ai plugin codebase — T46*
 
 ## Overview
@@ -11,6 +11,11 @@ modules in the obsidian-ai codebase: `ToolExecutor.ts`,
 agentic tool calling work (T43/T44) and are now the primary maintainability
 risks. T60/T60a own capability semantics; T46/T46a own the physical module
 arrangement and turn-lifecycle extraction.
+
+Current status: the main source reorganization is merged. T46a is complete;
+T46 remains open only for provider-switching and real-provider runtime
+acceptance. This document keeps the original plan below as history and adds
+the current evidence at the end.
 
 ## Guiding Principles
 
@@ -127,10 +132,8 @@ The first implementation slice follows the design above:
 - Prompt text and OpenResponses tools are built from the resolved definitions.
 
 The focused tool/provider tests, full test suite, TypeScript check, and
-production build passed after this slice. The remaining work is intentionally
-open: move the remaining UI callback and approval lifecycle boundaries out of
-the hook, then revisit
-`api.ts` and `main.ts`.
+production build passed after this slice. The remaining work was completed by
+the later T46a and API/lifecycle module changes recorded below.
 
 ## Phase 1a: Chat Turn Coordinator (T46a)
 
@@ -146,7 +149,7 @@ state and command adapter.
 
 ---
 
-## Phase 2: api.ts (765 → ~300 lines)
+## Phase 2: api.ts (765 → ~300 lines) — complete
 
 ### Current State
 `ChatAPIManager` does:
@@ -216,7 +219,7 @@ export class ProviderFactory {
 
 ---
 
-## Phase 3: main.ts (1,785 → ~300–400 lines)
+## Phase 3: main.ts (1,785 → ~300–400 lines) — complete
 
 ### Current State
 `ObsidianAIPlugin` does:
@@ -270,10 +273,10 @@ export default class ObsidianAIPlugin extends Plugin {
 2. **T48b/T48c/T62a plus T64b** establish the model-history policy and its
    retention evidence.
 3. **Phase 1a (T46a)** extracts the chat-turn coordinator using those owners.
-4. **Phase 2 (api.ts)** can follow as an independent provider/history/streaming
+4. **Phase 2 (api.ts)** is complete as an independent provider/history/streaming
    decomposition.
-5. **Phase 3 (main.ts)** should come last because it coordinates the final
-   storage, API, and UI module shapes.
+5. **Phase 3 (main.ts)** is complete as the final storage, API, and UI
+   lifecycle coordination layer.
 
 ## Risk Mitigation
 
@@ -288,7 +291,20 @@ export default class ObsidianAIPlugin extends Plugin {
 
 | File | Current | Target | Hard Limit |
 |------|---------|--------|------------|
-| ToolExecutor.ts | 265 | ~400 | 500 |
-| useMessageActions.ts | 1,350 | thin UI adapter; see T46a | — |
-| api.ts | 765 | ~300 | 400 |
-| main.ts | 1,785 | ~300–400 | 400 |
+| ToolExecutor.ts | 326 | ~400 | 500 |
+| useMessageActions.ts | 220 | thin UI adapter; see T46a | — |
+| api.ts | 363 | ~300 | 400 |
+| main.ts | 228 | ~300–400 | 400 |
+
+## Reconciliation and next review — 2026-08-29
+
+The current tree contains the domain handler split, shared tool context,
+resolved registry, React-free turn coordinator, provider/history/streaming
+modules, and registration/event/storage modules. `ChatApp.tsx` remains about
+1,023 lines as a composition layer.
+
+The remaining review follow-ups are non-blocking cleanup: simplify the long
+executor setup, remove the temporary `__ambiguous` file property, move the
+cancellation check earlier, document pagination lifetime, and tighten a few
+`any` casts. The next session will rerun Matt Pocock's code review skill on
+the current tree before deciding whether any of these still matter.

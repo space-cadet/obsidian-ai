@@ -1,6 +1,31 @@
 # Active Context
 
-*Last Updated: 2026-08-29 10:49 IST*
+*Last Updated: 2026-08-29 11:41:51 IST*
+
+### 2026-08-29 — Architecture status and next review
+
+The main architecture reorganization is present on `main` and `origin/main`
+at `b49ad7d`. The four review targets are now small coordinators or adapters:
+`ToolExecutor.ts` is 326 lines, `useMessageActions.ts` is 220 lines,
+`api.ts` is 363 lines, and `main.ts` is 228 lines. The extracted handler,
+turn, provider, history, streaming, registration, event, and storage modules
+are present.
+
+T46a is complete. T46 remains active only for provider-switching and real-
+provider runtime acceptance. The review's non-blocking cleanup items remain:
+the long executor setup, the temporary `__ambiguous` file property, the
+late cancellation check, pagination documentation, and a few `any` casts.
+`ChatApp.tsx` remains about 1,023 lines but is still treated as a composition
+layer rather than a new T46 extraction target.
+
+T48b/T48c local work is recorded in commit `b49ad7d`: shared tool replay
+serialization, pairing checks, compaction response validation, source IDs,
+derived-summary marking, and the T64b retention sweep. T64b is complete.
+Exact historical retrieval, an inspectable compaction record, and provider or
+plugin acceptance remain open.
+
+Next session: rerun Matt Pocock's code review skill against the current tree
+and refresh this status from new evidence.
 
 ### 2026-08-29 — T61 self-settings integration acceptance ✅
 

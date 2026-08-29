@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-29 10:49 IST*
+*Last Updated: 2026-08-29 11:41:51 IST*
 
 ## Overview
 
@@ -39,7 +39,6 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T63 | Context Item Caching | 🔄 | MEDIUM | 2026-08-26 | — | [Details](tasks/T63.md) |
 | T64 | Context Optimization Benchmark Harness | 🔄 | HIGH | 2026-08-26 | T48a | [Details](tasks/T64.md) |
 | T64a | Pareto Frontier Sweep | 🔄 | HIGH | 2026-08-27 | T64, T64c | [Details](tasks/T64a.md) |
-| T64b | Preserve Mode Content Retention | 🔄 | HIGH | 2026-08-27 | T64 | [Details](tasks/T64b.md) |
 | T64c | Fidelity-Weighted Scoring | 🔄 | MEDIUM | 2026-08-27 | T64, T64b | [Details](tasks/T64c.md) |
 | T64d | Live Estimator Validation | 🔄 | MEDIUM | 2026-08-27 | T64, T6a | [Details](tasks/T64d.md) |
 | T18a | Bounded Web Page Retrieval Tool | ⏸️ | MEDIUM | 2026-08-25 | T18, T60a, T60c | [Details](tasks/T18a.md) |
@@ -93,6 +92,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T60a | Canonical Tool Registry and Dynamic Exposure | ✅ | HIGH | 2026-08-25 | 2026-08-29 | T60, T39a | [Details](tasks/T60a.md) |
 | T60c | Validated Execution Boundary and Reliability | ✅ | HIGH | 2026-08-25 | 2026-08-29 | T60, T60a, T60b | [Details](tasks/T60c.md) |
 | T61 | Self-Settings Agent Tools | ✅ | HIGH | 2026-08-26 | 2026-08-29 | — | [Details](tasks/T61.md) |
+| T64b | Preserve Mode Content Retention | ✅ | HIGH | 2026-08-27 | 2026-08-29 | T64 | [Details](tasks/T64b.md) |
 
 ## Task Relationships
 
@@ -239,7 +239,7 @@ T64: Context Optimization Benchmark Harness
 
 ## Status Summary
 
-- **Active**: 32
-- **Completed**: 43
+- **Active**: 31
+- **Completed**: 44
 - **Paused**: 2
 - **Total**: 77

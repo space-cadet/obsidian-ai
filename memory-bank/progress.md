@@ -1,3 +1,19 @@
+### 2026-08-29 — Architecture status handoff ✅
+
+- Reconciled the architecture review with the current checkout and remote:
+  both point to `b49ad7d` and the worktree is clean.
+- Confirmed the main reorganization: `ToolExecutor.ts` 326 lines,
+  `useMessageActions.ts` 220, `api.ts` 363, and `main.ts` 228, with the
+  extracted handler, turn, provider, history, streaming, registration, event,
+  and storage modules present.
+- Recorded T46a as complete and T46 as still open only for provider switching
+  and real-provider runtime acceptance. Non-blocking review cleanup items and
+  stale architecture-guide text remain visible for the next review.
+- Recorded the T48b/T48c replay and compaction work plus the T64b retention
+  sweep from `b49ad7d`. T64b is complete; exact history retrieval and an
+  inspectable compaction record remain open.
+- Next session: rerun Matt Pocock's code review skill on the current tree.
+
 ### 2026-08-29 — T61 self-settings integration acceptance ✅
 
 - Added end-to-end `ToolExecutor` coverage for sanitized `read_settings`

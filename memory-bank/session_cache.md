@@ -1,6 +1,24 @@
 # Session Cache
 
-*Last Updated: 2026-08-29 09:45:48 IST*
+*Last Updated: 2026-08-29 11:41:51 IST*
+
+## 2026-08-29 — Architecture status handoff
+
+**Session title:** T46, T46a, T48b, T48c, T60a, T60c, T61, T64b: Record architecture status and defer fresh code review
+
+- Main and `origin/main` are synchronized at `b49ad7d`.
+- The T46/T46a structural work is present: domain handlers, shared tool
+  context, turn coordinator, turn output/persistence modules, provider/history/
+  streaming modules, and lifecycle modules.
+- Current file sizes: `ToolExecutor.ts` 326 lines,
+  `useMessageActions.ts` 220, `api.ts` 363, `main.ts` 228.
+- T46a is complete. T46 still awaits provider-switching and real-provider
+  runtime acceptance. Several non-blocking review cleanup items remain.
+- T48b/T48c and T64b changes and verification are recorded in commit
+  `b49ad7d`; T64b is complete. Exact history retrieval and an inspectable
+  compaction record remain open.
+- Next session action: rerun Matt Pocock's code review skill and refresh the
+  architecture status.
 
 ## 2026-08-29 — Memory Bank Task Registry Cleanup
 
