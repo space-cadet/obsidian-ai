@@ -1,6 +1,15 @@
 # Edit History
 
-*Last Updated: 2026-08-29 21:30:09 IST*
+*Last Updated: 2026-08-29 23:08:00 IST*
+
+#### 23:08:00 IST - T65: Memory-bank fix — recovered overwritten session
+- Restored `memory-bank/sessions/2026-08-29-evening.md` from commit `a8e4b33`
+  (original 18:21 session was overwritten by 21:32 session)
+- Created `memory-bank/sessions/2026-08-29-late-evening.md` for T65 work
+- Updated `memory-bank/session_cache.md` — added T65 entry, fixed timestamp
+- Updated `memory-bank/activeContext.md` — added T65 context at top
+- Updated `memory-bank/progress.md` — added T65 progress entry
+- Updated `memory-bank/tasks/T65.md` — corrected to follow task template
 
 #### 21:30:09 IST - T64d, T26: Correct full-session title
 - Updated `memory-bank/sessions/2026-08-29-night.md` - Expanded the session title and scope to cover live token validation and the agentic-memory audit

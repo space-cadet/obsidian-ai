@@ -1,6 +1,19 @@
 # Session Cache
 
-*Last Updated: 2026-08-29 21:29:46 IST*
+*Last Updated: 2026-08-29 22:58:00 IST*
+
+## 2026-08-29 — T65: Three-tier memory system (late evening)
+
+**Session title:** T65: Three-Tier Memory System with Auto-Curation
+
+- Fixed `identityContextBudget` dead code in `buildSystemPrompt()`.
+- Added nested settings tool support and `get_plugin_info` tool.
+- Implemented `ThreeTierMemoryStore` with core/staged/archive split,
+  score-based curation, and migration from legacy `memory.json`.
+- Added `memoryCoreSize` dropdown (Small/Medium/Large) to Intelligence settings.
+- 403 tests passing. All commits pushed to `origin/main`.
+
+See `sessions/2026-08-29-late-evening.md` for the complete record.
 
 ## 2026-08-29 — T64d, T26: Live token validation, agentic memory audit, and Memory Bank closeout
 

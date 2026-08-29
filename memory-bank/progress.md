@@ -1,3 +1,14 @@
+### 2026-08-29 — T65: Three-tier memory system (late evening) 🔄
+
+- Fixed `identityContextBudget` dead code in `buildSystemPrompt()`.
+- Added nested settings tool support (`resolveSettingPath()` for dot-notation).
+- Added `get_plugin_info` tool for agent self-awareness.
+- Implemented `ThreeTierMemoryStore` with core/staged/archive split,
+  score-based curation, access tracking, token budgeting, and migration.
+- Added `memoryCoreSize` dropdown (Small/Medium/Large) to Intelligence settings.
+- 403 tests passing. All pushed to `origin/main`.
+- Next: Wire into system prompt, agent curation tools, TF-IDF index.
+
 ### 2026-08-29 — T64, T64d, T48d live token validation
 
 - Recorded the live OpenRouter run using `openai/gpt-4o-mini`.

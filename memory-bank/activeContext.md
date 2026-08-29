@@ -1,6 +1,20 @@
 # Active Context
 
-*Last Updated: 2026-08-29 21:26:31 IST*
+*Last Updated: 2026-08-29 22:58:00 IST*
+
+### 2026-08-29 — T65: Three-tier memory system (late evening) 🔄
+
+Implemented the three-tier memory architecture (core/staged/archive) with
+score-based auto-curation. Core tier (50-200 entries) feeds the system prompt.
+Staged tier holds new memories awaiting evaluation. Archive tier is search-only.
+
+Key commits: `e32f8da` (budget wiring), `5367ea0` (nested settings),
+`f536c5b` (plugin info), `39c7f33` (ThreeTierMemoryStore),
+`f84323e` (memoryCoreSize UI).
+
+Next: Wire `ThreeTierMemoryStore` into `buildSystemPrompt()`, add agent
+curation tools (`evaluate_staged`, `cull_core`), implement TF-IDF index for
+archive search, add auto-curation hooks.
 
 ### 2026-08-29 — T64d, T26: Live token validation and agentic-memory audit
 
