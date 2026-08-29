@@ -38,6 +38,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T62a | T62 Elision Regression — Agent Workflow Breakage | 🔄 | HIGH | 2026-08-26 | T62 | [Details](tasks/T62a.md) |
 | T63 | Context Item Caching | 🔄 | MEDIUM | 2026-08-26 | — | [Details](tasks/T63.md) |
 | T64 | Context Optimization Benchmark Harness | 🔄 | HIGH | 2026-08-26 | T48a | [Details](tasks/T64.md) |
+| T65 | Three-Tier Memory System with Auto-Curation | 🔄 | HIGH | 2026-08-29 | T26, T61 | [Details](tasks/T65.md) |
 | T64a | Pareto Frontier Sweep | 🔄 | HIGH | 2026-08-27 | T64, T64c | [Details](tasks/T64a.md) |
 | T64c | Fidelity-Weighted Scoring | 🔄 | MEDIUM | 2026-08-27 | T64, T64b | [Details](tasks/T64c.md) |
 | T64d | Live Estimator Validation | ✅ | MEDIUM | 2026-08-27 | 2026-08-29 | T64, T6a | [Details](tasks/T64d.md) |
