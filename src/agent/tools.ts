@@ -642,6 +642,13 @@ export const updateSettingTool = t({
 	}),
 });
 
+export const getPluginInfoTool = t({
+	description:
+		"Get information about the plugin: name, version, author, description, and available capabilities. " +
+		"Use this when the user asks what version you are, what you can do, or who made you.",
+	inputSchema: z.object({}),
+});
+
 export const noteTools = {
 	read_note: readNoteTool,
 	edit_note: editNoteTool,
@@ -671,4 +678,5 @@ export const noteTools = {
 	search_past_sessions: searchPastSessionsTool,
 	read_settings: readSettingsTool,
 	update_setting: updateSettingTool,
+	get_plugin_info: getPluginInfoTool,
 };

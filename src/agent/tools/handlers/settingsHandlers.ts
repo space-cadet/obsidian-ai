@@ -75,6 +75,35 @@ export class SettingsHandlers extends ToolHandlerBase {
 		};
 	}
 
+	async getPluginInfo(): Promise<ToolResult> {
+		// Read manifest.json from the plugin directory
+		const manifestPath = `${this.app.vault.configDir}/plugins/obsidian-ai/manifest.json`;
+		try {
+			const adapter = this.app.vault.adapter;
+			if (!(await adapter.exists(manifestPath))) {
+				return { error: "Plugin manifest not found." };
+			}
+			const content = await adapter.read(manifestPath);
+			const manifest = JSON.parse(content);
+			return {
+				success: true,
+				content: JSON.stringify({
+					name: manifest.name,
+					version: manifest.version,
+					author: manifest.author,
+					authorUrl: manifest.authorUrl,
+					description: manifest.description,
+					minAppVersion: manifest.minAppVersion,
+					isDesktopOnly: manifest.isDesktopOnly,
+				}, null, 2),
+			};
+		} catch (e: any) {
+			return {
+				error: `Failed to read plugin manifest: ${e.message || String(e)}`,
+			};
+		}
+	}
+
 	private async _auditSettingChange(
 		key: string,
 		value: unknown,

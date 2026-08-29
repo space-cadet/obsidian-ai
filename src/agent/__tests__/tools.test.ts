@@ -31,6 +31,7 @@ const EXPECTED_TOOLS = [
 	"search_past_sessions",
 	"read_settings",
 	"update_setting",
+	"get_plugin_info",
 ];
 
 describe("noteTools", () => {

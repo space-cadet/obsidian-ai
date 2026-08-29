@@ -250,6 +250,7 @@ export class ToolExecutor {
 				this.settingsHandlers.updateSetting(
 					call.args as { key: string; value: unknown },
 				),
+			get_plugin_info: (call) => this.settingsHandlers.getPluginInfo(),
 		});
 		const providerDefinitions: ToolDefinition[] =
 			this.integrationRegistry?.getToolDefinitions() ?? [];
