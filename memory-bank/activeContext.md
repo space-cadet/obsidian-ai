@@ -1,20 +1,22 @@
 # Active Context
 
-*Last Updated: 2026-08-29 18:21:47 IST*
+*Last Updated: 2026-08-29 19:04:00 IST*
 
-### 2026-08-29 — T64, T64d, T48d live token validation
+### 2026-08-29 — T64d expanded live token validation ✅
 
 This separate session recorded the live benchmark run against OpenRouter with
-`openai/gpt-4o-mini`. The run completed 16 requests across four fixtures and
-four strategies. Provider-reported prompt usage was lower than the local
-estimate in 15 requests; the average difference was -65.2%, ranging from
--98.88% to +6.35%.
+`openai/gpt-4o-mini`. The expanded run completed 20 requests across four
+fixtures and five strategies, including the missing deterministic compaction
+projection. Provider-reported prompt usage was lower than the local estimate
+in 18 requests; the average difference was -54.7%, ranging from -98.88% to
++18.54%. Provider-reported benchmark cost was $0.00628440.
 
-T64d now has the per-request results and recommendation. Do not apply one
-global correction to `estimateTokens()` yet. T48d should prefer provider usage
-when available and label local values as estimates otherwise. T64d still needs
-the fifth compaction configuration and a recorded provider cost before it can
-close. T46 provider-switching acceptance was not tested by this fixture run.
+T64d is complete with the per-request results, cost evidence, and
+recommendation. Do not apply one global correction to `estimateTokens()` yet.
+T48d should prefer provider usage when available and label local values as
+estimates otherwise. The benchmark validates the compaction payload projection,
+not the separate production summary-generation request. T46
+provider-switching acceptance was not tested by this fixture run.
 
 ### 2026-08-29 — T62a automatic agent-mode preservation ✅
 

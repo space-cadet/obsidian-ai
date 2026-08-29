@@ -1,6 +1,26 @@
 # Session Cache
 
-*Last Updated: 2026-08-29 18:30:40 IST*
+*Last Updated: 2026-08-29 19:04:00 IST*
+
+## 2026-08-29 — T64d expanded live validation closeout
+
+**Session title:** T64d: Expanded live estimator validation with compaction and provider cost
+
+- Added the missing deterministic `compaction` configuration to the live
+  benchmark and completed 20/20 requests across four fixtures and five
+  strategies.
+- Added process-only `OPENROUTER_API_KEY` support and OpenRouter
+  `usage.cost` reporting; the supplied key was not persisted.
+- Provider-reported benchmark cost was `$0.00628440`; the separate metadata
+  probe cost `$0.00000240`.
+- The average estimate difference was `-54.7%`, ranging from `-98.88%` to
+  `+18.54%`. No global estimator correction is recommended.
+- T64d is complete. T48d should prefer provider usage and label local values as
+  estimates. The production summary-generation cost remains outside this
+  deterministic projection benchmark.
+
+See `sessions/2026-08-29-t64d-expanded-live-validation.md` and
+`tasks/T64d.md` for the full record.
 
 ## 2026-08-29 — T46, T48, T48a, T48b, T48c, T62a, T64, T64d, T48d closeout
 

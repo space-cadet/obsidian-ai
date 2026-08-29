@@ -126,17 +126,17 @@ export function printLiveReport(results: LiveResult[]): void {
 		"╚══════════════════════════════════════════════════════════════════════════════╝\n",
 	);
 
-	const header = `${pad("Fixture", 28)} | ${pad("Strategy", 10)} | ${pad("Est.", 8)} | ${pad("Actual", 8)} | ${pad("Δ%", 8)} | ${pad("Model", 12)}`;
+	const header = `${pad("Fixture", 28)} | ${pad("Strategy", 10)} | ${pad("Est.", 8)} | ${pad("Actual", 8)} | ${pad("Δ%", 8)} | ${pad("Model", 12)} | Cost`;
 	console.log(header);
-	console.log("─".repeat(90));
+	console.log("─".repeat(105));
 
 	for (const r of results) {
 		console.log(
-			`${pad(r.fixture.slice(0, 26), 28)} | ${pad(r.strategy, 10)} | ${formatNumber(r.estimated_tokens, 8)} | ${formatNumber(r.actual_prompt_tokens, 8)} | ${formatNumber(r.delta_percent, 8)}% | ${pad(r.model.slice(0, 10), 12)}`,
+			`${pad(r.fixture.slice(0, 26), 28)} | ${pad(r.strategy, 10)} | ${formatNumber(r.estimated_tokens, 8)} | ${formatNumber(r.actual_prompt_tokens, 8)} | ${formatNumber(r.delta_percent, 8)}% | ${pad(r.model.slice(0, 10), 12)} | ${r.provider_cost === undefined ? "n/a" : `$${r.provider_cost.toFixed(8)}`}`,
 		);
 	}
 
-	console.log("─".repeat(90));
+	console.log("─".repeat(105));
 
 	// Summary stats
 	if (results.length > 0) {

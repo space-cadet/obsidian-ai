@@ -120,6 +120,7 @@ npx tsx benchmarks/context-benchmark.ts --live --provider openrouter
 
 Captures:
 - Provider-reported `prompt_tokens` / `completion_tokens` / `total_tokens`
+- Provider-reported `usage.cost` when the provider exposes billing metadata
 - Comparison: estimated vs. actual (delta %)
 - Per-fixture/strategy breakdown
 
@@ -131,6 +132,15 @@ attachment-session-15-turn   | baseline   |    19597 |      220 |   -98.88% | op
 coding-session-30-turns      | elide      |     2817 |     1379 |   -51.05% | openai/gpt
 research-session-20-turns    | preserve   |     2200 |     1668 |   -24.18% | openai/gpt
 ```
+
+The live matrix includes `baseline`, `elide`, `preserve`, `budget`, and
+`compaction`. The compaction entry uses a deterministic local derived-summary
+projection with the newest four messages preserved. It measures the resulting
+provider payload and does not include a separate LLM summarization request.
+
+For one-off validation without changing the local OpenClaw configuration, the
+OpenRouter key may be supplied through `OPENROUTER_API_KEY`. The key is read
+only from the process environment and is not written to benchmark output.
 
 This costs money and should be used sparingly — primarily to validate the
 estimator's accuracy, not for rapid iteration. Estimated cost: ~$0.01-0.05

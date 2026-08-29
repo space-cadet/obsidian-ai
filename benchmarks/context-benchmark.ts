@@ -10,6 +10,7 @@ import {
 	type ContextBudgetOptions,
 } from "../src/context/contextBudget";
 import { estimateTokens } from "../src/context/tokenEstimator";
+import { formatCompactionSummary } from "../src/context/semanticCompaction";
 import type { ChatMessage, ContentPart } from "../src/types";
 import type { ToolCall, ToolResult } from "../src/agent/types";
 import { printReport, saveJsonReport, printLiveReport } from "./report";
@@ -68,6 +69,8 @@ export interface LiveResult {
 	actual_total_tokens: number;
 	delta_percent: number;
 	model: string;
+	generation_id?: string;
+	provider_cost?: number;
 }
 
 // ─── Token Counting ──────────────────────────────────────────────────────────
@@ -333,6 +336,16 @@ interface ProviderConfig {
 
 function loadProviderConfig(providerName: string): ProviderConfig | null {
 	try {
+		const environmentKey = process.env.OPENROUTER_API_KEY;
+		if (providerName === "openrouter" && environmentKey) {
+			return {
+				name: "openrouter",
+				baseUrl: "https://openrouter.ai/api/v1",
+				apiKey: environmentKey,
+				model: "openai/gpt-4o-mini",
+			};
+		}
+
 		const configPath = join(
 			process.env.HOME || "/home/cloudy",
 			".openclaw",
@@ -363,6 +376,51 @@ function loadProviderConfig(providerName: string): ProviderConfig | null {
 	} catch {
 		return null;
 	}
+}
+
+function compactSnippet(message: ChatMessage): string {
+	const toolText = (message.contentParts ?? [])
+		.filter((part) => part.type === "tool_call")
+		.map((part) => {
+			const result =
+				part.result?.error ?? part.result?.content ?? "pending";
+			return `${part.call.toolName}: ${result}`;
+		})
+		.join("; ");
+	const text = [message.content, toolText].filter(Boolean).join(" ");
+	return text.replace(/\s+/g, " ").trim().slice(0, 320);
+}
+
+/**
+ * Build a deterministic local stand-in for the production compaction output.
+ * The live benchmark measures the resulting request window; it does not
+ * spend an additional summarization request for every fixture.
+ */
+function buildCompactionHistory(messages: ChatMessage[]): HistoryEntry[] {
+	const keepRecent = 4;
+	const older = messages.slice(0, -keepRecent);
+	const recent = messages.slice(-keepRecent);
+	const summary = formatCompactionSummary({
+		keyDecisions: older
+			.filter((message) => message.role === "assistant")
+			.slice(-4)
+			.map(compactSnippet)
+			.filter(Boolean),
+		toolResults: toolContentTexts(older).map((text) =>
+			text.replace(/\s+/g, " ").trim().slice(0, 320),
+		),
+		userIntent: older
+			.filter((message) => message.role === "user")
+			.slice(-3)
+			.map(compactSnippet)
+			.filter(Boolean),
+		openQuestions: [],
+	});
+
+	return [
+		{ role: "assistant", content: summary },
+		...buildHistoryWithTools(recent, keepRecent, 4000, "preserve"),
+	];
 }
 
 function loadCustomKimiKey(): string | null {
@@ -402,6 +460,17 @@ async function runLiveBenchmark(
 			content: m.content || "",
 		}));
 		processedMessages = result.history;
+	} else if (strategy === "compaction") {
+		history = buildCompactionHistory(fixture.messages);
+		processedMessages = history.map((entry, index) => ({
+			id: `benchmark-compaction-${index}`,
+			role: entry.role === "tool" ? "assistant" : entry.role,
+			content:
+				typeof entry.content === "string"
+					? entry.content
+					: JSON.stringify(entry.content),
+			timestamp: index,
+		}));
 	} else {
 		// baseline — raw messages
 		history = fixture.messages.map((m) => ({
@@ -411,7 +480,10 @@ async function runLiveBenchmark(
 		processedMessages = fixture.messages;
 	}
 
-	const estimatedTokens = countTokens(processedMessages);
+	const estimatedTokens =
+		strategy === "compaction"
+			? countTokens(history)
+			: countTokens(processedMessages);
 
 	// Convert to API format (provider-specific)
 	const messages =
@@ -472,6 +544,33 @@ async function runLiveBenchmark(
 
 	const data = await response.json();
 	const usage = data.usage;
+	let providerCost =
+		typeof usage?.cost === "number"
+			? usage.cost
+			: typeof usage?.cost === "string"
+				? Number(usage.cost)
+				: undefined;
+	if (provider.name === "openrouter" && typeof data.id === "string") {
+		try {
+			const generationResponse = await fetch(
+				`${provider.baseUrl}/generation?id=${encodeURIComponent(data.id)}`,
+				{
+					headers: {
+						Authorization: `Bearer ${provider.apiKey}`,
+						"HTTP-Referer": "https://quantumofgravity.com",
+						"X-Title": "Obsidian AI Benchmark",
+					},
+				},
+			);
+			if (generationResponse.ok) {
+				const generationData = await generationResponse.json();
+				const cost = generationData.data?.total_cost;
+				if (typeof cost === "number") providerCost = cost;
+			}
+		} catch {
+			// Usage remains valid even if the optional cost lookup is unavailable.
+		}
+	}
 
 	return {
 		fixture: fixture.name,
@@ -487,6 +586,8 @@ async function runLiveBenchmark(
 			).toFixed(2),
 		),
 		model: provider.model,
+		generation_id: typeof data.id === "string" ? data.id : undefined,
+		provider_cost: providerCost,
 	};
 }
 
@@ -1062,7 +1163,13 @@ async function runLiveBenchmarks(providerName: string): Promise<LiveResult[]> {
 	}
 
 	const fixtures = loadFixtures();
-	const strategies = ["baseline", "elide", "preserve", "budget"];
+	const strategies = [
+		"baseline",
+		"elide",
+		"preserve",
+		"budget",
+		"compaction",
+	];
 	const results: LiveResult[] = [];
 
 	console.log(
