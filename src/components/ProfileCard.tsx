@@ -104,6 +104,7 @@ function ProfileEditForm({
 		profile.modelCache?.models ?? [],
 	);
 	const [modelSearch, setModelSearch] = useState("");
+	const [showApiKey, setShowApiKey] = useState(false);
 	const [testStatus, setTestStatus] = useState<null | {
 		ok: boolean;
 		message: string;
@@ -306,16 +307,11 @@ function ProfileEditForm({
 			{draft.provider !== "ollama" && (
 				<div className="obsidian-ai-profile-edit-row">
 					<label>API Key</label>
-					<input
-						type="password"
-						value={draft.apiKey || ""}
-						onChange={(e) => updateDraft("apiKey", e.target.value)}
-						placeholder={
-							draft.provider === "agent"
-								? "Bearer token…"
-								: "sk-…"
-						}
-					/>
+					<div className="obsidian-ai-api-key-control">
+						<input type={showApiKey ? "text" : "password"} value={draft.apiKey || ""} onChange={(e) => updateDraft("apiKey", e.target.value)} placeholder={draft.provider === "agent" ? "Bearer token…" : "sk-…"} />
+						<button type="button" aria-label={showApiKey ? "Hide API key" : "Show API key"} onClick={() => setShowApiKey((visible) => !visible)}>{showApiKey ? "◉" : "◌"}</button>
+						<button type="button" aria-label="Copy API key" onClick={() => { void navigator.clipboard?.writeText(draft.apiKey || ""); }}>⧉</button>
+					</div>
 				</div>
 			)}
 

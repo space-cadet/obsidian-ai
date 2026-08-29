@@ -64,7 +64,7 @@ export function renderSyncSection(
 		attr: { id: "obsidian-ai-settings-multi-user-chat-relay" },
 	});
 
-	section.createEl("h2", { text: "Multi-User Chat Relay" });
+	section.createEl("h3", { text: "Multi-User Chat Relay" });
 
 	const desc = section.createEl("p", { cls: "setting-item-description" });
 	desc.textContent =

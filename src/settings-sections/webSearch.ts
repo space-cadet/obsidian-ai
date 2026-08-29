@@ -1,7 +1,7 @@
 import { Setting } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { WebSearchProvider } from "../settings";
-import { createSection } from "./helpers";
+import { createPasswordInput, createSection } from "./helpers";
 
 export function renderWebSearchSection(
 	containerEl: HTMLElement,
@@ -42,15 +42,7 @@ export function renderWebSearchSection(
 			.setDesc(
 				"Your Brave Search API key. Get one at https://brave.com/search/api/ (2000 free queries/month).",
 			)
-			.addText((text) => {
-				text.setPlaceholder("BS...")
-					.setValue(plugin.settings.braveApiKey)
-					.inputEl.addEventListener("blur", async () => {
-						plugin.settings.braveApiKey = text.getValue().trim();
-						await saveSettings();
-					});
-				text.inputEl.type = "password";
-			});
+			.addText((text) => { const input = createPasswordInput(text.inputEl.parentElement!, { value: plugin.settings.braveApiKey, placeholder: "BS...", onChange: async (value) => { plugin.settings.braveApiKey = value.trim(); await saveSettings(); } }); text.inputEl.remove(); void input; });
 	}
 
 	// Tavily API key (only shown when Tavily is selected)
@@ -60,15 +52,7 @@ export function renderWebSearchSection(
 			.setDesc(
 				"Your Tavily API key. Get one at https://tavily.com/ (free tier available).",
 			)
-			.addText((text) => {
-				text.setPlaceholder("tvly-...")
-					.setValue(plugin.settings.tavilyApiKey)
-					.inputEl.addEventListener("blur", async () => {
-						plugin.settings.tavilyApiKey = text.getValue().trim();
-						await saveSettings();
-					});
-				text.inputEl.type = "password";
-			});
+			.addText((text) => { const input = createPasswordInput(text.inputEl.parentElement!, { value: plugin.settings.tavilyApiKey, placeholder: "tvly-...", onChange: async (value) => { plugin.settings.tavilyApiKey = value.trim(); await saveSettings(); } }); text.inputEl.remove(); void input; });
 	}
 
 	// Exa API key (only shown when Exa is selected)
@@ -78,15 +62,7 @@ export function renderWebSearchSection(
 			.setDesc(
 				"Your Exa API key. Get one at https://exa.ai/ (free tier available).",
 			)
-			.addText((text) => {
-				text.setPlaceholder("exa-...")
-					.setValue(plugin.settings.exaApiKey)
-					.inputEl.addEventListener("blur", async () => {
-						plugin.settings.exaApiKey = text.getValue().trim();
-						await saveSettings();
-					});
-				text.inputEl.type = "password";
-			});
+			.addText((text) => { const input = createPasswordInput(text.inputEl.parentElement!, { value: plugin.settings.exaApiKey, placeholder: "exa-...", onChange: async (value) => { plugin.settings.exaApiKey = value.trim(); await saveSettings(); } }); text.inputEl.remove(); void input; });
 	}
 
 	// SearXNG URL (only shown when SearXNG is selected)

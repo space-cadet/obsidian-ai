@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { createRoot } from "react-dom/client";
 import ObsidianAIPlugin from "../main";
 import { createSection } from "./helpers";
+import { createSliderWithValue } from "./helpers";
 import AIPruneModal from "../components/presentational/AIPruneModal";
 import { MemoryOptimizer } from "../intelligence/MemoryOptimizer";
 
@@ -140,25 +141,15 @@ export function renderIntelligenceSection(
 		});
 
 	if (plugin.settings.intelligence.autoSummarize) {
-		new Setting(sectionEl)
+		const minMessagesSetting = new Setting(sectionEl)
 			.setName("Min messages before summarizing")
 			.setDesc(
 				"Sessions with fewer messages than this will be skipped. " +
 					"Prevents summarizing trivial conversations.",
 			)
-			.addSlider((slider) => {
-				slider
-					.setLimits(2, 20, 1)
-					.setValue(
-						plugin.settings.intelligence.autoSummarizeMinMessages,
-					)
-					.setDynamicTooltip()
-					.onChange(async (value) => {
-						plugin.settings.intelligence.autoSummarizeMinMessages =
-							value;
-						await saveSettings();
-					});
-			});
+			;
+		createSliderWithValue(minMessagesSetting, { value: plugin.settings.intelligence.autoSummarizeMinMessages, min: 2, max: 20, step: 1,
+			onChange: async (value) => { plugin.settings.intelligence.autoSummarizeMinMessages = value; await saveSettings(); } });
 	}
 
 	new Setting(sectionEl)

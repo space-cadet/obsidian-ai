@@ -30,9 +30,9 @@ export function renderCustomCommandsSection(
 		});
 
 	plugin.settings.customCommands.forEach((command, index) => {
-		new Setting(sectionEl)
-			.setName(`Command: ${command.keyword}`)
-			.setDesc("Edit the command prompt.")
+		const commandSetting = new Setting(sectionEl)
+			.setName(`Command ${index + 1}`)
+			.setDesc("Set the keyword and prompt used by this command.")
 			.addText((text) => {
 				text.setValue(command.keyword)
 					.setPlaceholder("Command name")
@@ -41,17 +41,10 @@ export function renderCustomCommandsSection(
 							text.getValue();
 						await saveSettings();
 					});
-			})
-			.addTextArea((textarea) => {
-				textarea
-					.setValue(command.prompt)
-					.setPlaceholder("Command prompt")
-					.inputEl.addEventListener("blur", async () => {
-						plugin.settings.customCommands[index].prompt =
-							textarea.getValue();
-						await saveSettings();
-					});
-			})
+			});
+		const promptSetting = new Setting(sectionEl).setName("Prompt").setDesc(`Prompt for ${command.keyword || "this command"}.`);
+		promptSetting.addTextArea((textarea) => { textarea.setValue(command.prompt).setPlaceholder("Command prompt").inputEl.addEventListener("blur", async () => { plugin.settings.customCommands[index].prompt = textarea.getValue(); await saveSettings(); }); textarea.inputEl.classList.add("wide-text-settings"); });
+		commandSetting
 			.addExtraButton((btn) =>
 				btn
 					.setIcon("trash")

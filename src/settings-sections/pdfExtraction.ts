@@ -1,6 +1,6 @@
 import { Setting } from "obsidian";
 import ObsidianAIPlugin from "../main";
-import { createSection } from "./helpers";
+import { createSection, createSliderWithValue } from "./helpers";
 
 export function renderPdfExtractionSection(
 	containerEl: HTMLElement,
@@ -16,7 +16,7 @@ export function renderPdfExtractionSection(
 		"Configure how the AI extracts text from PDF documents.",
 	);
 
-	new Setting(sectionEl)
+	const maxPagesSetting = new Setting(sectionEl)
 		.setName("Extraction method")
 		.setDesc(
 			"Choose how PDF text is extracted. " +
@@ -69,14 +69,7 @@ export function renderPdfExtractionSection(
 				"Lower values save tokens and speed up extraction. " +
 				"Set to 0 for no limit (extract all pages).",
 		)
-		.addSlider((slider) =>
-			slider
-				.setLimits(0, 200, 10)
-				.setValue(plugin.settings.pdfMaxPages)
-				.setDynamicTooltip()
-				.onChange(async (value) => {
-					plugin.settings.pdfMaxPages = value;
-					await saveSettings({ quiet: true });
-				}),
-		);
+		;
+	createSliderWithValue(maxPagesSetting, { value: plugin.settings.pdfMaxPages, min: 0, max: 200, step: 10,
+		onChange: async (value) => { plugin.settings.pdfMaxPages = value; await saveSettings({ quiet: true }); } });
 }

@@ -1,6 +1,6 @@
 import { Setting, Notice } from "obsidian";
 import ObsidianAIPlugin from "../main";
-import { createSection } from "./helpers";
+import { createSection, createSliderWithValue } from "./helpers";
 import { ChatStorageMigration } from "../storage/Migration";
 
 export function renderAdvancedSection(
@@ -17,7 +17,7 @@ export function renderAdvancedSection(
 		"Adjust inline prompt behavior and low-level interaction details.",
 	);
 
-	new Setting(sectionEl)
+	const sidebarSetting = new Setting(sectionEl)
 		.setName("Selection prompt")
 		.setDesc(
 			"System prompt used when the tooltip is triggered with selected text.",
@@ -87,32 +87,22 @@ export function renderAdvancedSection(
 		.setDesc(
 			"Number of sessions shown in the sidebar before pagination. Not a hard cap on total sessions.",
 		)
-		.addSlider((slider) => {
-			slider
-				.setLimits(10, 200, 10)
-				.setValue(plugin.settings.maxSessionsInSidebar)
-				.setDynamicTooltip()
-				.onChange(async (value) => {
-					plugin.settings.maxSessionsInSidebar = value;
-					await saveSettings();
-				});
-		});
+		;
+	createSliderWithValue(sidebarSetting, {
+		value: plugin.settings.maxSessionsInSidebar, min: 10, max: 200, step: 10,
+		onChange: async (value) => { plugin.settings.maxSessionsInSidebar = value; await saveSettings(); },
+	});
 
-	new Setting(sectionEl)
+	const backupSetting = new Setting(sectionEl)
 		.setName("Session backup count")
 		.setDesc(
 			"Number of rolling backups to keep of data.json before writes.",
 		)
-		.addSlider((slider) => {
-			slider
-				.setLimits(1, 10, 1)
-				.setValue(plugin.settings.sessionBackupCount)
-				.setDynamicTooltip()
-				.onChange(async (value) => {
-					plugin.settings.sessionBackupCount = value;
-					await saveSettings();
-				});
-		});
+		;
+	createSliderWithValue(backupSetting, {
+		value: plugin.settings.sessionBackupCount, min: 1, max: 10, step: 1,
+		onChange: async (value) => { plugin.settings.sessionBackupCount = value; await saveSettings(); },
+	});
 
 	// Migration button (only shown if legacy data detected)
 	const migration = new ChatStorageMigration({

@@ -101,7 +101,7 @@ export function renderRemoteStorageSection(
 		attr: { id: "obsidian-ai-settings-remote-storage" },
 	});
 
-	section.createEl("h2", { text: "Remote Storage" });
+	section.createEl("h3", { text: "Remote Storage" });
 
 	section.createEl("p", {
 		cls: "setting-item-description",

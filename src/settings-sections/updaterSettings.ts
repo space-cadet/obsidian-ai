@@ -11,7 +11,7 @@ export function renderUpdaterSection(
 		attr: { id: "obsidian-ai-settings-updates" },
 	});
 
-	section.createEl("h2", { text: "Updates" });
+	section.createEl("h3", { text: "Updates" });
 
 	const desc = section.createEl("p", { cls: "setting-item-description" });
 	desc.textContent =
