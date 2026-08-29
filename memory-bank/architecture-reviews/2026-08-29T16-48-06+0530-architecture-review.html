@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fresh architecture review | obsidian-ai | 2026-08-29</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f5f5f4; color: #1c1917; }
+    .diagram { min-height: 16rem; }
+    code { font-size: .9em; }
+  </style>
+</head>
+<body class="antialiased">
+  <main class="mx-auto max-w-6xl px-5 py-10 sm:px-8">
+    <header class="border-b border-stone-300 pb-7">
+      <p class="text-xs font-semibold uppercase tracking-widest text-stone-500">Fresh read-only architecture review</p>
+      <h1 class="mt-3 text-4xl font-semibold tracking-tight text-stone-900">obsidian-ai</h1>
+      <p class="mt-3 max-w-3xl text-stone-600">Current checkout: <code>main</code> at <code>63bce58</code>, clean and aligned with <code>origin/main</code>. Review timestamp: <code>2026-08-29T16:48:06+05:30</code>.</p>
+      <div class="mt-5 grid gap-3 sm:grid-cols-3">
+        <div class="rounded border border-stone-300 bg-white p-4"><p class="text-xs uppercase tracking-wider text-stone-500">Previous baseline</p><p class="mt-1 font-semibold">2026-08-27 report retained</p></div>
+        <div class="rounded border border-stone-300 bg-white p-4"><p class="text-xs uppercase tracking-wider text-stone-500">Current scope</p><p class="mt-1 font-semibold">Recent agent and context changes</p></div>
+        <div class="rounded border border-stone-300 bg-white p-4"><p class="text-xs uppercase tracking-wider text-stone-500">Repository effect</p><p class="mt-1 font-semibold">No source changes</p></div>
+      </div>
+    </header>
+
+    <section class="mt-8 border-l-4 border-stone-800 bg-white px-5 py-4 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-widest text-stone-500">Top recommendation</p>
+      <p class="mt-2 text-lg leading-7 text-stone-800"><a class="font-semibold underline decoration-stone-400 underline-offset-4" href="#candidate-1">Make model-history policy one deep module</a>. It is the remaining finding with the clearest information-loss risk: history construction, budgeting, truncation, and compaction still cross several seams.</p>
+    </section>
+
+    <section class="mt-8 rounded border border-stone-300 bg-white p-5">
+      <h2 class="text-xl font-semibold text-stone-900">Comparison with the August 27 review</h2>
+      <p class="mt-2 leading-7 text-stone-600">The first review found four candidates before the T46 refactor. The tool-registry and send/request findings were subsequently addressed at their original level. The history-policy finding remains current. The sync finding remains speculative because no new sync pressure was identified.</p>
+    </section>
+
+    <section class="mt-10 space-y-8">
+      <article id="candidate-1" class="scroll-mt-6 border border-stone-300 bg-white shadow-sm">
+        <div class="border-b border-stone-200 px-5 py-5 sm:px-7">
+          <div class="flex flex-wrap items-center gap-3"><span class="bg-emerald-100 px-2 py-1 text-xs font-bold uppercase tracking-wider text-emerald-800">Strong</span><span class="text-xs font-medium uppercase tracking-wider text-stone-500">Still open from previous review</span></div>
+          <h2 class="mt-3 text-2xl font-semibold text-stone-900">Make model-history policy one deep module</h2>
+          <p class="mt-2 max-w-3xl text-stone-600">Tool-pair replay, elision, preservation, token truncation, request budgeting, and semantic compaction remain owned by several modules. The recent T64b evidence improved the tests and policy knowledge, but did not create one model-history module.</p>
+          <p class="mt-2 max-w-3xl text-stone-700"><b>Deepening opportunity:</b> give one module ownership of model-ready history. Protocol loops and <code>TurnLifecycle</code> should consume that result instead of applying overlapping policy.</p>
+          <p class="mt-3 text-sm text-stone-500"><b>Files:</b> <code>src/lib/historyBuilder.ts</code>, <code>src/context/contextBudget.ts</code>, <code>src/context/semanticCompaction.ts</code>, <code>src/agent/turnLifecycle.ts</code>, <code>src/agent/AgentLoop.ts</code>, <code>src/agent/OpenResponsesLoop.ts</code></p>
+        </div>
+        <div class="diagram grid gap-6 bg-stone-50 p-5 sm:grid-cols-2 sm:p-7">
+          <div><p class="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Current · policy crosses seams</p><div class="mermaid">flowchart TB
+            S["stored messages"] --> H["historyBuilder\ntool replay + elision"]
+            H --> L["TurnLifecycle\ncompaction + budget"]
+            L --> A["AgentLoop\nbudget + truncate"]
+            L --> O["OpenResponsesLoop\nbudget + truncate"]
+            classDef warn fill:#fef3c7,stroke:#b45309,color:#451a03;
+            classDef pale fill:#fafaf9,stroke:#78716c,color:#292524;
+            class H,L,A,O warn; class S pale;
+          </div></div>
+          <div><p class="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Direction · one policy module</p><div class="mermaid">flowchart TB
+            S["stored messages"] --> P["Model history policy\npairing · elision · compaction\ntruncation · budget"]
+            P --> A["AgentLoop"]
+            P --> O["OpenResponsesLoop"]
+            P --> T["regression suite"]
+            classDef deep fill:#292524,stroke:#0c0a09,color:#fff;
+            classDef pale fill:#fafaf9,stroke:#78716c,color:#292524;
+            class P deep; class S,A,O,T pale;
+          </div></div>
+        </div>
+        <div class="grid gap-5 border-t border-stone-200 px-5 py-5 sm:grid-cols-2 sm:px-7"><div><h3 class="text-sm font-semibold">Why it matters</h3><ul class="mt-2 space-y-1 text-sm leading-6 text-stone-600"><li><b>Locality:</b> history rules have one primary home.</li><li><b>Leverage:</b> both protocol loops receive the same model-ready representation.</li><li><b>Tests:</b> retention and token-budget tests cover one interface.</li></ul></div><div class="border-l-2 border-rose-300 pl-4"><h3 class="text-sm font-semibold">Current evidence</h3><p class="mt-2 text-sm leading-6 text-stone-600"><code>historyBuilder.ts</code> is 215 lines, <code>contextBudget.ts</code> 186, and <code>semanticCompaction.ts</code> 132. <code>TurnLifecycle</code>, <code>AgentLoop</code>, and <code>OpenResponsesLoop</code> still call these policies separately.</p></div></div>
+      </article>
+
+      <article id="candidate-2" class="scroll-mt-6 border border-stone-300 bg-white shadow-sm">
+        <div class="border-b border-stone-200 px-5 py-5 sm:px-7"><div class="flex flex-wrap items-center gap-3"><span class="bg-amber-100 px-2 py-1 text-xs font-bold uppercase tracking-wider text-amber-800">Worth exploring</span><span class="text-xs font-medium uppercase tracking-wider text-stone-500">Post-refactor concentration</span></div><h2 class="mt-3 text-2xl font-semibold text-stone-900">Deepen the turn lifecycle behind a narrower interface</h2><p class="mt-2 max-w-3xl text-stone-600">The original send/request finding is resolved at the hook level: <code>useMessageActions.ts</code> is now 220 lines. The new concentration is <code>turnLifecycle.ts</code> at 1,170 lines, where UI runtime patches, context resolution, compaction, history assembly, protocol execution, persistence, retry, and approval continuation still meet.</p><p class="mt-2 max-w-3xl text-stone-700"><b>Deepening opportunity:</b> preserve the existing seam around <code>TurnLifecycle</code>, but consider a narrower turn interface if changes to context policy or persistence repeatedly require editing the lifecycle module.</p><p class="mt-3 text-sm text-stone-500"><b>Files:</b> <code>src/agent/turnLifecycle.ts</code>, <code>src/agent/ChatTurnCoordinator.ts</code>, <code>src/hooks/useMessageActions.ts</code></p></div>
+        <div class="diagram grid gap-6 bg-stone-50 p-5 sm:grid-cols-2 sm:p-7"><div><p class="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Current · lifecycle is deep but broad</p><div class="mermaid">flowchart LR
+          UI["thin React hook"] --> T["TurnLifecycle\nrequest + runtime + policy"]
+          T --> C["context + compaction"]
+          T --> P["protocol coordinator"]
+          T --> R["persistence + retry"]
+          classDef deep fill:#292524,stroke:#0c0a09,color:#fff;
+          classDef pale fill:#fafaf9,stroke:#78716c,color:#292524;
+          class T deep; class UI,C,P,R pale;
+        </div></div><div><p class="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Direction · narrow turn interface</p><div class="mermaid">flowchart LR
+          UI["thin React hook"] --> T["turn interface"]
+          T --> Q["turn policy"]
+          T --> V["runtime view updates"]
+          T --> S["persistence adapter"]
+          classDef deep fill:#292524,stroke:#0c0a09,color:#fff;
+          classDef pale fill:#fafaf9,stroke:#78716c,color:#292524;
+          class T deep; class UI,Q,V,S pale;
+        </div></div></div>
+        <div class="border-t border-stone-200 px-5 py-5 sm:px-7"><h3 class="text-sm font-semibold">Deletion test</h3><p class="mt-2 text-sm leading-6 text-stone-600">Deleting the old hook orchestration clearly concentrated complexity; that is why the original candidate was valid. A further split is justified only if it removes policy coupling rather than moving statements into more shallow adapters.</p></div>
+      </article>
+
+      <article id="candidate-3" class="scroll-mt-6 border border-stone-300 bg-white shadow-sm">
+        <div class="border-b border-stone-200 px-5 py-5 sm:px-7"><div class="flex flex-wrap items-center gap-3"><span class="bg-amber-100 px-2 py-1 text-xs font-bold uppercase tracking-wider text-amber-800">Worth exploring</span><span class="text-xs font-medium uppercase tracking-wider text-stone-500">Residual from previous review</span></div><h2 class="mt-3 text-2xl font-semibold text-stone-900">Finish capability ownership across built-in and provider tools</h2><p class="mt-2 max-w-3xl text-stone-600">The shared registry now supplies descriptors, availability, model projections, and execution lookup. The previous cross-protocol drift is largely fixed. Some construction ownership remains split between <code>toolRegistry.ts</code>, the long executor map in <code>ToolExecutor.ts</code>, and provider-specific wrappers in <code>ProviderRegistry.ts</code>.</p><p class="mt-2 max-w-3xl text-stone-700"><b>Deepening opportunity:</b> simplify executor construction and make the provider adapter feed descriptors without reintroducing a second capability policy.</p><p class="mt-3 text-sm text-stone-500"><b>Files:</b> <code>src/agent/toolRegistry.ts</code>, <code>src/agent/ToolExecutor.ts</code>, <code>src/integrations/ProviderRegistry.ts</code>, <code>src/agent/tools/toOpenResponses.ts</code></p></div>
+        <div class="diagram grid gap-6 bg-stone-50 p-5 sm:grid-cols-2 sm:p-7"><div><p class="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Current · shared policy, split construction</p><div class="mermaid">flowchart TB
+          B["built-in descriptors"] --> R["toolRegistry\nresolution + projection"]
+          P["ProviderRegistry\nprovider discovery + wrappers"] --> R
+          X["ToolExecutor\nlarge handler map"] --> R
+          R --> M["model + approval + execution"]
+          classDef deep fill:#292524,stroke:#0c0a09,color:#fff;
+          classDef pale fill:#fafaf9,stroke:#78716c,color:#292524;
+          class R deep; class B,P,X,M pale;
+        </div></div><div><p class="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Direction · adapter into one owner</p><div class="mermaid">flowchart TB
+          I["built-in + provider inputs"] --> R["capability module\nresolve + project + execute"]
+          R --> M["model + approval + execution"]
+          classDef deep fill:#292524,stroke:#0c0a09,color:#fff;
+          classDef pale fill:#fafaf9,stroke:#78716c,color:#292524;
+          class R deep; class I,M pale;
+        </div></div></div>
+        <div class="border-t border-stone-200 px-5 py-5 sm:px-7"><h3 class="text-sm font-semibold">Current assessment</h3><p class="mt-2 text-sm leading-6 text-stone-600">This is cleanup and ownership tightening, not the urgent duplication described in the old report. The current resolved registry is a real seam; do not replace it with another layer unless the executor map or provider wrappers create a concrete change-cost problem.</p></div>
+      </article>
+
+      <article id="candidate-4" class="scroll-mt-6 border border-stone-300 bg-white shadow-sm">
+        <div class="border-b border-stone-200 px-5 py-5 sm:px-7"><div class="flex flex-wrap items-center gap-3"><span class="bg-slate-200 px-2 py-1 text-xs font-bold uppercase tracking-wider text-slate-700">Speculative</span><span class="text-xs font-medium uppercase tracking-wider text-stone-500">Deferred</span></div><h2 class="mt-3 text-2xl font-semibold text-stone-900">Separate sync reconciliation from transfer mechanics</h2><p class="mt-2 max-w-3xl text-stone-600"><code>SyncEngine.ts</code> remains 1,014 lines and <code>PluginFileSyncManager.ts</code> remains 1,256 lines. They still combine planning, conflict decisions, transfer orchestration, retry, progress, and persistence.</p><p class="mt-2 max-w-3xl text-stone-700"><b>Deepening opportunity:</b> if a new reconciliation rule or sync failure creates pressure, deepen policy behind a stable adapter seam while keeping WebDAV/WebSocket transfer replaceable.</p><p class="mt-3 text-sm text-stone-500"><b>Files:</b> <code>src/sync/SyncEngine.ts</code>, <code>src/sync/PluginFileSyncManager.ts</code>, <code>src/sync/SyncIndexManager.ts</code>, <code>src/sync/*Adapter.ts</code></p></div>
+        <div class="diagram bg-stone-50 p-5 sm:p-7"><div class="mermaid">flowchart LR
+          E["SyncEngine\nplan + transfer + conflicts"] --> F["PluginFileSyncManager\nstate + retry + transfer"]
+          E --> I["SyncIndexManager"]
+          E --> W["WebDAV adapter"]
+          E --> S["WebSocket adapter"]
+          classDef warn fill:#e2e8f0,stroke:#475569,color:#1e293b;
+          classDef pale fill:#fafaf9,stroke:#78716c,color:#292524;
+          class E,F warn; class I,W,S pale;
+        </div><p class="mt-4 text-sm leading-6 text-stone-600"><b>Why deferred:</b> the existing adapters and supporting modules already provide useful seams. The current evidence does not justify adding indirection.</p></div>
+      </article>
+    </section>
+
+    <footer class="mt-10 border-t border-stone-300 pt-5 text-sm leading-6 text-stone-500"><p>Scan basis: current source, recent git hotspots, the retained August 27 report, and the current clean checkout. No root <code>CONTEXT.md</code> or <code>docs/adr</code> directory was present. This report is read-only and proposes candidates; it does not define interfaces or modify source files.</p></footer>
+  </main>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'base', themeVariables: { fontFamily: 'ui-sans-serif, system-ui, sans-serif', primaryColor: '#fafaf9', primaryTextColor: '#292524', primaryBorderColor: '#78716c', lineColor: '#78716c', secondaryColor: '#f5f5f4', tertiaryColor: '#e7e5e4' } });
+  </script>
+</body>
+</html>

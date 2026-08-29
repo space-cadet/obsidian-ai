@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Architecture friction scan | obsidian-ai</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #f5f5f4; color: #1c1917; }
+    .diagram { min-height: 18rem; }
+    .mermaid { background: transparent; }
+  </style>
+</head>
+<body class="antialiased">
+  <main class="mx-auto max-w-6xl px-5 py-10 sm:px-8">
+    <header class="border-b border-stone-300 pb-7">
+      <div class="flex flex-wrap items-baseline justify-between gap-3">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-widest text-stone-500">Architecture friction scan</p>
+          <h1 class="mt-2 text-3xl font-semibold tracking-tight text-stone-900">obsidian-ai</h1>
+        </div>
+        <p class="text-sm text-stone-500">27 August 2026 · main @ 759af20</p>
+      </div>
+      <div class="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs text-stone-600">
+        <span><b class="text-emerald-700">Strong</b> · clear leverage and locality</span>
+        <span><b class="text-amber-700">Worth exploring</b> · plausible leverage, needs a decision</span>
+        <span><b class="text-slate-600">Speculative</b> · defer until pressure is demonstrated</span>
+      </div>
+    </header>
+
+    <section class="mt-8 border-l-4 border-stone-800 bg-white px-5 py-4 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-widest text-stone-500">Top recommendation</p>
+      <p class="mt-2 text-lg leading-7 text-stone-800"><a class="font-semibold underline decoration-stone-400 underline-offset-4" href="#candidate-1">Give the tool capability registry one owner</a>. It has the clearest leverage: one deep module could own availability, dispatch, and model projections for both protocols and provider capabilities.</p>
+    </section>
+
+    <section class="mt-10 space-y-8">
+      <article id="candidate-1" class="scroll-mt-6 border border-stone-300 bg-white shadow-sm">
+        <div class="border-b border-stone-200 px-5 py-5 sm:px-7">
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="bg-emerald-100 px-2 py-1 text-xs font-bold uppercase tracking-wider text-emerald-800">Strong</span>
+            <span class="text-xs font-medium uppercase tracking-wider text-stone-500">Capability ownership</span>
+          </div>
+          <h2 class="mt-3 text-2xl font-semibold text-stone-900">Give the tool capability registry one owner</h2>
+          <p class="mt-2 max-w-3xl text-stone-600">The tool contract, availability, executor map, provider definitions, and OpenResponses projection are spread across several modules. A capability change can cross multiple seams before it reaches a model or an approval action.</p>
+          <p class="mt-2 max-w-3xl text-stone-700"><b>Deepening opportunity:</b> concentrate capability resolution, dispatch, and model projections behind one deep module. Keep protocol loops focused on their transport behavior.</p>
+          <p class="mt-3 text-sm text-stone-500"><b>Dependency category:</b> shared capability module · <b>Files:</b> <code>src/agent/toolRegistry.ts</code>, <code>src/agent/ToolExecutor.ts</code>, <code>src/integrations/ProviderRegistry.ts</code>, <code>src/agent/tools/toOpenResponses.ts</code>, <code>src/hooks/useMessageActions.ts</code></p>
+        </div>
+        <div class="diagram grid gap-6 bg-stone-50 p-5 sm:grid-cols-2 sm:p-7">
+          <div>
+            <p class="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Today · several shallow seams</p>
+            <div class="mermaid">
+              flowchart TB
+                T["noteTools\nmodel descriptions"] --> R["toolRegistry\ndescriptors + availability"]
+                X["ToolExecutor\nexecutor map + methods"] --> R
+                P["ProviderRegistry\nprovider descriptors"] --> R
+                R --> U["useMessageActions\nresolve + wire"]
+                U --> A["AgentLoop"]
+                U --> O["OpenResponsesLoop"]
+                T --> Z["toOpenResponses\nreconstruct projection"]
+                Z --> O
+                X -. "dispatch ownership leaks" .-> A
+                X -. "new instance for approval" .-> U
+                classDef red fill:#fee2e2,stroke:#b91c1c,color:#450a0a;
+                classDef pale fill:#fafaf9,stroke:#78716c,color:#292524;
+                class T,R,X,P,U,A,O,Z pale;
+                linkStyle 8,9 stroke:#b91c1c,stroke-dasharray:5 5;
+            </div>
+          </div>
+          <div>
+            <p class="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Direction · one deep module</p>
+            <div class="mermaid">
+              flowchart TB
+                C["Resolved capability module\ncontract · availability\ndispatch · projections"]
+                N["noteTools + provider inputs"] --> C
+                C --> A["AgentLoop"]
+                C --> O["OpenResponsesLoop"]
+                C --> V["approval action"]
+                C --> M["model-facing projection"]
+                classDef deep fill:#292524,stroke:#0c0a09,color:#fff;
+                classDef pale fill:#fafaf9,stroke:#78716c,color:#292524;
+                class C deep;
+                class N,A,O,V,M pale;
+            </div>
+          </div>
+        </div>
+        <div class="grid gap-5 border-t border-stone-200 px-5 py-5 sm:grid-cols-2 sm:px-7">
+          <div>
+            <h3 class="text-sm font-semibold text-stone-900">Why it matters</h3>
+            <ul class="mt-2 space-y-1 text-sm leading-6 text-stone-600">
+              <li><b class="text-stone-800">Locality:</b> one capability change has one primary home.</li>
+              <li><b class="text-stone-800">Leverage:</b> both protocol loops consume the same resolved result.</li>
+              <li><b class="text-stone-800">Consistency:</b> availability context such as <code>developerMode</code> is supplied once.</li>
+              <li><b class="text-stone-800">Tests:</b> dispatch and policy get one stable seam.</li>
+            </ul>
+          </div>
+          <div class="border-l-2 border-amber-300 pl-4">
+            <h3 class="text-sm font-semibold text-stone-900">Evidence to preserve in an ADR</h3>
+            <p class="mt-2 text-sm leading-6 text-stone-600"><code>toolRegistry.ts:331-430</code> already contains transitional construction and resolution helpers. <code>ToolExecutor.ts:43-217</code> still builds a large executor map, while <code>ProviderRegistry.ts:163-192</code> resolves provider definitions separately. <code>useMessageActions.ts:614-640</code> resolves the model-facing set, then creates separate executors at lines 739, 878, and 1496.</p>
+          </div>
+        </div>
+      </article>
+
+      <article id="candidate-2" class="scroll-mt-6 border border-stone-300 bg-white shadow-sm">
+        <div class="border-b border-stone-200 px-5 py-5 sm:px-7">
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="bg-emerald-100 px-2 py-1 text-xs font-bold uppercase tracking-wider text-emerald-800">Strong</span>
+            <span class="text-xs font-medium uppercase tracking-wider text-stone-500">Turn orchestration</span>
+          </div>
+          <h2 class="mt-3 text-2xl font-semibold text-stone-900">Deepen the send/request coordinator</h2>
+          <p class="mt-2 max-w-3xl text-stone-600"><code>useMessageActions.ts</code> is 1,533 lines and owns context resolution, semantic compaction, history projection, token budgeting, capability selection, two protocol loops, persistence, streaming state, and approvals.</p>
+          <p class="mt-2 max-w-3xl text-stone-700"><b>Deepening opportunity:</b> move the turn lifecycle into a deep module that coordinates request assembly and runtime events. Leave the hook as a UI state and command adapter.</p>
+          <p class="mt-3 text-sm text-stone-500"><b>Dependency category:</b> request orchestration · <b>Files:</b> <code>src/hooks/useMessageActions.ts</code>, <code>src/agent/AgentLoop.ts</code>, <code>src/agent/OpenResponsesLoop.ts</code>, <code>src/context/*</code>, <code>src/lib/historyBuilder.ts</code></p>
+        </div>
+        <div class="diagram grid gap-6 bg-stone-50 p-5 sm:grid-cols-2 sm:p-7">
+          <div>
+            <p class="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Today · orchestration spans the hook</p>
+            <div class="mermaid">
+              flowchart LR
+                UI["Chat UI"] --> H["useMessageActions\nstate + policy + lifecycle"]
+                H --> C["context + compaction"]
+                H --> B["history + budget"]
+                H --> A["AgentLoop"]
+                H --> O["OpenResponsesLoop"]
+                H --> S["persistence + approval"]
+                A --> X["ToolExecutor"]
+                O --> X
+                classDef hot fill:#fef3c7,stroke:#b45309,color:#451a03;
+                classDef pale fill:#fafaf9,stroke:#78716c,color:#292524;
+                class H hot;
+                class UI,C,B,A,O,S,X pale;
+            </div>
+          </div>
+          <div>
+            <p class="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Direction · a deep turn module</p>
+            <div class="mermaid">
+              flowchart LR
+                UI["Chat UI"] --> H["thin hook\nstate + commands"]
+                H --> T["Turn coordinator\nrequest · stream · approval\npersistence · continuation"]
+                T --> C["context policy"]
+                T --> P["protocol adapters"]
+                T --> X["capability module"]
+                classDef deep fill:#292524,stroke:#0c0a09,color:#fff;
+                classDef pale fill:#fafaf9,stroke:#78716c,color:#292524;
+                class T deep;
+                class UI,H,C,P,X pale;
+            </div>
+          </div>
+        </div>
+        <div class="grid gap-5 border-t border-stone-200 px-5 py-5 sm:grid-cols-2 sm:px-7">
+          <div>
+            <h3 class="text-sm font-semibold text-stone-900">Expected wins</h3>
+            <ul class="mt-2 space-y-1 text-sm leading-6 text-stone-600">
+              <li><b class="text-stone-800">Locality:</b> one turn lifecycle is readable in one place.</li>
+              <li><b class="text-stone-800">Leverage:</b> callback and persistence policy is shared by both protocols.</li>
+              <li><b class="text-stone-800">Tests:</b> request assembly and approval flows can run without React.</li>
+              <li><b class="text-stone-800">Less duplication:</b> executor lifecycle and continuation decisions stop being wired repeatedly.</li>
+            </ul>
+          </div>
+          <div class="border-l-2 border-stone-300 pl-4">
+            <h3 class="text-sm font-semibold text-stone-900">Deletion test</h3>
+            <p class="mt-2 text-sm leading-6 text-stone-600">Deleting the hook’s orchestration responsibilities would remove a real concentration of policy. Deleting only a helper and moving its statements elsewhere would not improve depth; the candidate is worthwhile only if the new module owns the complete turn lifecycle.</p>
+          </div>
+        </div>
+      </article>
+
+      <article id="candidate-3" class="scroll-mt-6 border border-stone-300 bg-white shadow-sm">
+        <div class="border-b border-stone-200 px-5 py-5 sm:px-7">
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="bg-emerald-100 px-2 py-1 text-xs font-bold uppercase tracking-wider text-emerald-800">Strong</span>
+            <span class="text-xs font-medium uppercase tracking-wider text-stone-500">Model context policy</span>
+          </div>
+          <h2 class="mt-3 text-2xl font-semibold text-stone-900">Make model-history policy one deep module</h2>
+          <p class="mt-2 max-w-3xl text-stone-600"><code>historyBuilder.ts</code> has near-duplicate modern and legacy tool branches, while token estimation, truncation, budgeting, and semantic compaction are applied again by the hook and both protocol loops.</p>
+          <p class="mt-2 max-w-3xl text-stone-700"><b>Deepening opportunity:</b> let one model-history module own tool-pair preservation, elision/preservation, truncation, compaction projection, and budget accounting. Protocol loops should consume model-ready history.</p>
+          <p class="mt-3 text-sm text-stone-500"><b>Dependency category:</b> context projection · <b>Files:</b> <code>src/lib/historyBuilder.ts</code>, <code>src/context/contextBudget.ts</code>, <code>src/context/semanticCompaction.ts</code>, <code>src/agent/AgentLoop.ts</code>, <code>src/agent/OpenResponsesLoop.ts</code></p>
+        </div>
+        <div class="diagram grid gap-6 bg-stone-50 p-5 sm:grid-cols-2 sm:p-7">
+          <div>
+            <p class="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Today · policy is repeated</p>
+            <div class="mermaid">
+              flowchart TB
+                H["historyBuilder"] --> M["modern contentParts branch"]
+                H --> L["legacy toolCalls branch"]
+                M --> E["elide / preserve"]
+                L --> E
+                A["AgentLoop"] --> B["budget + truncate + estimate"]
+                O["OpenResponsesLoop"] --> B2["budget + truncate + estimate"]
+                U["useMessageActions"] --> C["compaction + history + budget"]
+                classDef warn fill:#fef3c7,stroke:#b45309,color:#451a03;
+                classDef pale fill:#fafaf9,stroke:#78716c,color:#292524;
+                class H,A,O,U warn;
+                class M,L,E,B,B2,C pale;
+            </div>
+          </div>
+          <div>
+            <p class="mb-3 text-xs font-bold uppercase tracking-widest text-stone-500">Direction · one context policy</p>
+            <div class="mermaid">
+              flowchart TB
+                I["stored messages"] --> P["Model history policy\ntool pairs · compaction\nelision · truncation · budget"]
+                P --> A["AgentLoop"]
+                P --> O["OpenResponsesLoop"]
+                P --> T["regression suite"]
+                classDef deep fill:#292524,stroke:#0c0a09,color:#fff;
+                classDef pale fill:#fafaf9,stroke:#78716c,color:#292524;
+                class P deep;
+                class I,A,O,T pale;
+            </div>
+          </div>
+        </div>
+        <div class="grid gap-5 border-t border-stone-200 px-5 py-5 sm:grid-cols-2 sm:px-7">
+          <div>
+            <h3 class="text-sm font-semibold text-stone-900">Expected wins</h3>
+            <ul class="mt-2 space-y-1 text-sm leading-6 text-stone-600">
+              <li><b class="text-stone-800">Locality:</b> context policy has one source of truth.</li>
+              <li><b class="text-stone-800">Leverage:</b> one regression suite covers both protocols.</li>
+              <li><b class="text-stone-800">Depth:</b> tool history remains agent-usable instead of merely type-correct.</li>
+              <li><b class="text-stone-800">Risk control:</b> the recent elision regression becomes an explicit policy test.</li>
+            </ul>
+          </div>
+          <div class="border-l-2 border-rose-300 pl-4">
+            <h3 class="text-sm font-semibold text-stone-900">Observed pressure</h3>
+            <p class="mt-2 text-sm leading-6 text-stone-600"><code>historyBuilder.ts:21-179</code> maintains two serialization paths. The default <code>toolHistoryMode</code> is <code>elide</code>, and the same request can then be budgeted again at <code>useMessageActions.ts:614-663</code> and <code>AgentLoop.ts:235</code>. This is a real seam for information loss, not just a style concern.</p>
+          </div>
+        </div>
+      </article>
+
+      <article id="candidate-4" class="scroll-mt-6 border border-stone-300 bg-white shadow-sm">
+        <div class="border-b border-stone-200 px-5 py-5 sm:px-7">
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="bg-slate-200 px-2 py-1 text-xs font-bold uppercase tracking-wider text-slate-700">Speculative</span>
+            <span class="text-xs font-medium uppercase tracking-wider text-stone-500">Sync policy</span>
+          </div>
+          <h2 class="mt-3 text-2xl font-semibold text-stone-900">Separate sync reconciliation from transfer mechanics</h2>
+          <p class="mt-2 max-w-3xl text-stone-600"><code>PluginFileSyncManager.ts</code> and <code>SyncEngine.ts</code> each cover substantial state normalization, conflict/deletion decisions, transfer orchestration, retry, progress, and persistence.</p>
+          <p class="mt-2 max-w-3xl text-stone-700"><b>Deepening opportunity:</b> if sync policy work continues, deepen reconciliation into a policy module while keeping transport adapters replaceable.</p>
+          <p class="mt-3 text-sm text-stone-500"><b>Dependency category:</b> state reconciliation · <b>Files:</b> <code>src/sync/PluginFileSyncManager.ts</code>, <code>src/sync/SyncEngine.ts</code>, <code>src/sync/SyncIndexManager.ts</code>, <code>src/sync/*Adapter.ts</code></p>
+        </div>
+        <div class="diagram bg-stone-50 p-5 sm:p-7">
+          <div class="mermaid">
+            flowchart LR
+              E["SyncEngine\nlifecycle + plan + transfer"] --> F["PluginFileSyncManager\nstate + conflicts + retry"]
+              E --> I["SyncIndexManager"]
+              E --> W["WebDAV adapter"]
+              E --> S["WebSocket adapter"]
+              F --> W
+              F --> I
+              classDef warn fill:#e2e8f0,stroke:#475569,color:#1e293b;
+              classDef pale fill:#fafaf9,stroke:#78716c,color:#292524;
+              class E,F warn;
+              class I,W,S pale;
+          </div>
+          <p class="mt-4 text-sm leading-6 text-stone-600"><b>Why speculative:</b> the existing WebDAV and WebSocket adapters already provide useful seams. A broad split could increase indirection without improving locality until a new reconciliation rule or sync failure mode creates pressure.</p>
+        </div>
+      </article>
+    </section>
+
+    <footer class="mt-10 border-t border-stone-300 pt-5 text-sm leading-6 text-stone-500">
+      <p>Scan basis: actual source and recent git hotspots on <code>main</code>. No root <code>CONTEXT.md</code>, <code>docs/adr</code>, or architecture configuration was present to reconcile. This report proposes architectural candidates only; it does not modify source files or define the final interface.</p>
+    </footer>
+  </main>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true, theme: 'base', themeVariables: { fontFamily: 'ui-sans-serif, system-ui, sans-serif', primaryColor: '#fafaf9', primaryTextColor: '#292524', primaryBorderColor: '#78716c', lineColor: '#78716c', secondaryColor: '#f5f5f4', tertiaryColor: '#e7e5e4' } });
+  </script>
+</body>
+</html>
