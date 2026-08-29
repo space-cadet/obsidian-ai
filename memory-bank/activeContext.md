@@ -1,6 +1,17 @@
 # Active Context
 
-*Last Updated: 2026-08-29 10:36 IST*
+*Last Updated: 2026-08-29 10:49 IST*
+
+### 2026-08-29 — T61 self-settings integration acceptance ✅
+
+Completed T61. Added end-to-end tests through `ToolExecutor` covering
+sanitized settings reads, the Developer mode gate, valid updates, automatic
+saving, audit records, invalid values, and immutable keys.
+
+- Full verification passed: 44 test files / 373 tests, TypeScript, formatting,
+  and the production build.
+- Developer mode remains the user-controlled gate; no separate confirmation
+  prompt was added.
 
 ### 2026-08-29 — T60a/T60c safety and registry completion ✅
 

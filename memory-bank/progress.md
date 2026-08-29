@@ -1,3 +1,13 @@
+### 2026-08-29 — T61 self-settings integration acceptance ✅
+
+- Added end-to-end `ToolExecutor` coverage for sanitized `read_settings`
+  output, Developer mode gating, valid updates, saving, audit records,
+  invalid values, and immutable keys.
+- Full verification passed: 44 test files / 373 tests, TypeScript, formatting,
+  and the production build.
+- T61 is complete. Developer mode remains the user-controlled gate for setting
+  changes.
+
 ### 2026-08-29 — T60a/T60c completion ✅
 
 - Replaced the group-chat hand-written tool list with the resolved registry
