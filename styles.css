@@ -131,6 +131,32 @@
 	padding-bottom: 24px;
 }
 
+.obsidian-ai-settings-search {
+	margin: 0 0 12px;
+}
+
+.obsidian-ai-settings-search label {
+	display: block;
+	margin-bottom: 6px;
+	font-size: var(--font-ui-smaller);
+	font-weight: 700;
+	color: var(--text-muted);
+}
+
+.obsidian-ai-settings-search-input {
+	width: 100%;
+	padding: 10px 13px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 10px;
+	background: var(--background-primary);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.obsidian-ai-settings-section.is-search-hidden,
+.obsidian-ai-settings-toc button.is-search-hidden {
+	display: none;
+}
+
 /* Override native Obsidian CTA buttons in our settings tab */
 .obsidian-ai-settings button.mod-cta {
 	background-color: var(--obsidian-ai-accent);
@@ -251,14 +277,25 @@
 
 .obsidian-ai-settings-section {
 	margin-bottom: 16px;
-	padding: 16px 18px;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 14px;
-	background: var(--background-secondary);
+	padding: 20px 22px;
+	border: 1px solid
+		color-mix(
+			in srgb,
+			var(--background-modifier-border) 75%,
+			var(--interactive-accent)
+		);
+	border-left: 4px solid var(--obsidian-ai-accent);
+	border-radius: 12px;
+	background: var(--background-primary-alt);
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
 }
 
 .obsidian-ai-settings-section > h3 {
-	margin: 0 0 4px;
+	margin: 0 0 8px;
+	font-size: 1.15em;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	color: var(--text-normal);
 }
 
 .obsidian-ai-settings-section-desc {
@@ -3696,7 +3733,11 @@
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;
-	margin: 0 0 16px;
+	margin: 0 0 20px;
+	padding: 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 12px;
+	background: var(--background-secondary);
 }
 
 .obsidian-ai-settings-toc button {
@@ -4905,8 +4946,6 @@
 .obsidian-ai-settings .sync-info-margin {
 	margin-top: 12px;
 }
-
-
 
 /* Utility classes */
 .is-hidden {

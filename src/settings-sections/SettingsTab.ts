@@ -101,6 +101,23 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			containerEl.addClass("obsidian-ai-settings");
 
 			renderHeroSection(containerEl, this.plugin);
+			const searchWrap = containerEl.createDiv({
+				cls: "obsidian-ai-settings-search",
+			});
+			searchWrap.createEl("label", {
+				text: "Find a setting",
+				attr: { for: "obsidian-ai-settings-search-input" },
+			});
+			const searchInput = searchWrap.createEl("input", {
+				cls: "obsidian-ai-settings-search-input",
+				attr: {
+					type: "search",
+					id: "obsidian-ai-settings-search-input",
+					placeholder: "Search settings…",
+					autocomplete: "off",
+					"aria-label": "Search settings",
+				},
+			});
 			const nav = containerEl.createEl("nav", {
 				cls: "obsidian-ai-settings-toc",
 				attr: { "aria-label": "Settings sections" },
@@ -112,11 +129,11 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Integrations", "Integrations"],
 				["Intelligence", "AI Intelligence Layer"],
 				["Web Search", "Web Search"],
-				["Sync", "Multi-User Chat Relay"],
+				["Chat Relay", "Multi-User Chat Relay"],
 				["Sync Components", "Sync Components"],
 				["Remote Storage", "Remote Storage"],
 				["Updates", "Updates"],
-				["Telemetry & Privacy", "Telemetry & Privacy"],
+				["PDF Extraction", "PDF Extraction"],
 				["Advanced", "Advanced"],
 				["Custom Commands", "Custom Commands"],
 				["Backup & Restore", "Backup & Restore"],
@@ -127,6 +144,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					text: label,
 					attr: { type: "button" },
 				});
+				button.dataset.sectionId = id;
 				button.addEventListener("click", (event) => {
 					event.preventDefault();
 					const section = containerEl.querySelector<HTMLElement>(
@@ -148,6 +166,38 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						});
 					}
 				});
+			});
+			searchInput.addEventListener("input", () => {
+				const query = searchInput.value.trim().toLocaleLowerCase();
+				containerEl
+					.querySelectorAll<HTMLElement>(
+						".obsidian-ai-settings-section",
+					)
+					.forEach((section) => {
+						section.toggleClass(
+							"is-search-hidden",
+							Boolean(query) &&
+								!section.textContent
+									?.toLocaleLowerCase()
+									.includes(query),
+						);
+					});
+				nav.querySelectorAll<HTMLButtonElement>("button").forEach(
+					(button) => {
+						const section = containerEl.querySelector<HTMLElement>(
+							`#${button.dataset.sectionId}`,
+						);
+						const matches =
+							!query ||
+							button.textContent
+								?.toLocaleLowerCase()
+								.includes(query) ||
+							section?.textContent
+								?.toLocaleLowerCase()
+								.includes(query);
+						button.toggleClass("is-search-hidden", !matches);
+					},
+				);
 			});
 			renderProviderProfilesSection(containerEl, this.plugin);
 			renderChatDefaultsSection(
