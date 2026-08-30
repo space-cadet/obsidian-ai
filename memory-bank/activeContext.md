@@ -1,5 +1,20 @@
 # Active Context
 
+### 2026-08-30 — T67 boundary 3 complete: plugin-data sync extracted ✅
+
+Extracted `syncPluginData`, `serializePluginData`, `deserializePluginData`,
+and `openRemoteStorageSettings` from `storage.ts` into
+`src/lifecycle/pluginDataSync.ts`. `storage.ts` now owns initialization,
+migration, session-end intelligence, and cleanup only (~200 lines).
+
+Added 11 focused characterization tests in
+`src/lifecycle/__tests__/pluginDataSync.test.ts` covering component
+filtering, dry-run mode, success/failure/conflict translation, error
+handling, default direction from settings, and serialization roundtrip.
+
+Full verification: 29 tests across lifecycle tests, TypeScript, production
+build. Commit: `56422f1`.
+
 ### 2026-08-30 — Storage and turn-lifecycle refactoring started 🔄
 
 Extracted settings/chat persistence into `src/lifecycle/persistence.ts` and

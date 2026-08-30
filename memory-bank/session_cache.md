@@ -1,6 +1,21 @@
 # Session Cache
 
-*Last Updated: 2026-08-30 13:01:09 IST*
+*Last Updated: 2026-08-30 16:14 IST*
+
+## 2026-08-30 — T67 boundary 3: plugin-data sync extracted
+
+- Extracted `syncPluginData`, `serializePluginData`, `deserializePluginData`,
+  and `openRemoteStorageSettings` from `storage.ts` into
+  `src/lifecycle/pluginDataSync.ts`.
+- `storage.ts` reduced from ~496 to ~200 lines.
+- Added 11 focused characterization tests covering component filtering,
+  dry-run mode, success/failure/conflict translation, error handling,
+  default direction from settings, and serialization roundtrip.
+- Full verification: 29 lifecycle tests passing, TypeScript clean,
+  production build green.
+- Commit: `56422f1` on `origin/main`.
+- Remaining in `storage.ts`: `initializeStorage`, `migrateStorage`,
+  `onSessionEnd`, `cleanupStorage` (~200 lines).
 
 ## 2026-08-30 — T65 memory integration closeout
 
