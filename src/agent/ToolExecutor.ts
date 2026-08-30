@@ -231,6 +231,8 @@ export class ToolExecutor {
 				this.memoryHandlers.readMemoryAudit(
 					call.args as { limit?: number; cursor?: string },
 				),
+			evaluate_staged: () => this.memoryHandlers.evaluateStaged(),
+			cull_core: () => this.memoryHandlers.cullCore(),
 			search_past_sessions: (call) =>
 				this.sessionHandlers.searchPastSessions(
 					call.args as {

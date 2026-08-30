@@ -503,6 +503,20 @@ export const readMemoryAuditTool = t({
 	}),
 });
 
+export const evaluateStagedMemoryTool = t({
+	description:
+		"Evaluate staged memories and promote high-value entries into core memory. " +
+		"Use after creating memories or when maintaining the memory store.",
+	inputSchema: z.object({}),
+});
+
+export const cullCoreMemoryTool = t({
+	description:
+		"Cull low-value entries from core memory and move them to the archive. " +
+		"Use when core memory needs maintenance.",
+	inputSchema: z.object({}),
+});
+
 export const checkPathsTool = t({
 	description:
 		"Check whether one or more note paths exist in the vault. " +
@@ -674,6 +688,8 @@ export const noteTools = {
 	list_memories: listMemoriesTool,
 	search_memories: searchMemoriesTool,
 	read_memory_audit: readMemoryAuditTool,
+	evaluate_staged: evaluateStagedMemoryTool,
+	cull_core: cullCoreMemoryTool,
 	search_note_content: searchNoteContentTool,
 	search_past_sessions: searchPastSessionsTool,
 	read_settings: readSettingsTool,

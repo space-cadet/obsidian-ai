@@ -120,6 +120,8 @@ const BUILTIN_RISKS: Record<string, HostToolRisk> = {
 	list_memories: "read",
 	search_memories: "read",
 	read_memory_audit: "read",
+	evaluate_staged: "local-write",
+	cull_core: "local-write",
 	search_past_sessions: "read",
 };
 

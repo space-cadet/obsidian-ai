@@ -28,6 +28,8 @@ const EXPECTED_TOOLS = [
 	"list_memories",
 	"search_memories",
 	"read_memory_audit",
+	"evaluate_staged",
+	"cull_core",
 	"search_past_sessions",
 	"read_settings",
 	"update_setting",

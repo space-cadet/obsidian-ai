@@ -11,6 +11,22 @@ export class MemoryHandlers extends ToolHandlerBase {
 		super(context);
 	}
 
+	async evaluateStaged(): Promise<ToolResult> {
+		if (!this.personaLoader) return { error: "Memory curation is disabled. Enable the intelligence layer in Settings." };
+		try {
+			const result = await this.personaLoader.tierMemoryStore.evaluateStaged();
+			return { success: true, content: `Promoted ${result.promoted} staged memories; demoted ${result.demoted} core memories.` };
+		} catch (e: any) { return { error: `Failed to evaluate staged memories: ${e.message}` }; }
+	}
+
+	async cullCore(): Promise<ToolResult> {
+		if (!this.personaLoader) return { error: "Memory curation is disabled. Enable the intelligence layer in Settings." };
+		try {
+			const demoted = await this.personaLoader.tierMemoryStore.cullCore();
+			return { success: true, content: `Demoted ${demoted} low-value core memories to the archive.` };
+		} catch (e: any) { return { error: `Failed to cull core memories: ${e.message}` }; }
+	}
+
 	async createMemory(args: {
 		category: string;
 		content: string;
