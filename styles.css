@@ -141,14 +141,15 @@
  * Target the same element directly; a descendant selector cannot override
  * Obsidian's default max-width on the settings host.
  */
-.vertical-tab-content.obsidian-ai-settings,
-.setting-tab-content.obsidian-ai-settings {
+.modal.mod-settings .vertical-tab-content.obsidian-ai-settings,
+.modal.mod-settings .setting-tab-content.obsidian-ai-settings {
 	box-sizing: border-box;
+	flex: 1 1 auto;
 	width: 100%;
 	max-width: none !important;
 	min-width: 0;
 	margin-inline: 0;
-	padding-inline: 12px;
+	padding-inline: 12px !important;
 }
 
 .obsidian-ai-settings-search {
@@ -447,9 +448,9 @@
 		padding-inline: 8px;
 	}
 
-	.vertical-tab-content.obsidian-ai-settings,
-	.setting-tab-content.obsidian-ai-settings {
-		padding-inline: 8px;
+	.modal.mod-settings .vertical-tab-content.obsidian-ai-settings,
+	.modal.mod-settings .setting-tab-content.obsidian-ai-settings {
+		padding-inline: 8px !important;
 	}
 
 	.obsidian-ai-settings-metrics {
