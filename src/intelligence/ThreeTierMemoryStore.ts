@@ -73,6 +73,7 @@ export class ThreeTierMemoryStore {
 	private coreCache: ScoredMemoryEntry[] | null = null;
 	private stagedCache: ScoredMemoryEntry[] | null = null;
 	private archiveCache: ScoredMemoryEntry[] | null = null;
+	private archiveIndex: Map<string, Map<string, number>> | null = null;
 
 	constructor(deps: ThreeTierMemoryStoreDeps) {
 		this.deps = deps;
@@ -141,6 +142,7 @@ export class ThreeTierMemoryStore {
 
 	async saveArchive(entries: ScoredMemoryEntry[]): Promise<void> {
 		this.archiveCache = entries;
+		this.archiveIndex = null;
 		await this._saveTier(this.archivePath, entries);
 	}
 
@@ -463,13 +465,46 @@ export class ThreeTierMemoryStore {
 	async search(query: string): Promise<ScoredMemoryEntry[]> {
 		const q = query.toLowerCase().trim();
 		if (!q) return [];
+		const [core, staged, archive] = await Promise.all([
+			this.loadCore(), this.loadStaged(), this.loadArchive(),
+		]);
+		const terms = this._terms(q);
+		const ranked: Array<{ entry: ScoredMemoryEntry; score: number }> = [];
+		for (const entry of [...core, ...staged]) {
+			const haystack = `${entry.content} ${entry.tags.join(" ")}`.toLowerCase();
+			if (terms.some((term) => haystack.includes(term))) {
+				ranked.push({ entry, score: terms.filter((term) => haystack.includes(term)).length + 1 });
+			}
+		}
+		const index = this._getArchiveIndex(archive);
+		for (const entry of archive) {
+			const document = index.get(entry.id);
+			if (!document) continue;
+			const score = terms.reduce((sum, term) => sum + (document.get(term) ?? 0), 0);
+			if (score > 0) ranked.push({ entry, score });
+		}
+		return ranked.sort((a, b) => b.score - a.score).map(({ entry }) => entry);
+	}
 
-		const all = await this.listAll();
-		return all.filter(
-			(e) =>
-				e.content.toLowerCase().includes(q) ||
-				e.tags.some((t) => t.includes(q)),
-		);
+	private _terms(text: string): string[] {
+		return [...new Set(text.split(/[^a-z0-9]+/).filter((term) => term.length > 2))];
+	}
+
+	/** Build a lightweight in-memory TF-IDF index for the cold archive. */
+	private _getArchiveIndex(entries: ScoredMemoryEntry[]): Map<string, Map<string, number>> {
+		if (this.archiveIndex) return this.archiveIndex;
+		const documents = entries.map((entry) => this._terms(`${entry.content} ${entry.tags.join(" ")}`));
+		const documentFrequency = new Map<string, number>();
+		for (const terms of documents) for (const term of new Set(terms)) documentFrequency.set(term, (documentFrequency.get(term) ?? 0) + 1);
+		const count = Math.max(entries.length, 1);
+		this.archiveIndex = new Map(entries.map((entry, i) => {
+			const terms = documents[i];
+			const frequencies = new Map<string, number>();
+			for (const term of terms) frequencies.set(term, (frequencies.get(term) ?? 0) + 1);
+			for (const [term, frequency] of frequencies) frequencies.set(term, (frequency / terms.length) * Math.log(count / (documentFrequency.get(term) ?? 1)));
+			return [entry.id, frequencies];
+		}));
+		return this.archiveIndex;
 	}
 
 	/** Get formatted context for system prompt (core entries only) */

@@ -186,6 +186,8 @@ export async function onSessionEnd(
 ): Promise<void> {
 	if (!plugin.settings.intelligence?.autoSummarize) return;
 	if (!plugin.sessionSummarizer) return;
+	if (!plugin.personaLoader) return;
+	const personaLoader = plugin.personaLoader;
 	if (!plugin.settings.intelligence?.enableIntelligence) return;
 
 	const minMessages =
@@ -219,6 +221,11 @@ export async function onSessionEnd(
 		plugin.logger?.log(
 			"info",
 			`[onSessionEnd] Saved ${entries.length} memory entries`,
+		);
+		const curation = await personaLoader.tierMemoryStore.evaluateStaged();
+		plugin.logger?.log(
+			"info",
+			`[onSessionEnd] Curated memory: promoted ${curation.promoted}, demoted ${curation.demoted}`,
 		);
 	} catch (e) {
 		plugin.logger?.log("warn", `[onSessionEnd] Summarization failed: ${e}`);
