@@ -44,6 +44,7 @@ export interface MemoryStoreDeps {
 	app: App;
 	intelligenceDir: string;
 	logger?: FileLogger;
+	backupRetention?: number;
 }
 
 const DEFAULT_MEMORY_ENTRIES: MemoryEntry[] = [];
@@ -103,22 +104,23 @@ export class MemoryStore {
 		await this._snapshot();
 		await adapter.write(this.jsonPath, JSON.stringify(entries, null, 2));
 		await this._regenerateMarkdown(entries);
-		await this._cleanupTimestampedBackups();
+		await this.cleanupTimestampedBackups();
 	}
 
 	/** Retain a bounded number of timestamped snapshots; fixed .bak files remain. */
-	private async _cleanupTimestampedBackups(): Promise<void> {
+	async cleanupTimestampedBackups(): Promise<void> {
 		const adapter = this.deps.app.vault.adapter;
 		const slash = this.jsonPath.lastIndexOf("/");
 		const dir = slash >= 0 ? this.jsonPath.slice(0, slash) : ".";
 		try {
 			const listing = await adapter.list(dir);
+			const retention = Math.max(0, this.deps.backupRetention ?? 20);
 			for (const prefix of [this.jsonPath, this.mdPath]) {
 				const matches = listing.files
 					.filter((path) => path.startsWith(`${prefix}.bak.`))
 					.sort()
 					.reverse();
-				for (const path of matches.slice(TIMESTAMPED_BACKUP_RETENTION)) {
+				for (const path of matches.slice(retention)) {
 					await adapter.remove(path);
 				}
 			}

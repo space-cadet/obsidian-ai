@@ -8,6 +8,7 @@ export interface PersonaLoaderDeps {
 	manifest: { id: string };
 	logger?: FileLogger;
 	memoryCoreSize?: "small" | "medium" | "large";
+	memoryBackupRetention?: number;
 }
 
 const DEFAULT_PERSONA = `# AI Persona
@@ -53,6 +54,7 @@ export class PersonaLoader {
 			app: deps.app,
 			intelligenceDir: this.intelligenceDir,
 			logger: deps.logger,
+			backupRetention: deps.memoryBackupRetention,
 		});
 		this.tierMemoryStore = new ThreeTierMemoryStore({
 			app: deps.app,
@@ -86,6 +88,7 @@ export class PersonaLoader {
 		// Migrate legacy markdown memory if needed
 		await this.memoryStore.migrateFromMarkdown();
 		await this._ensureTieredMemory();
+		await this.memoryStore.cleanupTimestampedBackups();
 		this.deps.logger?.log(
 			"info",
 			`MemoryStore initialized at ${this.intelligenceDir}`,

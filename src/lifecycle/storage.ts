@@ -76,6 +76,7 @@ export async function initializeStorage(
 		manifest: plugin.manifest,
 		logger: plugin.logger,
 		memoryCoreSize: plugin.settings.intelligence?.memoryCoreSize,
+		memoryBackupRetention: plugin.settings.intelligence?.memoryBackupRetention,
 	});
 	plugin.searchIndex = new SearchIndex(plugin.app, plugin.manifest.id);
 	if (plugin.settings.intelligence?.enableIntelligence) {

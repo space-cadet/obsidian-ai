@@ -95,6 +95,23 @@ export function renderIntelligenceSection(
 		});
 
 	new Setting(sectionEl)
+		.setName("Legacy memory backup retention")
+		.setDesc("Number of timestamped legacy memory backups to retain. Fixed recovery backups are always kept.")
+		.addDropdown((dropdown) => {
+			dropdown
+				.addOption("0", "Off")
+				.addOption("10", "10 generations")
+				.addOption("20", "20 generations")
+				.addOption("50", "50 generations")
+				.setValue(String(plugin.settings.intelligence.memoryBackupRetention))
+				.onChange(async (value) => {
+					plugin.settings.intelligence.memoryBackupRetention = Number(value);
+					await saveSettings();
+				});
+		})
+		;
+
+	new Setting(sectionEl)
 		.setName("Persona file path")
 		.setDesc(
 			"Path to the AI's static identity file, relative to the plugin folder. " +
