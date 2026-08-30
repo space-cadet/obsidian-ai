@@ -1,5 +1,18 @@
 # Active Context
 
+### 2026-08-31 — T69 external service authentication planning 🔄
+
+Created T69 as the umbrella for authenticating with external AI and coding
+services, with T69a for Codex / ChatGPT subscription authentication and T69b
+for Claude Code. Added the shared implementation document
+`implementation-details/external-service-authentication.md`.
+
+The planning boundary keeps T39 focused on peer Obsidian-plugin integrations.
+The preferred Codex direction is a desktop adapter around the supported local
+`codex app-server`; direct private-backend OAuth remains research-only. Claude
+Code requires an independent verification of its supported authentication and
+external-integration surface before an implementation path is selected.
+
 ### 2026-08-31 — T16 umbrella and group-chat follow-ups 🔄
 
 T16 is retained as the umbrella for multi-agent group chat. Created T16a for

@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-31 02:09:24 IST*
+*Last Updated: 2026-08-31 02:17:06 IST*
 
 ## Overview
 
@@ -43,6 +43,9 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T65 | Three-Tier Memory System with Auto-Curation | 🔄 | HIGH | 2026-08-29 | T26, T61 | [Details](tasks/T65.md) |
 | T66 | Stylesheet Architecture and CSS Cleanup | 🔄 | MEDIUM | 2026-08-30 | T8a, T34, T41, T58d | [Details](tasks/T66.md) |
 | T67 | Storage Lifecycle Decomposition | 🔄 | HIGH | 2026-08-30 | T46, T57, T58d, T65 | [Details](tasks/T67.md) |
+| T69 | External Service Authentication and Provider Adapters | 🔄 | HIGH | 2026-08-31 | T9, T14, T15, T38, T60, T60e | [Details](tasks/T69.md) |
+| T69a | Codex / ChatGPT Subscription Authentication | 🔄 | HIGH | 2026-08-31 | T69, T9, T14, T38, T60, T60e | [Details](tasks/T69a.md) |
+| T69b | Claude Code Authentication | 🔄 | HIGH | 2026-08-31 | T69, T9, T14, T38, T60, T60e | [Details](tasks/T69b.md) |
 | T64a | Pareto Frontier Sweep | 🔄 | HIGH | 2026-08-27 | T64, T64c | [Details](tasks/T64a.md) |
 | T64c | Fidelity-Weighted Scoring | 🔄 | MEDIUM | 2026-08-27 | T64, T64b | [Details](tasks/T64c.md) |
 | T64d | Live Estimator Validation | ✅ | MEDIUM | 2026-08-27 | 2026-08-29 | T64, T6a | [Details](tasks/T64d.md) |
@@ -253,10 +256,33 @@ T67: Storage Lifecycle Decomposition
   └── T57
   └── T58d
   └── T65
+T69: External Service Authentication and Provider Adapters
+  └── T9
+  └── T14
+  └── T15
+  └── T38
+  └── T60
+  └── T60e
+  └── T69a
+  └── T69b
+T69a: Codex / ChatGPT Subscription Authentication
+  └── T69
+  └── T9
+  └── T14
+  └── T38
+  └── T60
+  └── T60e
+T69b: Claude Code Authentication
+  └── T69
+  └── T9
+  └── T14
+  └── T38
+  └── T60
+  └── T60e
 
 ## Status Summary
 
-- **Active**: 33
+- **Active**: 36
 - **Completed**: 44
 - **Paused**: 2
-- **Total**: 78
+- **Total**: 81

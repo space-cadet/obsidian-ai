@@ -1,5 +1,20 @@
 # Session Cache
 
+## 2026-08-31 — T69 external service authentication planning
+
+- Created T69 as the umbrella for external service authentication and provider
+  adapters.
+- Created T69a for Codex / ChatGPT subscription authentication and T69b for
+  Claude Code authentication.
+- Added `implementation-details/external-service-authentication.md` with the
+  recovered ecosystem comparison, common adapter contract, credential rules,
+  service boundaries, and phased verification plan.
+- Kept T39 separate as the peer-plugin Integration Provider API.
+- No source code or credentials were changed; service-specific verification is
+  the next step.
+
+*Last Updated: 2026-08-31 02:17:06 IST*
+
 ## 2026-08-31 — T16 group-chat umbrella planning
 
 - T16 retained as the multi-agent group-chat umbrella.

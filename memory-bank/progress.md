@@ -1,3 +1,16 @@
+### 2026-08-31 — T69 external service authentication planning 🔄
+
+- Created the T69 umbrella for external service authentication and provider
+  adapters.
+- Created T69a for Codex / ChatGPT subscription authentication and T69b for
+  Claude Code authentication.
+- Recorded the preferred Codex `codex app-server` direction and kept direct
+  private-backend OAuth as a non-default research alternative.
+- Added the shared implementation document with privacy rules, adapter
+  boundaries, service-specific gates, and delivery phases.
+- No source code or credentials changed. Official service-authentication
+  verification remains the next step.
+
 ### 2026-08-30 — Multi-agent sequential orchestration fixes ✅
 
 - Sequential dispatch now feeds each agent's response into the next agent's

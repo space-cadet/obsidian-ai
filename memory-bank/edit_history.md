@@ -1,6 +1,17 @@
 # Edit History
 
-*Last Updated: 2026-08-31 02:09:24 IST*
+*Last Updated: 2026-08-31 02:17:06 IST*
+
+#### 02:17:06 IST - T69: Create external service authentication task family
+- Created `memory-bank/tasks/T69.md` - Defined the external service authentication and provider-adapter umbrella.
+- Created `memory-bank/tasks/T69a.md` - Defined Codex / ChatGPT subscription authentication planning and app-server boundaries.
+- Created `memory-bank/tasks/T69b.md` - Defined Claude Code authentication research and adapter planning.
+- Created `memory-bank/implementation-details/external-service-authentication.md` - Recorded the recovered ecosystem comparison, common contract, security rules, and delivery plan.
+- Updated `memory-bank/tasks.md` - Registered T69, T69a, and T69b and their task relationships.
+- Updated `memory-bank/activeContext.md` - Recorded the new planning umbrella and service boundaries.
+- Updated `memory-bank/progress.md` - Recorded the documentation milestone and next verification gate.
+- Updated `memory-bank/session_cache.md` - Added the current T69 planning handoff.
+- Updated `memory-bank/changelog.md` - Added the unreleased T69 planning entry.
 
 #### 02:09:24 IST - T16: Establish umbrella and group-chat follow-up subtasks
 - Modified `memory-bank/tasks/T16.md` - Re-established T16 as the umbrella and linked focused subtasks and related tasks.

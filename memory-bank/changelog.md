@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased - 2026-08-29
 
+### T69 external service authentication planning — 2026-08-31
+- Created the T69 umbrella for external service authentication and provider
+  adapters.
+- Added T69a for Codex / ChatGPT subscription authentication and T69b for
+  Claude Code authentication.
+- Added the external-service authentication implementation plan, including
+  the recovered ecosystem research, common adapter contract, privacy rules,
+  platform boundaries, and verification phases.
+- Kept the planned Codex integration separate from the existing OpenAI API
+  provider and from T39's peer-plugin Integration Provider API.
+
 ### T66 stylesheet architecture and cleanup — 2026-08-30
 - Split the monolithic stylesheet into six ordered source partials and added
   deterministic concatenation through the `prebuild` hook.
