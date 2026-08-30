@@ -1,5 +1,16 @@
 # Active Context
 
+### 2026-08-30 — Storage and turn-lifecycle refactoring started 🔄
+
+Extracted settings/chat persistence into `src/lifecycle/persistence.ts` and
+user/tool action handling into `src/agent/turnActions.ts`. The coordinators
+remain behavior owners: `storage.ts` still owns initialization and sync, and
+`turnLifecycle.ts` still owns the main `send()` path. Created T67 to track the
+remaining storage boundaries and characterization tests. Verification passes
+at 46 test files / 404 tests, TypeScript, formatting, and `git diff --check`.
+
+The production build and push are the remaining closeout gates for this slice.
+
 ### 2026-08-30 — T65 zero-budget boundary fixed ✅
 
 `ThreeTierMemoryStore.getSystemPromptContext(0)` now returns no memory

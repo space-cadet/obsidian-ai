@@ -1,3 +1,16 @@
+### 2026-08-30 — Storage and turn-lifecycle refactoring slice 🔄
+
+- Extracted settings/chat persistence into
+  `src/lifecycle/persistence.ts`; `storage.ts` keeps the public compatibility
+  exports and remains the lifecycle coordinator.
+- Extracted stop/retry/edit/cancel-edit/tool approval actions into
+  `src/agent/turnActions.ts`; `turnLifecycle.ts` keeps `send()` and execution
+  policy.
+- Created T67 for focused persistence coverage and the remaining sync,
+  plugin-data, initialization, and session-end boundaries.
+- Verification passed: 46 test files / 404 tests, TypeScript, formatting, and
+  `git diff --check`. Production build and remote push remain for closeout.
+
 ### 2026-08-30 — T65 zero-budget boundary fix ✅
 
 - Fixed `ThreeTierMemoryStore.getSystemPromptContext(0)` to return empty

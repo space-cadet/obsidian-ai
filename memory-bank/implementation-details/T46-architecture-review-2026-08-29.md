@@ -93,5 +93,9 @@ chat persistence, sync orchestration, plugin-data recovery, and session-end
 memory work. It also confirms that `turnLifecycle.ts` remains broad but should
 be reassessed only after the single model-history policy seam is stable.
 
-No new T46 extraction was started. CSS is intentionally outside T46 and is
-tracked independently by T66.
+The first small turn-lifecycle extraction has now started: stop, retry, edit,
+cancel-edit, and tool approval actions live in `src/agent/turnActions.ts`,
+while `turnLifecycle.ts` retains the main `send()` path and execution policy.
+This does not replace the model-history acceptance gates or change T46's
+provider/runtime scope. CSS is intentionally outside T46 and is tracked
+independently by T66.

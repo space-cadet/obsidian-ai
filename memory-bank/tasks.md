@@ -40,6 +40,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T64 | Context Optimization Benchmark Harness | 🔄 | HIGH | 2026-08-26 | T48a | [Details](tasks/T64.md) |
 | T65 | Three-Tier Memory System with Auto-Curation | 🔄 | HIGH | 2026-08-29 | T26, T61 | [Details](tasks/T65.md) |
 | T66 | Stylesheet Architecture and CSS Cleanup | 🔄 | MEDIUM | 2026-08-30 | T8a, T34, T41, T58d | [Details](tasks/T66.md) |
+| T67 | Storage Lifecycle Decomposition | 🔄 | HIGH | 2026-08-30 | T46, T57, T58d, T65 | [Details](tasks/T67.md) |
 | T64a | Pareto Frontier Sweep | 🔄 | HIGH | 2026-08-27 | T64, T64c | [Details](tasks/T64a.md) |
 | T64c | Fidelity-Weighted Scoring | 🔄 | MEDIUM | 2026-08-27 | T64, T64b | [Details](tasks/T64c.md) |
 | T64d | Live Estimator Validation | ✅ | MEDIUM | 2026-08-27 | 2026-08-29 | T64, T6a | [Details](tasks/T64d.md) |
@@ -243,10 +244,15 @@ T66: Stylesheet Architecture and CSS Cleanup
   └── T34
   └── T41
   └── T58d
+T67: Storage Lifecycle Decomposition
+  └── T46
+  └── T57
+  └── T58d
+  └── T65
 
 ## Status Summary
 
-- **Active**: 32
+- **Active**: 33
 - **Completed**: 44
 - **Paused**: 2
-- **Total**: 77
+- **Total**: 78

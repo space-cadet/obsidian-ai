@@ -1,18 +1,9 @@
 // src/lifecycle/storage.ts
 import { Notice } from "obsidian";
-import {
-	ObsidianAISettings,
-	DEFAULT_SETTINGS,
-	normalizeSettings,
-} from "../settings";
-import { StoredChatData, ChatSession } from "../types";
+import type { ChatSession } from "../types";
 import type { SyncLogEntry, SyncProgressSnapshot } from "../sync/SyncProgress";
-import { createFileLogger, FileLogger } from "../logger";
-import {
-	createStorage,
-	ChatStorage,
-	StorageDeps,
-} from "../storage/ChatStorage";
+import { createFileLogger } from "../logger";
+import { createStorage } from "../storage/ChatStorage";
 import { ChatStorageMigration } from "../storage/Migration";
 import { MigrationPromptModal } from "../modals/MigrationPromptModal";
 import { requestPluginFileConflictChoice } from "../modals/PluginFileConflictModal";
@@ -43,6 +34,20 @@ import {
 import { ProviderRegistry } from "../integrations/ProviderRegistry";
 import { ChatApiManager } from "../api";
 import type ObsidianAIPlugin from "../main";
+import {
+	createStorageDeps,
+	loadChatData,
+	loadSettings,
+	saveChatData,
+	saveSettings,
+} from "./persistence";
+
+export {
+	loadChatData,
+	loadSettings,
+	saveChatData,
+	saveSettings,
+} from "./persistence";
 
 export async function initializeStorage(
 	plugin: ObsidianAIPlugin,
@@ -76,7 +81,8 @@ export async function initializeStorage(
 		manifest: plugin.manifest,
 		logger: plugin.logger,
 		memoryCoreSize: plugin.settings.intelligence?.memoryCoreSize,
-		memoryBackupRetention: plugin.settings.intelligence?.memoryBackupRetention,
+		memoryBackupRetention:
+			plugin.settings.intelligence?.memoryBackupRetention,
 	});
 	plugin.searchIndex = new SearchIndex(plugin.app, plugin.manifest.id);
 	if (plugin.settings.intelligence?.enableIntelligence) {
@@ -91,7 +97,7 @@ export async function initializeStorage(
 
 	// Initialize chat storage layer
 	plugin._chatStorage = createStorage(
-		_storageDeps(plugin),
+		createStorageDeps(plugin),
 		plugin.settings.chatStorageFormat,
 	);
 
@@ -100,7 +106,9 @@ export async function initializeStorage(
 		const hasLegacy = await plugin._chatStorage.detectLegacyFormat();
 		if (hasLegacy && !plugin._migrationPromptShown) {
 			plugin._migrationPromptShown = true;
-			const migration = new ChatStorageMigration(_storageDeps(plugin));
+			const migration = new ChatStorageMigration(
+				createStorageDeps(plugin),
+			);
 			new MigrationPromptModal(
 				plugin.app,
 				migration,
@@ -108,7 +116,7 @@ export async function initializeStorage(
 					// On migrate: switch to jsonl format and reinitialize storage
 					plugin.settings.chatStorageFormat = "jsonl";
 					plugin._chatStorage = createStorage(
-						_storageDeps(plugin),
+						createStorageDeps(plugin),
 						"jsonl",
 					);
 					await plugin.saveSettings();
@@ -1197,222 +1205,4 @@ export function openRemoteStorageSettings(plugin: ObsidianAIPlugin): void {
 	};
 	window.setTimeout(reveal, 50);
 	window.setTimeout(reveal, 250);
-}
-
-/** Debounced auto-sync trigger. Waits 3s of inactivity before syncing. */
-let autoSyncTimeout: number | null = null;
-
-export function scheduleAutoSync(plugin: ObsidianAIPlugin): void {
-	if (autoSyncTimeout) {
-		window.clearTimeout(autoSyncTimeout);
-	}
-	autoSyncTimeout = window.setTimeout(() => {
-		autoSyncTimeout = null;
-		if (plugin.settings.remoteStorage?.autoSync) {
-			plugin.triggerSync().catch((err) => {
-				plugin.logger?.log("warn", `Auto-sync failed: ${err.message}`);
-			});
-		}
-	}, 3000);
-}
-
-function _storageDeps(plugin: ObsidianAIPlugin): StorageDeps {
-	return {
-		app: plugin.app,
-		manifest: plugin.manifest,
-		settings: plugin.settings,
-		loadData: () => plugin.loadData(),
-		saveData: (data) => plugin.saveData(data),
-		logger: plugin.logger,
-	};
-}
-
-// ─────────────────────────────────────────────────────────────
-// Safe data persistence layer
-// ─────────────────────────────────────────────────────────────
-
-export async function loadSettings(plugin: ObsidianAIPlugin) {
-	plugin.logger?.log("info", "loadSettings: reading data.json");
-	const raw = await plugin.loadData();
-	plugin._settingsLoadedFromFile = raw !== null && typeof raw === "object";
-	plugin.logger?.log(
-		"info",
-		`loadSettings: _settingsLoadedFromFile=${plugin._settingsLoadedFromFile}, raw=${raw ? "exists" : "null"}`,
-	);
-	plugin.settings = normalizeSettings(raw);
-
-	// Restore WebDAV password from localStorage (not synced, not in data.json)
-	const savedPassword = localStorage.getItem(
-		"obsidian-ai:webdav-password",
-	);
-	if (savedPassword && plugin.settings.remoteStorage.webdav) {
-		plugin.settings.remoteStorage.webdav.password = savedPassword;
-	}
-
-	plugin.logger?.setMaxSize(plugin.settings.debugLogMaxSizeMB * 1024 * 1024);
-}
-
-export async function saveSettings(plugin: ObsidianAIPlugin) {
-	plugin.logger?.log(
-		"info",
-		`saveSettings called: _settingsLoadedFromFile=${plugin._settingsLoadedFromFile}`,
-	);
-
-	// Guard: don't overwrite with defaults if we never successfully loaded user data.
-	if (!plugin._settingsLoadedFromFile) {
-		plugin.logger?.log(
-			"warn",
-			"saveSettings blocked: no valid data.json was loaded; refusing to overwrite with defaults",
-		);
-		return;
-	}
-
-	// Save password to localStorage (or clear if empty)
-	const webdavPassword = plugin.settings.remoteStorage.webdav?.password;
-	if (webdavPassword) {
-		localStorage.setItem(
-			"obsidian-ai:webdav-password",
-			webdavPassword,
-		);
-	} else {
-		localStorage.removeItem("obsidian-ai:webdav-password");
-	}
-
-	const existing = (await plugin.loadData()) ?? {};
-	// Deep-clone settings to avoid mutating live config when stripping secrets
-	let payload: Record<string, any> = JSON.parse(
-		JSON.stringify(plugin.settings),
-	);
-	payload = { ...existing, ...payload };
-
-	// Strip password from persisted data.json
-	if (payload.remoteStorage?.webdav?.password) {
-		payload.remoteStorage.webdav.password = "";
-	}
-
-	// When using JSONL storage, strip legacy chat data keys from data.json
-	// to avoid accidentally re-introducing legacy format after migration
-	if (plugin.settings.chatStorageFormat === "jsonl") {
-		delete payload.chatData;
-		delete payload.chatMessages;
-	}
-
-	// Skip write if nothing changed
-	if (JSON.stringify(payload) === JSON.stringify(existing)) {
-		plugin.logger?.log("info", "saveSettings skipped: no changes");
-		return;
-	}
-
-	plugin.logger?.log("info", "saveSettings: writing data.json to disk");
-	await _ensureRollingBackup(plugin, existing);
-	await plugin.saveData(payload);
-	plugin.logger?.log("info", "saveSettings: data.json written successfully");
-}
-
-export async function loadChatData(
-	plugin: ObsidianAIPlugin,
-): Promise<StoredChatData> {
-	plugin.logger?.log("info", "loadChatData: delegating to storage layer");
-	if (!plugin._chatStorage) {
-		plugin._chatStorage = createStorage(
-			_storageDeps(plugin),
-			plugin.settings.chatStorageFormat,
-		);
-	}
-	return plugin._chatStorage.loadChatData();
-}
-
-export async function saveChatData(
-	plugin: ObsidianAIPlugin,
-	chatData: StoredChatData,
-): Promise<void> {
-	if (!plugin._chatStorage) {
-		plugin._chatStorage = createStorage(
-			_storageDeps(plugin),
-			plugin.settings.chatStorageFormat,
-		);
-	}
-	if (plugin._saveInProgress) {
-		plugin._pendingChatData = chatData;
-		plugin.logger?.log(
-			"info",
-			"saveChatData queued: save already in progress",
-		);
-		return;
-	}
-	plugin._saveInProgress = true;
-
-	try {
-		let nextChatData: StoredChatData | null = chatData;
-		while (nextChatData) {
-			plugin._pendingChatData = null;
-			plugin.logger?.log(
-				"info",
-				"saveChatData: writing via storage layer",
-			);
-			await plugin._chatStorage.saveChatData(nextChatData);
-			plugin.logger?.log(
-				"info",
-				"saveChatData: storage layer wrote successfully",
-			);
-
-			// Auto-sync to remote if enabled (debounced)
-			if (
-				plugin.settings.remoteStorage?.enabled &&
-				plugin.settings.remoteStorage?.autoSync
-			) {
-				scheduleAutoSync(plugin);
-			}
-
-			// Invalidate search index so next search picks up new messages
-			plugin.searchIndex?.invalidate();
-
-			nextChatData = plugin._pendingChatData;
-			if (nextChatData) {
-				plugin.logger?.log(
-					"info",
-					"saveChatData: flushing queued snapshot",
-				);
-			}
-		}
-	} finally {
-		plugin._saveInProgress = false;
-	}
-}
-
-/** Create rolling backups of data.json before writes */
-async function _ensureRollingBackup(
-	plugin: ObsidianAIPlugin,
-	currentData: unknown,
-): Promise<void> {
-	try {
-		const adapter = plugin.app.vault.adapter;
-		const pluginDir = `${plugin.app.vault.configDir}/plugins/${plugin.manifest.id}`;
-		const dataPath = `${pluginDir}/data.json`;
-		const backupCount = plugin.settings.sessionBackupCount ?? 3;
-
-		const exists = await adapter.exists(dataPath);
-		if (!exists) return;
-
-		const content = await adapter.read(dataPath);
-
-		// Rotate existing backups: .bak.2 -> .bak.3, .bak.1 -> .bak.2, .bak -> .bak.1
-		for (let i = backupCount - 1; i >= 1; i--) {
-			const src =
-				i === 1 ? `${dataPath}.bak` : `${dataPath}.bak.${i - 1}`;
-			const dst = `${dataPath}.bak.${i}`;
-			if (await adapter.exists(src)) {
-				await adapter.write(dst, await adapter.read(src));
-			}
-		}
-
-		// Write the new .bak
-		await adapter.write(`${dataPath}.bak`, content);
-		plugin.logger?.log(
-			"info",
-			`Rolling backup created for data.json (keeping ${backupCount} copies)`,
-		);
-	} catch (e) {
-		plugin.logger?.log("warn", `Failed to create rolling backup: ${e}`);
-	}
 }

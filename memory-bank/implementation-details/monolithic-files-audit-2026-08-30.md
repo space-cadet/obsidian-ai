@@ -5,7 +5,8 @@ source_commit: 579252b
 
 # Overall Code Review and Monolithic Files Audit — 2026-08-30
 
-**Status**: Read-only audit recorded; no production source refactor was made.
+**Status**: Audit recorded; first production refactoring slice completed
+locally and tracked by T67.
 
 ## Scope and evidence
 
@@ -101,9 +102,28 @@ test these seams:
   coordinated with T65 rather than duplicated here.
 
 Each boundary should be extracted only after its inputs, error behavior,
-logging, and lifecycle ownership are tested. The first likely slice is chat
+logging, and lifecycle ownership are tested. The first slice is chat
 persistence versus sync orchestration because those have the clearest
-different change pressures. No extraction was started in this audit.
+different change pressures.
+
+## Refactoring slice — 2026-08-30
+
+- Moved settings and chat-data persistence, queued writes, backup rotation,
+  and auto-sync scheduling into `src/lifecycle/persistence.ts`.
+- Kept `storage.ts` as the lifecycle coordinator and preserved its existing
+  persistence exports for callers during the transition.
+- Moved stop, retry, edit, cancel-edit, and tool approval actions into
+  `src/agent/turnActions.ts`; `turnLifecycle.ts` still owns the main `send()`
+  path and its execution policy.
+- The source sizes are now 1,208 lines for `storage.ts`, 214 for
+  `persistence.ts`, 1,019 for `turnLifecycle.ts`, and 169 for `turnActions.ts`.
+- Verification passed: 46 test files / 404 tests, TypeScript, formatting, and
+  `git diff --check`.
+
+This is a responsibility extraction, not a claim that either monolith is
+resolved. T67 tracks the next storage slices and focused persistence tests;
+T46 retains ownership of the broader turn-lifecycle and provider/runtime
+work.
 
 ## Reassessment: `src/agent/turnLifecycle.ts`
 
@@ -172,4 +192,3 @@ still flat.
 5. Track stylesheet work independently in T66 and implement it last.
 6. For every implementation slice, run focused tests, the full test suite,
    TypeScript, the production build, and relevant desktop/mobile acceptance.
-
