@@ -76,6 +76,7 @@ src/
 │   ├── AgentLoop.ts               # Tool calling loop
 │   ├── ChatTurnCoordinator.ts     # Shared native/OpenResponses turn runner (T46a)
 │   ├── ChatTurnOutput.ts           # Text and tool-result collection (T46a)
+│   ├── turnActions.ts              # Stop, retry, edit, and approval actions (T46)
 │   ├── ToolExecutor.ts            # Registry-backed tool execution layer (326 lines; T46)
 │   ├── tools/                     # Resolved definitions, lookup, and handlers (T46)
 │   │   ├── ToolHandlerContext.ts   # Shared services for capability handlers
@@ -108,9 +109,13 @@ src/
 │       └── source.ts
 │
 ├── types.ts                       # Shared TypeScript types
-├── main.ts                        # Plugin lifecycle coordinator (228 lines; T46)
+├── main.ts                        # Plugin lifecycle coordinator (234 lines; T46)
 ├── ui/                            # View registration and workspace events
-└── lifecycle/storage.ts           # Storage initialization and migration
+└── lifecycle/                     # Storage lifecycle coordination (T67)
+    ├── storage.ts                 # Startup, migration, session-end, cleanup
+    ├── persistence.ts             # Settings and chat-data persistence
+    ├── sync.ts                    # Sync setup and sync actions
+    └── pluginDataSync.ts          # Selected plugin-data sync
 ```
 
 `default_prompts.ts` remains at the root of `src/`.
@@ -289,8 +294,11 @@ When a file grows beyond its target size:
   four main targets are now 326, 220, 363, and 228 lines respectively. The
   fresh `improve-codebase-architecture` review keeps model-history policy as
   the top follow-up, with T48/T48a/T48b/T48c/T62a as owners. `TurnLifecycle`
-  is a reassessment boundary, provider runtime acceptance remains open, and
-  sync decomposition is deferred.
+  is a reassessment boundary and provider runtime acceptance remains open.
+- **2026-08-30**: T67 moved storage persistence, sync coordination, and
+  selected plugin-data sync into separate lifecycle modules. `storage.ts` is
+  now 227 lines. T46 also moved user and tool actions into `turnActions.ts`;
+  the main turn send path remains in `turnLifecycle.ts`.
 
 ## Fresh Review Boundary — 2026-08-29
 

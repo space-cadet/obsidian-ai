@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased - 2026-08-29
 
+### T67 storage lifecycle refactoring — 2026-08-30
+- Split storage persistence, sync coordination, and selected plugin-data sync
+  into separate lifecycle modules.
+- Added focused tests for persistence and plugin-data sync.
+- Kept `storage.ts` as a small coordinator for startup, migration, session-end
+  memory work, and logger cleanup.
+- The current suite passes 48 test files / 433 tests. TypeScript, the
+  production build, and `git diff --check` pass.
+- The full Prettier check still reports 28 files needing formatting.
+
 ### Settings and startup follow-up — 2026-08-30
 - Added persistent collapsible settings sections and expand/collapse-all controls.
 - Fixed search navigation, API-key reveal/copy, slider values, headings, and Custom Commands layout.
@@ -35,7 +45,7 @@ All notable changes to this project will be documented in this file.
   T46/T46a structural split is complete at the original target level.
 - The top follow-up is one model-history policy boundary across T48/T48a/T48b/
   T48c/T62a; `TurnLifecycle` and capability construction are secondary review
-  boundaries, while sync decomposition remains deferred.
+  boundaries. Sync decomposition was later completed under T67.
 - T46 remains open for provider switching and real-provider runtime
   acceptance. No new task or subtask was created.
 

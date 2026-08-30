@@ -1,4 +1,17 @@
-### 2026-08-30 — Storage and turn-lifecycle refactoring slice 🔄
+### 2026-08-30 — T67 storage refactoring closeout 🔄
+
+- Completed the three planned storage boundaries: persistence, sync
+  coordination, and selected plugin-data sync.
+- `storage.ts` is now 227 lines and keeps only startup, migration,
+  session-end memory work, and logger cleanup.
+- Added 18 persistence tests and 11 plugin-data tests. The full suite now
+  passes 48 test files / 433 tests; TypeScript, the production build, and
+  `git diff --check` also pass.
+- The source changes are pushed at `fa35c12`; these Memory Bank updates are
+  currently local.
+- Prettier is not yet clean: 28 files still need formatting.
+
+### 2026-08-30 — Initial storage and turn-lifecycle refactoring slice
 
 - Extracted settings/chat persistence into
   `src/lifecycle/persistence.ts`; `storage.ts` keeps the public compatibility
@@ -14,8 +27,8 @@
   `src/lifecycle/__tests__/persistence.test.ts` covering settings load/save
   guards, WebDAV password handling, rolling backups, chat-data queuing,
   auto-sync debouncing, and legacy key stripping.
-- Verification passed: 47 test files / 422 tests, TypeScript, production build,
-  and `git diff --check`. Production build and remote push remain for closeout.
+- At that stage, the later sync and plugin-data extraction sessions had not yet
+  happened. Their final results are recorded above.
 
 ### 2026-08-30 — T65 zero-budget boundary fix ✅
 
@@ -91,7 +104,8 @@
   inspectable compaction record remain open.
 - Fresh finding: make model-history policy one deep module before deciding
   whether `TurnLifecycle` needs further extraction. Capability construction is
-  a secondary T60/T60a cleanup; sync decomposition remains deferred.
+  a secondary T60/T60a cleanup. At that time, sync decomposition remained
+  deferred; it was later completed under T67.
 - No new task or subtask was created.
 
 ### 2026-08-29 — T61 self-settings integration acceptance ✅

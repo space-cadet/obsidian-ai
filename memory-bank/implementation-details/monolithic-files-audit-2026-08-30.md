@@ -5,8 +5,8 @@ source_commit: 579252b
 
 # Overall Code Review and Monolithic Files Audit — 2026-08-30
 
-**Status**: Audit recorded; first production refactoring slice completed
-locally and tracked by T67.
+**Status**: Audit recorded; the first three T67 storage boundaries are now
+completed and the remaining coordinator work is tracked by T67.
 
 ## Scope and evidence
 
@@ -105,6 +105,26 @@ Each boundary should be extracted only after its inputs, error behavior,
 logging, and lifecycle ownership are tested. The first slice is chat
 persistence versus sync orchestration because those have the clearest
 different change pressures.
+
+## T67 follow-up — 2026-08-30
+
+The planned storage work continued after this audit:
+
+- `src/lifecycle/persistence.ts` now owns settings and chat-data persistence,
+  queued writes, backups, search invalidation, and auto-sync scheduling.
+- `src/lifecycle/sync.ts` now owns sync setup, manual sync, index rebuild, and
+  cancellation.
+- `src/lifecycle/pluginDataSync.ts` now owns selected plugin-data sync,
+  serialization, recovery copies, and result reporting.
+- `src/lifecycle/storage.ts` is now 227 lines and coordinates startup,
+  migration, session-end memory work, and logger cleanup.
+- Focused tests cover persistence (18) and plugin-data sync (11). The current
+  full suite passes 48 test files / 433 tests.
+
+The old size table above is retained as the audit baseline. The new modules
+are responsibility boundaries, not just smaller files. The remaining question
+is whether the startup and session-end coordinator code has a clear enough
+boundary to split further.
 
 ## Refactoring slice — 2026-08-30
 

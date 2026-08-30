@@ -87,5 +87,13 @@ truncation, and compaction.
 
 After that seam is tested, reassess whether `TurnLifecycle` still needs a
 narrower interface. Keep capability-construction cleanup with T60/T60a, keep
-sync decomposition deferred, and retain T46's provider-switching and
+the storage work under T67, and retain T46's provider-switching and
 real-provider runtime acceptance as separate gates.
+
+## Later update — 2026-08-30
+
+T46's turn-action slice is now in `src/agent/turnActions.ts`. T67 also
+completed the planned storage boundaries in `persistence.ts`, `sync.ts`, and
+`pluginDataSync.ts`. No further automatic split is required for T46; the
+remaining work is the provider/runtime acceptance and the model-history review
+already listed above.

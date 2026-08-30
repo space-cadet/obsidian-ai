@@ -29,6 +29,16 @@ Chat Lab must not add whole-vault sync. SyncIt must continue excluding `.obsidia
 
 Chat Lab currently has its own WebDAV sync engine. Chat sessions use a stronger encrypted session path. Settings, memory, persona, audit, usage, and sync metadata use a separate path and are the focus of T57a–T57c.
 
+As of 2026-08-30, the code is split into two lifecycle modules:
+
+- `src/lifecycle/sync.ts` coordinates the sync engine and chat-session sync.
+- `src/lifecycle/pluginDataSync.ts` selects and syncs plugin-data components.
+
+`src/main.ts` keeps the plugin-facing methods, and
+`src/sync/PluginFileSyncManager.ts` continues to own safe file transfer and
+conflict handling. This split changes where the code lives, not the ownership
+rules described in this document.
+
 SyncIt's current integration API is for AI tools and provider capabilities. It is not a data-sync API. T57d defines the future sibling contract.
 
 ## Data Rules

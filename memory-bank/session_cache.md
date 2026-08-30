@@ -1,6 +1,25 @@
 # Session Cache
 
-*Last Updated: 2026-08-30 16:14 IST*
+*Last Updated: 2026-08-30 16:46:02 IST*
+
+## 2026-08-30 — T67 final storage refactoring state
+
+- Persistence, sync coordination, and plugin-data sync are all extracted from
+  `storage.ts`.
+- The current full suite passes 48 test files / 433 tests. TypeScript, the
+  production build, and `git diff --check` pass.
+- The source changes are pushed at `fa35c12`; these Memory Bank updates are
+  currently local.
+- Prettier still reports issues in 28 files. No source formatting was changed
+  during this documentation update.
+
+## 2026-08-30 — T67 boundary 2: sync orchestration extracted
+
+- Moved `initSyncEngine`, `triggerSync`, `rebuildSyncIndex`, and `cancelSync`
+  into `src/lifecycle/sync.ts`.
+- Updated `main.ts` to use the new sync module while keeping the plugin API
+  unchanged.
+- Commit: `2995047`.
 
 ## 2026-08-30 — T67 boundary 3: plugin-data sync extracted
 
@@ -134,7 +153,8 @@ See `sessions/2026-08-29-t64d-expanded-live-validation.md` and
   compaction record remain open.
 - Next action: define the single model-history projection boundary under the
   existing T48/T62a owners, then reassess lifecycle extraction. No new task or
-  subtask was created; sync decomposition remains deferred.
+  subtask was created. At that time, sync decomposition remained deferred; it
+  was later completed under T67.
 
 ## 2026-08-29 — Memory Bank Task Registry Cleanup
 

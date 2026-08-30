@@ -1,5 +1,14 @@
 # Active Context
 
+### 2026-08-30 — T67 documentation closeout
+
+The three storage boundaries from the 2026-08-30 sessions are now present in
+the checkout and recorded in T67. The current full suite passes 48 test files
+and 433 tests. TypeScript, the production build, and `git diff --check` pass.
+The source changes are pushed at `fa35c12`. These Memory Bank updates are
+currently local. Prettier still reports issues in 28 files, including the four
+files from the latest storage extraction.
+
 ### 2026-08-30 — T67 boundary 3 complete: plugin-data sync extracted ✅
 
 Extracted `syncPluginData`, `serializePluginData`, `deserializePluginData`,
@@ -27,10 +36,8 @@ Added 18 focused characterization tests in
 `src/lifecycle/__tests__/persistence.test.ts` covering settings load/save
 guards, WebDAV password handling, rolling backup creation, chat-data write
 queuing, auto-sync debouncing, and legacy key stripping for jsonl format.
-Verification passes at 47 test files / 422 tests, TypeScript, production build,
-and `git diff --check`.
-
-The production build and push are the remaining closeout gates for this slice.
+At this stage, the focused persistence work and source changes were complete;
+later sessions completed the production build and remote push.
 
 ### 2026-08-30 — T65 zero-budget boundary fixed ✅
 
@@ -159,8 +166,8 @@ plugin acceptance remain open.
 Current plan: consolidate model-history policy behind one model-ready history
 boundary under T48/T48a/T48b/T48c/T62a, then reassess whether `TurnLifecycle`
 needs another extraction. Capability-construction cleanup remains with
-T60/T60a, and sync decomposition remains deferred. No new task or subtask was
-created.
+T60/T60a. At that time, sync decomposition remained deferred; it was later
+completed under T67. No new task or subtask was created.
 
 ### 2026-08-29 — T61 self-settings integration acceptance ✅
 
