@@ -1,6 +1,52 @@
 # Session Cache
 
-*Last Updated: 2026-08-30 13:01:09 IST*
+*Last Updated: 2026-08-30 22:03:24 IST*
+
+## 2026-08-30 — T66 CSS refactoring handoff
+
+- Recorded the complete stylesheet split and cleanup implementation in the
+  T66 task, selector inventory, and new architecture document.
+- Source is split into six ordered partials with deterministic concatenation;
+  generated `styles.css` remains the tracked release artifact.
+- Commits through `eff9f38` are pushed. Serial verification passes 48 test
+  files / 433 tests, TypeScript, build, package, and `git diff --check`.
+- T66 remains active: the Android Settings card-width screenshots show no
+  meaningful change after four wrapper/gutter attempts, and the prompt-field
+  `min-width: 25em` needs review in the next session.
+
+## 2026-08-30 — T67 final storage refactoring state
+
+- Persistence, sync coordination, and plugin-data sync are all extracted from
+  `storage.ts`.
+- The current full suite passes 48 test files / 433 tests. TypeScript, the
+  production build, and `git diff --check` pass.
+- The source changes are pushed at `fa35c12`; these Memory Bank updates are
+  currently local.
+- Prettier still reports issues in 28 files. No source formatting was changed
+  during this documentation update.
+
+## 2026-08-30 — T67 boundary 2: sync orchestration extracted
+
+- Moved `initSyncEngine`, `triggerSync`, `rebuildSyncIndex`, and `cancelSync`
+  into `src/lifecycle/sync.ts`.
+- Updated `main.ts` to use the new sync module while keeping the plugin API
+  unchanged.
+- Commit: `2995047`.
+
+## 2026-08-30 — T67 boundary 3: plugin-data sync extracted
+
+- Extracted `syncPluginData`, `serializePluginData`, `deserializePluginData`,
+  and `openRemoteStorageSettings` from `storage.ts` into
+  `src/lifecycle/pluginDataSync.ts`.
+- `storage.ts` reduced from ~496 to ~200 lines.
+- Added 11 focused characterization tests covering component filtering,
+  dry-run mode, success/failure/conflict translation, error handling,
+  default direction from settings, and serialization roundtrip.
+- Full verification: 29 lifecycle tests passing, TypeScript clean,
+  production build green.
+- Commit: `56422f1` on `origin/main`.
+- Remaining in `storage.ts`: `initializeStorage`, `migrateStorage`,
+  `onSessionEnd`, `cleanupStorage` (~200 lines).
 
 ## 2026-08-30 — T65 memory integration closeout
 
@@ -119,7 +165,8 @@ See `sessions/2026-08-29-t64d-expanded-live-validation.md` and
   compaction record remain open.
 - Next action: define the single model-history projection boundary under the
   existing T48/T62a owners, then reassess lifecycle extraction. No new task or
-  subtask was created; sync decomposition remains deferred.
+  subtask was created. At that time, sync decomposition remained deferred; it
+  was later completed under T67.
 
 ## 2026-08-29 — Memory Bank Task Registry Cleanup
 

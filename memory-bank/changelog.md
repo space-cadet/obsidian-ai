@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased - 2026-08-29
 
+### T66 stylesheet architecture and cleanup — 2026-08-30
+- Split the monolithic stylesheet into six ordered source partials and added
+  deterministic concatenation through the `prebuild` hook.
+- Kept the generated root `styles.css` release artifact tracked.
+- Removed verified duplicate focus/sync declarations and replaced unsupported
+  `attr(data-agent-color)` with a typed custom property for agent bubbles.
+- Pushed the stylesheet refactor and four Settings-wrapper follow-ups through
+  `eff9f38`.
+- Verification passes 48 test files / 433 tests, TypeScript, production build,
+  package output, and `git diff --check`.
+- Android Settings card-width visual acceptance remains open; the supplied
+  before/after screenshots showed no meaningful change, and prompt fields need
+  a follow-up review of their fixed `min-width`.
+
+### T67 storage lifecycle refactoring — 2026-08-30
+- Split storage persistence, sync coordination, and selected plugin-data sync
+  into separate lifecycle modules.
+- Added focused tests for persistence and plugin-data sync.
+- Kept `storage.ts` as a small coordinator for startup, migration, session-end
+  memory work, and logger cleanup.
+- The current suite passes 48 test files / 433 tests. TypeScript, the
+  production build, and `git diff --check` pass.
+- The full Prettier check still reports 28 files needing formatting.
+
 ### Settings and startup follow-up — 2026-08-30
 - Added persistent collapsible settings sections and expand/collapse-all controls.
 - Fixed search navigation, API-key reveal/copy, slider values, headings, and Custom Commands layout.
@@ -35,7 +59,7 @@ All notable changes to this project will be documented in this file.
   T46/T46a structural split is complete at the original target level.
 - The top follow-up is one model-history policy boundary across T48/T48a/T48b/
   T48c/T62a; `TurnLifecycle` and capability construction are secondary review
-  boundaries, while sync decomposition remains deferred.
+  boundaries. Sync decomposition was later completed under T67.
 - T46 remains open for provider switching and real-provider runtime
   acceptance. No new task or subtask was created.
 

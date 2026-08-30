@@ -15,6 +15,7 @@ import { toToolDisplayDescriptor } from "../agent/toolRegistry";
 import { ToolExecutor } from "../agent/ToolExecutor";
 import { runChatTurn } from "../agent/ChatTurnCoordinator";
 import { ChatTurnOutput } from "../agent/ChatTurnOutput";
+import { TurnActionController } from "./turnActions";
 import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
 import { resolveContextItems } from "../context/ContextEngine";
 import { resolveAttachments } from "../context/AttachmentEngine";
@@ -123,8 +124,17 @@ export class TurnLifecycle {
 	private compactionBySession: Record<string, string> = {};
 	private compactionInFlight: Record<string, boolean> = {};
 	private currentToolExecutor: ToolExecutor | null = null;
+	private readonly actions: TurnActionController;
+	private readonly getDeps: () => TurnLifecycleDeps;
 
-	constructor(private getDeps: () => TurnLifecycleDeps) {}
+	constructor(getDeps: () => TurnLifecycleDeps) {
+		this.getDeps = getDeps;
+		this.actions = new TurnActionController(
+			getDeps,
+			() => this.currentToolExecutor,
+			(text, attachments) => this.send(text, attachments),
+		);
+	}
 
 	// ─────────────────────────────────────────────────────
 	// SEND
@@ -972,167 +982,38 @@ export class TurnLifecycle {
 	// STOP
 	// ─────────────────────────────────────────────────────
 	stop = (): void => {
-		const deps = this.getDeps();
-		const currentActiveId = deps.activeSessionIdRef.current;
-		deps.getRuntime(currentActiveId).controller?.abort();
+		this.actions.stop();
 	};
 
 	// ─────────────────────────────────────────────────────
 	// RETRY
 	// ─────────────────────────────────────────────────────
 	retry = (messageId: string): void => {
-		const deps = this.getDeps();
-		const currentActiveId = deps.activeSessionIdRef.current;
-		if (!currentActiveId) return;
-		if (deps.getRuntime(currentActiveId).controller) return;
-
-		const session = deps.sessionsRef.current.find(
-			(s) => s.id === currentActiveId,
-		);
-		if (!session) return;
-
-		const assistantIndex = session.messages.findIndex(
-			(m) => m.id === messageId,
-		);
-		if (assistantIndex <= 0) return;
-
-		let userIndex = -1;
-		for (let i = assistantIndex - 1; i >= 0; i--) {
-			if (session.messages[i].role === "user") {
-				userIndex = i;
-				break;
-			}
-		}
-		if (userIndex === -1) return;
-
-		const userMsg = session.messages[userIndex];
-		const truncated = session.messages.slice(0, userIndex);
-		deps.messagesRef.current = truncated;
-
-		deps.setSessions((prev) =>
-			prev.map((s) =>
-				s.id === currentActiveId
-					? {
-							...s,
-							messages: truncated,
-							updatedAt: Date.now(),
-						}
-					: s,
-			),
-		);
-
-		// Restore attachments and context items before resending
-		if (userMsg.attachments && userMsg.attachments.length > 0) {
-			deps.ui.setMessageAttachments(userMsg.attachments);
-		}
-		if (userMsg.contextItems && userMsg.contextItems.length > 0) {
-			deps.setContextItems(userMsg.contextItems);
-		}
-
-		void this.send(userMsg.content, userMsg.attachments);
+		this.actions.retry(messageId);
 	};
 
 	// ─────────────────────────────────────────────────────
 	// EDIT
 	// ─────────────────────────────────────────────────────
 	edit = (messageId: string): void => {
-		const deps = this.getDeps();
-		const currentActiveId = deps.activeSessionIdRef.current;
-		if (!currentActiveId) return;
-		if (deps.getRuntime(currentActiveId).controller) return;
-
-		const session = deps.sessionsRef.current.find(
-			(s) => s.id === currentActiveId,
-		);
-		if (!session) return;
-
-		const index = session.messages.findIndex((m) => m.id === messageId);
-		if (index < 0 || session.messages[index].role !== "user") return;
-
-		const msg = session.messages[index];
-		const truncated = session.messages.slice(0, index);
-
-		deps.ui.setOriginalMessages([...session.messages]);
-		deps.messagesRef.current = truncated;
-
-		// Restore attachments and context items from the message being edited
-		deps.ui.setMessageAttachments(msg.attachments ?? []);
-		deps.setContextItems(msg.contextItems ?? []);
-
-		deps.setSessions((prev) =>
-			prev.map((s) =>
-				s.id === currentActiveId
-					? {
-							...s,
-							messages: truncated,
-							updatedAt: Date.now(),
-						}
-					: s,
-			),
-		);
-		deps.ui.setIsEditing(true);
-		deps.ui.setEditMessageText(msg.content);
+		this.actions.edit(messageId);
 	};
 
 	// ─────────────────────────────────────────────────────
 	// CANCEL EDIT
 	// ─────────────────────────────────────────────────────
 	cancelEdit = (): void => {
-		const deps = this.getDeps();
-		const currentActiveId = deps.activeSessionIdRef.current;
-		if (!currentActiveId || deps.ui.originalMessages.length === 0) return;
-
-		deps.setSessions((prev) =>
-			prev.map((s) =>
-				s.id === currentActiveId
-					? {
-							...s,
-							messages: deps.ui.originalMessages,
-							updatedAt: Date.now(),
-						}
-					: s,
-			),
-		);
-		deps.ui.setIsEditing(false);
-		deps.ui.setOriginalMessages([]);
-		deps.ui.setEditMessageText("");
-		deps.ui.setMessageAttachments([]);
-		deps.setContextItems([]);
+		this.actions.cancelEdit();
 	};
 
 	// ─────────────────────────────────────────────────────
 	// TOOL APPROVAL
 	// ─────────────────────────────────────────────────────
 	approveTool = async (): Promise<void> => {
-		const deps = this.getDeps();
-		const currentActiveId = deps.activeSessionIdRef.current;
-		if (!currentActiveId) return;
-		const runtime = deps.getRuntime(currentActiveId);
-		const pendingToolCall = runtime.pendingToolCall;
-		if (!pendingToolCall) return;
-		const toolExecutor =
-			this.currentToolExecutor ??
-			new ToolExecutor(
-				deps.plugin.app,
-				deps.plugin.settings,
-				deps.plugin.personaLoader ?? undefined,
-				deps.plugin.searchIndex ?? undefined,
-				() => currentActiveId,
-				deps.plugin.integrationRegistry,
-				deps.plugin.saveSettings.bind(deps.plugin),
-				deps.plugin.manifest?.id,
-			);
-		const result = await toolExecutor.execute(pendingToolCall);
-		runtime.resolveTool?.(result);
-		deps.patchRuntime(currentActiveId, { resolveTool: null });
+		await this.actions.approveTool();
 	};
 
 	rejectTool = (): void => {
-		const deps = this.getDeps();
-		const currentActiveId = deps.activeSessionIdRef.current;
-		if (!currentActiveId) return;
-		const runtime = deps.getRuntime(currentActiveId);
-		runtime.resolveTool?.(null);
-		deps.patchRuntime(currentActiveId, { resolveTool: null });
+		this.actions.rejectTool();
 	};
 }

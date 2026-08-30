@@ -1,3 +1,70 @@
+### 2026-08-30 — T66 stylesheet refactoring handoff 🔄
+
+- Split the stylesheet into six ordered partials under `styles/` and added
+  `scripts/concat-styles.mjs` plus the `prebuild` hook.
+- Kept the generated root `styles.css` tracked and verified package output.
+- Removed verified duplicate declarations, preserved the content overflow
+  fix, and replaced unsupported `attr(data-agent-color)` with a typed CSS
+  custom property set by `MessageBubble.tsx`.
+- Pushed commits `1276a0a`, `c242d02`, `5e22110`, `0d6a035`, and `eff9f38`.
+- Serial verification passes 48 test files / 433 tests, TypeScript, build,
+  package, and `git diff --check`.
+- T66 remains open for live Android Settings DOM inspection and visual
+  acceptance; the four card-width attempts did not change the screenshot
+  boundaries, and the last attempt exposed prompt-field misalignment.
+
+### 2026-08-30 — T67 storage refactoring closeout 🔄
+
+- Completed the three planned storage boundaries: persistence, sync
+  coordination, and selected plugin-data sync.
+- `storage.ts` is now 227 lines and keeps only startup, migration,
+  session-end memory work, and logger cleanup.
+- Added 18 persistence tests and 11 plugin-data tests. The full suite now
+  passes 48 test files / 433 tests; TypeScript, the production build, and
+  `git diff --check` also pass.
+- The source changes are pushed at `fa35c12`; these Memory Bank updates are
+  currently local.
+- Prettier is not yet clean: 28 files still need formatting.
+
+### 2026-08-30 — Initial storage and turn-lifecycle refactoring slice
+
+- Extracted settings/chat persistence into
+  `src/lifecycle/persistence.ts`; `storage.ts` keeps the public compatibility
+  exports and remains the lifecycle coordinator.
+- Extracted sync orchestration (`initSyncEngine`, `triggerSync`,
+  `rebuildSyncIndex`, `cancelSync`) into `src/lifecycle/sync.ts`;
+  `storage.ts` now owns initialization, plugin-data sync, session-end
+  intelligence, and cleanup only.
+- Extracted stop/retry/edit/cancel-edit/tool approval actions into
+  `src/agent/turnActions.ts`; `turnLifecycle.ts` keeps `send()` and execution
+  policy.
+- Created focused characterization tests in
+  `src/lifecycle/__tests__/persistence.test.ts` covering settings load/save
+  guards, WebDAV password handling, rolling backups, chat-data queuing,
+  auto-sync debouncing, and legacy key stripping.
+- At that stage, the later sync and plugin-data extraction sessions had not yet
+  happened. Their final results are recorded above.
+
+### 2026-08-30 — T65 zero-budget boundary fix ✅
+
+- Fixed `ThreeTierMemoryStore.getSystemPromptContext(0)` to return empty
+  context instead of bypassing the memory limit.
+- Added focused regression coverage; verification now passes 46 test files /
+  404 tests, TypeScript, and the production build.
+- T65 migration-event audit and versioned upgrade contract remain open.
+
+### 2026-08-30 — Overall code review and stylesheet planning 🔄
+
+- Recorded the current monolithic-files and CSS audit at
+  `memory-bank/implementation-details/monolithic-files-audit-2026-08-30.md`.
+- Reassessed `src/lifecycle/storage.ts` as a confirmed cross-domain
+  coordinator and `src/agent/turnLifecycle.ts` as a broad but coherent turn
+  boundary that waits on the model-history seam.
+- Created T66 for stylesheet architecture and CSS cleanup; implementation is
+  intentionally last and no production source was changed.
+- Verification evidence: 46 test files / 403 tests, TypeScript, and
+  `git diff --check` passed.
+
 ### 2026-08-29 — T65: Three-tier memory system (late evening) 🔄
 
 - Fixed `identityContextBudget` dead code in `buildSystemPrompt()`.
@@ -52,7 +119,8 @@
   inspectable compaction record remain open.
 - Fresh finding: make model-history policy one deep module before deciding
   whether `TurnLifecycle` needs further extraction. Capability construction is
-  a secondary T60/T60a cleanup; sync decomposition remains deferred.
+  a secondary T60/T60a cleanup. At that time, sync decomposition remained
+  deferred; it was later completed under T67.
 - No new task or subtask was created.
 
 ### 2026-08-29 — T61 self-settings integration acceptance ✅

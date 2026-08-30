@@ -1,0 +1,236 @@
+/* Usage bars for model diagnostics */
+.obsidian-ai-usage-bar-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 5px 0;
+}
+
+.obsidian-ai-usage-bar-label {
+	width: 140px;
+	font-size: var(--font-ui-smaller);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	flex-shrink: 0;
+	color: var(--text-normal);
+}
+
+.obsidian-ai-usage-bar-track {
+	flex: 1;
+	height: 8px;
+	background: var(--background-modifier-border);
+	border-radius: 4px;
+	overflow: hidden;
+	min-width: 40px;
+}
+
+.obsidian-ai-usage-bar-fill {
+	height: 100%;
+	background: var(--interactive-accent);
+	border-radius: 4px;
+	transition: width 0.3s ease;
+}
+
+.obsidian-ai-usage-bar-value {
+	width: 80px;
+	text-align: right;
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	flex-shrink: 0;
+}
+
+/* Memory stats card */
+.obsidian-ai-memory-stats {
+	padding: 12px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 10px;
+	background: var(--background-primary);
+	margin-top: 8px;
+}
+
+.obsidian-ai-memory-stats-header {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 10px;
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}
+
+.obsidian-ai-memory-stats-header strong {
+	color: var(--text-normal);
+}
+
+.obsidian-ai-memory-categories {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.obsidian-ai-memory-chip {
+	padding: 3px 8px;
+	border-radius: 4px;
+	background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+	color: var(--interactive-accent);
+	font-size: var(--font-ui-smaller);
+	font-weight: 500;
+}
+
+/* Audit log details */
+.obsidian-ai-settings-details {
+	margin-top: 8px;
+	border-top: 1px solid var(--background-modifier-border);
+	padding-top: 12px;
+}
+
+.obsidian-ai-settings-details summary {
+	font-weight: 600;
+	cursor: pointer;
+	user-select: none;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--text-normal);
+	list-style: none;
+	padding: 4px 0;
+}
+
+.obsidian-ai-settings-details summary::before {
+	content: "▸";
+	color: var(--text-muted);
+	font-size: 20px;
+	line-height: 1;
+	transition: transform 0.15s ease;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+}
+
+.obsidian-ai-settings-details[open] summary::before {
+	transform: rotate(90deg);
+}
+
+.obsidian-ai-settings-details summary:hover::before {
+	color: var(--text-normal);
+}
+
+.obsidian-ai-settings-details .details-content {
+	margin-top: 8px;
+	padding: 10px;
+	background: var(--background-primary);
+	border-radius: 8px;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	line-height: 1.6;
+	max-height: 300px;
+	overflow: auto;
+}
+
+.obsidian-ai-audit-entry {
+	margin-bottom: 4px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.obsidian-ai-audit-entry:last-child {
+	margin-bottom: 0;
+}
+
+/* Larger textareas for prompts */
+.wide-text-settings {
+	width: 100%;
+	min-width: 25em;
+	min-height: 12em;
+	resize: vertical;
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
+}
+
+/* Profile actions hover reveal */
+.obsidian-ai-profile-col-actions {
+	display: flex;
+	gap: 1px;
+	flex-shrink: 0;
+	opacity: 0.6;
+	transition: opacity 0.15s ease;
+}
+
+.obsidian-ai-profile-row:hover .obsidian-ai-profile-col-actions {
+	opacity: 1;
+}
+
+/* ── Updater styles ── */
+
+.updater-changelog {
+	max-height: 200px;
+	overflow-y: auto;
+	background: var(--background-secondary);
+	border-radius: 6px;
+	padding: 8px 12px;
+	margin: 8px 0;
+	font-size: var(--font-ui-small);
+}
+
+.updater-changelog pre {
+	margin: 0;
+	white-space: pre-wrap;
+	word-break: break-word;
+	font-family: var(--font-monospace);
+}
+
+.updater-prerelease-warning {
+	color: var(--text-warning);
+	font-weight: 500;
+}
+
+.updater-build-info {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 8px 12px;
+	margin: 8px 0 16px;
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
+}
+
+.updater-build-info a {
+	font-family: var(--font-monospace);
+	font-weight: 600;
+}
+
+/* Participant list bar */
+.chat-participant-bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 4px 12px;
+	background: var(--background-primary);
+	border-bottom: 1px solid var(--background-modifier-border);
+	font-size: 0.8em;
+}
+
+.chat-participant-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 2px 6px;
+	background: var(--background-secondary);
+	border-radius: 4px;
+	white-space: nowrap;
+}
+
+.chat-participant-chip-remote {
+	color: var(--text-muted);
+}
+
+.chat-participant-dot-online {
+	color: #4caf50;
+}
+
+/* ── Chat Sync Panel v2 (syncit-inspired) ───────────────────────────────── */

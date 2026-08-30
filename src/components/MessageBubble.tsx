@@ -339,7 +339,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	return (
 		<div
 			ref={bubbleRef}
-			className={`chat-bubble chat-bubble-${message.role}${message.isError ? " chat-bubble-error" : ""}${isActive ? " is-active" : ""}${selected ? " chat-bubble-selected" : ""}${isStreaming ? " chat-bubble-streaming" : ""}`}
+			className={`chat-bubble chat-bubble-${message.role}${message.agentId ? " chat-bubble-agent" : ""}${message.isError ? " chat-bubble-error" : ""}${isActive ? " is-active" : ""}${selected ? " chat-bubble-selected" : ""}${isStreaming ? " chat-bubble-streaming" : ""}`}
+			style={
+				message.agentColor && message.role === "assistant"
+					? ({ "--chat-agent-color": message.agentColor } as React.CSSProperties)
+					: undefined
+			}
 			onPointerDown={handlePointerDown}
 			onPointerUp={cancelLongPress}
 			onPointerCancel={cancelLongPress}

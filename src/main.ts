@@ -37,15 +37,17 @@ import {
 	saveSettings,
 	loadChatData,
 	saveChatData,
-	initSyncEngine,
-	rebuildSyncIndex,
-	triggerSync,
 	syncPluginData,
-	cancelSync,
 	onSessionEnd,
 	openRemoteStorageSettings,
 	cleanupStorage,
 } from "./lifecycle/storage";
+import {
+	initSyncEngine,
+	rebuildSyncIndex,
+	triggerSync,
+	cancelSync,
+} from "./lifecycle/sync";
 
 export { OPEN_CHAT_COMMAND_ID, OPEN_CHAT_COMMAND_NAME };
 

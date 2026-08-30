@@ -30,8 +30,9 @@ review was read-only and compared the current source after the T46/T46a work.
    supplies descriptors, availability, model projections, and execution lookup.
    T60/T60a may simplify remaining executor/provider construction without
    introducing a second capability policy.
-4. **Sync decomposition remains deferred.** The large sync modules are a
-   speculative concern and no new sync task is warranted without new pressure.
+4. **Sync decomposition remains deferred at the time of this review.** The
+   large sync modules were treated as a speculative concern, and no new sync
+   task was warranted without new pressure at that point.
 
 ## Existing Task Ownership
 
@@ -83,3 +84,27 @@ Verification completed: 45 test files / 381 tests, TypeScript, formatting, and
 the production bundle passed. Provider switching and real-provider acceptance
 remain separate T46 gates. Pairing through compaction and real agent-provider
 workflow acceptance remain open under T48b/T48c/T62a.
+
+## 2026-08-30 Monolithic-File Reassessment
+
+The dated [overall monolithic-files audit](monolithic-files-audit-2026-08-30.md)
+reassessed the current source after the pulled `579252b` changes. It confirms
+that `storage.ts` remains a cross-domain coordinator spanning initialization,
+chat persistence, sync orchestration, plugin-data recovery, and session-end
+memory work. It also confirms that `turnLifecycle.ts` remains broad but should
+be reassessed only after the single model-history policy seam is stable.
+
+The first small turn-lifecycle extraction has now started: stop, retry, edit,
+cancel-edit, and tool approval actions live in `src/agent/turnActions.ts`,
+while `turnLifecycle.ts` retains the main `send()` path and execution policy.
+This does not replace the model-history acceptance gates or change T46's
+provider/runtime scope. CSS is intentionally outside T46 and is tracked
+independently by T66.
+
+## Later update — 2026-08-30
+
+The review's earlier decision to defer sync decomposition has now been acted
+on under T67. Persistence, sync coordination, and selected plugin-data sync
+were moved into separate lifecycle modules through commits `0974157`,
+`2995047`, and `56422f1`. The remaining T46 work is still provider switching,
+real-provider runtime acceptance, and the model-history reassessment.

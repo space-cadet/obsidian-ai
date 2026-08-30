@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-30 13:01:09 IST*
+*Last Updated: 2026-08-30 22:03:24 IST*
 
 ## Overview
 
@@ -39,6 +39,8 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T63 | Context Item Caching | 🔄 | MEDIUM | 2026-08-26 | — | [Details](tasks/T63.md) |
 | T64 | Context Optimization Benchmark Harness | 🔄 | HIGH | 2026-08-26 | T48a | [Details](tasks/T64.md) |
 | T65 | Three-Tier Memory System with Auto-Curation | 🔄 | HIGH | 2026-08-29 | T26, T61 | [Details](tasks/T65.md) |
+| T66 | Stylesheet Architecture and CSS Cleanup | 🔄 | MEDIUM | 2026-08-30 | T8a, T34, T41, T58d | [Details](tasks/T66.md) |
+| T67 | Storage Lifecycle Decomposition | 🔄 | HIGH | 2026-08-30 | T46, T57, T58d, T65 | [Details](tasks/T67.md) |
 | T64a | Pareto Frontier Sweep | 🔄 | HIGH | 2026-08-27 | T64, T64c | [Details](tasks/T64a.md) |
 | T64c | Fidelity-Weighted Scoring | 🔄 | MEDIUM | 2026-08-27 | T64, T64b | [Details](tasks/T64c.md) |
 | T64d | Live Estimator Validation | ✅ | MEDIUM | 2026-08-27 | 2026-08-29 | T64, T6a | [Details](tasks/T64d.md) |
@@ -237,10 +239,20 @@ T62a: T62 Elision Regression — Agent Workflow Breakage
 T64: Context Optimization Benchmark Harness
   └── T48a
   └── Coordinates with: T48, T48c, T48d, T6a, T60d
+T66: Stylesheet Architecture and CSS Cleanup
+  └── T8a
+  └── T34
+  └── T41
+  └── T58d
+T67: Storage Lifecycle Decomposition
+  └── T46
+  └── T57
+  └── T58d
+  └── T65
 
 ## Status Summary
 
-- **Active**: 31
+- **Active**: 33
 - **Completed**: 44
 - **Paused**: 2
-- **Total**: 77
+- **Total**: 78
