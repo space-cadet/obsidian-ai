@@ -469,7 +469,11 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				});
 				// Move all non-header children into body
 				Array.from(el.children).forEach((child) => {
-					if (child !== header && !(child as HTMLElement).hasClass('obsidian-ai-settings-section-header')) {
+					if (
+						child !== header &&
+						child !== body &&
+						!(child as HTMLElement).hasClass('obsidian-ai-settings-section-header')
+					) {
 						body.appendChild(child);
 					}
 				});
