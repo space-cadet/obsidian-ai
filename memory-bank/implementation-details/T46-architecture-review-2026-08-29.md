@@ -83,3 +83,15 @@ Verification completed: 45 test files / 381 tests, TypeScript, formatting, and
 the production bundle passed. Provider switching and real-provider acceptance
 remain separate T46 gates. Pairing through compaction and real agent-provider
 workflow acceptance remain open under T48b/T48c/T62a.
+
+## 2026-08-30 Monolithic-File Reassessment
+
+The dated [overall monolithic-files audit](monolithic-files-audit-2026-08-30.md)
+reassessed the current source after the pulled `579252b` changes. It confirms
+that `storage.ts` remains a cross-domain coordinator spanning initialization,
+chat persistence, sync orchestration, plugin-data recovery, and session-end
+memory work. It also confirms that `turnLifecycle.ts` remains broad but should
+be reassessed only after the single model-history policy seam is stable.
+
+No new T46 extraction was started. CSS is intentionally outside T46 and is
+tracked independently by T66.

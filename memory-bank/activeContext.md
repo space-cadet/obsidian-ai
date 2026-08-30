@@ -1,5 +1,15 @@
 # Active Context
 
+### 2026-08-30 — Overall code review and stylesheet task recorded 🔄
+
+Recorded the read-only monolithic-files audit at
+`implementation-details/monolithic-files-audit-2026-08-30.md` against
+`579252b`. The reassessment confirms `storage.ts` as a cross-domain
+coordinator and keeps `turnLifecycle.ts` behind the existing model-history
+reassessment gate. Created T66 for separately owned CSS architecture and
+cleanup; stylesheet implementation remains last. No production source was
+changed.
+
 ### 2026-08-30 — T65 implementation closeout 🔄
 
 Completed the main T65 implementation: tiered CRUD and prompt integration,
