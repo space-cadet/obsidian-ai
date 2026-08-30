@@ -3,17 +3,17 @@
 ### 2026-08-30 — Storage and turn-lifecycle refactoring started 🔄
 
 Extracted settings/chat persistence into `src/lifecycle/persistence.ts` and
-user/tool action handling into `src/agent/turnActions.ts`. The coordinators
-remain behavior owners: `storage.ts` still owns initialization and sync, and
-`turnLifecycle.ts` still owns the main `send()` path. Created T67 to track the
-remaining storage boundaries and characterization tests.
+user/tool action handling into `src/agent/turnActions.ts`. Extracted sync
+orchestration (`initSyncEngine`, `triggerSync`, `rebuildSyncIndex`,
+`cancelSync`) into `src/lifecycle/sync.ts`. `storage.ts` now owns
+initialization, plugin-data sync, session-end intelligence, and cleanup only.
 
 Added 18 focused characterization tests in
 `src/lifecycle/__tests__/persistence.test.ts` covering settings load/save
 guards, WebDAV password handling, rolling backup creation, chat-data write
 queuing, auto-sync debouncing, and legacy key stripping for jsonl format.
-Verification passes at 47 test files / 422 tests, TypeScript, formatting, and
-`git diff --check`.
+Verification passes at 47 test files / 422 tests, TypeScript, production build,
+and `git diff --check`.
 
 The production build and push are the remaining closeout gates for this slice.
 

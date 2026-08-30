@@ -3,6 +3,10 @@
 - Extracted settings/chat persistence into
   `src/lifecycle/persistence.ts`; `storage.ts` keeps the public compatibility
   exports and remains the lifecycle coordinator.
+- Extracted sync orchestration (`initSyncEngine`, `triggerSync`,
+  `rebuildSyncIndex`, `cancelSync`) into `src/lifecycle/sync.ts`;
+  `storage.ts` now owns initialization, plugin-data sync, session-end
+  intelligence, and cleanup only.
 - Extracted stop/retry/edit/cancel-edit/tool approval actions into
   `src/agent/turnActions.ts`; `turnLifecycle.ts` keeps `send()` and execution
   policy.
@@ -10,8 +14,8 @@
   `src/lifecycle/__tests__/persistence.test.ts` covering settings load/save
   guards, WebDAV password handling, rolling backups, chat-data queuing,
   auto-sync debouncing, and legacy key stripping.
-- Verification passed: 47 test files / 422 tests, TypeScript, formatting, and
-  `git diff --check`. Production build and remote push remain for closeout.
+- Verification passed: 47 test files / 422 tests, TypeScript, production build,
+  and `git diff --check`. Production build and remote push remain for closeout.
 
 ### 2026-08-30 — T65 zero-budget boundary fix ✅
 
