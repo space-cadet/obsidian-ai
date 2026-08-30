@@ -1,11 +1,13 @@
 import { App } from "obsidian";
 import { FileLogger } from "../logger";
 import { MemoryStore } from "./MemoryStore";
+import { ThreeTierMemoryStore } from "./ThreeTierMemoryStore";
 
 export interface PersonaLoaderDeps {
 	app: App;
 	manifest: { id: string };
 	logger?: FileLogger;
+	memoryCoreSize?: "small" | "medium" | "large";
 }
 
 const DEFAULT_PERSONA = `# AI Persona
@@ -42,6 +44,7 @@ export class PersonaLoader {
 	private deps: PersonaLoaderDeps;
 	private readonly intelligenceDir: string;
 	readonly memoryStore: MemoryStore;
+	readonly tierMemoryStore: ThreeTierMemoryStore;
 
 	constructor(deps: PersonaLoaderDeps) {
 		this.deps = deps;
@@ -50,6 +53,12 @@ export class PersonaLoader {
 			app: deps.app,
 			intelligenceDir: this.intelligenceDir,
 			logger: deps.logger,
+		});
+		this.tierMemoryStore = new ThreeTierMemoryStore({
+			app: deps.app,
+			intelligenceDir: this.intelligenceDir,
+			logger: deps.logger,
+			config: deps.memoryCoreSize ? { coreSize: deps.memoryCoreSize } : undefined,
 		});
 	}
 
@@ -76,6 +85,7 @@ export class PersonaLoader {
 
 		// Migrate legacy markdown memory if needed
 		await this.memoryStore.migrateFromMarkdown();
+		await this._ensureTieredMemory();
 		this.deps.logger?.log(
 			"info",
 			`MemoryStore initialized at ${this.intelligenceDir}`,
@@ -90,6 +100,11 @@ export class PersonaLoader {
 
 	/** Read memory entries as markdown (truncated if needed). */
 	async loadMemory(options?: { maxTokens?: number }): Promise<string> {
+		const tiered = await this.tierMemoryStore.getSystemPromptContext(
+			options?.maxTokens,
+		);
+		if (tiered) return tiered;
+
 		const entries = await this.memoryStore.list();
 		if (entries.length === 0) return "";
 
@@ -112,6 +127,30 @@ export class PersonaLoader {
 			"..." +
 			(firstNewline > 0 ? truncated.slice(firstNewline + 1) : truncated)
 		);
+	}
+
+	/** Initialize tiered memory once, migrating the legacy store when present. */
+	private async _ensureTieredMemory(): Promise<void> {
+		const adapter = this.deps.app.vault.adapter;
+		const corePath = `${this.intelligenceDir}/core.json`;
+		const stagedPath = `${this.intelligenceDir}/staged.json`;
+		const archivePath = `${this.intelligenceDir}/archive.json`;
+		if (
+			(await adapter.exists(corePath)) ||
+			(await adapter.exists(stagedPath)) ||
+			(await adapter.exists(archivePath))
+		) {
+			return;
+		}
+
+		const legacy = await this.memoryStore.loadEntries();
+		if (legacy.length > 0) {
+			await this.tierMemoryStore.migrateFromLegacy(legacy);
+		} else {
+			await this.tierMemoryStore.saveCore([]);
+			await this.tierMemoryStore.saveStaged([]);
+			await this.tierMemoryStore.saveArchive([]);
+		}
 	}
 
 	/** Append a memory entry (delegates to MemoryStore). */
