@@ -348,13 +348,14 @@ export class Orchestrator {
 		resolvedParts: ResolvedMessagePart[] = [],
 	): AsyncGenerator<AgentResponse> {
 		const { targets, cleanText } = this.parseAndRoute(text);
+		const workingThread = [...thread];
 
 		if (this.mode === "parallel") {
 			// Launch all in parallel, yield as they complete
 			const promises = targets.map(async (engine) => {
 				const response = await this.sendToAgent(
 					engine,
-					thread,
+					workingThread,
 					cleanText,
 					signal,
 					resolvedParts,
@@ -366,15 +367,26 @@ export class Orchestrator {
 				yield await promise;
 			}
 		} else {
-			// Sequential: one at a time
+			// Sequential: one at a time, each agent sees prior agents' responses
 			for (const engine of targets) {
-				yield await this.sendToAgent(
+				const response = await this.sendToAgent(
 					engine,
-					thread,
+					workingThread,
 					cleanText,
 					signal,
 					resolvedParts,
 				);
+				yield response;
+				// Feed this response back so subsequent agents see it in context
+				workingThread.push({
+					id: `dispatch-${response.agentId}-${Date.now()}`,
+					role: "assistant",
+					content: response.text,
+					timestamp: Date.now(),
+					agentId: response.agentId,
+					agentName: response.agentName,
+					agentColor: response.agentColor,
+				});
 			}
 		}
 	}
@@ -536,8 +548,11 @@ export class Orchestrator {
 		let prompt =
 			`You are ${name}, participating in a collaborative discussion with other AI assistants. ` +
 			`You each bring different strengths and knowledge. ` +
-			`When asked to compare or review other assistants' perspectives, offer your own view — ` +
-			`agree, disagree, add nuance, or correct errors. This is normal collaborative discussion. ` +
+			`You MUST offer your own independent view. Do not simply agree with or repeat what other assistants have said. ` +
+			`Add new information, challenge weak points, or offer a different angle. ` +
+			`When reviewing other assistants' perspectives, explicitly agree, disagree, add nuance, or correct errors. ` +
+			`Speak only for yourself. NEVER speak for other agents or pretend to be them. ` +
+			`Address the user or specific agents by name when relevant. ` +
 			`Be concise and helpful.` +
 			`\n\nYou are integrated into an Obsidian note-taking app and can help with notes, research, and tasks.`;
 
