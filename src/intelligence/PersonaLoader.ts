@@ -11,6 +11,16 @@ export interface PersonaLoaderDeps {
 	memoryBackupRetention?: number;
 }
 
+export interface MemoryMetadata {
+	version: 1;
+	status: "initialized" | "migrated";
+	updatedAt: string;
+	coreCount: number;
+	stagedCount: number;
+	archiveCount: number;
+	backupCleanup?: { retention: number; completedAt: string };
+}
+
 const DEFAULT_PERSONA = `# AI Persona
 
 You are a helpful research assistant integrated into Obsidian.
@@ -44,12 +54,14 @@ Feel free to edit or delete anything — it's your memory.
 export class PersonaLoader {
 	private deps: PersonaLoaderDeps;
 	private readonly intelligenceDir: string;
+	private readonly metadataPath: string;
 	readonly memoryStore: MemoryStore;
 	readonly tierMemoryStore: ThreeTierMemoryStore;
 
 	constructor(deps: PersonaLoaderDeps) {
 		this.deps = deps;
 		this.intelligenceDir = `${deps.app.vault.configDir}/plugins/${deps.manifest.id}/intelligence`;
+		this.metadataPath = `${this.intelligenceDir}/memory-metadata.json`;
 		this.memoryStore = new MemoryStore({
 			app: deps.app,
 			intelligenceDir: this.intelligenceDir,
@@ -89,6 +101,7 @@ export class PersonaLoader {
 		await this.memoryStore.migrateFromMarkdown();
 		await this._ensureTieredMemory();
 		await this.memoryStore.cleanupTimestampedBackups();
+		await this._writeMemoryMetadata();
 		this.deps.logger?.log(
 			"info",
 			`MemoryStore initialized at ${this.intelligenceDir}`,
@@ -153,6 +166,34 @@ export class PersonaLoader {
 			await this.tierMemoryStore.saveCore([]);
 			await this.tierMemoryStore.saveStaged([]);
 			await this.tierMemoryStore.saveArchive([]);
+		}
+	}
+
+	private async _writeMemoryMetadata(): Promise<void> {
+		const [core, staged, archive] = await Promise.all([
+			this.tierMemoryStore.loadCore(),
+			this.tierMemoryStore.loadStaged(),
+			this.tierMemoryStore.loadArchive(),
+		]);
+		const metadata: MemoryMetadata = {
+			version: 1,
+			status: "initialized",
+			updatedAt: new Date().toISOString(),
+			coreCount: core.length,
+			stagedCount: staged.length,
+			archiveCount: archive.length,
+			backupCleanup: {
+				retention: this.deps.memoryBackupRetention ?? 20,
+				completedAt: new Date().toISOString(),
+			},
+		};
+		try {
+			await this.deps.app.vault.adapter.write(
+				this.metadataPath,
+				JSON.stringify(metadata, null, 2),
+			);
+		} catch (e) {
+			this.deps.logger?.log("warn", `Failed to write memory metadata: ${e}`);
 		}
 	}
 
