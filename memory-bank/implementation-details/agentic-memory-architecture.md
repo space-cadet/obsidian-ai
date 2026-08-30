@@ -1,8 +1,13 @@
 # Agentic Memory Architecture
 
-**Status**: Design phase for tiered architecture; flat persistent store implemented
-*Last Updated: 2026-08-29 21:26:31 IST*
+**Status**: Historical design reference; superseded by the implemented T65 architecture
+*Last Updated: 2026-08-30 13:08 IST*
 **Related**: T46 (orchestration decomposition), T60a (capability registry)
+
+> The three-tier design described here has since been implemented and extended
+> by T65. For the current implementation, see
+> [AI Intelligence Layer — Implementation Details](ai-intelligence-layer.md)
+> and [T65](../tasks/T65.md).
 
 ## Problem
 

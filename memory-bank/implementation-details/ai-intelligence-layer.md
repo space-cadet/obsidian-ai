@@ -1,8 +1,13 @@
 # AI Intelligence Layer — Implementation Details
 
 *Created: 2026-07-21 21:50 IST*  
-*Last Updated: 2026-08-14 22:56 IST*
-*Task: [T26](../tasks/T26.md)*
+*Last Updated: 2026-08-30 13:08 IST*
+*Tasks: [T26](../tasks/T26.md), [T65](../tasks/T65.md)*
+
+> **Current implementation note:** This is the canonical overview of the
+> intelligence layer. Some examples below describe the historical flat-memory
+> implementation; the current memory architecture is documented in the T65
+> section below.
 
 ---
 
@@ -11,6 +16,17 @@
 This document details the implementation of the AI Intelligence Layer for obsidian-ai — the system that transforms the plugin from a stateless chat UI into a context-aware agent with persistent identity, memory creation, cross-session retrieval, and plugin bridging.
 
 **Core principle:** The AI must be both a *consumer* and *producer* of context. It reads memory at session start and writes memory during/after sessions. This feedback loop is what creates the illusion (and reality) of intelligence.
+
+### Current implementation status
+
+- `PersonaLoader` provides persona and persistent-memory context.
+- `ThreeTierMemoryStore` is the active store; legacy `MemoryStore` remains for
+  migration and compatibility.
+- CRUD, prompt injection, staged evaluation, core culling, ranked archive
+  search, and session-end curation use the tiered store.
+- Migration and backup-cleanup state are recorded in
+  `intelligence/memory-metadata.json`; historical operations remain in
+  `memory-audit.jsonl`.
 
 ---
 
@@ -76,6 +92,44 @@ All intelligence files live in the **plugin directory**, never the vault:
 - Git-friendly — plugin data can be .gitignored separately
 - Obsidian's file watcher won't trigger on AI metadata changes
 - Plugin has guaranteed read/write access via `app.vault.adapter`
+
+### Current tiered-memory files (T65)
+
+Within `intelligence/`, the active memory files are:
+
+| File | Purpose |
+|---|---|
+| `persona.md` | User-editable persistent persona |
+| `core.json` | High-value memories loaded into the system prompt |
+| `staged.json` | Newly created memories awaiting evaluation |
+| `archive.json` | Older memories retained for search |
+| `memory-metadata.json` | Current schema, migration, tier counts, and backup-cleanup state |
+| `memory-audit.jsonl` | Historical memory operations and curation events |
+| `memory.json` / `memory.md` | Legacy flat-memory files used as migration input or compatibility fallback |
+
+The core limit is configurable as Small (50), Medium (100), or Large (200).
+The identity-context budget limits how much persona plus core memory enters the
+system prompt. New memories enter `staged`; `evaluate_staged` promotes strong
+entries to core, while `cull_core` moves weak core entries to archive.
+
+### Legacy migration and backup retention
+
+On intelligence initialization, legacy `memory.md` is first converted to
+`memory.json` when necessary. Legacy entries are then distributed into core and
+archive according to their scores, with staged initially empty. The migration
+is idempotent and recorded in `memory-metadata.json`.
+
+Legacy timestamped backup snapshots are bounded by the configured retention
+setting (Off, 10, 20, or 50 generations). Fixed `.bak` recovery files and all
+tier files are preserved. Cleanup occurs only after a successful write or
+during initialization; it does not delete memories.
+
+### Current memory tools and hooks
+
+The agent can use `create_memory`, `update_memory`, `delete_memory`,
+`list_memories`, `search_memories`, `evaluate_staged`, and `cull_core`.
+Archive searches use the lightweight ranked index, and staged evaluation is
+triggered automatically after session summarization when enabled.
 
 ---
 
