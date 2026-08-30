@@ -378,10 +378,15 @@ export class Orchestrator {
 				);
 				yield response;
 				// Feed this response back so subsequent agents see it in context
+				// Sanitize: strip any attribution prefixes the model may have echoed
+				const sanitizedText = this.sanitizeAgentOutput(
+					response.text,
+					response.agentName,
+				);
 				workingThread.push({
 					id: `dispatch-${response.agentId}-${Date.now()}`,
 					role: "assistant",
-					content: response.text,
+					content: sanitizedText,
 					timestamp: Date.now(),
 					agentId: response.agentId,
 					agentName: response.agentName,
@@ -542,6 +547,24 @@ export class Orchestrator {
 		}
 	}
 
+	/**
+	 * Strip attribution prefixes that the model may have echoed from context.
+	 * Prevents compounding [AgentName]: pollution in sequential responses.
+	 */
+	private sanitizeAgentOutput(text: string, agentName: string): string {
+		let cleaned = text.trim();
+
+		// Strip the agent's own attribution prefix if present
+		const ownPrefix = new RegExp(`^\\[${agentName}\\]:\\s*`, "i");
+		cleaned = cleaned.replace(ownPrefix, "");
+
+		// Strip any other agent attribution prefixes (model echoed them)
+		const anyPrefix = /^\[[^\]]+\]:\s*/gm;
+		cleaned = cleaned.replace(anyPrefix, "");
+
+		return cleaned.trim();
+	}
+
 	private buildSystemPrompt(agentId: string): string {
 		const engine = this.engines.find((e) => e.id === agentId);
 		const name = engine?.name ?? "Assistant";
@@ -565,7 +588,9 @@ export class Orchestrator {
 			prompt += `\n- Remote users: ${this.remoteUsers.join(", ")}`;
 		}
 		prompt +=
-			"\n\nMessages from other participants will be prefixed with their name.";
+			"\n\nMessages from other participants will be prefixed with their name. " +
+			"Your own responses should NOT include your name prefix — the system adds it automatically. " +
+			"Respond directly without quoting or repeating prior messages.";
 
 		if (this.enableTools) {
 			const definitions =
