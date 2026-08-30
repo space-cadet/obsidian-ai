@@ -39,7 +39,7 @@ export class MemoryHandlers extends ToolHandlerBase {
 		}
 
 		try {
-			const entry = await this.personaLoader.memoryStore.create(
+			const entry = await this.personaLoader.tierMemoryStore.create(
 				args.category as any,
 				args.content,
 				args.tags,
@@ -67,7 +67,7 @@ export class MemoryHandlers extends ToolHandlerBase {
 		}
 
 		try {
-			const entry = await this.personaLoader.memoryStore.update(args.id, {
+			const entry = await this.personaLoader.tierMemoryStore.update(args.id, {
 				category: args.category as any,
 				content: args.content,
 				tags: args.tags,
@@ -93,7 +93,7 @@ export class MemoryHandlers extends ToolHandlerBase {
 		}
 
 		try {
-			const deleted = await this.personaLoader.memoryStore.delete(
+			const deleted = await this.personaLoader.tierMemoryStore.delete(
 				args.id,
 			);
 			if (!deleted) {
@@ -118,7 +118,7 @@ export class MemoryHandlers extends ToolHandlerBase {
 		}
 
 		try {
-			const entries = await this.personaLoader.memoryStore.list({
+			const entries = await this.personaLoader.tierMemoryStore.listAll({
 				category: args.category as any,
 				tag: args.tag,
 			});
@@ -167,7 +167,7 @@ export class MemoryHandlers extends ToolHandlerBase {
 		try {
 			const entries = args.cursor
 				? []
-				: await this.personaLoader.memoryStore.search(args.query);
+				: await this.personaLoader.tierMemoryStore.search(args.query);
 			const page = this.continuations.page({
 				toolName: "search_memories",
 				fingerprint: requestFingerprint("search_memories", {

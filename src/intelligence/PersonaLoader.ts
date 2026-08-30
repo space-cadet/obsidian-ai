@@ -169,7 +169,7 @@ export class PersonaLoader {
 		if (!validCategories.includes(category as any)) {
 			throw new Error(`Invalid memory category: ${category}`);
 		}
-		const entry = await this.memoryStore.create(
+		const entry = await this.tierMemoryStore.create(
 			category as any,
 			content,
 			tags,

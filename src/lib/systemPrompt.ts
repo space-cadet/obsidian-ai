@@ -39,6 +39,10 @@ export async function buildSystemPrompt(
 	if (identityContext) {
 		prompt = identityContext + "\n\n";
 	}
+	if (personaLoader) {
+		prompt +=
+			"\n\nMemory is organized into three tiers: core memories are high-value and loaded into this prompt; staged memories are newly created and awaiting evaluation; archived memories are retained for search but are not loaded by default. Use evaluate_staged to curate new memories and cull_core to move low-value core memories to the archive.";
+	}
 	prompt +=
 		"You are a helpful assistant integrated into an Obsidian note-taking app.";
 
