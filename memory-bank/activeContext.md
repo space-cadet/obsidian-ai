@@ -7,11 +7,12 @@ services, with T69a for Codex / ChatGPT subscription authentication and T69b
 for Claude Code. Added the shared implementation document
 `implementation-details/external-service-authentication.md`.
 
-The planning boundary keeps T39 focused on peer Obsidian-plugin integrations.
-The preferred Codex direction is a desktop adapter around the supported local
-`codex app-server`; direct private-backend OAuth remains research-only. Claude
-Code requires an independent verification of its supported authentication and
-external-integration surface before an implementation path is selected.
+T39 remains focused on peer Obsidian-plugin integrations. Codex now has two
+implementation options: a maintainable desktop adapter around the supported
+local `codex app-server`, and an experimental mobile adapter using device-flow
+OAuth plus direct HTTP. Public source from Chatting with AI shows that the
+mobile approach is feasible. Claude Code still needs its own authentication
+review before an implementation path is selected.
 
 ### 2026-08-31 — T16 umbrella and group-chat follow-ups 🔄
 

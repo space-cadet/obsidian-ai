@@ -14,6 +14,10 @@ All notable changes to this project will be documented in this file.
   platform boundaries, and verification phases.
 - Kept the planned Codex integration separate from the existing OpenAI API
   provider and from T39's peer-plugin Integration Provider API.
+- Added current mobile research: Chatting with AI demonstrates device-flow
+  login, `requestUrl()`, `SecretStorage`, token refresh, and direct Codex HTTP.
+- Revised T69a to investigate both desktop app-server and experimental mobile
+  direct-HTTP implementations instead of treating mobile as unavailable.
 
 ### T66 stylesheet architecture and cleanup — 2026-08-30
 - Split the monolithic stylesheet into six ordered source partials and added

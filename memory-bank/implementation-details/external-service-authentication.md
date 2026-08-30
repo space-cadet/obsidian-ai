@@ -1,14 +1,14 @@
 # External Service Authentication and Provider Adapters
 
 *Created: 2026-08-31 02:17:06 IST*
-*Last Updated: 2026-08-31 02:17:06 IST*
+*Last Updated: 2026-08-31 02:42:18 IST*
 *Task: [T69](../tasks/T69.md)*
 
 ## Purpose
 
-This document defines the planning boundary for connecting Obsidian AI to
-external AI services that may use API keys, account-based authentication,
-subscription entitlements, local CLIs, or local app-server processes.
+This document describes how Obsidian AI can connect to external AI services
+that may use API keys, account-based authentication, subscription entitlements,
+local CLIs, or local app-server processes.
 
 The first service subtasks are:
 
@@ -19,7 +19,7 @@ This is separate from [T39](../tasks/T39.md), which is the peer-plugin API for
 installed Obsidian plugins such as Obsidian Git. T69 is about external model or
 coding services and the adapters that connect to them.
 
-## Terms and Boundaries
+## Access Modes
 
 The following access modes must remain distinct in product behavior and
 documentation:
@@ -33,15 +33,14 @@ documentation:
 | Remote agent | A separately hosted service accessed through a documented protocol | OpenResponses agent |
 | Proxy | A user-installed compatibility service that owns authentication | `openai-oauth`-style proxy |
 
-Subscription access is not automatically equivalent to API access. A service
-subtask must verify entitlement, terms, token scope, request limits, and the
-supported integration surface before implementation.
+Subscription access is not automatically equivalent to API access. Each service
+still needs a short, current check of entitlement, token scope, request limits,
+and the integration surface we intend to use.
 
 ## Recovered Ecosystem Research
 
-The August 27, 2026 research session found these Obsidian patterns. This is a
-historical research baseline and must be refreshed against current repositories
-and official documentation before implementation.
+The August 27, 2026 research session found these Obsidian patterns. The current
+follow-up below adds public mobile implementations found on 2026-08-31.
 
 | Plugin | Observed approach | Planning significance |
 | --- | --- | --- |
@@ -53,10 +52,22 @@ and official documentation before implementation.
 | [Codex for Obsidian](https://github.com/lufie/codex-for-obsidian) | Runs the local Codex CLI and reuses its existing login | Simple desktop sidebar pattern |
 | [Gryphon](https://community.obsidian.md/plugins/gryphon) and [AI Refiner](https://community.obsidian.md/plugins/ai-refiner) | Launch local `codex` processes as CLI providers | Generic local-process integration examples |
 
-The recorded recommendation is to prefer a supported local service boundary,
-especially Codex `app-server`, over implementing direct calls to private
-account backends. Direct private-backend OAuth remains a research alternative
-only and requires an explicit security and maintenance decision.
+### Current mobile precedents
+
+| Project | Observed approach | What we can reuse |
+| --- | --- | --- |
+| [Chatting with AI](https://github.com/o1xhack/obsidian-chatting) | Device authorization in the plugin, Obsidian `requestUrl()`, `SecretStorage`, token refresh, and direct HTTP calls to the Codex backend | Shows that ChatGPT/Codex subscription login can work on Obsidian mobile without a local process |
+| [Vault Companion for Claude](https://github.com/estrenuo/vault-companion-for-claude) | Direct Anthropic API key on every device; Claude subscription through a token-protected Mac relay | Good model for offering API access directly and subscription access through a companion host |
+| [Agentic Chat](https://github.com/tardigrde/obsidian-agentic-chat) | Mobile-safe hosted providers and remote MCP over HTTPS; secrets in `SecretStorage` | Useful HTTP, OAuth, storage, retry, and mobile testing patterns |
+| [GitHub Copilot Chat for Obsidian](https://github.com/hauridev/obsidian-github-copilot-plugin) | GitHub device flow and subscription API, but the plugin declares itself desktop-only | Confirms that device flow helps with login but does not by itself make the whole provider mobile-ready |
+| [OneDrive Sync](https://github.com/jeffsteinbok/obsidian-onedrive) | Direct mobile device-code login with refresh tokens in `SecretStorage` | Conventional cross-platform device-flow and secret-storage example |
+
+The updated recommendation is to develop two Codex options at a small scale:
+use the supported local `app-server` for the maintainable desktop integration,
+and test the direct device-flow HTTP approach for mobile. The second option is
+technically feasible but depends on request details that are not described by
+the public app-server documentation, so it needs a clear compatibility note
+and focused maintenance plan before release.
 
 ## Common Adapter Contract
 
@@ -116,25 +127,34 @@ The exact TypeScript shape is provisional. The contract must cover:
 
 See [T69a](../tasks/T69a.md).
 
-The preferred design is a desktop adapter that starts the locally installed
-Codex `app-server` and uses the user's existing supported Codex authentication
-state. The adapter should translate app-server events into the existing chat
-turn, streaming, tool, approval, and persistence boundaries.
+The desktop implementation should start with the locally installed Codex
+`app-server` and use the user's existing supported Codex authentication state.
+The adapter should translate app-server events into the existing chat turn,
+streaming, tool, approval, and persistence contracts.
 
-The direct approach observed in Chatting with AI performs device authorization,
-stores an OAuth credential, and calls a private endpoint such as
-`chatgpt.com/backend-api/codex/responses`. That demonstrates feasibility but
-depends on undocumented endpoint shapes, headers, model identifiers, and
-response formats. It is not the default implementation path.
+Mobile has a second, concrete implementation path. Chatting with AI performs
+the device authorization flow with `requestUrl()`, keeps access and refresh
+tokens in `SecretStorage`, refreshes expired access, and sends requests to
+`chatgpt.com/backend-api/codex/responses`. Its source shows that a local CLI is
+not required for mobile chat. It also buffers the streamed response and
+reconstructs the final result on the client.
 
-Codex-specific planning gates:
+The mobile path should begin as a compatibility adapter, separate from the
+desktop app-server adapter. It should have a small probe and clear diagnostics
+for device login, token refresh, model rejection, response parsing, and rate
+limits. We should only make it a normal provider after the request format and
+account behavior have been tested across supported Obsidian mobile versions.
+
+Codex implementation checklist:
 
 - Verify the current official app-server authentication and protocol contract.
-- Confirm whether the app-server owns login, refresh, and logout state.
+- Confirm whether app-server owns login, refresh, and logout state.
 - Define process startup, readiness, crash, restart, and shutdown behavior.
 - Map streamed text, tool calls, approvals, results, and cancellation.
-- Confirm desktop-only scope unless a supported mobile path exists.
-- Test that the existing OpenAI API provider remains independently usable.
+- Reproduce the mobile device-flow and direct-HTTP approach in a redacted
+  compatibility probe.
+- Keep the existing OpenAI API provider independently usable.
+- Decide whether the first release includes mobile direct HTTP or desktop only.
 
 ## Claude Code
 
@@ -142,11 +162,10 @@ See [T69b](../tasks/T69b.md).
 
 Claude Code must be investigated independently. The implementation must not
 assume that its account login, subscription entitlement, CLI, API, or OAuth
-surface matches Codex. The first deliverable is an authoritative boundary
-record stating which of these modes is supported for an external Obsidian
-integration.
+surface matches Codex. The first deliverable is a short, authoritative record
+stating which of these modes is supported for an external Obsidian integration.
 
-Claude-specific planning gates:
+Claude-specific implementation checklist:
 
 - Verify official authentication options and external-integration terms.
 - Distinguish Claude API credentials from Claude Code account credentials.
@@ -182,12 +201,11 @@ must not become a generic shell or credential bridge for T69.
 
 ### Phase 2: Codex proof of concept
 
-- Implement a desktop-only process and protocol probe if the current app-server
-  contract supports it.
-- Verify login reuse, one request, streaming, one bounded tool call, approval,
-  cancellation, and clean shutdown.
-- Keep the proof of concept separate from the production provider registry until
-  the lifecycle and security review passes.
+- Implement the desktop app-server probe and the mobile direct-HTTP probe as
+  separate small adapters.
+- Verify login reuse or device login, one request, response handling, one tool
+  call, approval behavior where available, cancellation, and clean shutdown.
+- Use the results to choose which path is ready for normal provider settings.
 
 ### Phase 3: Service adapters
 
@@ -203,9 +221,9 @@ must not become a generic shell or credential bridge for T69.
 - Verify tool approval, streaming, cancellation, persistence, export, sync, and
   updater interactions.
 
-## Verification Checklist
+## Implementation Checklist
 
-- [ ] Official authentication boundary is cited for each service.
+- [ ] Official authentication approach is cited for each service.
 - [ ] Login and logout are user-visible and reversible where supported.
 - [ ] No credential or callback data appears in prompts, logs, exports, or sync.
 - [ ] API-key profiles still work unchanged.
@@ -214,6 +232,6 @@ must not become a generic shell or credential bridge for T69.
 - [ ] Streaming and tool events are translated without executing incomplete
   arguments.
 - [ ] Approval policy remains host-controlled.
-- [ ] Desktop/mobile behavior is explicitly tested or documented as unsupported.
+- [ ] Desktop/mobile behavior is tested and described accurately.
 - [ ] Real-provider acceptance is separate from mocked tests and from release
   approval.

@@ -1,6 +1,16 @@
 # Edit History
 
-*Last Updated: 2026-08-31 02:17:06 IST*
+*Last Updated: 2026-08-31 02:42:18 IST*
+
+#### 02:42:18 IST - T69/T69a: Record mobile Codex implementation plan
+- Modified `memory-bank/tasks/T69.md` - Recorded mobile device-flow/direct-HTTP feasibility and the two Codex implementation options.
+- Modified `memory-bank/tasks/T69a.md` - Added the Chatting with AI mobile precedent, compatibility-probe work, and the first-release decision.
+- Modified `memory-bank/implementation-details/external-service-authentication.md` - Added current mobile precedents and revised the Codex delivery phases.
+- Updated `memory-bank/activeContext.md` - Reconciled the current Codex desktop/mobile plan.
+- Updated `memory-bank/progress.md` - Recorded the public mobile evidence and next probe.
+- Updated `memory-bank/session_cache.md` - Updated the active T69 handoff.
+- Updated `memory-bank/changelog.md` - Added the mobile-authentication planning update.
+- Updated `memory-bank/sessions/2026-08-31-external-service-authentication.md` - Appended the follow-up research and planning state.
 
 #### 02:17:06 IST - T69: Create external service authentication task family
 - Created `memory-bank/tasks/T69.md` - Defined the external service authentication and provider-adapter umbrella.

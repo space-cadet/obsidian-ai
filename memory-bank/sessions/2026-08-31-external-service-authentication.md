@@ -82,3 +82,21 @@ yet committed or pushed.
 ## Session Outcome
 
 **Status**: 🔄 DOCUMENTATION PLANNING COMPLETE; VERIFICATION PENDING
+
+## Follow-up: Mobile Codex Research
+
+**Last Updated**: 2026-08-31 02:42:18 IST
+
+Public plugin research found a direct mobile precedent in Chatting with AI.
+Its source uses device authorization, Obsidian `requestUrl()`, SecretStorage,
+token refresh, and direct HTTP calls to the Codex backend. This demonstrates
+that mobile support is feasible without a local Codex process.
+
+The T69 plan now includes two Codex proof-of-concept paths:
+
+1. Desktop local `codex app-server`, using the supported app-server protocol.
+2. Mobile device-flow/direct HTTP, starting as an experimental compatibility
+   adapter with its own response and token-lifecycle checks.
+
+The next implementation step is a small redacted probe for both paths. No
+source code or credentials were changed in this follow-up.

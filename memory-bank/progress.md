@@ -4,12 +4,14 @@
   adapters.
 - Created T69a for Codex / ChatGPT subscription authentication and T69b for
   Claude Code authentication.
-- Recorded the preferred Codex `codex app-server` direction and kept direct
-  private-backend OAuth as a non-default research alternative.
-- Added the shared implementation document with privacy rules, adapter
-  boundaries, service-specific gates, and delivery phases.
-- No source code or credentials changed. Official service-authentication
-  verification remains the next step.
+- Recorded two Codex implementation paths: supported local `codex app-server`
+  for desktop, and experimental device-flow/direct HTTP for mobile.
+- Added public plugin evidence from Chatting with AI, including mobile
+  `requestUrl()`, `SecretStorage`, token refresh, and Codex HTTP handling.
+- Added the shared implementation document with credential handling, adapter
+  contracts, mobile precedents, and delivery phases.
+- No source code or credentials changed. The next step is a small Codex probe
+  covering both the desktop app-server and mobile direct-HTTP approaches.
 
 ### 2026-08-30 — Multi-agent sequential orchestration fixes ✅
 

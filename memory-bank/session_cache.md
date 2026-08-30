@@ -6,14 +6,14 @@
   adapters.
 - Created T69a for Codex / ChatGPT subscription authentication and T69b for
   Claude Code authentication.
-- Added `implementation-details/external-service-authentication.md` with the
-  recovered ecosystem comparison, common adapter contract, credential rules,
-  service boundaries, and phased verification plan.
+- Updated `implementation-details/external-service-authentication.md` with
+  current mobile precedents and two Codex implementation paths: desktop
+  app-server and experimental mobile device-flow/direct HTTP.
 - Kept T39 separate as the peer-plugin Integration Provider API.
-- No source code or credentials were changed; service-specific verification is
-  the next step.
+- No source code or credentials were changed; the next step is a small Codex
+  compatibility probe for both paths.
 
-*Last Updated: 2026-08-31 02:17:06 IST*
+*Last Updated: 2026-08-31 02:42:18 IST*
 
 ## 2026-08-31 — T16 group-chat umbrella planning
 
