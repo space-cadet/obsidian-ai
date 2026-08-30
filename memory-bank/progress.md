@@ -1,3 +1,16 @@
+### 2026-08-30 — Multi-agent sequential orchestration fixes ✅
+
+- Sequential dispatch now feeds each agent's response into the next agent's
+  working context.
+- Added output sanitization for attribution echoes and model over-generation;
+  returned, displayed, and copied text now contain only the current agent's
+  response.
+- Strengthened prompts to require one self-authored response with no agent
+  prefixes or responses for other agents.
+- Commits: `81ece43`, `8a7425b`, `343c303`.
+- Commit records report clean builds/no regressions; dedicated multi-agent
+  tests and real-provider acceptance remain open.
+
 ### 2026-08-30 — T66 stylesheet refactoring handoff 🔄
 
 - Split the stylesheet into six ordered partials under `styles/` and added

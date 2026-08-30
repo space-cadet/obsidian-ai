@@ -5,6 +5,28 @@
 *Status: ✅ COMPLETE — All 5 Phases Delivered and Merged*
 *Depends on: T40 (Multi-User Chat with LaTeX Support)*
 
+### Sequential orchestration and output hygiene (T46, 2026-08-30)
+
+Sequential agent dispatch now feeds each completed agent response back into
+the working thread before the next agent is called. This gives later agents
+the intended conversation context while preserving the rule that each agent
+speaks only for itself.
+
+The Orchestrator also sanitizes model output at the boundary:
+
+- `[AgentName]:` attribution prefixes are stripped before responses enter the
+  working thread.
+- If a model generates another agent's attribution block, output is truncated
+  at that boundary so only the current agent's response remains.
+- Sanitization is applied to returned text as well as stored working-thread
+  text, keeping displayed and copied messages clean.
+- System prompts explicitly prohibit generating responses for other agents,
+  quoting prior agent messages, or adding agent-name prefixes.
+
+This closed the sequential echo/pollution and copied-message bugs in
+`81ece43`, `8a7425b`, and `343c303`. The commits report clean builds and no
+regressions; dedicated multi-agent test coverage remains a follow-up.
+
 ### Attachment replay extension (T19a, 2026-08-14)
 
 The participant message contract now preserves `ChatMessage.attachments` and persisted `resolvedParts` through local group dispatch and WebSocket relay. Orchestrator contexts may contain multimodal content for both historical user messages and the current prompt. This extends the original text-only flow documented below; large-file persistence is intentionally outside T19a and remains a T42/T19 concern.

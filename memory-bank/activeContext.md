@@ -1,5 +1,16 @@
 # Active Context
 
+### 2026-08-30 — Multi-agent sequential orchestration fixes ✅
+
+Recorded in `sessions/2026-08-30-multi-agent-orchestration-fixes.md` and the
+multi-user/agent architecture guide. Sequential dispatch now feeds prior
+agent responses into later-agent context. `sanitizeAgentOutput()` removes
+attribution echoes, truncates over-generated responses at another-agent
+boundaries, and sanitizes returned/displayed/copied text. Commits `81ece43`,
+`8a7425b`, and `343c303` are pushed. The commits report clean builds and no
+regressions; dedicated multi-agent tests and real-provider acceptance remain
+open.
+
 ### 2026-08-30 — T66 CSS refactoring handoff 🔄
 
 Recorded the completed T66 stylesheet architecture work in
