@@ -7,6 +7,7 @@
 - Created T16b for stable participant IDs, aliases, and unified `@` resolution.
 - Updated the architecture guide and related task cross-references.
 - Implementation remains pending; next step is to implement T16a/T16b in code.
+- Session closed at 2026-08-31 02:14 IST by explicit `/end`.
 
 *Last Updated: 2026-08-30 22:03:24 IST*
 
