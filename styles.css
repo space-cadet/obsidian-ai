@@ -1002,6 +1002,18 @@
 	user-select: text;
 }
 
+/* Content container for markdown-rendered output */
+.chat-bubble-content {
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+.chat-bubble-content pre {
+	white-space: pre;
+	overflow-x: auto;
+	max-width: 100%;
+}
+
 /* But keep action buttons non-selectable */
 .chat-bubble-actions {
 	margin-top: 6px;
@@ -2801,12 +2813,8 @@
 }
 
 /* Group chat message bubbles get subtle left border */
-.chat-bubble-assistant[data-agent-id] {
-	border-left: 3px solid transparent;
-}
-
-.chat-bubble-assistant[data-agent-color] {
-	border-left-color: attr(data-agent-color);
+.chat-bubble-assistant.chat-bubble-agent {
+	border-left: 3px solid var(--chat-agent-color, transparent);
 }
 
 /* ─── Action Bar Wrapper (holds ActionBar + participant dropdown) ─── */
@@ -3078,11 +3086,6 @@
 	max-height: 96px;
 	overflow-y: auto;
 	min-width: 120px;
-}
-
-.chat-textarea:focus {
-	outline: none;
-	border-color: var(--interactive-accent);
 }
 
 /* Mobile: tighter spacing */
@@ -4085,6 +4088,7 @@
 
 /* ── Chat Sync Panel v2 (syncit-inspired) ───────────────────────────────── */
 
+
 .chat-sync-panel-v2 {
 	display: flex;
 	flex-direction: column;
@@ -4698,20 +4702,8 @@
 	color: var(--text-muted);
 	text-transform: lowercase;
 }
-.sync-v2-pill.upload .sync-v2-pill-count {
-	color: var(--text-success);
-}
-.sync-v2-pill.download .sync-v2-pill-count {
-	color: var(--text-accent);
-}
 .sync-v2-pill.skip .sync-v2-pill-count {
 	color: var(--text-muted);
-}
-.sync-v2-pill.conflict .sync-v2-pill-count {
-	color: var(--text-warning);
-}
-.sync-v2-pill.error .sync-v2-pill-count {
-	color: var(--text-error);
 }
 .sync-v2-list {
 	flex: 1 1 180px;
