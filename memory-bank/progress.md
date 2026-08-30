@@ -1088,3 +1088,13 @@ Implemented the first pass on the three architectural improvements from the T55 
 - Completed settings UX, collapsible sections, manifest lookup, and deferred sync startup fixes.
 - Verification passed: 46 test files / 403 tests and production build.
 - Commit `887480b` pushed to `origin/main`.
+### 2026-08-30 — T65 memory system integration and safety closeout 🔄
+
+- Routed memory CRUD and persona memory loading through `ThreeTierMemoryStore`.
+- Added explicit tier guidance plus `evaluate_staged` and `cull_core` tools.
+- Added ranked archive search, session-end auto-curation, bounded legacy backup
+  retention, configurable retention UI, and startup cleanup.
+- Added `intelligence/memory-metadata.json` for durable tier counts and cleanup
+  state.
+- Verification: 403 tests and production build passed; commits pushed to main.
+- Remaining: formal migration-event audit/version upgrade contract.

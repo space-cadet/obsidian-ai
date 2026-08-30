@@ -1,6 +1,14 @@
 # Session Cache
 
-*Last Updated: 2026-08-30 01:07:32 IST*
+*Last Updated: 2026-08-30 13:01:09 IST*
+
+## 2026-08-30 — T65 memory integration closeout
+
+- Completed tiered CRUD, prompt guidance, curation tools, ranked archive search,
+  session-end curation, backup retention/cleanup, and persisted metadata.
+- Verification: 403 tests and production build passed.
+- Commits through `605633c` pushed to `origin/main`; repository is clean.
+- Remaining follow-up: formal migration-event audit/version upgrade contract.
 
 ## 2026-08-30 — T34 settings/runtime follow-up
 

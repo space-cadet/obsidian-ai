@@ -1,5 +1,15 @@
 # Active Context
 
+### 2026-08-30 — T65 implementation closeout 🔄
+
+Completed the main T65 implementation: tiered CRUD and prompt integration,
+curation tools, ranked archive search, session-end staged evaluation, bounded
+legacy backup cleanup with configurable retention, and persisted memory
+metadata. Verification remains green at 403 tests and production build.
+Remaining follow-up is a formal migration-event audit/version upgrade contract.
+
+Commits: `bbc25bd`, `8f82c7a`, `c03ad8c`, `747caad`, `605633c`.
+
 *Last Updated: 2026-08-30 01:07:32 IST*
 
 ### 2026-08-30 — T34 settings/runtime follow-up ✅
