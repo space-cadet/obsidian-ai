@@ -128,7 +128,12 @@
 
 .obsidian-ai-settings {
 	--obsidian-ai-accent: var(--interactive-accent, #0d9488);
-	padding-bottom: 24px;
+	/* The settings tab inherits Obsidian's generous default gutters. */
+	box-sizing: border-box;
+	width: 100%;
+	max-width: none;
+	margin-inline: 0;
+	padding: 0 12px 24px;
 }
 
 .obsidian-ai-settings-search {
@@ -423,6 +428,10 @@
 }
 
 @media (max-width: 420px) {
+	.obsidian-ai-settings {
+		padding-inline: 8px;
+	}
+
 	.obsidian-ai-settings-metrics {
 		grid-template-columns: 1fr;
 	}
