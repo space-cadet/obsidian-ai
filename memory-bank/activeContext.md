@@ -1,5 +1,14 @@
 # Active Context
 
+### 2026-08-30 — T65 zero-budget boundary fixed ✅
+
+`ThreeTierMemoryStore.getSystemPromptContext(0)` now returns no memory
+context, so an identity budget consumed by the persona cannot accidentally
+inject the entire core tier. Added focused regression coverage. The local
+suite now passes 46 test files / 404 tests; TypeScript and the production
+build remain green. T65's migration-event audit and versioned upgrade
+contract are still open.
+
 ### 2026-08-30 — Overall code review and stylesheet task recorded 🔄
 
 Recorded the read-only monolithic-files audit at

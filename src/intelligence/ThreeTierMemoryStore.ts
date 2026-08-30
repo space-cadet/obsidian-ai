@@ -510,10 +510,11 @@ export class ThreeTierMemoryStore {
 	/** Get formatted context for system prompt (core entries only) */
 	async getSystemPromptContext(maxTokens?: number): Promise<string> {
 		let core = await this.loadCore();
-		if (core.length === 0) return "";
+		if (core.length === 0 || (maxTokens !== undefined && maxTokens <= 0))
+			return "";
 
 		// Iteratively trim entries until under token limit
-		while (maxTokens && core.length > 0) {
+		while (maxTokens !== undefined && core.length > 0) {
 			const text = this._formatCoreEntries(core);
 			const estimatedTokens = text.length / 4;
 			if (estimatedTokens <= maxTokens) {
@@ -523,7 +524,7 @@ export class ThreeTierMemoryStore {
 			core = core.slice(1);
 		}
 
-		return this._formatCoreEntries(core);
+		return core.length > 0 ? this._formatCoreEntries(core) : "";
 	}
 
 	private _formatCoreEntries(entries: ScoredMemoryEntry[]): string {

@@ -1,3 +1,11 @@
+### 2026-08-30 — T65 zero-budget boundary fix ✅
+
+- Fixed `ThreeTierMemoryStore.getSystemPromptContext(0)` to return empty
+  context instead of bypassing the memory limit.
+- Added focused regression coverage; verification now passes 46 test files /
+  404 tests, TypeScript, and the production build.
+- T65 migration-event audit and versioned upgrade contract remain open.
+
 ### 2026-08-30 — Overall code review and stylesheet planning 🔄
 
 - Recorded the current monolithic-files and CSS audit at

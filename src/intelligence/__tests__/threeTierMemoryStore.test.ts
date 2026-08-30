@@ -226,6 +226,18 @@ describe("ThreeTierMemoryStore", () => {
 			const estimatedTokens = context.length / 4;
 			expect(estimatedTokens).toBeLessThanOrEqual(120); // Allow margin for headers
 		});
+
+		it("returns no context when the memory budget is zero", async () => {
+			const core = await store.loadCore();
+			core.push(
+				makeEntry({
+					content: "This must not be included with a zero budget",
+				}),
+			);
+			await store.saveCore(core);
+
+			expect(await store.getSystemPromptContext(0)).toBe("");
+		});
 	});
 
 	describe("migration", () => {
