@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-30 22:03:24 IST*
+*Last Updated: 2026-08-31 02:09:24 IST*
 
 ## Overview
 
@@ -16,6 +16,8 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T14 | Remote Agent Connectivity (OpenResponses) | 🔄 | HIGH | 2026-05-07 | T1, T13, T5, T9 | [Details](tasks/T14.md) |
 | T15 | Tabbed Chat Interface with Multi-Profile | 🔄 | HIGH | 2026-05-15 | T13, T14, T9 | [Details](tasks/T15.md) |
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
+| T16a | Bounded Group Context and Shared Tool Facts | 🔄 | HIGH | 2026-08-31 | T16, T46, T48b, T48c | [Details](tasks/T16a.md) |
+| T16b | Addressable Agent Participants and Unified `@` Resolution | 🔄 | HIGH | 2026-08-31 | T16, T43 | [Details](tasks/T16b.md) |
 | T40 | Multi-User Chat with LaTeX Support | 🔄 | HIGH | 2026-08-08 | T16 | [Details](tasks/T40.md) |
 | T42 | Remote Chat Storage & Sync | 🔄 | HIGH | 2026-08-10 | T40 | [Details](tasks/T42.md) |
 | T42a | Sync Index — Skip Unchanged Sessions | 🔄 | HIGH | 2026-08-19 | T42 | [Details](tasks/T42a.md) |
@@ -129,6 +131,8 @@ T15: Tabbed Chat Interface with Multi-Profile
   └── T9
 T16: Group Chat (Multi-Agent Conversation)
   └── T15
+  └── T16a
+  └── T16b
 T18: Web Search Tool for Chat
   └── T13
   └── T9

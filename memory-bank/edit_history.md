@@ -1,6 +1,21 @@
 # Edit History
 
-*Last Updated: 2026-08-30 22:03:24 IST*
+*Last Updated: 2026-08-31 02:09:24 IST*
+
+#### 02:09:24 IST - T16: Establish umbrella and group-chat follow-up subtasks
+- Modified `memory-bank/tasks/T16.md` - Re-established T16 as the umbrella and linked focused subtasks and related tasks.
+- Created `memory-bank/tasks/T16a.md` - Defined bounded group context and shared tool-fact requirements.
+- Created `memory-bank/tasks/T16b.md` - Defined stable agent participants and unified `@` resolution requirements.
+- Updated `memory-bank/tasks.md` - Registered T16a and T16b and added the parent relationship.
+- Modified `memory-bank/implementation-details/multi-user-agent-chat.md` - Recorded the umbrella and follow-up architecture.
+- Modified `memory-bank/tasks/T43.md` - Cross-referenced participant-handle ownership.
+- Modified `memory-bank/tasks/T46.md` - Cross-referenced bounded-context ownership.
+- Modified `memory-bank/tasks/T48b.md` - Cross-referenced shared tool-fact requirements.
+- Modified `memory-bank/tasks/T48c.md` - Cross-referenced ephemeral group summaries.
+- Modified `memory-bank/activeContext.md` - Recorded current T16 planning direction.
+- Modified `memory-bank/progress.md` - Recorded the planning milestone.
+- Modified `memory-bank/session_cache.md` - Recorded the active follow-ups.
+- Created `memory-bank/sessions/2026-08-31-group-chat-planning.md` - Recorded decisions and next steps.
 
 #### 22:03:24 IST - T66: Record CSS refactoring implementation and handoff
 - Modified `memory-bank/tasks/T66.md` - Reconciled the planned task with the implemented stylesheet split, cleanup, verification, pushed commits, and unresolved Settings-width follow-up.

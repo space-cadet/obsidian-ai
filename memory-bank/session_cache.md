@@ -1,5 +1,13 @@
 # Session Cache
 
+## 2026-08-31 — T16 group-chat umbrella planning
+
+- T16 retained as the multi-agent group-chat umbrella.
+- Created T16a for bounded selective context and shared tool facts.
+- Created T16b for stable participant IDs, aliases, and unified `@` resolution.
+- Updated the architecture guide and related task cross-references.
+- Implementation remains pending; next step is to implement T16a/T16b in code.
+
 *Last Updated: 2026-08-30 22:03:24 IST*
 
 ## 2026-08-30 — T66 CSS refactoring handoff

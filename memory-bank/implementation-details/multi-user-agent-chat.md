@@ -35,6 +35,19 @@ The participant message contract now preserves `ChatMessage.attachments` and per
 
 This document describes the **equal-footing participant model** for multi-user chat, where AI agents and remote human users participate as peers in the same chat tab.
 
+### T16 umbrella and active follow-ups (2026-08-31)
+
+T16 is the umbrella for multi-agent group chat. T16a tracks bounded selective
+working context and shared tool facts; T16b tracks stable participant IDs,
+aliases, and unified `@` resolution. Full transcripts remain available for UI
+and audit, but later agents should receive only bounded summaries, provenance,
+tool facts, and unresolved questions.
+
+Agent handles are participant identity, not provider identity: `agentId` remains
+separate from `profileId`. A resolver should distinguish agent targets, vault
+context references, unknown mentions, and clean text. Unknown `@tokens` remain
+ordinary text; resolved target IDs are stored structurally for reliable routing.
+
 ## Core Principle
 
 **All participants are equal.** Whether AI agent, remote human, or local user — each receives messages and decides independently how to respond.

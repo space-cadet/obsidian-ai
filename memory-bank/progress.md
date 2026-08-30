@@ -407,6 +407,12 @@ matches found.
 **Status:** Diagnosed, no source changes yet. Validates T60d need.
 
 ---
+### 2026-08-31 — T16 group-chat planning baseline 🔄
+
+- Re-established T16 as the umbrella task for multi-agent group chat.
+- Created T16a (bounded group context/shared tool facts) and T16b (addressable
+  participants/unified `@` resolution).
+- Linked the subtasks to T43, T46, T48b, and T48c; no implementation claimed.
 
 ### 2026-08-25 — T60b OpenResponses Loop Bug Fix ✅ COMPLETE
 

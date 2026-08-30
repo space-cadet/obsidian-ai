@@ -1,5 +1,12 @@
 # Active Context
 
+### 2026-08-31 — T16 umbrella and group-chat follow-ups 🔄
+
+T16 is retained as the umbrella for multi-agent group chat. Created T16a for
+bounded selective working context/shared tool facts and T16b for stable agent
+handles and unified `@` resolution. T16a/T16b are design-stage follow-ups;
+implementation and acceptance remain open.
+
 ### 2026-08-30 — Multi-agent sequential orchestration fixes ✅
 
 Recorded in `sessions/2026-08-30-multi-agent-orchestration-fixes.md` and the
