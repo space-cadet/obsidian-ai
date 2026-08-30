@@ -136,6 +136,24 @@
 	padding: 0 12px 24px;
 }
 
+/*
+ * PluginSettingTab may place the custom root inside one of Obsidian's
+ * constrained settings wrappers. Widen that host as well; changing only the
+ * child leaves the cards narrow because the parent still owns the max-width.
+ */
+.vertical-tab-content:has(.obsidian-ai-settings),
+.setting-tab-content:has(.obsidian-ai-settings) {
+	box-sizing: border-box;
+	width: 100%;
+	max-width: none !important;
+	padding-inline: 12px;
+}
+
+.vertical-tab-content .obsidian-ai-settings,
+.setting-tab-content .obsidian-ai-settings {
+	padding-inline: 0;
+}
+
 .obsidian-ai-settings-search {
 	margin: 0 0 12px;
 }
@@ -429,6 +447,11 @@
 
 @media (max-width: 420px) {
 	.obsidian-ai-settings {
+		padding-inline: 8px;
+	}
+
+	.vertical-tab-content:has(.obsidian-ai-settings),
+	.setting-tab-content:has(.obsidian-ai-settings) {
 		padding-inline: 8px;
 	}
 
