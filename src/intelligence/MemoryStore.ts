@@ -47,6 +47,7 @@ export interface MemoryStoreDeps {
 }
 
 const DEFAULT_MEMORY_ENTRIES: MemoryEntry[] = [];
+const TIMESTAMPED_BACKUP_RETENTION = 20;
 
 /**
  * Structured memory store with CRUD operations.
@@ -102,6 +103,28 @@ export class MemoryStore {
 		await this._snapshot();
 		await adapter.write(this.jsonPath, JSON.stringify(entries, null, 2));
 		await this._regenerateMarkdown(entries);
+		await this._cleanupTimestampedBackups();
+	}
+
+	/** Retain a bounded number of timestamped snapshots; fixed .bak files remain. */
+	private async _cleanupTimestampedBackups(): Promise<void> {
+		const adapter = this.deps.app.vault.adapter;
+		const slash = this.jsonPath.lastIndexOf("/");
+		const dir = slash >= 0 ? this.jsonPath.slice(0, slash) : ".";
+		try {
+			const listing = await adapter.list(dir);
+			for (const prefix of [this.jsonPath, this.mdPath]) {
+				const matches = listing.files
+					.filter((path) => path.startsWith(`${prefix}.bak.`))
+					.sort()
+					.reverse();
+				for (const path of matches.slice(TIMESTAMPED_BACKUP_RETENTION)) {
+					await adapter.remove(path);
+				}
+			}
+		} catch (e) {
+			this.deps.logger?.log("warn", `Failed to clean memory backups: ${e}`);
+		}
 	}
 
 	/** Restore the last pre-write snapshot, if one exists. */
