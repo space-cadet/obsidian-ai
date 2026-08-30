@@ -503,7 +503,7 @@ export class Orchestrator {
 					agentId: engine.id,
 					agentName: engine.name,
 					agentColor: engine.color,
-					text: result.text || fullText,
+					text: this.sanitizeAgentOutput(result.text || fullText, engine.name),
 					toolCalls:
 						toolCallsLog.length > 0 ? toolCallsLog : undefined,
 					tokenEstimate: result.tokenEstimate,
@@ -532,7 +532,7 @@ export class Orchestrator {
 				agentId: engine.id,
 				agentName: engine.name,
 				agentColor: engine.color,
-				text: fullText,
+				text: this.sanitizeAgentOutput(fullText, engine.name),
 				tokenEstimate: estimateTokens(fullText),
 				providerUsage,
 			};
@@ -548,21 +548,26 @@ export class Orchestrator {
 	}
 
 	/**
-	 * Strip attribution prefixes that the model may have echoed from context.
-	 * Prevents compounding [AgentName]: pollution in sequential responses.
+	 * Extract only this agent's own response from generated text.
+	 * Models may echo context prefixes or generate responses for other agents.
+	 * We strip all prefixes and truncate at the first sign of another agent's output.
 	 */
 	private sanitizeAgentOutput(text: string, agentName: string): string {
 		let cleaned = text.trim();
 
-		// Strip the agent's own attribution prefix if present
-		const ownPrefix = new RegExp(`^\\[${agentName}\\]:\\s*`, "i");
-		cleaned = cleaned.replace(ownPrefix, "");
-
-		// Strip any other agent attribution prefixes (model echoed them)
-		const anyPrefix = /^\[[^\]]+\]:\s*/gm;
+		// Strip any leading attribution prefix (own or others)
+		const anyPrefix = /^\[[^\]]+\]:\s*/;
 		cleaned = cleaned.replace(anyPrefix, "");
 
-		return cleaned.trim();
+		// Truncate at the first occurrence of another agent's prefix.
+		// This prevents the model from "completing" the conversation for others.
+		const otherAgentPrefix = /\n?\[[^\]]+\]:\s*/;
+		const cutoff = cleaned.search(otherAgentPrefix);
+		if (cutoff !== -1) {
+			cleaned = cleaned.slice(0, cutoff).trim();
+		}
+
+		return cleaned;
 	}
 
 	private buildSystemPrompt(agentId: string): string {
@@ -575,6 +580,7 @@ export class Orchestrator {
 			`Add new information, challenge weak points, or offer a different angle. ` +
 			`When reviewing other assistants' perspectives, explicitly agree, disagree, add nuance, or correct errors. ` +
 			`Speak only for yourself. NEVER speak for other agents or pretend to be them. ` +
+			`Generate ONLY your own single response. Do NOT write responses for other agents. ` +
 			`Address the user or specific agents by name when relevant. ` +
 			`Be concise and helpful.` +
 			`\n\nYou are integrated into an Obsidian note-taking app and can help with notes, research, and tasks.`;
