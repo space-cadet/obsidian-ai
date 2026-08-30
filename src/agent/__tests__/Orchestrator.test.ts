@@ -211,3 +211,119 @@ describe("Orchestrator remote user context", () => {
 		]);
 	});
 });
+
+describe("Orchestrator tool calling", () => {
+	function createToolExecutor(execute: ReturnType<typeof vi.fn>) {
+		return {
+			getModelTools: vi.fn().mockReturnValue({ read_note: {} }),
+			getResolvedToolRegistry: vi.fn().mockReturnValue({ definitions: [] }),
+			execute,
+		} as any;
+	}
+
+	function createOrchestrator(
+		api: ChatApiManager,
+		toolExecutor: any,
+		autoApprove: boolean,
+	) {
+		return new Orchestrator({
+			api,
+			participants: [
+				createParticipant("one", "Agent One", "one-profile"),
+				createParticipant("two", "Agent Two", "two-profile"),
+			],
+			mode: "sequential",
+			enableTools: true,
+			autoApprove,
+			toolExecutor,
+			maxSteps: 2,
+		});
+	}
+
+	it("executes an approved tool call for each sequential agent", async () => {
+		const api = createMockApiManager();
+		const execute = vi.fn().mockResolvedValue({
+			success: true,
+			content: "# Note from the vault",
+		});
+		(api.streamChatWithTools as ReturnType<typeof vi.fn>)
+			.mockImplementationOnce(async function* () {
+				yield {
+					type: "tool-call",
+					call: {
+						toolCallId: "call-one",
+						toolName: "read_note",
+						args: { path: "Note" },
+					},
+				};
+			})
+			.mockImplementationOnce(async function* () {
+				yield { type: "text-delta", text: "Agent One found the note." };
+			})
+			.mockImplementationOnce(async function* () {
+				yield { type: "text-delta", text: "Agent Two reviewed the finding." };
+			});
+
+		const orchestrator = createOrchestrator(
+			api,
+			createToolExecutor(execute),
+			true,
+		);
+		const responses = [];
+		for await (const response of orchestrator.dispatch("Review the note", [])) {
+			responses.push(response);
+		}
+
+		expect(execute).toHaveBeenCalledOnce();
+		expect(execute).toHaveBeenCalledWith(
+		{
+			toolCallId: "call-one",
+			toolName: "read_note",
+			args: { path: "Note" },
+		},
+			expect.anything(),
+		);
+		expect(responses[0].toolCalls?.[0].result?.content).toBe(
+			"# Note from the vault",
+		);
+		expect(responses[1].text).toBe("Agent Two reviewed the finding.");
+		const secondAgentMessages = (api.streamChatWithTools as any).mock.calls[2][0];
+		expect(secondAgentMessages.some((message: any) =>
+			JSON.stringify(message).includes("Agent One found the note."),
+		)).toBe(true);
+	});
+
+	it("returns a clear rejection result when group-chat approval is disabled", async () => {
+		const api = createMockApiManager();
+		const execute = vi.fn();
+		(api.streamChatWithTools as ReturnType<typeof vi.fn>)
+			.mockImplementationOnce(async function* () {
+				yield {
+					type: "tool-call",
+					call: {
+						toolCallId: "call-rejected",
+						toolName: "edit_note",
+						args: { path: "Note", content: "Changed" },
+					},
+				};
+			})
+			.mockImplementationOnce(async function* () {
+				yield { type: "text-delta", text: "No edit was made." };
+			});
+
+		const orchestrator = createOrchestrator(
+			api,
+			createToolExecutor(execute),
+			false,
+		);
+		const responses = [];
+		for await (const response of orchestrator.dispatch("Edit the note", [])) {
+			responses.push(response);
+		}
+
+		expect(execute).not.toHaveBeenCalled();
+		expect(responses[0].toolCalls?.[0].result?.error).toContain(
+			"manual approval is not supported in group chat",
+		);
+	});
+});

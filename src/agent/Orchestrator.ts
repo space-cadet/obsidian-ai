@@ -102,6 +102,7 @@ export class Orchestrator {
 		this.requestResponseReserveTokens =
 			options.requestResponseReserveTokens ?? 4096;
 		this.maxToolResultTokens = options.maxToolResultTokens ?? 4000;
+		this.toolExecutor = options.toolExecutor;
 		this.remoteUsers = options.remoteUsers ?? [];
 	}
 
