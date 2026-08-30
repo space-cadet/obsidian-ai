@@ -1,6 +1,18 @@
 # Session Cache
 
-*Last Updated: 2026-08-30 16:46:02 IST*
+*Last Updated: 2026-08-30 22:03:24 IST*
+
+## 2026-08-30 — T66 CSS refactoring handoff
+
+- Recorded the complete stylesheet split and cleanup implementation in the
+  T66 task, selector inventory, and new architecture document.
+- Source is split into six ordered partials with deterministic concatenation;
+  generated `styles.css` remains the tracked release artifact.
+- Commits through `eff9f38` are pushed. Serial verification passes 48 test
+  files / 433 tests, TypeScript, build, package, and `git diff --check`.
+- T66 remains active: the Android Settings card-width screenshots show no
+  meaningful change after four wrapper/gutter attempts, and the prompt-field
+  `min-width: 25em` needs review in the next session.
 
 ## 2026-08-30 — T67 final storage refactoring state
 

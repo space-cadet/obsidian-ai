@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased - 2026-08-29
 
+### T66 stylesheet architecture and cleanup — 2026-08-30
+- Split the monolithic stylesheet into six ordered source partials and added
+  deterministic concatenation through the `prebuild` hook.
+- Kept the generated root `styles.css` release artifact tracked.
+- Removed verified duplicate focus/sync declarations and replaced unsupported
+  `attr(data-agent-color)` with a typed custom property for agent bubbles.
+- Pushed the stylesheet refactor and four Settings-wrapper follow-ups through
+  `eff9f38`.
+- Verification passes 48 test files / 433 tests, TypeScript, production build,
+  package output, and `git diff --check`.
+- Android Settings card-width visual acceptance remains open; the supplied
+  before/after screenshots showed no meaningful change, and prompt fields need
+  a follow-up review of their fixed `min-width`.
+
 ### T67 storage lifecycle refactoring — 2026-08-30
 - Split storage persistence, sync coordination, and selected plugin-data sync
   into separate lifecycle modules.

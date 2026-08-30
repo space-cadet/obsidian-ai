@@ -1,3 +1,18 @@
+### 2026-08-30 — T66 stylesheet refactoring handoff 🔄
+
+- Split the stylesheet into six ordered partials under `styles/` and added
+  `scripts/concat-styles.mjs` plus the `prebuild` hook.
+- Kept the generated root `styles.css` tracked and verified package output.
+- Removed verified duplicate declarations, preserved the content overflow
+  fix, and replaced unsupported `attr(data-agent-color)` with a typed CSS
+  custom property set by `MessageBubble.tsx`.
+- Pushed commits `1276a0a`, `c242d02`, `5e22110`, `0d6a035`, and `eff9f38`.
+- Serial verification passes 48 test files / 433 tests, TypeScript, build,
+  package, and `git diff --check`.
+- T66 remains open for live Android Settings DOM inspection and visual
+  acceptance; the four card-width attempts did not change the screenshot
+  boundaries, and the last attempt exposed prompt-field misalignment.
+
 ### 2026-08-30 — T67 storage refactoring closeout 🔄
 
 - Completed the three planned storage boundaries: persistence, sync
