@@ -6,9 +6,11 @@
 - Extracted stop/retry/edit/cancel-edit/tool approval actions into
   `src/agent/turnActions.ts`; `turnLifecycle.ts` keeps `send()` and execution
   policy.
-- Created T67 for focused persistence coverage and the remaining sync,
-  plugin-data, initialization, and session-end boundaries.
-- Verification passed: 46 test files / 404 tests, TypeScript, formatting, and
+- Created focused characterization tests in
+  `src/lifecycle/__tests__/persistence.test.ts` covering settings load/save
+  guards, WebDAV password handling, rolling backups, chat-data queuing,
+  auto-sync debouncing, and legacy key stripping.
+- Verification passed: 47 test files / 422 tests, TypeScript, formatting, and
   `git diff --check`. Production build and remote push remain for closeout.
 
 ### 2026-08-30 — T65 zero-budget boundary fix ✅

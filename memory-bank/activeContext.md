@@ -6,8 +6,14 @@ Extracted settings/chat persistence into `src/lifecycle/persistence.ts` and
 user/tool action handling into `src/agent/turnActions.ts`. The coordinators
 remain behavior owners: `storage.ts` still owns initialization and sync, and
 `turnLifecycle.ts` still owns the main `send()` path. Created T67 to track the
-remaining storage boundaries and characterization tests. Verification passes
-at 46 test files / 404 tests, TypeScript, formatting, and `git diff --check`.
+remaining storage boundaries and characterization tests.
+
+Added 18 focused characterization tests in
+`src/lifecycle/__tests__/persistence.test.ts` covering settings load/save
+guards, WebDAV password handling, rolling backup creation, chat-data write
+queuing, auto-sync debouncing, and legacy key stripping for jsonl format.
+Verification passes at 47 test files / 422 tests, TypeScript, formatting, and
+`git diff --check`.
 
 The production build and push are the remaining closeout gates for this slice.
 
