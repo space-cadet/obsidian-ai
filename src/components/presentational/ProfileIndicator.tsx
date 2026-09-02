@@ -6,14 +6,6 @@ interface ProfileIndicatorProps {
 	profile: ProviderProfile;
 }
 
-const providerIcons: Record<string, string> = {
-	openai: "bot",
-	anthropic: "bot-message-square",
-	google: "bot",
-	deepseek: "bot",
-	agent: "network",
-};
-
 const providerColors: Record<string, string> = {
 	openai: "#74aa9c",
 	anthropic: "#d97757",
@@ -25,7 +17,6 @@ const providerColors: Record<string, string> = {
 export const ProfileIndicator: React.FC<ProfileIndicatorProps> = ({
 	profile,
 }) => {
-	const iconName = providerIcons[profile.provider] || "bot";
 	const color = providerColors[profile.provider] ?? "#888888";
 
 	return (
@@ -37,8 +28,11 @@ export const ProfileIndicator: React.FC<ProfileIndicatorProps> = ({
 				className="chat-profile-chip-dot"
 				style={{ background: color }}
 			/>
-			<ObsidianIcon icon={iconName} size={14} />
-			<span className="chat-profile-chip-name">{profile.name}</span>
+			<ObsidianIcon
+				icon="cpu"
+				size={14}
+				className="chat-profile-chip-icon"
+			/>
 			<span className="chat-profile-chip-model">{profile.model}</span>
 		</div>
 	);

@@ -2,9 +2,11 @@ import React, {
 	useState,
 	useRef,
 	useEffect,
+	useLayoutEffect,
 	useCallback,
 	useMemo,
 } from "react";
+import { createPortal } from "react-dom";
 import { Notice } from "obsidian";
 import type { ProviderProfile } from "../../settings";
 import { getProviderColor } from "../../settings";
@@ -85,7 +87,13 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 	const [selectedModel, setSelectedModel] = useState(profile.model);
 	const [fetching, setFetching] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
+	const triggerRef = useRef<HTMLButtonElement>(null);
+	const dropdownRef = useRef<HTMLDivElement>(null);
 	const searchRef = useRef<HTMLInputElement>(null);
+	const [dropdownPosition, setDropdownPosition] = useState({
+		top: 0,
+		left: 0,
+	});
 
 	const selectedProfiles = useMemo(() => {
 		return Array.from(selectedProfileIds)
@@ -138,12 +146,46 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 		}
 	}, [isOpen]);
 
+	// The toolbar scroll container clips descendants below its bottom edge.
+	// Position the portaled menu against the trigger so it remains visible over
+	// the chat content while the toolbar retains horizontal scrolling.
+	useLayoutEffect(() => {
+		if (!isOpen) return;
+
+		const updateDropdownPosition = () => {
+			const trigger = triggerRef.current;
+			if (!trigger) return;
+
+			const rect = trigger.getBoundingClientRect();
+			const padding = 8;
+			const menuWidth = Math.min(320, window.innerWidth - padding * 2);
+			const maxLeft = Math.max(
+				padding,
+				window.innerWidth - menuWidth - padding,
+			);
+			setDropdownPosition({
+				top: rect.bottom + 4,
+				left: Math.min(Math.max(padding, rect.left), maxLeft),
+			});
+		};
+
+		updateDropdownPosition();
+		window.addEventListener("resize", updateDropdownPosition);
+		window.addEventListener("scroll", updateDropdownPosition, true);
+		return () => {
+			window.removeEventListener("resize", updateDropdownPosition);
+			window.removeEventListener("scroll", updateDropdownPosition, true);
+		};
+	}, [isOpen]);
+
 	// Click outside to close
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (
 				containerRef.current &&
-				!containerRef.current.contains(event.target as Node)
+				!containerRef.current.contains(event.target as Node) &&
+				(!dropdownRef.current ||
+					!dropdownRef.current.contains(event.target as Node))
 			) {
 				setIsOpen(false);
 				setSubmenuAgentId(null);
@@ -331,6 +373,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 		<div className="chat-model-switcher" ref={containerRef}>
 			<button
 				data-testid="model-switcher-trigger"
+				ref={triggerRef}
 				className="chat-model-switcher-trigger"
 				onClick={toggleOpen}
 				aria-expanded={isOpen}
@@ -342,186 +385,199 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 				}
 				type="button"
 			>
-				{isMultiAgent ? (
-					<>
-						<ObsidianIcon icon="users" size={12} />
-						<span className="chat-model-switcher-current">
-							{triggerLabel}
-						</span>
-					</>
-				) : (
-					<>
-						<span
-							className="chat-model-switcher-provider-dot"
-							style={{
-								color: getProviderColor(profile.provider),
-							}}
-						>
-							●
-						</span>
-						<span className="chat-model-switcher-current">
-							{triggerLabel}
-						</span>
-					</>
-				)}
-				<ObsidianIcon icon="chevron-down" size={12} />
+				<ObsidianIcon
+					icon="cpu"
+					size={14}
+					className="chat-model-switcher-model-icon"
+				/>
+				<span className="chat-model-switcher-current">
+					{triggerLabel}
+				</span>
 			</button>
 
-			{isOpen && (
-				<div className="chat-model-switcher-dropdown">
-					{/* ─── Multi-agent: Agent list ─── */}
-					{isMultiAgent && !submenuAgentId ? (
-						<div className="chat-model-switcher-list">
-							<div className="chat-model-switcher-section-header">
-								Select agent to configure
-							</div>
-							{selectedProfiles.map((p) => (
-								<button
-									key={p.id}
-									className="chat-model-switcher-item"
-									onClick={() => handleOpenAgentModels(p.id)}
-									type="button"
-								>
-									<span
-										className="chat-model-switcher-item-dot"
-										style={{
-											color: getProviderColor(p.provider),
-										}}
-									>
-										●
-									</span>
-									<span className="chat-model-switcher-item-name">
-										{p.name}
-									</span>
-									<span className="chat-model-switcher-item-model">
-										{p.model}
-									</span>
-									<ObsidianIcon
-										icon="chevron-right"
-										size={14}
-									/>
-								</button>
-							))}
-						</div>
-					) : (
-						<>
-							{/* ─── Search ─── */}
-							{submenuAgentId && (
-								<button
-									className="chat-model-switcher-back"
-									onClick={handleBackToAgents}
-									type="button"
-								>
-									<ObsidianIcon icon="arrow-left" size={14} />
-									Back to agents
-								</button>
-							)}
-							<div className="chat-model-switcher-search">
-								<ObsidianIcon icon="search" size={14} />
-								<input
-									ref={searchRef}
-									type="text"
-									placeholder="Search models..."
-									value={search}
-									onChange={(e) => setSearch(e.target.value)}
-									onKeyDown={(e) => {
-										if (
-											e.key === "Enter" &&
-											displayModels.length > 0
-										) {
-											handleSelectModel(displayModels[0]);
-										}
-									}}
-								/>
-							</div>
-
-							{/* ─── Model list ─── */}
-							<div className="chat-model-switcher-list">
-								{hasRecent && (
-									<>
-										<div className="chat-model-switcher-section-header">
-											Recently used
-										</div>
-										{recentModels.map((m) => (
-											<button
-												key={`recent-${m}`}
-												className={`chat-model-switcher-item${m === currentModel ? " is-active" : ""}`}
-												onClick={() =>
-													handleSelectModel(m)
-												}
-												type="button"
-											>
-												<span className="chat-model-switcher-item-name">
-													{m}
-												</span>
-												{m === currentModel && (
-													<ObsidianIcon
-														icon="check"
-														size={14}
-													/>
-												)}
-											</button>
-										))}
-									</>
-								)}
-
-								{hasRecent && (
+			{isOpen && typeof document !== "undefined" && document.body
+				? (createPortal(
+						<div
+							ref={dropdownRef}
+							className="chat-model-switcher-dropdown"
+							style={{
+								top: dropdownPosition.top,
+								left: dropdownPosition.left,
+							}}
+						>
+							{/* ─── Multi-agent: Agent list ─── */}
+							{isMultiAgent && !submenuAgentId ? (
+								<div className="chat-model-switcher-list">
 									<div className="chat-model-switcher-section-header">
-										All models
-										<span className="chat-model-switcher-count">
-											{displayModels.length}
-										</span>
+										Select agent to configure
 									</div>
-								)}
-
-								{hasResults ? (
-									displayModels.map((m) => (
+									{selectedProfiles.map((p) => (
 										<button
-											key={m}
-											className={`chat-model-switcher-item${m === currentModel ? " is-active" : ""}`}
-											onClick={() => handleSelectModel(m)}
+											key={p.id}
+											className="chat-model-switcher-item"
+											onClick={() =>
+												handleOpenAgentModels(p.id)
+											}
 											type="button"
 										>
-											<span className="chat-model-switcher-item-name">
-												{m}
+											<span
+												className="chat-model-switcher-item-dot"
+												style={{
+													color: getProviderColor(
+														p.provider,
+													),
+												}}
+											>
+												●
 											</span>
-											{m === currentModel && (
-												<ObsidianIcon
-													icon="check"
-													size={14}
-												/>
-											)}
+											<span className="chat-model-switcher-item-name">
+												{p.name}
+											</span>
+											<span className="chat-model-switcher-item-model">
+												{p.model}
+											</span>
+											<ObsidianIcon
+												icon="chevron-right"
+												size={14}
+											/>
 										</button>
-									))
-								) : (
-									<div className="chat-model-switcher-empty">
-										No models match &ldquo;{search.trim()}
-										&rdquo;
+									))}
+								</div>
+							) : (
+								<>
+									{/* ─── Search ─── */}
+									{submenuAgentId && (
+										<button
+											className="chat-model-switcher-back"
+											onClick={handleBackToAgents}
+											type="button"
+										>
+											<ObsidianIcon
+												icon="arrow-left"
+												size={14}
+											/>
+											Back to agents
+										</button>
+									)}
+									<div className="chat-model-switcher-search">
+										<ObsidianIcon icon="search" size={14} />
+										<input
+											ref={searchRef}
+											type="text"
+											placeholder="Search models..."
+											value={search}
+											onChange={(e) =>
+												setSearch(e.target.value)
+											}
+											onKeyDown={(e) => {
+												if (
+													e.key === "Enter" &&
+													displayModels.length > 0
+												) {
+													handleSelectModel(
+														displayModels[0],
+													);
+												}
+											}}
+										/>
 									</div>
-								)}
-							</div>
 
-							{/* ─── Footer ─── */}
-							<div className="chat-model-switcher-footer">
-								<button
-									className="chat-model-switcher-refresh"
-									onClick={handleRefresh}
-									disabled={fetching}
-									type="button"
-								>
-									<ObsidianIcon
-										icon={
-											fetching ? "loader" : "refresh-cw"
-										}
-										size={14}
-									/>
-									{fetching ? "Fetching…" : "Refresh models"}
-								</button>
-							</div>
-						</>
-					)}
-				</div>
-			)}
+									{/* ─── Model list ─── */}
+									<div className="chat-model-switcher-list">
+										{hasRecent && (
+											<>
+												<div className="chat-model-switcher-section-header">
+													Recently used
+												</div>
+												{recentModels.map((m) => (
+													<button
+														key={`recent-${m}`}
+														className={`chat-model-switcher-item${m === currentModel ? " is-active" : ""}`}
+														onClick={() =>
+															handleSelectModel(m)
+														}
+														type="button"
+													>
+														<span className="chat-model-switcher-item-name">
+															{m}
+														</span>
+														{m === currentModel && (
+															<ObsidianIcon
+																icon="check"
+																size={14}
+															/>
+														)}
+													</button>
+												))}
+											</>
+										)}
+
+										{hasRecent && (
+											<div className="chat-model-switcher-section-header">
+												All models
+												<span className="chat-model-switcher-count">
+													{displayModels.length}
+												</span>
+											</div>
+										)}
+
+										{hasResults ? (
+											displayModels.map((m) => (
+												<button
+													key={m}
+													className={`chat-model-switcher-item${m === currentModel ? " is-active" : ""}`}
+													onClick={() =>
+														handleSelectModel(m)
+													}
+													type="button"
+												>
+													<span className="chat-model-switcher-item-name">
+														{m}
+													</span>
+													{m === currentModel && (
+														<ObsidianIcon
+															icon="check"
+															size={14}
+														/>
+													)}
+												</button>
+											))
+										) : (
+											<div className="chat-model-switcher-empty">
+												No models match &ldquo;
+												{search.trim()}
+												&rdquo;
+											</div>
+										)}
+									</div>
+
+									{/* ─── Footer ─── */}
+									<div className="chat-model-switcher-footer">
+										<button
+											className="chat-model-switcher-refresh"
+											onClick={handleRefresh}
+											disabled={fetching}
+											type="button"
+										>
+											<ObsidianIcon
+												icon={
+													fetching
+														? "loader"
+														: "refresh-cw"
+												}
+												size={14}
+											/>
+											{fetching
+												? "Fetching…"
+												: "Refresh models"}
+										</button>
+									</div>
+								</>
+							)}
+						</div>,
+						document.body,
+					) as unknown as React.ReactNode)
+				: null}
 		</div>
 	);
 };

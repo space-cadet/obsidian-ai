@@ -495,7 +495,6 @@
 
 /* ── Chat Panel ─────────────────────────────────────────────────────────── */
 
-
 .chat-panel {
 	display: flex;
 	flex-direction: column;
@@ -776,44 +775,27 @@
 	flex-shrink: 0;
 }
 
-.chat-profile-chip-name {
-	font-weight: 600;
-	color: var(--text-normal);
-	overflow: hidden;
-	text-overflow: ellipsis;
-	min-width: 0;
-}
-
 .chat-profile-chip-model {
-	color: var(--text-muted);
+	color: var(--text-normal);
 	font-family: var(--font-monospace);
 	font-size: 0.9em;
+	font-weight: 500;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	min-width: 0;
 }
 
-/* Narrow screens: hide model name, shrink chip */
+/* Keep the active model visible; profile/provider details remain in the tooltip. */
 @media (max-width: 480px) {
 	.chat-profile-chip {
-		max-width: 120px;
+		max-width: 160px;
 		padding: 2px 6px;
-	}
-	.chat-profile-chip-model {
-		display: none;
-	}
-	.chat-profile-chip-name {
-		max-width: 80px;
 	}
 }
 
-/* Very narrow: show only dot + icon */
 @media (max-width: 360px) {
-	.chat-profile-chip-name {
-		display: none;
-	}
 	.chat-profile-chip {
-		max-width: 40px;
+		max-width: 132px;
 		padding: 2px 4px;
 	}
 }
@@ -5117,7 +5099,9 @@
 	line-height: 1.2;
 	color: var(--text-normal);
 	cursor: pointer;
-	transition: border-color 0.15s ease, background 0.15s ease;
+	transition:
+		border-color 0.15s ease,
+		background 0.15s ease;
 	white-space: nowrap;
 	overflow: hidden;
 	box-shadow: none;
@@ -5133,6 +5117,11 @@
 	line-height: 1;
 }
 
+.chat-model-switcher-model-icon {
+	flex: 0 0 auto;
+	color: var(--text-muted);
+}
+
 .chat-model-switcher-current {
 	display: block;
 	flex: 1 1 auto;
@@ -5144,16 +5133,14 @@
 }
 
 .chat-model-switcher-dropdown {
-	position: absolute;
-	top: calc(100% + 4px);
-	left: 0;
+	position: fixed;
 	width: min(320px, calc(100vw - 16px));
-	min-width: 260px;
+	min-width: min(260px, calc(100vw - 16px));
 	max-width: calc(100vw - 16px);
-	max-height: 400px;
+	max-height: min(400px, calc(100vh - 16px));
 	overflow: hidden;
 	box-sizing: border-box;
-	z-index: 1000;
+	z-index: 10000;
 	background: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 6px;
@@ -5346,7 +5333,9 @@
 	font-size: 0.8em;
 	cursor: pointer;
 	box-shadow: none;
-	transition: background 0.1s ease, color 0.1s ease;
+	transition:
+		background 0.1s ease,
+		color 0.1s ease;
 }
 
 .chat-model-switcher-back:hover {

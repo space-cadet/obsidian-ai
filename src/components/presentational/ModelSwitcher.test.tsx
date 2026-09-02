@@ -55,6 +55,11 @@ describe("ModelSwitcher", () => {
 		expect(screen.getByText("Recently used")).toBeTruthy();
 		expect(screen.getByText("All models")).toBeTruthy();
 		expect(screen.getAllByText("z-ai/glm-5.3-flash")).toHaveLength(1);
+		expect(
+			screen
+				.getByText("Recently used")
+				.closest(".chat-model-switcher-dropdown")?.parentElement,
+		).toBe(document.body);
 	});
 
 	it("updates the trigger immediately and persists a selected model", async () => {
