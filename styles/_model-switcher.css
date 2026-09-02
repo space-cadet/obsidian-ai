@@ -265,8 +265,17 @@
 	color: var(--text-normal);
 }
 
+/* Keep the selector available on phones; the toolbar itself can scroll horizontally. */
 @media (max-width: 480px) {
-	.chat-model-switcher {
-		display: none;
+	.chat-model-switcher-trigger {
+		width: 116px;
+		min-width: 108px;
+	}
+}
+
+@media (max-width: 360px) {
+	.chat-model-switcher-trigger {
+		width: 100px;
+		min-width: 96px;
 	}
 }

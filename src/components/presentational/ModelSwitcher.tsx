@@ -92,7 +92,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 			.map((id) =>
 				plugin.settings.providerProfiles.find((p) => p.id === id),
 			)
-		.filter(Boolean) as ProviderProfile[];
+			.filter(Boolean) as ProviderProfile[];
 	}, [selectedProfileIds, plugin.settings.providerProfiles]);
 	const isMultiAgent = selectedProfiles.length > 1;
 
@@ -330,6 +330,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 	return (
 		<div className="chat-model-switcher" ref={containerRef}>
 			<button
+				data-testid="model-switcher-trigger"
 				className="chat-model-switcher-trigger"
 				onClick={toggleOpen}
 				aria-expanded={isOpen}

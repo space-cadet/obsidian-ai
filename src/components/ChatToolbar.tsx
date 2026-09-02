@@ -3,6 +3,7 @@ import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 import type { ProviderProfile } from "../settings";
 import { getAgentColor } from "../lib/agentVisuals";
 import ActionBar from "./presentational/ActionBar";
+import ProfileIndicator from "./presentational/ProfileIndicator";
 
 interface AgentChip {
 	id: string;
@@ -216,17 +217,30 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 					</div>
 				)}
 			</div>
-			{(selectedAgents.length > 1 || connectedUsers.length > 0) && (
+			{(selectedAgents.length > 0 || connectedUsers.length > 0) && (
 				<div className="chat-participant-bar">
-					{selectedAgents.map((p) => (
-						<span
-							key={p.id}
-							className="chat-participant-chip"
-							style={{ color: p.color }}
-						>
-							● {p.name}
-						</span>
-					))}
+					{selectedAgents.map((p) =>
+						plugin.settings.providerProfiles.find(
+							(profile) => profile.id === p.id,
+						) ? (
+							<ProfileIndicator
+								key={p.id}
+								profile={
+									plugin.settings.providerProfiles.find(
+										(profile) => profile.id === p.id,
+									)!
+								}
+							/>
+						) : (
+							<span
+								key={p.id}
+								className="chat-participant-chip"
+								style={{ color: p.color }}
+							>
+								● {p.name}
+							</span>
+						),
+					)}
 					{connectedUsers.map((user) => (
 						<span
 							key={user}
