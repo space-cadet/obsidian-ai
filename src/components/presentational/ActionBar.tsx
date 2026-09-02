@@ -4,6 +4,7 @@ import { ChatPluginLike } from "../../views/ObsidianAIChatView";
 import type { ProviderProfile } from "../../settings";
 import ObsidianIcon from "../ObsidianIcon";
 import ProfileIndicator from "./ProfileIndicator";
+import ModelSwitcher from "./ModelSwitcher";
 
 interface ActionBarProps {
 	onNewChat: () => void;
@@ -261,6 +262,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
 					</button>
 				)}
 				<ProfileIndicator profile={profile} />
+				<ModelSwitcher profile={profile} plugin={plugin} />
 			</div>
 		</div>
 	);

@@ -196,6 +196,9 @@ export interface ObsidianAISettings {
 	// Component-level sync selection (T55)
 	syncComponents: SyncComponentConfig;
 
+	/** Recently used models per provider, for toolbar quick-switch */
+	recentModels: Record<string, string[]>;
+
 	/** Which settings sections are collapsed (persisted UI state) */
 	collapsedSections?: Record<string, boolean>;
 }
@@ -461,6 +464,8 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 		persona: true,
 		usageStats: false,
 	},
+	// Recently used models per provider
+	recentModels: {},
 	// Collapsible section state (persisted)
 	collapsedSections: {},
 };
@@ -661,6 +666,10 @@ export const normalizeSettings = (
 			persona: Boolean(merged.syncComponents?.persona ?? true),
 			usageStats: Boolean(merged.syncComponents?.usageStats ?? false),
 		},
+		recentModels:
+			typeof merged.recentModels === 'object' && merged.recentModels !== null
+				? merged.recentModels
+				: {},
 		collapsedSections:
 			typeof merged.collapsedSections === 'object' && merged.collapsedSections !== null
 				? merged.collapsedSections

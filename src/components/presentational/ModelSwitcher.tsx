@@ -1,0 +1,338 @@
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { Notice } from "obsidian";
+import type { ProviderProfile, ObsidianAISettings } from "../../settings";
+import { ChatPluginLike } from "../../views/ObsidianAIChatView";
+import ObsidianIcon from "../ObsidianIcon";
+
+// ─── Fallback model lists per provider ─────────────────────────────
+
+const FALLBACK_MODELS: Record<string, string[]> = {
+	openai: [
+		"gpt-4o",
+		"gpt-4o-mini",
+		"gpt-4-turbo",
+		"gpt-4",
+		"gpt-3.5-turbo",
+	],
+	anthropic: [
+		"claude-3-5-sonnet-latest",
+		"claude-3-5-sonnet-20241022",
+		"claude-3-5-haiku-latest",
+		"claude-3-5-haiku-20241022",
+		"claude-3-opus-latest",
+		"claude-3-opus-20240229",
+		"claude-3-sonnet-20240229",
+		"claude-3-haiku-20240307",
+	],
+	gemini: [
+		"gemini-1.5-pro",
+		"gemini-1.5-flash",
+		"gemini-1.0-pro",
+		"gemini-pro",
+	],
+	deepseek: [
+		"deepseek-chat",
+		"deepseek-reasoner",
+		"deepseek-coder",
+	],
+	kimi: [
+		"kimi-k2",
+		"kimi-k2.5",
+		"kimi-k3",
+		"moonshot-v1-8k",
+		"moonshot-v1-32k",
+		"moonshot-v1-128k",
+	],
+	openrouter: [
+		"openai/gpt-4o",
+		"openai/gpt-4o-mini",
+		"anthropic/claude-3.5-sonnet",
+		"meta-llama/llama-3.1-70b",
+		"google/gemini-1.5-pro",
+	],
+	azure: [
+		"gpt-4o",
+		"gpt-4o-mini",
+		"gpt-4-turbo",
+		"gpt-4",
+		"gpt-35-turbo",
+	],
+	ollama: [
+		"llama3.2",
+		"llama3.1",
+		"llama3",
+		"mistral",
+		"codellama",
+		"phi4",
+	],
+	custom: [
+		"gpt-4o",
+		"gpt-4o-mini",
+		"gpt-4-turbo",
+		"gpt-3.5-turbo",
+	],
+	agent: [
+		"openclaw",
+	],
+};
+
+function getFallbackModels(provider: string): string[] {
+	return FALLBACK_MODELS[provider] ?? [];
+}
+
+// ─── Types ─────────────────────────────────────────────────────────
+
+interface ModelSwitcherProps {
+	profile: ProviderProfile;
+	plugin: ChatPluginLike;
+}
+
+// ─── Component ─────────────────────────────────────────────────────
+
+export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
+	profile,
+	plugin,
+}) => {
+	const [isOpen, setIsOpen] = useState(false);
+	const [search, setSearch] = useState("");
+	const [models, setModels] = useState<string[]>(
+		profile.modelCache?.models ?? [],
+	);
+	const [fetching, setFetching] = useState(false);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const searchRef = useRef<HTMLInputElement>(null);
+
+	// Sync models when profile changes
+	useEffect(() => {
+		setModels(profile.modelCache?.models ?? []);
+	}, [profile.modelCache?.models, profile.id]);
+
+	// Focus search when opening
+	useEffect(() => {
+		if (isOpen && searchRef.current) {
+			setTimeout(() => searchRef.current?.focus(), 10);
+		}
+	}, [isOpen]);
+
+	// Click outside to close
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (
+				containerRef.current &&
+				!containerRef.current.contains(event.target as Node)
+			) {
+				setIsOpen(false);
+			}
+		};
+		if (isOpen) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [isOpen]);
+
+	// Escape to close
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") setIsOpen(false);
+		};
+		if (isOpen) {
+			document.addEventListener("keydown", handleKeyDown);
+		}
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen]);
+
+	const allModels = useMemo(() => {
+		const fallback = getFallbackModels(profile.provider);
+		const combined = models.length > 0 ? models : fallback;
+		// Deduplicate and sort
+		const seen = new Set<string>();
+		const deduped: string[] = [];
+		for (const m of combined) {
+			if (!seen.has(m)) {
+				seen.add(m);
+				deduped.push(m);
+			}
+		}
+		return deduped.sort((a, b) => a.localeCompare(b));
+	}, [models, profile.provider]);
+
+	const recentModels = useMemo(() => {
+		const recent = plugin.settings.recentModels[profile.provider] ?? [];
+		// Filter to only models that exist in allModels
+		return recent.filter((m) => allModels.includes(m));
+	}, [plugin.settings.recentModels, profile.provider, allModels]);
+
+	const filteredModels = useMemo(() => {
+		if (!search.trim()) return allModels;
+		const q = search.trim().toLowerCase();
+		return allModels.filter((m) => m.toLowerCase().includes(q));
+	}, [allModels, search]);
+
+	const handleSelectModel = useCallback(
+		async (model: string) => {
+			setIsOpen(false);
+			setSearch("");
+
+			if (model === profile.model) return;
+
+			// Update profile model
+			const profiles = plugin.settings.providerProfiles.map((p) =>
+				p.id === profile.id ? { ...p, model, updatedAt: Date.now() } : p,
+			);
+			plugin.settings.providerProfiles = profiles;
+
+			// Update recent models
+			const recent = plugin.settings.recentModels[profile.provider] ?? [];
+			const withoutModel = recent.filter((m) => m !== model);
+			plugin.settings.recentModels = {
+				...plugin.settings.recentModels,
+				[profile.provider]: [model, ...withoutModel].slice(0, 5),
+			};
+
+			await plugin.saveSettings();
+			plugin.chatapi.updateSettings(plugin.settings);
+			new Notice(`Switched to ${model}`, 2000);
+		},
+		[profile.id, profile.model, profile.provider, plugin],
+	);
+
+	const handleRefresh = useCallback(async () => {
+		setFetching(true);
+		try {
+			const { ChatApiManager } = await import("../../api");
+			const chatApi = new ChatApiManager(plugin.settings, plugin.app);
+			const fetched = await chatApi.fetchModels(profile);
+			setModels(fetched);
+
+			// Update modelCache on the profile
+			const profiles = plugin.settings.providerProfiles.map((p) =>
+				p.id === profile.id
+					? {
+							...p,
+							modelCache: { models: fetched, fetchedAt: Date.now() },
+							updatedAt: Date.now(),
+						}
+					: p,
+			);
+			plugin.settings.providerProfiles = profiles;
+			await plugin.saveSettings();
+			plugin.chatapi.updateSettings(plugin.settings);
+			new Notice(`Fetched ${fetched.length} models`, 2000);
+		} catch (err: any) {
+			new Notice(`Failed to fetch models: ${err.message}`, 4000);
+		} finally {
+			setFetching(false);
+		}
+	}, [profile, plugin]);
+
+	const displayModels = search.trim() ? filteredModels : filteredModels;
+	const hasRecent = !search.trim() && recentModels.length > 0;
+	const hasResults = displayModels.length > 0;
+
+	return (
+		<div className="chat-model-switcher" ref={containerRef}>
+			<button
+				className="chat-model-switcher-trigger"
+				onClick={() => setIsOpen((prev) => !prev)}
+				title={`${profile.provider} / ${profile.model} - Click to change model`}
+				type="button"
+			>
+				<span className="chat-model-switcher-current">{profile.model}</span>
+				<ObsidianIcon icon="chevron-down" size={12} />
+			</button>
+
+			{isOpen && (
+				<div className="chat-model-switcher-dropdown">
+					<div className="chat-model-switcher-search">
+						<ObsidianIcon icon="search" size={14} />
+						<input
+							ref={searchRef}
+							type="text"
+							placeholder="Search models..."
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" && displayModels.length > 0) {
+									handleSelectModel(displayModels[0]);
+								}
+							}}
+						/>
+					</div>
+
+					<div className="chat-model-switcher-list">
+						{hasRecent && (
+							<>
+								<div className="chat-model-switcher-section-header">
+									Recently used
+								</div>
+								{recentModels.map((m) => (
+									<button
+										key={`recent-${m}`}
+										className={`chat-model-switcher-item${m === profile.model ? " is-active" : ""}`}
+										onClick={() => handleSelectModel(m)}
+										type="button"
+									>
+										<span className="chat-model-switcher-item-name">
+											{m}
+										</span>
+										{m === profile.model && (
+											<ObsidianIcon icon="check" size={14} />
+										)}
+									</button>
+								))}
+							</>
+						)}
+
+						{hasRecent && (
+							<div className="chat-model-switcher-section-header">
+								All models
+								<span className="chat-model-switcher-count">
+									{displayModels.length}
+								</span>
+							</div>
+						)}
+
+						{hasResults ? (
+							displayModels.map((m) => (
+								<button
+									key={m}
+									className={`chat-model-switcher-item${m === profile.model ? " is-active" : ""}`}
+									onClick={() => handleSelectModel(m)}
+									type="button"
+								>
+									<span className="chat-model-switcher-item-name">
+										{m}
+									</span>
+									{m === profile.model && (
+										<ObsidianIcon icon="check" size={14} />
+									)}
+								</button>
+							))
+						) : (
+							<div className="chat-model-switcher-empty">
+								No models match &ldquo;{search.trim()}&rdquo;
+							</div>
+						)}
+					</div>
+
+					<div className="chat-model-switcher-footer">
+						<button
+							className="chat-model-switcher-refresh"
+							onClick={handleRefresh}
+							disabled={fetching}
+							type="button"
+						>
+							<ObsidianIcon
+								icon={fetching ? "loader" : "refresh-cw"}
+								size={14}
+							/>
+							{fetching ? "Fetching…" : "Refresh models"}
+						</button>
+					</div>
+				</div>
+			)}
+		</div>
+	);
+};
+
+export default ModelSwitcher;
