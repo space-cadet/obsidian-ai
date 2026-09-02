@@ -59,18 +59,14 @@ function getFallbackModels(provider: string): string[] {
 	return FALLBACK_MODELS[provider] ?? [];
 }
 
-/** Keep the toolbar trigger compact while retaining the full identifier in its tooltip. */
-function getShortModelLabel(model: string): string {
-	const lastSegment = model.split("/").pop()?.trim();
-	return lastSegment || model;
-}
-
 // ─── Types ─────────────────────────────────────────────────────────
 
 interface ModelSwitcherProps {
 	profile: ProviderProfile;
 	plugin: ChatPluginLike;
 	selectedProfileIds: Set<string>;
+	modelOverrides?: Record<string, string>;
+	onModelChange?: (profileId: string, model: string) => Promise<void> | void;
 }
 
 // ─── Component ─────────────────────────────────────────────────────
@@ -79,6 +75,8 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 	profile,
 	plugin,
 	selectedProfileIds,
+	modelOverrides,
+	onModelChange,
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const [search, setSearch] = useState("");
@@ -95,13 +93,28 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 		left: 0,
 	});
 
+	const applyModelOverride = useCallback(
+		(target: ProviderProfile): ProviderProfile => {
+			const model = modelOverrides?.[target.id];
+			return model && model !== target.model
+				? { ...target, model }
+				: target;
+		},
+		[modelOverrides],
+	);
+
 	const selectedProfiles = useMemo(() => {
 		return Array.from(selectedProfileIds)
 			.map((id) =>
 				plugin.settings.providerProfiles.find((p) => p.id === id),
 			)
-			.filter(Boolean) as ProviderProfile[];
-	}, [selectedProfileIds, plugin.settings.providerProfiles]);
+			.filter(Boolean)
+			.map((p) => applyModelOverride(p as ProviderProfile));
+	}, [
+		selectedProfileIds,
+		plugin.settings.providerProfiles,
+		applyModelOverride,
+	]);
 	const isMultiAgent = selectedProfiles.length > 1;
 
 	// Active profile for single-agent mode
@@ -159,12 +172,18 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 			const rect = trigger.getBoundingClientRect();
 			const padding = 8;
 			const menuWidth = Math.min(320, window.innerWidth - padding * 2);
+			const menuHeight = Math.min(400, window.innerHeight - padding * 2);
 			const maxLeft = Math.max(
 				padding,
 				window.innerWidth - menuWidth - padding,
 			);
+			const belowTop = rect.bottom + 4;
+			const top =
+				belowTop + menuHeight <= window.innerHeight - padding
+					? belowTop
+					: Math.max(padding, rect.top - menuHeight - 4);
 			setDropdownPosition({
-				top: rect.bottom + 4,
+				top,
 				left: Math.min(Math.max(padding, rect.left), maxLeft),
 			});
 		};
@@ -220,7 +239,10 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 		(target: ProviderProfile): string[] => {
 			const cached = models[target.id] ?? target.modelCache?.models ?? [];
 			const fallback = getFallbackModels(target.provider);
-			const recent = plugin.settings.recentModels[target.provider] ?? [];
+			const recent =
+				plugin.settings.recentModels[target.id] ??
+				plugin.settings.recentModels[target.provider] ??
+				[];
 			const combined = [
 				...(cached.length > 0 ? cached : fallback),
 				...recent,
@@ -245,14 +267,20 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 
 	const recentModels = useMemo(() => {
 		const recent =
-			plugin.settings.recentModels[activeProfile.provider] ?? [];
+			plugin.settings.recentModels[activeProfile.id] ??
+			plugin.settings.recentModels[activeProfile.provider] ??
+			[];
 		return recent.filter(
 			(m, index) =>
 				typeof m === "string" &&
 				m.trim() &&
 				recent.indexOf(m) === index,
 		);
-	}, [plugin.settings.recentModels, activeProfile.provider]);
+	}, [
+		plugin.settings.recentModels,
+		activeProfile.id,
+		activeProfile.provider,
+	]);
 
 	const filteredModels = useMemo(() => {
 		if (!search.trim()) return allModels;
@@ -270,23 +298,34 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 				return;
 			}
 
-			// Update profile model
-			const profiles = plugin.settings.providerProfiles.map((p) =>
-				p.id === target.id ? { ...p, model, updatedAt: Date.now() } : p,
-			);
-			plugin.settings.providerProfiles = profiles;
+			// The selected model belongs to this chat tab. Keep the provider profile
+			// itself unchanged so another tab using the same credentials is isolated.
+			if (onModelChange) {
+				await onModelChange(target.id, model);
+			} else {
+				// Standalone/legacy consumers may not provide the tab-owned callback.
+				const profiles = plugin.settings.providerProfiles.map((p) =>
+					p.id === target.id
+						? { ...p, model, updatedAt: Date.now() }
+						: p,
+				);
+				plugin.settings.providerProfiles = profiles;
+			}
 			if (target.id === profile.id) setSelectedModel(model);
 
 			// Update recent models
-			const recent = plugin.settings.recentModels[target.provider] ?? [];
+			const recent =
+				plugin.settings.recentModels[target.id] ??
+				plugin.settings.recentModels[target.provider] ??
+				[];
 			const withoutModel = recent.filter((m) => m !== model);
 			plugin.settings.recentModels = {
 				...plugin.settings.recentModels,
-				[target.provider]: [model, ...withoutModel].slice(0, 5),
+				[target.id]: [model, ...withoutModel].slice(0, 5),
 			};
 
 			await plugin.saveSettings();
-			plugin.chatapi.updateSettings(plugin.settings);
+			if (!onModelChange) plugin.chatapi.updateSettings(plugin.settings);
 
 			if (isMultiAgent) {
 				new Notice(`Updated ${target.name} to ${model}`, 2000);
@@ -298,7 +337,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 				setSearch("");
 			}
 		},
-		[activeProfile, plugin, isMultiAgent, profile.id],
+		[activeProfile, plugin, isMultiAgent, profile.id, onModelChange],
 	);
 
 	const handleRefresh = useCallback(async () => {
@@ -355,9 +394,8 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 	const hasResults = displayModels.length > 0;
 
 	// Trigger label
-	const triggerLabel = isMultiAgent
-		? `${selectedProfileIds.size} agents`
-		: getShortModelLabel(selectedModel);
+	const activeModelCount = Math.max(1, selectedProfileIds.size);
+	const triggerLabel = String(activeModelCount);
 	const currentModel = isMultiAgent ? activeProfile.model : selectedModel;
 	const toggleOpen = () => {
 		setIsOpen((prev) => {
@@ -378,6 +416,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 				onClick={toggleOpen}
 				aria-expanded={isOpen}
 				aria-haspopup="menu"
+				aria-label={`${activeModelCount} active model${activeModelCount === 1 ? "" : "s"}`}
 				title={
 					isMultiAgent
 						? `${selectedProfileIds.size} agents — click to manage models`
@@ -400,6 +439,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 						<div
 							ref={dropdownRef}
 							className="chat-model-switcher-dropdown"
+							role="menu"
 							style={{
 								top: dropdownPosition.top,
 								left: dropdownPosition.left,
@@ -407,7 +447,10 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 						>
 							{/* ─── Multi-agent: Agent list ─── */}
 							{isMultiAgent && !submenuAgentId ? (
-								<div className="chat-model-switcher-list">
+								<div
+									className="chat-model-switcher-list"
+									role="none"
+								>
 									<div className="chat-model-switcher-section-header">
 										Select agent to configure
 									</div>
@@ -415,6 +458,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 										<button
 											key={p.id}
 											className="chat-model-switcher-item"
+											role="menuitem"
 											onClick={() =>
 												handleOpenAgentModels(p.id)
 											}
@@ -449,6 +493,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 									{submenuAgentId && (
 										<button
 											className="chat-model-switcher-back"
+											role="menuitem"
 											onClick={handleBackToAgents}
 											type="button"
 										>
@@ -493,6 +538,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 													<button
 														key={`recent-${m}`}
 														className={`chat-model-switcher-item${m === currentModel ? " is-active" : ""}`}
+														role="menuitem"
 														onClick={() =>
 															handleSelectModel(m)
 														}
@@ -526,6 +572,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 												<button
 													key={m}
 													className={`chat-model-switcher-item${m === currentModel ? " is-active" : ""}`}
+													role="menuitem"
 													onClick={() =>
 														handleSelectModel(m)
 													}

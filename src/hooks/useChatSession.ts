@@ -29,6 +29,7 @@ export interface UseChatSessionResult {
 	createNewSession: (opts?: {
 		includeActiveNote?: boolean;
 		selectedProfileIds?: string[];
+		modelOverrides?: Record<string, string>;
 		autoNameSessions?: boolean;
 		force?: boolean;
 	}) => ChatSession;
@@ -242,6 +243,7 @@ export function useChatSession({
 			selectedProfileIds?: string[];
 			autoNameSessions?: boolean;
 			force?: boolean;
+			modelOverrides?: Record<string, string>;
 		}): ChatSession => {
 			const currentActiveId = activeSessionIdRef.current;
 			const newSession: ChatSession = {
@@ -263,6 +265,7 @@ export function useChatSession({
 				selectedProfileIds: opts?.selectedProfileIds?.length
 					? opts.selectedProfileIds
 					: [getActiveProviderProfile(plugin.settings).id],
+				modelOverrides: opts?.modelOverrides,
 				remoteUsers: [],
 				selectedRemoteUserIds: [],
 			};

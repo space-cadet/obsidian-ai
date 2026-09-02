@@ -42,6 +42,7 @@ import type {
 } from "../hooks/useChatRuntimeState";
 import type { UseChatUIResult } from "../hooks/useChatUI";
 import type { ParticipantRouter } from "../agent/ParticipantRouter";
+import { resolveSessionProfile } from "../lib/sessionProfile";
 
 // ═══════════════════════════════════════════════════════
 // TYPES
@@ -392,6 +393,8 @@ export class TurnLifecycle {
 		deps.setContextTokenCount(resolved.stats.estimatedTokens);
 
 		const selectedIds = Array.from(deps.ui.selectedProfileIds);
+		const currentActiveId = deps.activeSessionIdRef.current;
+		if (!currentActiveId) return;
 
 		// ─── HUMAN-ONLY TAB: No AI selected ───
 		if (selectedIds.length === 0) {
@@ -405,8 +408,6 @@ export class TurnLifecycle {
 						? attachments
 						: undefined,
 			};
-			const currentActiveId = deps.activeSessionIdRef.current;
-			if (!currentActiveId) return;
 			deps.setSessions((prev) =>
 				prev.map((s) =>
 					s.id === currentActiveId
@@ -421,12 +422,21 @@ export class TurnLifecycle {
 			return;
 		}
 
-		const activeProfile: ProviderProfile =
+		const activeSession = deps.sessionsRef.current.find(
+			(session) => session.id === currentActiveId,
+		);
+		const selectedBaseProfile =
 			selectedIds.length === 1
-				? (deps.plugin.settings.providerProfiles.find(
+				? deps.plugin.settings.providerProfiles.find(
 						(p) => p.id === selectedIds[0],
-					) ?? deps.resolvedProfile)
-				: deps.resolvedProfile;
+					)
+				: undefined;
+		const activeProfile: ProviderProfile = selectedBaseProfile
+			? resolveSessionProfile(
+					selectedBaseProfile,
+					activeSession?.modelOverrides,
+				)
+			: deps.resolvedProfile;
 
 		// Resolve attachments before computing token estimate
 		let resolvedAttachmentParts: import("../api").MessageContentPart[] = [];
@@ -468,8 +478,6 @@ export class TurnLifecycle {
 			estimatedTokens: userTokenEstimate,
 		};
 
-		const currentActiveId = deps.activeSessionIdRef.current;
-		if (!currentActiveId) return;
 		deps.setSessions((prev) =>
 			prev.map((s) =>
 				s.id === currentActiveId

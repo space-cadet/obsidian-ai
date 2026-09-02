@@ -115,6 +115,8 @@ export interface ChatSession {
 	participants?: GroupChatParticipant[];
 	/** IDs of profiles selected in the multi-select toolbar */
 	selectedProfileIds?: string[];
+	/** Per-chat model choices, keyed by provider profile ID. */
+	modelOverrides?: Record<string, string>;
 	/** IDs of remote users explicitly added to this chat */
 	selectedRemoteUserIds?: string[];
 	/** Whether thinking/reasoning is enabled for this session */

@@ -279,13 +279,20 @@
 }
 
 .chat-profile-chip-model {
-	color: var(--text-normal);
+	color: #a78bfa;
 	font-family: var(--font-monospace);
-	font-size: 0.9em;
-	font-weight: 500;
+	font-size: 1em;
+	font-weight: 600;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	min-width: 0;
+}
+
+.chat-profile-chip-provider {
+	color: var(--text-muted);
+	font-size: 0.75em;
+	font-weight: 500;
+	text-transform: capitalize;
 }
 
 /* Keep the active model visible; profile/provider details remain in the tooltip. */

@@ -18,6 +18,8 @@ describe("ProfileIndicator", () => {
 		render(<ProfileIndicator profile={profile} />);
 
 		expect(screen.getByText(profile.model)).toBeTruthy();
+		expect(screen.getByText(profile.provider)).toBeTruthy();
+		expect(document.querySelector(".chat-profile-chip-icon")).toBeNull();
 		expect(
 			screen.getByTitle(/OpenRouter.*openai\/gpt-oss-120b/),
 		).toBeTruthy();

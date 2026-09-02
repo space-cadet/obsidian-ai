@@ -19,6 +19,8 @@ interface ActionBarProps {
 	onManualRename: () => void;
 	profile: ProviderProfile;
 	selectedProfileIds: Set<string>;
+	modelOverrides?: Record<string, string>;
+	onModelChange?: (profileId: string, model: string) => Promise<void> | void;
 	sessionTitle?: string;
 	zenMode?: boolean;
 	onToggleZenMode?: () => void;
@@ -49,6 +51,8 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	onManualRename,
 	profile,
 	selectedProfileIds,
+	modelOverrides,
+	onModelChange,
 	sessionTitle,
 	zenMode,
 	onToggleZenMode,
@@ -120,6 +124,8 @@ const ActionBar: React.FC<ActionBarProps> = ({
 					profile={profile}
 					plugin={plugin}
 					selectedProfileIds={selectedProfileIds}
+					modelOverrides={modelOverrides}
+					onModelChange={onModelChange}
 				/>
 
 				{onToggleParticipantDropdown && (

@@ -1,6 +1,5 @@
 import React from "react";
 import type { ProviderProfile } from "../../settings";
-import ObsidianIcon from "../ObsidianIcon";
 
 interface ProfileIndicatorProps {
 	profile: ProviderProfile;
@@ -28,11 +27,9 @@ export const ProfileIndicator: React.FC<ProfileIndicatorProps> = ({
 				className="chat-profile-chip-dot"
 				style={{ background: color }}
 			/>
-			<ObsidianIcon
-				icon="cpu"
-				size={14}
-				className="chat-profile-chip-icon"
-			/>
+			<span className="chat-profile-chip-provider">
+				{profile.provider}
+			</span>
 			<span className="chat-profile-chip-model">{profile.model}</span>
 		</div>
 	);

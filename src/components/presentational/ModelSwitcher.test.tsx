@@ -46,8 +46,9 @@ describe("ModelSwitcher", () => {
 			/>,
 		);
 
-		const trigger = screen.getByRole("button", { name: /gpt-oss-120b/ });
-		expect(trigger.textContent).not.toContain("openai/");
+		const trigger = screen.getByTestId("model-switcher-trigger");
+		expect(trigger.textContent).toBe("1");
+		expect(trigger.getAttribute("aria-label")).toBe("1 active model");
 		expect(trigger.getAttribute("aria-expanded")).toBe("false");
 
 		fireEvent.click(trigger);
@@ -74,14 +75,14 @@ describe("ModelSwitcher", () => {
 			/>,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: /gpt-oss-120b/ }));
-		fireEvent.click(screen.getByRole("button", { name: "gpt-4o" }));
+		fireEvent.click(screen.getByTestId("model-switcher-trigger"));
+		fireEvent.click(screen.getByRole("menuitem", { name: "gpt-4o" }));
 
 		await waitFor(() => {
 			expect(plugin.saveSettings).toHaveBeenCalledOnce();
 			expect(plugin.settings.providerProfiles[0].model).toBe("gpt-4o");
 		});
-		expect(screen.getByRole("button", { name: /gpt-4o/ })).toBeTruthy();
+		expect(screen.getByTestId("model-switcher-trigger").textContent).toBe("1");
 	});
 
 	it("keeps model caches isolated for profiles using the same provider", () => {
@@ -107,10 +108,35 @@ describe("ModelSwitcher", () => {
 			/>,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: /2 agents/ }));
-		fireEvent.click(screen.getByRole("button", { name: /Second/ }));
+		fireEvent.click(screen.getByTestId("model-switcher-trigger"));
+		fireEvent.click(screen.getByRole("menuitem", { name: /Second/ }));
 
 		expect(screen.getByText("second-model")).toBeTruthy();
 		expect(screen.queryByText("first-model")).toBeNull();
+	});
+
+	it("delegates model changes to the active chat tab", async () => {
+		const profile = makeProfile();
+		const plugin = makePlugin([profile]);
+		const onModelChange = vi.fn().mockResolvedValue(undefined);
+
+		render(
+			<ModelSwitcher
+				profile={profile}
+				plugin={plugin as any}
+				selectedProfileIds={new Set([profile.id])}
+				onModelChange={onModelChange}
+			/>,
+		);
+
+		fireEvent.click(screen.getByTestId("model-switcher-trigger"));
+		fireEvent.click(screen.getByRole("menuitem", { name: "gpt-4o" }));
+
+		await waitFor(() => {
+			expect(onModelChange).toHaveBeenCalledWith(profile.id, "gpt-4o");
+		});
+		expect(plugin.settings.providerProfiles[0].model).toBe(
+			"openai/gpt-oss-120b",
+		);
 	});
 });

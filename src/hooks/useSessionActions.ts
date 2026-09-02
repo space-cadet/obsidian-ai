@@ -18,6 +18,7 @@ interface UseSessionActionsOptions {
 	createNewSession: (opts?: {
 		includeActiveNote?: boolean;
 		selectedProfileIds?: string[];
+		modelOverrides?: Record<string, string>;
 		autoNameSessions?: boolean;
 		force?: boolean;
 	}) => ChatSession;
@@ -30,6 +31,7 @@ interface UseSessionActionsOptions {
 	clearSessionRuntime: (sessionId: string) => void;
 	openSessionIds: string[];
 	setOpenSessionIds: React.Dispatch<React.SetStateAction<string[]>>;
+	getModelOverrides?: () => Record<string, string> | undefined;
 }
 
 export interface UseSessionActionsResult {
@@ -63,6 +65,7 @@ export function useSessionActions({
 	clearSessionRuntime,
 	openSessionIds,
 	setOpenSessionIds,
+	getModelOverrides,
 }: UseSessionActionsOptions): UseSessionActionsResult {
 	const openSessionInTab = useCallback(
 		(sessionId: string, messageId?: string) => {
@@ -115,6 +118,7 @@ export function useSessionActions({
 			// A new tab inherits the currently visible tab's model, not the global
 			// default. This preserves the user's model choice across tab workflows.
 			selectedProfileIds: getSelectedProfileIds(),
+			modelOverrides: getModelOverrides?.(),
 			autoNameSessions: plugin.settings.autoNameSessions,
 		});
 		setOpenSessionIds((current) => [...current, newSession.id]);
@@ -133,6 +137,7 @@ export function useSessionActions({
 		createNewSession,
 		setSelectedProfileIds,
 		getSelectedProfileIds,
+		getModelOverrides,
 		setDebateMode,
 		setWasTruncated,
 		abortActiveRuntime,

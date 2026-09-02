@@ -117,6 +117,7 @@ interface SessionIndexEntry {
 		icon?: string;
 	}[];
 	selectedProfileIds?: string[];
+	modelOverrides?: Record<string, string>;
 	thinkingEnabled?: boolean;
 	contextItems?: ContextItem[];
 	scrollPosition?: number;
@@ -181,6 +182,7 @@ class JsonlStorage implements ChatStorage {
 					isGroupChat: entry.isGroupChat,
 					participants: entry.participants,
 					selectedProfileIds: entry.selectedProfileIds,
+					modelOverrides: entry.modelOverrides,
 					thinkingEnabled: entry.thinkingEnabled,
 					scrollPosition: entry.scrollPosition,
 				};
@@ -242,6 +244,7 @@ class JsonlStorage implements ChatStorage {
 				isGroupChat: session.isGroupChat,
 				participants: session.participants,
 				selectedProfileIds: session.selectedProfileIds,
+				modelOverrides: session.modelOverrides,
 				thinkingEnabled: session.thinkingEnabled,
 				scrollPosition: session.scrollPosition,
 				contextItems: session.contextItems,

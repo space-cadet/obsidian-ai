@@ -61,6 +61,7 @@ import { ChatApiManager } from "../api";
 import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
 import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
 import { getActiveProviderProfile, ProviderProfile } from "../settings";
+import { resolveSessionProfile as resolveProfileForSession } from "../lib/sessionProfile";
 import { stripThinkingTags } from "./MessageBubble";
 import {
 	serializeMessagesToMarkdown,
@@ -153,6 +154,21 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	const syncAdapterRef = useRef<SyncAdapter | null>(null);
 	const [relayConnected, setRelayConnected] = useState(false);
 	const [typingUsers, setTypingUsers] = useState<string[]>([]);
+	const activeSession = useMemo(
+		() => sessions.find((session) => session.id === activeSessionId),
+		[sessions, activeSessionId],
+	);
+	const modelOverrides = activeSession?.modelOverrides;
+	const getModelOverrides = useCallback(
+		() => activeSession?.modelOverrides,
+		[activeSession?.modelOverrides],
+	);
+	const resolveSessionProfile = useCallback(
+		(baseProfile: ProviderProfile): ProviderProfile => {
+			return resolveProfileForSession(baseProfile, modelOverrides);
+		},
+		[modelOverrides],
+	);
 
 	/** Resolve the profile for this chat panel */
 	const resolvedProfile: ProviderProfile = useMemo(() => {
@@ -160,22 +176,21 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			const p = plugin.settings.providerProfiles.find(
 				(pr) => pr.id === profileId,
 			);
-			if (p) return p;
+			if (p) return resolveSessionProfile(p);
 		}
-		const activeSession = sessions.find((s) => s.id === activeSessionId);
 		if (activeSession?.profileId) {
 			const p = plugin.settings.providerProfiles.find(
 				(pr) => pr.id === activeSession.profileId,
 			);
-			if (p) return p;
+			if (p) return resolveSessionProfile(p);
 		}
-		return getActiveProviderProfile(plugin.settings);
+		return resolveSessionProfile(getActiveProviderProfile(plugin.settings));
 	}, [
 		profileId,
-		activeSessionId,
+		activeSession,
 		plugin.settings.providerProfiles,
-		sessions,
 		settingsTick,
+		resolveSessionProfile,
 	]);
 
 	// ─── Derive participants from selectedProfileIds ───
@@ -186,15 +201,22 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			const profile = plugin.settings.providerProfiles.find(
 				(p) => p.id === id,
 			);
+			const effectiveProfile = profile
+				? resolveSessionProfile(profile)
+				: undefined;
 			return {
 				id,
-				name: profile?.name ?? "Unknown",
+				name: effectiveProfile?.name ?? "Unknown",
 				profileId: id,
-				color: getAgentColor(profile?.provider ?? "custom"),
-				icon: getAgentIcon(profile?.provider ?? "custom"),
+				color: getAgentColor(effectiveProfile?.provider ?? "custom"),
+				icon: getAgentIcon(effectiveProfile?.provider ?? "custom"),
 			};
 		});
-	}, [ui.selectedProfileIds, plugin.settings.providerProfiles]);
+	}, [
+		ui.selectedProfileIds,
+		plugin.settings.providerProfiles,
+		resolveSessionProfile,
+	]);
 
 	// All selected agents for display in participant bar (includes single selections)
 	const selectedAgents = useMemo(() => {
@@ -203,13 +225,21 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			const profile = plugin.settings.providerProfiles.find(
 				(p) => p.id === id,
 			);
+			const effectiveProfile = profile
+				? resolveSessionProfile(profile)
+				: undefined;
 			return {
 				id,
-				name: profile?.name ?? "Unknown",
-				color: getAgentColor(profile?.provider ?? "custom"),
+				name: effectiveProfile?.name ?? "Unknown",
+				color: getAgentColor(effectiveProfile?.provider ?? "custom"),
+				profile: effectiveProfile,
 			};
 		});
-	}, [ui.selectedProfileIds, plugin.settings.providerProfiles]);
+	}, [
+		ui.selectedProfileIds,
+		plugin.settings.providerProfiles,
+		resolveSessionProfile,
+	]);
 
 	const isGroupChat =
 		participants.length >= 2 || ui.selectedRemoteUserIds.size > 0;
@@ -221,7 +251,10 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			const profile = plugin.settings.providerProfiles.find(
 				(pr) => pr.id === p.profileId,
 			);
-			return { ...p, profile: profile ?? undefined };
+			return {
+				...p,
+				profile: profile ? resolveSessionProfile(profile) : undefined,
+			};
 		});
 		const orch = new Orchestrator({
 			api: plugin.chatapi,
@@ -275,6 +308,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		plugin.chatapi,
 		plugin.settings,
 		plugin.app,
+		resolveSessionProfile,
 	]);
 
 	// ─── Participant Router (wraps orchestrator + relay) ───
@@ -340,6 +374,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		},
 		openSessionIds: persistedOpenSessionIds,
 		setOpenSessionIds: setPersistedOpenSessionIds,
+		getModelOverrides,
 	});
 
 	// The toolbar is shared visually, but profile selection belongs to the
@@ -374,6 +409,27 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			ui.setSelectedRemoteUserIds(new Set(remoteIds));
 		}
 	}, [activeSessionId, chatDataLoaded]);
+
+	const handleModelChange = useCallback(
+		(profileId: string, model: string) => {
+			if (!activeSessionId) return;
+			setSessions((prev) =>
+				prev.map((session) => {
+					if (session.id !== activeSessionId) return session;
+					const nextOverrides = {
+						...(session.modelOverrides ?? {}),
+						[profileId]: model,
+					};
+					return {
+						...session,
+						modelOverrides: nextOverrides,
+						updatedAt: Date.now(),
+					};
+				}),
+			);
+		},
+		[activeSessionId, setSessions],
+	);
 
 	// ─── Settings Actions ───
 	const {
@@ -829,6 +885,8 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					selectedAgents={selectedAgents}
 					connectedUsers={connectedUsers}
 					selectedProfileIds={ui.selectedProfileIds}
+					modelOverrides={modelOverrides}
+					onModelChange={handleModelChange}
 					selectedRemoteUserIds={ui.selectedRemoteUserIds}
 					showParticipantDropdown={ui.showParticipantDropdown}
 					showRemoteUserDropdown={ui.showRemoteUserDropdown}

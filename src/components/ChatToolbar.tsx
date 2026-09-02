@@ -9,6 +9,7 @@ interface AgentChip {
 	id: string;
 	name: string;
 	color: string;
+	profile?: ProviderProfile;
 }
 
 interface ChatToolbarProps {
@@ -18,6 +19,8 @@ interface ChatToolbarProps {
 	selectedAgents: AgentChip[];
 	connectedUsers: string[];
 	selectedProfileIds: Set<string>;
+	modelOverrides?: Record<string, string>;
+	onModelChange?: (profileId: string, model: string) => Promise<void> | void;
 	selectedRemoteUserIds: Set<string>;
 	showParticipantDropdown: boolean;
 	showRemoteUserDropdown: boolean;
@@ -57,6 +60,8 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 	selectedAgents,
 	connectedUsers,
 	selectedProfileIds,
+	modelOverrides,
+	onModelChange,
 	selectedRemoteUserIds,
 	showParticipantDropdown,
 	showRemoteUserDropdown,
@@ -109,6 +114,8 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 					onManualRename={onManualRename}
 					profile={resolvedProfile}
 					selectedProfileIds={selectedProfileIds}
+					modelOverrides={modelOverrides}
+					onModelChange={onModelChange}
 					sessionTitle={sessionTitle}
 					zenMode={zenMode}
 					onToggleZenMode={onToggleZenMode}
@@ -226,6 +233,7 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 							<ProfileIndicator
 								key={p.id}
 								profile={
+									p.profile ??
 									plugin.settings.providerProfiles.find(
 										(profile) => profile.id === p.id,
 									)!

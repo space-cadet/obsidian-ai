@@ -776,13 +776,20 @@
 }
 
 .chat-profile-chip-model {
-	color: var(--text-normal);
+	color: #a78bfa;
 	font-family: var(--font-monospace);
-	font-size: 0.9em;
-	font-weight: 500;
+	font-size: 1em;
+	font-weight: 600;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	min-width: 0;
+}
+
+.chat-profile-chip-provider {
+	color: var(--text-muted);
+	font-size: 0.75em;
+	font-weight: 500;
+	text-transform: capitalize;
 }
 
 /* Keep the active model visible; profile/provider details remain in the tooltip. */
@@ -5086,8 +5093,8 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	width: 150px;
-	min-width: 96px;
+	width: 52px;
+	min-width: 52px;
 	height: 28px;
 	margin: 0;
 	padding: 4px 8px;
@@ -5124,12 +5131,11 @@
 
 .chat-model-switcher-current {
 	display: block;
-	flex: 1 1 auto;
-	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	font-family: var(--font-monospace);
+	flex: 0 0 auto;
+	font-size: 0.85em;
+	font-weight: 600;
+	line-height: 1;
+	color: var(--text-normal);
 }
 
 .chat-model-switcher-dropdown {
@@ -5346,14 +5352,14 @@
 /* Keep the selector available on phones; the toolbar itself can scroll horizontally. */
 @media (max-width: 480px) {
 	.chat-model-switcher-trigger {
-		width: 116px;
-		min-width: 108px;
+		width: 52px;
+		min-width: 52px;
 	}
 }
 
 @media (max-width: 360px) {
 	.chat-model-switcher-trigger {
-		width: 100px;
-		min-width: 96px;
+		width: 48px;
+		min-width: 48px;
 	}
 }
