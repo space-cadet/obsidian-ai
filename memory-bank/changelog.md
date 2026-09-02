@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+### T70 recent-model follow-up — 2026-09-02
+
+- Increased recent-model history to 10 entries per provider profile.
+- Added tab-activation recording so restored active models appear in Recents.
+- Shared the de-duplication/profile-scoping helper between tab activation and
+  explicit model selection.
+
 ## Unreleased - 2026-08-29
 
 ### T70 active-chat model identity planning — 2026-09-02

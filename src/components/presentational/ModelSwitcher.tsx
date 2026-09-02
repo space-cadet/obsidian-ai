@@ -12,6 +12,7 @@ import type { ProviderProfile } from "../../settings";
 import { getProviderColor } from "../../settings";
 import { ChatPluginLike } from "../../views/ObsidianAIChatView";
 import ObsidianIcon from "../ObsidianIcon";
+import { rememberRecentModel } from "../../lib/recentModels";
 
 // ─── Fallback model lists per provider ─────────────────────────────
 
@@ -317,16 +318,15 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 			}
 			if (target.id === profile.id) setSelectedModel(model);
 
-			// Update recent models
-			const recent =
-				plugin.settings.recentModels[target.id] ??
-				plugin.settings.recentModels[target.provider] ??
-				[];
-			const withoutModel = recent.filter((m) => m !== model);
-			plugin.settings.recentModels = {
-				...plugin.settings.recentModels,
-				[target.id]: [model, ...withoutModel].slice(0, 5),
-			};
+			// Update profile-scoped recent models. Tab activation uses the same
+			// helper, so both explicit selection and restored history share a
+			// consistent ten-item list.
+			plugin.settings.recentModels = rememberRecentModel(
+				plugin.settings.recentModels,
+				target.id,
+				target.provider,
+				model,
+			);
 
 			await plugin.saveSettings();
 			if (!onModelChange) plugin.chatapi.updateSettings(plugin.settings);

@@ -80,3 +80,6 @@ exact historical provider reconstruction is deliberately deferred.
   dimensions with neighboring toolbar controls.
 - Verification: 51 test files / 446 tests, TypeScript, production build, and
   package build passed. Packaged-runtime verification remains pending.
+- Recent-model behavior: the picker keeps 10 entries per profile. Activating
+  a tab records its resolved model (including a legacy historical model) using
+  the same de-duplication and profile-scoping helper as explicit selection.

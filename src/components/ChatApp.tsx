@@ -62,6 +62,7 @@ import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
 import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
 import { getActiveProviderProfile, ProviderProfile } from "../settings";
 import { resolveSessionProfile as resolveProfileForSession } from "../lib/sessionProfile";
+import { rememberRecentModel } from "../lib/recentModels";
 import { stripThinkingTags } from "./MessageBubble";
 import {
 	serializeMessagesToMarkdown,
@@ -213,6 +214,56 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			resolveSessionProfile,
 		],
 	);
+
+	// Remember the models belonging to the newly active tab. Derive this from
+	// the session itself rather than the shared UI selection state, which is
+	// restored in a separate effect and can briefly describe the previous tab.
+	const resolvedActiveSessionProfiles = useMemo(() => {
+		const ids = profileId
+			? [profileId]
+			: activeSession?.selectedProfileIds?.length
+				? activeSession.selectedProfileIds
+				: activeSession?.profileId
+					? [activeSession.profileId]
+					: [getActiveProviderProfile(plugin.settings).id];
+		const multiAgent = ids.length > 1;
+		return ids
+			.map((id) =>
+				plugin.settings.providerProfiles.find((p) => p.id === id),
+			)
+			.filter((p): p is ProviderProfile => Boolean(p))
+			.map((p) =>
+				resolveProfileForSession(
+					p,
+					activeSession?.modelOverrides,
+					activeSession?.messages,
+					multiAgent ? p.id : undefined,
+				),
+			);
+	}, [profileId, activeSession, plugin.settings.providerProfiles]);
+
+	useEffect(() => {
+		if (!chatDataLoaded || resolvedActiveSessionProfiles.length === 0)
+			return;
+		let nextRecentModels = plugin.settings.recentModels;
+		for (const activeProfile of resolvedActiveSessionProfiles) {
+			nextRecentModels = rememberRecentModel(
+				nextRecentModels,
+				activeProfile.id,
+				activeProfile.provider,
+				activeProfile.model,
+			);
+		}
+		if (nextRecentModels !== plugin.settings.recentModels) {
+			plugin.settings.recentModels = nextRecentModels;
+			void plugin.saveSettings();
+		}
+	}, [
+		chatDataLoaded,
+		activeSessionId,
+		resolvedActiveSessionProfiles,
+		plugin,
+	]);
 
 	// ─── Derive participants from selectedProfileIds ───
 	const participants = useMemo(() => {

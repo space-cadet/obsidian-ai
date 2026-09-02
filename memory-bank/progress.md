@@ -1220,3 +1220,10 @@ Implemented the first pass on the three architectural improvements from the T55 
   focused resolver/picker tests.
 - Verification: 51 test files / 446 tests, TypeScript, production build, and
   package build pass. Packaged Obsidian verification is still pending.
+### 2026-09-02 — T70 recent-model follow-up
+
+- Increased the per-profile recent-model history to 10 entries.
+- Active-tab changes now add the resolved model(s) to profile-scoped Recents;
+  explicit picker selection uses the same helper and limit.
+- Focused tests, TypeScript, full tests (448), package build, and diff checks
+  pass. Live Obsidian verification remains pending.

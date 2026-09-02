@@ -1,5 +1,12 @@
 # Session Cache
 
+### 2026-09-02 17:36 IST — T70 recent-model follow-up
+
+- Added ten-entry profile-scoped recent-model history.
+- Activating a tab now records its resolved model(s), including legacy-history
+  models; the session is used as the source to avoid stale UI selection.
+- Added helper and tests. Full suite: 52 files / 448 tests; package build pass.
+
 ## 2026-09-02 — T70 model identity planning
 
 - Reviewed the model/provider switcher work through `8d9456c` and confirmed

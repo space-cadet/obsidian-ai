@@ -1,5 +1,13 @@
 # Active Context
 
+### 2026-09-02 — T70 recent-model follow-up
+
+- Increased recent models from 5 to 10 per provider profile.
+- Tab activation now records each active profile's resolved model in Recents,
+  including models restored from older chat history. The write uses session
+  profile IDs and avoids the transient previous-tab UI selection.
+- Added shared helper/tests; focused and full checks passed before commit.
+
 ### 2026-09-02 — T70 implementation checkpoint
 
 - Implemented the active-tab model restoration fix. `ChatApp` now resolves
