@@ -1,3 +1,14 @@
+### 2026-09-02 — T70 complete ✅
+
+- Completed the active-chat model identity and picker consistency work in
+  `72bf9f1`.
+- Recents are now one shared ten-entry list per provider. Legacy profile-keyed
+  histories are migrated during settings load and import/sync normalization.
+- User verified toolbar appearance, tab/model restoration, shared Recents,
+  search, and dropdown layering in the live Obsidian runtime.
+- Final verification: 52 test files / 451 tests, TypeScript, production
+  build, formatting, and diff checks passed.
+
 ### 2026-09-02 — T70 active-chat model identity planning 🔄
 
 - Reviewed the model/provider switcher iterations through `8d9456c` and
@@ -1220,10 +1231,10 @@ Implemented the first pass on the three architectural improvements from the T55 
   focused resolver/picker tests.
 - Verification: 51 test files / 446 tests, TypeScript, production build, and
   package build pass. Packaged Obsidian verification is still pending.
-### 2026-09-02 — T70 recent-model follow-up
+### 2026-09-02 — T70 recent-model follow-up (superseded by provider sharing)
 
-- Increased the per-profile recent-model history to 10 entries.
-- Active-tab changes now add the resolved model(s) to profile-scoped Recents;
+- Increased the recent-model history to 10 entries per provider.
+- Active-tab changes now add the resolved model(s) to provider-scoped Recents;
   explicit picker selection uses the same helper and limit.
-- Focused tests, TypeScript, full tests (448), package build, and diff checks
-  pass. Live Obsidian verification remains pending.
+- This interim profile-scoped implementation was replaced by `72bf9f1`, which
+  migrates legacy profile histories and shares Recents across profiles.

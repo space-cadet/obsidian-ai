@@ -1,6 +1,6 @@
 # Session 2026-09-02 - Model Identity Planning
 *Created: 2026-09-02 16:23:33 IST*
-*Last Updated: 2026-09-02 16:23:33 IST*
+*Last Updated: 2026-09-02 18:06:05 IST*
 
 ## Focus Task
 T70: Active Chat Model Identity and Switcher Consistency
@@ -60,4 +60,19 @@ references, registries, and this session record were updated.
 
 ## Session Outcome
 
-**Status**: 🔄 SESSION HANDOFF
+**Status**: ✅ SESSION COMPLETE
+
+## Follow-up and Closeout — 2026-09-02
+
+The planned implementation was completed through commits `4fb31aa`,
+`dd1e2d5`, and `72bf9f1`. Older chats now restore their latest assistant
+model; explicit model choices remain per-chat; the picker, active chip, and
+turn execution share the active-tab identity. Recents were increased to ten
+entries and changed from profile-scoped storage to one shared list per
+provider, with migration for existing profile-keyed histories. Available
+model caches remain profile-specific.
+
+Validation passed with 52 test files / 451 tests, TypeScript, production build,
+formatting, and diff checks. The user verified toolbar appearance, tab/model
+restoration, shared Recents, search, and dropdown layering in the live Obsidian
+runtime. T70 is complete; no known blockers remain.

@@ -1,10 +1,23 @@
 # Active Context
 
+### 2026-09-02 — T70 complete ✅
+
+- T70 is complete in `72bf9f1`. The active tab now drives the restored
+  provider/model identity, including legacy-chat model fallback and explicit
+  per-chat overrides.
+- Recents are a shared ten-entry history per provider, migrated from the old
+  profile-keyed format. Available-model caches remain profile-specific.
+- User verified toolbar appearance, tab/model restoration, shared Recents,
+  search, and dropdown layering in the live Obsidian runtime.
+- Final validation: 52 test files / 451 tests, TypeScript, production build,
+  formatting, and diff checks passed. No known blockers remain.
+
 ### 2026-09-02 — T70 recent-model follow-up
 
-- Increased recent models from 5 to 10 per provider profile.
-- Tab activation now records each active profile's resolved model in Recents,
-  including models restored from older chat history. The write uses session
+- Increased recent models from 5 to 10 per provider.
+- Tab activation now records each active profile's resolved model in the shared
+  provider Recents list,
+  including models restored from older chat history. Resolution uses session
   profile IDs and avoids the transient previous-tab UI selection.
 - Added shared helper/tests; focused and full checks passed before commit.
 
@@ -17,8 +30,9 @@
 - Added agent-scoped history handling and persisted `modelName` for new group
   responses. Standardized the model picker trigger with the toolbar button
   class and added resolver/picker regression tests.
-- Validation passed: 51 test files / 446 tests, TypeScript, production build,
-  package build, and `git diff --check`. Live Obsidian verification remains.
+- Checkpoint validation passed: 51 test files / 446 tests, TypeScript,
+  production build, package build, and `git diff --check`; live Obsidian
+  verification was completed in the final closeout above.
 
 ### 2026-09-02 — T70 active-chat model identity planning 🔄
 

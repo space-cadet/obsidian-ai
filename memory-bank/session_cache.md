@@ -1,8 +1,21 @@
 # Session Cache
 
+### 2026-09-02 18:06 IST — T70 closeout
+
+- T70 completed in `72bf9f1`. Active-tab model restoration, legacy-chat
+  fallback, per-chat overrides, picker/chip synchronization, toolbar sizing,
+  group model metadata, and dropdown behavior are recorded as complete.
+- Recents are now a shared ten-entry list per provider. Settings load and
+  import/sync paths migrate legacy profile-keyed histories; model caches stay
+  profile-specific.
+- User verified the final build in Obsidian, including toolbar appearance,
+  tab/model restoration, shared Recents, search, and dropdown layering.
+- Final validation: 52 test files / 451 tests, TypeScript, production build,
+  formatting, and diff checks passed. No known blockers remain.
+
 ### 2026-09-02 17:36 IST — T70 recent-model follow-up
 
-- Added ten-entry profile-scoped recent-model history.
+- Added ten-entry provider-scoped recent-model history.
 - Activating a tab now records its resolved model(s), including legacy-history
   models; the session is used as the source to avoid stale UI selection.
 - Added helper and tests. Full suite: 52 files / 448 tests; package build pass.
@@ -17,7 +30,7 @@
   assistant model → profile default precedence.
 - Source implementation and runtime verification remain pending.
 
-*Last Updated: 2026-09-02 16:23:33 IST*
+*Last Updated: 2026-09-02 18:06:05 IST*
 
 ## 2026-08-31 — T69 external service authentication planning
 

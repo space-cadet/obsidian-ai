@@ -1,6 +1,6 @@
 # Settings & Provider Profile Design
 *Created: 2026-05-02 11:46:39 IST*
-*Last Updated: 2026-09-02 16:23:33 IST*
+*Last Updated: 2026-09-02 18:06:05 IST*
 
 ## Overview
 
@@ -10,6 +10,12 @@ T70 clarification: `ProviderProfile.model` is the profile default. The
 effective model shown and used by an active chat may be session-specific, with
 an explicit session override taking precedence over legacy message metadata
 and the profile default. See `T70-active-chat-model-identity.md`.
+
+T70 also defines `recentModels` as provider-scoped history: all credential
+profiles for one provider share the same ten-entry list. `ProviderProfile`
+model caches remain profile-scoped because different credentials may expose
+different catalogues. Legacy profile-keyed recent histories are normalized
+into provider keys during settings load and import/sync merges.
 
 ## Generated UI Reference
 

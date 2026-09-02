@@ -2,11 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-### T70 recent-model follow-up — 2026-09-02
+### T70 recent-model follow-up — 2026-09-02 (superseded by provider sharing)
 
-- Increased recent-model history to 10 entries per provider profile.
+- Increased recent-model history to 10 entries per provider.
 - Added tab-activation recording so restored active models appear in Recents.
-- Shared the de-duplication/profile-scoping helper between tab activation and
+- Shared the de-duplication/provider-scoping helper between tab activation and
   explicit model selection.
 
 ## Unreleased - 2026-08-29
@@ -305,3 +305,8 @@ Last release before 1.4.0 development cycle.
   the parent-resolved active-tab profile.
 - Persisted model metadata for group responses and matched the picker trigger
   to standard toolbar dimensions.
+- Increased Recents to ten entries and made each provider's list shared across
+  all credential profiles.
+- Migrated legacy profile-keyed Recents during settings load and import/sync
+  normalization while keeping available-model caches profile-specific.
+- T70 completed in `72bf9f1`; the user verified the final build in Obsidian.
