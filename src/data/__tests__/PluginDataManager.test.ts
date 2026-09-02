@@ -215,6 +215,17 @@ describe("PluginDataManager", () => {
 			});
 			expect(result.remoteStorage.webdav!.password).toBe("secret");
 		});
+
+		it("normalizes imported profile recents into provider recents", () => {
+			const current = createMockPlugin({}).settings;
+			const result = mergeSettings(current, {
+				recentModels: { p1: ["imported-profile-model"] },
+			});
+
+			expect(result.recentModels).toEqual({
+				openai: ["imported-profile-model"],
+			});
+		});
 	});
 
 	describe("extractSettings", () => {

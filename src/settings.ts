@@ -1,5 +1,6 @@
 import { cursorPrompt, selectionPrompt } from "./default_prompts";
 import { SlashCommand } from "./modules/commands/source";
+import { migrateRecentModelsToProviders } from "./lib/recentModels";
 
 export interface IntelligenceSettings {
 	enableIntelligence: boolean;
@@ -196,7 +197,7 @@ export interface ObsidianAISettings {
 	// Component-level sync selection (T55)
 	syncComponents: SyncComponentConfig;
 
-	/** Recently used models per provider, for toolbar quick-switch */
+	/** Recently used models per provider, shared across credential profiles. */
 	recentModels: Record<string, string[]>;
 
 	/** Which settings sections are collapsed (persisted UI state) */
@@ -666,10 +667,13 @@ export const normalizeSettings = (
 			persona: Boolean(merged.syncComponents?.persona ?? true),
 			usageStats: Boolean(merged.syncComponents?.usageStats ?? false),
 		},
-		recentModels:
-			typeof merged.recentModels === 'object' && merged.recentModels !== null
+		recentModels: migrateRecentModelsToProviders(
+			typeof merged.recentModels === "object" &&
+				merged.recentModels !== null
 				? merged.recentModels
 				: {},
+			providerProfiles,
+		),
 		collapsedSections:
 			typeof merged.collapsedSections === 'object' && merged.collapsedSections !== null
 				? merged.collapsedSections

@@ -249,7 +249,6 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		for (const activeProfile of resolvedActiveSessionProfiles) {
 			nextRecentModels = rememberRecentModel(
 				nextRecentModels,
-				activeProfile.id,
 				activeProfile.provider,
 				activeProfile.model,
 			);

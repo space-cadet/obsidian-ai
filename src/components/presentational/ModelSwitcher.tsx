@@ -12,7 +12,7 @@ import type { ProviderProfile } from "../../settings";
 import { getProviderColor } from "../../settings";
 import { ChatPluginLike } from "../../views/ObsidianAIChatView";
 import ObsidianIcon from "../ObsidianIcon";
-import { rememberRecentModel } from "../../lib/recentModels";
+import { getRecentModels, rememberRecentModel } from "../../lib/recentModels";
 
 // ─── Fallback model lists per provider ─────────────────────────────
 
@@ -244,10 +244,10 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 		(target: ProviderProfile): string[] => {
 			const cached = models[target.id] ?? target.modelCache?.models ?? [];
 			const fallback = getFallbackModels(target.provider);
-			const recent =
-				plugin.settings.recentModels[target.id] ??
-				plugin.settings.recentModels[target.provider] ??
-				[];
+			const recent = getRecentModels(
+				plugin.settings.recentModels,
+				target.provider,
+			);
 			const combined = [
 				...(cached.length > 0 ? cached : fallback),
 				...recent,
@@ -271,10 +271,10 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 	}, [getModelsForProfile, activeProfile]);
 
 	const recentModels = useMemo(() => {
-		const recent =
-			plugin.settings.recentModels[activeProfile.id] ??
-			plugin.settings.recentModels[activeProfile.provider] ??
-			[];
+		const recent = getRecentModels(
+			plugin.settings.recentModels,
+			activeProfile.provider,
+		);
 		return recent.filter(
 			(m, index) =>
 				typeof m === "string" &&
@@ -318,12 +318,10 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 			}
 			if (target.id === profile.id) setSelectedModel(model);
 
-			// Update profile-scoped recent models. Tab activation uses the same
-			// helper, so both explicit selection and restored history share a
-			// consistent ten-item list.
+			// Update the provider-scoped recent list. All credential profiles for
+			// this provider intentionally share this history.
 			plugin.settings.recentModels = rememberRecentModel(
 				plugin.settings.recentModels,
-				target.id,
 				target.provider,
 				model,
 			);

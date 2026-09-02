@@ -1,35 +1,55 @@
 import { describe, expect, it } from "vitest";
-import { MAX_RECENT_MODELS, rememberRecentModel } from "./recentModels";
+import {
+	getRecentModels,
+	MAX_RECENT_MODELS,
+	migrateRecentModelsToProviders,
+	rememberRecentModel,
+} from "./recentModels";
 
 describe("rememberRecentModel", () => {
 	it("keeps ten models newest first and removes duplicates", () => {
 		let recent: Record<string, string[]> = {};
 		for (let i = 0; i < MAX_RECENT_MODELS + 2; i++) {
-			recent = rememberRecentModel(
-				recent,
-				"profile-1",
-				"openai",
-				`model-${i}`,
-			);
+			recent = rememberRecentModel(recent, "openai", `model-${i}`);
 		}
 
-		recent = rememberRecentModel(recent, "profile-1", "openai", "model-3");
+		recent = rememberRecentModel(recent, "openai", "model-3");
 
-		expect(recent["profile-1"]).toHaveLength(MAX_RECENT_MODELS);
-		expect(recent["profile-1"]?.[0]).toBe("model-3");
-		expect(new Set(recent["profile-1"] ?? []).size).toBe(
-			MAX_RECENT_MODELS,
-		);
+		expect(recent.openai).toHaveLength(MAX_RECENT_MODELS);
+		expect(recent.openai?.[0]).toBe("model-3");
+		expect(new Set(recent.openai ?? []).size).toBe(MAX_RECENT_MODELS);
 	});
 
-	it("materializes legacy provider recents under the profile", () => {
-		const recent = rememberRecentModel(
-			{ openai: ["gpt-4o", "gpt-4o-mini"] },
-			"profile-1",
-			"openai",
+	it("shares one recent list across profiles using the same provider", () => {
+		let recent = rememberRecentModel({}, "openai", "gpt-4o");
+		recent = rememberRecentModel(recent, "openai", "gpt-4o-mini");
+
+		expect(getRecentModels(recent, "openai")).toEqual([
 			"gpt-4o-mini",
+			"gpt-4o",
+		]);
+		expect(Object.keys(recent)).toEqual(["openai"]);
+	});
+
+	it("migrates legacy profile recents into the provider list", () => {
+		const recent = migrateRecentModelsToProviders(
+			{
+				openai: ["provider-model"],
+				"profile-1": ["profile-one-model", "provider-model"],
+				"profile-2": ["profile-two-model"],
+			},
+			[
+				{ id: "profile-1", provider: "openai" },
+				{ id: "profile-2", provider: "openai" },
+			],
 		);
 
-		expect(recent["profile-1"]).toEqual(["gpt-4o-mini", "gpt-4o"]);
+		expect(recent).toEqual({
+			openai: [
+				"provider-model",
+				"profile-one-model",
+				"profile-two-model",
+			],
+		});
 	});
 });

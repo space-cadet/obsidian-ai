@@ -117,6 +117,45 @@ describe("ModelSwitcher", () => {
 		expect(screen.queryByText("first-model")).toBeNull();
 	});
 
+	it("shows the same provider recents for profiles with different credentials", () => {
+		const first = makeProfile({
+			id: "profile-1",
+			name: "First",
+			model: "first-model",
+			modelCache: { models: ["first-model"], fetchedAt: 1 },
+		});
+		const second = makeProfile({
+			id: "profile-2",
+			name: "Second",
+			model: "second-model",
+			modelCache: { models: ["second-model"], fetchedAt: 1 },
+		});
+		const plugin = makePlugin([first, second], {
+			openrouter: ["shared-recent-model"],
+		});
+
+		const { unmount } = render(
+			<ModelSwitcher
+				profile={first}
+				plugin={plugin as any}
+				selectedProfileIds={new Set([first.id])}
+			/>,
+		);
+		fireEvent.click(screen.getByTestId("model-switcher-trigger"));
+		expect(screen.getByText("shared-recent-model")).toBeTruthy();
+		unmount();
+
+		render(
+			<ModelSwitcher
+				profile={second}
+				plugin={plugin as any}
+				selectedProfileIds={new Set([second.id])}
+			/>,
+		);
+		fireEvent.click(screen.getByTestId("model-switcher-trigger"));
+		expect(screen.getByText("shared-recent-model")).toBeTruthy();
+	});
+
 	it("delegates model changes to the active chat tab", async () => {
 		const profile = makeProfile();
 		const plugin = makePlugin([profile]);

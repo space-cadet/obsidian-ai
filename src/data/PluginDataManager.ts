@@ -4,6 +4,7 @@ import {
 	type ObsidianAISettings,
 	type SyncComponentConfig,
 } from "../settings";
+import { migrateRecentModelsToProviders } from "../lib/recentModels";
 
 /** Fields that should never be overwritten from remote or import sources */
 const CREDENTIAL_KEYS = [
@@ -162,6 +163,10 @@ function mergeSettings(
 		...imported,
 		providerProfiles: mergedProfiles,
 	};
+	result.recentModels = migrateRecentModelsToProviders(
+		result.recentModels ?? {},
+		result.providerProfiles,
+	);
 
 	// Restore defaults for any missing required fields
 	for (const key of Object.keys(DEFAULT_SETTINGS) as Array<
