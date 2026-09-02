@@ -3,7 +3,6 @@ import { Menu } from "obsidian";
 import { ChatPluginLike } from "../../views/ObsidianAIChatView";
 import type { ProviderProfile } from "../../settings";
 import ObsidianIcon from "../ObsidianIcon";
-import ProfileIndicator from "./ProfileIndicator";
 import ModelSwitcher from "./ModelSwitcher";
 
 interface ActionBarProps {
@@ -19,6 +18,7 @@ interface ActionBarProps {
 	onToggleAutoName: () => void;
 	onManualRename: () => void;
 	profile: ProviderProfile;
+	selectedProfileIds: Set<string>;
 	sessionTitle?: string;
 	zenMode?: boolean;
 	onToggleZenMode?: () => void;
@@ -48,6 +48,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	onToggleAutoName,
 	onManualRename,
 	profile,
+	selectedProfileIds,
 	sessionTitle,
 	zenMode,
 	onToggleZenMode,
@@ -113,6 +114,14 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				>
 					<ObsidianIcon icon="download" size={15} />
 				</button>
+
+				{/* Model Switcher — positioned in normal toolbar flow */}
+				<ModelSwitcher
+					profile={profile}
+					plugin={plugin}
+					selectedProfileIds={selectedProfileIds}
+				/>
+
 				{onToggleParticipantDropdown && (
 					<div className="chat-council-trigger">
 						<button
@@ -247,22 +256,6 @@ const ActionBar: React.FC<ActionBarProps> = ({
 						{sessionTitle}
 					</span>
 				)}
-			</div>
-			<div className="chat-action-bar-right">
-				{onToggleZenMode && (
-					<button
-						className={`chat-btn chat-icon-btn ${zenMode ? "is-active" : ""}`}
-						onClick={onToggleZenMode}
-						title={zenMode ? "Exit zen mode" : "Zen mode (focus)"}
-					>
-						<ObsidianIcon
-							icon={zenMode ? "eye-off" : "eye"}
-							size={15}
-						/>
-					</button>
-				)}
-				<ProfileIndicator profile={profile} />
-				<ModelSwitcher profile={profile} plugin={plugin} />
 			</div>
 		</div>
 	);

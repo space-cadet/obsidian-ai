@@ -107,6 +107,7 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 					onToggleAutoName={onToggleAutoName}
 					onManualRename={onManualRename}
 					profile={resolvedProfile}
+					selectedProfileIds={selectedProfileIds}
 					sessionTitle={sessionTitle}
 					zenMode={zenMode}
 					onToggleZenMode={onToggleZenMode}
