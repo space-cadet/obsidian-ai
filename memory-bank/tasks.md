@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-08-31 02:42:18 IST*
+*Last Updated: 2026-09-02 16:23:33 IST*
 
 ## Overview
 
@@ -46,6 +46,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T69 | External Service Authentication and Provider Adapters | 🔄 | HIGH | 2026-08-31 | T9, T14, T15, T38, T60, T60e | [Details](tasks/T69.md) |
 | T69a | Codex / ChatGPT Subscription Authentication | 🔄 | HIGH | 2026-08-31 | T69, T9, T14, T38, T60, T60e | [Details](tasks/T69a.md) |
 | T69b | Claude Code Authentication | 🔄 | HIGH | 2026-08-31 | T69, T9, T14, T38, T60, T60e | [Details](tasks/T69b.md) |
+| T70 | Active Chat Model Identity and Switcher Consistency | 🔄 | HIGH | 2026-09-02 | T9, T15; builds on T35, T36 | [Details](tasks/T70.md) |
 | T64a | Pareto Frontier Sweep | 🔄 | HIGH | 2026-08-27 | T64, T64c | [Details](tasks/T64a.md) |
 | T64c | Fidelity-Weighted Scoring | 🔄 | MEDIUM | 2026-08-27 | T64, T64b | [Details](tasks/T64c.md) |
 | T64d | Live Estimator Validation | ✅ | MEDIUM | 2026-08-27 | 2026-08-29 | T64, T6a | [Details](tasks/T64d.md) |
@@ -280,9 +281,14 @@ T69b: Claude Code Authentication
   └── T60
   └── T60e
 
+T70: Active Chat Model Identity and Switcher Consistency
+  └── T9
+  └── T15
+  └── Builds on: T35, T36
+
 ## Status Summary
 
-- **Active**: 36
+- **Active**: 37
 - **Completed**: 44
 - **Paused**: 2
-- **Total**: 81
+- **Total**: 82

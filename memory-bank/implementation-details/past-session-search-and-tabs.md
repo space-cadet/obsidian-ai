@@ -100,6 +100,12 @@ prevents an oscillation between old persisted IDs and an in-progress picker
 change. A direct user selection then persists normally. `ActionBar` has no
 runtime participant-count logging.
 
+The same active-session ownership applies to model identity under T70. The
+effective model is resolved from the session override, then the last assistant
+message for legacy sessions, then the selected profile default. The shared
+toolbar consumes that resolved value; it does not maintain a second model
+selection state.
+
 Saved view state is stored only for conversations with messages:
 
 - `StoredChatData.openSessionIds` preserves the ordered saved-tab strip.

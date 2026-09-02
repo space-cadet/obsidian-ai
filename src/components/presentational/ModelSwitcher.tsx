@@ -65,6 +65,7 @@ interface ModelSwitcherProps {
 	profile: ProviderProfile;
 	plugin: ChatPluginLike;
 	selectedProfileIds: Set<string>;
+	resolvedProfiles?: ProviderProfile[];
 	modelOverrides?: Record<string, string>;
 	onModelChange?: (profileId: string, model: string) => Promise<void> | void;
 }
@@ -75,6 +76,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 	profile,
 	plugin,
 	selectedProfileIds,
+	resolvedProfiles,
 	modelOverrides,
 	onModelChange,
 }) => {
@@ -104,6 +106,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 	);
 
 	const selectedProfiles = useMemo(() => {
+		if (resolvedProfiles) return resolvedProfiles;
 		return Array.from(selectedProfileIds)
 			.map((id) =>
 				plugin.settings.providerProfiles.find((p) => p.id === id),
@@ -111,6 +114,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 			.filter(Boolean)
 			.map((p) => applyModelOverride(p as ProviderProfile));
 	}, [
+		resolvedProfiles,
 		selectedProfileIds,
 		plugin.settings.providerProfiles,
 		applyModelOverride,
@@ -412,7 +416,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 			<button
 				data-testid="model-switcher-trigger"
 				ref={triggerRef}
-				className="chat-model-switcher-trigger"
+				className="chat-btn chat-icon-btn chat-model-switcher-trigger"
 				onClick={toggleOpen}
 				aria-expanded={isOpen}
 				aria-haspopup="menu"

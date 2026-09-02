@@ -82,7 +82,9 @@ describe("ModelSwitcher", () => {
 			expect(plugin.saveSettings).toHaveBeenCalledOnce();
 			expect(plugin.settings.providerProfiles[0].model).toBe("gpt-4o");
 		});
-		expect(screen.getByTestId("model-switcher-trigger").textContent).toBe("1");
+		expect(screen.getByTestId("model-switcher-trigger").textContent).toBe(
+			"1",
+		);
 	});
 
 	it("keeps model caches isolated for profiles using the same provider", () => {
@@ -138,5 +140,24 @@ describe("ModelSwitcher", () => {
 		expect(plugin.settings.providerProfiles[0].model).toBe(
 			"openai/gpt-oss-120b",
 		);
+	});
+
+	it("uses the parent-resolved historical model for the active tab", () => {
+		const profile = makeProfile({ model: "profile-default" });
+		const plugin = makePlugin([profile]);
+
+		render(
+			<ModelSwitcher
+				profile={{ ...profile, model: "historical-model" }}
+				resolvedProfiles={[{ ...profile, model: "historical-model" }]}
+				plugin={plugin as any}
+				selectedProfileIds={new Set([profile.id])}
+			/>,
+		);
+
+		fireEvent.click(screen.getByTestId("model-switcher-trigger"));
+		expect(
+			screen.getByRole("menuitem", { name: "historical-model" }),
+		).toBeTruthy();
 	});
 });

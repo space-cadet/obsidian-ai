@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased - 2026-08-29
 
+### T70 active-chat model identity planning — 2026-09-02
+- Recorded the model-switcher follow-up as T70 after reviewing the legacy-chat
+  restoration and toolbar sizing issues.
+- Defined one parent-owned effective identity with session override, legacy
+  last-assistant model, and profile-default precedence.
+- Planned the picker/chip ownership boundary and layered verification; no
+  source implementation is included in this planning entry.
+
 ### T69 external service authentication planning — 2026-08-31
 - Created the T69 umbrella for external service authentication and provider
   adapters.
@@ -280,3 +288,13 @@ Last release before 1.4.0 development cycle.
 
 ### Removed
 - Legacy `@langchain/*` dependencies from the active implementation path - T4
+## Unreleased — 2026-09-02 — T70 active chat identity
+
+### Fixed
+
+- Restored the model used by older chat tabs from their latest assistant
+  message when no explicit tab override exists.
+- Synchronized toolbar picker, active profile chip, and turn execution through
+  the parent-resolved active-tab profile.
+- Persisted model metadata for group responses and matched the picker trigger
+  to standard toolbar dimensions.

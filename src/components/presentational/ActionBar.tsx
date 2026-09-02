@@ -19,6 +19,7 @@ interface ActionBarProps {
 	onManualRename: () => void;
 	profile: ProviderProfile;
 	selectedProfileIds: Set<string>;
+	resolvedSelectedProfiles?: ProviderProfile[];
 	modelOverrides?: Record<string, string>;
 	onModelChange?: (profileId: string, model: string) => Promise<void> | void;
 	sessionTitle?: string;
@@ -51,6 +52,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	onManualRename,
 	profile,
 	selectedProfileIds,
+	resolvedSelectedProfiles,
 	modelOverrides,
 	onModelChange,
 	sessionTitle,
@@ -124,6 +126,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
 					profile={profile}
 					plugin={plugin}
 					selectedProfileIds={selectedProfileIds}
+					resolvedProfiles={resolvedSelectedProfiles}
 					modelOverrides={modelOverrides}
 					onModelChange={onModelChange}
 				/>

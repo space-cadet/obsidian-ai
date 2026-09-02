@@ -1,3 +1,13 @@
+### 2026-09-02 — T70 active-chat model identity planning 🔄
+
+- Reviewed the model/provider switcher iterations through `8d9456c` and
+  confirmed the legacy-chat model restoration and toolbar sizing issues.
+- Created T70 and `implementation-details/T70-active-chat-model-identity.md`.
+- Chosen boundary: one parent-owned effective identity, resolved as session
+  override → last assistant model → profile default.
+- Planned two implementation checkpoints: identity/state and tests first;
+  visual/accessibility cleanup second. No source code changed in this plan.
+
 ### 2026-08-31 — T69 external service authentication planning 🔄
 
 - Created the T69 umbrella for external service authentication and provider
@@ -1200,3 +1210,13 @@ Implemented the first pass on the three architectural improvements from the T55 
   state.
 - Verification: 403 tests and production build passed; commits pushed to main.
 - Remaining: formal migration-event audit/version upgrade contract.
+### 2026-09-02 — T70 active-tab model identity
+
+- Implemented legacy-chat model fallback from the latest assistant message,
+  with explicit per-session model overrides taking precedence.
+- Threaded parent-resolved profiles through the toolbar/model picker and turn
+  execution; group responses now record model metadata for future restoration.
+- Matched the model picker trigger to standard toolbar button sizing and added
+  focused resolver/picker tests.
+- Verification: 51 test files / 446 tests, TypeScript, production build, and
+  package build pass. Packaged Obsidian verification is still pending.

@@ -159,15 +159,21 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		[sessions, activeSessionId],
 	);
 	const modelOverrides = activeSession?.modelOverrides;
+	const isMultiAgentSelection = ui.selectedProfileIds.size > 1;
 	const getModelOverrides = useCallback(
 		() => activeSession?.modelOverrides,
 		[activeSession?.modelOverrides],
 	);
 	const resolveSessionProfile = useCallback(
 		(baseProfile: ProviderProfile): ProviderProfile => {
-			return resolveProfileForSession(baseProfile, modelOverrides);
+			return resolveProfileForSession(
+				baseProfile,
+				modelOverrides,
+				activeSession?.messages,
+				isMultiAgentSelection ? baseProfile.id : undefined,
+			);
 		},
-		[modelOverrides],
+		[modelOverrides, activeSession?.messages, isMultiAgentSelection],
 	);
 
 	/** Resolve the profile for this chat panel */
@@ -192,6 +198,21 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		settingsTick,
 		resolveSessionProfile,
 	]);
+
+	const resolvedSelectedProfiles = useMemo(
+		() =>
+			Array.from(ui.selectedProfileIds)
+				.map((id) =>
+					plugin.settings.providerProfiles.find((p) => p.id === id),
+				)
+				.filter((p): p is ProviderProfile => Boolean(p))
+				.map((p) => resolveSessionProfile(p)),
+		[
+			ui.selectedProfileIds,
+			plugin.settings.providerProfiles,
+			resolveSessionProfile,
+		],
+	);
 
 	// ─── Derive participants from selectedProfileIds ───
 	const participants = useMemo(() => {
@@ -885,6 +906,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					selectedAgents={selectedAgents}
 					connectedUsers={connectedUsers}
 					selectedProfileIds={ui.selectedProfileIds}
+					resolvedSelectedProfiles={resolvedSelectedProfiles}
 					modelOverrides={modelOverrides}
 					onModelChange={handleModelChange}
 					selectedRemoteUserIds={ui.selectedRemoteUserIds}

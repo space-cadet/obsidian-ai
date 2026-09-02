@@ -1,5 +1,30 @@
 # Active Context
 
+### 2026-09-02 — T70 implementation checkpoint
+
+- Implemented the active-tab model restoration fix. `ChatApp` now resolves
+  model identity using session override, latest applicable assistant
+  `modelName`, then profile default, and shares that resolved profile with the
+  picker, active chip, and turn execution.
+- Added agent-scoped history handling and persisted `modelName` for new group
+  responses. Standardized the model picker trigger with the toolbar button
+  class and added resolver/picker regression tests.
+- Validation passed: 51 test files / 446 tests, TypeScript, production build,
+  package build, and `git diff --check`. Live Obsidian verification remains.
+
+### 2026-09-02 — T70 active-chat model identity planning 🔄
+
+Created T70 and its canonical implementation note after reviewing the model
+switcher work through `8d9456c`. The active chat tab will own one effective
+provider/model identity: session override, last assistant model for legacy
+sessions, then profile default. The picker, active chip, and turn execution
+must consume that same resolved value. The picker remains a standard-size
+icon/count control; the chip owns the visible provider/model presentation.
+
+This is intentionally one task, not a new subtask family. T35 and T36 remain
+completed historical foundations. Source implementation and runtime validation
+are still pending.
+
 ### 2026-08-31 — T69 external service authentication planning 🔄
 
 Created T69 as the umbrella for authenticating with external AI and coding

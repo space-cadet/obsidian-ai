@@ -19,6 +19,7 @@ interface ChatToolbarProps {
 	selectedAgents: AgentChip[];
 	connectedUsers: string[];
 	selectedProfileIds: Set<string>;
+	resolvedSelectedProfiles?: ProviderProfile[];
 	modelOverrides?: Record<string, string>;
 	onModelChange?: (profileId: string, model: string) => Promise<void> | void;
 	selectedRemoteUserIds: Set<string>;
@@ -60,6 +61,7 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 	selectedAgents,
 	connectedUsers,
 	selectedProfileIds,
+	resolvedSelectedProfiles,
 	modelOverrides,
 	onModelChange,
 	selectedRemoteUserIds,
@@ -114,6 +116,7 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 					onManualRename={onManualRename}
 					profile={resolvedProfile}
 					selectedProfileIds={selectedProfileIds}
+					resolvedSelectedProfiles={resolvedSelectedProfiles}
 					modelOverrides={modelOverrides}
 					onModelChange={onModelChange}
 					sessionTitle={sessionTitle}

@@ -1,5 +1,17 @@
 # Session Cache
 
+## 2026-09-02 — T70 model identity planning
+
+- Reviewed the model/provider switcher work through `8d9456c` and confirmed
+  the legacy-chat model mismatch and picker sizing mismatch.
+- Created T70 and its implementation note; updated provider-profile and
+  shared-tab architecture references.
+- Planned a parent-owned effective identity with session override → last
+  assistant model → profile default precedence.
+- Source implementation and runtime verification remain pending.
+
+*Last Updated: 2026-09-02 16:23:33 IST*
+
 ## 2026-08-31 — T69 external service authentication planning
 
 - Created T69 as the umbrella for external service authentication and provider
@@ -729,3 +741,11 @@ Session started after tool outage (~14:36–15:22 IST). Previous session had com
 *Session: 2026-08-27 ~20:30–21:00 IST*
 *Branch: `main` (2ec863c, 2fa1f85)*
 *Models: kimi/k3*
+### 2026-09-02 17:18 IST — T70 implementation checkpoint
+
+- Active work: T70 implementation is complete in source; final live Obsidian
+  verification remains.
+- Changes: shared session-profile resolution, legacy model fallback, parent
+  prop threading, group model metadata, standard picker dimensions, tests.
+- Validation: 51 test files / 446 tests; TypeScript, production build, package
+  build, and diff check passed.

@@ -27,6 +27,7 @@ export interface AgentResponse {
 	toolCalls?: Array<{ call: ToolCall; result?: ToolResult }>;
 	tokenEstimate?: number;
 	providerUsage?: ProviderTokenUsage;
+	modelName?: string;
 	error?: string;
 }
 
@@ -190,6 +191,7 @@ export class Orchestrator {
 				agentId: r.agentId,
 				agentName: r.agentName,
 				agentColor: r.agentColor,
+				modelName: r.modelName,
 			});
 		}
 
@@ -236,6 +238,7 @@ export class Orchestrator {
 					agentId: r.agentId,
 					agentName: r.agentName,
 					agentColor: r.agentColor,
+					modelName: r.modelName,
 				});
 			}
 		}
@@ -392,6 +395,7 @@ export class Orchestrator {
 					agentId: response.agentId,
 					agentName: response.agentName,
 					agentColor: response.agentColor,
+					modelName: response.modelName,
 				});
 			}
 		}
@@ -504,11 +508,15 @@ export class Orchestrator {
 					agentId: engine.id,
 					agentName: engine.name,
 					agentColor: engine.color,
-					text: this.sanitizeAgentOutput(result.text || fullText, engine.name),
+					text: this.sanitizeAgentOutput(
+						result.text || fullText,
+						engine.name,
+					),
 					toolCalls:
 						toolCallsLog.length > 0 ? toolCallsLog : undefined,
 					tokenEstimate: result.tokenEstimate,
 					providerUsage: result.providerUsage,
+					modelName: engine.profile.model,
 				};
 			}
 
@@ -536,6 +544,7 @@ export class Orchestrator {
 				text: this.sanitizeAgentOutput(fullText, engine.name),
 				tokenEstimate: estimateTokens(fullText),
 				providerUsage,
+				modelName: engine.profile.model,
 			};
 		} catch (error: any) {
 			return {
@@ -544,6 +553,7 @@ export class Orchestrator {
 				agentColor: engine.color,
 				text: "",
 				error: error.message || "Unknown error",
+				modelName: engine.profile.model,
 			};
 		}
 	}

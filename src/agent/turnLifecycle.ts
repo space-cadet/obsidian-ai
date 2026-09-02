@@ -42,7 +42,6 @@ import type {
 } from "../hooks/useChatRuntimeState";
 import type { UseChatUIResult } from "../hooks/useChatUI";
 import type { ParticipantRouter } from "../agent/ParticipantRouter";
-import { resolveSessionProfile } from "../lib/sessionProfile";
 
 // ═══════════════════════════════════════════════════════
 // TYPES
@@ -256,6 +255,7 @@ export class TurnLifecycle {
 						agentId: response.agentId,
 						agentName: response.agentName,
 						agentColor: response.agentColor,
+						modelName: response.modelName,
 						isError: !!response.error,
 						toolCalls: response.toolCalls,
 						estimatedTokens: response.tokenEstimate,
@@ -422,21 +422,9 @@ export class TurnLifecycle {
 			return;
 		}
 
-		const activeSession = deps.sessionsRef.current.find(
-			(session) => session.id === currentActiveId,
-		);
-		const selectedBaseProfile =
-			selectedIds.length === 1
-				? deps.plugin.settings.providerProfiles.find(
-						(p) => p.id === selectedIds[0],
-					)
-				: undefined;
-		const activeProfile: ProviderProfile = selectedBaseProfile
-			? resolveSessionProfile(
-					selectedBaseProfile,
-					activeSession?.modelOverrides,
-				)
-			: deps.resolvedProfile;
+		// ChatApp has already resolved the active tab's identity, including the
+		// legacy last-assistant model fallback. Use that same value for execution.
+		const activeProfile: ProviderProfile = deps.resolvedProfile;
 
 		// Resolve attachments before computing token estimate
 		let resolvedAttachmentParts: import("../api").MessageContentPart[] = [];

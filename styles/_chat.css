@@ -281,7 +281,7 @@
 .chat-profile-chip-model {
 	color: #a78bfa;
 	font-family: var(--font-monospace);
-	font-size: 1em;
+	font-size: 1.08em;
 	font-weight: 600;
 	overflow: hidden;
 	text-overflow: ellipsis;

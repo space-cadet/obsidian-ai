@@ -1,10 +1,15 @@
 # Settings & Provider Profile Design
 *Created: 2026-05-02 11:46:39 IST*
-*Last Updated: 2026-05-17 12:45 IST*
+*Last Updated: 2026-09-02 16:23:33 IST*
 
 ## Overview
 
 The current settings screen is a single global configuration: one provider, one model, and one API key. The provider-profile design lets users keep multiple inference configurations and switch between them without rewriting credentials.
+
+T70 clarification: `ProviderProfile.model` is the profile default. The
+effective model shown and used by an active chat may be session-specific, with
+an explicit session override taking precedence over legacy message metadata
+and the profile default. See `T70-active-chat-model-identity.md`.
 
 ## Generated UI Reference
 
