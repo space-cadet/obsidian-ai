@@ -10,6 +10,7 @@ const partials = [
 	'chat-extensions',
 	'settings',
 	'sync',
+	'model-switcher',
 ];
 
 const contents = await Promise.all(

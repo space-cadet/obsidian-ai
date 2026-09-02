@@ -216,7 +216,7 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 					</div>
 				)}
 			</div>
-			{(selectedAgents.length > 0 || connectedUsers.length > 0) && (
+			{(selectedAgents.length > 1 || connectedUsers.length > 0) && (
 				<div className="chat-participant-bar">
 					{selectedAgents.map((p) => (
 						<span

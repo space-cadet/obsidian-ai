@@ -1,6 +1,12 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, {
+	useState,
+	useRef,
+	useEffect,
+	useCallback,
+	useMemo,
+} from "react";
 import { Notice } from "obsidian";
-import type { ProviderProfile, ProviderType } from "../../settings";
+import type { ProviderProfile } from "../../settings";
 import { getProviderColor } from "../../settings";
 import { ChatPluginLike } from "../../views/ObsidianAIChatView";
 import ObsidianIcon from "../ObsidianIcon";
@@ -8,13 +14,7 @@ import ObsidianIcon from "../ObsidianIcon";
 // ─── Fallback model lists per provider ─────────────────────────────
 
 const FALLBACK_MODELS: Record<string, string[]> = {
-	openai: [
-		"gpt-4o",
-		"gpt-4o-mini",
-		"gpt-4-turbo",
-		"gpt-4",
-		"gpt-3.5-turbo",
-	],
+	openai: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
 	anthropic: [
 		"claude-3-5-sonnet-latest",
 		"claude-3-5-sonnet-20241022",
@@ -31,11 +31,7 @@ const FALLBACK_MODELS: Record<string, string[]> = {
 		"gemini-1.0-pro",
 		"gemini-pro",
 	],
-	deepseek: [
-		"deepseek-chat",
-		"deepseek-reasoner",
-		"deepseek-coder",
-	],
+	deepseek: ["deepseek-chat", "deepseek-reasoner", "deepseek-coder"],
 	kimi: [
 		"kimi-k2",
 		"kimi-k2.5",
@@ -51,34 +47,20 @@ const FALLBACK_MODELS: Record<string, string[]> = {
 		"meta-llama/llama-3.1-70b",
 		"google/gemini-1.5-pro",
 	],
-	azure: [
-		"gpt-4o",
-		"gpt-4o-mini",
-		"gpt-4-turbo",
-		"gpt-4",
-		"gpt-35-turbo",
-	],
-	ollama: [
-		"llama3.2",
-		"llama3.1",
-		"llama3",
-		"mistral",
-		"codellama",
-		"phi4",
-	],
-	custom: [
-		"gpt-4o",
-		"gpt-4o-mini",
-		"gpt-4-turbo",
-		"gpt-3.5-turbo",
-	],
-	agent: [
-		"openclaw",
-	],
+	azure: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-35-turbo"],
+	ollama: ["llama3.2", "llama3.1", "llama3", "mistral", "codellama", "phi4"],
+	custom: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+	agent: ["openclaw"],
 };
 
 function getFallbackModels(provider: string): string[] {
 	return FALLBACK_MODELS[provider] ?? [];
+}
+
+/** Keep the toolbar trigger compact while retaining the full identifier in its tooltip. */
+function getShortModelLabel(model: string): string {
+	const lastSegment = model.split("/").pop()?.trim();
+	return lastSegment || model;
 }
 
 // ─── Types ─────────────────────────────────────────────────────────
@@ -100,31 +82,54 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 	const [search, setSearch] = useState("");
 	const [submenuAgentId, setSubmenuAgentId] = useState<string | null>(null);
 	const [models, setModels] = useState<Record<string, string[]>>({});
+	const [selectedModel, setSelectedModel] = useState(profile.model);
 	const [fetching, setFetching] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const searchRef = useRef<HTMLInputElement>(null);
 
-	const isMultiAgent = selectedProfileIds.size > 1;
 	const selectedProfiles = useMemo(() => {
 		return Array.from(selectedProfileIds)
-			.map((id) => plugin.settings.providerProfiles.find((p) => p.id === id))
-			.filter(Boolean) as ProviderProfile[];
+			.map((id) =>
+				plugin.settings.providerProfiles.find((p) => p.id === id),
+			)
+		.filter(Boolean) as ProviderProfile[];
 	}, [selectedProfileIds, plugin.settings.providerProfiles]);
+	const isMultiAgent = selectedProfiles.length > 1;
 
 	// Active profile for single-agent mode
-	const activeProfile = isMultiAgent && submenuAgentId
-		? selectedProfiles.find((p) => p.id === submenuAgentId) ?? profile
-		: profile;
+	const activeProfile =
+		isMultiAgent && submenuAgentId
+			? (selectedProfiles.find((p) => p.id === submenuAgentId) ?? profile)
+			: profile;
 
-	// Sync models when profile changes
+	// Keep the local trigger responsive even though profile settings are mutated
+	// in-place by the plugin and the parent chat view may not re-render immediately.
+	useEffect(() => {
+		setSelectedModel(profile.model);
+	}, [profile.id, profile.model]);
+
+	// Sync cached models when a profile changes. Caches belong to profiles, not
+	// providers: two credentials for the same provider may expose different models.
 	useEffect(() => {
 		if (activeProfile.modelCache?.models) {
 			setModels((prev) => ({
 				...prev,
-				[activeProfile.provider]: activeProfile.modelCache!.models,
+				[activeProfile.id]: activeProfile.modelCache!.models,
 			}));
 		}
-	}, [activeProfile.modelCache?.models, activeProfile.provider, activeProfile.id]);
+	}, [activeProfile.modelCache?.models, activeProfile.id]);
+
+	// Do not leave a stale nested view behind when the selected agents change.
+	useEffect(() => {
+		if (
+			!isMultiAgent ||
+			(submenuAgentId &&
+				!selectedProfiles.some((p) => p.id === submenuAgentId))
+		) {
+			setSubmenuAgentId(null);
+			setSearch("");
+		}
+	}, [isMultiAgent, selectedProfiles, submenuAgentId]);
 
 	// Focus search when opening
 	useEffect(() => {
@@ -147,7 +152,8 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 		if (isOpen) {
 			document.addEventListener("mousedown", handleClickOutside);
 		}
-		return () => document.removeEventListener("mousedown", handleClickOutside);
+		return () =>
+			document.removeEventListener("mousedown", handleClickOutside);
 	}, [isOpen]);
 
 	// Escape to close
@@ -168,29 +174,43 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 		return () => document.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, submenuAgentId]);
 
-	const getModelsForProvider = useCallback((provider: string): string[] => {
-		const cached = models[provider] ?? [];
-		const fallback = getFallbackModels(provider);
-		const combined = cached.length > 0 ? cached : fallback;
-		const seen = new Set<string>();
-		const deduped: string[] = [];
-		for (const m of combined) {
-			if (!seen.has(m)) {
-				seen.add(m);
-				deduped.push(m);
+	const getModelsForProfile = useCallback(
+		(target: ProviderProfile): string[] => {
+			const cached = models[target.id] ?? target.modelCache?.models ?? [];
+			const fallback = getFallbackModels(target.provider);
+			const recent = plugin.settings.recentModels[target.provider] ?? [];
+			const combined = [
+				...(cached.length > 0 ? cached : fallback),
+				...recent,
+				target.model,
+			];
+			const seen = new Set<string>();
+			const deduped: string[] = [];
+			for (const m of combined) {
+				if (typeof m === "string" && m.trim() && !seen.has(m)) {
+					seen.add(m);
+					deduped.push(m);
+				}
 			}
-		}
-		return deduped.sort((a, b) => a.localeCompare(b));
-	}, [models]);
+			return deduped.sort((a, b) => a.localeCompare(b));
+		},
+		[models, plugin.settings.recentModels],
+	);
 
 	const allModels = useMemo(() => {
-		return getModelsForProvider(activeProfile.provider);
-	}, [getModelsForProvider, activeProfile.provider]);
+		return getModelsForProfile(activeProfile);
+	}, [getModelsForProfile, activeProfile]);
 
 	const recentModels = useMemo(() => {
-		const recent = plugin.settings.recentModels[activeProfile.provider] ?? [];
-		return recent.filter((m) => allModels.includes(m));
-	}, [plugin.settings.recentModels, activeProfile.provider, allModels]);
+		const recent =
+			plugin.settings.recentModels[activeProfile.provider] ?? [];
+		return recent.filter(
+			(m, index) =>
+				typeof m === "string" &&
+				m.trim() &&
+				recent.indexOf(m) === index,
+		);
+	}, [plugin.settings.recentModels, activeProfile.provider]);
 
 	const filteredModels = useMemo(() => {
 		if (!search.trim()) return allModels;
@@ -210,11 +230,10 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 
 			// Update profile model
 			const profiles = plugin.settings.providerProfiles.map((p) =>
-				p.id === target.id
-					? { ...p, model, updatedAt: Date.now() }
-					: p,
+				p.id === target.id ? { ...p, model, updatedAt: Date.now() } : p,
 			);
 			plugin.settings.providerProfiles = profiles;
+			if (target.id === profile.id) setSelectedModel(model);
 
 			// Update recent models
 			const recent = plugin.settings.recentModels[target.provider] ?? [];
@@ -237,7 +256,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 				setSearch("");
 			}
 		},
-		[activeProfile, plugin, isMultiAgent],
+		[activeProfile, plugin, isMultiAgent, profile.id],
 	);
 
 	const handleRefresh = useCallback(async () => {
@@ -248,7 +267,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 			const fetched = await chatApi.fetchModels(activeProfile);
 			setModels((prev) => ({
 				...prev,
-				[activeProfile.provider]: fetched,
+				[activeProfile.id]: fetched,
 			}));
 
 			// Update modelCache on the profile
@@ -256,7 +275,10 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 				p.id === activeProfile.id
 					? {
 							...p,
-							modelCache: { models: fetched, fetchedAt: Date.now() },
+							modelCache: {
+								models: fetched,
+								fetchedAt: Date.now(),
+							},
 							updatedAt: Date.now(),
 						}
 					: p,
@@ -282,21 +304,36 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 		setSearch("");
 	}, []);
 
-	// Build display models list
-	const displayModels = search.trim() ? filteredModels : filteredModels;
+	// Recent models get their own section; do not render them a second time below.
+	const recentModelSet = useMemo(() => new Set(recentModels), [recentModels]);
+	const displayModels = search.trim()
+		? filteredModels
+		: filteredModels.filter((model) => !recentModelSet.has(model));
 	const hasRecent = !search.trim() && recentModels.length > 0;
 	const hasResults = displayModels.length > 0;
 
 	// Trigger label
 	const triggerLabel = isMultiAgent
 		? `${selectedProfileIds.size} agents`
-		: profile.model;
+		: getShortModelLabel(selectedModel);
+	const currentModel = isMultiAgent ? activeProfile.model : selectedModel;
+	const toggleOpen = () => {
+		setIsOpen((prev) => {
+			if (prev) {
+				setSubmenuAgentId(null);
+				setSearch("");
+			}
+			return !prev;
+		});
+	};
 
 	return (
 		<div className="chat-model-switcher" ref={containerRef}>
 			<button
 				className="chat-model-switcher-trigger"
-				onClick={() => setIsOpen((prev) => !prev)}
+				onClick={toggleOpen}
+				aria-expanded={isOpen}
+				aria-haspopup="menu"
 				title={
 					isMultiAgent
 						? `${selectedProfileIds.size} agents — click to manage models`
@@ -315,7 +352,9 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 					<>
 						<span
 							className="chat-model-switcher-provider-dot"
-							style={{ color: getProviderColor(profile.provider) }}
+							style={{
+								color: getProviderColor(profile.provider),
+							}}
 						>
 							●
 						</span>
@@ -344,7 +383,9 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 								>
 									<span
 										className="chat-model-switcher-item-dot"
-										style={{ color: getProviderColor(p.provider) }}
+										style={{
+											color: getProviderColor(p.provider),
+										}}
 									>
 										●
 									</span>
@@ -383,7 +424,10 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 									value={search}
 									onChange={(e) => setSearch(e.target.value)}
 									onKeyDown={(e) => {
-										if (e.key === "Enter" && displayModels.length > 0) {
+										if (
+											e.key === "Enter" &&
+											displayModels.length > 0
+										) {
 											handleSelectModel(displayModels[0]);
 										}
 									}}
@@ -400,15 +444,20 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 										{recentModels.map((m) => (
 											<button
 												key={`recent-${m}`}
-												className={`chat-model-switcher-item${m === activeProfile.model ? " is-active" : ""}`}
-												onClick={() => handleSelectModel(m)}
+												className={`chat-model-switcher-item${m === currentModel ? " is-active" : ""}`}
+												onClick={() =>
+													handleSelectModel(m)
+												}
 												type="button"
 											>
 												<span className="chat-model-switcher-item-name">
 													{m}
 												</span>
-												{m === activeProfile.model && (
-													<ObsidianIcon icon="check" size={14} />
+												{m === currentModel && (
+													<ObsidianIcon
+														icon="check"
+														size={14}
+													/>
 												)}
 											</button>
 										))}
@@ -428,21 +477,25 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 									displayModels.map((m) => (
 										<button
 											key={m}
-											className={`chat-model-switcher-item${m === activeProfile.model ? " is-active" : ""}`}
+											className={`chat-model-switcher-item${m === currentModel ? " is-active" : ""}`}
 											onClick={() => handleSelectModel(m)}
 											type="button"
 										>
 											<span className="chat-model-switcher-item-name">
 												{m}
 											</span>
-											{m === activeProfile.model && (
-												<ObsidianIcon icon="check" size={14} />
+											{m === currentModel && (
+												<ObsidianIcon
+													icon="check"
+													size={14}
+												/>
 											)}
 										</button>
 									))
 								) : (
 									<div className="chat-model-switcher-empty">
-										No models match &ldquo;{search.trim()}&rdquo;
+										No models match &ldquo;{search.trim()}
+										&rdquo;
 									</div>
 								)}
 							</div>
@@ -456,7 +509,9 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 									type="button"
 								>
 									<ObsidianIcon
-										icon={fetching ? "loader" : "refresh-cw"}
+										icon={
+											fetching ? "loader" : "refresh-cw"
+										}
 										size={14}
 									/>
 									{fetching ? "Fetching…" : "Refresh models"}
