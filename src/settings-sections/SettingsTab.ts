@@ -1,4 +1,4 @@
-import { App, Notice, PluginSettingTab } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { ProviderProfile } from "../settings";
 import { getActiveProviderProfile } from "../settings";
@@ -83,7 +83,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 		sectionEl.toggleClass('is-collapsed', collapsed);
 		const body = sectionEl.querySelector<HTMLElement>('.obsidian-ai-settings-section-body');
 		if (body) {
-			body.style.display = collapsed ? 'none' : '';
+			body.toggleClass('is-hidden', collapsed);
 		}
 	}
 
@@ -102,7 +102,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			sectionEl.toggleClass('is-collapsed', collapsed);
 			const body = sectionEl.querySelector<HTMLElement>('.obsidian-ai-settings-section-body');
 			if (body) {
-				body.style.display = collapsed ? 'none' : '';
+				body.toggleClass('is-hidden', collapsed);
 			}
 			const btn = sectionEl.querySelector<HTMLElement>('.obsidian-ai-settings-section-toggle');
 			if (btn) {
@@ -261,7 +261,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			function renderDropdown(query: string) {
 				searchDropdown.empty();
 				if (!query) {
-					searchDropdown.style.display = "none";
+					searchDropdown.removeClass("is-visible");
 					searchInput.setAttribute("aria-expanded", "false");
 					return;
 				}
@@ -272,11 +272,11 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						item.sectionTitle.toLowerCase().includes(q),
 				);
 				if (matches.length === 0) {
-					searchDropdown.style.display = "none";
+					searchDropdown.removeClass("is-visible");
 					searchInput.setAttribute("aria-expanded", "false");
 					return;
 				}
-				searchDropdown.style.display = "block";
+				searchDropdown.addClass("is-visible");
 				searchInput.setAttribute("aria-expanded", "true");
 				matches.forEach((item) => {
 					const option = searchDropdown.createEl("div", {
@@ -307,7 +307,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					});
 					option.addEventListener("click", () => {
 						searchInput.value = "";
-						searchDropdown.style.display = "none";
+						searchDropdown.removeClass("is-visible");
 						searchInput.setAttribute("aria-expanded", "false");
 						const section = containerEl.querySelector<HTMLElement>(
 							`#${item.sectionId}`,
@@ -395,7 +395,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 		// Hide dropdown on outside click
 			document.addEventListener("click", (e) => {
 				if (!searchWrap.contains(e.target as Node)) {
-					searchDropdown.style.display = "none";
+					searchDropdown.removeClass("is-visible");
 					searchInput.setAttribute("aria-expanded", "false");
 				}
 			});
@@ -403,7 +403,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			// Keyboard navigation for dropdown
 			searchInput.addEventListener("keydown", (e) => {
 				if (e.key === "Escape") {
-					searchDropdown.style.display = "none";
+					searchDropdown.removeClass("is-visible");
 					searchInput.setAttribute("aria-expanded", "false");
 					searchInput.blur();
 					return;
@@ -444,7 +444,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				if (existingHeading) {
 					header.appendChild(existingHeading);
 				} else {
-					header.createEl('h2', { text: title });
+					new Setting(header).setName(title).setHeading();
 				}
 				const toggleBtn = header.createEl('button', {
 					cls: 'obsidian-ai-settings-section-toggle',
@@ -480,7 +480,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 
 				if (collapsed) {
 					el.addClass('is-collapsed');
-					body.style.display = 'none';
+					body.addClass('is-hidden');
 				}
 
 				sections.push({ title, el });

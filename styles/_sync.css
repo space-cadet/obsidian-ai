@@ -927,6 +927,7 @@
 .obsidian-ai-settings-section-body {
 	padding: 16px;
 }
+.obsidian-ai-settings-section-body.is-hidden { display: none; }
 
 .obsidian-ai-settings-section.is-collapsed {
 	border-color: var(--background-modifier-border-hover);
