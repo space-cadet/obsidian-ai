@@ -1,11 +1,37 @@
-# Chat Lab AI v1.3.4 Release Announcement
+# Chat Lab AI v1.5.0 Release Announcement
 
-Obsidian AI is an AI-powered assistant for Obsidian that combines fast inline editing with a persistent sidebar chat panel — now with multi-device sync and group chat.
+Chat Lab AI 1.5.0 improves collaborative agent chat, memory management, context reliability, settings, and lifecycle organization while preserving the existing multi-provider and multi-device workflows.
 
-## What's New in v1.3.4
+## What's New in v1.5.0
 
-- Community Directory compatibility and security remediation follow-up.
-- Reproducible, attested release assets built from the exact tag.
+### Collaborative Agent Chat
+
+- Sequential multi-agent conversations now pass each completed response to the next agent.
+- Agent output is sanitized so attribution echoes and generated responses for other agents do not appear in the conversation.
+- Tool execution is available through the multi-agent orchestrator, with improved approval and continuation behavior.
+
+### Three-Tier Memory
+
+- Added core, staged, and archive memory tiers.
+- Core memory is included in the model context within the configured budget.
+- Added memory curation tools, ranked archive search, migration metadata, and bounded backup cleanup.
+
+### Context and Reliability
+
+- Agent turns preserve tool-call and tool-result history automatically.
+- Improved context budgeting, pairing validation, and compaction handling.
+- Added focused coverage for orchestration, memory, persistence, plugin-data sync, and safety behavior.
+
+### Settings and Maintenance
+
+- Improved settings search, navigation, controls, collapsible sections, and layout.
+- Split the stylesheet into maintainable source partials with deterministic build-time concatenation.
+- Split storage persistence, synchronization, plugin-data sync, and turn actions into focused lifecycle modules.
+
+## Compatibility
+
+- Requires Obsidian 1.4.5 or newer.
+- Supports desktop and mobile.
 - Official Ollama integration remains deferred; custom OpenAI-compatible endpoints remain supported.
 
 ### Multi-Device Sync (WebSocket Relay)

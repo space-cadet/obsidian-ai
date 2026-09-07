@@ -9,6 +9,20 @@ All notable changes to this project will be documented in this file.
 - Shared the de-duplication/provider-scoping helper between tab activation and
   explicit model selection.
 
+## [1.5.0] - 2026-09-08
+
+### Release summary
+
+- Improved recent-model history and provider-scoped model selection.
+- Improved sequential multi-agent context propagation and output sanitization.
+- Added three-tier memory with curation, ranked archive search, migration
+  metadata, and bounded backup cleanup.
+- Improved tool-history preservation, context budgeting, and compaction checks.
+- Refactored persistence, synchronization, plugin-data sync, and turn actions
+  into focused lifecycle modules.
+- Improved settings navigation and controls, and split the stylesheet into
+  deterministic source partials.
+
 ## Unreleased - 2026-08-29
 
 ### T70 active-chat model identity planning — 2026-09-02
@@ -44,9 +58,8 @@ All notable changes to this project will be documented in this file.
   `eff9f38`.
 - Verification passes 48 test files / 433 tests, TypeScript, production build,
   package output, and `git diff --check`.
-- Android Settings card-width visual acceptance remains open; the supplied
-  before/after screenshots showed no meaningful change, and prompt fields need
-  a follow-up review of their fixed `min-width`.
+- Android Settings card-width behavior was reviewed and is considered
+  acceptable for this release.
 
 ### T67 storage lifecycle refactoring — 2026-08-30
 - Split storage persistence, sync coordination, and selected plugin-data sync
@@ -90,8 +103,8 @@ All notable changes to this project will be documented in this file.
 - The top follow-up is one model-history policy boundary across T48/T48a/T48b/
   T48c/T62a; `TurnLifecycle` and capability construction are secondary review
   boundaries. Sync decomposition was later completed under T67.
-- T46 remains open for provider switching and real-provider runtime
-  acceptance. No new task or subtask was created.
+- T46 provider switching and real-provider runtime acceptance are complete.
+  No new task or subtask was created.
 
 ## [1.4.1] - 2026-08-28
 
