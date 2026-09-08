@@ -99,11 +99,29 @@ function classifySettings(
 	sectionEl
 		.querySelectorAll<HTMLElement>(".setting-item")
 		.forEach((settingEl) => {
-			const name = settingEl.querySelector<HTMLElement>(
-				".setting-item-name",
-			)?.textContent;
-			const isAdvanced = Boolean(name && advancedNames.has(name.trim()));
+			const nameEl =
+				settingEl.querySelector<HTMLElement>(".setting-item-name");
+			const name = nameEl?.textContent;
+			const settingName = name?.trim() ?? "";
+			const isAdvanced = advancedNames.has(settingName);
 			settingEl.dataset.settingsTier = isAdvanced ? "advanced" : "normal";
+			if (isAdvanced) {
+				settingEl.dataset.settingsLabel = settingName;
+				if (
+					!nameEl?.querySelector(
+						".obsidian-ai-setting-advanced-badge",
+					)
+				) {
+					nameEl?.createEl("span", {
+						cls: "obsidian-ai-setting-advanced-badge",
+						text: "Advanced",
+						attr: {
+							"aria-label": "Advanced setting",
+							title: "Advanced setting",
+						},
+					});
+				}
+			}
 
 			if (isAdvanced && !showAdvanced) {
 				settingEl.addClass("is-advanced-hidden");
@@ -122,6 +140,12 @@ function classifySettings(
 		.querySelectorAll<HTMLElement>(".obsidian-ai-advanced-settings-block")
 		.forEach((block) => {
 			block.dataset.settingsTier = "advanced";
+			if (!block.querySelector(".obsidian-ai-setting-advanced-marker")) {
+				block.createEl("div", {
+					cls: "obsidian-ai-setting-advanced-marker",
+					text: "Advanced settings",
+				});
+			}
 			if (!showAdvanced) block.addClass("is-advanced-hidden");
 		});
 }
@@ -378,7 +402,10 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 							);
 						if (nameEl) {
 							searchItems.push({
-								label: nameEl.textContent || "",
+								label:
+									settingEl.dataset.settingsLabel ||
+									nameEl.textContent ||
+									"",
 								description: descriptionEl?.textContent || "",
 								sectionTitle,
 								sectionId,
