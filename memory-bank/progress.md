@@ -1,3 +1,13 @@
+### 2026-09-09 — Release and acceptance record cleanup ✅
+
+- Recorded the `1.5.0` publication, scanner fixes, exact tag verification, and
+  corrected remote parity under T8/T8b.
+- Marked real-provider acceptance and Android Settings card-width behavior as
+  accepted based on the user's runtime confirmation; the stale T46/T66 notes
+  are superseded.
+- Recorded the deferred onboarding mockup pass under T12. No production UI
+  implementation was made.
+
 ### 2026-09-02 — T70 complete ✅
 
 - Completed the active-chat model identity and picker consistency work in

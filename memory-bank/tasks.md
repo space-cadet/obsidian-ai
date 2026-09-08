@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-09-02 18:06:05 IST*
+*Last Updated: 2026-09-09 IST*
 
 ## Overview
 
@@ -50,6 +50,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T64c | Fidelity-Weighted Scoring | 🔄 | MEDIUM | 2026-08-27 | T64, T64b | [Details](tasks/T64c.md) |
 | T64d | Live Estimator Validation | ✅ | MEDIUM | 2026-08-27 | 2026-08-29 | T64, T6a | [Details](tasks/T64d.md) |
 | T70 | Active Chat Model Identity and Switcher Consistency | ✅ | HIGH | 2026-09-02 | 2026-09-02 | T9, T15; builds on T35, T36 | [Details](tasks/T70.md) |
+| T8b | 1.5.0 Community Scan Follow-up | 🔄 | HIGH | 2026-09-09 | T8, T8a | [Details](tasks/T8b.md) |
 | T18a | Bounded Web Page Retrieval Tool | ⏸️ | MEDIUM | 2026-08-25 | T18, T60a, T60c | [Details](tasks/T18a.md) |
 | T50 | OpenAI Responses API / Threads Support | 🔄 | MEDIUM | — | T14 | [Details](tasks/T50.md) |
 | T51 | Opt-in Telemetry and Usage Data Collection | 🔄 | MEDIUM | — | T38 | [Details](tasks/T51.md) |
@@ -211,6 +212,9 @@ T8: Open Source Release with Branding
 T8a: Community Directory Review Remediation
   └── T8
   └── T7
+T8b: 1.5.0 Community Scan Follow-up
+  └── T8
+  └── T8a
 T42: Remote Chat Storage & Sync
   └── T40
   └── T42a
@@ -288,7 +292,7 @@ T70: Active Chat Model Identity and Switcher Consistency
 
 ## Status Summary
 
-- **Active**: 36
+- **Active**: 37
 - **Completed**: 45
 - **Paused**: 2
-- **Total**: 82
+- **Total**: 83

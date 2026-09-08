@@ -58,9 +58,10 @@ At `eff9f38`, TypeScript, the production build, package output, and
 files / 433 tests. An earlier parallel invocation stalled without a failure
 summary; the serial run completed and is the reliable verification result.
 
-## Open follow-up: Android Settings card width
+## Historical follow-up: Android Settings card width
 
-The CSS refactor is complete, but visual acceptance is not. The four
+The CSS refactor is complete, but the earlier visual acceptance investigation
+was inconclusive. The four
 settings-width follow-ups did not change the card boundaries in the supplied
 Android screenshots. The Android bottom strip is the system navigation bar,
 not a page scrollbar. The next session should inspect the live Obsidian DOM
@@ -68,3 +69,7 @@ and computed styles to identify the actual width owner before changing more
 CSS. It should also correct the apparent prompt-field misalignment by
 reviewing `.wide-text-settings`, whose current `min-width: 25em` can exceed a
 narrow stacked `.setting-item` control.
+
+The user subsequently confirmed that the Android Settings card-width behavior
+and prompt-field layout are acceptable for the current release. No further CSS
+change is required under T66.

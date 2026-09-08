@@ -1,7 +1,7 @@
 # Release Process
 
 *Created: 2026-08-28*
-*Last Updated: 2026-08-28*
+*Last Updated: 2026-09-09*
 *Task: T8 (Open Source Release)*
 
 ## Overview
@@ -196,6 +196,7 @@ git push origin main
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| 1.5.0 | 2026-09-08 | Model/history, orchestration, memory, lifecycle, stylesheet, and final Community scanner fixes; exact tag verified after remote rebase |
 | 1.4.1 | 2026-08-28 | Community Review blocking errors fixed (API compatibility, CSS class refactor) |
 | 1.4.0 | 2026-08-28 | Orchestration decomposition (T46), context efficiency (T48/T62/T64), tool hardening (T60), sync system (T43/T58) |
 | 1.3.5 | 2026-08-16 | Last release before 1.4.0 cycle |
@@ -226,3 +227,16 @@ git push origin main
 
 **Prevention:** The convention was already documented in this file ("tag = version (no `v` prefix)"), but the muscle memory from git conventions (`git tag v1.0.0`) overrode it. Future releases: use `pnpm version` which bumps manifest and creates the correct tag automatically, or double-check tag name before pushing.
 
+### 2026-09-08: Rebase before replacing a release tag
+
+The `1.5.0` release push encountered a newer remote `main` commit. The release
+commit was rebased onto that remote history, the scanner fixes were applied,
+and the exact annotated tag `1.5.0` was recreated and pushed. Before declaring
+publication complete, verify both refs explicitly:
+
+```bash
+git ls-remote origin refs/heads/main refs/tags/1.5.0 refs/tags/1.5.0^{}
+```
+
+The branch ref and the dereferenced tag must resolve to the same final release
+commit.

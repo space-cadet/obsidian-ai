@@ -1,5 +1,16 @@
 # Active Context
 
+### 2026-09-09 — Release and acceptance record cleanup ✅
+
+- `1.5.0` is published from `4a751b6`; the exact remote tag and branch were
+  verified after the release tag was recreated following the remote rebase.
+- The two Community scanner findings in `SettingsTab.ts` were fixed and the
+  corrected tag was pushed. T8b remains open only for confirmation that the
+  queued scan is clear.
+- User-confirmed real-provider acceptance and Android Settings card-width
+  behavior are no longer open blockers; T46 and T66 records were updated.
+- Onboarding mockup work remains exploratory and deferred under T12.
+
 ### 2026-09-02 — T70 complete ✅
 
 - T70 is complete in `72bf9f1`. The active tab now drives the restored

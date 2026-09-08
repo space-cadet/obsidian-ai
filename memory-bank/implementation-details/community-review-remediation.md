@@ -149,3 +149,25 @@ Deleted bad `v1.4.1` release/tag, recreated as `1.4.1`. Release now matches mani
 - **Tag:** `1.4.1`
 - **Review Status:** ✅ Passed
 
+---
+
+## 2026-09-08 — 1.5.0 Scanner Follow-up
+
+The first `1.5.0` Community scan reported two remaining errors in
+`src/settings-sections/SettingsTab.ts`:
+
+1. `obsidianmd/no-static-styles-assignment` at seven direct style-assignment
+   sites.
+2. A raw HTML heading instead of an Obsidian `Setting` heading.
+
+The fixes are in `4a751b6`:
+
+- Replaced the static visibility assignments with CSS classes and added the
+  corresponding rules to the source partials before regenerating `styles.css`.
+- Replaced the raw heading element with
+  `new Setting(header).setName(title).setHeading()`.
+
+The corrected exact tag `1.5.0` was recreated and pushed after rebasing onto
+the newer remote `main` history. Verification passed with 52 test files / 451
+tests, TypeScript, production build, package generation, and `git diff --check`.
+The corrected Community scan remains the final T8b closeout check.

@@ -1,5 +1,16 @@
 # Session Cache
 
+### 2026-09-09 — Release and mockup handoff
+
+- `1.5.0` is published from `4a751b6`; remote `main` and the dereferenced
+  `1.5.0` tag match after the tag was recreated following the remote rebase.
+- The two scanner findings in `SettingsTab.ts` were fixed, verified, and
+  pushed. T8b remains open for the corrected scan result.
+- Real-provider acceptance and Android Settings card-width behavior are
+  accepted by the user and should not be carried forward as blockers.
+- The onboarding mockup is exploratory and deferred. Continue from live
+  Obsidian screenshots in the next session; no production changes were made.
+
 ### 2026-09-02 18:06 IST — T70 closeout
 
 - T70 completed in `72bf9f1`. Active-tab model restoration, legacy-chat

@@ -22,6 +22,9 @@ All notable changes to this project will be documented in this file.
   into focused lifecycle modules.
 - Improved settings navigation and controls, and split the stylesheet into
   deterministic source partials.
+- Cleared the final Settings scanner findings by replacing direct static style
+  assignments with CSS classes and converting the raw heading to an Obsidian
+  `Setting` heading. The final `1.5.0` tag points to the corrected release.
 
 ## Unreleased - 2026-08-29
 
