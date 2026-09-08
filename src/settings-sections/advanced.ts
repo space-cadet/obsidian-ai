@@ -17,7 +17,7 @@ export function renderAdvancedSection(
 		"Adjust inline prompt behavior and low-level interaction details.",
 	);
 
-	const sidebarSetting = new Setting(sectionEl)
+	new Setting(sectionEl)
 		.setName("Selection prompt")
 		.setDesc(
 			"System prompt used when the tooltip is triggered with selected text.",
@@ -82,13 +82,13 @@ export function renderAdvancedSection(
 				});
 		});
 
-	new Setting(sectionEl)
+	const maxSessionsSetting = new Setting(sectionEl)
 		.setName("Max sessions in sidebar")
 		.setDesc(
 			"Number of sessions shown in the sidebar before pagination. Not a hard cap on total sessions.",
 		)
 		;
-	createSliderWithValue(sidebarSetting, {
+	createSliderWithValue(maxSessionsSetting, {
 		value: plugin.settings.maxSessionsInSidebar, min: 10, max: 200, step: 10,
 		onChange: async (value) => { plugin.settings.maxSessionsInSidebar = value; await saveSettings(); },
 	});

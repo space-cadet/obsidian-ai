@@ -16,7 +16,7 @@ export function renderPdfExtractionSection(
 		"Configure how the AI extracts text from PDF documents.",
 	);
 
-	const maxPagesSetting = new Setting(sectionEl)
+	new Setting(sectionEl)
 		.setName("Extraction method")
 		.setDesc(
 			"Choose how PDF text is extracted. " +
@@ -62,7 +62,7 @@ export function renderPdfExtractionSection(
 			});
 	}
 
-	new Setting(sectionEl)
+	const maxPagesSetting = new Setting(sectionEl)
 		.setName("Maximum pages")
 		.setDesc(
 			"Maximum number of pages to extract from a PDF. " +

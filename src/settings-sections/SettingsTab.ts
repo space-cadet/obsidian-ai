@@ -105,23 +105,6 @@ function classifySettings(
 			const settingName = name?.trim() ?? "";
 			const isAdvanced = advancedNames.has(settingName);
 			settingEl.dataset.settingsTier = isAdvanced ? "advanced" : "normal";
-			if (isAdvanced) {
-				settingEl.dataset.settingsLabel = settingName;
-				if (
-					!nameEl?.querySelector(
-						".obsidian-ai-setting-advanced-badge",
-					)
-				) {
-					nameEl?.createEl("span", {
-						cls: "obsidian-ai-setting-advanced-badge",
-						text: "Advanced",
-						attr: {
-							"aria-label": "Advanced setting",
-							title: "Advanced setting",
-						},
-					});
-				}
-			}
 
 			if (isAdvanced && !showAdvanced) {
 				settingEl.addClass("is-advanced-hidden");
@@ -402,10 +385,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 							);
 						if (nameEl) {
 							searchItems.push({
-								label:
-									settingEl.dataset.settingsLabel ||
-									nameEl.textContent ||
-									"",
+								label: nameEl.textContent || "",
 								description: descriptionEl?.textContent || "",
 								sectionTitle,
 								sectionId,

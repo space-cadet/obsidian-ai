@@ -231,30 +231,19 @@
 	font-weight: 600;
 }
 
-.obsidian-ai-setting-advanced-badge {
-	display: inline-flex;
-	align-items: center;
-	margin-left: 8px;
-	padding: 2px 7px;
-	border: 1px solid var(--interactive-accent);
-	border-radius: 999px;
-	background: color-mix(
-		in srgb,
-		var(--interactive-accent) 10%,
-		var(--background-primary)
-	);
-	color: var(--interactive-accent);
-	font-size: var(--font-ui-smaller);
-	font-weight: 700;
-	letter-spacing: 0.02em;
-	line-height: 1.2;
-	vertical-align: middle;
-}
-
 .obsidian-ai-settings-section .setting-item[data-settings-tier="advanced"] {
 	border-left: 3px solid var(--interactive-accent);
 	padding-left: 12px;
 	background: color-mix(in srgb, var(--interactive-accent) 3%, transparent);
+}
+
+.obsidian-ai-settings-section
+	.setting-item[data-settings-tier="advanced"]
+	.setting-item-name::before {
+	content: "*";
+	margin-right: 5px;
+	color: var(--interactive-accent);
+	font-weight: 800;
 }
 
 .obsidian-ai-setting-advanced-marker {
