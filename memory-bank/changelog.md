@@ -28,6 +28,22 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased - 2026-08-29
 
+### T34 Settings and chat export follow-up — 2026-09-09
+- Added prominent Settings search and a persisted overall advanced-settings
+  visibility toggle.
+- Added local Debug Mode with selectable export telemetry and a visible chat
+  indicator; no network telemetry was added.
+- Routed message-selection copy, session copy, and session export through the
+  canonical `serializeChatExport()` entry point.
+- Audited Settings placement and replaced the standalone Advanced section with
+  per-section collapsible Advanced settings groups while retaining asterisk
+  markers.
+- Compacted the Settings hero and corrected responsive PDF Extraction layout.
+- User-confirmed expanded/collapsed screenshots are stored under
+  `memory-bank/assets/`; final implementation is pushed at `5e978af`.
+- Minimum / Normal / Enhanced metadata presets and further running-summary
+  changes remain future design work.
+
 ### T70 active-chat model identity planning — 2026-09-02
 - Recorded the model-switcher follow-up as T70 after reviewing the legacy-chat
   restoration and toolbar sizing issues.

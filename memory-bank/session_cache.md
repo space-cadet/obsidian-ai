@@ -1,5 +1,23 @@
 # Session Cache
 
+### 2026-09-09 — T34 Settings and export follow-up
+
+- The existing T34 task now records the complete Settings/export work from this
+  session; no new Settings task or subtask was created.
+- Final UI: prominent search, persisted Show advanced settings toggle, local
+  Debug Mode and chat indicator, asterisk-marked nested Advanced disclosures,
+  section audit, compact hero, and responsive PDF Extraction layout.
+- All chat message/session copy and export actions use `serializeChatExport()`;
+  local Debug Mode telemetry is optional export metadata and is not network
+  telemetry.
+- User confirmed the expanded/collapsed presentation. Assets:
+  `assets/T34-settings-advanced-expanded-2026-09-09.jpg` and
+  `assets/T34-settings-advanced-collapsed-2026-09-09.jpg`.
+- Final pushed commit: `5e978af`. Verification: 53 test files / 454 tests,
+  TypeScript, production build, and diff checks passed.
+- Minimum / Normal / Enhanced metadata presets and additional running-summary
+  implementation remain future design work.
+
 ### 2026-09-09 — Release and mockup handoff
 
 - `1.5.0` is published from `4a751b6`; remote `main` and the dereferenced

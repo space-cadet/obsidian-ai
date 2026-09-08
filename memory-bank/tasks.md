@@ -53,7 +53,6 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T8b | 1.5.0 Community Scan Follow-up | 🔄 | HIGH | 2026-09-09 | T8, T8a | [Details](tasks/T8b.md) |
 | T18a | Bounded Web Page Retrieval Tool | ⏸️ | MEDIUM | 2026-08-25 | T18, T60a, T60c | [Details](tasks/T18a.md) |
 | T50 | OpenAI Responses API / Threads Support | 🔄 | MEDIUM | — | T14 | [Details](tasks/T50.md) |
-| T51 | Opt-in Telemetry and Usage Data Collection | 🔄 | MEDIUM | — | T38 | [Details](tasks/T51.md) |
 
 ## Completed Tasks
 
@@ -103,6 +102,12 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T60c | Validated Execution Boundary and Reliability | ✅ | HIGH | 2026-08-25 | 2026-08-29 | T60, T60a, T60b | [Details](tasks/T60c.md) |
 | T61 | Self-Settings Agent Tools | ✅ | HIGH | 2026-08-26 | 2026-08-29 | — | [Details](tasks/T61.md) |
 | T64b | Preserve Mode Content Retention | ✅ | HIGH | 2026-08-27 | 2026-08-29 | T64 | [Details](tasks/T64b.md) |
+
+## Disabled / Removed Tasks
+
+| ID | Title | Status | Priority | Details |
+|----|-------|--------|----------|---------|
+| T51 | Opt-in Telemetry and Usage Data Collection | ⛔ DISABLED | MEDIUM | [Details](tasks/T51.md) |
 
 ## Task Relationships
 
@@ -293,6 +298,7 @@ T70: Active Chat Model Identity and Switcher Consistency
 ## Status Summary
 
 - **Active**: 37
-- **Completed**: 45
+- **Completed**: 46
 - **Paused**: 2
-- **Total**: 83
+- **Disabled**: 1
+- **Total**: 86

@@ -1,5 +1,27 @@
 # Active Context
 
+### 2026-09-09 — T34 Settings and export follow-up ✅
+
+- Completed the full Settings UI audit and follow-up from the long-context and
+  export discussion. The work is recorded under the existing T34 umbrella; no
+  new Settings task or subtask was needed.
+- The final pushed implementation adds prominent settings search, persisted
+  advanced visibility, local Debug Mode with an in-chat indicator, selected
+  export telemetry, and the unified `serializeChatExport()` entry point.
+- Mixed sections now end with independently collapsible Advanced settings
+  groups. Asterisk markers remain; Debug Mode and Diagnostics are whole
+  advanced sections, Sync Components is normal, Developer mode belongs to
+  Agent Tools, and Clear all chat history belongs to Backup & Restore.
+- The Settings hero and PDF Extraction layout were made more compact and
+  responsive. User-confirmed expanded/collapsed views are stored in
+  `assets/T34-settings-advanced-expanded-2026-09-09.jpg` and
+  `assets/T34-settings-advanced-collapsed-2026-09-09.jpg`.
+- Commits `fd6191e` through `5e978af` are pushed. Final verification passes
+  53 test files / 454 tests, TypeScript, production build, and diff checks.
+- The Minimum / Normal / Enhanced metadata preset and additional running
+  summary changes remain future design work. Debug telemetry is local and
+  export-only, separate from the disabled network telemetry task T51.
+
 ### 2026-09-09 — Release and acceptance record cleanup ✅
 
 - `1.5.0` is published from `4a751b6`; the exact remote tag and branch were

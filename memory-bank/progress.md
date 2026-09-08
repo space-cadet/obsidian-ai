@@ -1,3 +1,21 @@
+### 2026-09-09 — T34 Settings and export follow-up ✅
+
+- Completed the Settings audit and nested Advanced settings redesign under the
+  existing T34 task; no new task or subtask was required.
+- Added prominent settings search, persisted advanced visibility, local Debug
+  Mode/export telemetry, the visible chat indicator, and the unified
+  `serializeChatExport()` path for all chat copy/export actions.
+- Distributed advanced controls into their owning sections, removed the
+  obsolete standalone Advanced section, retained asterisks, and added
+  independently persisted per-section Advanced disclosures with search and
+  Expand/Collapse All integration.
+- Compact/responsive Settings and PDF Extraction layouts were verified by the
+  user. Screenshots are recorded under `memory-bank/assets/`.
+- Final commit `5e978af` is on `origin/main`; 53 test files / 454 tests,
+  TypeScript, production build, and `git diff --check` passed.
+- The proposed Minimum / Normal / Enhanced metadata preset and further
+  running-summary changes were not implemented and remain design follow-ups.
+
 ### 2026-09-09 — Release and acceptance record cleanup ✅
 
 - Recorded the `1.5.0` publication, scanner fixes, exact tag verification, and
