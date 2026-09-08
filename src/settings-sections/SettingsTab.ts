@@ -53,6 +53,79 @@ interface SearchItem {
 	settingEl: HTMLElement;
 }
 
+const ADVANCED_SECTION_TITLES = new Set([
+	"Advanced",
+	"Debug Mode",
+	"Diagnostics",
+	"Sync Components",
+]);
+
+const ADVANCED_SETTING_NAMES: Record<string, Set<string>> = {
+	"Chat Defaults": new Set([
+		"Show full request token count",
+		"Max saved conversations",
+		"Max context tokens",
+		"Max context messages",
+		"Model request token budget",
+		"Recent messages to preserve",
+		"Response token reserve",
+		"Compaction trigger tokens",
+		"Compaction release tokens",
+		"Max tool-result replay tokens",
+		"Tool history mode",
+	]),
+	"Agent Tools": new Set(["Max agent steps"]),
+	"AI Intelligence Layer": new Set([
+		"Identity context budget",
+		"Memory core size",
+		"Legacy memory backup retention",
+		"Persona file path",
+		"Memory file path",
+		"Auto-summarize sessions",
+		"Min messages before summarizing",
+		"Enable memory audit tool",
+	]),
+	"PDF Extraction": new Set(["Server endpoint URL", "Maximum pages"]),
+};
+
+function classifySettings(
+	sectionEl: HTMLElement,
+	sectionTitle: string,
+	showAdvanced: boolean,
+): void {
+	const advancedNames = ADVANCED_SETTING_NAMES[sectionTitle] ?? new Set();
+	let dividerInserted = false;
+
+	sectionEl
+		.querySelectorAll<HTMLElement>(".setting-item")
+		.forEach((settingEl) => {
+			const name = settingEl.querySelector<HTMLElement>(
+				".setting-item-name",
+			)?.textContent;
+			const isAdvanced = Boolean(name && advancedNames.has(name.trim()));
+			settingEl.dataset.settingsTier = isAdvanced ? "advanced" : "normal";
+
+			if (isAdvanced && !showAdvanced) {
+				settingEl.addClass("is-advanced-hidden");
+			}
+
+			if (isAdvanced && showAdvanced && !dividerInserted) {
+				const divider = document.createElement("div");
+				divider.className = "obsidian-ai-settings-advanced-divider";
+				divider.textContent = "Advanced settings";
+				settingEl.parentElement?.insertBefore(divider, settingEl);
+				dividerInserted = true;
+			}
+		});
+
+	sectionEl
+		.querySelectorAll<HTMLElement>(".obsidian-ai-advanced-settings-block")
+		.forEach((block) => {
+			block.dataset.settingsTier = "advanced";
+			if (!showAdvanced) block.addClass("is-advanced-hidden");
+		});
+}
+
 export class ObsidianAISettingsTab extends PluginSettingTab {
 	plugin: ObsidianAIPlugin;
 	private isDisplaying = false;
@@ -229,12 +302,6 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				attr: { "aria-label": "Settings sections" },
 			});
 			const tocButtons: HTMLButtonElement[] = [];
-			const advancedSectionTitles = new Set([
-				"Advanced",
-				"Debug Mode",
-				"Diagnostics",
-				"Sync Components",
-			]);
 			[
 				["Provider Profiles", "Provider Profiles"],
 				["Chat Defaults", "Chat Defaults"],
@@ -254,7 +321,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Diagnostics", "Diagnostics"],
 			].forEach(([label, sectionTitle]) => {
 				if (
-					advancedSectionTitles.has(sectionTitle) &&
+					ADVANCED_SECTION_TITLES.has(sectionTitle) &&
 					!this.plugin.settings.showAdvancedSettings
 				) {
 					return;
@@ -300,6 +367,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				sectionEl
 					.querySelectorAll<HTMLElement>(".setting-item")
 					.forEach((settingEl) => {
+						if (settingEl.hasClass("is-advanced-hidden")) return;
 						const nameEl =
 							settingEl.querySelector<HTMLElement>(
 								".setting-item-name",
@@ -378,6 +446,21 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						if (!section) return;
 						// Unhide the section if it was hidden by search
 						section.removeClass("is-search-hidden");
+						if (section.hasClass("is-collapsed")) {
+							section.removeClass("is-collapsed");
+							section
+								.querySelector<HTMLElement>(
+									".obsidian-ai-settings-section-body",
+								)
+								?.removeClass("is-hidden");
+							const toggle = section.querySelector<HTMLElement>(
+								".obsidian-ai-settings-section-toggle",
+							);
+							if (toggle) {
+								toggle.setAttribute("aria-expanded", "true");
+								toggle.textContent = "▾";
+							}
+						}
 						// Scroll to the setting
 						const scrollContainer =
 							getScrollableAncestor(containerEl);
@@ -424,12 +507,25 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						".obsidian-ai-settings-section",
 					)
 					.forEach((section) => {
+						const sectionId = section.id;
+						const sectionTitle =
+							section.querySelector<HTMLElement>(
+								".obsidian-ai-settings-section-header h2, .obsidian-ai-settings-section-header h3, .obsidian-ai-settings-section-header h4",
+							)?.textContent ?? "";
+						const visibleItemMatches = searchItems.some(
+							(item) =>
+								item.sectionId === sectionId &&
+								(item.label.toLocaleLowerCase().includes(query.toLocaleLowerCase()) ||
+									item.description.toLocaleLowerCase().includes(query.toLocaleLowerCase()) ||
+									item.sectionTitle.toLocaleLowerCase().includes(query.toLocaleLowerCase())),
+						);
 						section.toggleClass(
 							"is-search-hidden",
 							Boolean(query) &&
-								!section.textContent
-									?.toLocaleLowerCase()
-									.includes(query.toLocaleLowerCase()),
+							!sectionTitle
+								.toLocaleLowerCase()
+								.includes(query.toLocaleLowerCase()) &&
+							!visibleItemMatches,
 						);
 					});
 				tocButtons.forEach((button) => {
@@ -515,6 +611,10 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				const headerId = `${id}-header`;
 				const bodyId = `${id}-body`;
 				const collapsed = this.isCollapsed(id);
+				const isAdvancedSection = ADVANCED_SECTION_TITLES.has(title);
+				el.dataset.settingsTier = isAdvancedSection
+					? "advanced"
+					: "normal";
 
 				// Create header row with toggle button
 				const header = el.createEl("div", {
@@ -528,6 +628,12 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					header.appendChild(existingHeading);
 				} else {
 					new Setting(header).setName(title).setHeading();
+				}
+				if (isAdvancedSection) {
+					header.createEl("span", {
+						cls: "obsidian-ai-settings-tier-badge",
+						text: "Advanced",
+					});
 				}
 				const toggleBtn = header.createEl("button", {
 					cls: "obsidian-ai-settings-section-toggle",
@@ -571,6 +677,11 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					body.addClass("is-hidden");
 				}
 
+				classifySettings(
+					el,
+					title,
+					this.plugin.settings.showAdvancedSettings,
+				);
 				sections.push({ title, el });
 				registerSearchItems(el, title);
 			};

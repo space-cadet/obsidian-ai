@@ -186,7 +186,7 @@ export function renderIntelligenceSection(
 
 	// ── Memory Stats & Export ──
 	const statsEl = sectionEl.createEl("div", {
-		cls: "obsidian-ai-memory-stats",
+		cls: "obsidian-ai-memory-stats obsidian-ai-advanced-settings-block",
 	});
 
 	const statsHeader = statsEl.createEl("div", {
