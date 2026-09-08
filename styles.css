@@ -423,6 +423,41 @@
 .obsidian-ai-settings-section > h2,
 .obsidian-ai-settings-section > h3 { font-family: var(--font-interface); }
 
+/* Keep the description and control columns usable at every panel width. */
+.obsidian-ai-settings-section .setting-item {
+	display: grid;
+	grid-template-columns: minmax(240px, 1fr) minmax(300px, 1.1fr);
+	column-gap: 24px;
+	align-items: start;
+}
+
+.obsidian-ai-settings-section .setting-item-info {
+	min-width: 0;
+}
+
+.obsidian-ai-settings-section .setting-item-control {
+	min-width: 0;
+	width: 100%;
+	max-width: none;
+	justify-content: flex-start;
+}
+
+.obsidian-ai-settings-section .wide-text-settings {
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
+}
+
+@media (max-width: 760px) {
+	.obsidian-ai-settings-section .setting-item {
+		display: block;
+	}
+
+	.obsidian-ai-settings-section .setting-item-control {
+		margin-top: 10px;
+	}
+}
+
 .obsidian-ai-slider-value { min-width: 3em; margin-left: 8px; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted); }
 .obsidian-ai-password-input-wrapper, .obsidian-ai-api-key-control { display: flex; align-items: center; gap: 4px; }
 .obsidian-ai-password-input-wrapper input, .obsidian-ai-api-key-control input { min-width: 0; flex: 1; }

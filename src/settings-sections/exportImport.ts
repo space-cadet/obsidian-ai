@@ -1,7 +1,8 @@
-import { Notice, Setting, TFile, FuzzySuggestModal } from "obsidian";
+import { FuzzySuggestModal, Modal, Notice, Setting, TFile } from "obsidian";
 import ObsidianAIPlugin from "../main";
-import { createSection } from "./helpers";
+import { createSection, createSliderWithValue } from "./helpers";
 import { PluginDataManager } from "../data/PluginDataManager";
+import { ChatStorageMigration } from "../storage/Migration";
 
 async function saveExportToVault(
 	plugin: ObsidianAIPlugin,
@@ -126,6 +127,123 @@ export function renderExportImportSection(
 				new ExportFileSuggester(plugin.app).open();
 			});
 		});
+
+	new Setting(sectionEl)
+		.setName("Chat storage format")
+		.setDesc(
+			"Legacy = single data.json (old). JSONL = split sessions (fast, searchable, corruption-isolated).",
+		)
+		.addDropdown((dropdown) => {
+			dropdown
+				.addOption("legacy", "Legacy (data.json)")
+				.addOption("jsonl", "JSONL (split sessions)")
+				.setValue(plugin.settings.chatStorageFormat)
+				.onChange(async (value) => {
+					plugin.settings.chatStorageFormat = value as
+						| "legacy"
+						| "jsonl";
+					await saveSettings({ refresh: true });
+				});
+		});
+
+	const backupSetting = new Setting(sectionEl)
+		.setName("Session backup count")
+		.setDesc(
+			"Number of rolling backups to keep of data.json before writes.",
+		);
+	createSliderWithValue(backupSetting, {
+		value: plugin.settings.sessionBackupCount,
+		min: 1,
+		max: 10,
+		step: 1,
+		onChange: async (value) => {
+			plugin.settings.sessionBackupCount = value;
+			await saveSettings();
+		},
+	});
+
+	const migration = new ChatStorageMigration({
+		app: plugin.app,
+		manifest: plugin.manifest,
+		settings: plugin.settings,
+		loadData: () => plugin.loadData(),
+		saveData: (data) => plugin.saveData(data),
+		logger: plugin.logger,
+	});
+
+	// Migration is shown only when legacy data is detected.
+	migration.canMigrate().then((canMigrate) => {
+		if (!canMigrate) return;
+		new Setting(sectionEl)
+			.setName("Migrate chat data")
+			.setDesc(
+				"Convert legacy chat data in data.json to the new JSONL format.",
+			)
+			.addButton((btn) => {
+				btn.setButtonText("Migrate now")
+					.setCta()
+					.onClick(async () => {
+						btn.setDisabled(true);
+						btn.setButtonText("Migrating...");
+						const result = await migration.migrate();
+						if (result.success) {
+							new Notice(
+								`Migrated ${result.sessionCount} sessions (${result.messageCount} messages) to JSONL`,
+							);
+							plugin.settings.chatStorageFormat = "jsonl";
+							await saveSettings({ refresh: true });
+						} else {
+							new Notice(`Migration failed: ${result.error}`);
+							btn.setDisabled(false);
+							btn.setButtonText("Migrate now");
+						}
+					});
+			});
+	});
+
+	new Setting(sectionEl)
+		.setName("Clear all chat history")
+		.setDesc(
+			"Permanently delete all saved chat sessions. This frees up storage space.",
+		)
+		.addButton((btn) =>
+			btn
+				.setButtonText("Clear History")
+				.setWarning()
+				.onClick(async () => {
+					const modal = new Modal(plugin.app);
+					modal.titleEl.setText("Clear all chat history?");
+					modal.contentEl.createEl("p", {
+						text: "This will permanently delete all chat sessions. This action cannot be undone.",
+					});
+					const btnContainer = modal.contentEl.createEl("div");
+					btnContainer.setCssStyles({
+						display: "flex",
+						gap: "8px",
+						marginTop: "12px",
+					});
+
+					const cancelBtn = btnContainer.createEl("button", {
+						text: "Cancel",
+					});
+					cancelBtn.addEventListener("click", () => modal.close());
+
+					const confirmBtn = btnContainer.createEl("button", {
+						text: "Clear All",
+					});
+					confirmBtn.classList.add("mod-warning");
+					confirmBtn.addEventListener("click", async () => {
+						await plugin.saveChatData({
+							sessions: [],
+							activeSessionId: null,
+						});
+						modal.close();
+						new Notice("✓ All chat history cleared.");
+					});
+
+					modal.open();
+				}),
+		);
 }
 
 async function importFromFile(

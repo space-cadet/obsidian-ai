@@ -1,4 +1,4 @@
-import { App, Modal, Notice, Platform, Setting, TFile } from "obsidian";
+import { App, Notice, Platform, Setting, TFile } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection } from "./helpers";
 import { summarizeLlmUsage } from "../lib/usageStats";
@@ -432,53 +432,6 @@ export function renderDiagnosticsSection(
 					} finally {
 						btn.setDisabled(false);
 					}
-				}),
-		);
-
-	new Setting(sectionEl)
-		.setName("Clear all chat history")
-		.setDesc(
-			"Permanently delete all saved chat sessions. This frees up storage memory.",
-		)
-		.addButton((btn) =>
-			btn
-				.setButtonText("Clear History")
-				.setWarning()
-				.onClick(async () => {
-					const modal = new Modal(app);
-					modal.titleEl.setText("Clear all chat history?");
-					modal.contentEl.createEl("p", {
-						text: "This will permanently delete all chat sessions. This action cannot be undone.",
-					});
-					const btnContainer = modal.contentEl.createEl("div");
-					btnContainer.setCssStyles({
-						display: "flex",
-						gap: "8px",
-						marginTop: "12px",
-					});
-
-					const cancelBtn = btnContainer.createEl("button", {
-						text: "Cancel",
-					});
-					cancelBtn.addEventListener("click", () => {
-						modal.close();
-					});
-
-					const confirmBtn = btnContainer.createEl("button", {
-						text: "Clear All",
-					});
-					confirmBtn.classList.add("mod-warning");
-					confirmBtn.addEventListener("click", async () => {
-						await plugin.saveChatData({
-							sessions: [],
-							activeSessionId: null,
-						});
-						modal.close();
-						new Notice("✓ All chat history cleared.");
-						refreshMetrics();
-					});
-
-					modal.open();
 				}),
 		);
 

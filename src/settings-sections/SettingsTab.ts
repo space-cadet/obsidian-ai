@@ -3,7 +3,6 @@ import ObsidianAIPlugin from "../main";
 import { ProviderProfile } from "../settings";
 import { getActiveProviderProfile } from "../settings";
 import { renderAgentToolsSection } from "./agentTools";
-import { renderAdvancedSection } from "./advanced";
 import { renderChatDefaultsSection } from "./chatDefaults";
 import { renderCustomCommandsSection } from "./customCommands";
 import { renderDiagnosticsSection } from "./diagnostics";
@@ -54,15 +53,17 @@ interface SearchItem {
 }
 
 const ADVANCED_SECTION_TITLES = new Set([
-	"Advanced",
 	"Debug Mode",
 	"Diagnostics",
-	"Sync Components",
 ]);
 
 const ADVANCED_SETTING_NAMES: Record<string, Set<string>> = {
 	"Chat Defaults": new Set([
+		"Selection prompt",
+		"Cursor prompt",
+		"Message history",
 		"Show full request token count",
+		"Max sessions in sidebar",
 		"Max saved conversations",
 		"Max context tokens",
 		"Max context messages",
@@ -74,18 +75,31 @@ const ADVANCED_SETTING_NAMES: Record<string, Set<string>> = {
 		"Max tool-result replay tokens",
 		"Tool history mode",
 	]),
-	"Agent Tools": new Set(["Max agent steps"]),
+	"Agent Tools": new Set(["Max agent steps", "Developer mode"]),
 	"AI Intelligence Layer": new Set([
 		"Identity context budget",
 		"Memory core size",
 		"Legacy memory backup retention",
 		"Persona file path",
 		"Memory file path",
-		"Auto-summarize sessions",
 		"Min messages before summarizing",
 		"Enable memory audit tool",
 	]),
 	"PDF Extraction": new Set(["Server endpoint URL", "Maximum pages"]),
+	"Remote Storage": new Set([
+		"Conflict Resolution",
+		"Sync Direction",
+		"Path Prefix",
+	]),
+	Updates: new Set([
+		"Release channel",
+		"Auto-install stable updates",
+		"Available branch builds",
+	]),
+	"Backup & Restore": new Set([
+		"Chat storage format",
+		"Session backup count",
+	]),
 };
 
 function classifySettings(
@@ -113,7 +127,7 @@ function classifySettings(
 			if (isAdvanced && showAdvanced && !dividerInserted) {
 				const divider = document.createElement("div");
 				divider.className = "obsidian-ai-settings-advanced-divider";
-				divider.textContent = "Advanced settings";
+				divider.textContent = "* Advanced settings";
 				settingEl.parentElement?.insertBefore(divider, settingEl);
 				dividerInserted = true;
 			}
@@ -286,7 +300,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			new Setting(discoveryControls)
 				.setName("Show advanced settings")
 				.setDesc(
-					"Reveal diagnostics, developer controls, and other low-level configuration.",
+					"Reveal diagnostics, developer controls, and other low-level configuration. Advanced controls are marked with *.",
 				)
 				.addToggle((toggle) => {
 					toggle
@@ -321,7 +335,6 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Remote Storage", "Remote Storage"],
 				["Updates", "Updates"],
 				["PDF Extraction", "PDF Extraction"],
-				["Advanced", "Advanced"],
 				["Custom Commands", "Custom Commands"],
 				["Backup & Restore", "Backup & Restore"],
 				["Debug Mode", "Debug Mode"],
@@ -745,14 +758,12 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			);
 			addSection(s8, "Multi-User Chat Relay");
 
-			if (this.plugin.settings.showAdvancedSettings) {
-				const s9 = renderSyncComponentsSection(
-					containerEl,
-					this.plugin,
-					this.saveSettings.bind(this),
-				);
-				addSection(s9, "Sync Components");
-			}
+			const s9 = renderSyncComponentsSection(
+				containerEl,
+				this.plugin,
+				this.saveSettings.bind(this),
+			);
+			addSection(s9, "Sync Components");
 
 			const s10 = renderRemoteStorageSection(
 				containerEl,
@@ -767,15 +778,6 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				this.saveSettings.bind(this),
 			);
 			addSection(s11, "Updates");
-
-			if (this.plugin.settings.showAdvancedSettings) {
-				const s12 = renderAdvancedSection(
-					containerEl,
-					this.plugin,
-					this.saveSettings.bind(this),
-				);
-				addSection(s12, "Advanced");
-			}
 
 			const s13 = renderCustomCommandsSection(
 				containerEl,

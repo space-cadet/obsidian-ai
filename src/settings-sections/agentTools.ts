@@ -57,6 +57,20 @@ export function renderAgentToolsSection(
 					plugin.settings.maxAgentSteps =
 						Number.isFinite(value) && value > 0 ? value : 5;
 					await saveSettings();
+			});
+		});
+
+	new Setting(sectionEl)
+		.setName("Developer mode")
+		.setDesc(
+			"Allow the AI to read and modify select plugin settings through developer tools. Use with caution.",
+		)
+		.addToggle((toggle) => {
+			toggle
+				.setValue(plugin.settings.developerMode)
+				.onChange(async (value) => {
+					plugin.settings.developerMode = value;
+					await saveSettings();
 				});
 		});
 }

@@ -1,6 +1,6 @@
 import { Setting } from "obsidian";
 import ObsidianAIPlugin from "../main";
-import { createSection } from "./helpers";
+import { createSection, createSliderWithValue } from "./helpers";
 
 export function renderChatDefaultsSection(
 	containerEl: HTMLElement,
@@ -129,8 +129,70 @@ export function renderChatDefaultsSection(
 				.onChange(async (value) => {
 					plugin.settings.restoreChatTabs = value;
 					await saveSettings();
+			});
+		});
+
+	new Setting(sectionEl)
+		.setName("Selection prompt")
+		.setDesc(
+			"System prompt used when the tooltip is triggered with selected text.",
+		)
+		.addTextArea((textarea) => {
+			textarea
+				.setPlaceholder("e.g., Summarize the selected text.")
+				.setValue(plugin.settings.selectionPrompt)
+				.inputEl.addEventListener("blur", async () => {
+					plugin.settings.selectionPrompt = textarea.getValue();
+					await saveSettings();
+				});
+			textarea.inputEl.classList.add("wide-text-settings");
+		});
+
+	new Setting(sectionEl)
+		.setName("Cursor prompt")
+		.setDesc(
+			"System prompt used when the tooltip is triggered without selected text.",
+		)
+		.addTextArea((textarea) => {
+			textarea
+				.setPlaceholder("e.g., Generate text based on cursor position.")
+				.setValue(plugin.settings.cursorPrompt)
+				.inputEl.addEventListener("blur", async () => {
+					plugin.settings.cursorPrompt = textarea.getValue();
+					await saveSettings();
+				});
+			textarea.inputEl.classList.add("wide-text-settings");
+		});
+
+	new Setting(sectionEl)
+		.setName("Message history")
+		.setDesc(
+			"Enable prompt history navigation in the inline tooltip using the up/down arrow keys.",
+		)
+		.addToggle((toggle) => {
+			toggle
+				.setValue(plugin.settings.messageHistory)
+				.onChange(async (value) => {
+					plugin.settings.messageHistory = value;
+					await saveSettings();
 				});
 		});
+
+	const maxSessionsSetting = new Setting(sectionEl)
+		.setName("Max sessions in sidebar")
+		.setDesc(
+			"Number of sessions shown in the sidebar before pagination. Not a hard cap on total sessions.",
+		);
+	createSliderWithValue(maxSessionsSetting, {
+		value: plugin.settings.maxSessionsInSidebar,
+		min: 10,
+		max: 200,
+		step: 10,
+		onChange: async (value) => {
+			plugin.settings.maxSessionsInSidebar = value;
+			await saveSettings();
+		},
+	});
 
 	new Setting(sectionEl)
 		.setName("Max saved conversations")
