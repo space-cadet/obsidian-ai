@@ -18,6 +18,7 @@ import { renderWebSearchSection } from "./webSearch";
 import { renderPdfExtractionSection } from "./pdfExtraction";
 import { renderRemoteStorageSection } from "./remoteStorageSettings";
 import { renderExportImportSection } from "./exportImport";
+import { renderDebugModeSection } from "./debugMode";
 
 function debounce(fn: () => void, ms: number): () => void {
 	let timeout: ReturnType<typeof setTimeout> | null = null;
@@ -46,6 +47,7 @@ function getScrollableAncestor(element: HTMLElement): HTMLElement | null {
 
 interface SearchItem {
 	label: string;
+	description: string;
 	sectionTitle: string;
 	sectionId: string;
 	settingEl: HTMLElement;
@@ -70,7 +72,11 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 	}
 
 	/** Toggle section collapse state and persist */
-	private async toggleSection(sectionId: string, sectionEl: HTMLElement, collapsed: boolean): Promise<void> {
+	private async toggleSection(
+		sectionId: string,
+		sectionEl: HTMLElement,
+		collapsed: boolean,
+	): Promise<void> {
 		const sections = this.plugin.settings.collapsedSections ?? {};
 		if (collapsed) {
 			sections[sectionId] = true;
@@ -80,10 +86,12 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 		this.plugin.settings.collapsedSections = sections;
 		await this.plugin.saveSettings();
 
-		sectionEl.toggleClass('is-collapsed', collapsed);
-		const body = sectionEl.querySelector<HTMLElement>('.obsidian-ai-settings-section-body');
+		sectionEl.toggleClass("is-collapsed", collapsed);
+		const body = sectionEl.querySelector<HTMLElement>(
+			".obsidian-ai-settings-section-body",
+		);
 		if (body) {
-			body.toggleClass('is-hidden', collapsed);
+			body.toggleClass("is-hidden", collapsed);
 		}
 	}
 
@@ -91,25 +99,31 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 	private async setAllCollapsed(collapsed: boolean): Promise<void> {
 		const sections = this.plugin.settings.collapsedSections ?? {};
 		const containerEl = this.containerEl;
-		containerEl.querySelectorAll<HTMLElement>('.obsidian-ai-settings-section').forEach((sectionEl) => {
-			const sectionId = sectionEl.id;
-			if (!sectionId) return;
-			if (collapsed) {
-				sections[sectionId] = true;
-			} else {
-				delete sections[sectionId];
-			}
-			sectionEl.toggleClass('is-collapsed', collapsed);
-			const body = sectionEl.querySelector<HTMLElement>('.obsidian-ai-settings-section-body');
-			if (body) {
-				body.toggleClass('is-hidden', collapsed);
-			}
-			const btn = sectionEl.querySelector<HTMLElement>('.obsidian-ai-settings-section-toggle');
-			if (btn) {
-				btn.setAttribute('aria-expanded', String(!collapsed));
-				btn.textContent = collapsed ? '▸' : '▾';
-			}
-		});
+		containerEl
+			.querySelectorAll<HTMLElement>(".obsidian-ai-settings-section")
+			.forEach((sectionEl) => {
+				const sectionId = sectionEl.id;
+				if (!sectionId) return;
+				if (collapsed) {
+					sections[sectionId] = true;
+				} else {
+					delete sections[sectionId];
+				}
+				sectionEl.toggleClass("is-collapsed", collapsed);
+				const body = sectionEl.querySelector<HTMLElement>(
+					".obsidian-ai-settings-section-body",
+				);
+				if (body) {
+					body.toggleClass("is-hidden", collapsed);
+				}
+				const btn = sectionEl.querySelector<HTMLElement>(
+					".obsidian-ai-settings-section-toggle",
+				);
+				if (btn) {
+					btn.setAttribute("aria-expanded", String(!collapsed));
+					btn.textContent = collapsed ? "▸" : "▾";
+				}
+			});
 		this.plugin.settings.collapsedSections = sections;
 		await this.plugin.saveSettings();
 	}
@@ -126,6 +140,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 		const quiet = options?.quiet ?? false;
 		await this.plugin.saveSettings();
 		this.plugin.chatapi.updateSettings(this.plugin.settings);
+		window.dispatchEvent(new Event("obsidian-ai:settings-changed"));
 
 		if (refresh) {
 			if (this.isDisplaying) {
@@ -159,13 +174,21 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 
 			renderHeroSection(containerEl, this.plugin);
 
+			const discoveryControls = containerEl.createDiv({
+				cls: "obsidian-ai-settings-discovery",
+			});
+
 			// ── Search with dropdown ──
-			const searchWrap = containerEl.createDiv({
+			const searchWrap = discoveryControls.createDiv({
 				cls: "obsidian-ai-settings-search",
 			});
 			searchWrap.createEl("label", {
 				text: "Find a setting",
 				attr: { for: "obsidian-ai-settings-search-input" },
+			});
+			searchWrap.createEl("div", {
+				cls: "obsidian-ai-settings-search-hint",
+				text: "Search setting names, descriptions, and sections.",
 			});
 			const searchInput = searchWrap.createEl("input", {
 				cls: "obsidian-ai-settings-search-input",
@@ -180,6 +203,19 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					"aria-autocomplete": "list",
 				},
 			});
+			new Setting(discoveryControls)
+				.setName("Show advanced settings")
+				.setDesc(
+					"Reveal diagnostics, developer controls, and other low-level configuration.",
+				)
+				.addToggle((toggle) => {
+					toggle
+						.setValue(this.plugin.settings.showAdvancedSettings)
+						.onChange(async (value) => {
+							this.plugin.settings.showAdvancedSettings = value;
+							await this.saveSettings({ refresh: true });
+						});
+				});
 			const searchDropdown = searchWrap.createEl("div", {
 				cls: "obsidian-ai-settings-search-dropdown",
 				attr: {
@@ -193,6 +229,12 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				attr: { "aria-label": "Settings sections" },
 			});
 			const tocButtons: HTMLButtonElement[] = [];
+			const advancedSectionTitles = new Set([
+				"Advanced",
+				"Debug Mode",
+				"Diagnostics",
+				"Sync Components",
+			]);
 			[
 				["Provider Profiles", "Provider Profiles"],
 				["Chat Defaults", "Chat Defaults"],
@@ -208,8 +250,15 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Advanced", "Advanced"],
 				["Custom Commands", "Custom Commands"],
 				["Backup & Restore", "Backup & Restore"],
+				["Debug Mode", "Debug Mode"],
 				["Diagnostics", "Diagnostics"],
 			].forEach(([label, sectionTitle]) => {
+				if (
+					advancedSectionTitles.has(sectionTitle) &&
+					!this.plugin.settings.showAdvancedSettings
+				) {
+					return;
+				}
 				const id = `obsidian-ai-settings-${sectionTitle.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 				const button = nav.createEl("button", {
 					text: label,
@@ -243,19 +292,32 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			// Collect search items after rendering
 			const searchItems: SearchItem[] = [];
 
-			function registerSearchItems(sectionEl: HTMLElement, sectionTitle: string) {
+			function registerSearchItems(
+				sectionEl: HTMLElement,
+				sectionTitle: string,
+			) {
 				const sectionId = sectionEl.id;
-				sectionEl.querySelectorAll<HTMLElement>(".setting-item").forEach((settingEl) => {
-					const nameEl = settingEl.querySelector<HTMLElement>(".setting-item-name");
-					if (nameEl) {
-						searchItems.push({
-							label: nameEl.textContent || "",
-							sectionTitle,
-							sectionId,
-							settingEl,
-						});
-					}
-				});
+				sectionEl
+					.querySelectorAll<HTMLElement>(".setting-item")
+					.forEach((settingEl) => {
+						const nameEl =
+							settingEl.querySelector<HTMLElement>(
+								".setting-item-name",
+							);
+						const descriptionEl =
+							settingEl.querySelector<HTMLElement>(
+								".setting-item-description",
+							);
+						if (nameEl) {
+							searchItems.push({
+								label: nameEl.textContent || "",
+								description: descriptionEl?.textContent || "",
+								sectionTitle,
+								sectionId,
+								settingEl,
+							});
+						}
+					});
 			}
 
 			function renderDropdown(query: string) {
@@ -269,6 +331,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				const matches = searchItems.filter(
 					(item) =>
 						item.label.toLowerCase().includes(q) ||
+						item.description.toLowerCase().includes(q) ||
 						item.sectionTitle.toLowerCase().includes(q),
 				);
 				if (matches.length === 0) {
@@ -316,14 +379,18 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						// Unhide the section if it was hidden by search
 						section.removeClass("is-search-hidden");
 						// Scroll to the setting
-						const scrollContainer = getScrollableAncestor(containerEl);
+						const scrollContainer =
+							getScrollableAncestor(containerEl);
 						if (scrollContainer) {
 							const top =
 								item.settingEl.getBoundingClientRect().top -
 								scrollContainer.getBoundingClientRect().top +
 								scrollContainer.scrollTop -
 								12;
-							scrollContainer.scrollTo({ top, behavior: "smooth" });
+							scrollContainer.scrollTo({
+								top,
+								behavior: "smooth",
+							});
 						} else {
 							item.settingEl.scrollIntoView({
 								behavior: "smooth",
@@ -332,7 +399,13 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						}
 						// Brief highlight
 						item.settingEl.addClass("is-search-highlight");
-						setTimeout(() => item.settingEl.removeClass("is-search-highlight"), 2000);
+						setTimeout(
+							() =>
+								item.settingEl.removeClass(
+									"is-search-highlight",
+								),
+							2000,
+						);
 					});
 					option.addEventListener("keydown", (e) => {
 						if (e.key === "Enter") {
@@ -377,22 +450,26 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			});
 
 			// ── Expand / Collapse All ──
-		const collapseWrap = containerEl.createDiv({
-			cls: 'obsidian-ai-settings-collapse-bar',
-		});
-		collapseWrap.createEl('span', { text: 'Sections:' });
-		const expandBtn = collapseWrap.createEl('button', {
-			text: 'Expand all',
-			attr: { type: 'button' },
-		});
-		const collapseBtn = collapseWrap.createEl('button', {
-			text: 'Collapse all',
-			attr: { type: 'button' },
-		});
-		expandBtn.addEventListener('click', () => this.setAllCollapsed(false));
-		collapseBtn.addEventListener('click', () => this.setAllCollapsed(true));
+			const collapseWrap = containerEl.createDiv({
+				cls: "obsidian-ai-settings-collapse-bar",
+			});
+			collapseWrap.createEl("span", { text: "Sections:" });
+			const expandBtn = collapseWrap.createEl("button", {
+				text: "Expand all",
+				attr: { type: "button" },
+			});
+			const collapseBtn = collapseWrap.createEl("button", {
+				text: "Collapse all",
+				attr: { type: "button" },
+			});
+			expandBtn.addEventListener("click", () =>
+				this.setAllCollapsed(false),
+			);
+			collapseBtn.addEventListener("click", () =>
+				this.setAllCollapsed(true),
+			);
 
-		// Hide dropdown on outside click
+			// Hide dropdown on outside click
 			document.addEventListener("click", (e) => {
 				if (!searchWrap.contains(e.target as Node)) {
 					searchDropdown.removeClass("is-visible");
@@ -409,11 +486,16 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					return;
 				}
 				if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-				const options = searchDropdown.querySelectorAll<HTMLElement>("[role='option']");
+				const options =
+					searchDropdown.querySelectorAll<HTMLElement>(
+						"[role='option']",
+					);
 				if (options.length === 0) return;
-				const active = searchDropdown.querySelector<HTMLElement>(".is-active");
+				const active =
+					searchDropdown.querySelector<HTMLElement>(".is-active");
 				let idx = active ? Array.from(options).indexOf(active) : -1;
-				if (e.key === "ArrowDown") idx = Math.min(idx + 1, options.length - 1);
+				if (e.key === "ArrowDown")
+					idx = Math.min(idx + 1, options.length - 1);
 				else idx = Math.max(idx - 1, 0);
 				active?.removeClass("is-active");
 				options[idx].addClass("is-active");
@@ -435,36 +517,40 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				const collapsed = this.isCollapsed(id);
 
 				// Create header row with toggle button
-				const header = el.createEl('div', {
-					cls: 'obsidian-ai-settings-section-header',
+				const header = el.createEl("div", {
+					cls: "obsidian-ai-settings-section-header",
 					attr: { id: headerId },
 				});
 				// Move the existing heading into header
-				const existingHeading = el.querySelector<HTMLElement>('h2, h3, h4');
+				const existingHeading =
+					el.querySelector<HTMLElement>("h2, h3, h4");
 				if (existingHeading) {
 					header.appendChild(existingHeading);
 				} else {
 					new Setting(header).setName(title).setHeading();
 				}
-				const toggleBtn = header.createEl('button', {
-					cls: 'obsidian-ai-settings-section-toggle',
-					text: collapsed ? '▸' : '▾',
+				const toggleBtn = header.createEl("button", {
+					cls: "obsidian-ai-settings-section-toggle",
+					text: collapsed ? "▸" : "▾",
 					attr: {
-						type: 'button',
-						'aria-expanded': String(!collapsed),
-						'aria-controls': bodyId,
+						type: "button",
+						"aria-expanded": String(!collapsed),
+						"aria-controls": bodyId,
 					},
 				});
-				toggleBtn.addEventListener('click', () => {
-					const nowCollapsed = !el.hasClass('is-collapsed');
+				toggleBtn.addEventListener("click", () => {
+					const nowCollapsed = !el.hasClass("is-collapsed");
 					void this.toggleSection(id, el, nowCollapsed);
-					toggleBtn.setAttribute('aria-expanded', String(!nowCollapsed));
-					toggleBtn.textContent = nowCollapsed ? '▸' : '▾';
+					toggleBtn.setAttribute(
+						"aria-expanded",
+						String(!nowCollapsed),
+					);
+					toggleBtn.textContent = nowCollapsed ? "▸" : "▾";
 				});
 
 				// Wrap all existing children (except header) in body
-				const body = el.createEl('div', {
-					cls: 'obsidian-ai-settings-section-body',
+				const body = el.createEl("div", {
+					cls: "obsidian-ai-settings-section-body",
 					attr: { id: bodyId },
 				});
 				// Move all non-header children into body
@@ -472,15 +558,17 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					if (
 						child !== header &&
 						child !== body &&
-						!(child as HTMLElement).hasClass('obsidian-ai-settings-section-header')
+						!(child as HTMLElement).hasClass(
+							"obsidian-ai-settings-section-header",
+						)
 					) {
 						body.appendChild(child);
 					}
 				});
 
 				if (collapsed) {
-					el.addClass('is-collapsed');
-					body.addClass('is-hidden');
+					el.addClass("is-collapsed");
+					body.addClass("is-hidden");
 				}
 
 				sections.push({ title, el });
@@ -539,12 +627,14 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			);
 			addSection(s8, "Multi-User Chat Relay");
 
-			const s9 = renderSyncComponentsSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
-			);
-			addSection(s9, "Sync Components");
+			if (this.plugin.settings.showAdvancedSettings) {
+				const s9 = renderSyncComponentsSection(
+					containerEl,
+					this.plugin,
+					this.saveSettings.bind(this),
+				);
+				addSection(s9, "Sync Components");
+			}
 
 			const s10 = renderRemoteStorageSection(
 				containerEl,
@@ -560,12 +650,14 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			);
 			addSection(s11, "Updates");
 
-			const s12 = renderAdvancedSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
-			);
-			addSection(s12, "Advanced");
+			if (this.plugin.settings.showAdvancedSettings) {
+				const s12 = renderAdvancedSection(
+					containerEl,
+					this.plugin,
+					this.saveSettings.bind(this),
+				);
+				addSection(s12, "Advanced");
+			}
 
 			const s13 = renderCustomCommandsSection(
 				containerEl,
@@ -581,13 +673,22 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			);
 			addSection(s14, "Backup & Restore");
 
-			const s15 = renderDiagnosticsSection(
-				containerEl,
-				this.plugin,
-				this.app,
-				this.saveSettings.bind(this),
-			);
-			addSection(s15, "Diagnostics");
+			if (this.plugin.settings.showAdvancedSettings) {
+				const s15 = renderDebugModeSection(
+					containerEl,
+					this.plugin,
+					this.saveSettings.bind(this),
+				);
+				addSection(s15, "Debug Mode");
+
+				const s16 = renderDiagnosticsSection(
+					containerEl,
+					this.plugin,
+					this.app,
+					this.saveSettings.bind(this),
+				);
+				addSection(s16, "Diagnostics");
+			}
 		} finally {
 			this.isDisplaying = false;
 			if (this.pendingRefresh) {

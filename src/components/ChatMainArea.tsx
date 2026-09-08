@@ -26,6 +26,7 @@ interface ChatMainAreaProps {
 	currentAiMessage: string;
 	currentContentParts: ContentPart[];
 	isStreaming: boolean;
+	debugMode: boolean;
 	isEditing: boolean;
 	thinkingEnabled: boolean;
 	showThinking: boolean;
@@ -74,6 +75,7 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 	currentAiMessage,
 	currentContentParts,
 	isStreaming,
+	debugMode,
 	isEditing,
 	thinkingEnabled,
 	showThinking,
@@ -114,6 +116,16 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 }) => {
 	return (
 		<>
+			{debugMode && (
+				<div
+					className="chat-debug-mode-indicator"
+					role="status"
+					aria-label="Debug mode active"
+					title="Debug mode is active. Selected telemetry details will be available in session exports."
+				>
+					<span aria-hidden="true">●</span> Debug mode active
+				</div>
+			)}
 			<ChatMessages
 				sessionId={sessionId}
 				restoreScrollTop={restoreScrollTop}

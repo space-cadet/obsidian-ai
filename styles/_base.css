@@ -152,28 +152,64 @@
 	padding-inline: 12px !important;
 }
 
+.obsidian-ai-settings-discovery {
+	margin: 18px 0;
+	padding: 16px;
+	border: 1px solid var(--interactive-accent-hover);
+	border-radius: 12px;
+	background: linear-gradient(
+		135deg,
+		var(--background-primary),
+		var(--background-secondary)
+	);
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
 .obsidian-ai-settings-search {
-	margin: 0 0 12px;
+	position: relative;
+	z-index: 2;
+	margin: 0 0 14px;
 }
 
 .obsidian-ai-settings-search label {
 	display: block;
 	margin-bottom: 6px;
-	font-size: var(--font-ui-smaller);
+	font-size: var(--font-ui-medium);
 	font-weight: 700;
+	color: var(--text-normal);
+}
+
+.obsidian-ai-settings-search-hint {
+	margin: -2px 0 8px;
+	font-size: var(--font-ui-smaller);
 	color: var(--text-muted);
 }
 
 .obsidian-ai-settings-search-input {
 	width: 100%;
-	padding: 10px 13px;
-	border: 1px solid var(--background-modifier-border);
+	padding: 12px 14px;
+	border: 2px solid var(--interactive-accent);
 	border-radius: 10px;
 	background: var(--background-primary);
-	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	font-size: var(--font-ui-medium);
 }
 
-.obsidian-ai-settings-search { position: relative; z-index: 2; }
+.obsidian-ai-settings-search-input:focus {
+	border-color: var(--interactive-accent-hover);
+	box-shadow: 0 0 0 3px var(--background-modifier-active-hover);
+}
+
+.obsidian-ai-settings-discovery .setting-item {
+	margin: 0;
+	padding: 10px 0 0;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.obsidian-ai-settings-discovery .setting-item-name {
+	font-weight: 600;
+}
+
 .obsidian-ai-settings-search-dropdown {
 	display: none; position: absolute; left: 0; right: 0; top: 100%; max-height: 320px;
 	overflow-y: auto; padding: 4px; border: 1px solid var(--background-modifier-border);

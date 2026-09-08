@@ -28,6 +28,15 @@ export interface SyncComponentConfig {
 	usageStats: boolean;
 }
 
+/** Controls the optional telemetry block included in chat session exports. */
+export interface DebugTelemetrySettings {
+	includeProviderUsage: boolean;
+	includeRequestEstimates: boolean;
+	includeToolDetails: boolean;
+	includeContextMetadata: boolean;
+	includeModelTiming: boolean;
+}
+
 export type ProviderType =
 	| "openai"
 	| "ollama"
@@ -153,6 +162,12 @@ export interface ObsidianAISettings {
 	chatTabTitleWidth: number;
 	/** Show full request payload token count (system + history + message) instead of message-only */
 	showFullRequestTokens: boolean;
+	/** Reveal advanced controls in the Settings panel. */
+	showAdvancedSettings: boolean;
+	/** Enable enhanced telemetry capture and export details. */
+	debugMode: boolean;
+	/** Select which telemetry fields are included when debug mode is exported. */
+	debugTelemetry: DebugTelemetrySettings;
 	/** Restore saved internal chat tabs and their positions after a plugin reload. */
 	restoreChatTabs: boolean;
 	/** Enable developer mode: allows AI to read and modify plugin settings via tools. */
@@ -391,6 +406,15 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	chatTabTitleWidth: 160,
 	restoreChatTabs: true,
 	showFullRequestTokens: true,
+	showAdvancedSettings: false,
+	debugMode: false,
+	debugTelemetry: {
+		includeProviderUsage: true,
+		includeRequestEstimates: true,
+		includeToolDetails: true,
+		includeContextMetadata: true,
+		includeModelTiming: true,
+	},
 	developerMode: false,
 	contextPickerPathDisplay: "duplicates",
 	webSearchProvider: "duckduckgo",
@@ -498,6 +522,10 @@ export const normalizeSettings = (
 				providerProfiles.some((p) => p.id === id),
 			)
 		: [];
+	const debugTelemetry: DebugTelemetrySettings = {
+		...DEFAULT_SETTINGS.debugTelemetry,
+		...(loadedSettings?.debugTelemetry ?? {}),
+	};
 
 	return {
 		providerProfiles,
@@ -551,6 +579,9 @@ export const normalizeSettings = (
 		),
 		restoreChatTabs: Boolean(merged.restoreChatTabs ?? true),
 		showFullRequestTokens: Boolean(merged.showFullRequestTokens ?? true),
+		showAdvancedSettings: Boolean(merged.showAdvancedSettings ?? false),
+		debugMode: Boolean(merged.debugMode ?? false),
+		debugTelemetry,
 		developerMode: Boolean(merged.developerMode ?? false),
 		contextPickerPathDisplay:
 			(merged.contextPickerPathDisplay as
@@ -582,10 +613,10 @@ export const normalizeSettings = (
 				merged.intelligence?.memoryPath ?? "intelligence/memory.md",
 			identityContextBudget:
 				merged.intelligence?.identityContextBudget ?? 2000,
-			memoryCoreSize:
-				merged.intelligence?.memoryCoreSize ?? "medium",
-			memoryBackupRetention: Number.isFinite(merged.intelligence?.memoryBackupRetention)
-				? Math.max(0, Math.min(50, merged.intelligence!.memoryBackupRetention!))
+		memoryCoreSize:
+			merged.intelligence?.memoryCoreSize ?? "medium",
+		memoryBackupRetention: Number.isFinite(merged.intelligence?.memoryBackupRetention)
+			? Math.max(0, Math.min(50, merged.intelligence!.memoryBackupRetention!))
 				: 20,
 			autoSummarize: Boolean(merged.intelligence?.autoSummarize ?? false),
 			autoSummarizeMinMessages:

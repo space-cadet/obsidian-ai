@@ -1,14 +1,13 @@
 import React, { useState, useMemo } from "react";
 import { ChatSession } from "../../types";
 import {
-	serializeToMarkdown,
-	serializeToJSON,
-	serializeToJSONL,
+	serializeChatExport,
 	generateFilename,
 } from "../../utils/exportChat";
+import type { ExportFormat, ExportScope } from "../../utils/exportChat";
+import type { DebugTelemetrySettings } from "../../settings";
 
-export type ExportScope = "single" | "multiple" | "all";
-export type ExportFormat = "md" | "json" | "jsonl";
+export type { ExportFormat, ExportScope } from "../../utils/exportChat";
 
 interface ExportModalProps {
 	sessions: ChatSession[];
@@ -18,6 +17,10 @@ interface ExportModalProps {
 			vault: {
 				create: (path: string, content: string) => Promise<unknown>;
 			};
+		};
+		settings: {
+			debugMode: boolean;
+			debugTelemetry: DebugTelemetrySettings;
 		};
 	};
 	onClose: () => void;
@@ -54,6 +57,10 @@ const ExportModal: React.FC<ExportModalProps> = ({
 	plugin,
 	onClose,
 }) => {
+	const exportOptions = {
+		debugMode: plugin.settings.debugMode,
+		debugTelemetry: plugin.settings.debugTelemetry,
+	};
 	const [scope, setScope] = useState<ExportScope>("single");
 	const [format, setFormat] = useState<ExportFormat>("md");
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -101,23 +108,13 @@ const ExportModal: React.FC<ExportModalProps> = ({
 		setStatus("Exporting…");
 
 		try {
-			let content: string;
-			let ext: string;
-
-			switch (format) {
-				case "md":
-					content = serializeToMarkdown(targetSessions, scope);
-					ext = "md";
-					break;
-				case "json":
-					content = serializeToJSON(targetSessions, scope);
-					ext = "json";
-					break;
-				case "jsonl":
-					content = serializeToJSONL(targetSessions, scope);
-					ext = "jsonl";
-					break;
-			}
+			const content = serializeChatExport({
+				kind: "sessions",
+				sessions: targetSessions,
+				scope,
+				format,
+				options: exportOptions,
+			});
 
 			const filename = generateFilename(
 				scope,
@@ -136,21 +133,13 @@ const ExportModal: React.FC<ExportModalProps> = ({
 						activeSession?.title,
 						true,
 					);
-					let content: string;
-					switch (format) {
-						case "md":
-							content = serializeToMarkdown(
-								targetSessions,
-								scope,
-							);
-							break;
-						case "json":
-							content = serializeToJSON(targetSessions, scope);
-							break;
-						case "jsonl":
-							content = serializeToJSONL(targetSessions, scope);
-							break;
-					}
+					const content = serializeChatExport({
+						kind: "sessions",
+						sessions: targetSessions,
+						scope,
+						format,
+						options: exportOptions,
+					});
 					await plugin.app.vault.create(filename, content);
 					setStatus(`\u2713 Exported to ${filename}`);
 				} catch (err2: any) {

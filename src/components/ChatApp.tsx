@@ -65,9 +65,7 @@ import { resolveSessionProfile as resolveProfileForSession } from "../lib/sessio
 import { rememberRecentModel } from "../lib/recentModels";
 import { stripThinkingTags } from "./MessageBubble";
 import {
-	serializeMessagesToMarkdown,
-	serializeToJSON,
-	serializeToJSONL,
+	serializeChatExport,
 	generateFilename,
 } from "../utils/exportChat";
 import type { ExportFormat } from "./presentational/ExportModal";
@@ -109,6 +107,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 
 	const [wasTruncated, setWasTruncated] = useState(false);
 	const [contextTokenCount, setContextTokenCount] = useState(0);
+	const [, setSettingsRevision] = useState(0);
 	const [scrollToMessageId, setScrollToMessageId] = useState<
 		string | undefined
 	>(initialMessageId);
@@ -126,6 +125,16 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		abortRuntime,
 	} = useChatRuntimeState(activeSessionId);
 	const messagesRef = useRef<ChatMessage[]>([]);
+
+	useEffect(() => {
+		const refreshFromSettings = () => setSettingsRevision((revision) => revision + 1);
+		window.addEventListener("obsidian-ai:settings-changed", refreshFromSettings);
+		return () =>
+			window.removeEventListener(
+				"obsidian-ai:settings-changed",
+				refreshFromSettings,
+			);
+	}, []);
 
 	// Track if the app was hidden while streaming (for mobile background handling)
 	const wasHiddenRef = useRef(false);
@@ -869,7 +878,11 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		if (!selected.length) return;
 		try {
 			await navigator.clipboard.writeText(
-				serializeMessagesToMarkdown(selected),
+				serializeChatExport({
+					kind: "messages",
+					messages: selected,
+					format: "md",
+				}),
 			);
 			new Notice(`Copied ${selected.length} messages`);
 			ui.clearMessageSelection();
@@ -880,12 +893,16 @@ const ChatApp: React.FC<ChatAppProps> = ({
 
 	const handleSessionCopy = useCallback(
 		async (session: ChatSession, format: ExportFormat) => {
-			const content =
-				format === "md"
-					? serializeMessagesToMarkdown(session.messages)
-					: format === "json"
-						? serializeToJSON([session], "single")
-						: serializeToJSONL([session], "single");
+			const content = serializeChatExport({
+				kind: "sessions",
+				sessions: [session],
+				scope: "single",
+				format,
+				options: {
+					debugMode: plugin.settings.debugMode,
+					debugTelemetry: plugin.settings.debugTelemetry,
+				},
+			});
 			try {
 				await navigator.clipboard.writeText(content);
 				new Notice(`Copied ${format.toUpperCase()} chat`);
@@ -893,17 +910,21 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				new Notice(`Copy failed: ${(error as Error).message}`);
 			}
 		},
-		[],
+		[plugin.settings.debugMode, plugin.settings.debugTelemetry],
 	);
 
 	const handleSessionExport = useCallback(
 		async (session: ChatSession, format: ExportFormat) => {
-			const content =
-				format === "md"
-					? serializeMessagesToMarkdown(session.messages)
-					: format === "json"
-						? serializeToJSON([session], "single")
-						: serializeToJSONL([session], "single");
+			const content = serializeChatExport({
+				kind: "sessions",
+				sessions: [session],
+				scope: "single",
+				format,
+				options: {
+					debugMode: plugin.settings.debugMode,
+					debugTelemetry: plugin.settings.debugTelemetry,
+				},
+			});
 			try {
 				const filename = generateFilename(
 					"single",
@@ -927,7 +948,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				}
 			}
 		},
-		[plugin.app],
+		[plugin.app, plugin.settings.debugMode, plugin.settings.debugTelemetry],
 	);
 
 	const renderMarkdown = useCallback(
@@ -1046,6 +1067,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					currentAiMessage={activeRuntime.currentAiMessage}
 					currentContentParts={activeRuntime.currentContentParts}
 					isStreaming={activeRuntime.isStreaming}
+					debugMode={plugin.settings.debugMode}
 					isEditing={ui.isEditing}
 					thinkingEnabled={thinkingEnabled}
 					showThinking={thinkingEnabled}
