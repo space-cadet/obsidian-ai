@@ -36,7 +36,7 @@ export class SettingsHandlers extends ToolHandlerBase {
 		// Server-side developerMode gate (T61 security requirement)
 		if (!this.settings.developerMode) {
 			return {
-				error: "Developer mode is disabled. Enable it in Settings → Advanced to allow the AI to modify settings.",
+				error: "Developer mode is disabled. Enable it in Settings → Agent Tools to allow the AI to modify settings.",
 			};
 		}
 

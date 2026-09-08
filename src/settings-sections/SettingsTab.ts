@@ -89,7 +89,6 @@ const ADVANCED_SETTING_NAMES: Record<string, Set<string>> = {
 	"Remote Storage": new Set([
 		"Conflict Resolution",
 		"Sync Direction",
-		"Path Prefix",
 	]),
 	Updates: new Set([
 		"Release channel",
@@ -106,9 +105,11 @@ function classifySettings(
 	sectionEl: HTMLElement,
 	sectionTitle: string,
 	showAdvanced: boolean,
+	advancedCollapsed: boolean,
+	onToggleAdvanced: (collapsed: boolean) => void,
 ): void {
 	const advancedNames = ADVANCED_SETTING_NAMES[sectionTitle] ?? new Set();
-	let dividerInserted = false;
+	const advancedItems = new Set<HTMLElement>();
 
 	sectionEl
 		.querySelectorAll<HTMLElement>(".setting-item")
@@ -119,32 +120,69 @@ function classifySettings(
 			const settingName = name?.trim() ?? "";
 			const isAdvanced = advancedNames.has(settingName);
 			settingEl.dataset.settingsTier = isAdvanced ? "advanced" : "normal";
+			if (isAdvanced) advancedItems.add(settingEl);
 
 			if (isAdvanced && !showAdvanced) {
 				settingEl.addClass("is-advanced-hidden");
 			}
-
-			if (isAdvanced && showAdvanced && !dividerInserted) {
-				const divider = document.createElement("div");
-				divider.className = "obsidian-ai-settings-advanced-divider";
-				divider.textContent = "* Advanced settings";
-				settingEl.parentElement?.insertBefore(divider, settingEl);
-				dividerInserted = true;
-			}
 		});
 
+	const advancedBlocks = new Set<HTMLElement>();
 	sectionEl
 		.querySelectorAll<HTMLElement>(".obsidian-ai-advanced-settings-block")
 		.forEach((block) => {
 			block.dataset.settingsTier = "advanced";
-			if (!block.querySelector(".obsidian-ai-setting-advanced-marker")) {
-				block.createEl("div", {
-					cls: "obsidian-ai-setting-advanced-marker",
-					text: "Advanced settings",
-				});
-			}
+			advancedBlocks.add(block);
 			if (!showAdvanced) block.addClass("is-advanced-hidden");
 		});
+
+	const sectionBody = sectionEl.querySelector<HTMLElement>(
+		".obsidian-ai-settings-section-body",
+	);
+	if (!sectionBody) return;
+
+	const advancedElements = Array.from(sectionBody.children).filter(
+		(child): child is HTMLElement =>
+			child instanceof HTMLElement &&
+			(advancedItems.has(child) || advancedBlocks.has(child)),
+	);
+	if (advancedElements.length === 0) return;
+
+	const group = sectionBody.createDiv({
+		cls: "obsidian-ai-settings-advanced-group",
+		attr: { "data-settings-tier": "advanced" },
+	});
+	const header = group.createDiv({
+		cls: "obsidian-ai-settings-advanced-header",
+	});
+	header.createEl("span", {
+		cls: "obsidian-ai-settings-advanced-title",
+		text: "* Advanced settings",
+	});
+	const toggle = header.createEl("button", {
+		cls: "obsidian-ai-settings-advanced-toggle",
+		text: advancedCollapsed ? "▸" : "▾",
+		attr: {
+			type: "button",
+			"aria-expanded": String(!advancedCollapsed),
+		},
+	});
+	const groupBody = group.createDiv({
+		cls: "obsidian-ai-settings-advanced-body",
+	});
+	advancedElements.forEach((element) => groupBody.appendChild(element));
+	group.toggleClass("is-collapsed", advancedCollapsed);
+	groupBody.toggleClass("is-hidden", advancedCollapsed);
+	if (!showAdvanced) group.addClass("is-advanced-hidden");
+
+	toggle.addEventListener("click", () => {
+		const collapsed = !group.hasClass("is-collapsed");
+		group.toggleClass("is-collapsed", collapsed);
+		groupBody.toggleClass("is-hidden", collapsed);
+		toggle.setAttribute("aria-expanded", String(!collapsed));
+		toggle.textContent = collapsed ? "▸" : "▾";
+		onToggleAdvanced(collapsed);
+	});
 }
 
 export class ObsidianAISettingsTab extends PluginSettingTab {
@@ -163,6 +201,14 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 	/** Check if a section is currently collapsed */
 	private isCollapsed(sectionId: string): boolean {
 		return this.plugin.settings.collapsedSections?.[sectionId] ?? false;
+	}
+
+	/** Check whether a section's advanced settings group is collapsed. */
+	private isAdvancedCollapsed(sectionId: string): boolean {
+		return (
+			this.plugin.settings.collapsedSections?.[`${sectionId}:advanced`] ??
+			true
+		);
 	}
 
 	/** Toggle section collapse state and persist */
@@ -189,6 +235,25 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 		}
 	}
 
+	/** Toggle a section's nested advanced settings group and persist it. */
+	private async toggleAdvancedSettings(
+		sectionId: string,
+		groupEl: HTMLElement,
+		collapsed: boolean,
+	): Promise<void> {
+		const sections = this.plugin.settings.collapsedSections ?? {};
+		const key = `${sectionId}:advanced`;
+		if (collapsed) sections[key] = true;
+		else delete sections[key];
+		this.plugin.settings.collapsedSections = sections;
+		await this.plugin.saveSettings();
+
+		groupEl.toggleClass("is-collapsed", collapsed);
+		groupEl
+			.querySelector<HTMLElement>(".obsidian-ai-settings-advanced-body")
+			?.toggleClass("is-hidden", collapsed);
+	}
+
 	/** Expand or collapse all sections */
 	private async setAllCollapsed(collapsed: boolean): Promise<void> {
 		const sections = this.plugin.settings.collapsedSections ?? {};
@@ -212,6 +277,32 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				}
 				const btn = sectionEl.querySelector<HTMLElement>(
 					".obsidian-ai-settings-section-toggle",
+				);
+				if (btn) {
+					btn.setAttribute("aria-expanded", String(!collapsed));
+					btn.textContent = collapsed ? "▸" : "▾";
+				}
+			});
+		containerEl
+			.querySelectorAll<HTMLElement>(
+				".obsidian-ai-settings-advanced-group",
+			)
+			.forEach((groupEl) => {
+				const sectionEl = groupEl.closest<HTMLElement>(
+					".obsidian-ai-settings-section",
+				);
+				if (!sectionEl?.id) return;
+				const key = `${sectionEl.id}:advanced`;
+				if (collapsed) sections[key] = true;
+				else delete sections[key];
+				groupEl.toggleClass("is-collapsed", collapsed);
+				groupEl
+					.querySelector<HTMLElement>(
+						".obsidian-ai-settings-advanced-body",
+					)
+					?.toggleClass("is-hidden", collapsed);
+				const btn = groupEl.querySelector<HTMLButtonElement>(
+					".obsidian-ai-settings-advanced-toggle",
 				);
 				if (btn) {
 					btn.setAttribute("aria-expanded", String(!collapsed));
@@ -481,6 +572,16 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 								toggle.textContent = "▾";
 							}
 						}
+						const advancedGroup = item.settingEl.closest<HTMLElement>(
+							".obsidian-ai-settings-advanced-group",
+						);
+						if (advancedGroup?.hasClass("is-collapsed")) {
+							advancedGroup
+								.querySelector<HTMLButtonElement>(
+									".obsidian-ai-settings-advanced-toggle",
+								)
+								?.click();
+						}
 						// Scroll to the setting
 						const scrollContainer =
 							getScrollableAncestor(containerEl);
@@ -701,6 +802,15 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 					el,
 					title,
 					this.plugin.settings.showAdvancedSettings,
+					this.isAdvancedCollapsed(id),
+					(collapsed) => {
+						const group = el.querySelector<HTMLElement>(
+							".obsidian-ai-settings-advanced-group",
+						);
+						if (group) {
+							void this.toggleAdvancedSettings(id, group, collapsed);
+						}
+					},
 				);
 				sections.push({ title, el });
 				registerSearchItems(el, title);
