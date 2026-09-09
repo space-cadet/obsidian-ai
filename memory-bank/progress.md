@@ -1,3 +1,16 @@
+### 2026-09-09 — Tool-calling and context investigation ✅
+
+- Recorded the complete investigation and controlled telemetry in the dated
+  session record under T48/T48a/T48b/T48d.
+- Same-model baseline and small/large `read_note` comparisons confirm that a
+  2,000-token result adds approximately 2,130 provider input tokens to the
+  following request, while the tool registry costs approximately 3,400–3,500
+  estimated tokens per step.
+- Native multi-call preservation, safe settings controls, per-step telemetry,
+  and the Debug Mode layout follow-up are pushed through `d3aac65`.
+- Long-history budget trimming, exact result retrieval, cache attribution, and
+  OpenResponses telemetry parity remain open.
+
 ### 2026-09-09 — T34 Settings and export follow-up ✅
 
 - Completed the Settings audit and nested Advanced settings redesign under the

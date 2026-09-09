@@ -93,3 +93,16 @@ collapsed and expanded PDF Extraction views are stored as:
 The proposed Minimum / Normal / Enhanced metadata preset and further
 running-summary changes remain future design work; they are not represented as
 implemented behavior here.
+
+## 2026-09-09 Debug Mode telemetry and layout follow-up
+
+The Debug Mode export controls now include a writable `Per-step request
+breakdown` setting. It exposes bounded native-agent `agentSteps` records with
+request estimates, tool-schema/history/continuation/tool-result components, and
+per-step provider usage when available. Existing estimate and provider-usage
+filters remain independent, and full tool-result content is not duplicated.
+
+The Debug Mode panel separates the primary debug switch from an `Export
+details` group, uses right-aligned switches, and applies tighter section-only
+responsive styling. The generated stylesheet is `styles.css`; the layout change
+was pushed in `d3aac65`.

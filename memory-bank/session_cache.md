@@ -1,5 +1,16 @@
 # Session Cache
 
+### 2026-09-09 — Tool-context optimization investigation ✅
+
+- Consolidated the investigation and production telemetry in
+  `sessions/2026-09-09-tool-context-optimization-investigation.md`.
+- Same-model baseline: 7,272 provider input tokens. Small-result continuation:
+  7,272. Large-result continuation after a 2,000-token cap: 9,402.
+- Confirmed priorities: reduce the always-sent tool registry and replace large
+  replay payloads with bounded previews plus exact-retrieval references.
+- Remaining tests: long history with non-zero `maxRequestTokens`, parallel vs
+  sequential calls, cache attribution, and OpenResponses step parity.
+
 ### 2026-09-09 — T48b native multi-call replay fix
 
 - Native `AgentLoop` now preserves and executes all tool calls emitted in one

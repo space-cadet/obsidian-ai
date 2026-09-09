@@ -1,6 +1,21 @@
 # Edit History
 
-*Last Updated: 2026-09-09 15:13:58 IST*
+*Last Updated: 2026-09-09 20:16:45 IST*
+
+#### 20:16:45 IST - T48: Consolidate tool-context investigation and Memory Bank records
+- Modified `memory-bank/tasks/T48a.md` - Recorded same-model production telemetry and the still-open non-zero request-budget test.
+- Modified `memory-bank/tasks/T48b.md` - Recorded measured large-result replay cost and the next exact-retrieval direction.
+- Modified `memory-bank/tasks/T48d.md` - Recorded per-step provider reconciliation, cached-input limitations, and remaining validation gaps.
+- Modified `memory-bank/tasks/T60b.md` - Recorded that detailed per-step telemetry currently covers the native loop only.
+- Modified `memory-bank/tasks/T34.md` - Recorded the Debug Mode telemetry control and layout follow-up.
+- Modified `memory-bank/implementation-details/settings-panel-and-startup-followup.md` - Recorded the Debug Mode telemetry and layout additions.
+- Modified `memory-bank/implementation-details/context-optimization-results.md` - Cross-referenced production telemetry with the local benchmark evidence.
+- Modified `memory-bank/activeContext.md` - Added the current tool-context optimization findings and next actions.
+- Modified `memory-bank/session_cache.md` - Added the current investigation handoff and open evidence gaps.
+- Modified `memory-bank/progress.md` - Recorded the completed investigation milestone and remaining work.
+- Modified `memory-bank/changelog.md` - Added the unreleased tool-context investigation entry.
+- Created `memory-bank/edits/2026-09-09/201645-T48-tool-context-investigation.md` - Recorded this Memory Bank update in the canonical edit-chunk format.
+- Modified `memory-bank/edit_history.md` - Added the newest generated-view entry for this edit chunk.
 
 #### 15:13:58 IST - T48: Record tool-context fidelity analysis and plan
 

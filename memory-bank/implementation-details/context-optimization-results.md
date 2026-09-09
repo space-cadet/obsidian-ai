@@ -208,3 +208,16 @@ retrieval: measure per-request and cumulative provider usage, omitted-result
 recovery, tool-call/result pairing, and task correctness. A lower token count
 alone is not a successful strategy if the agent must reread or guesses at old
 content.
+
+## Production telemetry cross-reference — 2026-09-09
+
+Controlled `gpt-oss-120b` plugin exports provide a complementary production
+measurement. A no-tool request used 7,272 provider input tokens; a small
+`read_note` result left the continuation at 7,272; and a result capped at 2,000
+local tokens raised the continuation to 9,402. The production breakdown and
+same-model baseline are recorded in
+`sessions/2026-09-09-tool-context-optimization-investigation.md`.
+
+These measurements must remain separate from the harness results above: the
+harness validates relative context strategies with a local tokenizer, while
+the plugin telemetry reports provider usage for real serialized requests.

@@ -1,5 +1,18 @@
 # Active Context
 
+### 2026-09-09 — Tool-context optimization investigation ✅
+
+- Consolidated the full tool-calling/context investigation and controlled
+  production telemetry in `sessions/2026-09-09-tool-context-optimization-investigation.md`.
+- Same-model `gpt-oss-120b` evidence isolates large tool-result replay as the
+  first confirmed optimization target: 7,272 input tokens for the baseline and
+  small-result continuation versus 9,402 after a 2,000-token result.
+- Tool-schema estimates remain approximately 3,400–3,500 tokens per request,
+  including a no-tool run. Native multi-call preservation and aggregate usage
+  reconciliation are verified.
+- T48a non-zero request-budget/long-history behavior, exact result retrieval,
+  provider cache attribution, and OpenResponses per-step telemetry remain open.
+
 ### 2026-09-09 — T48b native multi-call replay fix ✅
 
 - Implemented the first fidelity-horizon code slice under T48/T48b.

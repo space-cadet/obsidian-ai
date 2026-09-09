@@ -28,6 +28,17 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased - 2026-08-29
 
+### T48/T48d Tool-context investigation — 2026-09-09
+
+- Recorded controlled production telemetry comparing no-tool, small-result,
+  and large-result `gpt-oss-120b` requests.
+- Confirmed large tool-result replay as the first optimization target and
+  identified the always-sent tool registry as a major fixed request cost.
+- Added per-step Debug Mode telemetry and the compact Debug Settings layout;
+  local estimates remain separate from provider-reported usage.
+- Follow-up remains bounded exact retrieval, selective tool exposure,
+  long-history request budgeting, cache attribution, and OpenResponses parity.
+
 ### T34 Settings and chat export follow-up — 2026-09-09
 - Added prominent Settings search and a persisted overall advanced-settings
   visibility toggle.
