@@ -11,7 +11,8 @@ export interface PersistedToolResultMatch {
 export function serializeToolResult(result: ToolResult): string {
 	if (result.content !== undefined) return result.content;
 	if (result.error !== undefined) return `Error: ${result.error}`;
-	return JSON.stringify(result);
+	const { result_reference: _reference, ...withoutReference } = result;
+	return JSON.stringify(withoutReference);
 }
 
 function contentPartCalls(message: ChatMessage): Array<{
