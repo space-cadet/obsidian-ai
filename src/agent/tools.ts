@@ -630,6 +630,24 @@ export const searchPastSessionsTool = t({
 	}),
 });
 
+export const readToolResultTool = t({
+	description:
+		"Read an exact bounded section of an earlier persisted tool result. " +
+		"Use the session_id and tool_call_id from an available result reference " +
+		"when a preview or summary does not contain enough detail.",
+	inputSchema: z.object({
+		session_id: z
+			.string()
+			.describe("The chat session containing the result"),
+		tool_call_id: z
+			.string()
+			.describe("The stable tool-call ID in the reference"),
+		offset: z.number().int().min(0).optional(),
+		limit: z.number().int().min(1).max(12000).optional(),
+		query: z.string().optional(),
+	}),
+});
+
 export const readSettingsTool = t({
 	description:
 		"Read the current plugin settings. " +
@@ -693,6 +711,7 @@ export const noteTools = {
 	cull_core: cullCoreMemoryTool,
 	search_note_content: searchNoteContentTool,
 	search_past_sessions: searchPastSessionsTool,
+	read_tool_result: readToolResultTool,
 	read_settings: readSettingsTool,
 	update_setting: updateSettingTool,
 	get_plugin_info: getPluginInfoTool,

@@ -12,9 +12,28 @@ export interface ToolCall {
 
 import type { ProviderTokenUsage } from "../types";
 
+/** Stable address for a persisted tool result in one chat session. */
+export interface ToolResultReference {
+	session_id: string;
+	tool_call_id: string;
+	tool_name: string;
+	message_id?: string;
+	source?: string;
+	content_fingerprint?: string;
+	content_length: number;
+}
+
 export interface ToolResult {
 	success?: boolean;
 	content?: string;
+	/** Reference to the complete persisted result when replay is bounded. */
+	result_reference?: ToolResultReference;
+	/** Range metadata returned by exact historical-result retrieval. */
+	total_chars?: number;
+	returned_start?: number;
+	returned_end?: number;
+	query_match_offset?: number;
+	next_offset?: number;
 	/** Fingerprint returned with note reads for safe follow-up edits. */
 	content_fingerprint?: string;
 	error?: string;

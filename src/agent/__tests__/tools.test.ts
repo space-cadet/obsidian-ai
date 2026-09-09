@@ -31,6 +31,7 @@ const EXPECTED_TOOLS = [
 	"evaluate_staged",
 	"cull_core",
 	"search_past_sessions",
+	"read_tool_result",
 	"read_settings",
 	"update_setting",
 	"get_plugin_info",

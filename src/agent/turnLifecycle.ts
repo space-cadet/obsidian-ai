@@ -591,6 +591,8 @@ export class TurnLifecycle {
 				? deps.plugin.saveSettings.bind(deps.plugin)
 				: undefined,
 			deps.plugin.manifest?.id,
+			undefined,
+			() => deps.sessionsRef.current,
 		);
 		this.currentToolExecutor = toolExecutor;
 		const resolvedToolRegistry = toolExecutor.getResolvedToolRegistry();

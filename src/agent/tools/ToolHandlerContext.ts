@@ -5,6 +5,7 @@ import type { SearchIndex } from "../../search/index";
 import type { ProviderRegistry } from "../../integrations/ProviderRegistry";
 import { ContinuationStore } from "../pagination";
 import { ToolResolver } from "./ToolResolver";
+import type { ChatMessage } from "../../types";
 
 /** Services shared by the capability-specific handlers. */
 export interface ToolHandlerContext {
@@ -15,6 +16,9 @@ export interface ToolHandlerContext {
 	personaLoader?: PersonaLoader;
 	searchIndex?: SearchIndex;
 	getActiveSessionId?: () => string | null;
+	getSessions?: () =>
+		| ReadonlyArray<{ id: string; messages: ChatMessage[] }>
+		| undefined;
 	integrationRegistry?: ProviderRegistry;
 	saveSettings?: () => Promise<void>;
 	continuations: ContinuationStore;
@@ -29,6 +33,9 @@ export abstract class ToolHandlerBase {
 	protected readonly personaLoader?: PersonaLoader;
 	protected readonly searchIndex?: SearchIndex;
 	protected readonly getActiveSessionId?: () => string | null;
+	protected readonly getSessions?: () =>
+		| ReadonlyArray<{ id: string; messages: ChatMessage[] }>
+		| undefined;
 	protected readonly integrationRegistry?: ProviderRegistry;
 	protected readonly saveSettings?: () => Promise<void>;
 	protected readonly continuations: ContinuationStore;
@@ -41,6 +48,7 @@ export abstract class ToolHandlerBase {
 		this.personaLoader = context.personaLoader;
 		this.searchIndex = context.searchIndex;
 		this.getActiveSessionId = context.getActiveSessionId;
+		this.getSessions = context.getSessions;
 		this.integrationRegistry = context.integrationRegistry;
 		this.saveSettings = context.saveSettings;
 		this.continuations = context.continuations;

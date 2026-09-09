@@ -53,6 +53,12 @@ export class ToolExecutor {
 		saveSettings?: () => Promise<void>,
 		pluginId?: string,
 		targetLocks: TargetLockManager = sharedTargetLocks,
+		getSessions?: () =>
+			| ReadonlyArray<{
+					id: string;
+					messages: import("../types").ChatMessage[];
+			  }>
+			| undefined,
 	) {
 		this.targetLocks = targetLocks;
 		this.resolver = new ToolResolver(app);
@@ -64,6 +70,7 @@ export class ToolExecutor {
 			personaLoader,
 			searchIndex,
 			getActiveSessionId,
+			getSessions,
 			integrationRegistry,
 			saveSettings,
 			continuations: this.continuations,
@@ -239,6 +246,16 @@ export class ToolExecutor {
 						query: string;
 						limit?: number;
 						cursor?: string;
+					},
+				),
+			read_tool_result: (call) =>
+				this.sessionHandlers.readToolResult(
+					call.args as {
+						session_id: string;
+						tool_call_id: string;
+						offset?: number;
+						limit?: number;
+						query?: string;
 					},
 				),
 			create_folder: (call) =>

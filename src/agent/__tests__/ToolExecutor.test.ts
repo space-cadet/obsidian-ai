@@ -164,3 +164,80 @@ describe("ToolExecutor note safety", () => {
 		expect(fixture.modify).toHaveBeenCalledTimes(2);
 	});
 });
+
+describe("ToolExecutor historical tool results", () => {
+	it("retrieves a bounded exact range through the registered tool", async () => {
+		const app = {
+			vault: {
+				getFiles: () => [],
+				getAbstractFileByPath: () => null,
+			},
+			metadataCache: { getFirstLinkpathDest: () => null },
+		} as any;
+		const sessions = [
+			{
+				id: "session-1",
+				messages: [
+					{
+						id: "message-1",
+						role: "assistant" as const,
+						content: "read",
+						timestamp: 1,
+						contentParts: [
+							{
+								type: "tool_call" as const,
+								call: {
+									toolCallId: "call-1",
+									toolName: "read_note",
+									args: { path: "Notes/plan.md" },
+								},
+								result: {
+									success: true,
+									content: "zero one two three four five",
+								},
+							},
+						],
+					},
+				],
+			},
+		];
+		const executor = new ToolExecutor(
+			app,
+			undefined,
+			undefined,
+			undefined,
+			() => "session-1",
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			() => sessions,
+		);
+
+		const result = await executor.execute({
+			toolCallId: "retrieve-1",
+			toolName: "read_tool_result",
+			args: {
+				session_id: "session-1",
+				tool_call_id: "call-1",
+				offset: 5,
+				limit: 8,
+			},
+		});
+
+		expect(result).toMatchObject({
+			success: true,
+			content: "one two ",
+			returned_start: 5,
+			returned_end: 13,
+			total_chars: 28,
+			has_more: true,
+			next_offset: 13,
+			result_reference: {
+				session_id: "session-1",
+				tool_call_id: "call-1",
+				message_id: "message-1",
+			},
+		});
+	});
+});
