@@ -1,5 +1,19 @@
 # Active Context
 
+### 2026-09-09 — T48 tool-context fidelity analysis 🔄
+
+- Audited `Downloads/Duplicate_Adjective_Category_Search.json` as conversation
+  data, confirming that T48 remains the single context-handling umbrella.
+- Recorded the fidelity horizon under T48 and T48a–d: lossless stored history,
+  bounded model replay, stable tool-result references, and exact retrieval on
+  demand. T62a remains the agent-retention decision record.
+- Measured 486,550 provider-reported tokens, 132,492 saved-message estimates,
+  and a 176,298-character `read_note` result; these categories must not be
+  combined as one usage metric.
+- No source code changed. Next implementation work is exact retrieval,
+  per-iteration budgeting/usage accounting, and fidelity-weighted validation.
+- Session record: `sessions/2026-09-09-tool-context-fidelity-analysis.md`.
+
 ### 2026-09-09 — T34 Settings and export follow-up ✅
 
 - Completed the full Settings UI audit and follow-up from the long-context and

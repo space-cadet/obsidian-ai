@@ -1,5 +1,16 @@
 # Session Cache
 
+### 2026-09-09 — T48 tool-context fidelity analysis
+
+- T48 remains the single umbrella; no new task was created.
+- Updated T48, T48a–d, T62a, and the compaction/optimization implementation
+  notes with the lossless-storage, bounded-replay, exact-retrieval plan.
+- Evidence: 486,550 provider-reported tokens, 132,492 saved estimates, and a
+  176,298-character `read_note` result in the inspected conversation JSON.
+- No source code changed. Follow-up remains exact retrieval, per-request
+  budgeting/accounting, and fidelity-weighted benchmark coverage.
+- Session: `sessions/2026-09-09-tool-context-fidelity-analysis.md`.
+
 ### 2026-09-09 — T34 Settings and export follow-up
 
 - The existing T34 task now records the complete Settings/export work from this

@@ -1,6 +1,20 @@
 # Edit History
 
-*Last Updated: 2026-08-31 02:42:18 IST*
+*Last Updated: 2026-09-09 15:13:58 IST*
+
+#### 15:13:58 IST - T48: Record tool-context fidelity analysis and plan
+
+- Created `memory-bank/sessions/2026-09-09-tool-context-fidelity-analysis.md` - Recorded the conversation-data audit, measured token totals, fidelity horizon, and next steps.
+- Modified `memory-bank/tasks/T48.md` - Recorded T48 umbrella ownership and the compact-by-default, exact-on-demand policy.
+- Modified `memory-bank/tasks/T48a.md` - Recorded per-request budgeting and large-context eviction requirements.
+- Modified `memory-bank/tasks/T48b.md` - Recorded canonical model replay and persisted representation duplication findings.
+- Modified `memory-bank/tasks/T48c.md` - Recorded stable result references, exact retrieval, and fidelity-horizon acceptance work.
+- Modified `memory-bank/tasks/T48d.md` - Recorded provider-versus-estimate accounting and per-iteration usage requirements.
+- Modified `memory-bank/tasks/T62a.md` - Refined agent retention toward recent/active preservation plus older-result retrieval.
+- Modified `memory-bank/implementation-details/conversation-compaction-design.md` - Added the large-result fidelity audit and reference-based context plan.
+- Modified `memory-bank/implementation-details/context-optimization-results.md` - Added the incident evidence and fidelity-weighted benchmark plan.
+- Modified `memory-bank/activeContext.md` - Added the current T48 analysis handoff.
+- Modified `memory-bank/session_cache.md` - Added the current T48 session state.
 
 #### 02:42:18 IST - T69/T69a: Record mobile Codex implementation plan
 - Modified `memory-bank/tasks/T69.md` - Recorded mobile device-flow/direct-HTTP feasibility and the two Codex implementation options.

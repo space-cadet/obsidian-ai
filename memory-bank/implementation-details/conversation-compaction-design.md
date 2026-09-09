@@ -1,6 +1,6 @@
 # Conversation Compaction Design
 *Created: 2026-08-19 13:31:15 IST*
-*Last Updated: 2026-08-29 17:08:29 IST*
+*Last Updated: 2026-09-09 15:13:58 IST*
 
 ## Implemented Slice and Current Boundary — 2026-08-23 17:05:26 IST
 
@@ -177,6 +177,21 @@ The expected quality impact is small for ordinary chats because recent turns,
 pinned constraints, and structured task state remain intact. Exact-detail tasks
 are the exception; they must use retrieval rather than treating the summary as
 verbatim evidence.
+
+## Fidelity Horizon Audit — 2026-09-09
+
+The `Duplicate_Adjective_Category_Search.json` audit provides a concrete
+large-context example: a large initial attachment and an untruncated
+`read_note` result were carried through later tool-loop requests. The policy is
+therefore explicitly lossless in storage but selectively lossless in active
+context. Aged tool results should become references with compact summaries,
+not remain inline indefinitely.
+
+The model-ready projection must include a small catalog of result IDs and
+provenance. An agent can retrieve an exact old result by ID; the retrieved
+payload is scoped to the current request and is not automatically reintroduced
+into all future history. This is the fidelity horizon to implement under T48c,
+with T48a budgeting before serialization and T48b canonical replay.
 
 ---
 

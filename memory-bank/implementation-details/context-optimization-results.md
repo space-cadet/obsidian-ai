@@ -195,3 +195,16 @@ The counterintuitive finding: **sometimes the dumb solution wins**. A fixed-size
 Full experiment output appended to `memory-bank/sessions/2026-08-27-evening.md`.
 
 Commit: `2ec863c`
+
+## Large-Result Fidelity Audit — 2026-09-09
+
+The `Duplicate_Adjective_Category_Search.json` conversation confirms that
+token exposure and fidelity must be scored together. It contains 486,550
+provider-reported tokens, 132,492 saved-message estimates, and a 176,298-
+character `read_note` result that remains expensive when replayed.
+
+The next benchmark plan should compare a bounded horizon with exact result
+retrieval: measure per-request and cumulative provider usage, omitted-result
+recovery, tool-call/result pairing, and task correctness. A lower token count
+alone is not a successful strategy if the agent must reread or guesses at old
+content.
