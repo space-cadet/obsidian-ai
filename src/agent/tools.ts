@@ -1,5 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
+import { MUTABLE_SETTING_KEYS } from "../lib/selfSettingsTools";
 
 // Cast tool() to any to bypass AI SDK v6's deeply nested generic type inference
 // which causes TypeScript to hang / OOM. Runtime behavior is unchanged.
@@ -646,7 +647,7 @@ export const updateSettingTool = t({
 		key: z
 			.string()
 			.describe(
-				"The setting key to update. Whitelisted: maxContextMessages, maxToolResultTokens, enableAgentTools, autoApply, showFullRequestTokens, pressEnterToSend, autoNameSessions, messageHistory, includeActiveNote, toolHistoryMode, developerMode",
+				`The setting key to update. Whitelisted: ${MUTABLE_SETTING_KEYS.join(", ")}`,
 			),
 		value: z
 			.any()

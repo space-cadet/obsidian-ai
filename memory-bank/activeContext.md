@@ -12,6 +12,17 @@
 - Exact historical retrieval, per-iteration provider parity, compaction
   provenance, and usage reconciliation remain open.
 
+### 2026-09-09 — T61 settings-tool coverage expansion ✅
+
+- Extended the Developer-mode `update_setting` allow-list to include the
+  request-budget, compaction, tool-replay, and Debug Mode/Diagnostics settings,
+  including nested telemetry flags.
+- Kept provider profiles, credentials, paths, and `maxAgentSteps` protected;
+  corrected `messageHistory` boolean validation and marked setting updates as
+  local writes for target locking.
+- Added unit and ToolExecutor integration coverage. Focused settings tests
+  pass; full suite and build verification remain to be run before closeout.
+
 ### 2026-09-09 — T48 tool-context fidelity analysis 🔄
 
 - Audited `Downloads/Duplicate_Adjective_Category_Search.json` as conversation

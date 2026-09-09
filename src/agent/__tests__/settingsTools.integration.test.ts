@@ -19,8 +19,25 @@ function makeSettings(developerMode: boolean) {
 	return {
 		developerMode,
 		apiKey: "top-level-secret",
+		maxContextTokens: 8000,
 		maxContextMessages: 10,
+		maxRequestTokens: 32000,
+		preserveRecentMessages: 4,
+		compactionTriggerTokens: 24000,
+		compactionReleaseTokens: 16000,
+		requestResponseReserveTokens: 4096,
 		maxToolResultTokens: 4000,
+		debugLogLevel: "error",
+		debugLogRetention: 200,
+		debugLogMaxSizeMB: 5,
+		debugMode: false,
+		debugTelemetry: {
+			includeProviderUsage: true,
+			includeRequestEstimates: true,
+			includeToolDetails: true,
+			includeContextMetadata: true,
+			includeModelTiming: true,
+		},
 		enableAgentTools: true,
 		providerProfiles: [
 			{
@@ -138,6 +155,60 @@ describe("T61 settings tools through ToolExecutor", () => {
 		expect(fixture.getAudit()).toContain('"operation":"update_setting"');
 		expect(fixture.getAudit()).toContain('"key":"maxContextMessages"');
 		expect(fixture.getAudit()).toContain('"value":20');
+	});
+
+	it("updates new budget and debug settings, including nested telemetry", async () => {
+		const fixture = makeApp();
+		const settings = makeSettings(true) as any;
+		const saveSettings = vi.fn(async () => undefined);
+		const executor = new ToolExecutor(
+			fixture.app,
+			settings,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			saveSettings,
+		);
+
+		const budget = await executor.execute({
+			toolCallId: "update-budget",
+			toolName: "update_setting",
+			args: { key: "maxRequestTokens", value: 16000 },
+		});
+		const debug = await executor.execute({
+			toolCallId: "update-debug",
+			toolName: "update_setting",
+			args: { key: "debugMode", value: true },
+		});
+		const telemetry = await executor.execute({
+			toolCallId: "update-telemetry",
+			toolName: "update_setting",
+			args: {
+				key: "debugTelemetry.includeToolDetails",
+				value: false,
+			},
+		});
+
+		expect(budget).toMatchObject({
+			success: true,
+			key: "maxRequestTokens",
+			value: 16000,
+		});
+		expect(debug).toMatchObject({
+			success: true,
+			key: "debugMode",
+			value: true,
+		});
+		expect(telemetry).toMatchObject({
+			success: true,
+			key: "debugTelemetry.includeToolDetails",
+			value: false,
+		});
+		expect(settings.maxRequestTokens).toBe(16000);
+		expect(settings.debugMode).toBe(true);
+		expect(settings.debugTelemetry.includeToolDetails).toBe(false);
+		expect(saveSettings).toHaveBeenCalledTimes(3);
 	});
 
 	it("rejects invalid types and immutable keys without saving", async () => {

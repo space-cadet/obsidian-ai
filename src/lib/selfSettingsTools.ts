@@ -5,8 +5,15 @@ import type { ObsidianAISettings } from "../settings";
  */
 export const MUTABLE_SETTING_KEYS = [
 	// Top-level keys
+	"maxContextTokens",
 	"maxContextMessages",
+	"maxRequestTokens",
+	"preserveRecentMessages",
+	"compactionTriggerTokens",
+	"compactionReleaseTokens",
+	"requestResponseReserveTokens",
 	"maxToolResultTokens",
+	"toolHistoryMode",
 	"enableAgentTools",
 	"autoApply",
 	"showFullRequestTokens",
@@ -14,8 +21,17 @@ export const MUTABLE_SETTING_KEYS = [
 	"autoNameSessions",
 	"messageHistory",
 	"includeActiveNote",
-	"toolHistoryMode",
 	"developerMode",
+	// Debug and diagnostics settings
+	"debugLogLevel",
+	"debugLogRetention",
+	"debugLogMaxSizeMB",
+	"debugMode",
+	"debugTelemetry.includeProviderUsage",
+	"debugTelemetry.includeRequestEstimates",
+	"debugTelemetry.includeToolDetails",
+	"debugTelemetry.includeContextMetadata",
+	"debugTelemetry.includeModelTiming",
 	// Nested intelligence settings
 	"intelligence.identityContextBudget",
 	"intelligence.enableIntelligence",
@@ -149,7 +165,10 @@ export function resolveSettingPath(
 ): { parent: Record<string, unknown>; key: string } | null {
 	const parts = path.split(".");
 	if (parts.length === 1) {
-		return { parent: settings as unknown as Record<string, unknown>, key: path };
+		return {
+			parent: settings as unknown as Record<string, unknown>,
+			key: path,
+		};
 	}
 
 	let current: unknown = settings;
@@ -198,7 +217,10 @@ export function validateSettingUpdate(
 	// Type validators
 	const assertPositiveNumber = (k: string, v: unknown) => {
 		if (typeof v !== "number" || !Number.isFinite(v) || v <= 0) {
-			return { ok: false as const, error: `"${k}" must be a positive number.` };
+			return {
+				ok: false as const,
+				error: `"${k}" must be a positive number.`,
+			};
 		}
 		return { ok: true as const };
 	};
@@ -228,17 +250,42 @@ export function validateSettingUpdate(
 	};
 
 	// Validation dispatch by key (including dot-notation paths)
-	let validation: { ok: boolean; error?: string } = { ok: false, error: `Unhandled key "${key}".` };
+	let validation: { ok: boolean; error?: string } = {
+		ok: false,
+		error: `Unhandled key "${key}".`,
+	};
 
 	switch (key) {
 		// Positive number keys
+		case "maxContextTokens":
 		case "maxContextMessages":
+		case "preserveRecentMessages":
 		case "maxToolResultTokens":
-		case "messageHistory":
+		case "debugLogRetention":
+		case "debugLogMaxSizeMB":
 		case "intelligence.identityContextBudget":
 		case "intelligence.autoSummarizeMinMessages":
 		case "remoteStorage.syncIntervalMinutes":
 			validation = assertPositiveNumber(key, value);
+			break;
+
+		// Non-negative number keys; zero has an explicit meaning in the UI.
+		case "maxRequestTokens":
+		case "compactionTriggerTokens":
+		case "compactionReleaseTokens":
+		case "requestResponseReserveTokens":
+			if (
+				typeof value !== "number" ||
+				!Number.isFinite(value) ||
+				value < 0
+			) {
+				validation = {
+					ok: false,
+					error: `"${key}" must be a non-negative number.`,
+				};
+			} else {
+				validation = { ok: true };
+			}
 			break;
 
 		// Boolean keys
@@ -254,12 +301,27 @@ export function validateSettingUpdate(
 		case "intelligence.enableMemoryAuditTool":
 		case "remoteStorage.enabled":
 		case "remoteStorage.autoSync":
+		case "debugMode":
+		case "debugTelemetry.includeProviderUsage":
+		case "debugTelemetry.includeRequestEstimates":
+		case "debugTelemetry.includeToolDetails":
+		case "debugTelemetry.includeContextMetadata":
+		case "debugTelemetry.includeModelTiming":
+		case "messageHistory":
 			validation = assertBoolean(key, value);
 			break;
 
 		// Enum keys
 		case "toolHistoryMode":
 			validation = assertEnum(key, value, ["elide", "preserve"]);
+			break;
+		case "debugLogLevel":
+			validation = assertEnum(key, value, [
+				"off",
+				"error",
+				"info",
+				"debug",
+			]);
 			break;
 		case "remoteStorage.syncDirection":
 			validation = assertEnum(key, value, ["both", "upload", "download"]);

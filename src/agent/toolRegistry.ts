@@ -123,6 +123,7 @@ const BUILTIN_RISKS: Record<string, HostToolRisk> = {
 	evaluate_staged: "local-write",
 	cull_core: "local-write",
 	search_past_sessions: "read",
+	update_setting: "local-write",
 };
 
 function titleForTool(id: string): string {

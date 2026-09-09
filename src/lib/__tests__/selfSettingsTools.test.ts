@@ -236,7 +236,7 @@ describe("validateSettingUpdate", () => {
 		const result = validateSettingUpdate("toolHistoryMode", "full");
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.error).toContain('must be one of: elide, preserve');
+			expect(result.error).toContain("must be one of: elide, preserve");
 		}
 	});
 
@@ -256,6 +256,33 @@ describe("validateSettingUpdate", () => {
 		}
 	});
 
+	it("accepts request-budget settings, including supported zero values", () => {
+		const budget = validateSettingUpdate("maxRequestTokens", 0);
+		const compaction = validateSettingUpdate(
+			"compactionTriggerTokens",
+			8000,
+		);
+		const reserve = validateSettingUpdate(
+			"requestResponseReserveTokens",
+			4096,
+		);
+
+		expect(budget.ok).toBe(true);
+		expect(compaction.ok).toBe(true);
+		expect(reserve.ok).toBe(true);
+	});
+
+	it("accepts debug and diagnostics settings", () => {
+		expect(validateSettingUpdate("debugMode", true).ok).toBe(true);
+		expect(validateSettingUpdate("debugLogLevel", "debug").ok).toBe(true);
+		expect(validateSettingUpdate("debugLogRetention", 500).ok).toBe(true);
+		expect(validateSettingUpdate("debugLogMaxSizeMB", 10).ok).toBe(true);
+		expect(
+			validateSettingUpdate("debugTelemetry.includeToolDetails", false)
+				.ok,
+		).toBe(true);
+	});
+
 	it("rejects zero for positive number fields", () => {
 		const result = validateSettingUpdate("maxContextMessages", 0);
 		expect(result.ok).toBe(false);
@@ -272,12 +299,19 @@ describe("validateSettingUpdate", () => {
 		}
 	});
 
-	it("accepts messageHistory as boolean-like number", () => {
-		// messageHistory is typed as number in the whitelist validation
-		const result = validateSettingUpdate("messageHistory", 5);
+	it("accepts messageHistory as a boolean", () => {
+		const result = validateSettingUpdate("messageHistory", true);
 		expect(result.ok).toBe(true);
 		if (result.ok) {
-			expect(result.value).toBe(5);
+			expect(result.value).toBe(true);
+		}
+	});
+
+	it("rejects messageHistory as a number", () => {
+		const result = validateSettingUpdate("messageHistory", 5);
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.error).toContain("must be a boolean");
 		}
 	});
 });
@@ -285,8 +319,15 @@ describe("validateSettingUpdate", () => {
 describe("MUTABLE_SETTING_KEYS", () => {
 	it("contains exactly the expected keys", () => {
 		expect(MUTABLE_SETTING_KEYS).toEqual([
+			"maxContextTokens",
 			"maxContextMessages",
+			"maxRequestTokens",
+			"preserveRecentMessages",
+			"compactionTriggerTokens",
+			"compactionReleaseTokens",
+			"requestResponseReserveTokens",
 			"maxToolResultTokens",
+			"toolHistoryMode",
 			"enableAgentTools",
 			"autoApply",
 			"showFullRequestTokens",
@@ -294,8 +335,16 @@ describe("MUTABLE_SETTING_KEYS", () => {
 			"autoNameSessions",
 			"messageHistory",
 			"includeActiveNote",
-			"toolHistoryMode",
 			"developerMode",
+			"debugLogLevel",
+			"debugLogRetention",
+			"debugLogMaxSizeMB",
+			"debugMode",
+			"debugTelemetry.includeProviderUsage",
+			"debugTelemetry.includeRequestEstimates",
+			"debugTelemetry.includeToolDetails",
+			"debugTelemetry.includeContextMetadata",
+			"debugTelemetry.includeModelTiming",
 			"intelligence.identityContextBudget",
 			"intelligence.enableIntelligence",
 			"intelligence.autoSummarize",

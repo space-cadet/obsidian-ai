@@ -10,6 +10,15 @@
 - Remaining T48 work: exact retrieval, eviction-safe references, shared
   per-iteration budgets, compaction provenance, and provider usage parity.
 
+### 2026-09-09 — T61 settings-tool coverage expansion
+
+- The agent can now update the newer request-budget, compaction, tool-replay,
+  and Debug Mode/Diagnostics settings in Developer mode, including nested
+  telemetry flags.
+- Provider profiles, credentials, paths, and `maxAgentSteps` remain protected.
+- Fixed `messageHistory` validation and classified `update_setting` as a local
+  write. Focused settings tests pass; full verification is pending.
+
 ### 2026-09-09 — T48 tool-context fidelity analysis
 
 - T48 remains the single umbrella; no new task was created.
