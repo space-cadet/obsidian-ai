@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased — 2026-09-10
+
+### Added
+
+- Bounded omitted-tool-result catalog entries and exact `read_tool_result`
+  retrieval with stable references — T48b/T48c (`08e8ad1`).
+- Schema-versioned compaction provenance with source IDs, fingerprints,
+  timestamps, model metadata, persistence, and stale-summary protection — T48c
+  (`c8a983f`).
+
+### Fixed
+
+- Dev pre-release publication now continues when moving the rolling
+  `latest-dev` tag fails — T7 (`de24b0a`).
+
+### Diagnostics
+
+- Seven-phase tool/context validation is recorded as **PARTIAL PASS**; runtime
+  semantic compaction and plugin reload persistence still need acceptance.
+- Provider usage and local estimates are recorded as separate accounting
+  categories — T48d.
+
+### Follow-ups
+
+- Fix context-item leakage between new chats and add session-isolation tests —
+  T63.
+- Create the abort controller before oversized context resolution and add
+  cancellation/preflight budget coverage — T48a/T63.
+
 ### T70 recent-model follow-up — 2026-09-02 (superseded by provider sharing)
 
 - Increased recent-model history to 10 entries per provider.

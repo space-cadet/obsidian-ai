@@ -1,3 +1,15 @@
+### 2026-09-10 — T48 tool-context fidelity follow-up 🔄
+
+- Added bounded omitted-result cataloging and exact retrieval in `08e8ad1`.
+- Added bounded compaction input and persisted provenance metadata in `c8a983f`.
+- Hardened dev release publication after tag-move failure in `de24b0a`; the
+  release workflow succeeded, with a remaining stale remote `latest-dev` tag.
+- Diagnostic result: **PARTIAL PASS**. Retrieval, pairing, truncation,
+  continuation recovery, and provider usage passed; runtime compaction and
+  reload persistence remain unverified.
+- Follow-up defects: session context leakage and cancellation that begins too
+  late for oversized context resolution.
+
 ### 2026-09-09 — Tool-calling and context investigation ✅
 
 - Recorded the complete investigation and controlled telemetry in the dated

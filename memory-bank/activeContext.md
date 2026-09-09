@@ -1,5 +1,19 @@
 # Active Context
 
+### 2026-09-10 — T48 fidelity implementation and diagnostic follow-up 🔄
+
+- `08e8ad1` catalogs omitted tool results and supports bounded exact
+  `read_tool_result` retrieval; `c8a983f` persists compaction provenance.
+- `de24b0a` keeps dev release assets/body publication alive after a rolling-tag
+  move failure. Run `34401737218` succeeded, but the remote `latest-dev` tag is
+  still `08e8ad1` while the release asset/body advertise `de24b0a`.
+- The seven-phase test is **PARTIAL PASS**. It did not validate runtime
+  semantic compaction or plugin reload persistence.
+- Current bugs are context-item state leakage between new chats and late abort
+  controller creation during oversized context resolution.
+- Next actions: add session-isolation and cancellation/preflight tests, then
+  repeat compaction with low thresholds and verify reload metadata reuse.
+
 ### 2026-09-09 — Tool-context optimization investigation ✅
 
 - Consolidated the full tool-calling/context investigation and controlled

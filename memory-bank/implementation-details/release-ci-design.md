@@ -51,6 +51,14 @@ GitHub Actions: pre-release.yml triggered
 
 The `latest-dev` release is always the most recent `main` build. No new release is created per push — the same release entry is updated in place.
 
+### 2026-09-10 workflow resilience follow-up
+
+Commit `de24b0a` makes publication continue when moving the rolling
+`latest-dev` tag fails. Workflow run `34401737218` succeeded, and the release
+body plus published `main.js` advertise `de24b0a`. The remote `latest-dev` tag
+itself remains at `08e8ad1`; this affects GitHub source archives, while the
+updater compares the published release body and asset identity.
+
 ---
 
 ## Version Bumping Workflow

@@ -1,5 +1,21 @@
 # Session Cache
 
+### 2026-09-10 — T48 tool-context fidelity and release follow-up 🔄
+
+- Recorded commits `08e8ad1`, `c8a983f`, and `de24b0a` under the existing T48
+  umbrella and the release CI record.
+- Omitted-result cataloging, bounded exact retrieval, compaction provenance
+  persistence, and focused automated coverage are complete in source.
+- The seven-phase test is **PARTIAL PASS**: retrieval, pairing, truncation,
+  continuation recovery, and provider accounting passed; runtime semantic
+  compaction and plugin reload persistence were not exercised.
+- Provider usage was `239,998` tokens (`237,757` input, `2,241` output), while
+  local top-level estimates summed to about `79,781`; do not combine them.
+- Open defects: context items leak across new chats, and oversized context
+  resolution cannot be cancelled before the abort controller is created.
+- Next: fix session isolation and cancellation/preflight budgeting, then run a
+  fresh low-threshold compaction and reload test.
+
 ### 2026-09-09 — Tool-context optimization investigation ✅
 
 - Consolidated the investigation and production telemetry in
