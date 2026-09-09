@@ -1011,6 +1011,20 @@ See `tasks/T56.md` for full details.
 
 *Last Updated: 2026-08-19 19:44 IST*
 
+### 2026-09-09 — Per-step request telemetry
+
+- Added the `debugTelemetry.includeRequestBreakdown` setting, including the
+  Debug Mode toggle and safe agent read/write support.
+- Native tool-enabled model steps now retain bounded request estimates for
+  tool schemas, selected history, continuations, and tool results, alongside
+  per-step provider usage and cached-input usage when available.
+- Debug JSON/JSONL/Markdown exports expose these records as
+  `telemetry.agentSteps` while preserving the existing provider-usage and
+  estimate filters.
+- Verification: 53 test files / 461 tests, TypeScript and production build,
+  Prettier checks on changed code, and `git diff --check` passed.
+- OpenResponses per-step telemetry parity remains open.
+
 ### 2026-08-19 — T42 Phase 6 Scoped: Port SyncIt Features
 
 **New subtasks created for T42 (Remote Chat Storage & Sync):**

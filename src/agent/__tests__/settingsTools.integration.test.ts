@@ -34,6 +34,7 @@ function makeSettings(developerMode: boolean) {
 		debugTelemetry: {
 			includeProviderUsage: true,
 			includeRequestEstimates: true,
+			includeRequestBreakdown: true,
 			includeToolDetails: true,
 			includeContextMetadata: true,
 			includeModelTiming: true,

@@ -34,6 +34,23 @@ export interface ProviderTokenUsage {
 	reasoningTokens?: number;
 }
 
+/** Bounded diagnostic breakdown for one native agent model request. */
+export interface AgentStepTelemetry {
+	step: number;
+	/** Local estimate of messages, tools, and request components for this step. */
+	requestTokenEstimate: number;
+	/** Estimated tokens for the tool definitions sent with this step. */
+	toolSchemaTokens: number;
+	/** Estimated selected prior history, excluding the current loop continuation. */
+	historyTokens: number;
+	/** Estimated assistant/tool continuation messages included in this step. */
+	continuationTokens: number;
+	/** Estimated newly formatted tool results prepared for the next step. */
+	toolResultTokens: number;
+	/** Provider usage for this individual model request, when reported. */
+	providerUsage?: ProviderTokenUsage;
+}
+
 export interface ChatMessage {
 	id: string;
 	role: "user" | "assistant";
@@ -65,6 +82,8 @@ export interface ChatMessage {
 		call: ToolCall;
 		result?: ToolResult;
 	}>;
+	/** Optional per-step request diagnostics captured in Debug Mode. */
+	agentStepTelemetry?: AgentStepTelemetry[];
 	/** Ordered content parts for inline rendering of tool calls */
 	contentParts?: ContentPart[];
 	/** Agent ID that generated this message (for group chat) */

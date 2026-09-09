@@ -3,7 +3,7 @@ import { AgentApiManager } from "../api/AgentApiManager";
 import type { App } from "obsidian";
 import { estimateTokens } from "../context/tokenEstimator";
 import type { ProviderProfile } from "../settings";
-import type { ProviderTokenUsage } from "../types";
+import type { AgentStepTelemetry, ProviderTokenUsage } from "../types";
 import { AgentLoop } from "./AgentLoop";
 import { OpenResponsesLoop } from "./OpenResponsesLoop";
 import type { ToolCall, ToolResult } from "./types";
@@ -26,6 +26,7 @@ export interface ChatTurnCoordinatorOptions {
 	preserveRecentMessages: number;
 	requestResponseReserveTokens: number;
 	maxToolResultTokens: number;
+	captureStepTelemetry?: boolean;
 	thinkingEnabled: boolean;
 	onTextDelta: (text: string) => void;
 	onToolCall: (call: ToolCall) => void;
@@ -38,6 +39,7 @@ export interface ChatTurnCoordinatorResult {
 	text: string;
 	tokenEstimate: number;
 	providerUsage?: ProviderTokenUsage;
+	agentStepTelemetry?: AgentStepTelemetry[];
 }
 
 /** Run one tool-enabled turn without depending on React or UI state. */
@@ -117,6 +119,7 @@ export async function runChatTurn(
 		preserveRecentMessages: options.preserveRecentMessages,
 		requestResponseReserveTokens: options.requestResponseReserveTokens,
 		maxToolResultTokens: options.maxToolResultTokens,
+		captureStepTelemetry: options.captureStepTelemetry,
 		profile,
 		thinkingEnabled: options.thinkingEnabled,
 		onTextDelta,
@@ -131,5 +134,8 @@ export async function runChatTurn(
 		text: result.text,
 		tokenEstimate: result.tokenEstimate,
 		providerUsage: result.providerUsage,
+		...(result.stepTelemetry
+			? { agentStepTelemetry: result.stepTelemetry }
+			: {}),
 	};
 }

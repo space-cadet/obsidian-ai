@@ -7,7 +7,7 @@ import {
 	truncateModelText,
 } from "../context/modelHistory";
 import type { ProviderProfile } from "../settings";
-import type { ProviderTokenUsage } from "../types";
+import type { AgentStepTelemetry, ProviderTokenUsage } from "../types";
 
 export interface AgentLoopOptions {
 	chatApi: ChatApiManager;
@@ -28,6 +28,8 @@ export interface AgentLoopOptions {
 	preserveRecentMessages?: number;
 	/** Tokens reserved for the response and later tool-loop steps. */
 	requestResponseReserveTokens?: number;
+	/** Capture bounded per-step request diagnostics for Debug Mode exports. */
+	captureStepTelemetry?: boolean;
 	/** Called with accumulated text whenever a text-delta arrives. */
 	onTextDelta: (accumulatedText: string) => void;
 	/** Called when a tool call is detected (before execution/approval). */
@@ -48,6 +50,8 @@ export interface AgentLoopResult {
 	stepTokenEstimates?: number[];
 	/** Provider-reported usage summed across the agent's model steps. */
 	providerUsage?: ProviderTokenUsage;
+	/** Provider usage and local request estimates for each model step. */
+	stepTelemetry?: AgentStepTelemetry[];
 }
 
 function addUsage(
@@ -218,10 +222,24 @@ export class AgentLoop {
 			Math.max(0, messages.length - 1),
 		);
 		let continuationMessages: any[] = [];
+		const toolSchemaTokens = estimateTokens(JSON.stringify(tools) ?? "");
+		const systemTokens = estimateTokens(
+			JSON.stringify(systemMessage?.content ?? "") ?? "",
+		);
+		const currentMessageTokens = estimateTokens(
+			JSON.stringify(currentMessage?.content ?? "") ?? "",
+		);
+		const estimateMessageList = (messagesToEstimate: any[]) =>
+			messagesToEstimate.length > 0
+				? estimateTokens(JSON.stringify(messagesToEstimate) ?? "")
+				: 0;
 		const budgetMessages = () => {
 			const maxRequestTokens = this.opts.maxRequestTokens ?? 0;
 			const fullHistory = [...initialHistory, ...continuationMessages];
 			if (maxRequestTokens <= 0) {
+				const historyTokens = estimateMessageList(initialHistory);
+				const continuationTokens =
+					estimateMessageList(continuationMessages);
 				return {
 					messages: [
 						...(systemMessage ? [systemMessage] : []),
@@ -230,6 +248,14 @@ export class AgentLoop {
 						...continuationMessages,
 					],
 					overBudget: false,
+					requestTokenEstimate:
+						systemTokens +
+						historyTokens +
+						currentMessageTokens +
+						continuationTokens +
+						toolSchemaTokens,
+					historyTokens,
+					continuationTokens,
 				};
 			}
 			const budgeted = buildBudgetedModelMessages({
@@ -256,6 +282,10 @@ export class AgentLoop {
 			const selectedContinuationMessages = budgeted.history.filter(
 				(message) => continuationSet.has(message),
 			);
+			const historyTokens = estimateMessageList(selectedInitialHistory);
+			const continuationTokens = estimateMessageList(
+				selectedContinuationMessages,
+			);
 			return {
 				messages: [
 					...(systemMessage ? [systemMessage] : []),
@@ -264,6 +294,14 @@ export class AgentLoop {
 					...selectedContinuationMessages,
 				],
 				overBudget: budgeted.overBudget,
+				requestTokenEstimate:
+					systemTokens +
+					historyTokens +
+					currentMessageTokens +
+					continuationTokens +
+					toolSchemaTokens,
+				historyTokens,
+				continuationTokens,
 			};
 		};
 
@@ -276,6 +314,7 @@ export class AgentLoop {
 		}
 		let currentMessages = budgetedMessages.messages;
 		const stepTokenEstimates: number[] = [];
+		const stepTelemetry: AgentStepTelemetry[] = [];
 		let providerUsage: ProviderTokenUsage | undefined;
 
 		let runningTotal = 0;
@@ -284,6 +323,8 @@ export class AgentLoop {
 			let stepText = "";
 			let stepReasoning = "";
 			const pendingCalls: ToolCall[] = [];
+			let stepProviderUsage: ProviderTokenUsage | undefined;
+			const requestBreakdown = budgetedMessages;
 
 			for await (const event of chatApi.streamChatWithTools(
 				currentMessages,
@@ -312,6 +353,10 @@ export class AgentLoop {
 					case "error":
 						throw new Error(event.message);
 					case "finish":
+						stepProviderUsage = addUsage(
+							stepProviderUsage,
+							event.providerUsage,
+						);
 						providerUsage = addUsage(
 							providerUsage,
 							event.providerUsage,
@@ -336,6 +381,18 @@ export class AgentLoop {
 			}
 
 			if (pendingCalls.length === 0) {
+				if (this.opts.captureStepTelemetry) {
+					stepTelemetry.push({
+						step,
+						requestTokenEstimate:
+							requestBreakdown.requestTokenEstimate,
+						toolSchemaTokens,
+						historyTokens: requestBreakdown.historyTokens,
+						continuationTokens: requestBreakdown.continuationTokens,
+						toolResultTokens: 0,
+						providerUsage: stepProviderUsage,
+					});
+				}
 				console.log(
 					`[AgentLoop] done — no tool call at step ${step}, ${fullText.length} chars`,
 				);
@@ -426,6 +483,17 @@ export class AgentLoop {
 					modelResult,
 				};
 			});
+			if (this.opts.captureStepTelemetry) {
+				stepTelemetry.push({
+					step,
+					requestTokenEstimate: requestBreakdown.requestTokenEstimate,
+					toolSchemaTokens,
+					historyTokens: requestBreakdown.historyTokens,
+					continuationTokens: requestBreakdown.continuationTokens,
+					toolResultTokens: resultTokens,
+					providerUsage: stepProviderUsage,
+				});
+			}
 			const toolMsg: any = {
 				role: "tool",
 				content: modelResults.map(({ call, modelResult }) => ({
@@ -473,6 +541,10 @@ export class AgentLoop {
 			stepsTaken: maxSteps, // Simplified; could track actual
 			stepTokenEstimates,
 			providerUsage,
+			stepTelemetry:
+				this.opts.captureStepTelemetry && stepTelemetry.length > 0
+					? stepTelemetry
+					: undefined,
 		};
 	}
 }

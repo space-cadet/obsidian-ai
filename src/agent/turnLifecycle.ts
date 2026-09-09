@@ -8,6 +8,7 @@ import type {
 	GroupChatParticipant,
 	ResolvedMessagePart,
 	Attachment,
+	AgentStepTelemetry,
 } from "../types";
 import type { ProviderProfile } from "../settings";
 import type { ToolCall, ToolResult } from "../agent/types";
@@ -665,6 +666,7 @@ export class TurnLifecycle {
 		let assistantContent = fullText;
 		let assistantTokenEstimate = 0;
 		let providerUsage: import("../types").ProviderTokenUsage | undefined;
+		let agentStepTelemetry: AgentStepTelemetry[] | undefined;
 
 		try {
 			if (isAgentProvider || (useTools && !slashCmd)) {
@@ -688,6 +690,12 @@ export class TurnLifecycle {
 						4096,
 					maxToolResultTokens:
 						deps.plugin.settings.maxToolResultTokens ?? 4000,
+					captureStepTelemetry:
+						deps.plugin.settings.debugMode &&
+						Boolean(
+							deps.plugin.settings.debugTelemetry
+								?.includeRequestBreakdown,
+						),
 					thinkingEnabled: deps.thinkingEnabled,
 					onTextDelta: (text) => {
 						fullText = text;
@@ -749,6 +757,7 @@ export class TurnLifecycle {
 				}
 				assistantTokenEstimate = result.tokenEstimate;
 				providerUsage = result.providerUsage;
+				agentStepTelemetry = result.agentStepTelemetry;
 			} else {
 				// … standard streamChat path (no tools)
 				let streamTokenTotal = userTokenEstimate;
@@ -867,6 +876,7 @@ export class TurnLifecycle {
 						: contentParts.length > 0
 							? contentParts
 							: undefined,
+				agentStepTelemetry,
 			};
 			deps.setSessions((prev) =>
 				prev.map((s) =>

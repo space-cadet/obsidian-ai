@@ -828,3 +828,16 @@ Session started after tool outage (~14:36–15:22 IST). Previous session had com
   prop threading, group model metadata, standard picker dimensions, tests.
 - Validation: 51 test files / 446 tests; TypeScript, production build, package
   build, and diff check passed.
+
+## 2026-09-09 17:29 IST — T48d per-step request telemetry
+
+- Added `debugTelemetry.includeRequestBreakdown` as a safe writable setting and
+  exposed it in Debug Mode.
+- Native AgentLoop telemetry now records one bounded `agentSteps` entry per
+  model request: request estimate, tool schema/history/continuation/tool-result
+  components, and provider usage including cached input when reported.
+- Export filtering remains independent: request estimates and provider usage
+  can still be selected separately, and tool-result content is not duplicated.
+- Verification passed: 53 files / 461 tests, TypeScript, production build,
+  formatting checks on changed code, and diff check.
+- Remaining gap: OpenResponses has no equivalent per-step telemetry projection.

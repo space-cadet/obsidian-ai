@@ -62,6 +62,38 @@ function buildDebugTelemetry(
 					telemetry.requestTokenEstimate =
 						message.requestTokenEstimate;
 				}
+				if (
+					fields.includeRequestBreakdown &&
+					message.agentStepTelemetry
+				) {
+					telemetry.agentSteps = message.agentStepTelemetry.map(
+						(step) => {
+							const stepTelemetry: Record<string, unknown> = {
+								step: step.step,
+							};
+							if (fields.includeRequestEstimates) {
+								stepTelemetry.requestTokenEstimate =
+									step.requestTokenEstimate;
+								stepTelemetry.toolSchemaTokens =
+									step.toolSchemaTokens;
+								stepTelemetry.historyTokens =
+									step.historyTokens;
+								stepTelemetry.continuationTokens =
+									step.continuationTokens;
+								stepTelemetry.toolResultTokens =
+									step.toolResultTokens;
+							}
+							if (
+								fields.includeProviderUsage &&
+								step.providerUsage
+							) {
+								stepTelemetry.providerUsage =
+									step.providerUsage;
+							}
+							return stepTelemetry;
+						},
+					);
+				}
 				if (fields.includeToolDetails) {
 					telemetry.toolCalls = getToolParts(message).map((part) => ({
 						callId: part.call.toolCallId,

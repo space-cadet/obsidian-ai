@@ -278,6 +278,12 @@ describe("validateSettingUpdate", () => {
 		expect(validateSettingUpdate("debugLogRetention", 500).ok).toBe(true);
 		expect(validateSettingUpdate("debugLogMaxSizeMB", 10).ok).toBe(true);
 		expect(
+			validateSettingUpdate(
+				"debugTelemetry.includeRequestBreakdown",
+				true,
+			).ok,
+		).toBe(true);
+		expect(
 			validateSettingUpdate("debugTelemetry.includeToolDetails", false)
 				.ok,
 		).toBe(true);
@@ -342,6 +348,7 @@ describe("MUTABLE_SETTING_KEYS", () => {
 			"debugMode",
 			"debugTelemetry.includeProviderUsage",
 			"debugTelemetry.includeRequestEstimates",
+			"debugTelemetry.includeRequestBreakdown",
 			"debugTelemetry.includeToolDetails",
 			"debugTelemetry.includeContextMetadata",
 			"debugTelemetry.includeModelTiming",

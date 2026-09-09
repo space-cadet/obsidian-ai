@@ -32,6 +32,7 @@ export interface SyncComponentConfig {
 export interface DebugTelemetrySettings {
 	includeProviderUsage: boolean;
 	includeRequestEstimates: boolean;
+	includeRequestBreakdown: boolean;
 	includeToolDetails: boolean;
 	includeContextMetadata: boolean;
 	includeModelTiming: boolean;
@@ -411,6 +412,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	debugTelemetry: {
 		includeProviderUsage: true,
 		includeRequestEstimates: true,
+		includeRequestBreakdown: true,
 		includeToolDetails: true,
 		includeContextMetadata: true,
 		includeModelTiming: true,

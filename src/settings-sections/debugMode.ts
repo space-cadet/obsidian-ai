@@ -60,6 +60,11 @@ export function renderDebugModeSection(
 		"includeRequestEstimates",
 	);
 	addTelemetryToggle(
+		"Per-step request breakdown",
+		"Include per-model-step estimates for tool schemas, selected history, continuations, tool results, and provider usage.",
+		"includeRequestBreakdown",
+	);
+	addTelemetryToggle(
 		"Tool details",
 		"Include tool names, call IDs, arguments, result status, and result sizes in the telemetry block.",
 		"includeToolDetails",

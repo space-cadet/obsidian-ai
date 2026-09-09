@@ -29,6 +29,7 @@ export const MUTABLE_SETTING_KEYS = [
 	"debugMode",
 	"debugTelemetry.includeProviderUsage",
 	"debugTelemetry.includeRequestEstimates",
+	"debugTelemetry.includeRequestBreakdown",
 	"debugTelemetry.includeToolDetails",
 	"debugTelemetry.includeContextMetadata",
 	"debugTelemetry.includeModelTiming",
@@ -304,6 +305,7 @@ export function validateSettingUpdate(
 		case "debugMode":
 		case "debugTelemetry.includeProviderUsage":
 		case "debugTelemetry.includeRequestEstimates":
+		case "debugTelemetry.includeRequestBreakdown":
 		case "debugTelemetry.includeToolDetails":
 		case "debugTelemetry.includeContextMetadata":
 		case "debugTelemetry.includeModelTiming":

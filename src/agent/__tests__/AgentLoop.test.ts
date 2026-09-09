@@ -2,6 +2,89 @@ import { describe, expect, it, vi } from "vitest";
 import { AgentLoop } from "../AgentLoop";
 
 describe("AgentLoop", () => {
+	it("captures per-step request and provider telemetry when enabled", async () => {
+		const streamChatWithTools = vi
+			.fn()
+			.mockImplementationOnce(async function* () {
+				yield {
+					type: "tool-call",
+					call: {
+						toolCallId: "call-telemetry",
+						toolName: "read_note",
+						args: { path: "Telemetry" },
+					},
+				};
+				yield {
+					type: "finish",
+					providerUsage: {
+						inputTokens: 120,
+						outputTokens: 12,
+						totalTokens: 132,
+						cachedInputTokens: 40,
+					},
+				};
+			})
+			.mockImplementationOnce(async function* () {
+				yield {
+					type: "finish",
+					providerUsage: {
+						inputTokens: 140,
+						outputTokens: 8,
+						totalTokens: 148,
+						cachedInputTokens: 60,
+					},
+				};
+				yield { type: "text-delta", text: "Done" };
+			});
+		const loop = new AgentLoop({
+			chatApi: { streamChatWithTools } as any,
+			toolExecutor: {
+				execute: vi
+					.fn()
+					.mockResolvedValue({ success: true, content: "result" }),
+			} as any,
+			maxSteps: 2,
+			autoApprove: true,
+			captureStepTelemetry: true,
+			onTextDelta: vi.fn(),
+			onToolCall: vi.fn(),
+			requestApproval: vi.fn(),
+		});
+
+		const result = await loop.run(
+			[{ role: "user", content: "Hello" }],
+			{ read_note: { description: "Read a note" } },
+			new AbortController().signal,
+		);
+
+		expect(result.stepTelemetry).toHaveLength(2);
+		expect(result.stepTelemetry?.[0]).toMatchObject({
+			step: 0,
+			toolSchemaTokens: expect.any(Number),
+			historyTokens: expect.any(Number),
+			continuationTokens: 0,
+			toolResultTokens: expect.any(Number),
+			providerUsage: {
+				inputTokens: 120,
+				cachedInputTokens: 40,
+			},
+		});
+		expect(result.stepTelemetry?.[1]).toMatchObject({
+			step: 1,
+			continuationTokens: expect.any(Number),
+			toolResultTokens: 0,
+			providerUsage: {
+				inputTokens: 140,
+				cachedInputTokens: 60,
+			},
+		});
+		expect(result.providerUsage).toMatchObject({
+			inputTokens: 260,
+			cachedInputTokens: 100,
+			totalTokens: 280,
+		});
+	});
+
 	it("preserves and executes every tool call emitted in one step", async () => {
 		const firstCall: import("../types").ToolCall = {
 			toolCallId: "call-one",

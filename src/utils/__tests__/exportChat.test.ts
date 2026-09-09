@@ -31,6 +31,21 @@ const session: ChatSession = {
 			},
 			modelName: "test-model",
 			responseTimeMs: 120,
+			agentStepTelemetry: [
+				{
+					step: 0,
+					requestTokenEstimate: 100,
+					toolSchemaTokens: 30,
+					historyTokens: 20,
+					continuationTokens: 0,
+					toolResultTokens: 8,
+					providerUsage: {
+						inputTokens: 90,
+						outputTokens: 10,
+						totalTokens: 100,
+					},
+				},
+			],
 			contextItems: [
 				{
 					type: "note",
@@ -74,6 +89,7 @@ describe("chat debug telemetry export", () => {
 					...DEFAULT_SETTINGS.debugTelemetry,
 					includeProviderUsage: false,
 					includeRequestEstimates: true,
+					includeRequestBreakdown: false,
 					includeToolDetails: false,
 					includeContextMetadata: true,
 					includeModelTiming: false,
@@ -87,6 +103,35 @@ describe("chat debug telemetry export", () => {
 		expect(message.contextItems).toHaveLength(1);
 		expect(message.toolCalls).toBeUndefined();
 		expect(message.modelName).toBeUndefined();
+		expect(message.agentSteps).toBeUndefined();
+	});
+
+	it("includes per-step request breakdown when selected", () => {
+		const exported = JSON.parse(
+			serializeToJSON([session], "single", {
+				debugMode: true,
+				debugTelemetry: {
+					...DEFAULT_SETTINGS.debugTelemetry,
+					includeRequestBreakdown: true,
+				},
+			}),
+		);
+
+		const step =
+			exported._debugTelemetry.sessions[0].messages[0].agentSteps[0];
+		expect(step).toMatchObject({
+			step: 0,
+			requestTokenEstimate: 100,
+			toolSchemaTokens: 30,
+			historyTokens: 20,
+			continuationTokens: 0,
+			toolResultTokens: 8,
+			providerUsage: {
+				inputTokens: 90,
+				outputTokens: 10,
+				totalTokens: 100,
+			},
+		});
 	});
 
 	it("uses one serializer entry point for session and selected-message copy", () => {
