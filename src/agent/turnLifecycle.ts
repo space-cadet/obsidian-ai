@@ -9,6 +9,7 @@ import type {
 	ResolvedMessagePart,
 	Attachment,
 	AgentStepTelemetry,
+	CompactionMetadata,
 } from "../types";
 import type { ProviderProfile } from "../settings";
 import type { ToolCall, ToolResult } from "../agent/types";
@@ -28,9 +29,13 @@ import {
 import { buildModelHistory } from "../context/modelHistory";
 import {
 	compactionHysteresisReleased,
+	compactionMetadataMatchesTranscript,
+	createCompactionMetadata,
 	formatCompactionSummary,
+	parseCompactionMetadata,
 	parseCompactionSummary,
 	planSemanticCompaction,
+	transcriptStartsWith,
 } from "../context/semanticCompaction";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { parseSlashCommand } from "../lib/slashCommand";
@@ -122,7 +127,7 @@ function formatPastSessionLinks(
 // ═══════════════════════════════════════════════════════
 
 export class TurnLifecycle {
-	private compactionBySession: Record<string, string> = {};
+	private compactionBySession: Record<string, CompactionMetadata> = {};
 	private compactionInFlight: Record<string, boolean> = {};
 	private currentToolExecutor: ToolExecutor | null = null;
 	private readonly actions: TurnActionController;
@@ -495,8 +500,37 @@ export class TurnLifecycle {
 		const maxContextMessages =
 			deps.plugin.settings.maxContextMessages || 10;
 		const sessionIdForCompaction = deps.activeSessionIdRef.current;
+		const activeSessionForCompaction = sessionIdForCompaction
+			? deps.sessionsRef.current.find(
+					(session) => session.id === sessionIdForCompaction,
+				)
+			: undefined;
+		const parsedPersistedCompaction =
+			activeSessionForCompaction?.compactionMetadata
+				? parseCompactionMetadata(
+						activeSessionForCompaction.compactionMetadata,
+					)
+				: undefined;
+		const persistedCompaction =
+			parsedPersistedCompaction &&
+			compactionMetadataMatchesTranscript(
+				parsedPersistedCompaction,
+				deps.messagesRef.current,
+			)
+				? parsedPersistedCompaction
+				: undefined;
 		let existingSummary = sessionIdForCompaction
-			? this.compactionBySession[sessionIdForCompaction]
+			? (() => {
+					const inMemory =
+						this.compactionBySession[sessionIdForCompaction];
+					return inMemory &&
+						compactionMetadataMatchesTranscript(
+							inMemory,
+							deps.messagesRef.current,
+						)
+						? inMemory
+						: (persistedCompaction ?? undefined);
+				})()
 			: undefined;
 		if (
 			existingSummary &&
@@ -514,10 +548,22 @@ export class TurnLifecycle {
 			existingSummary = undefined;
 			if (sessionIdForCompaction) {
 				delete this.compactionBySession[sessionIdForCompaction];
+				deps.setSessions((prev) =>
+					prev.map((session) => {
+						if (session.id !== sessionIdForCompaction)
+							return session;
+						const {
+							compactionMetadata: _metadata,
+							...withoutMetadata
+						} = session;
+						return withoutMetadata;
+					}),
+				);
 			}
 		}
+		const compactionSourceMessages = deps.messagesRef.current.slice();
 		const compactionPlan = planSemanticCompaction(
-			deps.messagesRef.current,
+			compactionSourceMessages,
 			{
 				triggerTokens:
 					deps.plugin.settings.compactionTriggerTokens ?? 24000,
@@ -527,11 +573,16 @@ export class TurnLifecycle {
 					3,
 					deps.plugin.settings.preserveRecentMessages ?? 4,
 				),
+				maxTokens: 8000,
+				maxToolResultTokens: 1200,
+				sessionId: sessionIdForCompaction ?? undefined,
 			},
 			Boolean(existingSummary),
 		);
 		let modelHistory = deps.messagesRef.current;
-		let compactionSummary = existingSummary ?? "";
+		let compactionSummary = existingSummary
+			? formatCompactionSummary(existingSummary.summary)
+			: "";
 		if (
 			compactionPlan.shouldCompact &&
 			sessionIdForCompaction &&
@@ -549,6 +600,16 @@ export class TurnLifecycle {
 					compactionProfile,
 				)
 				.then((rawSummary) => {
+					if (
+						!transcriptStartsWith(
+							deps.messagesRef.current,
+							compactionSourceMessages,
+						)
+					) {
+						throw new Error(
+							"Transcript changed while compaction was running",
+						);
+					}
 					const parsed = parseCompactionSummary(
 						JSON.parse(rawSummary),
 					);
@@ -557,8 +618,20 @@ export class TurnLifecycle {
 							"Compaction response did not match the expected format",
 						);
 					}
-					this.compactionBySession[sessionIdForCompaction] =
-						formatCompactionSummary(parsed);
+					const metadata = createCompactionMetadata({
+						sourceMessages: compactionPlan.summarized,
+						transcriptMessages: compactionSourceMessages,
+						summary: parsed,
+						model: compactionProfile?.model,
+					});
+					this.compactionBySession[sessionIdForCompaction] = metadata;
+					deps.setSessions((prev) =>
+						prev.map((session) =>
+							session.id === sessionIdForCompaction
+								? { ...session, compactionMetadata: metadata }
+								: session,
+						),
+					);
 					new Notice("Conversation compacted for future requests.");
 				})
 				.catch((error) => {

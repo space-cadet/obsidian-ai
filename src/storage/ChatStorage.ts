@@ -4,6 +4,7 @@ import type {
 	ChatSession,
 	ChatMessage,
 	ContextItem,
+	CompactionMetadata,
 } from "../types";
 import type { ObsidianAISettings } from "../settings";
 
@@ -121,6 +122,7 @@ interface SessionIndexEntry {
 	thinkingEnabled?: boolean;
 	contextItems?: ContextItem[];
 	scrollPosition?: number;
+	compactionMetadata?: CompactionMetadata;
 }
 
 interface SessionIndex {
@@ -185,6 +187,7 @@ class JsonlStorage implements ChatStorage {
 					modelOverrides: entry.modelOverrides,
 					thinkingEnabled: entry.thinkingEnabled,
 					scrollPosition: entry.scrollPosition,
+					compactionMetadata: entry.compactionMetadata,
 				};
 			}),
 		);
@@ -248,6 +251,7 @@ class JsonlStorage implements ChatStorage {
 				thinkingEnabled: session.thinkingEnabled,
 				scrollPosition: session.scrollPosition,
 				contextItems: session.contextItems,
+				compactionMetadata: session.compactionMetadata,
 			});
 		}
 

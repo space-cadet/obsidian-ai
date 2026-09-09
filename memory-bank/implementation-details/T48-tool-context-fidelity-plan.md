@@ -216,5 +216,25 @@ compaction, or changes to the visible chat transcript.
 - Revalidated native/legacy lookup, oversized replay projection, pairing, and
   full-suite behavior: 55 test files and 470 tests passed; TypeScript passed.
 
-Remaining in this work package: bound the semantic-compaction input with the
-same projection rules and persist inspectable compaction provenance/metadata.
+The next work-package item was to bound the semantic-compaction input with the
+same projection rules and persist inspectable compaction provenance/metadata;
+that item is recorded in the checkpoint below.
+
+### 2026-09-10 — bounded compaction and provenance
+
+- Semantic-compaction prompts now apply the shared tool-result projection and
+  an 8,000-token input ceiling, with a 1,200-token per-result allowance.
+- Compaction metadata is schema-versioned and records source message IDs,
+  source tool-call IDs, summarized-through ID, source-prefix fingerprint,
+  creation-time transcript fingerprint, summary, timestamp, and model.
+- Metadata is restored from and written to the JSONL session index; legacy
+  storage and encrypted session sync retain it through the existing session
+  object path.
+- Async summaries are accepted only when their captured source prefix remains
+  unchanged, allowing append-only turns while rejecting stale summaries.
+- Valid persisted metadata is reused after restart and cleared when the
+  configured compaction hysteresis is released.
+
+Remaining: rolling re-distillation when new messages age beyond an existing
+summary, attachment-aware budgeting, provider telemetry parity, and selective
+tool-registry measurement.

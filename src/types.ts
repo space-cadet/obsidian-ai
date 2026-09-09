@@ -34,6 +34,34 @@ export interface ProviderTokenUsage {
 	reasoningTokens?: number;
 }
 
+/** Structured, model-generated summary of an aged conversation prefix. */
+export interface CompactionSummary {
+	keyDecisions: string[];
+	toolResults: string[];
+	userIntent: string[];
+	openQuestions: string[];
+}
+
+/** Durable provenance for the non-destructive model-history compaction. */
+export interface CompactionMetadata {
+	/** Schema version for future summary migrations. */
+	version: 1;
+	/** Messages represented by the summary, in transcript order. */
+	sourceMessageIds: string[];
+	/** Tool calls represented by the summary, in transcript order. */
+	sourceToolCallIds: string[];
+	/** Last source message represented by this summary. */
+	summarizedThroughMessageId: string;
+	/** Fingerprint of the summarized source prefix. */
+	sourceFingerprint: string;
+	/** Fingerprint of the full transcript at summary creation time. */
+	transcriptFingerprint: string;
+	/** Structured summary retained for inspection and deterministic rendering. */
+	summary: CompactionSummary;
+	createdAt: number;
+	model?: string;
+}
+
 /** Bounded diagnostic breakdown for one native agent model request. */
 export interface AgentStepTelemetry {
 	step: number;
@@ -126,6 +154,8 @@ export interface ChatSession {
 	updatedAt: number;
 	messages: ChatMessage[];
 	contextItems: ContextItem[];
+	/** Non-destructive model-history summary; the full messages remain intact. */
+	compactionMetadata?: CompactionMetadata;
 	/** The profile used for this session. Defaults to active profile if not set. */
 	profileId?: string;
 	/** Group chat mode flag */

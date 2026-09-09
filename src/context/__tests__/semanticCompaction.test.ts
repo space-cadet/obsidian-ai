@@ -3,9 +3,14 @@ import { ChatMessage } from "../../types";
 import {
 	buildCompactionPrompt,
 	compactionHysteresisReleased,
+	compactionMetadataMatchesTranscript,
+	createCompactionMetadata,
 	formatCompactionSummary,
+	fingerprintTranscript,
+	parseCompactionMetadata,
 	parseCompactionSummary,
 	planSemanticCompaction,
+	transcriptStartsWith,
 } from "../semanticCompaction";
 
 const message = (role: "user" | "assistant", content: string): ChatMessage => ({
@@ -88,6 +93,76 @@ describe("semantic compaction", () => {
 		expect(prompt).toContain("message IDs below as source references");
 	});
 
+	it("bounds compaction input and projects oversized tool results", () => {
+		const toolMessage: ChatMessage = {
+			id: "assistant-tool-large",
+			role: "assistant",
+			content: "Done",
+			timestamp: 0,
+			contentParts: [
+				{
+					type: "tool_call",
+					call: {
+						toolCallId: "call-large",
+						toolName: "read_note",
+						args: { path: "large.md" },
+					},
+					result: { content: "HEAD-" + "x".repeat(4000) + "-TAIL" },
+				},
+			],
+		};
+		const prompt = buildCompactionPrompt([toolMessage], {
+			maxTokens: 200,
+			maxToolResultTokens: 20,
+			sessionId: "session-1",
+		});
+
+		expect(prompt).toContain("bounded projection");
+		expect(prompt).toContain("assistant-tool-large");
+		expect(prompt).toContain("tool result truncated");
+		expect(prompt.length).toBeLessThanOrEqual(200 * 4);
+	});
+
+	it("creates and validates append-safe compaction provenance", () => {
+		const source = [message("user", "decision: use JSON")];
+		const fullTranscript = [...source, message("assistant", "done")];
+		const summary = {
+			keyDecisions: ["Use JSON"],
+			toolResults: [],
+			userIntent: ["Preserve fidelity"],
+			openQuestions: [],
+		};
+		const metadata = createCompactionMetadata({
+			sourceMessages: source,
+			transcriptMessages: fullTranscript,
+			summary,
+			createdAt: 123,
+			model: "test-model",
+		});
+
+		expect(metadata).toMatchObject({
+			version: 1,
+			sourceMessageIds: [source[0].id],
+			summarizedThroughMessageId: source[0].id,
+			sourceFingerprint: fingerprintTranscript(source),
+			transcriptFingerprint: fingerprintTranscript(fullTranscript),
+			createdAt: 123,
+			model: "test-model",
+		});
+		expect(parseCompactionMetadata(metadata)).toEqual(metadata);
+		expect(
+			compactionMetadataMatchesTranscript(metadata, fullTranscript),
+		).toBe(true);
+		expect(transcriptStartsWith(fullTranscript, source)).toBe(true);
+		expect(
+			compactionMetadataMatchesTranscript(metadata, [
+				message("user", "changed"),
+				...fullTranscript.slice(1),
+			]),
+		).toBe(false);
+		expect(parseCompactionMetadata({ ...metadata, version: 2 })).toBeNull();
+	});
+
 	it("rejects compaction output with missing or non-text fields", () => {
 		expect(parseCompactionSummary({ keyDecisions: [] })).toBeNull();
 		expect(
@@ -103,5 +178,13 @@ describe("semantic compaction", () => {
 			userIntent: ["Keep costs down"],
 			openQuestions: ["Need provider testing"],
 		});
+		expect(
+			parseCompactionSummary({
+				keyDecisions: ["x".repeat(801)],
+				toolResults: [],
+				userIntent: [],
+				openQuestions: [],
+			}),
+		).toBeNull();
 	});
 });
