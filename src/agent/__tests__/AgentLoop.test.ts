@@ -2,6 +2,74 @@ import { describe, expect, it, vi } from "vitest";
 import { AgentLoop } from "../AgentLoop";
 
 describe("AgentLoop", () => {
+	it("preserves and executes every tool call emitted in one step", async () => {
+		const firstCall: import("../types").ToolCall = {
+			toolCallId: "call-one",
+			toolName: "read_note",
+			args: { path: "One" },
+		};
+		const secondCall: import("../types").ToolCall = {
+			toolCallId: "call-two",
+			toolName: "read_note",
+			args: { path: "Two" },
+		};
+		const streamChatWithTools = vi
+			.fn()
+			.mockImplementationOnce(async function* () {
+				yield { type: "tool-call", call: firstCall };
+				yield { type: "tool-call", call: secondCall };
+			})
+			.mockImplementationOnce(async function* () {
+				yield { type: "text-delta", text: "Both notes read." };
+			});
+		const execute = vi
+			.fn()
+			.mockResolvedValueOnce({ success: true, content: "First note" })
+			.mockResolvedValueOnce({ success: true, content: "Second note" });
+		const onToolCall = vi.fn();
+		const onToolResult = vi.fn();
+		const loop = new AgentLoop({
+			chatApi: { streamChatWithTools } as any,
+			toolExecutor: { execute } as any,
+			maxSteps: 2,
+			autoApprove: true,
+			onTextDelta: vi.fn(),
+			onToolCall,
+			onToolResult,
+			requestApproval: vi.fn(),
+		});
+
+		await loop.run(
+			[{ role: "user", content: "Read both notes" }],
+			{},
+			new AbortController().signal,
+		);
+
+		expect(onToolCall.mock.calls.map(([call]) => call.toolCallId)).toEqual([
+			"call-one",
+			"call-two",
+		]);
+		expect(execute.mock.calls.map(([call]) => call.toolCallId)).toEqual([
+			"call-one",
+			"call-two",
+		]);
+		expect(
+			onToolResult.mock.calls.map(([call]) => call.toolCallId),
+		).toEqual(["call-one", "call-two"]);
+
+		const followUpMessages = streamChatWithTools.mock.calls[1][0];
+		expect(
+			followUpMessages[1].content.map(
+				(part: { type: string; toolCallId: string }) => part.toolCallId,
+			),
+		).toEqual(["call-one", "call-two"]);
+		expect(
+			followUpMessages[2].content.map(
+				(part: { type: string; toolCallId: string }) => part.toolCallId,
+			),
+		).toEqual(["call-one", "call-two"]);
+	});
+
 	it("preserves Gemini tool-call metadata for the next tool step", async () => {
 		const streamChatWithTools = vi
 			.fn()

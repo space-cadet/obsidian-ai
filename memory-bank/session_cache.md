@@ -1,5 +1,15 @@
 # Session Cache
 
+### 2026-09-09 — T48b native multi-call replay fix
+
+- Native `AgentLoop` now preserves and executes all tool calls emitted in one
+  model step, then replays one matching multi-result tool message.
+- Added regression coverage for two-call ordering and pairing.
+- Verification: full suite 53 files / 455 tests, TypeScript, production build,
+  formatting, and diff checks passed.
+- Remaining T48 work: exact retrieval, eviction-safe references, shared
+  per-iteration budgets, compaction provenance, and provider usage parity.
+
 ### 2026-09-09 — T48 tool-context fidelity analysis
 
 - T48 remains the single umbrella; no new task was created.

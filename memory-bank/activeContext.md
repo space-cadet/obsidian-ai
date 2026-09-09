@@ -1,5 +1,17 @@
 # Active Context
 
+### 2026-09-09 — T48b native multi-call replay fix ✅
+
+- Implemented the first fidelity-horizon code slice under T48/T48b.
+- Native `AgentLoop` now collects every tool call emitted in one model step,
+  executes them in order, and sends matching ordered tool results on the next
+  continuation.
+- Added regression coverage for callback order, execution order, and paired
+  call/result IDs. Full suite: 53 test files / 455 tests; TypeScript,
+  production build, formatting, and diff checks pass.
+- Exact historical retrieval, per-iteration provider parity, compaction
+  provenance, and usage reconciliation remain open.
+
 ### 2026-09-09 — T48 tool-context fidelity analysis 🔄
 
 - Audited `Downloads/Duplicate_Adjective_Category_Search.json` as conversation

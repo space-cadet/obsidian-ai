@@ -283,7 +283,7 @@ export class AgentLoop {
 		for (let step = 0; step < maxSteps; step++) {
 			let stepText = "";
 			let stepReasoning = "";
-			let pendingCall: ToolCall | null = null;
+			const pendingCalls: ToolCall[] = [];
 
 			for await (const event of chatApi.streamChatWithTools(
 				currentMessages,
@@ -307,7 +307,7 @@ export class AgentLoop {
 						stepReasoning += event.text;
 						break;
 					case "tool-call":
-						pendingCall = event.call;
+						pendingCalls.push(event.call);
 						break;
 					case "error":
 						throw new Error(event.message);
@@ -335,7 +335,7 @@ export class AgentLoop {
 				break;
 			}
 
-			if (!pendingCall) {
+			if (pendingCalls.length === 0) {
 				console.log(
 					`[AgentLoop] done — no tool call at step ${step}, ${fullText.length} chars`,
 				);
@@ -345,32 +345,44 @@ export class AgentLoop {
 			}
 
 			console.log(
-				`[AgentLoop] step ${step} tool-call: ${pendingCall.toolName}`,
-				pendingCall.args,
+				`[AgentLoop] step ${step} tool-calls: ${pendingCalls.map((call) => call.toolName).join(", ")}`,
 			);
-			this.opts.onToolCall(pendingCall);
 
-			// Count tokens for tool call args only (text already counted incrementally)
-			const toolCallTokens = estimateTokens(
-				JSON.stringify(pendingCall.args),
-			);
-			runningTotal += toolCallTokens;
-			this.opts.onTokenUpdate?.(runningTotal);
+			const toolResults: Array<{ call: ToolCall; result: ToolResult }> =
+				[];
+			let toolCallTokens = 0;
+			let resultTokens = 0;
+			for (const pendingCall of pendingCalls) {
+				console.log(
+					`[AgentLoop] step ${step} tool-call: ${pendingCall.toolName}`,
+					pendingCall.args,
+				);
+				this.opts.onToolCall(pendingCall);
 
-			let result: ToolResult;
-			if (autoApprove) {
-				result = await toolExecutor.execute(pendingCall, signal);
-			} else {
-				result = (await this.opts.requestApproval(pendingCall)) ?? {
-					error: "User rejected the tool call",
-				};
+				// Count tokens for tool call args only (text already counted incrementally)
+				const callTokens = estimateTokens(
+					JSON.stringify(pendingCall.args),
+				);
+				toolCallTokens += callTokens;
+				runningTotal += callTokens;
+				this.opts.onTokenUpdate?.(runningTotal);
+
+				let result: ToolResult;
+				if (autoApprove) {
+					result = await toolExecutor.execute(pendingCall, signal);
+				} else {
+					result = (await this.opts.requestApproval(pendingCall)) ?? {
+						error: "User rejected the tool call",
+					};
+				}
+
+				console.log(
+					`[AgentLoop] step ${step} tool-result:`,
+					result.error ?? "success",
+				);
+				this.opts.onToolResult?.(pendingCall, result);
+				toolResults.push({ call: pendingCall, result });
 			}
-
-			console.log(
-				`[AgentLoop] step ${step} tool-result:`,
-				result.error ?? "success",
-			);
-			this.opts.onToolResult?.(pendingCall, result);
 
 			// Build assistant message (text + tool call only — reasoning is NOT included
 			// because the Vercel AI SDK's OpenAI provider strips reasoning parts when
@@ -382,15 +394,17 @@ export class AgentLoop {
 			if (stepText) {
 				assistantParts.push({ type: "text", text: stepText });
 			}
-			assistantParts.push({
-				type: "tool-call",
-				toolCallId: pendingCall.toolCallId,
-				toolName: pendingCall.toolName,
-				input: pendingCall.args,
-				// Gemini function calls include a thought signature in provider metadata.
-				// Preserve it on the original call part for the next agent step.
-				providerMetadata: pendingCall.providerMetadata,
-			});
+			assistantParts.push(
+				...pendingCalls.map((pendingCall) => ({
+					type: "tool-call",
+					toolCallId: pendingCall.toolCallId,
+					toolName: pendingCall.toolName,
+					input: pendingCall.args,
+					// Gemini function calls include a thought signature in provider metadata.
+					// Preserve it on the original call part for the next agent step.
+					providerMetadata: pendingCall.providerMetadata,
+				})),
+			);
 
 			const assistantMsg: any = {
 				role: "assistant",
@@ -398,29 +412,31 @@ export class AgentLoop {
 			};
 
 			// Build tool result message with formatted text (not raw JSON)
-			const formattedResult = formatToolResult(
-				pendingCall.toolName,
-				result,
-			);
-			// Keep the complete result in the callbacks/persisted transcript, but
-			// never feed an oversized result into the immediate continuation.
-			const modelResult = truncateModelText(
-				formattedResult,
-				maxToolResultTokens,
-			);
+			const modelResults = toolResults.map(({ call, result }) => {
+				const formattedResult = formatToolResult(call.toolName, result);
+				// Keep the complete result in the callbacks/persisted transcript, but
+				// never feed an oversized result into the immediate continuation.
+				const modelResult = truncateModelText(
+					formattedResult,
+					maxToolResultTokens,
+				);
+				resultTokens += estimateTokens(modelResult);
+				return {
+					call,
+					modelResult,
+				};
+			});
 			const toolMsg: any = {
 				role: "tool",
-				content: [
-					{
-						type: "tool-result",
-						toolCallId: pendingCall.toolCallId,
-						toolName: pendingCall.toolName,
-						output: {
-							type: "text",
-							value: modelResult,
-						},
+				content: modelResults.map(({ call, modelResult }) => ({
+					type: "tool-result",
+					toolCallId: call.toolCallId,
+					toolName: call.toolName,
+					output: {
+						type: "text",
+						value: modelResult,
 					},
-				],
+				})),
 			};
 
 			continuationMessages = [
@@ -436,8 +452,7 @@ export class AgentLoop {
 			}
 			currentMessages = budgetedMessages.messages;
 
-			// Count tokens for tool result
-			const resultTokens = estimateTokens(modelResult);
+			// Count tokens for all tool results
 			runningTotal += resultTokens;
 			this.opts.onTokenUpdate?.(runningTotal);
 
