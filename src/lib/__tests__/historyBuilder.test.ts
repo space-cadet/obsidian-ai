@@ -225,6 +225,20 @@ describe("buildHistoryWithTools", () => {
 		expect(history[1].content[0].output.value).toBe("Note content here");
 	});
 
+	it("adds an exact retrieval reference when preserving an oversized result", () => {
+		const message = createToolMessage("HEAD-" + "x".repeat(2000) + "-TAIL");
+		const history = buildHistoryWithTools([message], 10, 100, "preserve", {
+			sessionId: "session-1",
+		});
+
+		expect(history[1].content[0].output.value).toContain(
+			"read_tool_result",
+		);
+		expect(history[1].content[0].output.value).toContain("call-1");
+		expect(history[1].content[0].output.value).toContain("HEAD-");
+		expect(history[1].content[0].output.value).toContain("-TAIL");
+	});
+
 	it("keeps several tool calls and results matched", () => {
 		const message: ChatMessage = {
 			id: "msg-many",

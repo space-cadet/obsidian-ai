@@ -11,6 +11,9 @@ import {
 	type BudgetedHistoryResult,
 	type ContextBudgetOptions,
 } from "./contextBudget";
+import { buildToolResultCatalog } from "./toolResultCatalog";
+import { listPersistedToolResults } from "./toolResultReference";
+import { estimateTokens } from "./tokenEstimator";
 
 export type ModelMessage = {
 	role: "system" | "user" | "assistant" | "tool";
@@ -26,6 +29,10 @@ export interface ModelHistoryOptions {
 	toolHistoryMode: "elide" | "preserve";
 	/** Agent turns preserve tool details automatically. */
 	agentMode: boolean;
+	/** Session identity used for historical result references and catalogs. */
+	sessionId?: string;
+	/** Maximum derived catalog size in estimated tokens. */
+	resultCatalogTokens?: number;
 	budget: ContextBudgetOptions;
 }
 
@@ -37,6 +44,8 @@ export interface ModelHistoryResult {
 	estimatedRequestTokens: number;
 	droppedMessages: number;
 	overBudget: boolean;
+	toolResultCatalogEntries: number;
+	toolResultCatalogTokens: number;
 }
 
 /**
@@ -54,6 +63,7 @@ export function buildModelHistory(
 		options.maxMessages,
 		options.maxToolResultTokens,
 		toolHistoryMode,
+		{ sessionId: options.sessionId },
 	);
 	const pairing = validateToolHistoryPairing(replayHistory);
 	if (!pairing.valid) {
@@ -62,12 +72,61 @@ export function buildModelHistory(
 		);
 	}
 
-	const budgeted = buildBudgetedHistory({
-		systemPrompt: options.systemPrompt,
+	let systemPrompt = options.systemPrompt;
+	let catalogItems: ReturnType<typeof buildToolResultCatalog>["items"] = [];
+	let catalogPrompt = "";
+	const allResultIds = new Set(
+		listPersistedToolResults(options.history).map(
+			({ call }) => call.toolCallId,
+		),
+	);
+	let budgeted = buildBudgetedHistory({
+		systemPrompt,
 		currentMessage: options.currentMessage,
 		history: replayHistory,
 		options: options.budget,
 	});
+
+	// Adding a catalog consumes request budget, so rebuild until the selected
+	// replay and its catalog stabilize. The bound prevents pathological history
+	// from causing an unbounded planning loop.
+	for (let pass = 0; pass < 3; pass++) {
+		const selectedResultIds = new Set<string>();
+		for (const entry of budgeted.history) {
+			if (!Array.isArray(entry.content)) continue;
+			if (entry.role !== "tool") continue;
+			for (const part of entry.content) {
+				if (
+					part?.type === "tool-result" &&
+					typeof part.toolCallId === "string"
+				) {
+					selectedResultIds.add(part.toolCallId);
+				}
+			}
+		}
+		const omittedResultIds = new Set(allResultIds);
+		for (const id of selectedResultIds) omittedResultIds.delete(id);
+		const catalog = buildToolResultCatalog({
+			messages: options.history,
+			omittedToolCallIds: omittedResultIds,
+			sessionId: options.sessionId,
+			maxTokens: options.resultCatalogTokens,
+		});
+		catalogItems = catalog.items;
+		catalogPrompt = catalog.prompt;
+		const nextPrompt =
+			catalog.prompt && typeof options.systemPrompt === "string"
+				? `${options.systemPrompt}\n\n${catalog.prompt}`
+				: options.systemPrompt;
+		if (nextPrompt === systemPrompt) break;
+		systemPrompt = nextPrompt;
+		budgeted = buildBudgetedHistory({
+			systemPrompt,
+			currentMessage: options.currentMessage,
+			history: replayHistory,
+			options: options.budget,
+		});
+	}
 	const budgetedPairing = validateToolHistoryPairing(budgeted.history);
 	if (!budgetedPairing.valid) {
 		throw new Error(
@@ -77,7 +136,7 @@ export function buildModelHistory(
 
 	return {
 		messages: [
-			{ role: "system", content: options.systemPrompt },
+			{ role: "system", content: systemPrompt },
 			...budgeted.history,
 			{ role: "user", content: options.currentMessage },
 		],
@@ -87,6 +146,10 @@ export function buildModelHistory(
 		estimatedRequestTokens: budgeted.estimatedRequestTokens,
 		droppedMessages: budgeted.droppedMessages,
 		overBudget: budgeted.overBudget,
+		toolResultCatalogEntries: catalogItems.length,
+		toolResultCatalogTokens: catalogPrompt
+			? estimateTokens(catalogPrompt)
+			: 0,
 	};
 }
 

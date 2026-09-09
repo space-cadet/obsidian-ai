@@ -7,12 +7,30 @@ export interface PersistedToolResultMatch {
 	result: ToolResult;
 }
 
+/** List completed persisted results in transcript order. */
+export function listPersistedToolResults(
+	messages: ChatMessage[],
+): PersistedToolResultMatch[] {
+	const matches: PersistedToolResultMatch[] = [];
+	for (const message of messages) {
+		const entries =
+			message.contentParts && message.contentParts.length > 0
+				? contentPartCalls(message)
+				: (message.toolCalls ?? []);
+		for (const entry of entries) {
+			if (!entry.result) continue;
+			matches.push({ message, call: entry.call, result: entry.result });
+		}
+	}
+	return matches;
+}
+
 /** Convert a persisted result into stable text for exact range retrieval. */
 export function serializeToolResult(result: ToolResult): string {
 	if (result.content !== undefined) return result.content;
 	if (result.error !== undefined) return `Error: ${result.error}`;
 	const { result_reference: _reference, ...withoutReference } = result;
-	return JSON.stringify(withoutReference);
+	return JSON.stringify(withoutReference) ?? "";
 }
 
 function contentPartCalls(message: ChatMessage): Array<{
@@ -41,17 +59,9 @@ export function findPersistedToolResult(
 		return { error: "The requested chat session was not found." };
 	}
 
-	const matches: PersistedToolResultMatch[] = [];
-	for (const message of session.messages) {
-		const entries =
-			message.contentParts && message.contentParts.length > 0
-				? contentPartCalls(message)
-				: (message.toolCalls ?? []);
-		for (const entry of entries) {
-			if (entry.call.toolCallId !== toolCallId || !entry.result) continue;
-			matches.push({ message, call: entry.call, result: entry.result });
-		}
-	}
+	const matches = listPersistedToolResults(session.messages).filter(
+		(match) => match.call.toolCallId === toolCallId,
+	);
 
 	if (matches.length === 0) {
 		return {

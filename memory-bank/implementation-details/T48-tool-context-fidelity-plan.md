@@ -203,3 +203,18 @@ compaction, or changes to the visible chat transcript.
 - Full persisted results remain unchanged for UI and export.
 - Focused and full automated verification remains required after each provider
   request-shape change.
+
+### 2026-09-10 — omitted-result catalog
+
+- Added a bounded derived catalog for completed tool results that fall outside
+  the selected model-history replay.
+- Catalog entries retain the session and tool-call address, a compact summary,
+  and explicit `read_tool_result` retrieval guidance without fabricating a
+  synthetic tool message.
+- Reused canonical result serialization for history projection, including
+  structured results that do not have a `content` or `error` field.
+- Revalidated native/legacy lookup, oversized replay projection, pairing, and
+  full-suite behavior: 55 test files and 470 tests passed; TypeScript passed.
+
+Remaining in this work package: bound the semantic-compaction input with the
+same projection rules and persist inspectable compaction provenance/metadata.

@@ -1,6 +1,7 @@
 import type { ChatMessage } from "../types";
 import type { ToolCall, ToolResult } from "../agent/types";
-import { truncateTextForTokens } from "../context/contextBudget";
+import { projectToolResultForModel } from "../context/toolResultProjection";
+import { serializeToolResult } from "../context/toolResultReference";
 
 export interface HistoryEntry {
 	role: "user" | "assistant" | "tool";
@@ -33,6 +34,7 @@ export function buildHistoryWithTools(
 	maxMessages: number,
 	maxToolResultTokens: number,
 	toolHistoryMode: "elide" | "preserve" = "elide",
+	options: { sessionId?: string } = {},
 ): HistoryEntry[] {
 	const result: HistoryEntry[] = [];
 
@@ -68,6 +70,7 @@ export function buildHistoryWithTools(
 				toolCalls,
 				toolHistoryMode,
 				maxToolResultTokens,
+				options.sessionId,
 			);
 			result.push(...entries);
 		} else if (m.toolCalls && m.toolCalls.length > 0) {
@@ -92,6 +95,7 @@ export function buildHistoryWithTools(
 					m.toolCalls,
 					toolHistoryMode,
 					maxToolResultTokens,
+					options.sessionId,
 				),
 			);
 		} else {
@@ -111,18 +115,23 @@ function buildToolHistoryEntries(
 	toolCalls: PersistedToolCall[],
 	toolHistoryMode: "elide" | "preserve",
 	maxToolResultTokens: number,
+	sessionId?: string,
 ): HistoryEntry[] {
 	const assistantContent: any[] = textParts;
 	const toolResults = toolCalls
 		.filter(({ result }) => result)
 		.map(({ call, result }) => {
-			const rawResult = result!.error
-				? `Error: ${result!.error}`
-				: result!.content || "";
+			const rawResult = serializeToolResult(result!);
 			const resultText =
 				toolHistoryMode === "elide"
 					? `[${rawResult.length} chars, elided]`
-					: truncateTextForTokens(rawResult, maxToolResultTokens);
+					: projectToolResultForModel({
+							text: rawResult,
+							call,
+							result: result!,
+							maxTokens: maxToolResultTokens,
+							sessionId,
+						}).text;
 			return {
 				type: "tool-result",
 				toolCallId: call.toolCallId,

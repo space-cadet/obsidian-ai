@@ -82,4 +82,43 @@ describe("buildModelHistory", () => {
 		expect(result.pairing.valid).toBe(true);
 		expect(result.messages[3].content).toBe("continue");
 	});
+
+	it("catalogs omitted persisted results without creating a synthetic tool result", () => {
+		const recentMessage: ChatMessage = {
+			id: "recent-1",
+			role: "user",
+			content: "Please continue.",
+			timestamp: 1,
+		};
+		const result = buildModelHistory(
+			options({
+				history: [
+					toolMessage("The omitted detail is important."),
+					recentMessage,
+				],
+				maxMessages: 1,
+				sessionId: "session-1",
+				resultCatalogTokens: 600,
+				budget: {
+					maxRequestTokens: 0,
+					maxMessages: 1,
+					preserveRecentMessages: 1,
+					responseReserveTokens: 0,
+				},
+			}),
+		);
+
+		expect(result.toolResultCatalogEntries).toBe(1);
+		expect(result.messages[0].content).toContain(
+			"DERIVED TOOL RESULT CATALOG",
+		);
+		expect(result.messages[0].content).toContain("call-1");
+		expect(result.messages[0].content).toContain("read_tool_result");
+		expect(result.history).toEqual([
+			{ role: "user", content: "Please continue." },
+		]);
+		expect(
+			result.messages.filter((message) => message.role === "tool"),
+		).toHaveLength(0);
+	});
 });

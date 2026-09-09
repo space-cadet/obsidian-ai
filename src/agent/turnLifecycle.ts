@@ -630,6 +630,8 @@ export class TurnLifecycle {
 				deps.plugin.settings.maxToolResultTokens ?? 4000,
 			toolHistoryMode: deps.plugin.settings.toolHistoryMode ?? "elide",
 			agentMode: isAgentProvider || (useTools && !slashCmd),
+			sessionId: sessionIdForCompaction ?? undefined,
+			resultCatalogTokens: 600,
 			budget: {
 				maxRequestTokens:
 					deps.plugin.settings.maxRequestTokens ?? 32000,
