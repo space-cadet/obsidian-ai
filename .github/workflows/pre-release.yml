@@ -45,6 +45,10 @@ jobs:
                   zip -r ${PLUGIN_NAME}.zip $PLUGIN_NAME
 
             - name: Update latest-dev tag to current commit
+              # Keep publishing the updater release even if this tag-move is
+              # rejected by repository policy. The release body and assets are
+              # the updater's source of truth for the current commit.
+              continue-on-error: true
               run: |
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
