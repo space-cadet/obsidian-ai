@@ -6,8 +6,8 @@ import type { OpenResponsesEvent } from "../api/OpenResponsesParser";
 import type { ToolExecutor } from "./ToolExecutor";
 import type { ToolCall, ToolResult } from "./types";
 import { estimateTokens } from "../context/tokenEstimator";
-import { truncateModelText } from "../context/modelHistory";
 import type { OpenResponsesTool } from "../api/AgentApiManager";
+import { projectToolResultForModel } from "../context/toolResultProjection";
 
 interface OpenResponsesLoopOptions {
 	agentApi: AgentApiManager;
@@ -15,6 +15,8 @@ interface OpenResponsesLoopOptions {
 	maxSteps: number;
 	autoApprove: boolean;
 	maxToolResultTokens?: number;
+	/** Session identity used for exact references on bounded results. */
+	sessionId?: string;
 	/** Shared token allowance for all outputs in one continuation. */
 	requestResponseReserveTokens?: number;
 	onTextDelta?: (text: string) => void;
@@ -30,6 +32,7 @@ export class OpenResponsesLoop {
 	private maxSteps: number;
 	private autoApprove: boolean;
 	private maxToolResultTokens: number;
+	private sessionId?: string;
 	private requestResponseReserveTokens: number;
 	private onTextDelta?: (text: string) => void;
 	private onToolCall?: (call: ToolCall) => void;
@@ -49,6 +52,7 @@ export class OpenResponsesLoop {
 		this.maxSteps = options.maxSteps;
 		this.autoApprove = options.autoApprove;
 		this.maxToolResultTokens = options.maxToolResultTokens ?? 4000;
+		this.sessionId = options.sessionId;
 		this.requestResponseReserveTokens =
 			options.requestResponseReserveTokens ?? 4096;
 		this.onTextDelta = options.onTextDelta;
@@ -171,6 +175,8 @@ export class OpenResponsesLoop {
 			const rawFunctionCallOutputs: Array<{
 				call_id: string;
 				output: string;
+				call: ToolCall;
+				result: ToolResult;
 			}> = [];
 
 			for (const [call_id, fc] of this.pendingFunctionCalls) {
@@ -218,8 +224,6 @@ export class OpenResponsesLoop {
 					}
 				}
 
-				this.onToolResult?.(toolCall, result);
-
 				// Format result for OpenResponses
 				const output = JSON.stringify({
 					success: result.success ?? !result.error,
@@ -230,6 +234,8 @@ export class OpenResponsesLoop {
 				rawFunctionCallOutputs.push({
 					call_id,
 					output,
+					call: toolCall,
+					result,
 				});
 			}
 
@@ -254,12 +260,26 @@ export class OpenResponsesLoop {
 							),
 						)
 					: sharedBudget;
-			const functionCallOutputs = rawFunctionCallOutputs.map(
-				(output) => ({
+			const functionCallOutputs = rawFunctionCallOutputs.map((output) => {
+				const projection = projectToolResultForModel({
+					text: output.output,
+					call: output.call,
+					result: output.result,
+					maxTokens: perOutputBudget,
+					sessionId: this.sessionId,
+				});
+				const persistedResult = projection.reference
+					? {
+							...output.result,
+							result_reference: projection.reference,
+						}
+					: output.result;
+				this.onToolResult?.(output.call, persistedResult);
+				return {
 					call_id: output.call_id,
-					output: truncateModelText(output.output, perOutputBudget),
-				}),
-			);
+					output: projection.text,
+				};
+			});
 
 			// Send tool results back to agent for continuation
 			console.log(

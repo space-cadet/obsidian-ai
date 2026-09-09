@@ -684,6 +684,7 @@ export class TurnLifecycle {
 					autoApprove,
 					maxRequestTokens:
 						deps.plugin.settings.maxRequestTokens ?? 32000,
+					sessionId: currentActiveId,
 					maxContextMessages,
 					preserveRecentMessages:
 						deps.plugin.settings.preserveRecentMessages ?? 4,

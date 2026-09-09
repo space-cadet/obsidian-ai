@@ -38,12 +38,13 @@ describe("OpenResponsesLoop", () => {
 			toolExecutor: {
 				execute: vi.fn().mockResolvedValue({
 					success: true,
-					content: "HEAD-" + "x".repeat(200) + "-TAIL",
+					content: "HEAD-" + "x".repeat(1200) + "-TAIL",
 				}),
 			} as any,
 			maxSteps: 2,
 			autoApprove: true,
-			maxToolResultTokens: 30,
+			sessionId: "session-1",
+			maxToolResultTokens: 100,
 		});
 
 		await loop.run([], [], new AbortController().signal);
@@ -53,6 +54,7 @@ describe("OpenResponsesLoop", () => {
 		expect(continuationOutputs[0].output).toContain(
 			"tool result truncated",
 		);
+		expect(continuationOutputs[0].output).toContain("read_tool_result");
 	});
 
 	it("shares the continuation budget across parallel tool results", async () => {

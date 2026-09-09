@@ -22,6 +22,7 @@ export interface ChatTurnCoordinatorOptions {
 	maxSteps: number;
 	autoApprove: boolean;
 	maxRequestTokens: number;
+	sessionId?: string;
 	maxContextMessages: number;
 	preserveRecentMessages: number;
 	requestResponseReserveTokens: number;
@@ -88,6 +89,7 @@ export async function runChatTurn(
 			maxSteps: profile.maxSteps ?? maxSteps,
 			autoApprove: profile.autoApprove ?? autoApprove,
 			maxToolResultTokens: options.maxToolResultTokens,
+			sessionId: options.sessionId,
 			requestResponseReserveTokens: options.requestResponseReserveTokens,
 			onTextDelta,
 			onToolCall,
@@ -115,6 +117,7 @@ export async function runChatTurn(
 		maxSteps,
 		autoApprove,
 		maxRequestTokens: options.maxRequestTokens,
+		sessionId: options.sessionId,
 		maxContextMessages: options.maxContextMessages,
 		preserveRecentMessages: options.preserveRecentMessages,
 		requestResponseReserveTokens: options.requestResponseReserveTokens,

@@ -214,19 +214,22 @@ describe("AgentLoop", () => {
 			.mockImplementationOnce(async function* () {
 				yield { type: "text-delta", text: "Done" };
 			});
+		const onToolResult = vi.fn();
 		const loop = new AgentLoop({
 			chatApi: { streamChatWithTools } as any,
 			toolExecutor: {
 				execute: vi.fn().mockResolvedValue({
 					success: true,
-					content: "HEAD-" + "x".repeat(200) + "-TAIL",
+					content: "HEAD-" + "x".repeat(1200) + "-TAIL",
 				}),
 			} as any,
 			maxSteps: 2,
 			autoApprove: true,
-			maxToolResultTokens: 20,
+			sessionId: "session-1",
+			maxToolResultTokens: 100,
 			onTextDelta: vi.fn(),
 			onToolCall: vi.fn(),
+			onToolResult,
 			requestApproval: vi.fn(),
 		});
 
@@ -241,6 +244,16 @@ describe("AgentLoop", () => {
 		expect(toolResult).toContain("HEAD-");
 		expect(toolResult).toContain("-TAIL");
 		expect(toolResult).toContain("tool result truncated");
+		expect(toolResult).toContain("read_tool_result");
+		expect(onToolResult).toHaveBeenCalledWith(
+			expect.objectContaining({ toolCallId: "call-large" }),
+			expect.objectContaining({
+				result_reference: expect.objectContaining({
+					session_id: "session-1",
+					tool_call_id: "call-large",
+				}),
+			}),
+		);
 	});
 
 	it("re-budgets the full history before each tool continuation", async () => {

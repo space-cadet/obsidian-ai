@@ -188,3 +188,18 @@ usage remains authoritative; local estimates remain labelled diagnostics.
 This plan does not require a second result database, vector search, a storage
 rewrite, a new umbrella task, a usage-dashboard redesign, provider-native
 compaction, or changes to the visible chat transcript.
+
+## Implementation checkpoints
+
+### 2026-09-09 — retrieval and bounded projection
+
+- Added stable result references and canonical/legacy persisted-result lookup.
+- Added the read-only `read_tool_result` capability with bounded offset and
+  query retrieval.
+- Added the shared model-result projection used by native and OpenResponses
+  loops.
+- Large results now carry a bounded preview and retrieval reference when the
+  configured result budget can fit the reference envelope.
+- Full persisted results remain unchanged for UI and export.
+- Focused and full automated verification remains required after each provider
+  request-shape change.

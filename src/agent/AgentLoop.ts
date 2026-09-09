@@ -2,12 +2,10 @@ import { ChatApiManager } from "../api";
 import { ToolExecutor } from "./ToolExecutor";
 import type { ToolCall, ToolResult, StreamEvent } from "./types";
 import { estimateTokens } from "../context/tokenEstimator";
-import {
-	buildBudgetedModelMessages,
-	truncateModelText,
-} from "../context/modelHistory";
+import { buildBudgetedModelMessages } from "../context/modelHistory";
 import type { ProviderProfile } from "../settings";
 import type { AgentStepTelemetry, ProviderTokenUsage } from "../types";
+import { projectToolResultForModel } from "../context/toolResultProjection";
 
 export interface AgentLoopOptions {
 	chatApi: ChatApiManager;
@@ -22,6 +20,8 @@ export interface AgentLoopOptions {
 	maxToolResultTokens?: number;
 	/** Total request budget to re-apply before each tool-loop continuation. */
 	maxRequestTokens?: number;
+	/** Session identity used for exact references on bounded results. */
+	sessionId?: string;
 	/** Maximum number of persisted messages considered for a continuation. */
 	maxContextMessages?: number;
 	/** Number of newest messages retained verbatim in a continuation. */
@@ -437,7 +437,6 @@ export class AgentLoop {
 					`[AgentLoop] step ${step} tool-result:`,
 					result.error ?? "success",
 				);
-				this.opts.onToolResult?.(pendingCall, result);
 				toolResults.push({ call: pendingCall, result });
 			}
 
@@ -473,9 +472,19 @@ export class AgentLoop {
 				const formattedResult = formatToolResult(call.toolName, result);
 				// Keep the complete result in the callbacks/persisted transcript, but
 				// never feed an oversized result into the immediate continuation.
-				const modelResult = truncateModelText(
-					formattedResult,
-					maxToolResultTokens,
+				const projection = projectToolResultForModel({
+					text: formattedResult,
+					call,
+					result,
+					maxTokens: maxToolResultTokens,
+					sessionId: this.opts.sessionId,
+				});
+				const modelResult = projection.text;
+				this.opts.onToolResult?.(
+					call,
+					projection.reference
+						? { ...result, result_reference: projection.reference }
+						: result,
 				);
 				resultTokens += estimateTokens(modelResult);
 				return {
