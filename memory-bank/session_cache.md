@@ -841,3 +841,6 @@ Session started after tool outage (~14:36–15:22 IST). Previous session had com
 - Verification passed: 53 files / 461 tests, TypeScript, production build,
   formatting checks on changed code, and diff check.
 - Remaining gap: OpenResponses has no equivalent per-step telemetry projection.
+- Debug Mode layout was tightened with an Export details group and section-only
+  responsive styling; the generated stylesheet, full test suite, and build
+  remain clean.

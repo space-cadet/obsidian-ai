@@ -1021,6 +1021,8 @@ See `tasks/T56.md` for full details.
 - Debug JSON/JSONL/Markdown exports expose these records as
   `telemetry.agentSteps` while preserving the existing provider-usage and
   estimate filters.
+- The Debug Mode settings panel now groups export controls, aligns switches to
+  the right edge, and uses tighter section-specific spacing.
 - Verification: 53 test files / 461 tests, TypeScript and production build,
   Prettier checks on changed code, and `git diff --check` passed.
 - OpenResponses per-step telemetry parity remains open.

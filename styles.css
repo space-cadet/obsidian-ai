@@ -494,6 +494,73 @@
 	}
 }
 
+/* Keep Debug Mode compact and make its export controls read as one group. */
+#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item {
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	min-height: 0;
+	padding: 14px 0;
+}
+
+#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item .setting-item-info {
+	padding-right: 24px;
+}
+
+#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item .setting-item-control {
+	width: auto;
+	justify-content: flex-end;
+}
+
+.obsidian-ai-debug-telemetry-group {
+	margin-top: 14px;
+	padding: 16px 18px 4px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 10px;
+	background: var(--background-primary);
+}
+
+.obsidian-ai-debug-telemetry-group h4 {
+	margin: 0;
+	font-size: var(--font-ui-medium);
+	font-weight: 650;
+	color: var(--text-normal);
+}
+
+.obsidian-ai-debug-telemetry-group-desc {
+	margin: 4px 0 8px;
+	color: var(--text-muted);
+}
+
+.obsidian-ai-debug-telemetry-group .setting-item {
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	min-height: 0;
+	padding: 12px 0;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.obsidian-ai-debug-telemetry-group .setting-item-info {
+	padding-right: 24px;
+}
+
+.obsidian-ai-debug-telemetry-group .setting-item-control {
+	width: auto;
+	justify-content: flex-end;
+}
+
+@media (max-width: 760px) {
+	#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item,
+	.obsidian-ai-debug-telemetry-group .setting-item {
+		display: flex;
+		align-items: center;
+	}
+
+	#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item .setting-item-control,
+	.obsidian-ai-debug-telemetry-group .setting-item .setting-item-control {
+		margin-top: 0;
+	}
+}
+
 .obsidian-ai-slider-value { min-width: 3em; margin-left: 8px; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted); }
 .obsidian-ai-password-input-wrapper, .obsidian-ai-api-key-control { display: flex; align-items: center; gap: 4px; }
 .obsidian-ai-password-input-wrapper input, .obsidian-ai-api-key-control input { min-width: 0; flex: 1; }

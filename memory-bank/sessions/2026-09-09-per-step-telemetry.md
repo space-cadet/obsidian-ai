@@ -22,12 +22,16 @@ can exceed a single visible message estimate.
   the provider, while retaining the aggregate provider total.
 - Exported the records as `telemetry.agentSteps` without duplicating full tool
   result content. Existing estimate and provider-usage filters remain active.
+- Reworked the Debug Mode settings layout with a compact primary control row,
+  an `Export details` group, right-aligned switches, and tighter responsive
+  spacing scoped only to this section.
 
 ## Verification
 
 - Full suite: 53 test files / 461 tests passed.
 - TypeScript and production build passed.
 - Prettier checks on changed code and `git diff --check` passed.
+- Debug settings stylesheet was regenerated successfully.
 
 ## Remaining Work
 

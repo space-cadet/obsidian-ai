@@ -30,12 +30,21 @@ export function renderDebugModeSection(
 				});
 		});
 
+	const telemetryGroup = sectionEl.createDiv({
+		cls: "obsidian-ai-debug-telemetry-group",
+	});
+	telemetryGroup.createEl("h4", { text: "Export details" });
+	telemetryGroup.createEl("p", {
+		text: "Choose which diagnostic details are included when you export a session.",
+		cls: "obsidian-ai-debug-telemetry-group-desc",
+	});
+
 	const addTelemetryToggle = (
 		name: string,
 		desc: string,
 		key: keyof typeof plugin.settings.debugTelemetry,
 	) => {
-		new Setting(sectionEl)
+		new Setting(telemetryGroup)
 			.setName(name)
 			.setDesc(desc)
 			.addToggle((toggle) => {
