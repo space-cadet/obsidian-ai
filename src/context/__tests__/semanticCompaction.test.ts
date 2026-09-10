@@ -92,7 +92,7 @@ describe("semantic compaction", () => {
 
 		expect(prompt).toContain("Message assistant-tool-1");
 		expect(prompt).toContain("read_note (call-1)");
-		expect(prompt).toContain("message IDs below as source references");
+		expect(prompt).toContain("Message IDs are source references");
 	});
 
 	it("bounds compaction input and projects oversized tool results", () => {
@@ -236,6 +236,31 @@ describe("semantic compaction", () => {
 				"userIntent: missing",
 				"openQuestions: missing",
 			]),
+		);
+	});
+
+	it("normalizes structured tool results into bounded summary text", () => {
+		const diagnostics = parseCompactionResponseDetailed(
+			JSON.stringify({
+				keyDecisions: [],
+				toolResults: [
+					{
+						toolCallId: "call-1",
+						toolName: "read_note",
+						result: "completed",
+					},
+				],
+				userIntent: [],
+				openQuestions: [],
+			}),
+		);
+
+		expect(diagnostics.failure).toBeNull();
+		expect(diagnostics.summary?.toolResults[0]).toContain(
+			'"toolCallId":"call-1"',
+		);
+		expect(diagnostics.summary?.toolResults[0].length).toBeLessThanOrEqual(
+			800,
 		);
 	});
 });
