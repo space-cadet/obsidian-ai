@@ -1,7 +1,12 @@
 import type { ChatMessage, ChatSession } from "../types";
 import type { ProviderProfile } from "../settings";
 import { estimateTokens } from "../context/tokenEstimator";
-import { buildHistoryWithTools } from "./historyBuilder";
+import { buildModelHistory } from "../context/modelHistory";
+import {
+	compactionMetadataMatchesTranscript,
+	formatCompactionSummary,
+	parseCompactionMetadata,
+} from "../context/semanticCompaction";
 import { formatBuiltinCommandReference } from "./builtinCommands";
 
 export interface DebugCommandResult {
@@ -21,6 +26,11 @@ export function handleDebugCommand(
 	settings: {
 		toolHistoryMode: "elide" | "preserve";
 		maxRequestTokens?: number;
+		maxContextMessages?: number;
+		maxToolResultTokens?: number;
+		preserveRecentMessages?: number;
+		requestResponseReserveTokens?: number;
+		enableAgentTools?: boolean;
 	},
 ): DebugCommandResult {
 	const trimmed = text.trim();
@@ -39,7 +49,7 @@ export function handleDebugCommand(
 		case "debug history":
 			return {
 				handled: true,
-				response: formatHistoryDebug(session, settings.toolHistoryMode),
+				response: formatHistoryDebug(session, profile, settings),
 			};
 		case "debug tokens":
 			return {
@@ -70,22 +80,82 @@ export function handleDebugCommand(
 
 function formatHistoryDebug(
 	session: ChatSession | undefined,
-	toolHistoryMode: "elide" | "preserve",
+	profile: ProviderProfile,
+	settings: {
+		toolHistoryMode: "elide" | "preserve";
+		maxRequestTokens?: number;
+		maxContextMessages?: number;
+		maxToolResultTokens?: number;
+		preserveRecentMessages?: number;
+		requestResponseReserveTokens?: number;
+		enableAgentTools?: boolean;
+	},
 ): string {
 	if (!session || session.messages.length === 0) {
 		return "**History Debug**\n\nNo messages in current session.";
 	}
 
-	const history = buildHistoryWithTools(
-		session.messages,
-		50, // generous limit for debug view
-		4000,
-		toolHistoryMode,
+	const modelMessages = session.messages.filter(
+		(message) => !message.isDebug,
 	);
+	const parsedCompaction = session.compactionMetadata
+		? parseCompactionMetadata(session.compactionMetadata)
+		: null;
+	const compaction =
+		parsedCompaction &&
+		compactionMetadataMatchesTranscript(parsedCompaction, modelMessages)
+			? parsedCompaction
+			: null;
+	const preserveRecentMessages = Math.max(
+		3,
+		settings.preserveRecentMessages ?? 4,
+	);
+	const projectedHistory = compaction
+		? modelMessages.slice(-preserveRecentMessages)
+		: modelMessages;
 
-	let output = `**History Debug** — ${history.length} message(s) in model-facing history\n\n`;
+	let modelHistory: ReturnType<typeof buildModelHistory>;
+	try {
+		modelHistory = buildModelHistory({
+			systemPrompt: compaction
+				? formatCompactionSummary(compaction.summary)
+				: "",
+			currentMessage: "",
+			history: projectedHistory,
+			maxMessages: settings.maxContextMessages || 10,
+			maxToolResultTokens: settings.maxToolResultTokens ?? 4000,
+			toolHistoryMode: settings.toolHistoryMode,
+			agentMode:
+				profile.provider === "agent" ||
+				Boolean(settings.enableAgentTools),
+			sessionId: session.id,
+			resultCatalogTokens: 600,
+			budget: {
+				maxRequestTokens: settings.maxRequestTokens ?? 32000,
+				maxMessages: settings.maxContextMessages || 10,
+				preserveRecentMessages,
+				responseReserveTokens:
+					settings.requestResponseReserveTokens ?? 4096,
+			},
+		});
+	} catch (error) {
+		const detail = error instanceof Error ? error.message : String(error);
+		return `**History Debug**\n\nUnable to build model-facing history: ${detail}`;
+	}
 
-	history.forEach((msg, i) => {
+	let output = `**History Debug** — ${modelHistory.history.length} message(s) in model-facing history\n\n`;
+	if (compaction) {
+		output += `**Compaction:** applied — summary covers ${compaction.sourceMessageIds.length} older message(s); the newest ${Math.min(preserveRecentMessages, modelMessages.length)} message(s) are replayed exactly.\n\n`;
+		output += `**Compaction summary**\n\n${formatCompactionSummary(compaction.summary)}\n\n`;
+	} else if (session.compactionMetadata) {
+		output +=
+			"**Compaction:** not applied — saved metadata is invalid or no longer matches the transcript.\n\n";
+	} else {
+		output +=
+			"**Compaction:** not applied — no saved summary for this session.\n\n";
+	}
+
+	modelHistory.history.forEach((msg, i) => {
 		const role = msg.role;
 		const preview =
 			typeof msg.content === "string"

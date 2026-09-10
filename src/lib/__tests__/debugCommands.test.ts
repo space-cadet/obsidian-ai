@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { handleDebugCommand } from "../debugCommands";
 import type { ChatSession, ChatMessage } from "../../types";
 import type { ProviderProfile } from "../../settings";
+import { createCompactionMetadata } from "../../context/semanticCompaction";
 
 function makeSession(messages: ChatMessage[] = []): ChatSession {
 	return {
@@ -113,6 +114,89 @@ describe("handleDebugCommand", () => {
 		expect(result.response).toContain("History Debug");
 		expect(result.response).toContain("user");
 		expect(result.response).toContain("assistant");
+	});
+
+	it("shows the compaction-aware history projection", () => {
+		const source: ChatMessage[] = [
+			{
+				id: "old-1",
+				role: "user",
+				content: "OLD-ONE",
+				timestamp: 1,
+			},
+			{
+				id: "old-2",
+				role: "assistant",
+				content: "OLD-TWO",
+				timestamp: 2,
+			},
+		];
+		const recent: ChatMessage[] = [
+			{
+				id: "recent-1",
+				role: "user",
+				content: "RECENT-ONE",
+				timestamp: 3,
+			},
+			{
+				id: "recent-2",
+				role: "assistant",
+				content: "RECENT-TWO",
+				timestamp: 4,
+			},
+			{
+				id: "recent-3",
+				role: "user",
+				content: "RECENT-THREE",
+				timestamp: 5,
+			},
+			{
+				id: "recent-4",
+				role: "assistant",
+				content: "RECENT-FOUR",
+				timestamp: 6,
+			},
+		];
+		const session = makeSession([
+			...source,
+			...recent,
+			{
+				id: "debug-event",
+				role: "assistant",
+				content: "Context Compacted",
+				timestamp: 7,
+				isDebug: true,
+			},
+		]);
+		session.compactionMetadata = createCompactionMetadata({
+			sourceMessages: source,
+			transcriptMessages: [...source, ...recent],
+			summary: {
+				keyDecisions: ["Summary retained"],
+				toolResults: [],
+				userIntent: ["Test projection"],
+				openQuestions: [],
+			},
+		});
+
+		const result = handleDebugCommand(
+			"!debug history",
+			session,
+			mockProfile,
+			{
+				...defaultSettings,
+				maxContextMessages: 100,
+				preserveRecentMessages: 4,
+			},
+		);
+
+		expect(result.response).toContain("**Compaction:** applied");
+		expect(result.response).toContain("Summary retained");
+		expect(result.response).toContain("RECENT-ONE");
+		expect(result.response).toContain("RECENT-FOUR");
+		expect(result.response).not.toContain("OLD-ONE");
+		expect(result.response).not.toContain("OLD-TWO");
+		expect(result.response).not.toContain("Context Compacted");
 	});
 
 	it("handles !debug tokens with empty session", () => {

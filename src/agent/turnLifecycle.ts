@@ -368,6 +368,13 @@ export class TurnLifecycle {
 				toolHistoryMode:
 					deps.plugin.settings.toolHistoryMode ?? "elide",
 				maxRequestTokens: deps.plugin.settings.maxRequestTokens,
+				maxContextMessages: deps.plugin.settings.maxContextMessages,
+				maxToolResultTokens: deps.plugin.settings.maxToolResultTokens,
+				preserveRecentMessages:
+					deps.plugin.settings.preserveRecentMessages,
+				requestResponseReserveTokens:
+					deps.plugin.settings.requestResponseReserveTokens,
+				enableAgentTools: deps.plugin.settings.enableAgentTools,
 			},
 		);
 		if (debugResult.handled) {
