@@ -11,6 +11,7 @@ import { setGeneratedResponseEffect } from "./modules/AIExtension";
 import { parseCommand } from "./modules/commands/parser";
 import { MessageQueue, HistoryMessage } from "./api/history";
 import type { ProviderTokenUsage } from "./types";
+import { estimateTokens } from "./context/tokenEstimator";
 import {
 	createLanguageModel,
 	validateProfile,
@@ -36,6 +37,13 @@ export type SdkMessage =
 	| { role: "system"; content: string | MessageContentPart[] }
 	| { role: "user"; content: string | MessageContentPart[] }
 	| { role: "assistant"; content: string | MessageContentPart[] };
+
+export interface ApiCallTelemetryResult {
+	text: string;
+	requestTokenEstimate: number;
+	providerUsage?: ProviderTokenUsage;
+	responseTimeMs: number;
+}
 
 /**
  * Maps a provider type to its required credential fields.
@@ -77,6 +85,25 @@ export class ChatApiManager {
 		profile?: ProviderProfile,
 		signal?: AbortSignal,
 	): Promise<string> {
+		const result = await this.callApiWithTelemetry(
+			systemMessage,
+			message,
+			profile,
+			signal,
+		);
+		return result.text;
+	}
+
+	/** Call the model while retaining usage for non-chat requests such as compaction. */
+	public async callApiWithTelemetry(
+		systemMessage: string,
+		message: string,
+		profile?: ProviderProfile,
+		signal?: AbortSignal,
+	): Promise<ApiCallTelemetryResult> {
+		const startedAt = Date.now();
+		const requestTokenEstimate =
+			estimateTokens(systemMessage) + estimateTokens(message);
 		const model = createLanguageModel(
 			profile ?? getActiveProviderProfile(this.settings),
 		);
@@ -84,7 +111,11 @@ export class ChatApiManager {
 			new Notice(
 				"⚠️ Chat client is not initialized. Please check your settings.",
 			);
-			return "⚠️ Chat client is not available.";
+			return {
+				text: "⚠️ Chat client is not available.",
+				requestTokenEstimate,
+				responseTimeMs: Date.now() - startedAt,
+			};
 		}
 
 		try {
@@ -94,14 +125,23 @@ export class ChatApiManager {
 				messages: [{ role: "user", content: message }],
 				abortSignal: signal,
 			});
-			return result.text;
+			return {
+				text: result.text,
+				requestTokenEstimate,
+				providerUsage: normalizeProviderUsage(await result.usage),
+				responseTimeMs: Date.now() - startedAt,
+			};
 		} catch (error: any) {
 			if (signal?.aborted || error?.name === "AbortError") {
 				throw error;
 			}
 			console.error("Error calling the chat model:", error);
 			new Notice(`❌ Error calling the chat model: ${error.message}`);
-			return "⚠️ Failed to generate a response. Please try again later.";
+			return {
+				text: "⚠️ Failed to generate a response. Please try again later.",
+				requestTokenEstimate,
+				responseTimeMs: Date.now() - startedAt,
+			};
 		}
 	}
 

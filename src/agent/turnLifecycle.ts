@@ -10,7 +10,9 @@ import type {
 	Attachment,
 	AgentStepTelemetry,
 	CompactionMetadata,
+	CompactionTelemetry,
 } from "../types";
+import type { ApiCallTelemetryResult } from "../api";
 import type { ProviderProfile } from "../settings";
 import type { ToolCall, ToolResult } from "../agent/types";
 import { toToolDisplayDescriptor } from "../agent/toolRegistry";
@@ -169,6 +171,66 @@ export class TurnLifecycle {
 		);
 	}
 
+	private appendDebugMessageToSession(
+		sessionId: string,
+		response: string,
+	): void {
+		const deps = this.getDeps();
+		const debugMsg: ChatMessage = {
+			id: makeId(),
+			role: "assistant",
+			content: response,
+			timestamp: Date.now(),
+			isDebug: true,
+		};
+		deps.setSessions((prev) =>
+			prev.map((session) =>
+				session.id === sessionId
+					? {
+							...session,
+							messages: [...session.messages, debugMsg],
+							updatedAt: Date.now(),
+						}
+					: session,
+			),
+		);
+	}
+
+	private async callCompactionApi(
+		prompt: string,
+		profile: ProviderProfile | undefined,
+	): Promise<{ text: string; telemetry: CompactionTelemetry }> {
+		const systemMessage =
+			"You summarize conversation history for another model. Return JSON only.";
+		const api = this.getDeps().plugin.chatapi as any;
+		const startedAt = Date.now();
+		if (typeof api.callApiWithTelemetry === "function") {
+			const result = (await api.callApiWithTelemetry(
+				systemMessage,
+				prompt,
+				profile,
+			)) as ApiCallTelemetryResult;
+			return {
+				text: result.text,
+				telemetry: {
+					requestTokenEstimate: result.requestTokenEstimate,
+					providerUsage: result.providerUsage,
+					responseTimeMs: result.responseTimeMs,
+				},
+			};
+		}
+
+		const text = await api.callApi(systemMessage, prompt, profile);
+		return {
+			text,
+			telemetry: {
+				requestTokenEstimate:
+					estimateTokens(systemMessage) + estimateTokens(prompt),
+				responseTimeMs: Date.now() - startedAt,
+			},
+		};
+	}
+
 	/** Run a user-requested compaction immediately and report the result in chat. */
 	private async runManualCompaction(): Promise<string> {
 		const deps = this.getDeps();
@@ -212,8 +274,7 @@ export class TurnLifecycle {
 			typeof parseCompactionResponseDetailed
 		> | null = null;
 		try {
-			const rawSummary = await deps.plugin.chatapi.callApi(
-				"You summarize conversation history for another model. Return JSON only.",
+			const compactionResult = await this.callCompactionApi(
 				buildCompactionPrompt(summarized, {
 					maxTokens: 8000,
 					maxToolResultTokens: 1200,
@@ -221,6 +282,7 @@ export class TurnLifecycle {
 				}),
 				compactionProfile,
 			);
+			const rawSummary = compactionResult.text;
 			const currentTranscript = (
 				deps.sessionsRef.current.find(
 					(candidate) => candidate.id === sessionId,
@@ -243,6 +305,7 @@ export class TurnLifecycle {
 				transcriptMessages: transcript,
 				summary: parsed,
 				model: compactionProfile?.model,
+				telemetry: compactionResult.telemetry,
 			});
 			this.compactionBySession[sessionId] = metadata;
 			deps.setSessions((prev) =>
@@ -719,13 +782,11 @@ export class TurnLifecycle {
 			const compactionProfile =
 				activeProfile.provider === "agent" ? undefined : activeProfile;
 			this.compactionInFlight[sessionIdForCompaction] = true;
-			void deps.plugin.chatapi
-				.callApi(
-					"You summarize conversation history for another model. Return JSON only.",
-					compactionPlan.prompt,
-					compactionProfile,
-				)
-				.then((rawSummary) => {
+			void this.callCompactionApi(
+				compactionPlan.prompt,
+				compactionProfile,
+			)
+				.then(({ text: rawSummary, telemetry }) => {
 					if (
 						!transcriptStartsWith(
 							deps.messagesRef.current.filter(
@@ -751,19 +812,62 @@ export class TurnLifecycle {
 						transcriptMessages: compactionSourceMessages,
 						summary: parsed,
 						model: compactionProfile?.model,
+						telemetry,
 					});
 					this.compactionBySession[sessionIdForCompaction] = metadata;
+					const summarizedCount = compactionPlan.summarized.length;
+					const recentCount = compactionPlan.recent.length;
+					const providerTotal = telemetry.providerUsage?.totalTokens;
+					const usageLine = Number.isFinite(providerTotal)
+						? ` Provider usage: ${providerTotal!.toLocaleString()} tokens.`
+						: telemetry.requestTokenEstimate !== undefined
+							? ` Estimated compaction request: ${telemetry.requestTokenEstimate.toLocaleString()} tokens.`
+							: "";
+					const debugMsg: ChatMessage = {
+						id: makeId(),
+						role: "assistant",
+						content: [
+							"**Context Compacted**",
+							"",
+							`✅ Automatic compaction completed. Summary saved for ${summarizedCount} older message(s); kept ${recentCount} recent message(s) exact.${usageLine}`,
+							"This local event is recorded in the transcript and is excluded from future model requests.",
+						].join("\n"),
+						timestamp: Date.now(),
+						isDebug: true,
+					};
 					deps.setSessions((prev) =>
 						prev.map((session) =>
 							session.id === sessionIdForCompaction
-								? { ...session, compactionMetadata: metadata }
+								? {
+										...session,
+										compactionMetadata: metadata,
+										messages: [
+											...session.messages,
+											debugMsg,
+										],
+										updatedAt: Date.now(),
+									}
 								: session,
 						),
 					);
 					new Notice("Conversation compacted for future requests.");
 				})
 				.catch((error) => {
-					console.error("[T48c] Semantic compaction skipped:", error);
+					const detail =
+						error instanceof Error ? error.message : String(error);
+					deps.plugin.logger?.log(
+						"error",
+						`[T48c] Automatic compaction failed: ${detail}`,
+					);
+					this.appendDebugMessageToSession(
+						sessionIdForCompaction,
+						[
+							"**Context Compaction**",
+							"",
+							`❌ Automatic compaction failed: ${detail}`,
+							"No compaction metadata was saved.",
+						].join("\n"),
+					);
 				})
 				.finally(() => {
 					delete this.compactionInFlight[sessionIdForCompaction];

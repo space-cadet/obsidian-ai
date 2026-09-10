@@ -2,6 +2,7 @@ import type {
 	ChatMessage,
 	CompactionMetadata,
 	CompactionSummary,
+	CompactionTelemetry,
 } from "../types";
 import { estimateTokens } from "./tokenEstimator";
 import { projectToolResultForModel } from "./toolResultProjection";
@@ -422,6 +423,7 @@ export function createCompactionMetadata(args: {
 	summary: CompactionSummary;
 	createdAt?: number;
 	model?: string;
+	telemetry?: CompactionTelemetry;
 }): CompactionMetadata {
 	const sourceMessageIds = args.sourceMessages.map((message) => message.id);
 	return {
@@ -435,6 +437,83 @@ export function createCompactionMetadata(args: {
 		summary: args.summary,
 		createdAt: args.createdAt ?? Date.now(),
 		...(args.model ? { model: args.model } : {}),
+		...(args.telemetry ? { telemetry: args.telemetry } : {}),
+	};
+}
+
+function parseCompactionTelemetry(
+	value: unknown,
+): CompactionTelemetry | null | undefined {
+	if (value === undefined) return undefined;
+	if (typeof value !== "object" || value === null) return null;
+	const candidate = value as Record<string, unknown>;
+	const requestTokenEstimate = candidate.requestTokenEstimate;
+	const responseTimeMs = candidate.responseTimeMs;
+	if (
+		(requestTokenEstimate !== undefined &&
+			(typeof requestTokenEstimate !== "number" ||
+				!Number.isFinite(requestTokenEstimate) ||
+				requestTokenEstimate < 0)) ||
+		(responseTimeMs !== undefined &&
+			(typeof responseTimeMs !== "number" ||
+				!Number.isFinite(responseTimeMs) ||
+				responseTimeMs < 0))
+	) {
+		return null;
+	}
+
+	let providerUsage: CompactionTelemetry["providerUsage"];
+	if (candidate.providerUsage !== undefined) {
+		if (
+			typeof candidate.providerUsage !== "object" ||
+			candidate.providerUsage === null
+		) {
+			return null;
+		}
+		const usage = candidate.providerUsage as Record<string, unknown>;
+		const usageKeys = [
+			"inputTokens",
+			"outputTokens",
+			"totalTokens",
+			"cachedInputTokens",
+			"reasoningTokens",
+		] as const;
+		if (
+			usageKeys.some(
+				(key) =>
+					usage[key] !== undefined &&
+					(typeof usage[key] !== "number" ||
+						!Number.isFinite(usage[key] as number) ||
+						(usage[key] as number) < 0),
+			)
+		) {
+			return null;
+		}
+		providerUsage = {
+			...(typeof usage.inputTokens === "number"
+				? { inputTokens: usage.inputTokens }
+				: {}),
+			...(typeof usage.outputTokens === "number"
+				? { outputTokens: usage.outputTokens }
+				: {}),
+			...(typeof usage.totalTokens === "number"
+				? { totalTokens: usage.totalTokens }
+				: {}),
+			...(typeof usage.cachedInputTokens === "number"
+				? { cachedInputTokens: usage.cachedInputTokens }
+				: {}),
+			...(typeof usage.reasoningTokens === "number"
+				? { reasoningTokens: usage.reasoningTokens }
+				: {}),
+		};
+	}
+
+	return {
+		...(typeof requestTokenEstimate === "number"
+			? { requestTokenEstimate }
+			: {}),
+		...(providerUsage ? { providerUsage } : {}),
+		...(typeof responseTimeMs === "number" ? { responseTimeMs } : {}),
 	};
 }
 
@@ -447,6 +526,7 @@ export function parseCompactionMetadata(
 	const summary = parseCompactionSummary(candidate.summary);
 	const sourceMessageIds = stringArray(candidate.sourceMessageIds);
 	const sourceToolCallIds = stringArray(candidate.sourceToolCallIds);
+	const telemetry = parseCompactionTelemetry(candidate.telemetry);
 	if (
 		candidate.version !== 1 ||
 		!sourceMessageIds ||
@@ -463,6 +543,7 @@ export function parseCompactionMetadata(
 		candidate.transcriptFingerprint.length > 128 ||
 		typeof candidate.createdAt !== "number" ||
 		!Number.isFinite(candidate.createdAt) ||
+		(candidate.telemetry !== undefined && telemetry === null) ||
 		!summary
 	) {
 		return null;
@@ -479,6 +560,7 @@ export function parseCompactionMetadata(
 		...(typeof candidate.model === "string"
 			? { model: candidate.model }
 			: {}),
+		...(telemetry ? { telemetry } : {}),
 	};
 }
 

@@ -134,6 +134,52 @@ describe("chat debug telemetry export", () => {
 		});
 	});
 
+	it("exports compaction accounting separately from message telemetry", () => {
+		const compactedSession: ChatSession = {
+			...session,
+			compactionMetadata: {
+				version: 1,
+				sourceMessageIds: ["old-message"],
+				sourceToolCallIds: ["old-call"],
+				summarizedThroughMessageId: "old-message",
+				sourceFingerprint: "fnv1a:11111111",
+				transcriptFingerprint: "fnv1a:22222222",
+				summary: {
+					keyDecisions: [],
+					toolResults: [],
+					userIntent: [],
+					openQuestions: [],
+				},
+				createdAt: 3,
+				model: "compaction-model",
+				telemetry: {
+					requestTokenEstimate: 950,
+					providerUsage: {
+						inputTokens: 800,
+						outputTokens: 150,
+						totalTokens: 950,
+					},
+					responseTimeMs: 200,
+				},
+			},
+		};
+		const exported = JSON.parse(
+			serializeToJSON([compactedSession], "single", {
+				debugMode: true,
+				debugTelemetry: DEFAULT_SETTINGS.debugTelemetry,
+			}),
+		);
+
+		expect(exported._debugTelemetry.sessions[0].compaction).toMatchObject({
+			sourceMessageCount: 1,
+			sourceToolCallCount: 1,
+			requestTokenEstimate: 950,
+			providerUsage: { totalTokens: 950 },
+			model: "compaction-model",
+			responseTimeMs: 200,
+		});
+	});
+
 	it("uses one serializer entry point for session and selected-message copy", () => {
 		const sessionExport = serializeChatExport({
 			kind: "sessions",

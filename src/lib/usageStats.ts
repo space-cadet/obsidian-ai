@@ -102,6 +102,62 @@ export function summarizeLlmUsage(sessions: ChatSession[]): LlmUsageStats {
 			inputEstimatedTokens += pendingUserTokens;
 			locallyEstimatedTokens += pendingUserTokens;
 		}
+
+		const compaction = session.compactionMetadata?.telemetry;
+		if (compaction) {
+			const usage = compaction.providerUsage;
+			const hasProviderUsage =
+				usage &&
+				[usage.inputTokens, usage.outputTokens, usage.totalTokens].some(
+					(value) => Number.isFinite(value),
+				);
+			const requestTokens = Math.max(
+				0,
+				compaction.requestTokenEstimate ?? 0,
+			);
+			if (hasProviderUsage) {
+				const inputTokens = Math.max(
+					0,
+					usage.inputTokens ?? requestTokens,
+				);
+				const totalTokens = Math.max(
+					0,
+					usage.totalTokens ?? inputTokens,
+				);
+				const outputTokens = Math.max(
+					0,
+					usage.outputTokens ?? totalTokens - inputTokens,
+				);
+				inputEstimatedTokens += inputTokens;
+				outputEstimatedTokens += outputTokens;
+				providerReportedTokens += totalTokens;
+				providerResponseCount += 1;
+			} else if (requestTokens > 0) {
+				inputEstimatedTokens += requestTokens;
+				locallyEstimatedTokens += requestTokens;
+				estimatedResponseCount += 1;
+			}
+
+			const model = session.compactionMetadata?.model || "Compaction";
+			const modelTotal = hasProviderUsage
+				? Math.max(
+						0,
+						usage.totalTokens ??
+							(usage.inputTokens ?? requestTokens) +
+								(usage.outputTokens ?? 0),
+					)
+				: requestTokens;
+			if (modelTotal > 0) {
+				modelTokens.set(
+					model,
+					(modelTokens.get(model) ?? 0) + modelTotal,
+				);
+			}
+			if (Number.isFinite(compaction.responseTimeMs)) {
+				responseTimeTotal += compaction.responseTimeMs!;
+				measuredResponseCount += 1;
+			}
+		}
 	}
 
 	return {

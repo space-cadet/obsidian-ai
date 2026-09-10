@@ -16,12 +16,12 @@ export type ChatExportRequest =
 			scope: ExportScope;
 			format: ExportFormat;
 			options?: ChatExportOptions;
-		}
+	  }
 	| {
 			kind: "messages";
 			messages: ChatMessage[];
 			format: "md";
-		};
+	  };
 
 function getToolParts(message: ChatMessage) {
 	if (message.contentParts?.length) {
@@ -45,83 +45,125 @@ function buildDebugTelemetry(
 	return {
 		enabled: true,
 		included: { ...fields },
-		sessions: sessions.map((session) => ({
-			sessionId: session.id,
-			messages: session.messages.map((message, index) => {
-				const telemetry: Record<string, unknown> = {
-					messageId: message.id,
-					index,
-					role: message.role,
-				};
+		sessions: sessions.map((session) => {
+			const sessionTelemetry: Record<string, unknown> = {
+				sessionId: session.id,
+				messages: session.messages.map((message, index) => {
+					const telemetry: Record<string, unknown> = {
+						messageId: message.id,
+						index,
+						role: message.role,
+					};
 
-				if (fields.includeProviderUsage && message.providerUsage) {
-					telemetry.providerUsage = message.providerUsage;
-				}
+					if (fields.includeProviderUsage && message.providerUsage) {
+						telemetry.providerUsage = message.providerUsage;
+					}
+					if (fields.includeRequestEstimates) {
+						telemetry.messageEstimatedTokens =
+							message.estimatedTokens;
+						telemetry.requestTokenEstimate =
+							message.requestTokenEstimate;
+					}
+					if (
+						fields.includeRequestBreakdown &&
+						message.agentStepTelemetry
+					) {
+						telemetry.agentSteps = message.agentStepTelemetry.map(
+							(step) => {
+								const stepTelemetry: Record<string, unknown> = {
+									step: step.step,
+								};
+								if (fields.includeRequestEstimates) {
+									stepTelemetry.requestTokenEstimate =
+										step.requestTokenEstimate;
+									stepTelemetry.toolSchemaTokens =
+										step.toolSchemaTokens;
+									stepTelemetry.historyTokens =
+										step.historyTokens;
+									stepTelemetry.continuationTokens =
+										step.continuationTokens;
+									stepTelemetry.toolResultTokens =
+										step.toolResultTokens;
+								}
+								if (
+									fields.includeProviderUsage &&
+									step.providerUsage
+								) {
+									stepTelemetry.providerUsage =
+										step.providerUsage;
+								}
+								return stepTelemetry;
+							},
+						);
+					}
+					if (fields.includeToolDetails) {
+						telemetry.toolCalls = getToolParts(message).map(
+							(part) => ({
+								callId: part.call.toolCallId,
+								toolName: part.call.toolName,
+								args: part.call.args,
+								result: part.result
+									? {
+											ok: !part.result.error,
+											resultChars: part.result.error
+												? undefined
+												: (part.result.content ?? "")
+														.length,
+											error: part.result.error,
+											hasMore: part.result.has_more,
+										}
+									: undefined,
+							}),
+						);
+					}
+					if (fields.includeContextMetadata && message.contextItems) {
+						telemetry.contextItems = message.contextItems;
+					}
+					if (fields.includeModelTiming) {
+						telemetry.modelName = message.modelName;
+						telemetry.responseTimeMs = message.responseTimeMs;
+					}
+
+					return telemetry;
+				}),
+			};
+
+			const compaction = session.compactionMetadata;
+			if (compaction) {
+				const compactionTelemetry: Record<string, unknown> = {
+					sourceMessageCount: compaction.sourceMessageIds.length,
+					sourceToolCallCount: compaction.sourceToolCallIds.length,
+					summarizedThroughMessageId:
+						compaction.summarizedThroughMessageId,
+					createdAt: compaction.createdAt,
+				};
 				if (fields.includeRequestEstimates) {
-					telemetry.messageEstimatedTokens = message.estimatedTokens;
-					telemetry.requestTokenEstimate =
-						message.requestTokenEstimate;
+					compactionTelemetry.requestTokenEstimate =
+						compaction.telemetry?.requestTokenEstimate;
 				}
 				if (
-					fields.includeRequestBreakdown &&
-					message.agentStepTelemetry
+					fields.includeProviderUsage &&
+					compaction.telemetry?.providerUsage
 				) {
-					telemetry.agentSteps = message.agentStepTelemetry.map(
-						(step) => {
-							const stepTelemetry: Record<string, unknown> = {
-								step: step.step,
-							};
-							if (fields.includeRequestEstimates) {
-								stepTelemetry.requestTokenEstimate =
-									step.requestTokenEstimate;
-								stepTelemetry.toolSchemaTokens =
-									step.toolSchemaTokens;
-								stepTelemetry.historyTokens =
-									step.historyTokens;
-								stepTelemetry.continuationTokens =
-									step.continuationTokens;
-								stepTelemetry.toolResultTokens =
-									step.toolResultTokens;
-							}
-							if (
-								fields.includeProviderUsage &&
-								step.providerUsage
-							) {
-								stepTelemetry.providerUsage =
-									step.providerUsage;
-							}
-							return stepTelemetry;
-						},
-					);
-				}
-				if (fields.includeToolDetails) {
-					telemetry.toolCalls = getToolParts(message).map((part) => ({
-						callId: part.call.toolCallId,
-						toolName: part.call.toolName,
-						args: part.call.args,
-						result: part.result
-							? {
-									ok: !part.result.error,
-									resultChars: part.result.error
-										? undefined
-										: (part.result.content ?? "").length,
-									error: part.result.error,
-									hasMore: part.result.has_more,
-								}
-							: undefined,
-					}));
-				}
-				if (fields.includeContextMetadata && message.contextItems) {
-					telemetry.contextItems = message.contextItems;
+					compactionTelemetry.providerUsage =
+						compaction.telemetry.providerUsage;
 				}
 				if (fields.includeModelTiming) {
-					telemetry.modelName = message.modelName;
-					telemetry.responseTimeMs = message.responseTimeMs;
+					compactionTelemetry.model = compaction.model;
+					compactionTelemetry.responseTimeMs =
+						compaction.telemetry?.responseTimeMs;
 				}
+				if (fields.includeContextMetadata) {
+					compactionTelemetry.sourceMessageIds =
+						compaction.sourceMessageIds;
+					compactionTelemetry.sourceToolCallIds =
+						compaction.sourceToolCallIds;
+				}
+				sessionTelemetry.compaction = compactionTelemetry;
+			}
 
-				return telemetry;
-			}),
-		})),
+			return sessionTelemetry;
+		}),
 	};
 }
 
@@ -287,8 +329,9 @@ export function serializeToJSONL(
 						telemetry
 							? {
 									...m,
-									_debugTelemetry:
-										telemetry.sessions[0].messages[index],
+									_debugTelemetry: (
+										telemetry.sessions[0] as any
+									).messages[index],
 								}
 							: m,
 					),

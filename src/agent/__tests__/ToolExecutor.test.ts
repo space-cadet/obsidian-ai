@@ -166,7 +166,7 @@ describe("ToolExecutor note safety", () => {
 });
 
 describe("ToolExecutor historical tool results", () => {
-	it("retrieves a bounded exact range through the registered tool", async () => {
+	it("retrieves an older exact range after compaction metadata is present", async () => {
 		const app = {
 			vault: {
 				getFiles: () => [],
@@ -177,6 +177,21 @@ describe("ToolExecutor historical tool results", () => {
 		const sessions = [
 			{
 				id: "session-1",
+				compactionMetadata: {
+					version: 1,
+					sourceMessageIds: ["message-1"],
+					sourceToolCallIds: ["call-1"],
+					summarizedThroughMessageId: "message-1",
+					sourceFingerprint: "fnv1a:11111111",
+					transcriptFingerprint: "fnv1a:22222222",
+					summary: {
+						keyDecisions: ["The result is retrievable"],
+						toolResults: ["read_note (call-1): completed"],
+						userIntent: [],
+						openQuestions: [],
+					},
+					createdAt: 2,
+				},
 				messages: [
 					{
 						id: "message-1",

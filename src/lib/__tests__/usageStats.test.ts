@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { summarizeLlmUsage } from "../usageStats";
+import { getSessionTotalTokens } from "../sessionUtils";
 
 describe("summarizeLlmUsage", () => {
 	it("separates estimated input/output totals and groups assistant usage by model", () => {
@@ -83,5 +84,81 @@ describe("summarizeLlmUsage", () => {
 			usageSource: "provider",
 			modelEstimatedTokens: [{ model: "openrouter/test", tokens: 1_200 }],
 		});
+	});
+
+	it("includes compaction request usage separately from chat messages", () => {
+		const stats = summarizeLlmUsage([
+			{
+				id: "one",
+				title: "",
+				createdAt: 1,
+				updatedAt: 1,
+				contextItems: [],
+				messages: [],
+				compactionMetadata: {
+					version: 1,
+					sourceMessageIds: ["old"],
+					sourceToolCallIds: [],
+					summarizedThroughMessageId: "old",
+					sourceFingerprint: "fnv1a:11111111",
+					transcriptFingerprint: "fnv1a:22222222",
+					summary: {
+						keyDecisions: [],
+						toolResults: [],
+						userIntent: [],
+						openQuestions: [],
+					},
+					createdAt: 2,
+					model: "compaction-model",
+					telemetry: {
+						requestTokenEstimate: 950,
+						providerUsage: {
+							inputTokens: 800,
+							outputTokens: 150,
+							totalTokens: 950,
+						},
+						responseTimeMs: 200,
+					},
+				},
+			},
+		]);
+
+		expect(stats).toMatchObject({
+			totalEstimatedTokens: 950,
+			inputEstimatedTokens: 800,
+			outputEstimatedTokens: 150,
+			providerReportedTokens: 950,
+			modelEstimatedTokens: [{ model: "compaction-model", tokens: 950 }],
+			averageResponseTimeMs: 200,
+		});
+		expect(
+			getSessionTotalTokens({
+				id: "one",
+				title: "",
+				createdAt: 1,
+				updatedAt: 1,
+				contextItems: [],
+				messages: [],
+				compactionMetadata: {
+					version: 1,
+					sourceMessageIds: ["old"],
+					sourceToolCallIds: [],
+					summarizedThroughMessageId: "old",
+					sourceFingerprint: "fnv1a:11111111",
+					transcriptFingerprint: "fnv1a:22222222",
+					summary: {
+						keyDecisions: [],
+						toolResults: [],
+						userIntent: [],
+						openQuestions: [],
+					},
+					createdAt: 2,
+					telemetry: {
+						requestTokenEstimate: 950,
+						providerUsage: { totalTokens: 950 },
+					},
+				},
+			}),
+		).toBe(950);
 	});
 });

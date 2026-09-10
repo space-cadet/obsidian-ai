@@ -42,6 +42,13 @@ export interface CompactionSummary {
 	openQuestions: string[];
 }
 
+/** Provider and local accounting for the compaction request itself. */
+export interface CompactionTelemetry {
+	requestTokenEstimate?: number;
+	providerUsage?: ProviderTokenUsage;
+	responseTimeMs?: number;
+}
+
 /** Durable provenance for the non-destructive model-history compaction. */
 export interface CompactionMetadata {
 	/** Schema version for future summary migrations. */
@@ -60,6 +67,8 @@ export interface CompactionMetadata {
 	summary: CompactionSummary;
 	createdAt: number;
 	model?: string;
+	/** Usage for the hidden summarization request, when available. */
+	telemetry?: CompactionTelemetry;
 }
 
 /** Bounded diagnostic breakdown for one native agent model request. */

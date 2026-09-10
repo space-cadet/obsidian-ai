@@ -40,5 +40,16 @@ export function getSessionTotalTokens(session: ChatSession): number {
 			pendingUserTokens = 0;
 		}
 	}
+
+	const compaction = session.compactionMetadata?.telemetry;
+	if (compaction) {
+		const providerTotal = compaction.providerUsage?.totalTokens;
+		if (Number.isFinite(providerTotal)) {
+			total += providerTotal!;
+		} else if (Number.isFinite(compaction.requestTokenEstimate)) {
+			total += compaction.requestTokenEstimate!;
+		}
+	}
+
 	return total + pendingUserTokens;
 }

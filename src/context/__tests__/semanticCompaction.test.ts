@@ -140,6 +140,15 @@ describe("semantic compaction", () => {
 			summary,
 			createdAt: 123,
 			model: "test-model",
+			telemetry: {
+				requestTokenEstimate: 321,
+				providerUsage: {
+					inputTokens: 300,
+					outputTokens: 21,
+					totalTokens: 321,
+				},
+				responseTimeMs: 456,
+			},
 		});
 
 		expect(metadata).toMatchObject({
@@ -150,6 +159,15 @@ describe("semantic compaction", () => {
 			transcriptFingerprint: fingerprintTranscript(fullTranscript),
 			createdAt: 123,
 			model: "test-model",
+			telemetry: {
+				requestTokenEstimate: 321,
+				providerUsage: {
+					inputTokens: 300,
+					outputTokens: 21,
+					totalTokens: 321,
+				},
+				responseTimeMs: 456,
+			},
 		});
 		expect(parseCompactionMetadata(metadata)).toEqual(metadata);
 		expect(
