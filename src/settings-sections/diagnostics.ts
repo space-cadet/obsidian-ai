@@ -177,6 +177,28 @@ export function renderDiagnosticsSection(
 				});
 		});
 
+	new Setting(sectionEl)
+		.setName("Memory snapshot interval (seconds)")
+		.setDesc(
+			"Record a baseline heap and DOM snapshot at this interval. Minimum 60 seconds; Errors-only logging still keeps these baseline metrics, while Off disables them.",
+		)
+		.addText((text) => {
+			text.setPlaceholder("60")
+				.setValue(String(plugin.settings.memoryLogIntervalSeconds))
+				.inputEl.addEventListener("blur", async () => {
+					const value = Number.parseInt(text.getValue(), 10);
+					plugin.settings.memoryLogIntervalSeconds = Number.isFinite(
+						value,
+					)
+						? Math.min(3600, Math.max(60, value))
+						: 60;
+					text.setValue(
+						String(plugin.settings.memoryLogIntervalSeconds),
+					);
+					await saveSettings();
+				});
+		});
+
 	const metricsEl = sectionEl.createDiv({
 		cls: "obsidian-ai-settings-metrics",
 	});

@@ -9,6 +9,10 @@ import { StoredChatData } from "../types";
 import { ObsidianAISettings } from "../settings";
 import type { SyncLogEntry, SyncProgressSnapshot } from "../sync/SyncProgress";
 
+interface ChatLogger {
+	log(level: string, ...args: unknown[]): void;
+}
+
 export const CHAT_VIEWTYPE = "obsidian-ai-chat-view";
 
 export interface ChatPluginLike {
@@ -16,6 +20,7 @@ export interface ChatPluginLike {
 	chatapi: ChatApiManager;
 	manifest: { id: string };
 	settings: ObsidianAISettings;
+	logger?: ChatLogger;
 	personaLoader: import("../intelligence/PersonaLoader").PersonaLoader | null;
 	searchIndex: import("../search/index").SearchIndex | null;
 	integrationRegistry?: import("../integrations/ProviderRegistry").ProviderRegistry;

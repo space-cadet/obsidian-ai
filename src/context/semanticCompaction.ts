@@ -46,6 +46,21 @@ const MAX_SUMMARY_ITEM_CHARS = 800;
 const MAX_SUMMARY_CHARS = 8000;
 const MAX_SOURCE_IDS = 10000;
 
+export type CompactionResponseFailure =
+	| "empty-response"
+	| "provider-error"
+	| "invalid-json"
+	| "invalid-schema";
+
+export interface CompactionResponseDiagnostics {
+	summary: CompactionSummary | null;
+	failure: CompactionResponseFailure | null;
+	rawLength: number;
+	fencedJson: boolean;
+	parsedCandidateCount: number;
+	schemaIssues: string[];
+}
+
 function stringArray(value: unknown): string[] | null {
 	if (
 		!Array.isArray(value) ||
@@ -56,71 +71,191 @@ function stringArray(value: unknown): string[] | null {
 	return value;
 }
 
-function boundedStringArray(
-	value: unknown,
-	maxItems: number,
-	maxItemChars: number,
-	maxTotalChars: number,
-): string[] | null {
-	const values = stringArray(value);
-	if (!values || values.length > maxItems) return null;
-	let totalChars = 0;
-	for (const item of values) {
-		if (item.length > maxItemChars) return null;
-		totalChars += item.length;
-		if (totalChars > maxTotalChars) return null;
+function validateCompactionSummary(value: unknown): {
+	summary: CompactionSummary | null;
+	issues: string[];
+} {
+	if (typeof value !== "object" || value === null) {
+		return {
+			summary: null,
+			issues: ["response must be a JSON object"],
+		};
 	}
-	return values;
+
+	const candidate = value as Record<string, unknown>;
+	const issues: string[] = [];
+	const fields = [
+		"keyDecisions",
+		"toolResults",
+		"userIntent",
+		"openQuestions",
+	] as const;
+	const values = {} as Record<(typeof fields)[number], string[]>;
+
+	for (const field of fields) {
+		if (!(field in candidate)) {
+			issues.push(`${field}: missing`);
+			continue;
+		}
+		const value = candidate[field];
+		if (!Array.isArray(value)) {
+			issues.push(`${field}: must be an array of strings`);
+			continue;
+		}
+		if (!value.every((item) => typeof item === "string")) {
+			issues.push(`${field}: must contain only strings`);
+			continue;
+		}
+		if (value.length > MAX_SUMMARY_ITEMS) {
+			issues.push(
+				`${field}: too many items (maximum ${MAX_SUMMARY_ITEMS})`,
+			);
+			continue;
+		}
+		if (value.some((item) => item.length > MAX_SUMMARY_ITEM_CHARS)) {
+			issues.push(
+				`${field}: an item exceeds ${MAX_SUMMARY_ITEM_CHARS} characters`,
+			);
+			continue;
+		}
+		const totalChars = value.reduce(
+			(total, item) => total + item.length,
+			0,
+		);
+		if (totalChars > MAX_SUMMARY_CHARS) {
+			issues.push(
+				`${field}: exceeds ${MAX_SUMMARY_CHARS} characters in total`,
+			);
+			continue;
+		}
+		values[field] = value;
+	}
+
+	if (issues.length > 0) return { summary: null, issues };
+
+	const summary = fields.reduce(
+		(total, field) =>
+			total + values[field].reduce((sum, item) => sum + item.length, 0),
+		0,
+	);
+	if (summary > MAX_SUMMARY_CHARS) {
+		return {
+			summary: null,
+			issues: [
+				`summary: exceeds ${MAX_SUMMARY_CHARS} characters in total`,
+			],
+		};
+	}
+
+	return {
+		summary: {
+			keyDecisions: values.keyDecisions,
+			toolResults: values.toolResults,
+			userIntent: values.userIntent,
+			openQuestions: values.openQuestions,
+		},
+		issues: [],
+	};
 }
 
 /** Accept only the four fields the compaction prompt asks the model to return. */
 export function parseCompactionSummary(
 	value: unknown,
 ): CompactionSummary | null {
-	if (typeof value !== "object" || value === null) return null;
-	const candidate = value as Record<string, unknown>;
-	const summaryArray = (value: unknown) =>
-		boundedStringArray(
-			value,
-			MAX_SUMMARY_ITEMS,
-			MAX_SUMMARY_ITEM_CHARS,
-			MAX_SUMMARY_CHARS,
-		);
-	const keyDecisions = summaryArray(candidate.keyDecisions);
-	const toolResults = summaryArray(candidate.toolResults);
-	const userIntent = summaryArray(candidate.userIntent);
-	const openQuestions = summaryArray(candidate.openQuestions);
-	if (!keyDecisions || !toolResults || !userIntent || !openQuestions) {
-		return null;
-	}
-	if (
-		[
-			...keyDecisions,
-			...toolResults,
-			...userIntent,
-			...openQuestions,
-		].reduce((total, item) => total + item.length, 0) > MAX_SUMMARY_CHARS
-	) {
-		return null;
-	}
-	return { keyDecisions, toolResults, userIntent, openQuestions };
+	return validateCompactionSummary(value).summary;
 }
 
 /** Parse the JSON object returned by a compaction provider, including fenced JSON. */
 export function parseCompactionResponse(raw: string): CompactionSummary | null {
-	const trimmed = raw.trim();
+	return parseCompactionResponseDetailed(raw).summary;
+}
+
+/**
+ * Parse a provider response while retaining safe, bounded diagnostics.
+ * The response body is deliberately not included so logs cannot duplicate the
+ * conversation or expose note content.
+ */
+export function parseCompactionResponseDetailed(
+	raw: string,
+): CompactionResponseDiagnostics {
+	const value = typeof raw === "string" ? raw : String(raw ?? "");
+	const trimmed = value.trim();
 	const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
 	const candidates = fenced ? [fenced[1].trim(), trimmed] : [trimmed];
 
+	const base = {
+		rawLength: value.length,
+		fencedJson: Boolean(fenced),
+		parsedCandidateCount: 0,
+		schemaIssues: [] as string[],
+	};
+	if (!trimmed) {
+		return { ...base, summary: null, failure: "empty-response" };
+	}
+	if (
+		trimmed === "⚠️ Chat client is not available." ||
+		trimmed === "⚠️ Failed to generate a response. Please try again later."
+	) {
+		return { ...base, summary: null, failure: "provider-error" };
+	}
+
+	let sawParsedJson = false;
 	for (const candidate of candidates) {
 		try {
-			const parsed = parseCompactionSummary(JSON.parse(candidate));
-			if (parsed) return parsed;
+			const parsed = JSON.parse(candidate);
+			sawParsedJson = true;
+			base.parsedCandidateCount += 1;
+			const validation = validateCompactionSummary(parsed);
+			if (validation.summary) {
+				return { ...base, summary: validation.summary, failure: null };
+			}
+			if (base.schemaIssues.length === 0) {
+				base.schemaIssues = validation.issues.slice(0, 8);
+			}
 		} catch {
-			// Try the next representation, then report an invalid response to the caller.
+			// Continue so a fenced response can still be checked as raw JSON.
 		}
 	}
-	return null;
+
+	return {
+		...base,
+		summary: null,
+		failure: sawParsedJson ? "invalid-schema" : "invalid-json",
+	};
+}
+
+export function describeCompactionResponseDiagnostics(
+	diagnostics: CompactionResponseDiagnostics,
+): string {
+	const parts = [
+		`failure=${diagnostics.failure ?? "none"}`,
+		`responseChars=${diagnostics.rawLength}`,
+		`fencedJson=${diagnostics.fencedJson ? "yes" : "no"}`,
+		`parsedCandidates=${diagnostics.parsedCandidateCount}`,
+	];
+	if (diagnostics.schemaIssues.length > 0) {
+		parts.push(`schemaIssues=${diagnostics.schemaIssues.join("; ")}`);
+	}
+	return parts.join(", ");
+}
+
+export function compactionResponseFailureMessage(
+	diagnostics: CompactionResponseDiagnostics,
+): string {
+	switch (diagnostics.failure) {
+		case "provider-error":
+			return "The chat provider did not return a compaction response.";
+		case "empty-response":
+			return "The chat provider returned an empty compaction response.";
+		case "invalid-json":
+			return "The chat provider returned text that was not valid JSON.";
+		case "invalid-schema":
+			return diagnostics.schemaIssues.length > 0
+				? `The JSON response was missing or invalid: ${diagnostics.schemaIssues.join(", ")}.`
+				: "The JSON response did not contain the required summary arrays.";
+		default:
+			return "The compaction response could not be validated.";
+	}
 }
 
 function textOf(

@@ -288,6 +288,25 @@ describe("persistence", () => {
 			expect(mockStorage.saveChatData).toHaveBeenCalledWith(chatData);
 		});
 
+		it("skips an identical snapshot after it has been written", async () => {
+			const plugin = createMockPlugin();
+			const mockStorage = {
+				saveChatData: vi.fn().mockResolvedValue(undefined),
+			};
+			plugin._chatStorage = mockStorage as any;
+			plugin.settings = { ...DEFAULT_SETTINGS, chatStorageFormat: "jsonl" };
+			const chatData = { sessions: [], messages: {} };
+
+			await saveChatData(plugin, chatData as any);
+			await saveChatData(plugin, chatData as any);
+
+			expect(mockStorage.saveChatData).toHaveBeenCalledOnce();
+			expect(plugin.logger.log).toHaveBeenCalledWith(
+				"debug",
+				"saveChatData skipped: snapshot unchanged",
+			);
+		});
+
 		it("queues writes when save is already in progress", async () => {
 			const plugin = createMockPlugin();
 			const mockStorage = {
@@ -311,7 +330,7 @@ describe("persistence", () => {
 
 			expect(plugin._pendingChatData).toEqual(chatData2);
 			expect(plugin.logger.log).toHaveBeenCalledWith(
-				"info",
+				"debug",
 				expect.stringContaining("queued"),
 			);
 		});

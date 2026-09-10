@@ -153,6 +153,8 @@ export interface ObsidianAISettings {
 	debugLogLevel: "off" | "error" | "info" | "debug";
 	debugLogRetention: number;
 	debugLogMaxSizeMB: number;
+	/** Baseline memory snapshot interval; clamped to 60 seconds through 1 hour. */
+	memoryLogIntervalSeconds: number;
 	enableAgentTools: boolean;
 	autoApply: boolean;
 	/** IDs of peer-plugin providers allowed to offer tools to Obsidian AI. */
@@ -399,6 +401,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	debugLogLevel: "error",
 	debugLogRetention: 200,
 	debugLogMaxSizeMB: 5,
+	memoryLogIntervalSeconds: 60,
 	enableAgentTools: true,
 	autoApply: false,
 	enabledIntegrationProviderIds: [],
@@ -559,6 +562,14 @@ export const normalizeSettings = (
 		debugLogLevel: merged.debugLogLevel ?? "error",
 		debugLogRetention: merged.debugLogRetention ?? 200,
 		debugLogMaxSizeMB: merged.debugLogMaxSizeMB ?? 5,
+		memoryLogIntervalSeconds: Number.isFinite(
+			merged.memoryLogIntervalSeconds,
+		)
+			? Math.min(
+					3600,
+					Math.max(60, Math.round(merged.memoryLogIntervalSeconds)),
+				)
+			: 60,
 		enableAgentTools: Boolean(merged.enableAgentTools ?? true),
 		autoApply: Boolean(merged.autoApply ?? false),
 		enabledIntegrationProviderIds: Array.isArray(

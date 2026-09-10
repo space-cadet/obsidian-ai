@@ -87,4 +87,59 @@ describe("TurnLifecycle compaction command", () => {
 			content: expect.stringContaining("Summary validated and saved"),
 		});
 	});
+
+	it("logs actionable bounded diagnostics when compaction is rejected", async () => {
+		const sessions = [makeSession()];
+		const logger = { log: vi.fn() };
+		const deps = {
+			plugin: {
+				settings: { preserveRecentMessages: 3 },
+				chatapi: {
+					callApi: vi
+						.fn()
+						.mockResolvedValue(
+							JSON.stringify({ summary: "wrong shape" }),
+						),
+				},
+				logger,
+			} as any,
+			orchestrator: null,
+			participantRouter: null,
+			resolvedProfile: {
+				id: "profile-1",
+				name: "Test",
+				provider: "openai",
+				model: "test-model",
+				createdAt: 0,
+				updatedAt: 0,
+			},
+			isGroupChat: false,
+			participants: [],
+			thinkingEnabled: false,
+			sessionsRef: { current: sessions },
+			activeSessionIdRef: { current: "session-1" },
+			setSessions: vi.fn(),
+			getRuntime: () => ({ controller: null }) as any,
+			patchRuntime: vi.fn(),
+			clearRuntime: vi.fn(),
+			setWasTruncated: vi.fn(),
+			setContextTokenCount: vi.fn(),
+			setContextItems: vi.fn(),
+			messagesRef: { current: sessions[0].messages },
+			contextItemsRef: { current: [] },
+			ui: {} as any,
+		} as unknown as TurnLifecycleDeps;
+		const lifecycle = new TurnLifecycle(() => deps);
+
+		await lifecycle.send("!debug compact");
+
+		expect(logger.log).toHaveBeenCalledWith(
+			"error",
+			expect.stringContaining("failure=invalid-schema"),
+		);
+		expect(logger.log).toHaveBeenCalledWith(
+			"error",
+			expect.stringContaining("schemaIssues="),
+		);
+	});
 });

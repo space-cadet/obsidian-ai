@@ -9,6 +9,7 @@ import {
 	fingerprintTranscript,
 	parseCompactionMetadata,
 	parseCompactionResponse,
+	parseCompactionResponseDetailed,
 	parseCompactionSummary,
 	planSemanticCompaction,
 	transcriptStartsWith,
@@ -206,5 +207,35 @@ describe("semantic compaction", () => {
 			),
 		).toEqual(summary);
 		expect(parseCompactionResponse("```json\nnot JSON\n```")).toBeNull();
+	});
+
+	it("classifies provider errors without exposing response content", () => {
+		const diagnostics = parseCompactionResponseDetailed(
+			"⚠️ Failed to generate a response. Please try again later.",
+		);
+
+		expect(diagnostics).toMatchObject({
+			failure: "provider-error",
+			rawLength: expect.any(Number),
+			fencedJson: false,
+			parsedCandidateCount: 0,
+		});
+		expect(JSON.stringify(diagnostics)).not.toContain("try again later");
+	});
+
+	it("reports bounded schema diagnostics for valid JSON with wrong fields", () => {
+		const diagnostics = parseCompactionResponseDetailed(
+			JSON.stringify({ summary: "wrong shape" }),
+		);
+
+		expect(diagnostics.failure).toBe("invalid-schema");
+		expect(diagnostics.schemaIssues).toEqual(
+			expect.arrayContaining([
+				"keyDecisions: missing",
+				"toolResults: missing",
+				"userIntent: missing",
+				"openQuestions: missing",
+			]),
+		);
 	});
 });

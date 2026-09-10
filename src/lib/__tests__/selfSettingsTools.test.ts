@@ -277,6 +277,9 @@ describe("validateSettingUpdate", () => {
 		expect(validateSettingUpdate("debugLogLevel", "debug").ok).toBe(true);
 		expect(validateSettingUpdate("debugLogRetention", 500).ok).toBe(true);
 		expect(validateSettingUpdate("debugLogMaxSizeMB", 10).ok).toBe(true);
+		expect(validateSettingUpdate("memoryLogIntervalSeconds", 60).ok).toBe(
+			true,
+		);
 		expect(
 			validateSettingUpdate(
 				"debugTelemetry.includeRequestBreakdown",
@@ -345,6 +348,7 @@ describe("MUTABLE_SETTING_KEYS", () => {
 			"debugLogLevel",
 			"debugLogRetention",
 			"debugLogMaxSizeMB",
+			"memoryLogIntervalSeconds",
 			"debugMode",
 			"debugTelemetry.includeProviderUsage",
 			"debugTelemetry.includeRequestEstimates",

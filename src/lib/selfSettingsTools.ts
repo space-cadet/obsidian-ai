@@ -26,6 +26,7 @@ export const MUTABLE_SETTING_KEYS = [
 	"debugLogLevel",
 	"debugLogRetention",
 	"debugLogMaxSizeMB",
+	"memoryLogIntervalSeconds",
 	"debugMode",
 	"debugTelemetry.includeProviderUsage",
 	"debugTelemetry.includeRequestEstimates",
@@ -268,6 +269,21 @@ export function validateSettingUpdate(
 		case "intelligence.autoSummarizeMinMessages":
 		case "remoteStorage.syncIntervalMinutes":
 			validation = assertPositiveNumber(key, value);
+			break;
+		case "memoryLogIntervalSeconds":
+			if (
+				typeof value !== "number" ||
+				!Number.isInteger(value) ||
+				value < 60 ||
+				value > 3600
+			) {
+				validation = {
+					ok: false,
+					error: `"${key}" must be an integer between 60 and 3600 seconds.`,
+				};
+			} else {
+				validation = { ok: true };
+			}
 			break;
 
 		// Non-negative number keys; zero has an explicit meaning in the UI.

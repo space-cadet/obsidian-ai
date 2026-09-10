@@ -24,6 +24,10 @@ export async function loadSettings(plugin: ObsidianAIPlugin): Promise<void> {
 		`loadSettings: _settingsLoadedFromFile=${plugin._settingsLoadedFromFile}, raw=${raw ? "exists" : "null"}`,
 	);
 	plugin.settings = normalizeSettings(raw);
+	plugin.logger?.setLogLevel?.(plugin.settings.debugLogLevel);
+	plugin.logger?.setMemoryLogIntervalSeconds?.(
+		plugin.settings.memoryLogIntervalSeconds,
+	);
 
 	// Restore WebDAV password from localStorage (not synced, not in data.json)
 	const savedPassword = localStorage.getItem("obsidian-ai:webdav-password");
@@ -48,6 +52,10 @@ export async function saveSettings(plugin: ObsidianAIPlugin): Promise<void> {
 		);
 		return;
 	}
+	plugin.logger?.setLogLevel?.(plugin.settings.debugLogLevel);
+	plugin.logger?.setMemoryLogIntervalSeconds?.(
+		plugin.settings.memoryLogIntervalSeconds,
+	);
 
 	// Save password to localStorage (or clear if empty)
 	const webdavPassword = plugin.settings.remoteStorage.webdav?.password;
@@ -105,6 +113,7 @@ export async function saveChatData(
 	plugin: ObsidianAIPlugin,
 	chatData: StoredChatData,
 ): Promise<void> {
+	const fingerprint = fingerprintChatData(chatData);
 	if (!plugin._chatStorage) {
 		plugin._chatStorage = createStorage(
 			createStorageDeps(plugin),
@@ -112,11 +121,25 @@ export async function saveChatData(
 		);
 	}
 	if (plugin._saveInProgress) {
+		if (
+			plugin._pendingChatData &&
+			fingerprintChatData(plugin._pendingChatData) === fingerprint
+		) {
+			plugin.logger?.log(
+				"debug",
+				"saveChatData skipped: identical snapshot already queued",
+			);
+			return;
+		}
 		plugin._pendingChatData = chatData;
 		plugin.logger?.log(
-			"info",
+			"debug",
 			"saveChatData queued: save already in progress",
 		);
+		return;
+	}
+	if (plugin._lastSavedChatDataFingerprint === fingerprint) {
+		plugin.logger?.log("debug", "saveChatData skipped: snapshot unchanged");
 		return;
 	}
 	plugin._saveInProgress = true;
@@ -124,12 +147,22 @@ export async function saveChatData(
 	try {
 		let nextChatData: StoredChatData | null = chatData;
 		while (nextChatData) {
+			const nextFingerprint = fingerprintChatData(nextChatData);
 			plugin._pendingChatData = null;
+			if (plugin._lastSavedChatDataFingerprint === nextFingerprint) {
+				plugin.logger?.log(
+					"debug",
+					"saveChatData skipped: queued snapshot unchanged",
+				);
+				nextChatData = plugin._pendingChatData;
+				continue;
+			}
 			plugin.logger?.log(
 				"info",
 				"saveChatData: writing via storage layer",
 			);
 			await plugin._chatStorage.saveChatData(nextChatData);
+			plugin._lastSavedChatDataFingerprint = nextFingerprint;
 			plugin.logger?.log(
 				"info",
 				"saveChatData: storage layer wrote successfully",
@@ -157,6 +190,21 @@ export async function saveChatData(
 	} finally {
 		plugin._saveInProgress = false;
 	}
+}
+
+/**
+ * Return a compact fingerprint for a persisted chat snapshot without retaining
+ * the serialized transcript in memory. The length is included to make the
+ * small hash collision-resistant for the practical session sizes involved.
+ */
+export function fingerprintChatData(chatData: StoredChatData): string {
+	const serialized = JSON.stringify(chatData) ?? "";
+	let hash = 2166136261;
+	for (let index = 0; index < serialized.length; index++) {
+		hash ^= serialized.charCodeAt(index);
+		hash = Math.imul(hash, 16777619);
+	}
+	return `fnv1a:${serialized.length}:${(hash >>> 0).toString(16).padStart(8, "0")}`;
 }
 
 /** Debounced auto-sync trigger. Waits 3s of inactivity before syncing. */

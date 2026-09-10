@@ -34,7 +34,9 @@ import {
 	createCompactionMetadata,
 	formatCompactionSummary,
 	parseCompactionMetadata,
-	parseCompactionResponse,
+	parseCompactionResponseDetailed,
+	compactionResponseFailureMessage,
+	describeCompactionResponseDiagnostics,
 	planSemanticCompaction,
 	transcriptStartsWith,
 } from "../context/semanticCompaction";
@@ -206,6 +208,9 @@ export class TurnLifecycle {
 				? undefined
 				: deps.resolvedProfile;
 		this.compactionInFlight[sessionId] = true;
+		let responseDiagnostics: ReturnType<
+			typeof parseCompactionResponseDetailed
+		> | null = null;
 		try {
 			const rawSummary = await deps.plugin.chatapi.callApi(
 				"You summarize conversation history for another model. Return JSON only.",
@@ -226,12 +231,13 @@ export class TurnLifecycle {
 					"Transcript changed while compaction was running",
 				);
 			}
-			const parsed = parseCompactionResponse(rawSummary);
-			if (!parsed) {
+			responseDiagnostics = parseCompactionResponseDetailed(rawSummary);
+			if (!responseDiagnostics.summary) {
 				throw new Error(
-					"Compaction response did not match the expected JSON format",
+					compactionResponseFailureMessage(responseDiagnostics),
 				);
 			}
+			const parsed = responseDiagnostics.summary;
 			const metadata = createCompactionMetadata({
 				sourceMessages: summarized,
 				transcriptMessages: transcript,
@@ -259,6 +265,10 @@ export class TurnLifecycle {
 		} catch (error) {
 			const detail =
 				error instanceof Error ? error.message : String(error);
+			deps.plugin.logger?.log(
+				"error",
+				`[T48c] Manual compaction failed: ${detail}${responseDiagnostics ? ` (${describeCompactionResponseDiagnostics(responseDiagnostics)})` : ""}`,
+			);
 			return [
 				"**Compaction Test**",
 				"",
@@ -728,12 +738,14 @@ export class TurnLifecycle {
 							"Transcript changed while compaction was running",
 						);
 					}
-					const parsed = parseCompactionResponse(rawSummary);
-					if (!parsed) {
+					const responseDiagnostics =
+						parseCompactionResponseDetailed(rawSummary);
+					if (!responseDiagnostics.summary) {
 						throw new Error(
-							"Compaction response did not match the expected format",
+							`${compactionResponseFailureMessage(responseDiagnostics)} (${describeCompactionResponseDiagnostics(responseDiagnostics)})`,
 						);
 					}
+					const parsed = responseDiagnostics.summary;
 					const metadata = createCompactionMetadata({
 						sourceMessages: compactionPlan.summarized,
 						transcriptMessages: compactionSourceMessages,
@@ -751,7 +763,7 @@ export class TurnLifecycle {
 					new Notice("Conversation compacted for future requests.");
 				})
 				.catch((error) => {
-					console.warn("[T48c] Semantic compaction skipped:", error);
+					console.error("[T48c] Semantic compaction skipped:", error);
 				})
 				.finally(() => {
 					delete this.compactionInFlight[sessionIdForCompaction];

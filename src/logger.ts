@@ -1,5 +1,22 @@
 import { App, Platform } from "obsidian";
 
+export type LoggerLevel = "off" | "error" | "info" | "debug";
+
+export const DEFAULT_MEMORY_LOG_INTERVAL_SECONDS = 60;
+export const MIN_MEMORY_LOG_INTERVAL_SECONDS = 60;
+export const MAX_MEMORY_LOG_INTERVAL_SECONDS = 3600;
+
+export function normalizeMemoryLogIntervalSeconds(value: unknown): number {
+	const seconds =
+		typeof value === "number" && Number.isFinite(value)
+			? value
+			: DEFAULT_MEMORY_LOG_INTERVAL_SECONDS;
+	return Math.min(
+		MAX_MEMORY_LOG_INTERVAL_SECONDS,
+		Math.max(MIN_MEMORY_LOG_INTERVAL_SECONDS, Math.round(seconds)),
+	);
+}
+
 const ORIGINAL = {
 	log: console.log,
 	error: console.error,
@@ -16,6 +33,8 @@ export class FileLogger {
 	private readonly app: App;
 	private initialized = false;
 	private bytesWrittenSinceCheck = 0;
+	private logLevel: LoggerLevel = "error";
+	private memoryLogIntervalSeconds = DEFAULT_MEMORY_LOG_INTERVAL_SECONDS;
 	private static readonly CHECK_INTERVAL = 100 * 1024; // 100KB
 
 	constructor(app: App, pluginId: string, maxSizeBytes = 5 * 1024 * 1024) {
@@ -50,11 +69,10 @@ export class FileLogger {
 			this.truncateIfNeeded().catch(() => {});
 		}, 5000);
 
-		// Log initial memory snapshot and start periodic logging
+		// Log one baseline snapshot at startup, then continue at the configured
+		// low-frequency interval. Settings are applied immediately after startup.
 		this.logMemorySnapshot();
-		this.memoryTimer = window.setInterval(() => {
-			this.logMemorySnapshot();
-		}, 10000);
+		this.startMemoryLogging();
 	}
 
 	/**
@@ -63,10 +81,28 @@ export class FileLogger {
 	setMaxSize(bytes: number) {
 		this.maxSize = bytes;
 	}
+
+	/** Apply the configured verbosity to normal log messages. */
+	setLogLevel(level: LoggerLevel) {
+		if (this.logLevel === level) return;
+		this.logLevel = level;
+	}
+
+	/**
+	 * Configure the periodic memory baseline. A non-zero minimum is intentional:
+	 * memory remains observable without recreating a ten-second log stream.
+	 */
+	setMemoryLogIntervalSeconds(seconds: number) {
+		const normalized = normalizeMemoryLogIntervalSeconds(seconds);
+		if (this.memoryLogIntervalSeconds === normalized) return;
+		this.memoryLogIntervalSeconds = normalized;
+		if (this.initialized) this.startMemoryLogging();
+	}
 	/**
 	 * Log a message. Buffers by default; errors are flushed immediately.
 	 */
 	log(level: string, ...args: any[]) {
+		if (!this.shouldLog(level)) return;
 		const line = this.formatLine(level, ...args);
 		this.buffer.push(line);
 
@@ -128,6 +164,26 @@ export class FileLogger {
 		} else {
 			this.log("metric", `Memory — N/A, DOM nodes: ${domNodes}`);
 		}
+	}
+
+	private startMemoryLogging() {
+		if (this.memoryTimer) clearInterval(this.memoryTimer);
+		this.memoryTimer = window.setInterval(() => {
+			this.logMemorySnapshot();
+		}, this.memoryLogIntervalSeconds * 1000);
+	}
+
+	private shouldLog(level: string): boolean {
+		if (this.logLevel === "off") return false;
+		// Baseline memory metrics remain available at the default Errors-only
+		// level. They are separately rate-limited by memoryLogIntervalSeconds.
+		if (level === "metric") return true;
+		if (level === "error" || level === "fatal") return true;
+		if (this.logLevel === "debug") return true;
+		if (this.logLevel === "info") {
+			return level !== "debug" && level !== "log";
+		}
+		return false;
 	}
 
 	private formatLine(level: string, ...args: any[]): string {
