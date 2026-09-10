@@ -340,3 +340,18 @@ Savings increase with conversation length.
 - Related: [T6a — Token Counter Accuracy Fix](../tasks/T6a.md)
 - Research: [Context Compaction Strategies — Research Reference](context-compaction-strategies-reference.md)
 - Source: `src/hooks/useMessageActions.ts` (history building)
+
+## Runtime acceptance and debug projection — 2026-09-10
+
+The controlled application test completed compaction, preserved the recovery
+markers, and kept the compaction notice in the transcript after reload. The
+full transcript remains lossless; only the model-facing projection is reduced.
+
+The `!debug history` command now uses the shared budgeted history builder,
+validates persisted compaction provenance, renders the derived summary, and
+shows the exact recent messages that are eligible for replay. Debug-only
+transcript events and summarized older messages are excluded.
+
+The implementation is verified in `4e6c0ff`. Pairing through every provider,
+attachment-aware accounting, cancellation/preflight, and session-isolation
+acceptance remain open under T48a–d and T63.

@@ -1,3 +1,11 @@
+### 2026-09-10 — T48 compaction acceptance and debug-history closeout ✅
+
+- Confirmed successful controlled compaction, recovery-marker preservation,
+  and persistence of the compaction notice after Obsidian reload.
+- Fixed `!debug history` to show the shared compaction-aware model projection,
+  excluding summarized older messages and debug-only transcript events.
+- Source and documentation verification passed; commit `4e6c0ff` is pushed.
+
 ### 2026-09-10 — T48 tool-context fidelity follow-up 🔄
 
 - Added bounded omitted-result cataloging and exact retrieval in `08e8ad1`.

@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased — 2026-09-10
 
+### Fixed
+
+- Persisted compaction notices in the chat transcript and verified recovery
+  after reload — T48c.
+- Corrected `!debug history` to display the bounded, compaction-aware model
+  history rather than the raw transcript — T48 (`4e6c0ff`).
+- Recorded provider totals separately from local estimates and retained
+  periodic minimum memory diagnostics — T48d/T11.
+
 ### Added
 
 - Bounded omitted-tool-result catalog entries and exact `read_tool_result`

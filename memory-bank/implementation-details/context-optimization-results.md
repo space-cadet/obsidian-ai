@@ -221,3 +221,15 @@ same-model baseline are recorded in
 These measurements must remain separate from the harness results above: the
 harness validates relative context strategies with a local tokenizer, while
 the plugin telemetry reports provider usage for real serialized requests.
+
+## Final compaction and debug-history acceptance — 2026-09-10
+
+The controlled run confirmed that compaction metadata is usable for recovery,
+the compaction event persists as part of the chat transcript after reload, and
+the complete transcript is not replaced. Plugin and OpenRouter totals were
+approximately 263k and 266k respectively; they are cumulative provider/session
+measurements and must not be confused with one request's history size.
+
+Commit `4e6c0ff` corrected `!debug history` so it follows the shared model
+history projection, applies a valid saved summary, keeps the recent exact tail,
+and omits debug-only events. Automated coverage now includes this behavior.

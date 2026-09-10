@@ -1,5 +1,14 @@
 # Session Cache
 
+### 2026-09-10 — T48 compaction acceptance and debug-history closeout ✅
+
+- Final source commit `4e6c0ff` aligns `!debug history` with the shared
+  compaction-aware model-history projection.
+- Runtime testing confirmed compaction, recovery, and notice persistence after
+  reload; full automated verification passed.
+- T48 remains active only for its documented pairing, preflight, isolation,
+  attachment, and provider-parity acceptance gaps.
+
 ### 2026-09-10 — T48 tool-context fidelity and release follow-up 🔄
 
 - Recorded commits `08e8ad1`, `c8a983f`, and `de24b0a` under the existing T48

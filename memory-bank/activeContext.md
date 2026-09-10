@@ -1,5 +1,16 @@
 # Active Context
 
+### 2026-09-10 — T48 compaction acceptance and debug-history closeout ✅
+
+- Runtime testing confirmed compaction recovery, persisted in-chat notices
+  after reload, and separate plugin/OpenRouter cumulative usage totals.
+- The final source fix `4e6c0ff` makes `!debug history` use the same bounded,
+  compaction-aware model-history projection as normal requests.
+- Full verification passed: 58 test files / 488 tests, TypeScript, production
+  build, formatting, and diff checks; `main` matches `origin/main`.
+- Remaining T48 work is limited to explicitly open pairing, attachment-aware
+  accounting, cancellation/preflight, isolation, and provider-parity gates.
+
 ### 2026-09-10 — T48 fidelity implementation and diagnostic follow-up 🔄
 
 - `08e8ad1` catalogs omitted tool results and supports bounded exact
