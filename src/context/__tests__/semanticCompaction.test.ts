@@ -8,6 +8,7 @@ import {
 	formatCompactionSummary,
 	fingerprintTranscript,
 	parseCompactionMetadata,
+	parseCompactionResponse,
 	parseCompactionSummary,
 	planSemanticCompaction,
 	transcriptStartsWith,
@@ -186,5 +187,24 @@ describe("semantic compaction", () => {
 				openQuestions: [],
 			}),
 		).toBeNull();
+	});
+
+	it("accepts raw and fenced JSON compaction responses", () => {
+		const summary = {
+			keyDecisions: ["Use bounded replay"],
+			toolResults: ["Read the note"],
+			userIntent: ["Keep costs down"],
+			openQuestions: [],
+		};
+
+		expect(parseCompactionResponse(JSON.stringify(summary))).toEqual(
+			summary,
+		);
+		expect(
+			parseCompactionResponse(
+				["```json", JSON.stringify(summary), "```"].join("\n"),
+			),
+		).toEqual(summary);
+		expect(parseCompactionResponse("```json\nnot JSON\n```")).toBeNull();
 	});
 });

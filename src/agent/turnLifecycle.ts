@@ -28,12 +28,13 @@ import {
 } from "../context/tokenEstimator";
 import { buildModelHistory } from "../context/modelHistory";
 import {
+	buildCompactionPrompt,
 	compactionHysteresisReleased,
 	compactionMetadataMatchesTranscript,
 	createCompactionMetadata,
 	formatCompactionSummary,
 	parseCompactionMetadata,
-	parseCompactionSummary,
+	parseCompactionResponse,
 	planSemanticCompaction,
 	transcriptStartsWith,
 } from "../context/semanticCompaction";
@@ -142,6 +143,133 @@ export class TurnLifecycle {
 		);
 	}
 
+	private appendDebugMessage(response: string): void {
+		const deps = this.getDeps();
+		const debugMsg: ChatMessage = {
+			id: makeId(),
+			role: "assistant",
+			content: response,
+			timestamp: Date.now(),
+			isDebug: true,
+		};
+		const currentActiveId = deps.activeSessionIdRef.current;
+		if (!currentActiveId) return;
+		deps.setSessions((prev) =>
+			prev.map((session) =>
+				session.id === currentActiveId
+					? {
+							...session,
+							messages: [...session.messages, debugMsg],
+							updatedAt: Date.now(),
+						}
+					: session,
+			),
+		);
+	}
+
+	/** Run a user-requested compaction immediately and report the result in chat. */
+	private async runManualCompaction(): Promise<string> {
+		const deps = this.getDeps();
+		const sessionId = deps.activeSessionIdRef.current;
+		if (!sessionId) {
+			return "**Compaction Test**\n\nNo active session.";
+		}
+		if (this.compactionInFlight[sessionId]) {
+			return "**Compaction Test**\n\nA compaction request is already in progress for this session.";
+		}
+
+		const session = deps.sessionsRef.current.find(
+			(candidate) => candidate.id === sessionId,
+		);
+		const transcript = (
+			session?.messages ?? deps.messagesRef.current
+		).filter((message) => !message.isDebug);
+		const keepRecentMessages = Math.max(
+			3,
+			deps.plugin.settings.preserveRecentMessages ?? 4,
+		);
+		const summarized = transcript.slice(
+			0,
+			Math.max(0, transcript.length - keepRecentMessages),
+		);
+		if (summarized.length === 0) {
+			return [
+				"**Compaction Test**",
+				"",
+				`Need at least ${keepRecentMessages + 1} non-debug messages.`,
+				`The current session has ${transcript.length}; the newest ${keepRecentMessages} are preserved exactly.`,
+			].join("\n");
+		}
+
+		const compactionProfile =
+			deps.resolvedProfile.provider === "agent"
+				? undefined
+				: deps.resolvedProfile;
+		this.compactionInFlight[sessionId] = true;
+		try {
+			const rawSummary = await deps.plugin.chatapi.callApi(
+				"You summarize conversation history for another model. Return JSON only.",
+				buildCompactionPrompt(summarized, {
+					maxTokens: 8000,
+					maxToolResultTokens: 1200,
+					sessionId,
+				}),
+				compactionProfile,
+			);
+			const currentTranscript = (
+				deps.sessionsRef.current.find(
+					(candidate) => candidate.id === sessionId,
+				)?.messages ?? deps.messagesRef.current
+			).filter((message) => !message.isDebug);
+			if (!transcriptStartsWith(currentTranscript, transcript)) {
+				throw new Error(
+					"Transcript changed while compaction was running",
+				);
+			}
+			const parsed = parseCompactionResponse(rawSummary);
+			if (!parsed) {
+				throw new Error(
+					"Compaction response did not match the expected JSON format",
+				);
+			}
+			const metadata = createCompactionMetadata({
+				sourceMessages: summarized,
+				transcriptMessages: transcript,
+				summary: parsed,
+				model: compactionProfile?.model,
+			});
+			this.compactionBySession[sessionId] = metadata;
+			deps.setSessions((prev) =>
+				prev.map((candidate) =>
+					candidate.id === sessionId
+						? { ...candidate, compactionMetadata: metadata }
+						: candidate,
+				),
+			);
+			new Notice("Conversation compacted for future requests.");
+			return [
+				"**Compaction Test**",
+				"",
+				`✅ Summary validated and saved for ${summarized.length} older message(s).`,
+				`Kept the newest ${transcript.length - summarized.length} message(s) exact.`,
+				"The complete transcript remains unchanged; future model requests can use the saved summary.",
+				"",
+				formatCompactionSummary(parsed),
+			].join("\n");
+		} catch (error) {
+			const detail =
+				error instanceof Error ? error.message : String(error);
+			return [
+				"**Compaction Test**",
+				"",
+				`❌ Compaction failed: ${detail}`,
+				"No compaction metadata was saved. Check the plugin debug log for details.",
+			].join("\n");
+		} finally {
+			delete this.compactionInFlight[sessionId];
+		}
+	}
+
 	// ─────────────────────────────────────────────────────
 	// SEND
 	// ─────────────────────────────────────────────────────
@@ -153,6 +281,30 @@ export class TurnLifecycle {
 			deps.getRuntime(deps.activeSessionIdRef.current).controller
 		)
 			return;
+
+		// Check for local debug commands before selecting the single- or group-chat
+		// execution path. Built-in ! commands must never reach a model.
+		const currentSession = deps.sessionsRef.current.find(
+			(s) => s.id === deps.activeSessionIdRef.current,
+		);
+		const debugResult = handleDebugCommand(
+			text,
+			currentSession,
+			deps.resolvedProfile,
+			{
+				toolHistoryMode:
+					deps.plugin.settings.toolHistoryMode ?? "elide",
+				maxRequestTokens: deps.plugin.settings.maxRequestTokens,
+			},
+		);
+		if (debugResult.handled) {
+			const response =
+				debugResult.action === "compact"
+					? await this.runManualCompaction()
+					: debugResult.response || "";
+			this.appendDebugMessage(response);
+			return;
+		}
 
 		// ─── GROUP CHAT PATH ───
 		if (deps.isGroupChat && (deps.participantRouter || deps.orchestrator)) {
@@ -313,45 +465,6 @@ export class TurnLifecycle {
 
 		// ─── SINGLE CHAT PATH ───
 
-		// Check for debug commands first (!debug ...)
-		const currentSession = deps.sessionsRef.current.find(
-			(s) => s.id === deps.activeSessionIdRef.current,
-		);
-		const debugResult = handleDebugCommand(
-			text,
-			currentSession,
-			deps.resolvedProfile,
-			{
-				toolHistoryMode:
-					deps.plugin.settings.toolHistoryMode ?? "elide",
-				maxRequestTokens: deps.plugin.settings.maxRequestTokens,
-			},
-		);
-		if (debugResult.handled) {
-			const debugMsg: ChatMessage = {
-				id: makeId(),
-				role: "assistant",
-				content: debugResult.response || "",
-				timestamp: Date.now(),
-				isDebug: true,
-			};
-			const currentActiveId = deps.activeSessionIdRef.current;
-			if (currentActiveId) {
-				deps.setSessions((prev) =>
-					prev.map((s) =>
-						s.id === currentActiveId
-							? {
-									...s,
-									messages: [...s.messages, debugMsg],
-									updatedAt: Date.now(),
-								}
-							: s,
-					),
-				);
-			}
-			return;
-		}
-
 		const slashCmd = parseSlashCommand(text);
 		let sendText = text;
 		let sendContextItems = deps.contextItemsRef.current;
@@ -505,6 +618,9 @@ export class TurnLifecycle {
 					(session) => session.id === sessionIdForCompaction,
 				)
 			: undefined;
+		const currentModelMessages = deps.messagesRef.current.filter(
+			(message) => !message.isDebug,
+		);
 		const parsedPersistedCompaction =
 			activeSessionForCompaction?.compactionMetadata
 				? parseCompactionMetadata(
@@ -515,7 +631,7 @@ export class TurnLifecycle {
 			parsedPersistedCompaction &&
 			compactionMetadataMatchesTranscript(
 				parsedPersistedCompaction,
-				deps.messagesRef.current,
+				currentModelMessages,
 			)
 				? parsedPersistedCompaction
 				: undefined;
@@ -526,7 +642,7 @@ export class TurnLifecycle {
 					return inMemory &&
 						compactionMetadataMatchesTranscript(
 							inMemory,
-							deps.messagesRef.current,
+							currentModelMessages,
 						)
 						? inMemory
 						: (persistedCompaction ?? undefined);
@@ -534,7 +650,7 @@ export class TurnLifecycle {
 			: undefined;
 		if (
 			existingSummary &&
-			compactionHysteresisReleased(deps.messagesRef.current, {
+			compactionHysteresisReleased(currentModelMessages, {
 				triggerTokens:
 					deps.plugin.settings.compactionTriggerTokens ?? 24000,
 				releaseTokens:
@@ -561,7 +677,7 @@ export class TurnLifecycle {
 				);
 			}
 		}
-		const compactionSourceMessages = deps.messagesRef.current.slice();
+		const compactionSourceMessages = currentModelMessages.slice();
 		const compactionPlan = planSemanticCompaction(
 			compactionSourceMessages,
 			{
@@ -602,7 +718,9 @@ export class TurnLifecycle {
 				.then((rawSummary) => {
 					if (
 						!transcriptStartsWith(
-							deps.messagesRef.current,
+							deps.messagesRef.current.filter(
+								(message) => !message.isDebug,
+							),
 							compactionSourceMessages,
 						)
 					) {
@@ -610,9 +728,7 @@ export class TurnLifecycle {
 							"Transcript changed while compaction was running",
 						);
 					}
-					const parsed = parseCompactionSummary(
-						JSON.parse(rawSummary),
-					);
+					const parsed = parseCompactionResponse(rawSummary);
 					if (!parsed) {
 						throw new Error(
 							"Compaction response did not match the expected format",
@@ -641,7 +757,7 @@ export class TurnLifecycle {
 					delete this.compactionInFlight[sessionIdForCompaction];
 				});
 		} else if (existingSummary) {
-			modelHistory = deps.messagesRef.current.slice(
+			modelHistory = currentModelMessages.slice(
 				-Math.max(3, deps.plugin.settings.preserveRecentMessages ?? 4),
 			);
 		}

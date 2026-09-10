@@ -2,10 +2,12 @@ import type { ChatMessage, ChatSession } from "../types";
 import type { ProviderProfile } from "../settings";
 import { estimateTokens } from "../context/tokenEstimator";
 import { buildHistoryWithTools } from "./historyBuilder";
+import { formatBuiltinCommandReference } from "./builtinCommands";
 
 export interface DebugCommandResult {
 	handled: boolean;
 	response?: string;
+	action?: "compact";
 }
 
 /**
@@ -27,6 +29,13 @@ export function handleDebugCommand(
 	const command = trimmed.slice(1).trim().toLowerCase();
 
 	switch (command) {
+		case "help":
+		case "debug":
+		case "debug help":
+			return {
+				handled: true,
+				response: formatDebugHelp(),
+			};
 		case "debug history":
 			return {
 				handled: true,
@@ -46,10 +55,10 @@ export function handleDebugCommand(
 				handled: true,
 				response: formatContextDebug(session),
 			};
-		case "debug help":
+		case "debug compact":
 			return {
 				handled: true,
-				response: formatDebugHelp(),
+				action: "compact",
 			};
 		default:
 			return {
@@ -180,17 +189,11 @@ function formatContextDebug(session: ChatSession | undefined): string {
 
 function formatDebugHelp(): string {
 	return [
-		"**Debug Commands**",
+		formatBuiltinCommandReference(),
 		"",
-		"These commands show internal state without sending anything to the model:",
+		"**Notes**",
 		"",
-		"| Command | Description |",
-		"|---------|-------------|",
-		"| `!debug history` | Show model-facing message history |",
-		"| `!debug tokens` | Show token estimates and counts |",
-		"| `!debug context` | Show context items/attachments |",
-		"| `!debug help` | Show this help message |",
-		"",
-		"> 🔒 Debug output is local-only — never sent to the AI model.",
+		"- `!debug tokens` is a local estimate; provider-reported usage is shown in session telemetry when available.",
+		"- `!debug compact` summarizes older messages immediately, preserves the full transcript, and reports success or failure in the chat.",
 	].join("\n");
 }

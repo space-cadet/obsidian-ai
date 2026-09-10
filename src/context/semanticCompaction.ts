@@ -106,6 +106,23 @@ export function parseCompactionSummary(
 	return { keyDecisions, toolResults, userIntent, openQuestions };
 }
 
+/** Parse the JSON object returned by a compaction provider, including fenced JSON. */
+export function parseCompactionResponse(raw: string): CompactionSummary | null {
+	const trimmed = raw.trim();
+	const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+	const candidates = fenced ? [fenced[1].trim(), trimmed] : [trimmed];
+
+	for (const candidate of candidates) {
+		try {
+			const parsed = parseCompactionSummary(JSON.parse(candidate));
+			if (parsed) return parsed;
+		} catch {
+			// Try the next representation, then report an invalid response to the caller.
+		}
+	}
+	return null;
+}
+
 function textOf(
 	message: ChatMessage,
 	options: CompactionPromptOptions = {},

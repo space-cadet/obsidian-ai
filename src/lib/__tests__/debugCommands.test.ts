@@ -48,9 +48,33 @@ describe("handleDebugCommand", () => {
 			defaultSettings,
 		);
 		expect(result.handled).toBe(true);
-		expect(result.response).toContain("Debug Commands");
+		expect(result.response).toContain("Built-in ! Commands");
 		expect(result.response).toContain("!debug history");
 		expect(result.response).toContain("!debug tokens");
+		expect(result.response).toContain("!debug compact");
+	});
+
+	it("handles the short !help alias", () => {
+		const result = handleDebugCommand(
+			"!help",
+			undefined,
+			mockProfile,
+			defaultSettings,
+		);
+		expect(result.handled).toBe(true);
+		expect(result.response).toContain("Built-in ! Commands");
+	});
+
+	it("returns a compaction action without sending it to the model", () => {
+		const result = handleDebugCommand(
+			"!debug compact",
+			makeSession(),
+			mockProfile,
+			defaultSettings,
+		);
+		expect(result.handled).toBe(true);
+		expect(result.action).toBe("compact");
+		expect(result.response).toBeUndefined();
 	});
 
 	it("handles !debug history with empty session", () => {
@@ -153,7 +177,7 @@ describe("handleDebugCommand", () => {
 			defaultSettings,
 		);
 		expect(result.handled).toBe(true);
-		expect(result.response).toContain("Debug Commands");
+		expect(result.response).toContain("Built-in ! Commands");
 	});
 
 	it("counts tool calls in token debug", () => {
