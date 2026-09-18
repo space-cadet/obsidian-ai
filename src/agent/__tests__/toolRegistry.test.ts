@@ -241,3 +241,62 @@ describe("canonical tool registry", () => {
 		).toThrow("object-like input schema");
 	});
 });
+
+describe("provider tool model-schema normalization", () => {
+	it("wraps plain JSON-schema provider input for the AI SDK request build", async () => {
+		const { asSchema } = await import("ai");
+		const definition = providerCapabilityToToolDefinition("obsidian-git", {
+			id: "git.status",
+			title: "Repository status",
+			description: "Show repository status.",
+			inputSchema: {
+				type: "object",
+				properties: {
+					depth: { type: "number" },
+				},
+				additionalProperties: false,
+			},
+			risk: "read",
+			execute: async () => ({ success: true }),
+		});
+
+		// Exact code path the AI SDK runs while building the model request;
+		// a bare JSON-schema object used to throw "t is not a function" here.
+		const exposed = asSchema(
+			(definition.modelTool as { inputSchema: unknown })
+				.inputSchema as Parameters<typeof asSchema>[0],
+		).jsonSchema;
+		expect(exposed).toMatchObject({ type: "object" });
+
+		// Host-side argument validation still sees the raw schema.
+		expect(definition.inputSchema).toMatchObject({ type: "object" });
+		expect(
+			await validateToolArguments(definition, { depth: 5 }),
+		).toMatchObject({ ok: true, args: { depth: 5 } });
+		expect(await validateToolArguments(definition, { depth: "x" }))
+			.toMatchObject({ ok: false });
+	});
+
+	it("passes Zod provider schemas through untouched", async () => {
+		const { asSchema } = await import("ai");
+		const schema = z.object({ query: z.string() });
+		const definition = providerCapabilityToToolDefinition("example", {
+			id: "example.zod",
+			title: "Zod schema",
+			description: "Uses zod.",
+			inputSchema: schema,
+			risk: "read",
+			execute: async () => ({ success: true }),
+		});
+
+		expect(
+			(definition.modelTool as { inputSchema: unknown }).inputSchema,
+		).toBe(schema);
+		expect(
+			asSchema(
+				(definition.modelTool as { inputSchema: unknown })
+					.inputSchema as Parameters<typeof asSchema>[0],
+			).jsonSchema,
+		).toMatchObject({ type: "object" });
+	});
+});

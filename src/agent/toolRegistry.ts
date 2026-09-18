@@ -1,5 +1,5 @@
 import Ajv, { type ValidateFunction } from "ajv";
-import { tool } from "ai";
+import { jsonSchema, tool } from "ai";
 import type { ToolCall, ToolResult } from "./types";
 import { noteTools } from "./tools";
 import type {
@@ -442,6 +442,37 @@ export function normalizeProviderRisk(risk: ProviderRisk): HostToolRisk {
 	}
 }
 
+/**
+ * The AI SDK's `tool()` only accepts Zod/Standard schemas or its own
+ * `jsonSchema()` wrapper. Providers may legally hand us a bare JSON-schema
+ * object (per the Integration Provider contract); passing one through
+ * makes the SDK try to *call* it while building the model request
+ * (TypeError: ... is not a function). Normalize to an SDK-native schema.
+ */
+function toModelInputSchema(inputSchema: unknown): unknown {
+	const candidate = inputSchema as {
+		safeParse?: unknown;
+		"~standard"?: { validate?: unknown };
+		jsonSchema?: unknown;
+		validate?: unknown;
+	};
+	if (typeof candidate?.safeParse === "function") return inputSchema;
+	if (typeof candidate?.["~standard"]?.validate === "function")
+		return inputSchema;
+	// Already an SDK jsonSchema() wrapper (has both jsonSchema and validate).
+	if (
+		isRecord(candidate) &&
+		typeof candidate.validate === "function" &&
+		isRecord(candidate.jsonSchema)
+	) {
+		return inputSchema;
+	}
+	const raw = isRecord(candidate?.jsonSchema)
+		? candidate.jsonSchema
+		: inputSchema;
+	return jsonSchema(raw as Parameters<typeof jsonSchema>[0]);
+}
+
 export function providerCapabilityToToolDefinition(
 	providerId: string,
 	capability: ProviderCapability,
@@ -449,7 +480,7 @@ export function providerCapabilityToToolDefinition(
 	assertObjectLikeInputSchema(capability.id, capability.inputSchema);
 	const modelTool = tool({
 		description: capability.description,
-		inputSchema: capability.inputSchema as any,
+		inputSchema: toModelInputSchema(capability.inputSchema) as any,
 	}) as unknown as Record<string, unknown>;
 	return {
 		id: capability.id,
