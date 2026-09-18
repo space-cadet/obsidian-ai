@@ -13,7 +13,7 @@ export function renderIntegrationsSection(
 	const sectionEl = createSection(
 		containerEl,
 		"Integrations",
-		"Enable compatible peer plugins to offer their read-only tools to Obsidian AI. Provider credentials and configuration remain in the provider plugin.",
+		"Enable compatible peer plugins to offer their tools to Obsidian AI. Provider credentials and configuration remain in the provider plugin.",
 	);
 
 	const refreshButton = new ButtonComponent(sectionEl)
@@ -40,7 +40,7 @@ export function renderIntegrationsSection(
 		new Setting(sectionEl)
 			.setName(provider.displayName)
 			.setDesc(
-				`${provider.message} ${provider.capabilityCount} read-only tool${provider.capabilityCount === 1 ? "" : "s"} available.`,
+				`${provider.message} ${provider.capabilityCount} tool${provider.capabilityCount === 1 ? "" : "s"} available.`,
 			)
 			.addToggle((toggle) => {
 				toggle
