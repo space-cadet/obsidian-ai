@@ -106,7 +106,7 @@ describe("ProviderRegistry", () => {
 		expect(registry.getToolRegistry(builtInTools)).toEqual(builtInTools);
 	});
 
-	it("does not expose mutation capabilities before T38 policy support", () => {
+	it("exposes mutation capabilities and executes them through the host tool path", async () => {
 		const provider = makeProvider({
 			capabilities: [
 				{
@@ -115,7 +115,10 @@ describe("ProviderRegistry", () => {
 					description: "Write example data.",
 					inputSchema: z.object({}),
 					risk: "write",
-					execute: async () => ({ success: true }),
+					execute: async () => ({
+						success: true,
+						content: "Written",
+					}),
 				},
 			],
 		});
@@ -124,7 +127,20 @@ describe("ProviderRegistry", () => {
 		});
 		registry.discover();
 
-		expect(registry.getToolRegistry(builtInTools)).toEqual(builtInTools);
+		const resolved = registry.getResolvedToolRegistry(builtInTools);
+		expect(resolved.tools).toHaveProperty("example.write");
+		expect(resolved.byId.get("example.write")?.risk).toBe("local-write");
+		const result = await registry.execute({
+			toolCallId: "call-2",
+			toolName: "example.write",
+			args: {},
+		});
+		expect(result).toMatchObject({
+			success: true,
+			content: "Written",
+			providerId: "example-provider",
+			risk: "write",
+		});
 	});
 
 	it("rejects provider capability IDs that collide with built-ins", () => {

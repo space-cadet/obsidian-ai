@@ -57,9 +57,10 @@ function readProvider(value: unknown): IntegrationProvider | null {
 }
 
 /**
- * Discovers public peer-plugin provider APIs and exposes their availability
- * through the same descriptor registry used by built-in tools. T38 still
- * owns provider mutation policy, so non-read capabilities remain hidden.
+ * Discovers public peer-plugin provider APIs and exposes their tools through
+ * the same descriptor registry used by built-in tools. All capability risk
+ * classes register; whether a tool call prompts first is decided by the
+ * host's existing auto-execute toggle, same as built-in tools.
  */
 export class ProviderRegistry {
 	private providers = new Map<string, IntegrationProvider>();
@@ -128,9 +129,7 @@ export class ProviderRegistry {
 				message: enabled
 					? "Available to Obsidian AI."
 					: "Installed but disabled for Obsidian AI.",
-				capabilityCount: provider.capabilities.filter(
-					(capability) => capability.risk === "read",
-				).length,
+				capabilityCount: provider.capabilities.length,
 				enabled,
 			});
 		}
@@ -176,14 +175,14 @@ export class ProviderRegistry {
 				...definition,
 				providerName: provider.displayName,
 				availability: () =>
-					!this.settings.enabledIntegrationProviderIds.includes(provider.id)
+					!this.settings.enabledIntegrationProviderIds.includes(
+						provider.id,
+					)
 						? "disabled"
-						: capability.risk !== "read"
-							? "disabled"
-							: capability.availability === "disabled" ||
-								  capability.availability === "misconfigured"
-								? capability.availability
-								: "available",
+						: capability.availability === "disabled" ||
+							  capability.availability === "misconfigured"
+							? capability.availability
+							: "available",
 				execute: async (call: ToolCall) =>
 					(await this.execute(call)) ?? {
 						error: `Integration provider for ${call.toolName} is unavailable.`,
@@ -220,11 +219,6 @@ export class ProviderRegistry {
 				error: `${provider.displayName} is disabled. Re-enable it in Settings → Agent Tools → Integrations.`,
 			};
 		}
-		if (capability.risk !== "read") {
-			return {
-				error: `${capability.title} is unavailable until the Tool Safety & Approval policy is implemented.`,
-			};
-		}
 
 		try {
 			const result = await capability.execute(call.args, {
@@ -253,8 +247,7 @@ export class ProviderRegistry {
 		return (
 			this.getAllCapabilities().find(
 				(capability) => capability.id === toolName,
-			) ??
-			null
+			) ?? null
 		);
 	}
 
