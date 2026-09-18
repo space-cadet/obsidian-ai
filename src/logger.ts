@@ -218,14 +218,17 @@ export class FileLogger {
 
 	private wrapConsole() {
 		const scoped =
-			(level: "log" | "error" | "warn" | "info", original: (...args: any[]) => void) =>
-				(...args: any[]) => {
-					original.apply(console, args);
-					// Only capture output that originates from this plugin's bundle.
-					// Console is global — without the scope check every installed
-					// plugin's logs would be vacuumed into our debug.log.
-					if (this.isOwnCallSite()) this.log(level, ...args);
-				};
+			(
+				level: "log" | "error" | "warn" | "info",
+				original: (...args: any[]) => void,
+			) =>
+			(...args: any[]) => {
+				original.apply(console, args);
+				// Only capture output that originates from this plugin's bundle.
+				// Console is global — without the scope check every installed
+				// plugin's logs would be vacuumed into our debug.log.
+				if (this.isOwnCallSite()) this.log(level, ...args);
+			};
 		console.log = scoped("log", ORIGINAL.log);
 		console.error = scoped("error", ORIGINAL.error);
 		console.warn = scoped("warn", ORIGINAL.warn);
