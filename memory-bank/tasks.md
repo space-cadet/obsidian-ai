@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-09-10 21:54:28 IST*
+*Last Updated: 2026-09-19 03:55 IST*
 
 ## Overview
 
@@ -20,6 +20,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T16b | Addressable Agent Participants and Unified `@` Resolution | 🔄 | HIGH | 2026-08-31 | T16, T43 | [Details](tasks/T16b.md) |
 | T38 | Tool Approval Policy Framework | ❌ | — | 2026-08-05 | — | [Details](tasks/T38.md) |
 | T39 | Git Integration Provider (obsidian-git → obsidian-ai) | ✅ | HIGH | 2026-08-05 | 2026-09-18 | T39a, T39b | [Details](tasks/T39.md) |
+| T39a | Provider API Host, Lifecycle, and Tool-Policy Boundary | ✅ | HIGH | 2026-08-05 | 2026-09-18 | T39, T13, T38 | [Details](tasks/T39a.md) |
 | T39b | Git Write Tools from Chat | ✅ | HIGH | 2026-08-05 | 2026-09-18 | T39 | [Details](tasks/T39b.md) |
 | T40 | Multi-User Chat with LaTeX Support | 🔄 | HIGH | 2026-08-08 | T16 | [Details](tasks/T40.md) |
 | T42 | Remote Chat Storage & Sync | 🔄 | HIGH | 2026-08-10 | T40 | [Details](tasks/T42.md) |

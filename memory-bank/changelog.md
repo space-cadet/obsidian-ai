@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased — 2026-09-18
+
+### Added
+
+- Git write tools from chat: `git.stage` (explicit paths, deletions staged),
+  `git.commit` (returns hash), `git.pull`, `git.push`, served by
+  obsidian-git `2e4f1d9` through the Integration Provider — T39b.
+- Provider write tools register in the tool registry; the auto-execute toggle
+  is the only gate — T39b.
+
+### Fixed
+
+- `TypeError: t is not a function` crash when registering provider tools —
+  provider JSON schemas now normalize through `toModelInputSchema()` before
+  reaching the AI SDK — T39a.
+- Stale "8 read only tools" label in Integrations settings — T39b.
+- debug.log scoped to the plugin's own bundle; per-stream-chunk debug spam
+  removed — T61.
+
 ## Unreleased — 2026-09-10
 
 ### Fixed

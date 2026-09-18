@@ -1,5 +1,15 @@
 # Session Cache
 
+### 2026-09-19 03:55 IST — T39 git integration delivery ✅
+
+- Session file: `sessions/2026-09-18-night.md`.
+- T39a ✅ `a5186ef` (schema-normalization crash fix), T38 ❌ cancelled
+  (reverted to `f7db24a`), T39b ✅ (write tools `19f1a37`, label fix
+  `5286706`, MB record `e75576d`), T61 debug.log hygiene `63f0169`.
+- obsidian-git companions: `a0e5705`, `a6f636b`, `056c620`, `2e4f1d9`.
+- Verification: 492/492 tests, tsc clean, 17/17 smoke checks.
+- Next: T44a references/citations fallback; T48 acceptance gaps as documented.
+
 ### 2026-09-10 — T48 compaction acceptance and debug-history closeout ✅
 
 - Final source commit `4e6c0ff` aligns `!debug history` with the shared

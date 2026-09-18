@@ -1,10 +1,27 @@
 # Error Log
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-08-28 18:39 IST*
+*Last Updated: 2026-09-19 03:55 IST*
 
 *Newest entries first. Each entry documents a development error, its cause, and resolution.*
 
 ---
+
+### 2026-09-19 03:55 IST — Provider tool registration crash (ERR-20260918-001)
+
+- **Symptom:** `TypeError: t is not a function` the moment any obsidian-git
+  provider tool was registered, before any model request completed.
+- **Cause:** `providerCapabilityToToolDefinition()` passed a bare JSON-schema
+  object straight into the AI SDK `tool()`; the SDK only accepts
+  Zod/Standard schemas or its own `jsonSchema()` wrapper, and tried to call
+  anything else as a function while building the model request (`asSchema`
+  crash site).
+- **Resolution:** Normalized schemas with `toModelInputSchema()` in
+  `src/agent/toolRegistry.ts` — zod/~standard/SDK-wrapped schemas pass
+  through, bare JSON-schema objects get the `jsonSchema()` wrapper. The raw
+  schema stays on the descriptor for host-side Ajv validation and
+  OpenResponses conversion. Regression test exercises the exact crash site.
+  Shipped in `a5186ef` (T39a).
+- **Status:** ✅ Fixed; 492/492 tests pass.
 
 ### 2026-08-28 18:39 IST — Community Review Blocking Errors (ERR-20260828-001)
 

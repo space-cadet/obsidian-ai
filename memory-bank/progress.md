@@ -1299,3 +1299,18 @@ Implemented the first pass on the three architectural improvements from the T55 
   explicit picker selection uses the same helper and limit.
 - This interim profile-scoped implementation was replaced by `72bf9f1`, which
   migrates legacy profile histories and shares Recents across profiles.
+### 2026-09-18 — T39 git integration delivery ✅
+
+- T39a `a5186ef`: provider JSON schemas normalized through
+  `toModelInputSchema()` — fixed the `TypeError: t is not a function`
+  registration crash; regression test at the `asSchema()` crash site.
+- T38 ❌ CANCELLED: AI-authored approval-policy framework rejected by Deepak;
+  reverted to `f7db24a`, design doc deleted, honest record in task file. The
+  auto-execute toggle remains the only tool gate.
+- T39b: obsidian-git `2e4f1d9` write tools (stage/commit/pull/push, cache
+  invalidation); obsidian-ai `19f1a37` write-tool registration, read-only
+  hard-block removed; `5286706` settings label fix; `e75576d` MB record.
+- T61 `63f0169` + `f7db24a`: debug.log scoped to own bundle, stream-chunk
+  spam dropped.
+- Verification: 492/492 tests, tsc clean, 17/17 cross-repo smoke checks
+  (deletion staging, commit hash == HEAD, snapshot cache invalidation).

@@ -1,5 +1,26 @@
 # Active Context
 
+### 2026-09-19 03:55 IST — T39 git integration delivery complete ✅
+
+- T39a ✅ `a5186ef` — provider JSON schemas now normalize through
+  `toModelInputSchema()` before reaching the AI SDK `tool()`; this killed the
+  `TypeError: t is not a function` crash on provider-tool registration.
+- T38 ❌ CANCELLED — AI-authored approval-policy framework Deepak never
+  requested; reverted to `f7db24a`, design doc deleted, honest record in the
+  task file. The existing auto-execute toggle is the only gate.
+- T39b ✅ — obsidian-git `2e4f1d9` shipped git.stage/commit/pull/push with
+  snapshot-cache invalidation; obsidian-ai `19f1a37` registered the write
+  tools (read-only hard-block removed); `5286706` dropped the stale
+  "8 read only tools" settings label.
+- T61 debug.log hygiene ✅ — `63f0169` scoped debug.log to the plugin's own
+  bundle and dropped stream-chunk spam.
+- Verification: 492/492 tests, tsc clean, 17/17 cross-repo smoke checks.
+- Standing lesson recorded: when Deepak says "no," pin down exactly what
+  "that" is before acting or recording.
+- Next: T44a references/citations fallback (CrossRef blocked from Vercel
+  egress — OpenAlex/DataCite); arxivite duplicate-pair cleanup is tracked in
+  that repo. T48 acceptance gaps remain as previously documented.
+
 ### 2026-09-10 — T48 compaction acceptance and debug-history closeout ✅
 
 - Runtime testing confirmed compaction recovery, persisted in-chat notices
