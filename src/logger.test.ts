@@ -63,3 +63,31 @@ describe("FileLogger memory diagnostics", () => {
 		}
 	});
 });
+
+describe("FileLogger console capture scope", () => {
+	it("does not capture console output from outside the plugin bundle", () => {
+		const logger = makeLogger();
+		// Simulate the wrapped console without init()'s timers and side effects.
+		(logger as any).wrapConsole();
+		try {
+			// This test file is not the plugin's main.js, so the call site is
+			// "someone else" — exactly what a third-party plugin would look like.
+			console.log("other-plugin noise", { a: 1 });
+			console.error("other-plugin error");
+
+			const buffered = (logger as any).buffer.join("");
+			expect(buffered).not.toContain("other-plugin noise");
+			expect(buffered).not.toContain("other-plugin error");
+		} finally {
+			(logger as any).unwrapConsole();
+		}
+	});
+
+	it("still captures direct logger writes", () => {
+		const logger = makeLogger();
+		logger.setLogLevel("debug");
+		logger.log("debug", "own debug line");
+		const buffered = (logger as any).buffer.join("");
+		expect(buffered).toContain("own debug line");
+	});
+});

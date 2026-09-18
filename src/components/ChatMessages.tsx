@@ -29,11 +29,6 @@ const StreamingBubble: React.FC<{
 		const logger = (window as any).__obsidianAiLogger;
 		let unmounted = false;
 
-		logger?.writeDirect?.(
-			"debug",
-			`[StreamingBubble] entering useEffect — ${content.length} chars, ${contentParts?.length ?? 0} parts`,
-		);
-
 		try {
 			const isPartsMode = Boolean(
 				contentParts && contentParts.length > 0,
@@ -175,10 +170,6 @@ const StreamingBubble: React.FC<{
 				if (content !== lastTextRef.current) {
 					lastTextRef.current = content;
 					contentRef.current.empty();
-					logger?.writeDirect?.(
-						"debug",
-						`[StreamingBubble] text changed, re-rendering`,
-					);
 					renderMarkdown(
 						sanitizeHtmlForRenderer(content),
 						contentRef.current,
@@ -186,10 +177,6 @@ const StreamingBubble: React.FC<{
 					)
 						.then(() => {
 							if (unmounted) return;
-							logger?.writeDirect?.(
-								"debug",
-								`[StreamingBubble] renderMarkdown resolved`,
-							);
 						})
 						.catch((err: any) => {
 							if (unmounted) return;

@@ -31,6 +31,7 @@ export class FileLogger {
 	private logPath: string;
 	private maxSize: number;
 	private readonly app: App;
+	private readonly pluginId: string;
 	private initialized = false;
 	private bytesWrittenSinceCheck = 0;
 	private logLevel: LoggerLevel = "error";
@@ -39,6 +40,7 @@ export class FileLogger {
 
 	constructor(app: App, pluginId: string, maxSizeBytes = 5 * 1024 * 1024) {
 		this.app = app;
+		this.pluginId = pluginId;
 		this.logPath = `${app.vault.configDir}/plugins/${pluginId}/debug.log`;
 		this.maxSize = maxSizeBytes;
 	}
@@ -215,22 +217,36 @@ export class FileLogger {
 	}
 
 	private wrapConsole() {
-		console.log = (...args: any[]) => {
-			ORIGINAL.log.apply(console, args);
-			this.log("log", ...args);
-		};
-		console.error = (...args: any[]) => {
-			ORIGINAL.error.apply(console, args);
-			this.log("error", ...args);
-		};
-		console.warn = (...args: any[]) => {
-			ORIGINAL.warn.apply(console, args);
-			this.log("warn", ...args);
-		};
-		console.info = (...args: any[]) => {
-			ORIGINAL.info.apply(console, args);
-			this.log("info", ...args);
-		};
+		const scoped =
+			(level: "log" | "error" | "warn" | "info", original: (...args: any[]) => void) =>
+				(...args: any[]) => {
+					original.apply(console, args);
+					// Only capture output that originates from this plugin's bundle.
+					// Console is global — without the scope check every installed
+					// plugin's logs would be vacuumed into our debug.log.
+					if (this.isOwnCallSite()) this.log(level, ...args);
+				};
+		console.log = scoped("log", ORIGINAL.log);
+		console.error = scoped("error", ORIGINAL.error);
+		console.warn = scoped("warn", ORIGINAL.warn);
+		console.info = scoped("info", ORIGINAL.info);
+	}
+
+	unwrapConsole() {
+		console.log = ORIGINAL.log;
+		console.error = ORIGINAL.error;
+		console.warn = ORIGINAL.warn;
+		console.info = ORIGINAL.info;
+	}
+
+	/** True when the caller's stack frames point into this plugin's main.js. */
+	private isOwnCallSite(): boolean {
+		try {
+			const stack = new Error().stack ?? "";
+			return stack.includes(`${this.pluginId}/main.js`);
+		} catch {
+			return true;
+		}
 	}
 
 	private setupErrorHandlers() {
