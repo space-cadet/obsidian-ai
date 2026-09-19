@@ -28,6 +28,7 @@ export interface ChatPluginLike {
 	loadChatData(): Promise<StoredChatData>;
 	/** Read one session's message file into memory (index-only boot). */
 	hydrateSession?(sessionId: string): Promise<ChatMessage[]>;
+	peekSessionMessages?(sessionId: string): Promise<ChatMessage[]>;
 	/** False while a session's messages exist on disk but aren't in memory. */
 	isSessionHydrated?(sessionId: string): boolean;
 	saveChatData(data: StoredChatData): Promise<void>;

@@ -30,6 +30,7 @@ export interface ChatStorage {
 	detectLegacyFormat(): Promise<boolean>;
 	/** Read one session's message file into memory. Returns the messages. */
 	hydrateSession?(sessionId: string): Promise<ChatMessage[]>;
+	peekSessionMessages?(sessionId: string): Promise<ChatMessage[]>;
 	/** False while a session's messages exist on disk but haven't been read. */
 	isSessionHydrated?(sessionId: string): boolean;
 }
@@ -300,6 +301,17 @@ class JsonlStorage implements ChatStorage {
 
 	isSessionHydrated(sessionId: string): boolean {
 		return !this.unhydratedSessions.has(sessionId);
+	}
+
+	/** Pure read of one session's messages for consumers that must not
+		disturb lazy-hydration state (history copy/export, search): touches
+		neither the unhydratedSessions guard nor lastSavedState. */
+	async peekSessionMessages(sessionId: string): Promise<ChatMessage[]> {
+		const entry = this.unhydratedSessions.get(sessionId);
+		const adapter = this.deps.app.vault.adapter;
+		const pluginDir = `${this.deps.app.vault.configDir}/plugins/${this.deps.manifest.id}`;
+		const filePath = entry?.filePath ?? `${SESSIONS_DIR}/${sessionId}.jsonl`;
+		return this._loadMessages(`${pluginDir}/${filePath}`);
 	}
 
 	async saveChatData(data: StoredChatData): Promise<void> {

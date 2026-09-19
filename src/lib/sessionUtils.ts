@@ -3,7 +3,17 @@ import { ChatSession } from "../types";
 /** Authoritative message count — valid even before a session's messages are
 	hydrated into memory (index-only boot), unlike messages.length. */
 export function sessionMessageCount(session: ChatSession): number {
-	return session.messageCount ?? session.messages.length;
+	// Trust the cached count only while messages haven't been loaded into
+	// memory yet; hydrated sessions use the live array so send/retry/edit
+	// don't leave a stale startup count in the history modal.
+	if (
+		session.hydrated === false &&
+		session.messages.length === 0 &&
+		session.messageCount != null
+	) {
+		return session.messageCount;
+	}
+	return session.messages.length;
 }
 
 export function makeId(): string {

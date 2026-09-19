@@ -124,6 +124,16 @@ export async function hydrateChatSession(
 	return plugin._chatStorage.hydrateSession(sessionId);
 }
 
+/** Pure read for history copy/export and search — never mutates
+	hydration state, so unhydrated sessions keep their write guard. */
+export async function peekChatSessionMessages(
+	plugin: ObsidianAIPlugin,
+	sessionId: string,
+): Promise<ChatMessage[]> {
+	if (!plugin._chatStorage?.peekSessionMessages) return [];
+	return plugin._chatStorage.peekSessionMessages(sessionId);
+}
+
 export function isChatSessionHydrated(
 	plugin: ObsidianAIPlugin,
 	sessionId: string,

@@ -308,3 +308,32 @@ describe("JsonlStorage hydrate-all write protection (Codex P1)", () => {
 		);
 	});
 });
+
+describe("JsonlStorage peekSessionMessages (Codex wave-2)", () => {
+	it("reads messages without disturbing the hydration write guard", async () => {
+		const files = new Map<string, string>();
+		await makeStorage(files).storage.saveChatData({
+			sessions: [makeSession("s1", ["hello", "world"])],
+			activeSessionId: "s1",
+		});
+
+		const { storage, adapter } = makeStorage(files);
+		const boot = await storage.loadChatData();
+		expect(boot.sessions[0].messages).toEqual([]);
+
+		// Export/copy path: pure read, no hydration bookkeeping.
+		const peeked = await storage.peekSessionMessages?.("s1");
+		expect(peeked).toHaveLength(2);
+		expect(storage.isSessionHydrated?.("s1")).toBe(false);
+
+		// The save guard still protects the unhydrated session.
+		await storage.saveChatData({
+			sessions: boot.sessions,
+			activeSessionId: null,
+		});
+		expect(adapter.write).not.toHaveBeenCalledWith(
+			sessionPath("s1"),
+			expect.anything(),
+		);
+	});
+});

@@ -38,6 +38,7 @@ import {
 	loadChatData,
 	hydrateChatSession,
 	isChatSessionHydrated,
+	peekChatSessionMessages,
 	saveChatData,
 	syncPluginData,
 	onSessionEnd,
@@ -166,6 +167,12 @@ export default class ObsidianAIPlugin extends Plugin {
 		sessions unhydrated until first open). Returns [] for unknown ids. */
 	async hydrateSession(sessionId: string) {
 		return hydrateChatSession(this, sessionId);
+	}
+
+	/** Pure read of a session's messages without changing hydration state
+		(history copy/export, search). */
+	async peekSessionMessages(sessionId: string) {
+		return peekChatSessionMessages(this, sessionId);
 	}
 
 	isSessionHydrated(sessionId: string): boolean {

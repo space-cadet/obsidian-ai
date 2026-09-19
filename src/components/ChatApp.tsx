@@ -897,9 +897,17 @@ const ChatApp: React.FC<ChatAppProps> = ({
 
 	const handleSessionCopy = useCallback(
 		async (session: ChatSession, format: ExportFormat) => {
+			// Index-only sessions hold no messages in memory yet — read the
+			// file via a pure peek (hydration state untouched) first.
+			let resolved = session;
+			if (!session.hydrated && session.messageCount != null) {
+				const messages =
+					(await plugin.peekSessionMessages?.(session.id)) ?? [];
+				if (messages.length > 0) resolved = { ...session, messages };
+			}
 			const content = serializeChatExport({
 				kind: "sessions",
-				sessions: [session],
+				sessions: [resolved],
 				scope: "single",
 				format,
 				options: {
@@ -919,9 +927,16 @@ const ChatApp: React.FC<ChatAppProps> = ({
 
 	const handleSessionExport = useCallback(
 		async (session: ChatSession, format: ExportFormat) => {
+			// Same pure peek as handleSessionCopy before serializing.
+			let resolved = session;
+			if (!session.hydrated && session.messageCount != null) {
+				const messages =
+					(await plugin.peekSessionMessages?.(session.id)) ?? [];
+				if (messages.length > 0) resolved = { ...session, messages };
+			}
 			const content = serializeChatExport({
 				kind: "sessions",
-				sessions: [session],
+				sessions: [resolved],
 				scope: "single",
 				format,
 				options: {

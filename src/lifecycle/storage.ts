@@ -20,6 +20,7 @@ export {
 	loadChatData,
 	hydrateChatSession,
 	isChatSessionHydrated,
+	peekChatSessionMessages,
 	loadSettings,
 	saveChatData,
 	saveSettings,

@@ -352,8 +352,11 @@ export function useChatSession({
 				const savedSessions = withNew.filter(
 					(session) => sessionMessageCount(session) > 0,
 				);
+				// Mutually exclusive with savedSessions above: index-only sessions
+				// have empty in-memory messages but messages on disk — drafting
+				// them duplicates IDs in state and re-adds pruned sessions.
 				const draftSessions = withNew.filter(
-					(session) => session.messages.length === 0,
+					(session) => sessionMessageCount(session) === 0,
 				);
 				return [
 					...pruneSessions(savedSessions, max, currentActiveId),
