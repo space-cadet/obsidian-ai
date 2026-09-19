@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, memo } from "react";
 import { App } from "obsidian";
 import { ChatMessage, ContentPart } from "../types";
 import { createRoot } from "react-dom/client";
@@ -273,6 +273,47 @@ interface ChatMessagesProps {
 	onToggleSelection?: (messageId: string) => void;
 }
 
+interface MessageRowProps {
+	msg: ChatMessage;
+	app: App;
+	renderMarkdown: ChatMessagesProps["renderMarkdown"];
+	showThinking?: boolean;
+	onOpenPastSession?: (sessionId: string, messageId: string) => void;
+	onAppend: (content: string) => void;
+	onInsertAtCursor: (content: string) => void;
+	onApply: (content: string) => void;
+	onRetry: (messageId: string) => void;
+	onEdit: (messageId: string) => void;
+	onApplyToTarget: (content: string, target: string) => void;
+	onCreateNote: (content: string, target: string) => void;
+	onAppendToTarget: (content: string, target: string) => void;
+	selectionMode?: boolean;
+	selected?: boolean;
+	onLongPress?: (messageId: string) => void;
+	onToggleSelection?: (messageId: string) => void;
+}
+
+/**
+ * Memoized per-message row. The parent re-renders on every scroll-position and
+ * streaming state change; without memo, every bubble in the session
+ * reconciles each time, which is the main source of scroll jank in long chats.
+ * The per-message arrow closures are built here so they only change when the
+ * message itself changes.
+ */
+const MessageRow: React.FC<MessageRowProps> = memo(
+	({ msg, onRetry, onEdit, selected, ...rest }) => (
+		<div data-message-id={msg.id}>
+			<MessageBubble
+				{...rest}
+				message={msg}
+				selected={selected}
+				onRetry={() => onRetry(msg.id)}
+				onEdit={() => onEdit(msg.id)}
+			/>
+		</div>
+	),
+);
+
 const ChatMessages: React.FC<ChatMessagesProps> = ({
 	sessionId,
 	restoreScrollTop,
@@ -384,21 +425,6 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		return () => window.clearTimeout(timer);
 	}, [scrollToMessageId, messages]);
 
-	useEffect(() => {
-		if (!scrollToMessageId) return;
-		const target = scrollRef.current?.querySelector<HTMLElement>(
-			`[data-message-id="${scrollToMessageId}"]`,
-		);
-		if (!target) return;
-		target.scrollIntoView({ behavior: "smooth", block: "center" });
-		target.classList.add("chat-message-highlight");
-		const timer = window.setTimeout(
-			() => target.classList.remove("chat-message-highlight"),
-			2000,
-		);
-		return () => window.clearTimeout(timer);
-	}, [scrollToMessageId, messages]);
-
 	const scrollToTop = useCallback(() => {
 		scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
 	}, []);
@@ -421,27 +447,26 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 					</div>
 				)}
 				{messages.map((msg) => (
-					<div key={msg.id} data-message-id={msg.id}>
-						<MessageBubble
-							message={msg}
-							app={app}
-							renderMarkdown={renderMarkdown}
-							showThinking={showThinking}
-							onOpenPastSession={onOpenPastSession}
-							onAppend={onAppend}
-							onInsertAtCursor={onInsertAtCursor}
-							onApply={onApply}
-							onRetry={() => onRetry(msg.id)}
-							onEdit={() => onEdit(msg.id)}
-							onApplyToTarget={onApplyToTarget}
-							onCreateNote={onCreateNote}
-							onAppendToTarget={onAppendToTarget}
-							selectionMode={selectionMode}
-							selected={selectedMessageIds?.has(msg.id)}
-							onLongPress={onLongPress}
-							onToggleSelection={onToggleSelection}
-						/>
-					</div>
+					<MessageRow
+						key={msg.id}
+						msg={msg}
+						app={app}
+						renderMarkdown={renderMarkdown}
+						showThinking={showThinking}
+						onOpenPastSession={onOpenPastSession}
+						onAppend={onAppend}
+						onInsertAtCursor={onInsertAtCursor}
+						onApply={onApply}
+						onRetry={onRetry}
+						onEdit={onEdit}
+						onApplyToTarget={onApplyToTarget}
+						onCreateNote={onCreateNote}
+						onAppendToTarget={onAppendToTarget}
+						selectionMode={selectionMode}
+						selected={selectedMessageIds?.has(msg.id)}
+						onLongPress={onLongPress}
+						onToggleSelection={onToggleSelection}
+					/>
 				))}
 				{isStreaming && currentAiMessage && (
 					<StreamingBubble

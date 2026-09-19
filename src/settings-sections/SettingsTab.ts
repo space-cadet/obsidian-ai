@@ -193,6 +193,10 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 		void this.saveSettings({ quiet: true });
 	}, 250);
 
+	private debouncedCollapseSave = debounce(() => {
+		void this.plugin.saveSettings();
+	}, 300);
+
 	constructor(app: App, plugin: ObsidianAIPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
@@ -224,7 +228,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			delete sections[sectionId];
 		}
 		this.plugin.settings.collapsedSections = sections;
-		await this.plugin.saveSettings();
+		this.debouncedCollapseSave();
 
 		sectionEl.toggleClass("is-collapsed", collapsed);
 		const body = sectionEl.querySelector<HTMLElement>(
@@ -246,7 +250,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 		if (collapsed) sections[key] = true;
 		else delete sections[key];
 		this.plugin.settings.collapsedSections = sections;
-		await this.plugin.saveSettings();
+		this.debouncedCollapseSave();
 
 		groupEl.toggleClass("is-collapsed", collapsed);
 		groupEl
@@ -310,7 +314,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				}
 			});
 		this.plugin.settings.collapsedSections = sections;
-		await this.plugin.saveSettings();
+		this.debouncedCollapseSave();
 	}
 
 	private get activeProfile(): ProviderProfile {
