@@ -166,6 +166,7 @@ export async function rebuildSyncIndex(
 
 	const previousHandler = plugin.syncEngine.getProgressHandler();
 	const rebuildStart = Date.now();
+	plugin.syncHub?.beginRun("rebuild");
 	let rebuildTotal = 0;
 	let rebuildCompleted = 0;
 	let rebuildUploadedBytes = 0;
@@ -173,8 +174,8 @@ export async function rebuildSyncIndex(
 	const emitRebuildProgress = (
 		progress: Partial<SyncProgressSnapshot> &
 			Pick<SyncProgressSnapshot, "phase" | "stage">,
-	) =>
-		options?.onProgress?.({
+	) => {
+		const snapshot: SyncProgressSnapshot = {
 			phase: progress.phase,
 			stage: progress.stage,
 			total: progress.total ?? rebuildTotal,
@@ -187,7 +188,14 @@ export async function rebuildSyncIndex(
 			indeterminate: progress.indeterminate,
 			uploadedBytes: rebuildUploadedBytes,
 			downloadedBytes: rebuildDownloadedBytes,
-		});
+		};
+		plugin.syncHub?.publishProgress(snapshot);
+		options?.onProgress?.(snapshot);
+	};
+	const emitLog = (entry: SyncLogEntry) => {
+		plugin.syncHub?.publishLog(entry);
+		emitLog(entry);
+	};
 	try {
 		plugin.syncEngine.setProgressHandler((event) => {
 			if (event.type === "stage") {
@@ -222,7 +230,7 @@ export async function rebuildSyncIndex(
 						rebuildDownloadedBytes += event.bytes;
 				}
 			}
-			options?.onLog?.({
+			emitLog({
 				id: `session:${event.id}`,
 				operation: event.direction,
 				title,
@@ -243,6 +251,22 @@ export async function rebuildSyncIndex(
 			});
 		});
 		const result = await plugin.syncEngine.rebuildIndex(choice);
+		plugin.syncHub?.endRun({
+			ok: true,
+			message: "Sync record rebuilt",
+			uploaded: result.uploaded,
+			downloaded: result.downloaded,
+			conflicts: result.conflicts,
+			skipped: result.skipped,
+			uploadedBytes: rebuildUploadedBytes,
+			downloadedBytes: rebuildDownloadedBytes,
+			errors: [],
+			dryRun: false,
+			trigger: "rebuild",
+			startedAt: rebuildStart,
+			finishedAt: Date.now(),
+			durationMs: Date.now() - rebuildStart,
+		});
 		new Notice("Sync record rebuilt.");
 		return {
 			uploaded: result.uploaded,
@@ -250,6 +274,24 @@ export async function rebuildSyncIndex(
 			conflicts: result.conflicts,
 			skipped: result.skipped,
 		};
+	} catch (err: any) {
+		plugin.syncHub?.endRun({
+			ok: false,
+			message: `Rebuild failed: ${err?.message ?? err}`,
+			uploaded: 0,
+			downloaded: 0,
+			conflicts: 0,
+			skipped: 0,
+			uploadedBytes: rebuildUploadedBytes,
+			downloadedBytes: rebuildDownloadedBytes,
+			errors: [err?.message ?? String(err)],
+			dryRun: false,
+			trigger: "rebuild",
+			startedAt: rebuildStart,
+			finishedAt: Date.now(),
+			durationMs: Date.now() - rebuildStart,
+		});
+		throw err;
 	} finally {
 		if (previousHandler) {
 			plugin.syncEngine!.setProgressHandler(previousHandler);
@@ -269,6 +311,7 @@ export async function triggerSync(
 		direction?: "both" | "upload" | "download";
 		onProgress?: (progress: SyncProgressSnapshot) => void;
 		onLog?: (entry: SyncLogEntry) => void;
+		trigger?: "manual" | "auto";
 	},
 ): Promise<{
 	ok: boolean;
@@ -312,6 +355,7 @@ export async function triggerSync(
 
 	plugin.syncEngine.dryRun = dryRun;
 	const startTime = Date.now();
+	plugin.syncHub?.beginRun(options?.trigger === "auto" ? "auto" : "manual");
 	const syncLogger = new SyncLogger(plugin.app, plugin.manifest.id);
 
 	// ── Modal: primary progress UI ──
@@ -340,8 +384,8 @@ export async function triggerSync(
 	const emitProgress = (
 		progress: Partial<SyncProgressSnapshot> &
 			Pick<SyncProgressSnapshot, "phase" | "stage">,
-	) =>
-		options?.onProgress?.({
+	) => {
+		const snapshot: SyncProgressSnapshot = {
 			phase: progress.phase,
 			stage: progress.stage,
 			total: progress.total ?? totalOps,
@@ -356,7 +400,14 @@ export async function triggerSync(
 			downloadedBytes: progressDownloadedBytes,
 			plannedUploadBytes: plannedUploadBytes || undefined,
 			plannedDownloadBytes: plannedDownloadBytes || undefined,
-		});
+		};
+		plugin.syncHub?.publishProgress(snapshot);
+		options?.onProgress?.(snapshot);
+	};
+	const emitLog = (entry: SyncLogEntry) => {
+		plugin.syncHub?.publishLog(entry);
+		emitLog(entry);
+	};
 
 	try {
 		// Compute sync plan (may fail if offline, bad credentials, etc.)
@@ -423,7 +474,7 @@ export async function triggerSync(
 							id: event.id,
 						});
 					}
-					options?.onLog?.({
+					emitLog({
 						id: `session:${event.id}`,
 						operation: event.direction || "system",
 						title,
@@ -447,7 +498,7 @@ export async function triggerSync(
 							done: true,
 						});
 					}
-					options?.onLog?.({
+					emitLog({
 						id: `session:${event.id}`,
 						operation: event.direction || "system",
 						title,
@@ -475,7 +526,7 @@ export async function triggerSync(
 						id: event.id,
 						error: true,
 					});
-					options?.onLog?.({
+					emitLog({
 						id: `session:${event.id}`,
 						operation: "error",
 						title,
@@ -513,7 +564,7 @@ export async function triggerSync(
 					modal?.addLog(operation, title, {
 						id: `plugin:${event.id}`,
 					});
-					options?.onLog?.({
+					emitLog({
 						id: `plugin:${event.id}`,
 						operation,
 						title,
@@ -532,7 +583,7 @@ export async function triggerSync(
 						id: `plugin:${event.id}`,
 						error: true,
 					});
-					options?.onLog?.({
+					emitLog({
 						id: `plugin:${event.id}`,
 						operation: "error",
 						title,
@@ -545,7 +596,7 @@ export async function triggerSync(
 						id: `plugin:${event.id}`,
 						done: true,
 					});
-					options?.onLog?.({
+					emitLog({
 						id: `plugin:${event.id}`,
 						operation,
 						title,
@@ -637,6 +688,23 @@ export async function triggerSync(
 			new Notice(`⚠️ Sync finished with errors: ${msg}`, 8000);
 		}
 
+		plugin.syncHub?.endRun({
+			ok,
+			message: msg,
+			uploaded: result.uploaded,
+			downloaded: result.downloaded,
+			conflicts: result.conflicts,
+			skipped: result.skipped,
+			uploadedBytes: progressUploadedBytes,
+			downloadedBytes: progressDownloadedBytes,
+			errors: combinedErrors,
+			dryRun,
+			trigger: options?.trigger === "auto" ? "auto" : "manual",
+			startedAt: startTime,
+			finishedAt: Date.now(),
+			durationMs: Date.now() - startTime,
+		});
+
 		return {
 			ok,
 			message: msg,
@@ -696,6 +764,22 @@ export async function triggerSync(
 			skipped: 0,
 			errors: [err.message],
 			message: msg,
+		});
+		plugin.syncHub?.endRun({
+			ok: false,
+			message: msg,
+			uploaded: 0,
+			downloaded: 0,
+			conflicts: 0,
+			skipped: 0,
+			uploadedBytes: progressUploadedBytes,
+			downloadedBytes: progressDownloadedBytes,
+			errors: [msg],
+			dryRun,
+			trigger: options?.trigger === "auto" ? "auto" : "manual",
+			startedAt: startTime,
+			finishedAt: Date.now(),
+			durationMs: Date.now() - startTime,
 		});
 		new Notice(`❌ ${msg}`, 8000);
 		return {

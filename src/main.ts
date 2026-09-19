@@ -8,6 +8,8 @@ import { PersonaLoader } from "./intelligence/PersonaLoader";
 import { SearchIndex } from "./search/index";
 import { SessionSummarizer } from "./intelligence/SessionSummarizer";
 import { SyncEngine } from "./sync/SyncEngine";
+import { SyncStatusHub } from "./sync/SyncStatusHub";
+import { mountSyncStatusBar } from "./sync/SyncStatusBar";
 import { ProviderRegistry } from "./integrations/ProviderRegistry";
 import { AgentApiManager } from "./api/AgentApiManager";
 import { ChatStorage } from "./storage/ChatStorage";
@@ -71,6 +73,7 @@ export default class ObsidianAIPlugin extends Plugin {
 	syncRetryStore:
 		| import("./sync/SyncRetryStore").DurableSyncRetryStore
 		| null = null;
+	syncHub = new SyncStatusHub();
 
 	// Data integrity guards
 	_backupCreated = false;
@@ -103,6 +106,7 @@ export default class ObsidianAIPlugin extends Plugin {
 		);
 
 		registerChatView(this);
+		mountSyncStatusBar(this, () => activateChatView(this));
 		this.logger?.log(
 			"info",
 			`[Startup] chat view registered at ${Date.now() - onloadStart}ms`,
@@ -209,6 +213,7 @@ export default class ObsidianAIPlugin extends Plugin {
 			direction?: "both" | "upload" | "download";
 			onProgress?: (progress: SyncProgressSnapshot) => void;
 			onLog?: (entry: SyncLogEntry) => void;
+			trigger?: "manual" | "auto";
 		},
 	): Promise<{
 		ok: boolean;

@@ -249,7 +249,7 @@ export function scheduleAutoSync(plugin: ObsidianAIPlugin): void {
 	autoSyncTimeout = window.setTimeout(() => {
 		autoSyncTimeout = null;
 		if (plugin.settings.remoteStorage?.autoSync) {
-			plugin.triggerSync().catch((err) => {
+			plugin.triggerSync(false, { trigger: "auto" }).catch((err) => {
 				plugin.logger?.log("warn", `Auto-sync failed: ${err.message}`);
 			});
 		}
