@@ -1154,3 +1154,12 @@ See `tasks/T56.md` for full details.
 - **What's Next**: S3 backend, conflict resolution UI, sync status badge in chat UI, auto-sync on session changes
 - **Task**: `memory-bank/tasks/T42.md` (updated)
 - **Design doc**: `memory-bank/implementation-details/remote-chat-storage.md`
+
+## 2026-09-19 19:45 IST — T71 done, T24 index-only startup shipped
+
+Active focus is the `perf/chat-scroll-settings-lag` branch (9 commits, pushed;
+HEAD `99860e6`), awaiting Deepak's device verdicts before merge to main and
+v1.6.0. T71 (chat scroll perf + streaming follow) completed; T24 gained
+index-only startup (57ms device boot load, hard save guard, lazy hydration);
+T11 gained event logging + startup phase timings. Suite 506/506. Named next
+startup bottleneck: SyncEngine WebDAV init ~4.1s (not started).

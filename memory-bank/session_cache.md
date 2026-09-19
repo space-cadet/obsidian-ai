@@ -890,3 +890,16 @@ Session started after tool outage (~14:36–15:22 IST). Previous session had com
 - Debug Mode layout was tightened with an Export details group and section-only
   responsive styling; the generated stylesheet, full test suite, and build
   remain clean.
+
+## 2026-09-19 19:40 IST — T71 + T24: chat scroll perf + index-only startup
+
+- **Branch:** `perf/chat-scroll-settings-lag` (9 commits, pushed; HEAD `99860e6`)
+- **T71 (new, ✅):** scroll lag, follow-scroll streaming, send-scroll race fix
+  (`fa44b6f`), mention pills (`5443c4e`), preview fixture (`e32eb88`).
+- **T24 (+):** index-only startup — boot from `sessions/index.json` (~57ms vs
+  8.9s), lazy hydration with hard save guard, gates write through `sessionsRef`.
+- **T11 (+):** event logging + startup phase timings (`0bcaf61`, `c87189a`, `01a941c`).
+- **Verification:** 506/506 tests (6 new storage tests), tsc clean, build green.
+  Device-verified 57ms startup load; 162 sessions / 2191 messages restored.
+- **Pending Deepak:** device verdicts on follow-scroll/pills/event logs → merge
+  branch to main → cut v1.6.0. Named next bottleneck: SyncEngine WebDAV init ~4.1s.

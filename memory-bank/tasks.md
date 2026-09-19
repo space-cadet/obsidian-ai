@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-09-19 03:55 IST*
+*Last Updated: 2026-09-19 19:40 IST*
 
 ## Overview
 
@@ -54,6 +54,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T64c | Fidelity-Weighted Scoring | 🔄 | MEDIUM | 2026-08-27 | T64, T64b | [Details](tasks/T64c.md) |
 | T64d | Live Estimator Validation | ✅ | MEDIUM | 2026-08-27 | 2026-08-29 | T64, T6a | [Details](tasks/T64d.md) |
 | T70 | Active Chat Model Identity and Switcher Consistency | ✅ | HIGH | 2026-09-02 | 2026-09-02 | T9, T15; builds on T35, T36 | [Details](tasks/T70.md) |
+| T71 | Chat View Scroll Performance and Streaming Follow | ✅ | HIGH | 2026-09-19 | 2026-09-19 | T24, T15 | [Details](tasks/T71.md) |
 | T8b | 1.5.0 Community Scan Follow-up | 🔄 | HIGH | 2026-09-09 | T8, T8a | [Details](tasks/T8b.md) |
 | T18a | Bounded Web Page Retrieval Tool | ⏸️ | MEDIUM | 2026-08-25 | T18, T60a, T60c | [Details](tasks/T18a.md) |
 | T50 | OpenAI Responses API / Threads Support | 🔄 | MEDIUM | — | T14 | [Details](tasks/T50.md) |
