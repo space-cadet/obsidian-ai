@@ -346,10 +346,20 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	const bottomRef = useRef<HTMLDivElement>(null);
 	const [showScrollTop, setShowScrollTop] = useState(false);
 	const [showScrollBottom, setShowScrollBottom] = useState(false);
-	const isNearBottomRef = useRef(true);
+	/** Auto-follow mode: true while the view should track new content. Engages
+		on send and when the user is at the bottom; disengages when the user
+		scrolls away, re-engages when they return to the bottom. */
+	const followRef = useRef(true);
 	const prevMessagesLength = useRef(messages.length);
 
-	/** Check scroll position and update button visibility */
+	/** Jump the container to the very bottom without touching outer panes. */
+	const scrollToBottomInstant = useCallback(() => {
+		const container = scrollRef.current;
+		if (!container) return;
+		container.scrollTop = container.scrollHeight;
+	}, []);
+
+	/** Check scroll position, sync follow mode, and update button visibility */
 	const checkScrollPosition = useCallback(() => {
 		const container = scrollRef.current;
 		if (!container) return;
@@ -359,7 +369,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 			container.scrollTop -
 			container.clientHeight;
 		const atBottom = distanceFromBottom < threshold;
-		isNearBottomRef.current = atBottom;
+		followRef.current = atBottom;
 		setShowScrollBottom(!atBottom && messages.length > 0);
 		setShowScrollTop(container.scrollTop > 200);
 	}, [messages.length]);
@@ -387,26 +397,34 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 			checkScrollPosition();
 		});
 		return () => cancelAnimationFrame(frame);
-	}, [sessionId, restoreScrollTop, messages.length, checkScrollPosition]);
+	}, [sessionId, restoreScrollTop, checkScrollPosition]);
 
-	/** Auto-scroll to bottom on new messages or streaming content — but ONLY if user is already near bottom */
+	/** Follow new content to the bottom: always on local send, otherwise only
+		while follow mode is engaged (user is at / returned to the bottom). */
 	useEffect(() => {
-		if (messages.length > prevMessagesLength.current || isStreaming) {
-			if (isNearBottomRef.current) {
-				bottomRef.current?.scrollIntoView({ behavior: "auto" });
-			}
-			// Update button visibility after render
-			requestAnimationFrame(checkScrollPosition);
+		const grew = messages.length > prevMessagesLength.current;
+		const lastIsUser =
+			messages.length > 0 &&
+			messages[messages.length - 1]?.role === "user";
+		if (grew && lastIsUser) {
+			// Local send: bring the new message and its reply into view even if
+			// the user was reading history above.
+			followRef.current = true;
+		}
+		if ((grew || isStreaming) && followRef.current) {
+			scrollToBottomInstant();
 		}
 		prevMessagesLength.current = messages.length;
-	}, [messages, isStreaming, currentAiMessage, checkScrollPosition]);
+		// Update button visibility after render
+		requestAnimationFrame(checkScrollPosition);
+	}, [messages, isStreaming, currentAiMessage, checkScrollPosition, scrollToBottomInstant]);
 
-	/** Scroll to bottom on mount if there are messages */
+	/** Scroll to bottom on mount when there are messages and no saved position to restore. */
 	useEffect(() => {
-		if (messages.length > 0) {
-			bottomRef.current?.scrollIntoView({ behavior: "auto" });
-			isNearBottomRef.current = true;
+		if (messages.length > 0 && restoreScrollTop == null) {
+			scrollToBottomInstant();
 		}
+		followRef.current = true;
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only scroll positioning intentionally ignores changing message dependencies.
 	}, []);
 
@@ -430,8 +448,14 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	}, []);
 
 	const scrollToBottom = useCallback(() => {
-		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-		isNearBottomRef.current = true;
+		followRef.current = true;
+		const container = scrollRef.current;
+		if (container) {
+			container.scrollTo({
+				top: container.scrollHeight,
+				behavior: "smooth",
+			});
+		}
 		setShowScrollBottom(false);
 	}, []);
 
