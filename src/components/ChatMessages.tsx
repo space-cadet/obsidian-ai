@@ -300,6 +300,11 @@ interface MessageRowProps {
  * The per-message arrow closures are built here so they only change when the
  * message itself changes.
  */
+/** Transition-only debug logging; no-ops unless the file logger is at debug level. */
+const debugLog = (...args: unknown[]) => {
+	(window as any).__obsidianAiLogger?.log?.("debug", ...args);
+};
+
 const MessageRow: React.FC<MessageRowProps> = memo(
 	({ msg, onRetry, onEdit, selected, ...rest }) => (
 		<div data-message-id={msg.id}>
@@ -369,6 +374,11 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 			container.scrollTop -
 			container.clientHeight;
 		const atBottom = distanceFromBottom < threshold;
+		if (atBottom !== followRef.current) {
+			debugLog(
+				`[ChatScroll] follow ${atBottom ? "engaged (near bottom)" : "released (scrolled away)"} — ${Math.round(distanceFromBottom)}px from bottom`,
+			);
+		}
 		followRef.current = atBottom;
 		setShowScrollBottom(!atBottom && messages.length > 0);
 		setShowScrollTop(container.scrollTop > 200);
@@ -394,6 +404,9 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		if (!container || !sessionId) return;
 		const frame = requestAnimationFrame(() => {
 			container.scrollTop = Math.max(0, restoreScrollTop ?? 0);
+			debugLog(
+				`[ChatScroll] restored saved position ${Math.round(container.scrollTop)}px for session ${sessionId}`,
+			);
 			checkScrollPosition();
 		});
 		return () => cancelAnimationFrame(frame);
@@ -409,9 +422,19 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		if (grew && lastIsUser) {
 			// Local send: bring the new message and its reply into view even if
 			// the user was reading history above.
+			if (!followRef.current) {
+				debugLog(
+					`[ChatScroll] new user message while scrolled up — follow forced on, jumping to bottom`,
+				);
+			}
 			followRef.current = true;
 		}
 		if ((grew || isStreaming) && followRef.current) {
+			if (grew) {
+				debugLog(
+					`[ChatScroll] following new message to bottom (streaming: ${Boolean(isStreaming)})`,
+				);
+			}
 			scrollToBottomInstant();
 		}
 		prevMessagesLength.current = messages.length;
@@ -448,6 +471,9 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	}, []);
 
 	const scrollToBottom = useCallback(() => {
+		debugLog(
+			"[ChatScroll] ↓ button — follow engaged, smooth scroll to bottom",
+		);
 		followRef.current = true;
 		const container = scrollRef.current;
 		if (container) {

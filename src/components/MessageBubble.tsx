@@ -40,6 +40,7 @@ export function highlightMentions(container: HTMLElement, items: ContextItem[]):
 	while ((node = walker.nextNode())) {
 		nodes.push(node as Text);
 	}
+	let pillsCreated = 0;
 	for (const textNode of nodes) {
 		const text = textNode.textContent || "";
 		// Find all non-overlapping matches, earliest first; on a tie the
@@ -61,6 +62,7 @@ export function highlightMentions(container: HTMLElement, items: ContextItem[]):
 			searchFrom = bestIdx + bestName.length;
 		}
 		if (matches.length === 0) continue;
+		pillsCreated += matches.length;
 		const parent = textNode.parentNode;
 		if (!parent) continue;
 		const fragment = document.createDocumentFragment();
@@ -81,6 +83,12 @@ export function highlightMentions(container: HTMLElement, items: ContextItem[]):
 			fragment.appendChild(document.createTextNode(text.slice(cursor)));
 		}
 		parent.replaceChild(fragment, textNode);
+	}
+	if (pillsCreated > 0) {
+		(window as any).__obsidianAiLogger?.log?.(
+			"debug",
+			`[Mentions] pilled ${pillsCreated} mention(s)`,
+		);
 	}
 }
 
@@ -310,6 +318,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	// Context items whose names don't appear in the message text are not
 	// rendered as inline mention pills, so the footer still shows them.
 	// Items already visible inline would be redundant there.
+	const totalContextItems = message.contextItems?.length ?? 0;
 	const visibleContextItems = useMemo(
 		() =>
 			message.role === "user"
@@ -340,6 +349,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	useEffect(() => {
 		return cancelLongPress;
 	}, []);
+
+	useEffect(() => {
+		if (message.role !== "user" || totalContextItems === 0) return;
+		(window as any).__obsidianAiLogger?.log?.(
+			"debug",
+			`[Mentions] context footer: ${visibleContextItems.length}/${totalContextItems} items shown (rest inline)`,
+		);
+	}, [message.role, totalContextItems, visibleContextItems.length]);
 
 	useEffect(() => {
 		if (!isActive) return;
