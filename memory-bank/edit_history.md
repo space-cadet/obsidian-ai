@@ -1573,3 +1573,7 @@ GPT 5.4 Medium's rewrite restored the guard mechanism and restructured the panel
 - Updated `memory-bank/activeContext.md` — updated focus, next steps
 - Updated `memory-bank/sessions/2026-05-02-morning.md` — session 3 update appended
 - Updated `memory-bank/session_cache.md` — T7 complete, focus shifted to T1
+
+## 2026-09-20
+
+- 02:53:00 IST - T42g: Sync visibility implementation (mockups approved) — Actions: Created SyncStatusHub/SyncStatusBar/planBytes tests/panel tests/SyncLogModal; Modified SyncProgress/StorageAdapter/SyncEngine/lifecycle sync+persistence/main/ChatView/ChatSyncPanel rebuild/registration/styles.css; Deleted old v2 panel internals. Decisions: per-conflict decision chips deferred (engine store needed); SyncProgressModal wired via command palette; derived rates only. Commits: 0720540, e604eed, bfd525b. Tests 537/537 green.
