@@ -192,6 +192,18 @@ class JsonlStorage implements ChatStorage {
 			}),
 		);
 
+		const totalBytes = sessions.reduce(
+			(sum, s) =>
+				sum + s.messages.reduce((m, msg) => m + (msg.content?.length ?? 0), 0),
+			0,
+		);
+		this.deps.logger?.log(
+			"info",
+			`JsonlStorage: loaded ${sessions.length} session file(s), ` +
+				`${sessions.reduce((n, s) => n + s.messages.length, 0)} message(s), ` +
+				`~${Math.round(totalBytes / 1024)}KB of message text`,
+		);
+
 		this.lastSavedState = {
 			sessions: new Map(
 				sessions.map((s) => [

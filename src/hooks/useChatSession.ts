@@ -74,8 +74,17 @@ export function useChatSession({
 	// ─── Load persisted sessions on mount ───
 	useEffect(() => {
 		let cancelled = false;
+		const loadStart = Date.now();
+		plugin.logger?.log(
+			"info",
+			"[Startup] ChatApp mount — loading chat data…",
+		);
 		plugin.loadChatData().then((data) => {
 			if (cancelled) return;
+			plugin.logger?.log(
+				"info",
+				`[Startup] loadChatData resolved in ${Date.now() - loadStart}ms`,
+			);
 			const savedSessions = data.sessions.filter(
 				(session) => session.messages.length > 0,
 			);

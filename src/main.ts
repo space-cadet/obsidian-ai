@@ -81,6 +81,7 @@ export default class ObsidianAIPlugin extends Plugin {
 	_updater: PluginUpdater | null = null;
 
 	async onload() {
+		const onloadStart = Date.now();
 		// Register the entry command before asynchronous migration/settings work so
 		// Obsidian's command palette can discover it even while startup completes.
 		this.addCommand({
@@ -90,8 +91,19 @@ export default class ObsidianAIPlugin extends Plugin {
 		});
 
 		await initializeStorage(this);
+		console.info(
+			`[ObsidianAI] startup: initializeStorage done in ${Date.now() - onloadStart}ms`,
+		);
+		this.logger?.log(
+			"info",
+			`[Startup] initializeStorage done in ${Date.now() - onloadStart}ms`,
+		);
 
 		registerChatView(this);
+		this.logger?.log(
+			"info",
+			`[Startup] chat view registered at ${Date.now() - onloadStart}ms`,
+		);
 		registerRibbonIcon(this);
 		registerEditorExtensions(this);
 		registerCommands(this);
