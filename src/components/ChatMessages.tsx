@@ -384,6 +384,14 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		setShowScrollTop(container.scrollTop > 200);
 	}, [messages.length]);
 
+	/** Latest checkScrollPosition, so effects can invoke it without depending
+		on its identity — it changes with messages.length, which would
+		otherwise re-run them on every new message. */
+	const checkScrollPositionRef = useRef(checkScrollPosition);
+	useEffect(() => {
+		checkScrollPositionRef.current = checkScrollPosition;
+	});
+
 	/** Attach scroll listener */
 	useEffect(() => {
 		const container = scrollRef.current;
@@ -398,7 +406,10 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		return () => container.removeEventListener("scroll", onScroll);
 	}, [checkScrollPosition, onScrollPositionChange, sessionId]);
 
-	/** Restore the active tab's saved position after its message DOM has rendered. */
+	/** Restore the active tab's saved position after its message DOM has rendered.
+		Runs only on session switch / explicit restore-value change — NOT on
+		message growth — so a stale saved position can never fight the follow
+		scroll on send. */
 	useEffect(() => {
 		const container = scrollRef.current;
 		if (!container || !sessionId) return;
@@ -407,10 +418,11 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 			debugLog(
 				`[ChatScroll] restored saved position ${Math.round(container.scrollTop)}px for session ${sessionId}`,
 			);
-			checkScrollPosition();
+			checkScrollPositionRef.current();
 		});
 		return () => cancelAnimationFrame(frame);
-	}, [sessionId, restoreScrollTop, checkScrollPosition]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- checkScrollPosition is read via ref; listing it would re-run this on every message.
+	}, [sessionId, restoreScrollTop]);
 
 	/** Follow new content to the bottom: always on local send, otherwise only
 		while follow mode is engaged (user is at / returned to the bottom). */
