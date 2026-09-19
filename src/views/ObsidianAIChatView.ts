@@ -5,7 +5,7 @@ import ChatApp from "../components/ChatApp";
 import { ChatErrorBoundary } from "../components/presentational/ErrorBoundary";
 import { ChatApiManager } from "../api";
 import { App } from "obsidian";
-import { StoredChatData } from "../types";
+import { StoredChatData, ChatMessage } from "../types";
 import { ObsidianAISettings } from "../settings";
 import type { SyncLogEntry, SyncProgressSnapshot } from "../sync/SyncProgress";
 
@@ -26,6 +26,10 @@ export interface ChatPluginLike {
 	integrationRegistry?: import("../integrations/ProviderRegistry").ProviderRegistry;
 	openSessionInNewTab(sessionId: string, messageId: string): Promise<void>;
 	loadChatData(): Promise<StoredChatData>;
+	/** Read one session's message file into memory (index-only boot). */
+	hydrateSession?(sessionId: string): Promise<ChatMessage[]>;
+	/** False while a session's messages exist on disk but aren't in memory. */
+	isSessionHydrated?(sessionId: string): boolean;
 	saveChatData(data: StoredChatData): Promise<void>;
 	saveSettings(): Promise<void>;
 	openRemoteStorageSettings?(): void;

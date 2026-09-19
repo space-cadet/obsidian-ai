@@ -702,7 +702,8 @@ function _getSessionTitle(
 async function _populateSyncCache(plugin: ObsidianAIPlugin): Promise<void> {
 	if (!plugin.syncEngine) return;
 	try {
-		const chatData = await plugin.loadChatData();
+		// Full load: the sync cache needs real message content.
+		const chatData = await plugin.loadChatData({ hydrate: true });
 		(plugin as any)._chatData = chatData;
 		const sessions = chatData.sessions || [];
 		await plugin.syncEngine.populateCache(sessions);

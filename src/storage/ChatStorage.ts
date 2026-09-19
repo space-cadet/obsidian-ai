@@ -17,10 +17,21 @@ export interface StorageDeps {
 	logger?: { log(level: string, msg: string): void };
 }
 
+export interface LoadChatDataOptions {
+	/** Read every session's message file up front. Default false: boot from
+		the index only and hydrate message files on first open. Used by sync,
+		diagnostics, and usage stats — anything that needs full transcripts. */
+	hydrate?: boolean;
+}
+
 export interface ChatStorage {
-	loadChatData(): Promise<StoredChatData>;
+	loadChatData(opts?: LoadChatDataOptions): Promise<StoredChatData>;
 	saveChatData(data: StoredChatData): Promise<void>;
 	detectLegacyFormat(): Promise<boolean>;
+	/** Read one session's message file into memory. Returns the messages. */
+	hydrateSession?(sessionId: string): Promise<ChatMessage[]>;
+	/** False while a session's messages exist on disk but haven't been read. */
+	isSessionHydrated?(sessionId: string): boolean;
 }
 
 export function createStorage(
@@ -40,7 +51,7 @@ export function createStorage(
 class LegacyStorage implements ChatStorage {
 	constructor(private deps: StorageDeps) {}
 
-	async loadChatData(): Promise<StoredChatData> {
+	async loadChatData(_opts?: LoadChatDataOptions): Promise<StoredChatData> {
 		this.deps.logger?.log(
 			"info",
 			"LegacyStorage: loadChatData reading data.json",
@@ -138,9 +149,16 @@ const SESSIONS_DIR = "sessions";
 class JsonlStorage implements ChatStorage {
 	private deps: StorageDeps;
 	private lastSavedState: {
-		sessions: Map<string, { messageIds: string[]; updatedAt: number }>;
+		sessions: Map<string, { messageIds: string[] | null; updatedAt: number }>;
 		activeSessionId: string | null;
 	} | null = null;
+	/** Sessions booted from the index whose message files have NOT been read
+		yet, keyed by id with their original index entries. saveChatData must
+		never write these (messages in memory are []) — only hydrateSession()
+		(or a save carrying real messages, e.g. a sync download) clears them. */
+	private unhydratedSessions = new Map<string, SessionIndexEntry>();
+	/** In-flight hydrateSession calls — concurrent callers share one read. */
+	private pendingHydrations = new Map<string, Promise<ChatMessage[]>>();
 
 	constructor(deps: StorageDeps) {
 		this.deps = deps;
@@ -151,7 +169,9 @@ class JsonlStorage implements ChatStorage {
 		return data?.chatData != null || Array.isArray(data?.chatMessages);
 	}
 
-	async loadChatData(): Promise<StoredChatData> {
+	async loadChatData(
+		opts: LoadChatDataOptions = {},
+	): Promise<StoredChatData> {
 		const adapter = this.deps.app.vault.adapter;
 		const pluginDir = `${this.deps.app.vault.configDir}/plugins/${this.deps.manifest.id}`;
 		const indexPath = `${pluginDir}/${SESSIONS_DIR}/index.json`;
@@ -168,17 +188,30 @@ class JsonlStorage implements ChatStorage {
 			return { sessions: [], activeSessionId: null };
 		}
 
+		const hydrateAll = opts.hydrate === true;
+		this.unhydratedSessions.clear();
+
 		const sessions: ChatSession[] = await Promise.all(
 			index.sessions.map(async (entry) => {
-				const messages = await this._loadMessages(
-					`${pluginDir}/${entry.filePath}`,
-				);
+				let messages: ChatMessage[] = [];
+				if (hydrateAll) {
+					messages = await this._loadMessages(
+						`${pluginDir}/${entry.filePath}`,
+					);
+				} else {
+					// Index-only boot: metadata now, messages on first open.
+					this.unhydratedSessions.set(entry.id, entry);
+				}
 				return {
 					id: entry.id,
 					title: entry.title,
 					createdAt: entry.createdAt,
 					updatedAt: entry.updatedAt,
 					messages,
+					messageCount: hydrateAll
+						? messages.length
+						: entry.messageCount,
+					hydrated: hydrateAll,
 					contextItems: entry.contextItems ?? [],
 					profileId: entry.profileId,
 					isGroupChat: entry.isGroupChat,
@@ -201,7 +234,8 @@ class JsonlStorage implements ChatStorage {
 			"info",
 			`JsonlStorage: loaded ${sessions.length} session file(s), ` +
 				`${sessions.reduce((n, s) => n + s.messages.length, 0)} message(s), ` +
-				`~${Math.round(totalBytes / 1024)}KB of message text`,
+				`~${Math.round(totalBytes / 1024)}KB of message text` +
+				(hydrateAll ? "" : " (index-only boot)"),
 		);
 
 		this.lastSavedState = {
@@ -209,7 +243,11 @@ class JsonlStorage implements ChatStorage {
 				sessions.map((s) => [
 					s.id,
 					{
-						messageIds: s.messages.map((m) => m.id),
+						// null = on-disk ids unknown (index-only boot); forces a full
+						// overwrite on the first write instead of a bad append.
+						messageIds: hydrateAll
+							? s.messages.map((m) => m.id)
+							: null,
 						updatedAt: s.updatedAt,
 					},
 				]),
@@ -222,6 +260,41 @@ class JsonlStorage implements ChatStorage {
 			activeSessionId: index.activeSessionId,
 			openSessionIds: index.openSessionIds,
 		};
+	}
+
+	/** Read one session's message file into memory. Idempotent; returns [] for
+		already-hydrated or unknown ids so callers can fire it unconditionally. */
+	async hydrateSession(sessionId: string): Promise<ChatMessage[]> {
+		const pending = this.pendingHydrations.get(sessionId);
+		if (pending) return pending;
+		const p = this._hydrateSessionImpl(sessionId).finally(() =>
+			this.pendingHydrations.delete(sessionId),
+		);
+		this.pendingHydrations.set(sessionId, p);
+		return p;
+	}
+
+	private async _hydrateSessionImpl(
+		sessionId: string,
+	): Promise<ChatMessage[]> {
+		const entry = this.unhydratedSessions.get(sessionId);
+		if (!entry) return [];
+		const adapter = this.deps.app.vault.adapter;
+		const pluginDir = `${this.deps.app.vault.configDir}/plugins/${this.deps.manifest.id}`;
+		const messages = await this._loadMessages(
+			`${pluginDir}/${entry.filePath}`,
+		);
+		this.unhydratedSessions.delete(sessionId);
+		// Record the true on-disk ids so the next save can append correctly.
+		this.lastSavedState?.sessions.set(sessionId, {
+			messageIds: messages.map((m) => m.id),
+			updatedAt: entry.updatedAt,
+		});
+		return messages;
+	}
+
+	isSessionHydrated(sessionId: string): boolean {
+		return !this.unhydratedSessions.has(sessionId);
 	}
 
 	async saveChatData(data: StoredChatData): Promise<void> {
@@ -239,6 +312,20 @@ class JsonlStorage implements ChatStorage {
 			const filePath = `${SESSIONS_DIR}/${session.id}.jsonl`;
 			const fullPath = `${pluginDir}/${filePath}`;
 
+			const originalEntry = this.unhydratedSessions.get(session.id);
+			if (originalEntry && session.messages.length === 0) {
+				// Hard guard: this session's messages were never read into memory
+				// (index-only boot, never opened). Writing [] would destroy the
+				// on-disk file. Skip the write and carry the original index entry
+				// forward, letting title/scroll-position edits persist.
+				indexEntries.push({
+					...originalEntry,
+					title: session.title,
+					scrollPosition: session.scrollPosition,
+				});
+				continue;
+			}
+
 			const previous = this.lastSavedState?.sessions.get(session.id);
 			const previousMessageIds = previous?.messageIds ?? null;
 
@@ -247,6 +334,9 @@ class JsonlStorage implements ChatStorage {
 				session.messages,
 				previousMessageIds,
 			);
+			// Real messages are now on disk (either they were already, or this
+			// write put them there) — the session is hydrated from here on.
+			this.unhydratedSessions.delete(session.id);
 
 			indexEntries.push({
 				id: session.id,
@@ -284,7 +374,9 @@ class JsonlStorage implements ChatStorage {
 				data.sessions.map((s) => [
 					s.id,
 					{
-						messageIds: s.messages.map((m) => m.id),
+						messageIds: this.unhydratedSessions.has(s.id)
+							? null
+							: s.messages.map((m) => m.id),
 						updatedAt: s.updatedAt,
 					},
 				]),

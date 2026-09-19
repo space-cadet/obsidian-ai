@@ -1,5 +1,11 @@
 import { ChatSession } from "../types";
 
+/** Authoritative message count — valid even before a session's messages are
+	hydrated into memory (index-only boot), unlike messages.length. */
+export function sessionMessageCount(session: ChatSession): number {
+	return session.messageCount ?? session.messages.length;
+}
+
 export function makeId(): string {
 	return crypto.randomUUID();
 }

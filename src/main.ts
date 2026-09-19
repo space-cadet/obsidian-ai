@@ -36,6 +36,8 @@ import {
 	loadSettings,
 	saveSettings,
 	loadChatData,
+	hydrateChatSession,
+	isChatSessionHydrated,
 	saveChatData,
 	syncPluginData,
 	onSessionEnd,
@@ -154,8 +156,20 @@ export default class ObsidianAIPlugin extends Plugin {
 		return saveSettings(this);
 	}
 
-	async loadChatData(): Promise<StoredChatData> {
-		return loadChatData(this);
+	async loadChatData(
+		opts?: import("./storage/ChatStorage").LoadChatDataOptions,
+	): Promise<StoredChatData> {
+		return loadChatData(this, opts);
+	}
+
+	/** Read one session's message file into memory (index-only boot leaves
+		sessions unhydrated until first open). Returns [] for unknown ids. */
+	async hydrateSession(sessionId: string) {
+		return hydrateChatSession(this, sessionId);
+	}
+
+	isSessionHydrated(sessionId: string): boolean {
+		return isChatSessionHydrated(this, sessionId);
 	}
 
 	async saveChatData(chatData: StoredChatData): Promise<void> {

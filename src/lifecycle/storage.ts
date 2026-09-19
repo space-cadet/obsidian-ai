@@ -18,6 +18,8 @@ import {
 
 export {
 	loadChatData,
+	hydrateChatSession,
+	isChatSessionHydrated,
 	loadSettings,
 	saveChatData,
 	saveSettings,
