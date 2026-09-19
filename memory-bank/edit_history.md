@@ -3,6 +3,10 @@
 *Last Updated: 2026-09-19 23:05 IST*
 
 ### 2026-09-19
+#### 01:52:00 IST - T42g: Sync Visibility & Observability task created
+- Created `memory-bank/tasks/T42g.md` - sync visibility/observability (bytes/rates, structured failures, reconciliation detail, log viewer, status-bar indicator); design phase, Luna mockups first per Deepak.
+- Modified `memory-bank/tasks.md` - T42g active row (T42e dry-run taken, T42f superseded).
+
 
 #### 23:05:00 IST - T24a: Created subtask + post-merge memory-bank closeout
 - Created `memory-bank/tasks/T24a.md` - global search scope over index-only sessions (⏸️ pending Deepak decision; options A/B/C recorded).
