@@ -1,3 +1,15 @@
+### 2026-09-19 — Perf PR merged to main ✅ (PR #8, `c83e593`)
+
+- Chat scroll perf + follow-scroll (T71), index-only startup (T24),
+  instrumentation (T11) shipped together: 23 commits, 517/517 tests, CI
+  green, device-verified. Suite grew 492 → 517 across the effort.
+- Codex review hardening across 3 waves: wave-2 copy/export hydration +
+  draft dedup; wave-3 hydration-guard preservation + scroll restore after
+  lazy fill.
+- New tracked gap: **T24a** — global search only covers hydrated sessions
+  (regression vs 1.5.0); decision pending, does not block v1.6.0.
+- Next: v1.6.0 release.
+
 ### 2026-09-10 — T48 compaction acceptance and debug-history closeout ✅
 
 - Confirmed successful controlled compaction, recovery-marker preservation,

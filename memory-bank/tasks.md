@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-09-19 19:40 IST*
+*Last Updated: 2026-09-19 23:05 IST*
 
 ## Overview
 
@@ -12,7 +12,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | ID | Title | Status | Priority | Started | Dependencies | Details |
 |----|-------|--------|----------|---------|--------------|---------|
 | META-1 | Memory Bank Setup and Maintenance | 🔄 | HIGH | 2026-05-02 | — | [Details](tasks/META-1.md) |
-| T11 | Debug Logging & Diagnostics | 🔄 | MEDIUM | 2026-05-08 | T9 | [Details](tasks/T11.md) |
+| T11 | Debug Logging & Diagnostics | ✅ | MEDIUM | 2026-05-08 | T9 | [Details](tasks/T11.md) |
 | T14 | Remote Agent Connectivity (OpenResponses) | 🔄 | HIGH | 2026-05-07 | T1, T13, T5, T9 | [Details](tasks/T14.md) |
 | T15 | Tabbed Chat Interface with Multi-Profile | 🔄 | HIGH | 2026-05-15 | T13, T14, T9 | [Details](tasks/T15.md) |
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
@@ -55,6 +55,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T64d | Live Estimator Validation | ✅ | MEDIUM | 2026-08-27 | 2026-08-29 | T64, T6a | [Details](tasks/T64d.md) |
 | T70 | Active Chat Model Identity and Switcher Consistency | ✅ | HIGH | 2026-09-02 | 2026-09-02 | T9, T15; builds on T35, T36 | [Details](tasks/T70.md) |
 | T71 | Chat View Scroll Performance and Streaming Follow | ✅ | HIGH | 2026-09-19 | 2026-09-19 | T24, T15 | [Details](tasks/T71.md) |
+| T24a | Global Search Scope over Index-Only Sessions | ⏸️ | MEDIUM | 2026-09-19 | T24 | [Details](tasks/T24a.md) |
 | T8b | 1.5.0 Community Scan Follow-up | 🔄 | HIGH | 2026-09-09 | T8, T8a | [Details](tasks/T8b.md) |
 | T18a | Bounded Web Page Retrieval Tool | ⏸️ | MEDIUM | 2026-08-25 | T18, T60a, T60c | [Details](tasks/T18a.md) |
 | T50 | OpenAI Responses API / Threads Support | 🔄 | MEDIUM | — | T14 | [Details](tasks/T50.md) |
@@ -70,6 +71,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T19 | File Attachments for Chat Messages | ✅ | HIGH | 2026-05-25 | 2026-05-25 | T13, T4, T9 | [Details](tasks/T19.md) |
 | T2 | Conversation Chain & Memory | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T1 | [Details](tasks/T2.md) |
 | T21 | CLI Test Harness for AI Features | ✅ | MEDIUM | 2026-05-25 | 2026-05-25 | T13, T19, T4 | [Details](tasks/T21.md) |
+| T24 | SessionStorage — JSONL Chat Persistence | ✅ | HIGH | 2026-06-14 | 2026-06-14 | — | [Details](tasks/T24.md) |
 | T23 | Settings.ts Decomposition | ✅ | HIGH | 2026-05-28 | 2026-05-28 | — | [Details](tasks/T23.md) |
 | T3 | Context & Mentions System | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T1 | [Details](tasks/T3.md) |
 | T34 | Settings Panel UI/UX Improvements | ✅ | MEDIUM | 2026-08-07 | 2026-08-07 | - | [Details](tasks/T34.md) |

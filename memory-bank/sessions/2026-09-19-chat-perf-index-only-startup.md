@@ -35,3 +35,25 @@
 
 - Deepak's device verdicts (follow-scroll, pills, info-level logs) → merge to
   main → cut v1.6.0.
+
+## Late session (22:45–23:05 IST) — wave-3 fixes, merge, mem-scan
+
+- Recovered the prior session's silent loop: a pre-compaction flush turn
+  emitted 17 consecutive `read` calls (every thinking block said STOP, no
+  text ever emitted — 38 min silence, same Kimi high-context degradation
+  pattern as 2026-08-23). Nothing was lost: branch clean at `a0bbbd0`,
+  512/512, memory intact.
+- Codex wave-3 fixes: **P1** hydration-guard preservation
+  (`hydratedSessionIds` — sync metadata reads no longer re-flag hydrated
+  sessions); **P2** scroll restore after lazy fill
+  (`pendingHydrationRestoreRef`). `4ffc923`, then `5632d86` + `e9aef27`
+  (prettier sweep — CI checks every PR-changed file, not per-commit).
+  Suite 517/517.
+- PR #8 merged to main `c83e593` at 22:52 IST; CI green; **device-verified
+  by Deepak ("Works 👏👏👏")**.
+- mem-scan (obsidian-ai only, per Deepak's correction — not multi-repo):
+  task files healthy; regenerated the registry/context layer; created
+  **T24a** (global search scope, ⏸️ pending decision); backfilled
+  edit_history.
+- Process lesson recorded: wrap long PR work in shorter sessions — Kimi
+  tool discipline degrades at high context (second occurrence).

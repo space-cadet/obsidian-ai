@@ -1,6 +1,34 @@
 # Edit History
 
-*Last Updated: 2026-09-19 03:55 IST*
+*Last Updated: 2026-09-19 23:05 IST*
+
+### 2026-09-19
+
+#### 23:05:00 IST - T24a: Created subtask + post-merge memory-bank closeout
+- Created `memory-bank/tasks/T24a.md` - global search scope over index-only sessions (⏸️ pending Deepak decision; options A/B/C recorded).
+- Modified `memory-bank/tasks.md` - T24a active row; T24 completed row restored; T11 row refreshed to ✅.
+- Modified `memory-bank/tasks/T71.md` - merged + device-verified notes.
+- Modified `memory-bank/tasks/T24.md` - Open Items section pointing at T24a.
+- Modified `memory-bank/activeContext.md` / `progress.md` / `session_cache.md` - 2026-09-19 perf PR merged entries.
+- Modified `memory-bank/sessions/2026-09-19-chat-perf-index-only-startup.md` - late-session addendum.
+- Created `memory-bank/edits/2026-09-19/230500-t24a-search-scope-subtask.md` - closeout chunk.
+
+#### 22:37:00 IST - T71/T24: Modified — codex wave-3 fixes (hydration guard + scroll restore)
+- Modified `src/storage/ChatStorage.ts` - `hydratedSessionIds` set; metadata reads no longer re-flag hydrated sessions (4ffc923).
+- Modified `src/components/ChatMessages.tsx` - `pendingHydrationRestoreRef`; restore re-applies once on hydration fill; follow effect skips that growth (4ffc923).
+- Modified `src/storage/__tests__/ChatStorage.test.ts` + `src/components/__tests__/ChatMessages.followScroll.test.tsx` - 5 regression tests.
+- Modified 14 PR-wide source files - prettier sweep so CI's changed-files check passes (5632d86, e9aef27).
+- Modified `memory-bank/tasks/T71.md` + created `memory-bank/edits/2026-09-19/223700-t71-t24-codex-wave3-fixes.md` - wave-3 record.
+
+#### 19:42:00 IST - T11: Updated — event logging + startup phase timings
+- Modified `memory-bank/tasks/T11.md` - `0bcaf61` follow-scroll/mention instrumentation, `c87189a` chat-lifecycle event logging, `01a941c` startup phase timings; enabled the 8.9s → 57ms diagnosis.
+
+#### 19:41:00 IST - T24: Updated — index-only startup shipped (99860e6)
+- Modified `memory-bank/tasks/T24.md` + 16 source files - default `loadChatData` index-only (~57ms device, was ~8.9s); `hydrateSession` dedupes concurrent reads; hard save guard; open/send gates write through `sessionsRef`; `{hydrate: true}` at sync cache, usage-stats, diagnostics. Suite 506/506.
+
+#### 19:40:00 IST - T71: Created task — Chat View Scroll Performance and Streaming Follow
+- Created `memory-bank/tasks/T71.md` - records `e32eb88`, `ff3f960`, `7ecccdd`, `5443c4e`, `fa44b6f`; restore-effect fix via `checkScrollPositionRef`; red-first regression test.
+- Modified `memory-bank/tasks.md` - T71 registry row.
 
 ### 2026-09-18
 

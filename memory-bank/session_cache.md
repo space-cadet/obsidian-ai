@@ -1,5 +1,13 @@
 # Session Cache
 
+### 2026-09-19 23:05 IST — perf PR merged ✅
+
+- Session file: `sessions/2026-09-19-chat-perf-index-only-startup.md`
+  (late-session addendum appended).
+- T71 ✅, T24 ✅, T11 ✅; T24a ⏸️ created (search scope, pending decision).
+- Merge `c83e593` 22:52 IST; suite 517/517; CI green; device-verified.
+- Next: v1.6.0 release; T24a decision.
+
 ### 2026-09-19 03:55 IST — T39 git integration delivery ✅
 
 - Session file: `sessions/2026-09-18-night.md`.

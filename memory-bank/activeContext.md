@@ -1,5 +1,26 @@
 # Active Context
 
+### 2026-09-19 23:05 IST — T71/T24/T11 perf PR merged to main ✅ (PR #8)
+
+- 23 commits on `perf/chat-scroll-settings-lag` → merged `c83e593`
+  (22:52 IST); CI green (2 builds + prettier); suite 517/517, tsc clean.
+- **T71 ✅** chat scroll perf + streaming follow: memoized rows,
+  `content-visibility`, debounced persistence, follow-scroll with scroll-up
+  interrupt, mention pills root-cause fix, send-scroll restore race fix.
+- **T24 ✅ 2026-09-19 addendum** — index-only startup: boot from
+  `sessions/index.json` (~57ms device, was 8.9s), lazy hydration, hard save
+  guard; codex wave-2/3 hardening (`peekSessionMessages` copy/export,
+  draft-bucket dedup, hydration-guard preservation, scroll restore after
+  lazy fill).
+- **T11 ✅** event logging + startup phase timings (`0bcaf61`, `c87189a`,
+  `01a941c`) — enabled the 8.9s → 57ms diagnosis.
+- Device-verified by Deepak. Process lesson: PR work at high context on
+  Kimi degraded into a 17× tool-call read loop (38 min silence, same
+  pattern as 2026-08-23) — wrap such work in shorter sessions.
+- **Next:** cut v1.6.0 (version bump, tag, release notes). Pending Deepak
+  decision: **T24a** global-search scope over index-only sessions
+  (hydrate-on-search / disk search / scope note).
+
 ### 2026-09-19 03:55 IST — T39 git integration delivery complete ✅
 
 - T39a ✅ `a5186ef` — provider JSON schemas now normalize through
