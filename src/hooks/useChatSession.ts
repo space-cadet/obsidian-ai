@@ -84,6 +84,14 @@ export function useChatSession({
 				// zero-message entries; those should be cleaned up on the next autosave.
 				skipNextAutosaveRef.current =
 					savedSessions.length === data.sessions.length;
+				const totalMessages = savedSessions.reduce(
+					(sum, s) => sum + s.messages.length,
+					0,
+				);
+				plugin.logger?.log(
+					"info",
+					`[Chat] restored ${savedSessions.length} session(s), ${totalMessages} message(s)`,
+				);
 				setSessions(savedSessions);
 				const restoredActiveId = savedSessions.some(
 					(session) => session.id === data.activeSessionId,

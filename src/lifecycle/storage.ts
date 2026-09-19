@@ -48,6 +48,7 @@ export async function initializeStorage(
 	plugin.integrationRegistry.discover();
 	plugin.logger.setMaxSize(plugin.settings.debugLogMaxSizeMB * 1024 * 1024);
 	plugin.chatapi = new ChatApiManager(plugin.settings, plugin.app);
+	plugin.chatapi.setLogger?.(plugin.logger);
 
 	// Initialize low-level session storage
 	plugin.sessionStorage = new SessionStorage({

@@ -85,6 +85,10 @@ export class ObsidianAIChatView extends ItemView {
 		// On desktop Obsidian may call onOpen + setState in quick succession,
 		// and contentEl can contain stale DOM from a previous mount.
 		this.contentEl.empty();
+		this.plugin.logger?.log(
+			"info",
+			`[ChatView] opened — profile: ${this.options.profileId ?? "default"}`,
+		);
 		this.render();
 	}
 
@@ -133,6 +137,7 @@ export class ObsidianAIChatView extends ItemView {
 	}
 
 	async onClose(): Promise<void> {
+		this.plugin.logger?.log("info", "[ChatView] closed");
 		this.root?.unmount();
 		this.root = null;
 		this.renderPending = false;

@@ -31,6 +31,7 @@ const sharedTargetLocks = new TargetLockManager();
 
 export class ToolExecutor {
 	private builtInRegistry: ResolvedToolRegistry;
+	private readonly logger?: { log: (level: string, ...args: any[]) => void };
 	private readonly continuations = new ContinuationStore();
 	private readonly resolver: ToolResolver;
 	private readonly noteHandlers: NoteHandlers;
@@ -59,7 +60,9 @@ export class ToolExecutor {
 					messages: import("../types").ChatMessage[];
 			  }>
 			| undefined,
+		logger?: { log: (level: string, ...args: any[]) => void },
 	) {
+		this.logger = logger;
 		this.targetLocks = targetLocks;
 		this.resolver = new ToolResolver(app);
 		const context: ToolHandlerContext = {
@@ -298,6 +301,7 @@ export class ToolExecutor {
 	}
 
 	async execute(call: ToolCall, signal?: AbortSignal): Promise<ToolResult> {
+		const startedAt = Date.now();
 		try {
 			const registryDef = this.builtInRegistry.byId.get(call.toolName);
 			if (!registryDef?.execute) {
@@ -322,6 +326,7 @@ export class ToolExecutor {
 				return { error: "Tool call cancelled before execution." };
 			}
 
+			this.logger?.log("info", `[Tool] ${call.toolName} starting`);
 			const validatedCall = { ...call, args: validation.args };
 			const execute = () =>
 				registryDef.execute!(validatedCall, {
@@ -337,11 +342,34 @@ export class ToolExecutor {
 							execute,
 							signal,
 						);
+			const elapsed = Date.now() - startedAt;
+			if (result.error) {
+				this.logger?.log(
+					"info",
+					`[Tool] ${call.toolName} failed in ${elapsed}ms — ${String(result.error).slice(0, 200)}`,
+				);
+			} else {
+				const size = result.content
+					? String(result.content).length
+					: 0;
+				this.logger?.log(
+					"info",
+					`[Tool] ${call.toolName} done in ${elapsed}ms — ${size} chars`,
+				);
+			}
 			return result;
 		} catch (e: any) {
 			if (e instanceof ToolLockCancelledError) {
+				this.logger?.log(
+					"info",
+					`[Tool] ${call.toolName} cancelled — ${e.message}`,
+				);
 				return { error: e.message };
 			}
+			this.logger?.log(
+				"error",
+				`[Tool] ${call.toolName} threw after ${Date.now() - startedAt}ms — ${e.message || String(e)}`,
+			);
 			return { error: e.message || String(e) };
 		}
 	}
