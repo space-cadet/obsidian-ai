@@ -35,6 +35,12 @@ export interface ChatPluginLike {
 	saveSettings(): Promise<void>;
 	openRemoteStorageSettings?(): void;
 	syncHub?: import("../sync/SyncStatusHub").SyncStatusHub;
+	triggerSync?(
+		dryRun?: boolean,
+		options?: {
+			direction?: "both" | "upload" | "download";
+		},
+	): Promise<{ ok: boolean; message: string }>;
 	rebuildSyncIndex?(
 		choice: "remote" | "local" | "compare",
 		options?: {

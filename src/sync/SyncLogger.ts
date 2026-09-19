@@ -1,4 +1,4 @@
-import type { App } from "obsidian";
+import { App, Modal } from "obsidian";
 import type { SyncResult } from "./StorageAdapter";
 import type { StorageAdapter } from "./StorageAdapter";
 
@@ -18,10 +18,23 @@ export interface SyncSessionRecord {
 	durationMs: number;
 }
 
+/** T42g rotation policy (obsidian-syncit SyncLogger parity). */
+const MAX_LOG_LINES = 1000;
+const MAX_LOG_AGE_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+const MAX_LOG_BYTES = 512 * 1024; // 512 KB
+const BACKUP_NAME = "sync.log.1";
+
+export interface SyncLoggerOptions {
+	maxLines?: number;
+	maxAgeMs?: number;
+	maxBytes?: number;
+}
+
 /**
  * Logs sync operations to both local file and remote storage.
  *
- * Local: `${pluginDir}/sync.log`
+ * Local: `${pluginDir}/sync.log` (rotated to `sync.log.1` when oversized;
+ * pruned by line count and entry age on every flush)
  * Remote: `${prefix}/sync.log` (via StorageAdapter.writeText)
  */
 export class SyncLogger {
@@ -29,11 +42,17 @@ export class SyncLogger {
 	private pluginId: string;
 	readonly deviceId: string;
 	private logBuffer: string[] = [];
+	private opts: Required<SyncLoggerOptions>;
 
-	constructor(app: App, pluginId: string) {
+	constructor(app: App, pluginId: string, opts?: SyncLoggerOptions) {
 		this.app = app;
 		this.pluginId = pluginId;
 		this.deviceId = this.getDeviceId();
+		this.opts = {
+			maxLines: opts?.maxLines ?? MAX_LOG_LINES,
+			maxAgeMs: opts?.maxAgeMs ?? MAX_LOG_AGE_MS,
+			maxBytes: opts?.maxBytes ?? MAX_LOG_BYTES,
+		};
 	}
 
 	private getDeviceId(): string {
@@ -66,30 +85,69 @@ export class SyncLogger {
 		this.logBuffer.push(line);
 	}
 
-	/** Flush buffered logs to local file */
+	/**
+	 * Prune combined log content: drop entries older than maxAge, cap at
+	 * maxLines, and enforce the byte budget (dropping oldest lines first).
+	 */
+	pruneLines(lines: string[]): string[] {
+		const cutoff = Date.now() - this.opts.maxAgeMs;
+		const fresh = lines.filter((line) => {
+			const ts = Date.parse(line.slice(0, 24));
+			return Number.isNaN(ts) || ts >= cutoff;
+		});
+		let kept = fresh.slice(-this.opts.maxLines);
+		let bytes = kept.reduce((n, l) => n + l.length + 1, 0);
+		while (kept.length > 0 && bytes > this.opts.maxBytes) {
+			bytes -= kept[0].length + 1;
+			kept.shift();
+		}
+		return kept;
+	}
+
+	/** Flush buffered logs to local file, rotating to backup if oversized. */
 	async flushLocal(): Promise<void> {
 		if (this.logBuffer.length === 0) return;
 
 		const pluginDir = `${this.app.vault.configDir}/plugins/${this.pluginId}`;
 		const logPath = `${pluginDir}/sync.log`;
+		const backupPath = `${pluginDir}/${BACKUP_NAME}`;
 
 		try {
 			let existing = "";
 			if (await this.app.vault.adapter.exists(logPath)) {
 				existing = await this.app.vault.adapter.read(logPath);
 			}
-			// Keep last 500 lines
+
+			// Rotate the previous file to the single backup slot before
+			// rewriting, if it already exceeds the byte budget.
+			if (
+				existing.length > this.opts.maxBytes &&
+				!(await this.app.vault.adapter.exists(backupPath))
+			) {
+				await this.app.vault.adapter.copy(logPath, backupPath);
+			}
+
 			const lines = existing.split("\n").filter(Boolean);
-			const trimmed = lines.slice(-400);
-			const newContent =
-				[...trimmed, ...this.logBuffer].join("\n") + "\n";
-			await this.app.vault.adapter.write(logPath, newContent);
+			const kept = this.pruneLines([...lines, ...this.logBuffer]);
+			await this.app.vault.adapter.write(logPath, kept.join("\n") + "\n");
 			this.logBuffer = [];
 		} catch (err: any) {
 			console.error(
 				"[SyncLogger] Failed to write local log:",
 				err.message,
 			);
+		}
+	}
+
+	/** Read recent log lines for the in-app viewer (newest last). */
+	async readRecent(lineCount = 200): Promise<string[]> {
+		const logPath = `${this.app.vault.configDir}/plugins/${this.pluginId}/sync.log`;
+		try {
+			if (!(await this.app.vault.adapter.exists(logPath))) return [];
+			const content = await this.app.vault.adapter.read(logPath);
+			return content.split("\n").filter(Boolean).slice(-lineCount);
+		} catch {
+			return [];
 		}
 	}
 
@@ -110,5 +168,29 @@ export class SyncLogger {
 				err.message,
 			);
 		}
+	}
+}
+
+/** Minimal in-app viewer for the local sync log history (T42g). */
+export class SyncLogModal extends Modal {
+	private lines: string[];
+
+	constructor(app: App, lines: string[]) {
+		super(app);
+		this.lines = lines;
+	}
+
+	onOpen(): void {
+		this.setTitle("Sync log");
+		const { contentEl } = this;
+		contentEl.addClass("obsidian-ai-sync-log-modal");
+		const pre = contentEl.createEl("pre", {
+			cls: "obsidian-ai-sync-log-modal__body",
+		});
+		pre.setText(this.lines.join("\n") || "No log entries yet.");
+	}
+
+	onClose(): void {
+		this.contentEl.empty();
 	}
 }

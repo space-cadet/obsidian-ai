@@ -1,15 +1,20 @@
-import React, {
-	useState,
-	useCallback,
-	useRef,
-	useEffect,
-	useMemo,
-} from "react";
+// src/components/ChatSyncPanel.tsx
+// T42g: sync visibility panel rebuilt around the SyncStatusHub. Five
+// surfaces — off / idle / syncing / complete / conflicts+errors — fed by
+// the hub so auto-sync, settings "Sync Now", and command-palette runs all
+// surface here. Design approved via Luna mockups r4 (2026-09-19).
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Notice } from "obsidian";
 import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 import type { SyncLogEntry, SyncProgressSnapshot } from "../sync/SyncProgress";
+import {
+	formatBytes,
+	formatRate,
+	type SyncStatusSnapshot,
+} from "../sync/SyncStatusHub";
+import { SyncLogger, SyncLogModal } from "../sync/SyncLogger";
 
 export type { SyncLogEntry, SyncProgressSnapshot } from "../sync/SyncProgress";
-
 export type SyncDirection = "both" | "upload" | "download";
 export type SyncProgress = SyncProgressSnapshot;
 
@@ -17,7 +22,14 @@ interface ChatSyncPanelProps {
 	plugin: ChatPluginLike;
 }
 
+const DIRECTION_OPTIONS: { value: SyncDirection; label: string }[] = [
+	{ value: "both", label: "Both directions" },
+	{ value: "upload", label: "Upload only" },
+	{ value: "download", label: "Download only" },
+];
+
 // ── Utilities ────────────────────────────────────────────────────────────
+
 function formatDuration(ms: number): string {
 	if (ms < 1000) return `${ms}ms`;
 	const sec = Math.floor(ms / 1000);
@@ -29,561 +41,487 @@ function formatDuration(ms: number): string {
 	return `${hr}h ${min % 60}m`;
 }
 
-// ── Component ────────────────────────────────────────────────────────────
-const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
-	const rs = plugin.settings.remoteStorage;
+function relativeTime(ts: number): string {
+	const secs = Math.max(1, Math.floor((Date.now() - ts) / 1000));
+	if (secs < 60) return `${secs}s ago`;
+	const mins = Math.floor(secs / 60);
+	if (mins < 60) return `${mins}m ago`;
+	const hrs = Math.floor(mins / 60);
+	if (hrs < 24) return `${hrs}h ago`;
+	return `${Math.floor(hrs / 24)}d ago`;
+}
 
-	const [direction, setDirection] = useState<SyncDirection>(
-		rs.syncDirection ?? "both",
+type RowKind = "done" | "conflict" | "failed" | "skipped" | "active" | "info";
+
+function classify(entry: SyncLogEntry): RowKind {
+	if (entry.status === "error") return "failed";
+	if (entry.status === "active") return "active";
+	if (entry.operation === "conflict") return "conflict";
+	if (entry.operation === "skip") return "skipped";
+	if (entry.operation === "system") return "info";
+	return "done";
+}
+
+const CHIP_LABEL: Record<RowKind, string> = {
+	done: "done",
+	conflict: "overwritten",
+	failed: "failed",
+	skipped: "skipped",
+	active: "syncing",
+	info: "info",
+};
+
+const OP_ARROW: Record<string, string> = {
+	upload: "↑",
+	download: "↓",
+	conflict: "⚡",
+	skip: "⊘",
+	error: "⚠",
+	system: "·",
+};
+
+function LogRow({ entry, chip }: { entry: SyncLogEntry; chip?: boolean }) {
+	const kind = classify(entry);
+	return (
+		<div className={`sync-log-row sync-log-row--${kind}`}>
+			<span className="sync-log-row-op">
+				{OP_ARROW[entry.operation] ?? "·"}
+			</span>
+			<div className="sync-log-row-main">
+				<div className="sync-log-row-title" title={entry.title}>
+					{entry.title}
+				</div>
+				{entry.message && kind !== "done" && (
+					<div className="sync-log-row-msg">{entry.message}</div>
+				)}
+			</div>
+			{chip && (
+				<span className={`sync-chip sync-chip--${kind}`}>
+					{CHIP_LABEL[kind]}
+				</span>
+			)}
+		</div>
 	);
-	const [dryRun, setDryRun] = useState(false);
-	const [isSyncing, setIsSyncing] = useState(false);
-	const [progress, setProgress] = useState<SyncProgress | null>(null);
-	const [logs, setLogs] = useState<SyncLogEntry[]>([]);
-	const [result, setResult] = useState<{
-		ok: boolean;
-		message: string;
-		uploaded: number;
-		downloaded: number;
-		conflicts: number;
-		skipped: number;
-		errors: string[];
-		elapsedMs: number;
-		pluginData?: {
-			status: "complete" | "partial" | "failed";
-			uploaded: boolean;
-			downloaded: boolean;
-			conflict: boolean;
-			failed: number;
-			errors: string[];
-		};
-		chatSessions?: {
-			status: "complete" | "partial" | "failed";
-			retryable: number;
-		};
-	} | null>(null);
-	const [error, setError] = useState<string | null>(null);
-	const [showRebuildChoices, setShowRebuildChoices] = useState(false);
-	const [isRebuilding, setIsRebuilding] = useState(false);
-	const [rebuildReport, setRebuildReport] = useState<{
-		uploaded: number;
-		downloaded: number;
-		conflicts: number;
-		skipped: number;
-	} | null>(null);
-	const logsEndRef = useRef<HTMLDivElement>(null);
-	const startTimeRef = useRef<number>(0);
+}
 
-	// ── Batched update refs ────────────────────────────────────────────────
-	const logBufferRef = useRef<SyncLogEntry[]>([]);
-	const progressBufferRef = useRef<SyncProgress | null>(null);
-	const rafRef = useRef<number | null>(null);
+// ── Component ────────────────────────────────────────────────────────────
 
-	const flushUpdates = useCallback(() => {
-		rafRef.current = null;
-		if (logBufferRef.current.length > 0) {
-			const batch = logBufferRef.current;
-			logBufferRef.current = [];
-			setLogs((prev) => {
-				const next = [...prev];
-				const map = new Map(next.map((l, i) => [l.id, i]));
-				for (const entry of batch) {
-					const idx = map.get(entry.id);
-					if (idx !== undefined) {
-						next[idx] = { ...next[idx], ...entry };
-					} else {
-						next.push(entry);
-						if (next.length > 200) next.shift();
-					}
-					map.set(entry.id, next.length - 1);
-				}
-				return next;
-			});
-		}
-		if (progressBufferRef.current) {
-			setProgress(progressBufferRef.current);
-			progressBufferRef.current = null;
-		}
-	}, []);
+const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
+	const hub = plugin.syncHub ?? null;
+	const [snap, setSnap] = useState<SyncStatusSnapshot | null>(
+		hub?.getSnapshot() ?? null,
+	);
+	const [tab, setTab] = useState<"summary" | "activity">("summary");
+	const [showAll, setShowAll] = useState(false);
+	const [direction, setDirection] = useState<SyncDirection>(
+		(plugin.settings.remoteStorage?.syncDirection as SyncDirection) ??
+			"both",
+	);
+	const [busy, setBusy] = useState(false);
+	const snapRef = useRef(snap);
+	snapRef.current = snap;
 
 	useEffect(() => {
-		logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
-	}, [logs]);
-
-	const updateLog = useCallback(
-		(entry: SyncLogEntry) => {
-			logBufferRef.current.push(entry);
-			if (!rafRef.current) {
-				rafRef.current = requestAnimationFrame(flushUpdates);
+		if (!hub) return;
+		const off = hub.subscribe((s) => {
+			setSnap({ ...s, runLog: [...s.runLog] });
+			if (s.state === "syncing") {
+				setShowAll(false);
 			}
-		},
-		[flushUpdates],
-	);
-
-	const updateProgress = useCallback(
-		(p: SyncProgress) => {
-			progressBufferRef.current = p;
-			if (!rafRef.current) {
-				rafRef.current = requestAnimationFrame(flushUpdates);
-			}
-		},
-		[flushUpdates],
-	);
-
-	const handleSync = useCallback(async () => {
-		setIsSyncing(true);
-		setProgress({
-			phase: "planning",
-			stage: "Preparing sync…",
-			total: 0,
-			completed: 0,
-			uploaded: 0,
-			downloaded: 0,
-			conflicts: 0,
-			skipped: 0,
-			elapsedMs: 0,
-			indeterminate: true,
 		});
-		setResult(null);
-		setError(null);
-		setLogs([]);
-		startTimeRef.current = Date.now();
+		return off;
+	}, [hub]);
 
-		try {
-			const syncResult = await (plugin as any).triggerSync?.(dryRun, {
-				direction,
-				onProgress: (p: SyncProgress) => updateProgress(p),
-				onLog: (entry: SyncLogEntry) => updateLog(entry),
-			});
-
-			if (syncResult) {
-				const elapsedMs = Date.now() - startTimeRef.current;
-				setResult({ ...syncResult, elapsedMs });
-			}
-		} catch (err: any) {
-			const msg = err?.message || String(err);
-			setError(msg);
-			updateLog({
-				id: "__error__",
-				operation: "error",
-				title: "Sync failed",
-				status: "error",
-				message: msg,
-				timestamp: Date.now(),
-			});
-		} finally {
-			setIsSyncing(false);
-		}
-	}, [plugin, direction, dryRun, updateLog, updateProgress]);
-
-	const handleCancel = useCallback(() => {
-		plugin.cancelSync?.();
-	}, [plugin]);
-
-	const handleOpenSettings = useCallback(() => {
-		if (plugin.openRemoteStorageSettings) {
-			plugin.openRemoteStorageSettings();
-			return;
-		}
-		// Fallback for lightweight hosts and previews.
-		// @ts-ignore
-		plugin.app.setting.open();
-		// @ts-ignore
-		plugin.app.setting.openTabById(plugin.manifest.id);
-	}, [plugin]);
-
-	const handleRebuild = useCallback(
-		async (choice: "remote" | "local" | "compare") => {
-			if (!plugin.rebuildSyncIndex) return;
-			setIsRebuilding(true);
-			setShowRebuildChoices(false);
-			setError(null);
-			setRebuildReport(null);
-			setResult(null);
-			setProgress({
-				phase: "rebuilding",
-				stage: "Preparing rebuild…",
-				total: 0,
-				completed: 0,
-				uploaded: 0,
-				downloaded: 0,
-				conflicts: 0,
-				skipped: 0,
-				elapsedMs: 0,
-				indeterminate: true,
-			});
-			setLogs([]);
-			try {
-				const report = await plugin.rebuildSyncIndex(choice, {
-					onLog: updateLog,
-					onProgress: updateProgress,
-				});
-				setRebuildReport(report);
-			} catch (err: any) {
-				setError(err?.message || String(err));
-			} finally {
-				setIsRebuilding(false);
-			}
-		},
-		[plugin],
+	const syncConfigured = Boolean(
+		plugin.settings.remoteStorage?.enabled &&
+		plugin.settings.remoteStorage?.backend &&
+		plugin.settings.remoteStorage?.backend !== "none",
 	);
+	const hubState = snap?.state ?? "disabled";
+	const state = syncConfigured ? hubState : "disabled";
+	const lastResult = snap?.lastResult ?? null;
+	const runLog = useMemo(() => snap?.runLog ?? [], [snap]);
+	const failures = useMemo(() => snap?.failures ?? [], [snap]);
+	const progress = snap?.progress ?? null;
 
-	const isBusy = isSyncing || isRebuilding;
-
-	// ── Derived state ──────────────────────────────────────────────────────
-	const lastSyncText = rs.lastSyncTime
-		? new Date(rs.lastSyncTime).toLocaleString()
-		: "Never";
-
-	const progressPercent = useMemo(() => {
-		if (!progress || progress.indeterminate) return 0;
-		if (progress.total <= 0) {
-			return progress.phase === "complete" ? 100 : 0;
+	const startSync = async (dry: boolean) => {
+		if (!plugin.triggerSync || busy) return;
+		setBusy(true);
+		try {
+			await plugin.triggerSync(dry, { direction });
+		} catch (err: any) {
+			new Notice(`Sync failed: ${err?.message ?? err}`, 6000);
+		} finally {
+			setBusy(false);
 		}
-		return Math.min(
-			100,
-			Math.round((progress.completed / progress.total) * 100),
-		);
-	}, [progress]);
+	};
 
-	const elapsedText = useMemo(() => {
-		if (progress) return formatDuration(progress.elapsedMs);
-		if (result) return formatDuration(result.elapsedMs);
-		return "0s";
-	}, [progress, result]);
+	const openLogModal = async () => {
+		const logger = new SyncLogger(plugin.app, plugin.manifest.id);
+		const lines = await logger.readRecent(200);
+		new SyncLogModal(plugin.app, lines).open();
+	};
 
 	const counts = useMemo(() => {
-		return {
-			upload: logs.filter((l) => l.operation === "upload").length,
-			download: logs.filter((l) => l.operation === "download").length,
-			skip: logs.filter((l) => l.operation === "skip").length,
-			conflict: logs.filter((l) => l.operation === "conflict").length,
-			error: logs.filter((l) => l.operation === "error").length,
-			done: logs.filter((l) => l.status === "done").length,
-		};
-	}, [logs]);
+		const c = { done: 0, conflict: 0, failed: 0, skipped: 0 };
+		for (const e of runLog) {
+			const k = classify(e);
+			if (k === "done") c.done++;
+			else if (k === "conflict") c.conflict++;
+			else if (k === "failed") c.failed++;
+			else if (k === "skipped") c.skipped++;
+		}
+		return c;
+	}, [runLog]);
 
-	const latestActiveId = useMemo(
-		() =>
-			[...logs]
-				.reverse()
-				.find(
-					(item) =>
-						item.status === "active" || item.status === "pending",
-				)?.id,
-		[logs],
-	);
+	const visibleLog = showAll ? runLog : runLog.slice(-5);
+	const activeRows = runLog.filter((e) => e.status === "active").slice(-3);
 
-	const scanned = progress?.total ?? logs.length;
-	const completed = progress?.completed ?? counts.done;
-	const statusHeading = isSyncing
-		? "Syncing…"
-		: isRebuilding
-			? "Rebuilding…"
-			: result
-				? result.ok
-					? "Complete"
-					: "Sync finished with errors"
-				: error
-					? "Sync failed"
-					: "Ready to sync";
-	const directionLabel =
-		direction === "both"
-			? "Upload + download"
-			: direction === "upload"
-				? "Upload"
-				: "Download";
-
-	// ── Render ─────────────────────────────────────────────────────────────
-	return (
-		<div className="chat-sync-panel-v2">
-			<div className="sync-v2-status-block">
-				<div className="sync-v2-eyebrow">Status</div>
-				<h2 className={isSyncing ? "sync-v2-status--syncing" : ""}>
-					{isSyncing && <span className="sync-v2-spinner" />}
-					{statusHeading}
-				</h2>
-				<div className="sync-v2-substatus">
-					{isSyncing
-						? `${completed} of ${scanned} · ${elapsedText}`
-						: isRebuilding
-							? `${completed} of ${scanned} · ${elapsedText}`
-							: `${directionLabel} · Last sync: ${lastSyncText}`}
+	// ── Off ──
+	if (state === "disabled") {
+		return (
+			<div className="sync-panel">
+				<div className="sync-eyebrow">Remote sync</div>
+				<div className="sync-card sync-card--empty">
+					<div className="sync-card-title">Sync is off</div>
+					<div className="sync-card-sub">
+						Connect WebDAV or S3 to keep chats, memory, and settings
+						aligned across devices.
+					</div>
+					{plugin.openRemoteStorageSettings && (
+						<button
+							className="sync-btn sync-btn--primary"
+							onClick={() => plugin.openRemoteStorageSettings?.()}
+						>
+							Set up sync
+						</button>
+					)}
 				</div>
 			</div>
+		);
+	}
 
-			{/* ── Controls Row ─────────────────────────────────────────── */}
-			<div className="sync-v2-controls">
-				<select
-					value={direction}
-					onChange={(e) =>
-						setDirection(e.target.value as SyncDirection)
-					}
-					disabled={isSyncing}
+	// ── Idle ──
+	if (state === "idle" || state === "connecting" || state === "error") {
+		const lastBytes =
+			(lastResult?.uploadedBytes ?? 0) +
+			(lastResult?.downloadedBytes ?? 0);
+		const lastRate = formatRate(lastBytes, lastResult?.durationMs ?? 0);
+		return (
+			<div className="sync-panel">
+				<div
+					className={`sync-strip sync-strip--${state === "error" && lastResult && !lastResult.ok ? "error" : "idle"}`}
 				>
-					<option value="both">Both directions</option>
-					<option value="upload">Upload only</option>
-					<option value="download">Download only</option>
-				</select>
-				<label className="sync-v2-dryrun">
-					<input
-						type="checkbox"
-						checked={dryRun}
-						onChange={(e) => setDryRun(e.target.checked)}
-						disabled={isSyncing}
+					<span
+						className={`sync-dot ${state === "error" ? "sync-dot--error" : "sync-dot--ok"}`}
 					/>
-					Dry run
-				</label>
-				<button
-					className="sync-v2-settings-btn"
-					onClick={handleOpenSettings}
-					aria-label="Open settings"
-					title="Open settings"
-				>
-					⚙️
-				</button>
-			</div>
-
-			{showRebuildChoices && !isBusy && (
-				<div className="sync-v2-rebuild-backdrop" role="presentation">
-					<div
-						className="sync-v2-rebuild-panel"
-						role="dialog"
-						aria-modal="true"
-						aria-labelledby="sync-v2-rebuild-title"
-					>
-						<h3 id="sync-v2-rebuild-title">Rebuild sync record</h3>
-						<p>The app needs to decide which copies to trust.</p>
-						<div className="sync-v2-rebuild-options">
-							<button
-								onClick={() => void handleRebuild("remote")}
-								disabled={isRebuilding}
-							>
-								Trust remote copies
-							</button>
-							<button
-								onClick={() => void handleRebuild("local")}
-								disabled={isRebuilding}
-							>
-								Trust local copies
-							</button>
-							<button
-								onClick={() => void handleRebuild("compare")}
-								disabled={isRebuilding}
-							>
-								Compare copies
-							</button>
-							<button
-								onClick={() => setShowRebuildChoices(false)}
-								disabled={isRebuilding}
-							>
-								Cancel
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
-			{rebuildReport && !showRebuildChoices && (
-				<div className="sync-v2-rebuild-report">
-					<strong>Rebuild finished</strong>
-					<span>Uploaded: {rebuildReport.uploaded}</span>
-					<span>Downloaded: {rebuildReport.downloaded}</span>
-					<span>Needs attention: {rebuildReport.conflicts}</span>
-					<span>Already matched: {rebuildReport.skipped}</span>
-					<button onClick={() => setRebuildReport(null)}>
-						Dismiss
-					</button>
-				</div>
-			)}
-
-			{/* ── Progress Section (SyncIt-style) ──────────────────────── */}
-			{(isBusy || progress || result || rebuildReport || error) && (
-				<div className="sync-v2-progress">
-					<div className="sync-v2-progress-track">
-						<div
-							className={`sync-v2-progress-fill ${isBusy ? "sync-v2-progress-fill--active" : ""} ${progress?.indeterminate ? "sync-v2-progress-fill--indeterminate" : ""}`}
-							style={{ width: `${progressPercent}%` }}
-						/>
-					</div>
-					<div className="sync-v2-progress-meta">
-						<span>
-							{progress?.indeterminate
-								? "Planning…"
-								: `${progressPercent}%`}
-						</span>
-						<span>
-							{progress?.stage ?? "Preparing…"} ·{" "}
-							{progress?.completed ?? 0} / {progress?.total ?? 0}{" "}
-							operations
-						</span>
-					</div>
-				</div>
-			)}
-
-			{/* ── Category Counters (syncit-style pills) ───────────────── */}
-			{(isSyncing || logs.length > 0 || result) && (
-				<div className="sync-v2-counters">
-					<div className="sync-v2-pill">
-						<span className="sync-v2-pill-count">{scanned}</span>
-						<span className="sync-v2-pill-label">scanned</span>
-					</div>
-					<div className="sync-v2-pill upload">
-						<span className="sync-v2-pill-count">
-							{counts.upload}
-						</span>
-						<span className="sync-v2-pill-label">upload</span>
-					</div>
-					<div className="sync-v2-pill download">
-						<span className="sync-v2-pill-count">
-							{counts.download}
-						</span>
-						<span className="sync-v2-pill-label">download</span>
-					</div>
-					<div className="sync-v2-pill skip">
-						<span className="sync-v2-pill-count">
-							{counts.skip}
-						</span>
-						<span className="sync-v2-pill-label">skip</span>
-					</div>
-					<div className="sync-v2-pill conflict">
-						<span className="sync-v2-pill-count">
-							{counts.conflict}
-						</span>
-						<span className="sync-v2-pill-label">conflict</span>
-					</div>
-					<div className="sync-v2-pill error">
-						<span className="sync-v2-pill-count">
-							{counts.error}
-						</span>
-						<span className="sync-v2-pill-label">error</span>
-					</div>
-				</div>
-			)}
-
-			{result?.pluginData && (
-				<div className="sync-v2-rebuild-report">
-					<strong>Plugin data: {result.pluginData.status}</strong>
 					<span>
-						{result.pluginData.failed > 0
-							? `${result.pluginData.failed} item(s) need retry`
-							: "All selected plugin-data items completed"}
+						{state === "connecting"
+							? "Connecting…"
+							: lastResult
+								? `Last sync ${relativeTime(lastResult.finishedAt)}`
+								: "Sync idle"}
 					</span>
 				</div>
-			)}
 
-			{result?.chatSessions && (
-				<div className="sync-v2-rebuild-report">
-					<strong>Chat sessions: {result.chatSessions.status}</strong>
-					{result.chatSessions.retryable > 0 && (
-						<span>
-							{result.chatSessions.retryable} item(s) queued for
-							retry
+				{lastResult && (
+					<div
+						className={`sync-card ${lastResult.ok ? "" : "sync-card--danger"}`}
+					>
+						<div className="sync-card-eyebrow">
+							{lastResult.dryRun ? "Last dry run" : "Last sync"}
+						</div>
+						<div className="sync-card-title">
+							{lastResult.ok
+								? lastResult.message || "Complete"
+								: "Finished with attention"}
+						</div>
+						<div className="sync-card-sub">
+							↑{lastResult.uploaded} ↓{lastResult.downloaded} ⚡
+							{lastResult.conflicts} ⊘{lastResult.skipped}
+							{lastBytes > 0 &&
+								` · ${formatBytes(lastBytes)}${
+									lastResult.durationMs
+										? ` at ${lastRate}`
+										: ""
+								}`}
+							{lastResult.durationMs
+								? ` · ${formatDuration(lastResult.durationMs)}`
+								: ""}
+						</div>
+						{!lastResult.ok && lastResult.errors.length > 0 && (
+							<div className="sync-card-error">
+								{lastResult.errors[0]}
+							</div>
+						)}
+					</div>
+				)}
+
+				{/* Complete surface: stats grid + full op log persist until the
+				    next run begins (hub clears runLog on beginRun). */}
+				{runLog.length > 0 && (
+					<div className="sync-complete">
+						<div className="sync-stats-grid">
+							<div
+								className={`sync-stat sync-stat--success ${counts.done === 0 ? "sync-stat--dim" : ""}`}
+							>
+								<div className="sync-stat-num">
+									{counts.done}
+								</div>
+								<div className="sync-stat-label">done</div>
+							</div>
+							<div
+								className={`sync-stat sync-stat--warn ${counts.conflict === 0 ? "sync-stat--dim" : ""}`}
+							>
+								<div className="sync-stat-num">
+									{counts.conflict}
+								</div>
+								<div className="sync-stat-label">
+									overwritten
+								</div>
+							</div>
+							<div
+								className={`sync-stat ${counts.skipped === 0 ? "sync-stat--dim" : ""}`}
+							>
+								<div className="sync-stat-num">
+									{counts.skipped}
+								</div>
+								<div className="sync-stat-label">skipped</div>
+							</div>
+							<div
+								className={`sync-stat sync-stat--danger ${counts.failed === 0 ? "sync-stat--dim" : ""}`}
+							>
+								<div className="sync-stat-num">
+									{counts.failed}
+								</div>
+								<div className="sync-stat-label">errors</div>
+							</div>
+						</div>
+						<div className="sync-log">
+							{visibleLog.map((e) => (
+								<LogRow key={e.id} entry={e} chip />
+							))}
+						</div>
+						{runLog.length > 5 && (
+							<button
+								className="sync-link"
+								onClick={() => setShowAll((v) => !v)}
+							>
+								{showAll
+									? "Show less"
+									: `Show all ${runLog.length}`}
+							</button>
+						)}
+					</div>
+				)}
+
+				{failures.length > 0 && (
+					<div className="sync-card sync-card--danger">
+						<div className="sync-card-eyebrow">
+							Failed operations
+						</div>
+						{failures.slice(-4).map((f, i) => (
+							<div key={i} className="sync-fail-row">
+								<div className="sync-fail-row-title">
+									{f.title}
+								</div>
+								<div className="sync-fail-row-msg">
+									{f.message} · {relativeTime(f.timestamp)}
+								</div>
+							</div>
+						))}
+						<button
+							className="sync-btn sync-btn--danger"
+							disabled={busy}
+							onClick={() => startSync(false)}
+						>
+							Retry sync
+						</button>
+					</div>
+				)}
+
+				<div className="sync-controls">
+					<select
+						className="sync-select"
+						value={direction}
+						disabled={busy}
+						onChange={(e) =>
+							setDirection(e.target.value as SyncDirection)
+						}
+					>
+						{DIRECTION_OPTIONS.map((o) => (
+							<option key={o.value} value={o.value}>
+								{o.label}
+							</option>
+						))}
+					</select>
+					<div className="sync-controls-row">
+						<button
+							className="sync-btn sync-btn--ghost"
+							disabled={busy}
+							onClick={() => startSync(true)}
+						>
+							🔍 Dry run
+						</button>
+						<button
+							className="sync-btn sync-btn--primary"
+							disabled={busy}
+							onClick={() => startSync(false)}
+						>
+							{busy ? "Syncing…" : "Sync now"}
+						</button>
+						{plugin.openRemoteStorageSettings && (
+							<button
+								className="sync-btn sync-btn--icon"
+								aria-label="Sync settings"
+								onClick={() =>
+									plugin.openRemoteStorageSettings?.()
+								}
+							>
+								⚙
+							</button>
+						)}
+					</div>
+				</div>
+
+				<button className="sync-link" onClick={openLogModal}>
+					View sync log
+				</button>
+			</div>
+		);
+	}
+
+	// ── Syncing ──
+	const total = progress?.total ?? 0;
+	const completed = progress?.completed ?? 0;
+	const pct =
+		progress?.indeterminate || total === 0
+			? null
+			: Math.min(100, Math.round((completed / total) * 100));
+	const bytesNow =
+		(progress?.uploadedBytes ?? 0) + (progress?.downloadedBytes ?? 0);
+	const rate = formatRate(bytesNow, progress?.elapsedMs ?? 0);
+
+	return (
+		<div className="sync-panel">
+			<div className="sync-strip sync-strip--syncing">
+				<span className="sync-dot sync-dot--pulse" />
+				<span>{progress?.stage ?? "Syncing…"}</span>
+			</div>
+
+			<div className="sync-progress">
+				<div className="sync-progress-head">
+					<span>{progress?.stage ?? "Working…"}</span>
+					{total > 0 && (
+						<span className="sync-progress-count">
+							{completed}/{total}
 						</span>
 					)}
 				</div>
-			)}
-
-			{error && !isSyncing && (
-				<div className="sync-v2-error">❌ {error}</div>
-			)}
-
-			{/* ── Per-item List (syncit-style cards) ───────────────────── */}
-			<div className="sync-v2-list">
-				<div className="sync-v2-section-title">Files</div>
-				{logs.length === 0 && !isSyncing && (
-					<div className="sync-v2-empty">
-						<div className="sync-v2-empty-icon">📂</div>
-						<div>No sync activity yet</div>
-						<div className="sync-v2-empty-sub">
-							Last sync: {lastSyncText}
-						</div>
-					</div>
-				)}
-				{logs.map((log) => (
-					<SyncItem
-						key={log.id}
-						entry={log}
-						latestActive={latestActiveId === log.id}
-					/>
-				))}
-				<div ref={logsEndRef} />
-			</div>
-
-			{/* ── Action Bar ───────────────────────────────────────────── */}
-			<div className="sync-v2-actions">
-				{isBusy ? (
-					<button
-						className="sync-v2-btn cancel"
-						onClick={handleCancel}
-					>
-						Cancel
-					</button>
-				) : (
-					<button
-						className="sync-v2-btn primary"
-						onClick={handleSync}
-						disabled={!rs.enabled || rs.backend === "none"}
-					>
-						{dryRun ? "Start dry run" : "Start sync"}
-					</button>
-				)}
-				{!isBusy && (
-					<button
-						className="sync-v2-btn rebuild"
-						onClick={() => setShowRebuildChoices(true)}
-						disabled={isRebuilding}
-					>
-						{isRebuilding ? "Rebuilding…" : "Rebuild"}
-					</button>
-				)}
-			</div>
-		</div>
-	);
-};
-
-// ── Individual sync item card ────────────────────────────────────────────
-const SyncItem: React.FC<{
-	entry: SyncLogEntry;
-	latestActive: boolean;
-}> = ({ entry, latestActive }) => {
-	const opLabel = {
-		upload: "Uploading",
-		download: "Downloading",
-		conflict: "Conflict",
-		skip: "Skipped",
-		error: "Error",
-		system: "",
-	}[entry.operation];
-
-	const statusLabel = {
-		pending: "Pending",
-		active: "In Progress",
-		done: "Done",
-		error: "Failed",
-		skipped: "Skipped",
-	}[entry.status];
-
-	return (
-		<div
-			className={`sync-v2-item sync-v2-item--${entry.operation} ${latestActive ? "sync-v2-item--latest-active" : ""}`}
-		>
-			<div className="sync-v2-item-main">
-				<div className="sync-v2-item-title" title={entry.title}>
-					{entry.title}
+				<div className="sync-progress-track">
+					{pct === null ? (
+						<div className="sync-progress-indeterminate" />
+					) : (
+						<div
+							className="sync-progress-fill"
+							style={{ width: `${pct}%` }}
+						/>
+					)}
 				</div>
-				{entry.message && (
-					<div className="sync-v2-item-message">{entry.message}</div>
-				)}
+				<div className="sync-progress-meta">
+					{formatDuration(progress?.elapsedMs ?? 0)}
+					{(progress?.uploadedBytes ?? 0) > 0 &&
+						` · ↑${formatBytes(progress!.uploadedBytes!)}`}
+					{(progress?.downloadedBytes ?? 0) > 0 &&
+						` · ↓${formatBytes(progress!.downloadedBytes!)}`}
+					{` · ${rate}`}
+				</div>
 			</div>
-			<div className="sync-v2-item-meta">
-				{opLabel && (
-					<span className="sync-v2-item-action">{opLabel}</span>
-				)}
-				<span
-					className={`sync-v2-item-status sync-v2-item-status--${entry.status}`}
+
+			{activeRows.length > 0 && (
+				<div className="sync-ops">
+					{activeRows.map((e) => (
+						<div
+							key={e.id}
+							className="sync-op-row sync-op-row--active"
+						>
+							<span className="sync-op-shimmer" />
+							<span className="sync-log-row-op">
+								{OP_ARROW[e.operation] ?? "·"}
+							</span>
+							<span className="sync-op-row-title" title={e.title}>
+								{e.title}
+							</span>
+						</div>
+					))}
+				</div>
+			)}
+
+			<div className="sync-tabs">
+				<button
+					className={`sync-tab ${tab === "summary" ? "sync-tab--active" : ""}`}
+					onClick={() => setTab("summary")}
 				>
-					{statusLabel}
-				</span>
+					Summary
+				</button>
+				<button
+					className={`sync-tab ${tab === "activity" ? "sync-tab--active" : ""}`}
+					onClick={() => setTab("activity")}
+				>
+					Activity{runLog.length > 0 ? ` (${runLog.length})` : ""}
+				</button>
+			</div>
+
+			{tab === "summary" ? (
+				<div className="sync-stats-grid">
+					<div className="sync-stat sync-stat--success">
+						<div className="sync-stat-num">{counts.done}</div>
+						<div className="sync-stat-label">done</div>
+					</div>
+					<div
+						className={`sync-stat sync-stat--warn ${counts.conflict === 0 ? "sync-stat--dim" : ""}`}
+					>
+						<div className="sync-stat-num">{counts.conflict}</div>
+						<div className="sync-stat-label">overwritten</div>
+					</div>
+					<div
+						className={`sync-stat ${counts.skipped === 0 ? "sync-stat--dim" : ""}`}
+					>
+						<div className="sync-stat-num">{counts.skipped}</div>
+						<div className="sync-stat-label">skipped</div>
+					</div>
+					<div
+						className={`sync-stat sync-stat--danger ${counts.failed === 0 ? "sync-stat--dim" : ""}`}
+					>
+						<div className="sync-stat-num">{counts.failed}</div>
+						<div className="sync-stat-label">errors</div>
+					</div>
+				</div>
+			) : (
+				<div className="sync-feed">
+					{runLog.length === 0 ? (
+						<div className="sync-feed-empty">
+							Waiting for operations…
+						</div>
+					) : (
+						runLog.map((e) => <LogRow key={e.id} entry={e} />)
+					)}
+					<div className="sync-feed-fade" />
+				</div>
+			)}
+
+			<div className="sync-panel-foot">
+				<button
+					className="sync-btn sync-btn--ghost"
+					onClick={() => plugin.cancelSync?.()}
+				>
+					Cancel
+				</button>
+				{runLog.length > 0 && (
+					<span className="sync-panel-foot-meta">
+						{runLog.length} operations
+					</span>
+				)}
 			</div>
 		</div>
 	);

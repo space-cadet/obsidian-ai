@@ -142,11 +142,19 @@ export function registerCommands(plugin: ObsidianAIPlugin): void {
 		callback: () => checkForUpdates(plugin, true),
 	});
 
-	// T42e: Dry run command
+	// T42e/T42g: Dry run command (panel surfaces it via the status hub)
 	plugin.addCommand({
 		id: "chat-sync-dry-run",
 		name: "Chat Sync: Dry Run",
 		callback: () => plugin.triggerSync(true),
+	});
+
+	// T42g: command-palette sync shows the progress modal — the sidebar
+	// panel may not be visible when this is invoked.
+	plugin.addCommand({
+		id: "chat-sync-now",
+		name: "Chat Sync: Sync Now",
+		callback: () => plugin.triggerSync(false, { useModal: true }),
 	});
 
 	// Command to clear debug log
