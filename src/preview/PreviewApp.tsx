@@ -57,7 +57,12 @@ const renderMarkdown = async (
 };
 
 const PreviewApp: React.FC = () => {
-	const [state, setState] = useState<ChatFixtureState>("normal");
+	const [state, setState] = useState<ChatFixtureState>(() => {
+		const param = new URLSearchParams(window.location.search).get("fixture");
+		return chatFixtureStates.includes(param as ChatFixtureState)
+			? (param as ChatFixtureState)
+			: "normal";
+	});
 	const session = useMemo(() => getChatFixture(state), [state]);
 	const [selectedProfiles, setSelectedProfiles] = useState(
 		new Set(["fixture-openai", "fixture-anthropic"]),

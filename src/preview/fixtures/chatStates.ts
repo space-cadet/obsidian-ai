@@ -8,7 +8,8 @@ export type ChatFixtureState =
 	| "error"
 	| "multi-agent"
 	| "relay-only"
-	| "mobile";
+	| "mobile"
+	| "large";
 
 const timestamp = 1_754_000_000_000;
 
@@ -33,6 +34,25 @@ const baseSession = (messages: ChatMessage[] = []): ChatSession => ({
 	contextItems: [],
 	profileId: "fixture-openai",
 });
+
+const LARGE_FIXTURE_MESSAGE_COUNT = 400;
+
+const largeFixtureParagraphs = [
+	"The **canonical commutation relation** `[x, p] = i\\hbar` fixes the uncertainty principle, and every variational ansatz must respect it or the ground-state energy comes out below the true value.",
+	"Here is the key identity: `\\int_{-\\infty}^{\\infty} e^{-x^2}\\,dx = \\sqrt{\\pi}`. We use it to normalize the Gaussian wavepacket before propagating.",
+	"Steps:\n1. Wick-rotate the contour.\n2. Deform onto the steepest-descent path.\n3. Read off the saddle contribution at `t = t_0`.",
+	"```python\ndef partition(beta, levels):\n    return sum(math.exp(-beta * e) for e in levels)\n```\n\nThen take `-d/dβ ln Z` to get the internal energy.",
+	"The **correlation length** `\\xi` diverges as `|T - T_c|^{-\\nu}` with `\\nu \\approx 0.63` in 3D Ising universality — so finite-size scaling is not optional near criticality.",
+	"Remember: the path integral weights each history by `e^{iS/\\hbar}`; stationary phase keeps only the classical trajectory plus quadratic fluctuations.",
+];
+
+const largeFixtureMessage = (index: number): ChatMessage => {
+	const role = index % 2 === 0 ? "user" : "assistant";
+	const content = `q${String(index).padStart(4, "0")} ${largeFixtureParagraphs[index % largeFixtureParagraphs.length]}`;
+	return message(role, content, {
+		...(role === "assistant" ? { modelName: "Fixture GPT" } : {}),
+	});
+};
 
 /** Deterministic, network-free sessions used by the standalone UI preview. */
 export function getChatFixture(state: ChatFixtureState): ChatSession {
@@ -134,6 +154,12 @@ export function getChatFixture(state: ChatFixtureState): ChatSession {
 				title: "Mobile fixture",
 				scrollPosition: 240,
 			};
+		case "large":
+			return baseSession(
+				Array.from({ length: LARGE_FIXTURE_MESSAGE_COUNT }, (_, i) =>
+					largeFixtureMessage(i),
+				),
+			);
 	}
 }
 
@@ -146,4 +172,5 @@ export const chatFixtureStates: readonly ChatFixtureState[] = [
 	"multi-agent",
 	"relay-only",
 	"mobile",
+	"large",
 ];

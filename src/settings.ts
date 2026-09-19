@@ -769,5 +769,3 @@ const normalizeProviderProfile = (
 	});
 };
 
-// Re-export SettingsTab for backward compatibility
-export { ObsidianAISettingsTab } from "./settings-sections/SettingsTab";
