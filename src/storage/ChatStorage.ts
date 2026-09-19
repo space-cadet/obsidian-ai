@@ -189,7 +189,9 @@ class JsonlStorage implements ChatStorage {
 		}
 
 		const hydrateAll = opts.hydrate === true;
-		this.unhydratedSessions.clear();
+		// A full read (diagnostics, usage stats, sync cache) must never disturb
+		// lazy-hydration write protection; only index-only boots rebuild it.
+		if (!hydrateAll) this.unhydratedSessions.clear();
 
 		const sessions: ChatSession[] = await Promise.all(
 			index.sessions.map(async (entry) => {
@@ -246,8 +248,11 @@ class JsonlStorage implements ChatStorage {
 						// null = on-disk ids unknown (index-only boot); forces a full
 						// overwrite on the first write instead of a bad append.
 						messageIds: hydrateAll
-							? s.messages.map((m) => m.id)
-							: null,
+							? this.unhydratedSessions.has(s.id)
+								? (this.lastSavedState?.sessions.get(s.id)
+										?.messageIds ?? null)
+							: s.messages.map((m) => m.id)
+						: null,
 						updatedAt: s.updatedAt,
 					},
 				]),

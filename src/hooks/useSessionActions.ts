@@ -3,7 +3,7 @@ import { Notice } from "obsidian";
 import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 import type { ChatSession, ContextItem } from "../types";
 import { getActiveProviderProfile } from "../settings";
-import { makeId } from "../lib/sessionUtils";
+import { makeId, sessionMessageCount } from "../lib/sessionUtils";
 
 interface UseSessionActionsOptions {
 	plugin: ChatPluginLike;
@@ -198,9 +198,14 @@ export function useSessionActions({
 	const handleCloseTab = useCallback(
 		(sessionId: string) => {
 			clearSessionRuntime(sessionId);
+			const closeTarget = sessionsRef.current.find(
+				(session) => session.id === sessionId,
+			);
+			// Unhydrated saved sessions hold messages on disk (messageCount > 0)
+			// even though their in-memory list is still empty — never treat them
+			// as drafts, or closing a tab orphans their file.
 			const isDraft =
-				sessionsRef.current.find((session) => session.id === sessionId)
-					?.messages.length === 0;
+				!!closeTarget && sessionMessageCount(closeTarget) === 0;
 			if (isDraft) {
 				setSessions((current) =>
 					current.filter((session) => session.id !== sessionId),

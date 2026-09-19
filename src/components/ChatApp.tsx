@@ -29,7 +29,11 @@ import { parseMentions } from "../agent/MentionParser";
 import { getAgentColor, getAgentIcon } from "../lib/agentVisuals";
 import { contextItemKey, sameContextItems } from "../lib/contextUtils";
 import { parseSlashCommand, SlashCommand } from "../lib/slashCommand";
-import { makeId, getSessionTotalTokens } from "../lib/sessionUtils";
+import {
+	makeId,
+	getSessionTotalTokens,
+	sessionMessageCount,
+} from "../lib/sessionUtils";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { useChatSession } from "../hooks/useChatSession";
 import { useChatUI } from "../hooks/useChatUI";
@@ -113,7 +117,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	>(initialMessageId);
 	const [thinkingEnabled, setThinkingEnabled] = useState(false);
 	const savedSessions = useMemo(
-		() => sessions.filter((session) => session.messages.length > 0),
+		() => sessions.filter((session) => sessionMessageCount(session) > 0),
 		[sessions],
 	);
 

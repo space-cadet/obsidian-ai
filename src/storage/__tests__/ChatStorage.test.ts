@@ -273,3 +273,38 @@ describe("JsonlStorage index-only boot", () => {
 		expect(reloaded.sessions[0].messages[0].content).toBe("from-remote");
 	});
 });
+
+describe("JsonlStorage hydrate-all write protection (Codex P1)", () => {
+	it("hydrate:true full read keeps the save guard for unhydrated sessions", async () => {
+		const files = new Map<string, string>();
+		await makeStorage(files).storage.saveChatData({
+			sessions: [makeSession("s1", ["hello", "world"])],
+			activeSessionId: "s1",
+		});
+
+		// Fresh instance simulates plugin boot (index-only).
+		const { storage, adapter } = makeStorage(files);
+		const boot = await storage.loadChatData();
+		expect(boot.sessions[0].messages).toEqual([]);
+
+		// Diagnostics-style full read must NOT clear the write guard.
+		const full = await storage.loadChatData({ hydrate: true });
+		expect(full.sessions[0].messages).toHaveLength(2);
+		expect(storage.isSessionHydrated?.("s1")).toBe(false);
+
+		// Autosave carrying the empty unhydrated session must not clobber
+		// the .jsonl on disk.
+		await storage.saveChatData({
+			sessions: boot.sessions,
+			activeSessionId: null,
+		});
+		const written = (
+			files.get(sessionPath("s1")) ?? ""
+		).trim().split("\n").filter(Boolean);
+		expect(written).toHaveLength(2);
+		expect(adapter.write).not.toHaveBeenCalledWith(
+			sessionPath("s1"),
+			expect.anything(),
+		);
+	});
+});
