@@ -309,6 +309,75 @@ describe("JsonlStorage hydrate-all write protection (Codex P1)", () => {
 	});
 });
 
+describe("JsonlStorage metadata reads preserve hydration state (Codex wave-3 P1)", () => {
+	it("sync-style metadata read does not re-flag an already-hydrated session", async () => {
+		const files = new Map<string, string>();
+		await makeStorage(files).storage.saveChatData({
+			sessions: [makeSession("a", ["hello"]), makeSession("b", ["world"])],
+			activeSessionId: "a",
+		});
+
+		// Fresh boot, index-only.
+		const { storage } = makeStorage(files);
+		await storage.loadChatData();
+		expect(storage.isSessionHydrated?.("a")).toBe(false);
+		expect(storage.isSessionHydrated?.("b")).toBe(false);
+
+		// Open session a.
+		const messages = await storage.hydrateSession?.("a");
+		expect(messages).toHaveLength(1);
+		expect(storage.isSessionHydrated?.("a")).toBe(true);
+
+		// Sync performs a metadata-only index read.
+		await storage.loadChatData();
+
+		// a must STAY hydrated — the bug re-flagged it, making a later
+		// hydration revert newer in-memory messages to disk state.
+		expect(storage.isSessionHydrated?.("a")).toBe(true);
+		// b was never opened — the save guard must still protect it.
+		expect(storage.isSessionHydrated?.("b")).toBe(false);
+	});
+
+	it("hydrateSession stays idempotent across a later metadata read", async () => {
+		const files = new Map<string, string>();
+		await makeStorage(files).storage.saveChatData({
+			sessions: [makeSession("a", ["hello"])],
+			activeSessionId: "a",
+		});
+		const { storage } = makeStorage(files);
+		await storage.loadChatData();
+		await storage.hydrateSession?.("a");
+
+		await storage.loadChatData(); // sync re-read
+
+		// Already-hydrated ids return [] — no second file read that could
+		// overwrite newer UI state with stale disk state.
+		const again = await storage.hydrateSession?.("a");
+		expect(again).toEqual([]);
+	});
+
+	it("save guard still protects never-opened sessions after a metadata read", async () => {
+		const files = new Map<string, string>();
+		await makeStorage(files).storage.saveChatData({
+			sessions: [makeSession("a", ["hello"]), makeSession("b", ["precious"])],
+			activeSessionId: "a",
+		});
+		const before = files.get(sessionPath("b"));
+
+		const { storage } = makeStorage(files);
+		const boot = await storage.loadChatData();
+		await storage.hydrateSession?.("a");
+		await storage.loadChatData(); // sync re-read
+
+		// Autosave carrying both sessions; b is still empty in memory.
+		await storage.saveChatData({
+			sessions: boot.sessions,
+			activeSessionId: "a",
+		});
+		expect(files.get(sessionPath("b"))).toBe(before);
+	});
+});
+
 describe("JsonlStorage peekSessionMessages (Codex wave-2)", () => {
 	it("reads messages without disturbing the hydration write guard", async () => {
 		const files = new Map<string, string>();

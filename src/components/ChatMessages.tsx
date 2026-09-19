@@ -356,6 +356,12 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		scrolls away, re-engages when they return to the bottom. */
 	const followRef = useRef(true);
 	const prevMessagesLength = useRef(messages.length);
+	const hasMessages = messages.length > 0;
+	/** Saved scroll position deferred from a session switch that landed on an
+		index-only session (DOM still empty, so the browser clamped the restore
+		to 0). The restore effect re-applies it once hydration fills the
+		transcript; the follow effect must leave that fill growth alone. */
+	const pendingHydrationRestoreRef = useRef<number | null>(null);
 
 	/** Jump the container to the very bottom without touching outer panes. */
 	const scrollToBottomInstant = useCallback(() => {
@@ -406,28 +412,47 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		return () => container.removeEventListener("scroll", onScroll);
 	}, [checkScrollPosition, onScrollPositionChange, sessionId]);
 
-	/** Restore the active tab's saved position after its message DOM has rendered.
-		Runs only on session switch / explicit restore-value change — NOT on
-		message growth — so a stale saved position can never fight the follow
+	/** Restore the active tab's saved position after its message DOM has
+		rendered. Runs on session switch / restore-value change, and once more
+		when an index-only session's first messages render — but NOT on ongoing
+		message growth, so a stale saved position can never fight the follow
 		scroll on send. */
 	useEffect(() => {
 		const container = scrollRef.current;
 		if (!container || !sessionId) return;
 		const frame = requestAnimationFrame(() => {
-			container.scrollTop = Math.max(0, restoreScrollTop ?? 0);
+			const top = Math.max(0, restoreScrollTop ?? 0);
+			if (!hasMessages && top > 0) {
+				// Index-only session mid-hydration: the DOM has no content yet
+				// and the browser clamps scrollTop to 0. Remember the target;
+				// the hasMessages dependency re-runs this effect exactly once
+				// when the transcript lands.
+				pendingHydrationRestoreRef.current = top;
+				return;
+			}
+			pendingHydrationRestoreRef.current = null;
+			container.scrollTop = top;
 			debugLog(
 				`[ChatScroll] restored saved position ${Math.round(container.scrollTop)}px for session ${sessionId}`,
 			);
 			checkScrollPositionRef.current();
 		});
 		return () => cancelAnimationFrame(frame);
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- checkScrollPosition is read via ref; listing it would re-run this on every message.
-	}, [sessionId, restoreScrollTop]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- checkScrollPosition is read via ref; hasMessages gates the one-shot index-only re-run.
+	}, [sessionId, restoreScrollTop, hasMessages]);
 
 	/** Follow new content to the bottom: always on local send, otherwise only
 		while follow mode is engaged (user is at / returned to the bottom). */
 	useEffect(() => {
 		const grew = messages.length > prevMessagesLength.current;
+		// Index-only hydration fill: the restore effect owns positioning for
+		// this growth — following it would yank the user to the bottom.
+		if (grew && pendingHydrationRestoreRef.current != null) {
+			pendingHydrationRestoreRef.current = null;
+			prevMessagesLength.current = messages.length;
+			requestAnimationFrame(checkScrollPosition);
+			return;
+		}
 		const lastIsUser =
 			messages.length > 0 &&
 			messages[messages.length - 1]?.role === "user";

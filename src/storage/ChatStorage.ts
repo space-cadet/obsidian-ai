@@ -160,6 +160,12 @@ class JsonlStorage implements ChatStorage {
 	private unhydratedSessions = new Map<string, SessionIndexEntry>();
 	/** In-flight hydrateSession calls — concurrent callers share one read. */
 	private pendingHydrations = new Map<string, Promise<ChatMessage[]>>();
+	/** Sessions known to have their messages in UI memory (hydrated via
+		hydrateSession() or saved carrying real messages). Metadata-only index
+		reads use this to avoid re-flagging those sessions as unhydrated —
+		doing so would make isSessionHydrated() lie and a later "hydration"
+		could revert newer in-memory messages to disk state (Codex wave-3 P1). */
+	private hydratedSessionIds = new Set<string>();
 
 	constructor(deps: StorageDeps) {
 		this.deps = deps;
@@ -203,7 +209,11 @@ class JsonlStorage implements ChatStorage {
 					);
 				} else {
 					// Index-only boot: metadata now, messages on first open.
-					this.unhydratedSessions.set(entry.id, entry);
+					// Sessions already known-hydrated (mid-session sync re-read)
+					// stay OUT of the guard — the UI already holds their messages.
+					if (!this.hydratedSessionIds.has(entry.id)) {
+						this.unhydratedSessions.set(entry.id, entry);
+					}
 				}
 				return {
 					id: entry.id,
@@ -291,6 +301,7 @@ class JsonlStorage implements ChatStorage {
 			`${pluginDir}/${entry.filePath}`,
 		);
 		this.unhydratedSessions.delete(sessionId);
+		this.hydratedSessionIds.add(sessionId);
 		// Record the true on-disk ids so the next save can append correctly.
 		this.lastSavedState?.sessions.set(sessionId, {
 			messageIds: messages.map((m) => m.id),
@@ -354,6 +365,7 @@ class JsonlStorage implements ChatStorage {
 			// Real messages are now on disk (either they were already, or this
 			// write put them there) — the session is hydrated from here on.
 			this.unhydratedSessions.delete(session.id);
+			this.hydratedSessionIds.add(session.id);
 
 			indexEntries.push({
 				id: session.id,

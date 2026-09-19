@@ -96,4 +96,65 @@ describe("ChatMessages follow-scroll vs restore race", () => {
 		// Follow still engaged → no "scroll to bottom" button.
 		expect(screen.queryByTitle("Scroll to bottom")).toBeNull();
 	});
+
+	it("index-only session: saved position applies after hydration fill, follow stays off", () => {
+		// Session switch lands on an index-only session: messages not yet
+		// loaded, saved position 500. The DOM is empty, so the restore cannot
+		// apply yet — the browser would clamp it to 0.
+		const { rerender } = render(
+			<ChatMessages {...baseProps} messages={[]} restoreScrollTop={500} />,
+			);
+
+		const container = document.querySelector<HTMLElement>(
+			".chat-messages",
+		)!;
+		Object.defineProperty(container, "scrollHeight", {
+			value: 2000,
+			configurable: true,
+		});
+		flushRaf();
+
+		// Hydration fills the transcript.
+		const first = makeMsg("m1", "user");
+		rerender(
+			<ChatMessages
+				{...baseProps}
+				messages={[first]}
+				restoreScrollTop={500}
+			/>,
+		);
+		flushRaf();
+
+		// The deferred restore must win — NOT a follow-scroll to the bottom.
+		expect(container.scrollTop).toBe(500);
+		// Restored mid-transcript → follow released → scroll-bottom button.
+		expect(screen.getByTitle("Scroll to bottom")).toBeTruthy();
+	});
+
+	it("index-only session with saved position 0 stays at top after hydration fill", () => {
+		const { rerender } = render(
+			<ChatMessages {...baseProps} messages={[]} restoreScrollTop={0} />,
+		);
+
+		const container = document.querySelector<HTMLElement>(
+			".chat-messages",
+		)!;
+		Object.defineProperty(container, "scrollHeight", {
+			value: 2000,
+			configurable: true,
+		});
+		flushRaf();
+
+		const first = makeMsg("m1", "user");
+		rerender(
+			<ChatMessages
+				{...baseProps}
+				messages={[first]}
+				restoreScrollTop={0}
+			/>,
+		);
+		flushRaf();
+
+		expect(container.scrollTop).toBe(0);
+	});
 });
