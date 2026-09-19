@@ -168,6 +168,8 @@ export async function rebuildSyncIndex(
 	const rebuildStart = Date.now();
 	let rebuildTotal = 0;
 	let rebuildCompleted = 0;
+	let rebuildUploadedBytes = 0;
+	let rebuildDownloadedBytes = 0;
 	const emitRebuildProgress = (
 		progress: Partial<SyncProgressSnapshot> &
 			Pick<SyncProgressSnapshot, "phase" | "stage">,
@@ -183,6 +185,8 @@ export async function rebuildSyncIndex(
 			skipped: progress.skipped ?? 0,
 			elapsedMs: Date.now() - rebuildStart,
 			indeterminate: progress.indeterminate,
+			uploadedBytes: rebuildUploadedBytes,
+			downloadedBytes: rebuildDownloadedBytes,
 		});
 	try {
 		plugin.syncEngine.setProgressHandler((event) => {
@@ -190,6 +194,10 @@ export async function rebuildSyncIndex(
 				if (event.total !== undefined) rebuildTotal = event.total;
 				if (event.completed !== undefined)
 					rebuildCompleted = event.completed;
+				if (event.planBytes) {
+					rebuildUploadedBytes = 0;
+					rebuildDownloadedBytes = 0;
+				}
 				emitRebuildProgress({
 					phase: event.phase ?? "rebuilding",
 					stage: event.stage ?? "Rebuilding sync record",
@@ -204,7 +212,16 @@ export async function rebuildSyncIndex(
 				titleMap.get(event.id) ||
 				_getSessionTitle(plugin, event.id)?.trim() ||
 				`Session ${event.id.slice(0, 8)}…`;
-			if (event.status === "done") rebuildCompleted++;
+			if (event.status === "done") {
+				rebuildCompleted++;
+
+				if (event.bytes) {
+					if (event.direction === "upload")
+						rebuildUploadedBytes += event.bytes;
+					else if (event.direction === "download")
+						rebuildDownloadedBytes += event.bytes;
+				}
+			}
 			options?.onLog?.({
 				id: `session:${event.id}`,
 				operation: event.direction,
@@ -315,6 +332,10 @@ export async function triggerSync(
 	let progressDownloaded = 0;
 	let progressConflicts = 0;
 	let progressSkipped = 0;
+	let progressUploadedBytes = 0;
+	let progressDownloadedBytes = 0;
+	let plannedUploadBytes = 0;
+	let plannedDownloadBytes = 0;
 	let totalOps = 0;
 	const emitProgress = (
 		progress: Partial<SyncProgressSnapshot> &
@@ -331,6 +352,10 @@ export async function triggerSync(
 			skipped: progress.skipped ?? progressSkipped,
 			elapsedMs: Date.now() - startTime,
 			indeterminate: progress.indeterminate,
+			uploadedBytes: progressUploadedBytes,
+			downloadedBytes: progressDownloadedBytes,
+			plannedUploadBytes: plannedUploadBytes || undefined,
+			plannedDownloadBytes: plannedDownloadBytes || undefined,
 		});
 
 	try {
@@ -360,7 +385,6 @@ export async function triggerSync(
 			Number(sc.usageStats);
 		totalOps = pluginDataOps;
 		modal?.setTotal(totalOps);
-
 		// Set up progress handler now that totalOps is known
 		// Build title map from local sessions for better remote session titles
 		const chatData = await plugin.loadChatData();
@@ -373,6 +397,10 @@ export async function triggerSync(
 				if (event.total !== undefined) {
 					totalOps = event.total + pluginDataOps;
 					modal?.setTotal(totalOps);
+				}
+				if (event.planBytes) {
+					plannedUploadBytes = event.planBytes.upload;
+					plannedDownloadBytes = event.planBytes.download;
 				}
 				modal?.addLog("system", event.stage ?? "Planning sync…");
 				emitProgress({
@@ -407,6 +435,12 @@ export async function triggerSync(
 					if (event.direction === "upload") progressUploaded++;
 					if (event.direction === "download") progressDownloaded++;
 					if (event.direction === "conflict") progressConflicts++;
+					if (event.bytes) {
+						if (event.direction === "upload")
+							progressUploadedBytes += event.bytes;
+						else if (event.direction === "download")
+							progressDownloadedBytes += event.bytes;
+					}
 					if (event.direction) {
 						modal?.addLog(event.direction, `${title}`, {
 							id: event.id,

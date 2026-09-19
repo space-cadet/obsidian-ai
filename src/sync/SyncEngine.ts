@@ -7,6 +7,7 @@ import type {
 	SyncPlan,
 	CachedSession,
 } from "./StorageAdapter";
+import { estimateSessionBytes } from "./StorageAdapter";
 import { LocalCache } from "./LocalCache";
 import { EncryptionLayer, checksum } from "./EncryptionLayer";
 import { SyncIndexManager } from "./SyncIndexManager";
@@ -213,6 +214,18 @@ export class SyncEngine {
 			} else if (direction === "download") {
 				plan = { ...plan, upload: [], conflicts: [] };
 			}
+			// T42g: recompute planned bytes after direction filtering
+			plan = {
+				...plan,
+				uploadBytes: plan.upload.reduce(
+					(n, s) => n + estimateSessionBytes(s),
+					0,
+				),
+				downloadBytes: plan.download.reduce(
+					(n, m) => n + (m.size ?? 0),
+					0,
+				),
+			};
 			this.progress?.({
 				type: "stage",
 				id: "sync:plan",
@@ -224,6 +237,10 @@ export class SyncEngine {
 					plan.download.length +
 					plan.conflicts.length,
 				completed: 0,
+				planBytes: {
+					upload: plan.uploadBytes,
+					download: plan.downloadBytes,
+				},
 			});
 
 			// T42e: Dry run mode — compute plan but do not transfer anything
@@ -249,6 +266,7 @@ export class SyncEngine {
 						id: session.id,
 						direction: "upload",
 						status: "done",
+						bytes: estimateSessionBytes(session),
 					});
 					uploaded++;
 				}
@@ -269,6 +287,7 @@ export class SyncEngine {
 						id: meta.id,
 						direction: "download",
 						status: "done",
+						bytes: meta.size ?? 0,
 					});
 					downloaded++;
 				}
@@ -577,7 +596,17 @@ export class SyncEngine {
 			download.push(meta);
 		}
 
-		return { upload, download, conflicts, skipped };
+		return {
+			upload,
+			download,
+			conflicts,
+			skipped,
+			uploadBytes: upload.reduce(
+				(n, s) => n + estimateSessionBytes(s),
+				0,
+			),
+			downloadBytes: download.reduce((n, m) => n + (m.size ?? 0), 0),
+		};
 	}
 
 	/** Rebuild sync state using the user's chosen rule for conflicts. */
@@ -797,6 +826,9 @@ export class SyncEngine {
 			payload.salt = encrypted.salt;
 		}
 
+		const payloadBytes = new TextEncoder().encode(
+			JSON.stringify(payload),
+		).length;
 		const result = await this.adapter.putSession(payload);
 		await this.cache.markSynced(session.id, session.updatedAt, result.etag);
 		await this.retryStore?.clear("chat-session", session.id);
@@ -805,6 +837,7 @@ export class SyncEngine {
 			id: session.id,
 			direction: "upload",
 			status: "done",
+			bytes: payloadBytes,
 		});
 		this.log("debug", `SyncEngine: uploaded ${session.id}`);
 
@@ -887,6 +920,7 @@ export class SyncEngine {
 			id: meta.id,
 			direction: "download",
 			status: "done",
+			bytes: meta.size ?? 0,
 		});
 		this.log("debug", `SyncEngine: downloaded ${meta.id}`);
 

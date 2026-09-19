@@ -117,4 +117,17 @@ export interface SyncPlan {
 	download: RemoteSessionMeta[];
 	conflicts: Array<{ local: ChatSession; remote: RemoteSessionMeta }>;
 	skipped: number;
+	/** Estimated payload bytes for planned uploads (T42g). */
+	uploadBytes: number;
+	/** Known/estimated payload bytes for planned downloads (T42g). */
+	downloadBytes: number;
+}
+
+/** Rough payload-size estimate for a chat session (T42g). */
+export function estimateSessionBytes(session: ChatSession): number {
+	try {
+		return new TextEncoder().encode(JSON.stringify(session)).length;
+	} catch {
+		return 0;
+	}
 }
