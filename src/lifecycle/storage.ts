@@ -10,14 +10,13 @@ import { SessionSummarizer } from "../intelligence/SessionSummarizer";
 import { ProviderRegistry } from "../integrations/ProviderRegistry";
 import { ChatApiManager } from "../api";
 import type ObsidianAIPlugin from "../main";
-import {
-	createStorageDeps,
-	loadSettings,
-	saveSettings,
-} from "./persistence";
+import { createStorageDeps, loadSettings, saveSettings } from "./persistence";
 
 export {
 	loadChatData,
+	hydrateChatSession,
+	isChatSessionHydrated,
+	peekChatSessionMessages,
 	loadSettings,
 	saveChatData,
 	saveSettings,
@@ -33,21 +32,35 @@ export {
 export async function initializeStorage(
 	plugin: ObsidianAIPlugin,
 ): Promise<void> {
+	let stepStart = Date.now();
+	const mark = (label: string) => {
+		plugin.logger?.log(
+			"info",
+			`[Startup] ${label}: ${Date.now() - stepStart}ms`,
+		);
+		stepStart = Date.now();
+	};
+
 	await migrateStorage(plugin);
+	// Logger not yet created — timing reported after init below.
 
 	// Initialize file logger FIRST so any crash during load is captured.
 	plugin.logger = createFileLogger(plugin.app, plugin.manifest.id);
 	await plugin.logger.init();
+	mark("migrateStorage + logger.init");
 
 	await loadSettings(plugin);
+	mark("loadSettings");
 
 	plugin.integrationRegistry = new ProviderRegistry(
 		plugin.app,
 		plugin.settings,
 	);
 	plugin.integrationRegistry.discover();
+	mark("ProviderRegistry.discover");
 	plugin.logger.setMaxSize(plugin.settings.debugLogMaxSizeMB * 1024 * 1024);
 	plugin.chatapi = new ChatApiManager(plugin.settings, plugin.app);
+	plugin.chatapi.setLogger?.(plugin.logger);
 
 	// Initialize low-level session storage
 	plugin.sessionStorage = new SessionStorage({
@@ -68,6 +81,7 @@ export async function initializeStorage(
 	plugin.searchIndex = new SearchIndex(plugin.app, plugin.manifest.id);
 	if (plugin.settings.intelligence?.enableIntelligence) {
 		await plugin.personaLoader.ensureDefaults();
+		mark("personaLoader.ensureDefaults");
 	}
 
 	// Initialize session summarizer (T26 Phase 2)
@@ -85,6 +99,7 @@ export async function initializeStorage(
 	// Detect legacy format and prompt for migration (non-blocking, once per session)
 	if (plugin.settings.chatStorageFormat === "legacy") {
 		const hasLegacy = await plugin._chatStorage.detectLegacyFormat();
+		mark("detectLegacyFormat");
 		if (hasLegacy && !plugin._migrationPromptShown) {
 			plugin._migrationPromptShown = true;
 			const migration = new ChatStorageMigration(

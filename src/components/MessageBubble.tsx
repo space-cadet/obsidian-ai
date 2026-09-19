@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { App, Notice, TFile } from "obsidian";
 import { ChatMessage, ContextItem, ContentPart, Attachment } from "../types";
 import MessageActions from "./presentational/MessageActions";
@@ -10,7 +10,10 @@ import {
 } from "../lib/messageTimestamp";
 
 /** Highlight context item names in rendered DOM */
-function highlightMentions(container: HTMLElement, items: ContextItem[]): void {
+export function highlightMentions(
+	container: HTMLElement,
+	items: ContextItem[],
+): void {
 	if (!items || items.length === 0) return;
 	const names = items
 		.map((item) => {
@@ -25,11 +28,11 @@ function highlightMentions(container: HTMLElement, items: ContextItem[]): void {
 					return "Active note";
 			}
 		})
-		.filter(Boolean);
+		.filter((name): name is string => Boolean(name));
 	if (names.length === 0) return;
-	// Sort by length descending to prefer longer matches
+	// Sort by length descending so overlapping names prefer the longest match
 	names.sort((a, b) => b.length - a.length);
-	// Walk text nodes and replace
+	// Walk text nodes and replace EVERY occurrence, not just the first.
 	const walker = document.createTreeWalker(
 		container,
 		NodeFilter.SHOW_TEXT,
@@ -40,31 +43,55 @@ function highlightMentions(container: HTMLElement, items: ContextItem[]): void {
 	while ((node = walker.nextNode())) {
 		nodes.push(node as Text);
 	}
+	let pillsCreated = 0;
 	for (const textNode of nodes) {
 		const text = textNode.textContent || "";
-		let matchIndex = -1;
-		let matchName = "";
-		for (const name of names) {
-			const idx = text.indexOf(name);
-			if (idx !== -1 && (matchIndex === -1 || idx < matchIndex)) {
-				matchIndex = idx;
-				matchName = name;
+		// Find all non-overlapping matches, earliest first; on a tie the
+		// longest name wins (names are length-sorted).
+		const matches: Array<{ start: number; name: string }> = [];
+		let searchFrom = 0;
+		while (searchFrom <= text.length) {
+			let bestIdx = -1;
+			let bestName = "";
+			for (const name of names) {
+				const idx = text.indexOf(name, searchFrom);
+				if (idx !== -1 && (bestIdx === -1 || idx < bestIdx)) {
+					bestIdx = idx;
+					bestName = name;
+				}
 			}
+			if (bestIdx === -1) break;
+			matches.push({ start: bestIdx, name: bestName });
+			searchFrom = bestIdx + bestName.length;
 		}
-		if (matchIndex === -1) continue;
-		const before = text.slice(0, matchIndex);
-		const after = text.slice(matchIndex + matchName.length);
-		const span = document.createElement("span");
-		span.className = "chat-mention-pill";
-		span.textContent = matchName;
+		if (matches.length === 0) continue;
+		pillsCreated += matches.length;
 		const parent = textNode.parentNode;
 		if (!parent) continue;
-		if (before)
-			parent.insertBefore(document.createTextNode(before), textNode);
-		parent.insertBefore(span, textNode);
-		if (after)
-			parent.insertBefore(document.createTextNode(after), textNode);
-		parent.removeChild(textNode);
+		const fragment = document.createDocumentFragment();
+		let cursor = 0;
+		for (const match of matches) {
+			if (match.start > cursor) {
+				fragment.appendChild(
+					document.createTextNode(text.slice(cursor, match.start)),
+				);
+			}
+			const span = document.createElement("span");
+			span.className = "chat-mention-pill";
+			span.textContent = match.name;
+			fragment.appendChild(span);
+			cursor = match.start + match.name.length;
+		}
+		if (cursor < text.length) {
+			fragment.appendChild(document.createTextNode(text.slice(cursor)));
+		}
+		parent.replaceChild(fragment, textNode);
+	}
+	if (pillsCreated > 0) {
+		(window as any).__obsidianAiLogger?.log?.(
+			"debug",
+			`[Mentions] pilled ${pillsCreated} mention(s)`,
+		);
 	}
 }
 
@@ -174,6 +201,19 @@ interface MessageBubbleProps {
 	onToggleSelection?: (messageId: string) => void;
 }
 
+/** Searchable name for a context item, used for inline-mention dedup. */
+function contextItemName(item: ContextItem): string {
+	switch (item.type) {
+		case "note":
+		case "folder":
+			return item.name;
+		case "tag":
+			return item.tag;
+		case "active-note":
+			return "Active note";
+	}
+}
+
 function formatContextItems(items: ContextItem[]): string {
 	return items
 		.map((item) => {
@@ -278,6 +318,21 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	const longPressTimer = useRef<number | null>(null);
 	const longPressTriggered = useRef(false);
 
+	// Context items whose names don't appear in the message text are not
+	// rendered as inline mention pills, so the footer still shows them.
+	// Items already visible inline would be redundant there.
+	const totalContextItems = message.contextItems?.length ?? 0;
+	const visibleContextItems = useMemo(
+		() =>
+			message.role === "user"
+				? (message.contextItems ?? []).filter(
+						(item) =>
+							!message.content.includes(contextItemName(item)),
+					)
+				: [],
+		[message.role, message.contextItems, message.content],
+	);
+
 	const cancelLongPress = () => {
 		if (longPressTimer.current !== null)
 			window.clearTimeout(longPressTimer.current);
@@ -297,6 +352,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 	useEffect(() => {
 		return cancelLongPress;
 	}, []);
+
+	useEffect(() => {
+		if (message.role !== "user" || totalContextItems === 0) return;
+		(window as any).__obsidianAiLogger?.log?.(
+			"debug",
+			`[Mentions] context footer: ${visibleContextItems.length}/${totalContextItems} items shown (rest inline)`,
+		);
+	}, [message.role, totalContextItems, visibleContextItems.length]);
 
 	useEffect(() => {
 		if (!isActive) return;
@@ -342,7 +405,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 			className={`chat-bubble chat-bubble-${message.role}${message.agentId ? " chat-bubble-agent" : ""}${message.isError ? " chat-bubble-error" : ""}${isActive ? " is-active" : ""}${selected ? " chat-bubble-selected" : ""}${isStreaming ? " chat-bubble-streaming" : ""}`}
 			style={
 				message.agentColor && message.role === "assistant"
-					? ({ "--chat-agent-color": message.agentColor } as React.CSSProperties)
+					? ({
+							"--chat-agent-color": message.agentColor,
+						} as React.CSSProperties)
 					: undefined
 			}
 			onPointerDown={handlePointerDown}
@@ -440,19 +505,16 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 				</div>
 			)}
 
-			{/* Context tracking for user messages */}
-			{message.role === "user" &&
-				message.contextItems &&
-				message.contextItems.length > 0 && (
-					<div className="chat-message-context-footer">
-						<span className="chat-message-context-label">
-							Context:
-						</span>
-						<span className="chat-message-context-items">
-							{formatContextItems(message.contextItems)}
-						</span>
-					</div>
-				)}
+			{/* Context tracking for user messages — only items NOT already
+			    visible as inline mention pills in the message text. */}
+			{message.role === "user" && visibleContextItems.length > 0 && (
+				<div className="chat-message-context-footer">
+					<span className="chat-message-context-label">Context:</span>
+					<span className="chat-message-context-items">
+						{formatContextItems(visibleContextItems)}
+					</span>
+				</div>
+			)}
 
 			{/* Attachments for user messages */}
 			{message.role === "user" &&
@@ -643,7 +705,7 @@ function LegacyContent({
 		return () => {
 			unmounted = true;
 		};
-	}, [displayContent, app, renderMarkdown]);
+	}, [displayContent, app, renderMarkdown, contextItems]);
 
 	return <div ref={contentRef} className="chat-bubble-content" />;
 }

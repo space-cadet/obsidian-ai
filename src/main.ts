@@ -36,6 +36,9 @@ import {
 	loadSettings,
 	saveSettings,
 	loadChatData,
+	hydrateChatSession,
+	isChatSessionHydrated,
+	peekChatSessionMessages,
 	saveChatData,
 	syncPluginData,
 	onSessionEnd,
@@ -81,6 +84,7 @@ export default class ObsidianAIPlugin extends Plugin {
 	_updater: PluginUpdater | null = null;
 
 	async onload() {
+		const onloadStart = Date.now();
 		// Register the entry command before asynchronous migration/settings work so
 		// Obsidian's command palette can discover it even while startup completes.
 		this.addCommand({
@@ -90,8 +94,19 @@ export default class ObsidianAIPlugin extends Plugin {
 		});
 
 		await initializeStorage(this);
+		console.info(
+			`[ObsidianAI] startup: initializeStorage done in ${Date.now() - onloadStart}ms`,
+		);
+		this.logger?.log(
+			"info",
+			`[Startup] initializeStorage done in ${Date.now() - onloadStart}ms`,
+		);
 
 		registerChatView(this);
+		this.logger?.log(
+			"info",
+			`[Startup] chat view registered at ${Date.now() - onloadStart}ms`,
+		);
 		registerRibbonIcon(this);
 		registerEditorExtensions(this);
 		registerCommands(this);
@@ -142,8 +157,26 @@ export default class ObsidianAIPlugin extends Plugin {
 		return saveSettings(this);
 	}
 
-	async loadChatData(): Promise<StoredChatData> {
-		return loadChatData(this);
+	async loadChatData(
+		opts?: import("./storage/ChatStorage").LoadChatDataOptions,
+	): Promise<StoredChatData> {
+		return loadChatData(this, opts);
+	}
+
+	/** Read one session's message file into memory (index-only boot leaves
+		sessions unhydrated until first open). Returns [] for unknown ids. */
+	async hydrateSession(sessionId: string) {
+		return hydrateChatSession(this, sessionId);
+	}
+
+	/** Pure read of a session's messages without changing hydration state
+		(history copy/export, search). */
+	async peekSessionMessages(sessionId: string) {
+		return peekChatSessionMessages(this, sessionId);
+	}
+
+	isSessionHydrated(sessionId: string): boolean {
+		return isChatSessionHydrated(this, sessionId);
 	}
 
 	async saveChatData(chatData: StoredChatData): Promise<void> {

@@ -251,7 +251,8 @@ export function renderDiagnosticsSection(
 		);
 
 		try {
-			const chatData = await plugin.loadChatData();
+			// Full load: counts + usage need real message content.
+			const chatData = await plugin.loadChatData({ hydrate: true });
 			const sessionCount = chatData.sessions.length;
 			const msgCount = chatData.sessions.reduce(
 				(sum, s) => sum + s.messages.length,
@@ -373,7 +374,10 @@ export function renderDiagnosticsSection(
 				.onClick(async () => {
 					btn.setDisabled(true);
 					try {
-						const chatData = await plugin.loadChatData();
+						// Full load: usage summary needs real message content.
+						const chatData = await plugin.loadChatData({
+							hydrate: true,
+						});
 						const usage = summarizeLlmUsage(chatData.sessions);
 
 						// Redact sensitive settings

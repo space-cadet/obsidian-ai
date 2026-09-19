@@ -12,6 +12,7 @@ describe("chat fixtures", () => {
 			"multi-agent",
 			"relay-only",
 			"mobile",
+			"large",
 		]);
 	});
 

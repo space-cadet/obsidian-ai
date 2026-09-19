@@ -1,6 +1,10 @@
 import { normalizeSettings } from "../settings";
-import type { StoredChatData } from "../types";
-import { createStorage, type StorageDeps } from "../storage/ChatStorage";
+import type { ChatMessage, StoredChatData } from "../types";
+import {
+	createStorage,
+	type LoadChatDataOptions,
+	type StorageDeps,
+} from "../storage/ChatStorage";
 import type ObsidianAIPlugin from "../main";
 
 /** Build the dependencies shared by the chat storage implementations. */
@@ -98,6 +102,7 @@ export async function saveSettings(plugin: ObsidianAIPlugin): Promise<void> {
 
 export async function loadChatData(
 	plugin: ObsidianAIPlugin,
+	opts?: LoadChatDataOptions,
 ): Promise<StoredChatData> {
 	plugin.logger?.log("info", "loadChatData: delegating to storage layer");
 	if (!plugin._chatStorage) {
@@ -106,7 +111,34 @@ export async function loadChatData(
 			plugin.settings.chatStorageFormat,
 		);
 	}
-	return plugin._chatStorage.loadChatData();
+	return plugin._chatStorage.loadChatData(opts);
+}
+
+/** Read one session's message file into memory (index-only boot leaves
+	sessions unhydrated until first open). Returns [] for unknown ids. */
+export async function hydrateChatSession(
+	plugin: ObsidianAIPlugin,
+	sessionId: string,
+): Promise<ChatMessage[]> {
+	if (!plugin._chatStorage?.hydrateSession) return [];
+	return plugin._chatStorage.hydrateSession(sessionId);
+}
+
+/** Pure read for history copy/export and search — never mutates
+	hydration state, so unhydrated sessions keep their write guard. */
+export async function peekChatSessionMessages(
+	plugin: ObsidianAIPlugin,
+	sessionId: string,
+): Promise<ChatMessage[]> {
+	if (!plugin._chatStorage?.peekSessionMessages) return [];
+	return plugin._chatStorage.peekSessionMessages(sessionId);
+}
+
+export function isChatSessionHydrated(
+	plugin: ObsidianAIPlugin,
+	sessionId: string,
+): boolean {
+	return plugin._chatStorage?.isSessionHydrated?.(sessionId) ?? true;
 }
 
 export async function saveChatData(

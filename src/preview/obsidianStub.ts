@@ -35,3 +35,9 @@ export class TFolder {
 }
 
 export const Platform = { isMobile: false };
+
+export const requestUrl = async (..._args: unknown[]): Promise<any> => {
+	throw new Error("requestUrl is not available in the preview sandbox");
+};
+
+export class MarkdownView {}

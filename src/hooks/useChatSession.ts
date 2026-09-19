@@ -4,7 +4,11 @@ import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 import type { ProviderProfile } from "../settings";
 import type { ChatApiManager } from "../api";
 import { getActiveProviderProfile } from "../settings";
-import { makeId, pruneSessions } from "../lib/sessionUtils";
+import {
+	makeId,
+	pruneSessions,
+	sessionMessageCount,
+} from "../lib/sessionUtils";
 import {
 	generateSessionTitle,
 	generateSessionTitleLLM,
@@ -74,16 +78,35 @@ export function useChatSession({
 	// ─── Load persisted sessions on mount ───
 	useEffect(() => {
 		let cancelled = false;
+		const loadStart = Date.now();
+		plugin.logger?.log(
+			"info",
+			"[Startup] ChatApp mount — loading chat data…",
+		);
 		plugin.loadChatData().then((data) => {
 			if (cancelled) return;
+			plugin.logger?.log(
+				"info",
+				`[Startup] loadChatData resolved in ${Date.now() - loadStart}ms`,
+			);
 			const savedSessions = data.sessions.filter(
-				(session) => session.messages.length > 0,
+				// messageCount comes from the index, so this stays correct even
+				// when messages haven't been hydrated yet (index-only boot).
+				(session) => sessionMessageCount(session) > 0,
 			);
 			if (savedSessions.length > 0) {
 				// Preserve the loaded storage untouched unless this also removes legacy
 				// zero-message entries; those should be cleaned up on the next autosave.
 				skipNextAutosaveRef.current =
 					savedSessions.length === data.sessions.length;
+				const totalMessages = savedSessions.reduce(
+					(sum, s) => sum + sessionMessageCount(s),
+					0,
+				);
+				plugin.logger?.log(
+					"info",
+					`[Chat] restored ${savedSessions.length} session(s), ${totalMessages} message(s)`,
+				);
 				setSessions(savedSessions);
 				const restoredActiveId = savedSessions.some(
 					(session) => session.id === data.activeSessionId,
@@ -106,6 +129,39 @@ export function useChatSession({
 							? [restoredActiveId]
 							: [],
 				);
+				// Index-only boot: message files load in the background for the
+				// sessions visible right now (active + open tabs); every other
+				// session hydrates on first open via the open/send gates.
+				for (const id of new Set(
+					[restoredActiveId, ...restoredOpenIds].filter(
+						(id): id is string => typeof id === "string",
+					),
+				)) {
+					plugin
+						.hydrateSession?.(id)
+						.then((messages) => {
+							if (cancelled || messages.length === 0) return;
+							// Write through the ref synchronously (see send gate).
+							sessionsRef.current = sessionsRef.current.map(
+								(s) =>
+									s.id === id
+										? {
+												...s,
+												messages,
+												messageCount: messages.length,
+												hydrated: true,
+											}
+										: s,
+							);
+							setSessions(sessionsRef.current);
+						})
+						.catch((err: any) =>
+							plugin.logger?.log(
+								"warn",
+								`[Startup] hydrate ${id} failed: ${err?.message}`,
+							),
+						);
+				}
 			} else {
 				// No saved data — create an empty session
 				const activeProfile = getActiveProviderProfile(plugin.settings);
@@ -153,7 +209,9 @@ export function useChatSession({
 			}
 			saveTimerRef.current = window.setTimeout(() => {
 				const persistedSessions = sessions.filter(
-					(session) => session.messages.length > 0,
+					// messageCount keeps unhydrated sessions in the payload; the
+					// storage layer's guard skips writing their (empty) messages.
+					(session) => sessionMessageCount(session) > 0,
 				);
 				const persistedActiveSessionId = persistedSessions.some(
 					(session) => session.id === activeSessionId,
@@ -297,10 +355,13 @@ export function useChatSession({
 				const withNew = [...updated, newSession];
 				const max = plugin.settings.maxSavedConversations || 20;
 				const savedSessions = withNew.filter(
-					(session) => session.messages.length > 0,
+					(session) => sessionMessageCount(session) > 0,
 				);
+				// Mutually exclusive with savedSessions above: index-only sessions
+				// have empty in-memory messages but messages on disk — drafting
+				// them duplicates IDs in state and re-adds pruned sessions.
 				const draftSessions = withNew.filter(
-					(session) => session.messages.length === 0,
+					(session) => sessionMessageCount(session) === 0,
 				);
 				return [
 					...pruneSessions(savedSessions, max, currentActiveId),

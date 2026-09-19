@@ -66,6 +66,34 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 	// ═══════════════════════════════════════════════════════
 	const handleSend = useCallback(
 		async (text: string, attachments?: import("../types").Attachment[]) => {
+			// Index-only boot hard-gate: never send into a session whose messages
+			// are still on disk — appending to an empty in-memory copy would make
+			// the next save overwrite the real file. Await hydration first.
+			const sessionId = depsRef.current.activeSessionIdRef.current;
+			if (
+				sessionId &&
+				depsRef.current.plugin.isSessionHydrated?.(sessionId) === false
+			) {
+				const messages =
+					await depsRef.current.plugin.hydrateSession?.(sessionId);
+				if (messages && messages.length > 0) {
+					const d = depsRef.current;
+					// Write through the ref synchronously — TurnLifecycle reads
+					// sessionsRef.current directly, so a plain setState would leave
+					// it stale and send() would append to the empty copy.
+					d.sessionsRef.current = d.sessionsRef.current.map((s) =>
+						s.id === sessionId
+							? {
+									...s,
+									messages,
+									messageCount: messages.length,
+									hydrated: true,
+								}
+							: s,
+					);
+					d.setSessions(d.sessionsRef.current);
+				}
+			}
 			await lifecycleRef.current!.send(text, attachments);
 		},
 		[],

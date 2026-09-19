@@ -162,6 +162,12 @@ export interface ChatSession {
 	createdAt: number;
 	updatedAt: number;
 	messages: ChatMessage[];
+	/** Authoritative message count, valid even before messages are hydrated
+		(index-only boot). Falls back to messages.length when unset. */
+	messageCount?: number;
+	/** False while this session's messages exist on disk but haven't been
+		read into memory yet. Set by index-only boot, cleared on hydration. */
+	hydrated?: boolean;
 	contextItems: ContextItem[];
 	/** Non-destructive model-history summary; the full messages remain intact. */
 	compactionMetadata?: CompactionMetadata;

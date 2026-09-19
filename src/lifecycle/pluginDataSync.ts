@@ -252,7 +252,8 @@ function _buildSyncTargets(
 			remotePath: "usage-stats.json",
 			allowDownload: false,
 			readLocal: async () => {
-				const chatData = await plugin.loadChatData();
+				// Full load: usage stats need real message content.
+				const chatData = await plugin.loadChatData({ hydrate: true });
 				const { summarizeLlmUsage } = await import("../lib/usageStats");
 				const stats = summarizeLlmUsage(chatData.sessions || []);
 				return JSON.stringify(stats, null, 2);
@@ -266,9 +267,7 @@ function _buildSyncTargets(
 	return targets;
 }
 
-function _makeStateStore(
-	plugin: ObsidianAIPlugin,
-): {
+function _makeStateStore(plugin: ObsidianAIPlugin): {
 	load: () => Promise<PluginFileSyncState | null>;
 	save: (state: PluginFileSyncState) => Promise<void>;
 } {

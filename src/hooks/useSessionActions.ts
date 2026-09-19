@@ -3,7 +3,7 @@ import { Notice } from "obsidian";
 import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 import type { ChatSession, ContextItem } from "../types";
 import { getActiveProviderProfile } from "../settings";
-import { makeId } from "../lib/sessionUtils";
+import { makeId, sessionMessageCount } from "../lib/sessionUtils";
 
 interface UseSessionActionsOptions {
 	plugin: ChatPluginLike;
@@ -69,13 +69,45 @@ export function useSessionActions({
 }: UseSessionActionsOptions): UseSessionActionsResult {
 	const openSessionInTab = useCallback(
 		(sessionId: string, messageId?: string) => {
+			// Index-only boot: if this session's messages haven't been read yet,
+			// start loading them now and fill state when they arrive. The send
+			// gate awaits hydration, so a fast type-and-enter can't clobber.
+			const target = sessionsRef.current.find((s) => s.id === sessionId);
+			if (target && target.hydrated === false) {
+				plugin
+					.hydrateSession?.(sessionId)
+					.then((messages) => {
+						if (messages.length === 0) return;
+						// Write through the ref synchronously — anything reading
+						// sessionsRef.current before React re-renders must see the
+						// hydrated messages, not the empty boot copy.
+						sessionsRef.current = sessionsRef.current.map((s) =>
+							s.id === sessionId
+								? {
+										...s,
+										messages,
+										messageCount: messages.length,
+										hydrated: true,
+									}
+								: s,
+						);
+						setSessions(sessionsRef.current);
+					})
+					.catch(() => {});
+			}
 			setOpenSessionIds((current) =>
 				current.includes(sessionId) ? current : [...current, sessionId],
 			);
 			setActiveSessionId(sessionId);
 			setScrollToMessageId(messageId);
 		},
-		[setActiveSessionId, setScrollToMessageId],
+		[
+			plugin,
+			sessionsRef,
+			setSessions,
+			setActiveSessionId,
+			setScrollToMessageId,
+		],
 	);
 
 	// Listen for external open-session events
@@ -172,9 +204,14 @@ export function useSessionActions({
 	const handleCloseTab = useCallback(
 		(sessionId: string) => {
 			clearSessionRuntime(sessionId);
+			const closeTarget = sessionsRef.current.find(
+				(session) => session.id === sessionId,
+			);
+			// Unhydrated saved sessions hold messages on disk (messageCount > 0)
+			// even though their in-memory list is still empty — never treat them
+			// as drafts, or closing a tab orphans their file.
 			const isDraft =
-				sessionsRef.current.find((session) => session.id === sessionId)
-					?.messages.length === 0;
+				!!closeTarget && sessionMessageCount(closeTarget) === 0;
 			if (isDraft) {
 				setSessions((current) =>
 					current.filter((session) => session.id !== sessionId),

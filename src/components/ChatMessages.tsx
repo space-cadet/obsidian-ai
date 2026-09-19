@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, memo } from "react";
 import { App } from "obsidian";
 import { ChatMessage, ContentPart } from "../types";
 import { createRoot } from "react-dom/client";
@@ -273,6 +273,52 @@ interface ChatMessagesProps {
 	onToggleSelection?: (messageId: string) => void;
 }
 
+interface MessageRowProps {
+	msg: ChatMessage;
+	app: App;
+	renderMarkdown: ChatMessagesProps["renderMarkdown"];
+	showThinking?: boolean;
+	onOpenPastSession?: (sessionId: string, messageId: string) => void;
+	onAppend: (content: string) => void;
+	onInsertAtCursor: (content: string) => void;
+	onApply: (content: string) => void;
+	onRetry: (messageId: string) => void;
+	onEdit: (messageId: string) => void;
+	onApplyToTarget: (content: string, target: string) => void;
+	onCreateNote: (content: string, target: string) => void;
+	onAppendToTarget: (content: string, target: string) => void;
+	selectionMode?: boolean;
+	selected?: boolean;
+	onLongPress?: (messageId: string) => void;
+	onToggleSelection?: (messageId: string) => void;
+}
+
+/**
+ * Memoized per-message row. The parent re-renders on every scroll-position and
+ * streaming state change; without memo, every bubble in the session
+ * reconciles each time, which is the main source of scroll jank in long chats.
+ * The per-message arrow closures are built here so they only change when the
+ * message itself changes.
+ */
+/** Transition-only debug logging; no-ops unless the file logger is at debug level. */
+const debugLog = (...args: unknown[]) => {
+	(window as any).__obsidianAiLogger?.log?.("debug", ...args);
+};
+
+const MessageRow: React.FC<MessageRowProps> = memo(
+	({ msg, onRetry, onEdit, selected, ...rest }) => (
+		<div data-message-id={msg.id}>
+			<MessageBubble
+				{...rest}
+				message={msg}
+				selected={selected}
+				onRetry={() => onRetry(msg.id)}
+				onEdit={() => onEdit(msg.id)}
+			/>
+		</div>
+	),
+);
+
 const ChatMessages: React.FC<ChatMessagesProps> = ({
 	sessionId,
 	restoreScrollTop,
@@ -305,10 +351,26 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	const bottomRef = useRef<HTMLDivElement>(null);
 	const [showScrollTop, setShowScrollTop] = useState(false);
 	const [showScrollBottom, setShowScrollBottom] = useState(false);
-	const isNearBottomRef = useRef(true);
+	/** Auto-follow mode: true while the view should track new content. Engages
+		on send and when the user is at the bottom; disengages when the user
+		scrolls away, re-engages when they return to the bottom. */
+	const followRef = useRef(true);
 	const prevMessagesLength = useRef(messages.length);
+	const hasMessages = messages.length > 0;
+	/** Saved scroll position deferred from a session switch that landed on an
+		index-only session (DOM still empty, so the browser clamped the restore
+		to 0). The restore effect re-applies it once hydration fills the
+		transcript; the follow effect must leave that fill growth alone. */
+	const pendingHydrationRestoreRef = useRef<number | null>(null);
 
-	/** Check scroll position and update button visibility */
+	/** Jump the container to the very bottom without touching outer panes. */
+	const scrollToBottomInstant = useCallback(() => {
+		const container = scrollRef.current;
+		if (!container) return;
+		container.scrollTop = container.scrollHeight;
+	}, []);
+
+	/** Check scroll position, sync follow mode, and update button visibility */
 	const checkScrollPosition = useCallback(() => {
 		const container = scrollRef.current;
 		if (!container) return;
@@ -318,10 +380,23 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 			container.scrollTop -
 			container.clientHeight;
 		const atBottom = distanceFromBottom < threshold;
-		isNearBottomRef.current = atBottom;
+		if (atBottom !== followRef.current) {
+			debugLog(
+				`[ChatScroll] follow ${atBottom ? "engaged (near bottom)" : "released (scrolled away)"} — ${Math.round(distanceFromBottom)}px from bottom`,
+			);
+		}
+		followRef.current = atBottom;
 		setShowScrollBottom(!atBottom && messages.length > 0);
 		setShowScrollTop(container.scrollTop > 200);
 	}, [messages.length]);
+
+	/** Latest checkScrollPosition, so effects can invoke it without depending
+		on its identity — it changes with messages.length, which would
+		otherwise re-run them on every new message. */
+	const checkScrollPositionRef = useRef(checkScrollPosition);
+	useEffect(() => {
+		checkScrollPositionRef.current = checkScrollPosition;
+	});
 
 	/** Attach scroll listener */
 	useEffect(() => {
@@ -337,52 +412,87 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		return () => container.removeEventListener("scroll", onScroll);
 	}, [checkScrollPosition, onScrollPositionChange, sessionId]);
 
-	/** Restore the active tab's saved position after its message DOM has rendered. */
+	/** Restore the active tab's saved position after its message DOM has
+		rendered. Runs on session switch / restore-value change, and once more
+		when an index-only session's first messages render — but NOT on ongoing
+		message growth, so a stale saved position can never fight the follow
+		scroll on send. */
 	useEffect(() => {
 		const container = scrollRef.current;
 		if (!container || !sessionId) return;
 		const frame = requestAnimationFrame(() => {
-			container.scrollTop = Math.max(0, restoreScrollTop ?? 0);
-			checkScrollPosition();
+			const top = Math.max(0, restoreScrollTop ?? 0);
+			if (!hasMessages && top > 0) {
+				// Index-only session mid-hydration: the DOM has no content yet
+				// and the browser clamps scrollTop to 0. Remember the target;
+				// the hasMessages dependency re-runs this effect exactly once
+				// when the transcript lands.
+				pendingHydrationRestoreRef.current = top;
+				return;
+			}
+			pendingHydrationRestoreRef.current = null;
+			container.scrollTop = top;
+			debugLog(
+				`[ChatScroll] restored saved position ${Math.round(container.scrollTop)}px for session ${sessionId}`,
+			);
+			checkScrollPositionRef.current();
 		});
 		return () => cancelAnimationFrame(frame);
-	}, [sessionId, restoreScrollTop, messages.length, checkScrollPosition]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- checkScrollPosition is read via ref; hasMessages gates the one-shot index-only re-run.
+	}, [sessionId, restoreScrollTop, hasMessages]);
 
-	/** Auto-scroll to bottom on new messages or streaming content — but ONLY if user is already near bottom */
+	/** Follow new content to the bottom: always on local send, otherwise only
+		while follow mode is engaged (user is at / returned to the bottom). */
 	useEffect(() => {
-		if (messages.length > prevMessagesLength.current || isStreaming) {
-			if (isNearBottomRef.current) {
-				bottomRef.current?.scrollIntoView({ behavior: "auto" });
-			}
-			// Update button visibility after render
+		const grew = messages.length > prevMessagesLength.current;
+		// Index-only hydration fill: the restore effect owns positioning for
+		// this growth — following it would yank the user to the bottom.
+		if (grew && pendingHydrationRestoreRef.current != null) {
+			pendingHydrationRestoreRef.current = null;
+			prevMessagesLength.current = messages.length;
 			requestAnimationFrame(checkScrollPosition);
+			return;
+		}
+		const lastIsUser =
+			messages.length > 0 &&
+			messages[messages.length - 1]?.role === "user";
+		if (grew && lastIsUser) {
+			// Local send: bring the new message and its reply into view even if
+			// the user was reading history above.
+			if (!followRef.current) {
+				debugLog(
+					`[ChatScroll] new user message while scrolled up — follow forced on, jumping to bottom`,
+				);
+			}
+			followRef.current = true;
+		}
+		if ((grew || isStreaming) && followRef.current) {
+			if (grew) {
+				debugLog(
+					`[ChatScroll] following new message to bottom (streaming: ${Boolean(isStreaming)})`,
+				);
+			}
+			scrollToBottomInstant();
 		}
 		prevMessagesLength.current = messages.length;
-	}, [messages, isStreaming, currentAiMessage, checkScrollPosition]);
+		// Update button visibility after render
+		requestAnimationFrame(checkScrollPosition);
+	}, [
+		messages,
+		isStreaming,
+		currentAiMessage,
+		checkScrollPosition,
+		scrollToBottomInstant,
+	]);
 
-	/** Scroll to bottom on mount if there are messages */
+	/** Scroll to bottom on mount when there are messages and no saved position to restore. */
 	useEffect(() => {
-		if (messages.length > 0) {
-			bottomRef.current?.scrollIntoView({ behavior: "auto" });
-			isNearBottomRef.current = true;
+		if (messages.length > 0 && restoreScrollTop == null) {
+			scrollToBottomInstant();
 		}
+		followRef.current = true;
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only scroll positioning intentionally ignores changing message dependencies.
 	}, []);
-
-	useEffect(() => {
-		if (!scrollToMessageId) return;
-		const target = scrollRef.current?.querySelector<HTMLElement>(
-			`[data-message-id="${scrollToMessageId}"]`,
-		);
-		if (!target) return;
-		target.scrollIntoView({ behavior: "smooth", block: "center" });
-		target.classList.add("chat-message-highlight");
-		const timer = window.setTimeout(
-			() => target.classList.remove("chat-message-highlight"),
-			2000,
-		);
-		return () => window.clearTimeout(timer);
-	}, [scrollToMessageId, messages]);
 
 	useEffect(() => {
 		if (!scrollToMessageId) return;
@@ -404,8 +514,17 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	}, []);
 
 	const scrollToBottom = useCallback(() => {
-		bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-		isNearBottomRef.current = true;
+		debugLog(
+			"[ChatScroll] ↓ button — follow engaged, smooth scroll to bottom",
+		);
+		followRef.current = true;
+		const container = scrollRef.current;
+		if (container) {
+			container.scrollTo({
+				top: container.scrollHeight,
+				behavior: "smooth",
+			});
+		}
 		setShowScrollBottom(false);
 	}, []);
 
@@ -421,27 +540,26 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 					</div>
 				)}
 				{messages.map((msg) => (
-					<div key={msg.id} data-message-id={msg.id}>
-						<MessageBubble
-							message={msg}
-							app={app}
-							renderMarkdown={renderMarkdown}
-							showThinking={showThinking}
-							onOpenPastSession={onOpenPastSession}
-							onAppend={onAppend}
-							onInsertAtCursor={onInsertAtCursor}
-							onApply={onApply}
-							onRetry={() => onRetry(msg.id)}
-							onEdit={() => onEdit(msg.id)}
-							onApplyToTarget={onApplyToTarget}
-							onCreateNote={onCreateNote}
-							onAppendToTarget={onAppendToTarget}
-							selectionMode={selectionMode}
-							selected={selectedMessageIds?.has(msg.id)}
-							onLongPress={onLongPress}
-							onToggleSelection={onToggleSelection}
-						/>
-					</div>
+					<MessageRow
+						key={msg.id}
+						msg={msg}
+						app={app}
+						renderMarkdown={renderMarkdown}
+						showThinking={showThinking}
+						onOpenPastSession={onOpenPastSession}
+						onAppend={onAppend}
+						onInsertAtCursor={onInsertAtCursor}
+						onApply={onApply}
+						onRetry={onRetry}
+						onEdit={onEdit}
+						onApplyToTarget={onApplyToTarget}
+						onCreateNote={onCreateNote}
+						onAppendToTarget={onAppendToTarget}
+						selectionMode={selectionMode}
+						selected={selectedMessageIds?.has(msg.id)}
+						onLongPress={onLongPress}
+						onToggleSelection={onToggleSelection}
+					/>
 				))}
 				{isStreaming && currentAiMessage && (
 					<StreamingBubble

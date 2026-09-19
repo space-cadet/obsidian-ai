@@ -58,6 +58,7 @@ export class ChatApiManager {
 	private app: App;
 	private settings: ObsidianAISettings;
 	private messageHistory: MessageQueue<HistoryMessage>;
+	private logger?: { log: (level: string, ...args: any[]) => void };
 
 	/**
 	 * Initializes the ChatApiManager with the given settings.
@@ -70,6 +71,11 @@ export class ChatApiManager {
 		this.messageHistory = new MessageQueue<HistoryMessage>(
 			settings.messageHistory ? settings.maxContextMessages || 50 : 0,
 		);
+	}
+
+	/** Attach the file logger (wired by storage lifecycle after creation). */
+	setLogger(logger: { log: (level: string, ...args: any[]) => void }) {
+		this.logger = logger;
 	}
 
 	/**
@@ -158,9 +164,13 @@ export class ChatApiManager {
 		thinkingEnabled?: boolean,
 		onUsage?: (usage: ProviderTokenUsage) => void,
 	): AsyncIterable<string> {
-		const model = createLanguageModel(
-			profile ?? getActiveProviderProfile(this.settings),
+		const activeProfile =
+			profile ?? getActiveProviderProfile(this.settings);
+		this.logger?.log(
+			"debug",
+			`[API] stream start — model ${activeProfile.model}, ${messages.length} message(s)`,
 		);
+		const model = createLanguageModel(activeProfile);
 		if (!model) {
 			throw new Error("Chat client is not initialized.");
 		}
@@ -195,11 +205,21 @@ export class ChatApiManager {
 			),
 		});
 
-		for await (const chunk of result.textStream) {
-			yield chunk;
-		}
-		if (onUsage) {
-			onUsage(normalizeProviderUsage(await result.usage));
+		try {
+			for await (const chunk of result.textStream) {
+				yield chunk;
+			}
+			if (onUsage) {
+				onUsage(normalizeProviderUsage(await result.usage));
+			}
+		} catch (e: any) {
+			if (!signal?.aborted && e?.name !== "AbortError") {
+				this.logger?.log(
+					"error",
+					`[API] stream error — model ${activeProfile.model}: ${e?.message ?? String(e)}`,
+				);
+			}
+			throw e;
 		}
 	}
 
@@ -219,13 +239,29 @@ export class ChatApiManager {
 		profile?: ProviderProfile,
 		thinkingEnabled?: boolean,
 	): AsyncIterable<StreamEvent> {
-		yield* _streamChatWithTools(
-			messages,
-			tools,
-			signal,
-			profile ?? getActiveProviderProfile(this.settings),
-			thinkingEnabled,
+		const activeProfile =
+			profile ?? getActiveProviderProfile(this.settings);
+		this.logger?.log(
+			"debug",
+			`[API] tool-step stream start — model ${activeProfile.model}, ${messages.length} message(s)`,
 		);
+		try {
+			yield* _streamChatWithTools(
+				messages,
+				tools,
+				signal,
+				activeProfile,
+				thinkingEnabled,
+			);
+		} catch (e: any) {
+			if (!signal?.aborted && e?.name !== "AbortError") {
+				this.logger?.log(
+					"error",
+					`[API] tool-step stream error — model ${activeProfile.model}: ${e?.message ?? String(e)}`,
+				);
+			}
+			throw e;
+		}
 	}
 
 	/**

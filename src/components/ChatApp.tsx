@@ -29,7 +29,11 @@ import { parseMentions } from "../agent/MentionParser";
 import { getAgentColor, getAgentIcon } from "../lib/agentVisuals";
 import { contextItemKey, sameContextItems } from "../lib/contextUtils";
 import { parseSlashCommand, SlashCommand } from "../lib/slashCommand";
-import { makeId, getSessionTotalTokens } from "../lib/sessionUtils";
+import {
+	makeId,
+	getSessionTotalTokens,
+	sessionMessageCount,
+} from "../lib/sessionUtils";
 import { buildSystemPrompt } from "../lib/systemPrompt";
 import { useChatSession } from "../hooks/useChatSession";
 import { useChatUI } from "../hooks/useChatUI";
@@ -64,10 +68,7 @@ import { getActiveProviderProfile, ProviderProfile } from "../settings";
 import { resolveSessionProfile as resolveProfileForSession } from "../lib/sessionProfile";
 import { rememberRecentModel } from "../lib/recentModels";
 import { stripThinkingTags } from "./MessageBubble";
-import {
-	serializeChatExport,
-	generateFilename,
-} from "../utils/exportChat";
+import { serializeChatExport, generateFilename } from "../utils/exportChat";
 import type { ExportFormat } from "./presentational/ExportModal";
 import { WebSocketSyncAdapter } from "../sync/WebSocketSyncAdapter";
 import type { SyncAdapter } from "../sync/SyncAdapter";
@@ -113,7 +114,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	>(initialMessageId);
 	const [thinkingEnabled, setThinkingEnabled] = useState(false);
 	const savedSessions = useMemo(
-		() => sessions.filter((session) => session.messages.length > 0),
+		() => sessions.filter((session) => sessionMessageCount(session) > 0),
 		[sessions],
 	);
 
@@ -127,8 +128,12 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	const messagesRef = useRef<ChatMessage[]>([]);
 
 	useEffect(() => {
-		const refreshFromSettings = () => setSettingsRevision((revision) => revision + 1);
-		window.addEventListener("obsidian-ai:settings-changed", refreshFromSettings);
+		const refreshFromSettings = () =>
+			setSettingsRevision((revision) => revision + 1);
+		window.addEventListener(
+			"obsidian-ai:settings-changed",
+			refreshFromSettings,
+		);
 		return () =>
 			window.removeEventListener(
 				"obsidian-ai:settings-changed",
@@ -893,9 +898,17 @@ const ChatApp: React.FC<ChatAppProps> = ({
 
 	const handleSessionCopy = useCallback(
 		async (session: ChatSession, format: ExportFormat) => {
+			// Index-only sessions hold no messages in memory yet — read the
+			// file via a pure peek (hydration state untouched) first.
+			let resolved = session;
+			if (!session.hydrated && session.messageCount != null) {
+				const messages =
+					(await plugin.peekSessionMessages?.(session.id)) ?? [];
+				if (messages.length > 0) resolved = { ...session, messages };
+			}
 			const content = serializeChatExport({
 				kind: "sessions",
-				sessions: [session],
+				sessions: [resolved],
 				scope: "single",
 				format,
 				options: {
@@ -915,9 +928,16 @@ const ChatApp: React.FC<ChatAppProps> = ({
 
 	const handleSessionExport = useCallback(
 		async (session: ChatSession, format: ExportFormat) => {
+			// Same pure peek as handleSessionCopy before serializing.
+			let resolved = session;
+			if (!session.hydrated && session.messageCount != null) {
+				const messages =
+					(await plugin.peekSessionMessages?.(session.id)) ?? [];
+				if (messages.length > 0) resolved = { ...session, messages };
+			}
 			const content = serializeChatExport({
 				kind: "sessions",
-				sessions: [session],
+				sessions: [resolved],
 				scope: "single",
 				format,
 				options: {

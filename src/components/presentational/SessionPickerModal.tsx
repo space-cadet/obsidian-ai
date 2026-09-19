@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { ChatSession } from "../../types";
-import { getSessionTotalTokens } from "../../lib/sessionUtils";
+import {
+	getSessionTotalTokens,
+	sessionMessageCount,
+} from "../../lib/sessionUtils";
 import type { ExportFormat } from "./ExportModal";
 
 interface SessionPickerModalProps {
@@ -46,7 +49,8 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 
 	// Sort by updatedAt descending (newest first)
 	const sorted = sessions
-		.filter((session) => session.messages.length > 0)
+		// messageCount keeps index-only (unhydrated) sessions visible.
+		.filter((session) => sessionMessageCount(session) > 0)
 		.sort((a, b) => b.updatedAt - a.updatedAt);
 
 	const startRename = (session: ChatSession) => {
@@ -101,9 +105,14 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 						<div className="chat-session-list">
 							{sorted.map((session) => {
 								const isActive = session.id === activeSessionId;
-								const firstUserMsg = session.messages.find(
-									(m) => m.role === "user",
-								);
+								// Snippet only once hydrated; unhydrated sessions
+								// fall back to their index title.
+								const firstUserMsg =
+									session.hydrated === false
+										? undefined
+										: session.messages.find(
+												(m) => m.role === "user",
+											);
 								const preview = firstUserMsg
 									? firstUserMsg.content.slice(0, 60) +
 										(firstUserMsg.content.length > 60
@@ -157,7 +166,7 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 												</div>
 											)}
 											<div className="chat-session-meta">
-												{session.messages.length}{" "}
+												{sessionMessageCount(session)}{" "}
 												messages ·{" "}
 												{formatRelativeTime(
 													session.updatedAt,

@@ -665,6 +665,13 @@ export class TurnLifecycle {
 			estimatedTokens: userTokenEstimate,
 		};
 
+		deps.plugin.logger?.log(
+			"info",
+			`[Chat] user message — session ${currentActiveId.slice(0, 8)}, ` +
+				`${attachments?.length ?? 0} attachment(s), ` +
+				`${sendContextItems?.length ?? 0} context item(s), ` +
+				`~${userTokenEstimate} tokens`,
+		);
 		deps.setSessions((prev) =>
 			prev.map((s) =>
 				s.id === currentActiveId
@@ -905,6 +912,7 @@ export class TurnLifecycle {
 			deps.plugin.manifest?.id,
 			undefined,
 			() => deps.sessionsRef.current,
+			deps.plugin.logger,
 		);
 		this.currentToolExecutor = toolExecutor;
 		const resolvedToolRegistry = toolExecutor.getResolvedToolRegistry();
@@ -1195,6 +1203,13 @@ export class TurnLifecycle {
 							: undefined,
 				agentStepTelemetry,
 			};
+			deps.plugin.logger?.log(
+				"info",
+				`[Chat] reply complete — session ${currentActiveId.slice(0, 8)}, ` +
+					`model ${activeProfile.model}, ` +
+					`~${assistantTokenEstimate} tokens, ` +
+					`${assistantMsg.responseTimeMs ?? Date.now() - streamStartTime}ms`,
+			);
 			deps.setSessions((prev) =>
 				prev.map((s) =>
 					s.id === currentActiveId
@@ -1246,6 +1261,10 @@ export class TurnLifecycle {
 					contentParts: interruptedParts,
 					isError: e.name !== "AbortError",
 				};
+				deps.plugin.logger?.log(
+					"info",
+					`[Chat] reply interrupted — session ${currentActiveId.slice(0, 8)} after ${Date.now() - streamStartTime}ms`,
+				);
 				deps.setSessions((prev) =>
 					prev.map((s) =>
 						s.id === currentActiveId
@@ -1269,6 +1288,10 @@ export class TurnLifecycle {
 					command: commandMeta,
 					estimatedTokens: estimateTokens(`Error: ${e.message}`),
 				};
+				deps.plugin.logger?.log(
+					"error",
+					`[Chat] turn error — session ${currentActiveId.slice(0, 8)}: ${e.message ?? String(e)}`,
+				);
 				deps.setSessions((prev) =>
 					prev.map((s) =>
 						s.id === currentActiveId

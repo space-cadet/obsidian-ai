@@ -20,6 +20,10 @@ export class TurnActionController {
 	stop = (): void => {
 		const deps = this.getDeps();
 		const currentActiveId = deps.activeSessionIdRef.current;
+		deps.plugin.logger?.log(
+			"info",
+			`[Chat] stopped — session ${currentActiveId?.slice(0, 8)}`,
+		);
 		deps.getRuntime(currentActiveId).controller?.abort();
 	};
 
@@ -70,6 +74,12 @@ export class TurnActionController {
 		if (userMsg.contextItems && userMsg.contextItems.length > 0) {
 			deps.setContextItems(userMsg.contextItems);
 		}
+		deps.plugin.logger?.log(
+			"info",
+			`[Chat] retry — session ${currentActiveId.slice(0, 8)}, ` +
+				`restored ${userMsg.attachments?.length ?? 0} attachment(s), ` +
+				`${userMsg.contextItems?.length ?? 0} context item(s)`,
+		);
 
 		void this.send(userMsg.content, userMsg.attachments);
 	};
@@ -106,6 +116,12 @@ export class TurnActionController {
 						}
 					: s,
 			),
+		);
+		deps.plugin.logger?.log(
+			"info",
+			`[Chat] edit — session ${currentActiveId.slice(0, 8)}, ` +
+				`restored ${msg.attachments?.length ?? 0} attachment(s), ` +
+				`${msg.contextItems?.length ?? 0} context item(s)`,
 		);
 		deps.ui.setIsEditing(true);
 		deps.ui.setEditMessageText(msg.content);
@@ -152,6 +168,9 @@ export class TurnActionController {
 				deps.plugin.integrationRegistry,
 				deps.plugin.saveSettings.bind(deps.plugin),
 				deps.plugin.manifest?.id,
+				undefined,
+				undefined,
+				deps.plugin.logger,
 			);
 		const result = await toolExecutor.execute(pendingToolCall);
 		runtime.resolveTool?.(result);

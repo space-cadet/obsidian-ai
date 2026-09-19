@@ -626,10 +626,17 @@ export const normalizeSettings = (
 				merged.intelligence?.memoryPath ?? "intelligence/memory.md",
 			identityContextBudget:
 				merged.intelligence?.identityContextBudget ?? 2000,
-		memoryCoreSize:
-			merged.intelligence?.memoryCoreSize ?? "medium",
-		memoryBackupRetention: Number.isFinite(merged.intelligence?.memoryBackupRetention)
-			? Math.max(0, Math.min(50, merged.intelligence!.memoryBackupRetention!))
+			memoryCoreSize: merged.intelligence?.memoryCoreSize ?? "medium",
+			memoryBackupRetention: Number.isFinite(
+				merged.intelligence?.memoryBackupRetention,
+			)
+				? Math.max(
+						0,
+						Math.min(
+							50,
+							merged.intelligence!.memoryBackupRetention!,
+						),
+					)
 				: 20,
 			autoSummarize: Boolean(merged.intelligence?.autoSummarize ?? false),
 			autoSummarizeMinMessages:
@@ -719,7 +726,8 @@ export const normalizeSettings = (
 			providerProfiles,
 		),
 		collapsedSections:
-			typeof merged.collapsedSections === 'object' && merged.collapsedSections !== null
+			typeof merged.collapsedSections === "object" &&
+			merged.collapsedSections !== null
 				? merged.collapsedSections
 				: {},
 	};
@@ -768,6 +776,3 @@ const normalizeProviderProfile = (
 		model: profile.model || getDefaultModel(provider),
 	});
 };
-
-// Re-export SettingsTab for backward compatibility
-export { ObsidianAISettingsTab } from "./settings-sections/SettingsTab";
