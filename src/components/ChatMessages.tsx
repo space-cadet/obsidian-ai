@@ -477,7 +477,13 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		prevMessagesLength.current = messages.length;
 		// Update button visibility after render
 		requestAnimationFrame(checkScrollPosition);
-	}, [messages, isStreaming, currentAiMessage, checkScrollPosition, scrollToBottomInstant]);
+	}, [
+		messages,
+		isStreaming,
+		currentAiMessage,
+		checkScrollPosition,
+		scrollToBottomInstant,
+	]);
 
 	/** Scroll to bottom on mount when there are messages and no saved position to restore. */
 	useEffect(() => {

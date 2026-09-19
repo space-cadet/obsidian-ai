@@ -68,9 +68,8 @@ describe("ChatMessages follow-scroll vs restore race", () => {
 			/>,
 		);
 
-		const container = document.querySelector<HTMLElement>(
-			".chat-messages",
-		)!;
+		const container =
+			document.querySelector<HTMLElement>(".chat-messages")!;
 		Object.defineProperty(container, "scrollHeight", {
 			value: 2000,
 			configurable: true,
@@ -102,12 +101,15 @@ describe("ChatMessages follow-scroll vs restore race", () => {
 		// loaded, saved position 500. The DOM is empty, so the restore cannot
 		// apply yet — the browser would clamp it to 0.
 		const { rerender } = render(
-			<ChatMessages {...baseProps} messages={[]} restoreScrollTop={500} />,
-			);
+			<ChatMessages
+				{...baseProps}
+				messages={[]}
+				restoreScrollTop={500}
+			/>,
+		);
 
-		const container = document.querySelector<HTMLElement>(
-			".chat-messages",
-		)!;
+		const container =
+			document.querySelector<HTMLElement>(".chat-messages")!;
 		Object.defineProperty(container, "scrollHeight", {
 			value: 2000,
 			configurable: true,
@@ -136,9 +138,8 @@ describe("ChatMessages follow-scroll vs restore race", () => {
 			<ChatMessages {...baseProps} messages={[]} restoreScrollTop={0} />,
 		);
 
-		const container = document.querySelector<HTMLElement>(
-			".chat-messages",
-		)!;
+		const container =
+			document.querySelector<HTMLElement>(".chat-messages")!;
 		Object.defineProperty(container, "scrollHeight", {
 			value: 2000,
 			configurable: true,

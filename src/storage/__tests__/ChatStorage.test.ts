@@ -74,7 +74,6 @@ describe("ChatStorage", () => {
 	});
 });
 
-
 function makeAdapter(files: Map<string, string>) {
 	return {
 		exists: vi.fn(async (path: string) => files.has(path)),
@@ -298,9 +297,10 @@ describe("JsonlStorage hydrate-all write protection (Codex P1)", () => {
 			sessions: boot.sessions,
 			activeSessionId: null,
 		});
-		const written = (
-			files.get(sessionPath("s1")) ?? ""
-		).trim().split("\n").filter(Boolean);
+		const written = (files.get(sessionPath("s1")) ?? "")
+			.trim()
+			.split("\n")
+			.filter(Boolean);
 		expect(written).toHaveLength(2);
 		expect(adapter.write).not.toHaveBeenCalledWith(
 			sessionPath("s1"),
@@ -313,7 +313,10 @@ describe("JsonlStorage metadata reads preserve hydration state (Codex wave-3 P1)
 	it("sync-style metadata read does not re-flag an already-hydrated session", async () => {
 		const files = new Map<string, string>();
 		await makeStorage(files).storage.saveChatData({
-			sessions: [makeSession("a", ["hello"]), makeSession("b", ["world"])],
+			sessions: [
+				makeSession("a", ["hello"]),
+				makeSession("b", ["world"]),
+			],
 			activeSessionId: "a",
 		});
 
@@ -359,7 +362,10 @@ describe("JsonlStorage metadata reads preserve hydration state (Codex wave-3 P1)
 	it("save guard still protects never-opened sessions after a metadata read", async () => {
 		const files = new Map<string, string>();
 		await makeStorage(files).storage.saveChatData({
-			sessions: [makeSession("a", ["hello"]), makeSession("b", ["precious"])],
+			sessions: [
+				makeSession("a", ["hello"]),
+				makeSession("b", ["precious"]),
+			],
 			activeSessionId: "a",
 		});
 		const before = files.get(sessionPath("b"));

@@ -150,7 +150,10 @@ const SESSIONS_DIR = "sessions";
 class JsonlStorage implements ChatStorage {
 	private deps: StorageDeps;
 	private lastSavedState: {
-		sessions: Map<string, { messageIds: string[] | null; updatedAt: number }>;
+		sessions: Map<
+			string,
+			{ messageIds: string[] | null; updatedAt: number }
+		>;
 		activeSessionId: string | null;
 	} | null = null;
 	/** Sessions booted from the index whose message files have NOT been read
@@ -240,7 +243,11 @@ class JsonlStorage implements ChatStorage {
 
 		const totalBytes = sessions.reduce(
 			(sum, s) =>
-				sum + s.messages.reduce((m, msg) => m + (msg.content?.length ?? 0), 0),
+				sum +
+				s.messages.reduce(
+					(m, msg) => m + (msg.content?.length ?? 0),
+					0,
+				),
 			0,
 		);
 		this.deps.logger?.log(
@@ -262,8 +269,8 @@ class JsonlStorage implements ChatStorage {
 							? this.unhydratedSessions.has(s.id)
 								? (this.lastSavedState?.sessions.get(s.id)
 										?.messageIds ?? null)
-							: s.messages.map((m) => m.id)
-						: null,
+								: s.messages.map((m) => m.id)
+							: null,
 						updatedAt: s.updatedAt,
 					},
 				]),
@@ -321,7 +328,8 @@ class JsonlStorage implements ChatStorage {
 		const entry = this.unhydratedSessions.get(sessionId);
 		const adapter = this.deps.app.vault.adapter;
 		const pluginDir = `${this.deps.app.vault.configDir}/plugins/${this.deps.manifest.id}`;
-		const filePath = entry?.filePath ?? `${SESSIONS_DIR}/${sessionId}.jsonl`;
+		const filePath =
+			entry?.filePath ?? `${SESSIONS_DIR}/${sessionId}.jsonl`;
 		return this._loadMessages(`${pluginDir}/${filePath}`);
 	}
 
