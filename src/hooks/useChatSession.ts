@@ -4,7 +4,11 @@ import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 import type { ProviderProfile } from "../settings";
 import type { ChatApiManager } from "../api";
 import { getActiveProviderProfile } from "../settings";
-import { makeId, pruneSessions, sessionMessageCount } from "../lib/sessionUtils";
+import {
+	makeId,
+	pruneSessions,
+	sessionMessageCount,
+} from "../lib/sessionUtils";
 import {
 	generateSessionTitle,
 	generateSessionTitleLLM,
@@ -125,38 +129,39 @@ export function useChatSession({
 							? [restoredActiveId]
 							: [],
 				);
-			// Index-only boot: message files load in the background for the
-			// sessions visible right now (active + open tabs); every other
-			// session hydrates on first open via the open/send gates.
-			for (const id of new Set(
-				[restoredActiveId, ...restoredOpenIds].filter(
-					(id): id is string => typeof id === "string",
-				),
-			)) {
-				plugin.hydrateSession
-					?.(id)
-					.then((messages) => {
-						if (cancelled || messages.length === 0) return;
-						// Write through the ref synchronously (see send gate).
-						sessionsRef.current = sessionsRef.current.map((s) =>
-							s.id === id
-								? {
-										...s,
-										messages,
-										messageCount: messages.length,
-										hydrated: true,
-									}
-								: s,
+				// Index-only boot: message files load in the background for the
+				// sessions visible right now (active + open tabs); every other
+				// session hydrates on first open via the open/send gates.
+				for (const id of new Set(
+					[restoredActiveId, ...restoredOpenIds].filter(
+						(id): id is string => typeof id === "string",
+					),
+				)) {
+					plugin
+						.hydrateSession?.(id)
+						.then((messages) => {
+							if (cancelled || messages.length === 0) return;
+							// Write through the ref synchronously (see send gate).
+							sessionsRef.current = sessionsRef.current.map(
+								(s) =>
+									s.id === id
+										? {
+												...s,
+												messages,
+												messageCount: messages.length,
+												hydrated: true,
+											}
+										: s,
+							);
+							setSessions(sessionsRef.current);
+						})
+						.catch((err: any) =>
+							plugin.logger?.log(
+								"warn",
+								`[Startup] hydrate ${id} failed: ${err?.message}`,
+							),
 						);
-						setSessions(sessionsRef.current);
-					})
-					.catch((err: any) =>
-						plugin.logger?.log(
-							"warn",
-							`[Startup] hydrate ${id} failed: ${err?.message}`,
-						),
-					);
-			}
+				}
 			} else {
 				// No saved data — create an empty session
 				const activeProfile = getActiveProviderProfile(plugin.settings);

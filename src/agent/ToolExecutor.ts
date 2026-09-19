@@ -349,9 +349,7 @@ export class ToolExecutor {
 					`[Tool] ${call.toolName} failed in ${elapsed}ms — ${String(result.error).slice(0, 200)}`,
 				);
 			} else {
-				const size = result.content
-					? String(result.content).length
-					: 0;
+				const size = result.content ? String(result.content).length : 0;
 				this.logger?.log(
 					"info",
 					`[Tool] ${call.toolName} done in ${elapsed}ms — ${size} chars`,

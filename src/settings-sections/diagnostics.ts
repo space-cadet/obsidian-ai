@@ -375,7 +375,9 @@ export function renderDiagnosticsSection(
 					btn.setDisabled(true);
 					try {
 						// Full load: usage summary needs real message content.
-						const chatData = await plugin.loadChatData({ hydrate: true });
+						const chatData = await plugin.loadChatData({
+							hydrate: true,
+						});
 						const usage = summarizeLlmUsage(chatData.sessions);
 
 						// Redact sensitive settings

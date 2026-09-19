@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { ChatSession } from "../../types";
-import { getSessionTotalTokens, sessionMessageCount } from "../../lib/sessionUtils";
+import {
+	getSessionTotalTokens,
+	sessionMessageCount,
+} from "../../lib/sessionUtils";
 import type { ExportFormat } from "./ExportModal";
 
 interface SessionPickerModalProps {
@@ -103,10 +106,13 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 							{sorted.map((session) => {
 								const isActive = session.id === activeSessionId;
 								// Snippet only once hydrated; unhydrated sessions
-							// fall back to their index title.
-								const firstUserMsg = session.hydrated === false ? undefined : session.messages.find(
-									(m) => m.role === "user",
-								);
+								// fall back to their index title.
+								const firstUserMsg =
+									session.hydrated === false
+										? undefined
+										: session.messages.find(
+												(m) => m.role === "user",
+											);
 								const preview = firstUserMsg
 									? firstUserMsg.content.slice(0, 60) +
 										(firstUserMsg.content.length > 60

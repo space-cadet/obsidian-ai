@@ -2,12 +2,13 @@ import { describe, it, expect } from "vitest";
 import { highlightMentions } from "../MessageBubble";
 import type { ContextItem } from "../../types";
 
-const note = (name: string, path = ""): ContextItem => ({
-	id: name,
-	type: "note",
-	name,
-	path: path || `${name}.md`,
-} as ContextItem);
+const note = (name: string, path = ""): ContextItem =>
+	({
+		id: name,
+		type: "note",
+		name,
+		path: path || `${name}.md`,
+	}) as ContextItem;
 
 const pillTexts = (container: HTMLElement): string[] =>
 	Array.from(container.querySelectorAll(".chat-mention-pill")).map(

@@ -267,9 +267,7 @@ function _buildSyncTargets(
 	return targets;
 }
 
-function _makeStateStore(
-	plugin: ObsidianAIPlugin,
-): {
+function _makeStateStore(plugin: ObsidianAIPlugin): {
 	load: () => Promise<PluginFileSyncState | null>;
 	save: (state: PluginFileSyncState) => Promise<void>;
 } {

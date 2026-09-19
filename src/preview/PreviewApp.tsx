@@ -58,7 +58,9 @@ const renderMarkdown = async (
 
 const PreviewApp: React.FC = () => {
 	const [state, setState] = useState<ChatFixtureState>(() => {
-		const param = new URLSearchParams(window.location.search).get("fixture");
+		const param = new URLSearchParams(window.location.search).get(
+			"fixture",
+		);
 		return chatFixtureStates.includes(param as ChatFixtureState)
 			? (param as ChatFixtureState)
 			: "normal";

@@ -10,7 +10,10 @@ import {
 } from "../lib/messageTimestamp";
 
 /** Highlight context item names in rendered DOM */
-export function highlightMentions(container: HTMLElement, items: ContextItem[]): void {
+export function highlightMentions(
+	container: HTMLElement,
+	items: ContextItem[],
+): void {
 	if (!items || items.length === 0) return;
 	const names = items
 		.map((item) => {
@@ -402,7 +405,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 			className={`chat-bubble chat-bubble-${message.role}${message.agentId ? " chat-bubble-agent" : ""}${message.isError ? " chat-bubble-error" : ""}${isActive ? " is-active" : ""}${selected ? " chat-bubble-selected" : ""}${isStreaming ? " chat-bubble-streaming" : ""}`}
 			style={
 				message.agentColor && message.role === "assistant"
-					? ({ "--chat-agent-color": message.agentColor } as React.CSSProperties)
+					? ({
+							"--chat-agent-color": message.agentColor,
+						} as React.CSSProperties)
 					: undefined
 			}
 			onPointerDown={handlePointerDown}
@@ -502,17 +507,14 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 
 			{/* Context tracking for user messages — only items NOT already
 			    visible as inline mention pills in the message text. */}
-			{message.role === "user" &&
-				visibleContextItems.length > 0 && (
-					<div className="chat-message-context-footer">
-						<span className="chat-message-context-label">
-							Context:
-						</span>
-						<span className="chat-message-context-items">
-							{formatContextItems(visibleContextItems)}
-						</span>
-					</div>
-				)}
+			{message.role === "user" && visibleContextItems.length > 0 && (
+				<div className="chat-message-context-footer">
+					<span className="chat-message-context-label">Context:</span>
+					<span className="chat-message-context-items">
+						{formatContextItems(visibleContextItems)}
+					</span>
+				</div>
+			)}
 
 			{/* Attachments for user messages */}
 			{message.role === "user" &&

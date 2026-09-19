@@ -10,11 +10,7 @@ import { SessionSummarizer } from "../intelligence/SessionSummarizer";
 import { ProviderRegistry } from "../integrations/ProviderRegistry";
 import { ChatApiManager } from "../api";
 import type ObsidianAIPlugin from "../main";
-import {
-	createStorageDeps,
-	loadSettings,
-	saveSettings,
-} from "./persistence";
+import { createStorageDeps, loadSettings, saveSettings } from "./persistence";
 
 export {
 	loadChatData,

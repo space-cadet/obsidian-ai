@@ -52,10 +52,7 @@ interface SearchItem {
 	settingEl: HTMLElement;
 }
 
-const ADVANCED_SECTION_TITLES = new Set([
-	"Debug Mode",
-	"Diagnostics",
-]);
+const ADVANCED_SECTION_TITLES = new Set(["Debug Mode", "Diagnostics"]);
 
 const ADVANCED_SETTING_NAMES: Record<string, Set<string>> = {
 	"Chat Defaults": new Set([
@@ -86,10 +83,7 @@ const ADVANCED_SETTING_NAMES: Record<string, Set<string>> = {
 		"Enable memory audit tool",
 	]),
 	"PDF Extraction": new Set(["Server endpoint URL", "Maximum pages"]),
-	"Remote Storage": new Set([
-		"Conflict Resolution",
-		"Sync Direction",
-	]),
+	"Remote Storage": new Set(["Conflict Resolution", "Sync Direction"]),
 	Updates: new Set([
 		"Release channel",
 		"Auto-install stable updates",
@@ -576,9 +570,10 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 								toggle.textContent = "▾";
 							}
 						}
-						const advancedGroup = item.settingEl.closest<HTMLElement>(
-							".obsidian-ai-settings-advanced-group",
-						);
+						const advancedGroup =
+							item.settingEl.closest<HTMLElement>(
+								".obsidian-ai-settings-advanced-group",
+							);
 						if (advancedGroup?.hasClass("is-collapsed")) {
 							advancedGroup
 								.querySelector<HTMLButtonElement>(
@@ -640,17 +635,23 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						const visibleItemMatches = searchItems.some(
 							(item) =>
 								item.sectionId === sectionId &&
-								(item.label.toLocaleLowerCase().includes(query.toLocaleLowerCase()) ||
-									item.description.toLocaleLowerCase().includes(query.toLocaleLowerCase()) ||
-									item.sectionTitle.toLocaleLowerCase().includes(query.toLocaleLowerCase())),
+								(item.label
+									.toLocaleLowerCase()
+									.includes(query.toLocaleLowerCase()) ||
+									item.description
+										.toLocaleLowerCase()
+										.includes(query.toLocaleLowerCase()) ||
+									item.sectionTitle
+										.toLocaleLowerCase()
+										.includes(query.toLocaleLowerCase())),
 						);
 						section.toggleClass(
 							"is-search-hidden",
 							Boolean(query) &&
-							!sectionTitle
-								.toLocaleLowerCase()
-								.includes(query.toLocaleLowerCase()) &&
-							!visibleItemMatches,
+								!sectionTitle
+									.toLocaleLowerCase()
+									.includes(query.toLocaleLowerCase()) &&
+								!visibleItemMatches,
 						);
 					});
 				tocButtons.forEach((button) => {
@@ -812,7 +813,11 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 							".obsidian-ai-settings-advanced-group",
 						);
 						if (group) {
-							void this.toggleAdvancedSettings(id, group, collapsed);
+							void this.toggleAdvancedSettings(
+								id,
+								group,
+								collapsed,
+							);
 						}
 					},
 				);

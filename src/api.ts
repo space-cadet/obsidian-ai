@@ -164,7 +164,8 @@ export class ChatApiManager {
 		thinkingEnabled?: boolean,
 		onUsage?: (usage: ProviderTokenUsage) => void,
 	): AsyncIterable<string> {
-		const activeProfile = profile ?? getActiveProviderProfile(this.settings);
+		const activeProfile =
+			profile ?? getActiveProviderProfile(this.settings);
 		this.logger?.log(
 			"debug",
 			`[API] stream start — model ${activeProfile.model}, ${messages.length} message(s)`,
@@ -238,7 +239,8 @@ export class ChatApiManager {
 		profile?: ProviderProfile,
 		thinkingEnabled?: boolean,
 	): AsyncIterable<StreamEvent> {
-		const activeProfile = profile ?? getActiveProviderProfile(this.settings);
+		const activeProfile =
+			profile ?? getActiveProviderProfile(this.settings);
 		this.logger?.log(
 			"debug",
 			`[API] tool-step stream start — model ${activeProfile.model}, ${messages.length} message(s)`,

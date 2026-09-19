@@ -68,10 +68,7 @@ import { getActiveProviderProfile, ProviderProfile } from "../settings";
 import { resolveSessionProfile as resolveProfileForSession } from "../lib/sessionProfile";
 import { rememberRecentModel } from "../lib/recentModels";
 import { stripThinkingTags } from "./MessageBubble";
-import {
-	serializeChatExport,
-	generateFilename,
-} from "../utils/exportChat";
+import { serializeChatExport, generateFilename } from "../utils/exportChat";
 import type { ExportFormat } from "./presentational/ExportModal";
 import { WebSocketSyncAdapter } from "../sync/WebSocketSyncAdapter";
 import type { SyncAdapter } from "../sync/SyncAdapter";
@@ -131,8 +128,12 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	const messagesRef = useRef<ChatMessage[]>([]);
 
 	useEffect(() => {
-		const refreshFromSettings = () => setSettingsRevision((revision) => revision + 1);
-		window.addEventListener("obsidian-ai:settings-changed", refreshFromSettings);
+		const refreshFromSettings = () =>
+			setSettingsRevision((revision) => revision + 1);
+		window.addEventListener(
+			"obsidian-ai:settings-changed",
+			refreshFromSettings,
+		);
 		return () =>
 			window.removeEventListener(
 				"obsidian-ai:settings-changed",

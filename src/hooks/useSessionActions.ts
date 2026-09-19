@@ -74,8 +74,8 @@ export function useSessionActions({
 			// gate awaits hydration, so a fast type-and-enter can't clobber.
 			const target = sessionsRef.current.find((s) => s.id === sessionId);
 			if (target && target.hydrated === false) {
-				plugin.hydrateSession
-					?.(sessionId)
+				plugin
+					.hydrateSession?.(sessionId)
 					.then((messages) => {
 						if (messages.length === 0) return;
 						// Write through the ref synchronously — anything reading
@@ -101,7 +101,13 @@ export function useSessionActions({
 			setActiveSessionId(sessionId);
 			setScrollToMessageId(messageId);
 		},
-		[plugin, sessionsRef, setSessions, setActiveSessionId, setScrollToMessageId],
+		[
+			plugin,
+			sessionsRef,
+			setSessions,
+			setActiveSessionId,
+			setScrollToMessageId,
+		],
 	);
 
 	// Listen for external open-session events
