@@ -217,8 +217,22 @@ function buildReplayContent(
 		return replayText;
 	}
 
+	// History replays must not carry image parts: the Vercel AI SDK requires
+	// an image-capable endpoint whenever ANY message in the payload has an
+	// image part, which would force every later text-only send onto an image
+	// model. Replace old image parts with a text placeholder; the persisted
+	// transcript keeps the real parts and new attachments still send as
+	// images via the current-message path.
+	const replayParts = (
+		message.resolvedParts as import("../api").MessageContentPart[]
+	).map((part) =>
+		part?.type === "image"
+			? { type: "text" as const, text: "[image attached]" }
+			: part,
+	);
+
 	return [
 		{ type: "text", text: replayText },
-		...(message.resolvedParts as import("../api").MessageContentPart[]),
+		...replayParts,
 	];
 }
