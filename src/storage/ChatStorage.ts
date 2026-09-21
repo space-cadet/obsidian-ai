@@ -206,10 +206,33 @@ class JsonlStorage implements ChatStorage {
 		const sessions: ChatSession[] = await Promise.all(
 			index.sessions.map(async (entry) => {
 				let messages: ChatMessage[] = [];
+				// Bulk hydrate must not claim success for a session whose
+				// message file is missing or unparseable — consumers (sync
+				// cache, diagnostics) treat hydrated as "content verified".
+				// Mirror the lazy hydrateSession() honesty guard.
+				let hydrateFailed = false;
 				if (hydrateAll) {
 					messages = await this._loadMessages(
 						`${pluginDir}/${entry.filePath}`,
 					);
+					if (messages.length === 0 && entry.messageCount > 0) {
+						hydrateFailed = true;
+						// Keep it retryable via hydrateSession() and under the
+						// save-guard so an autosave can't clobber the index.
+						this.unhydratedSessions.set(entry.id, entry);
+						this.deps.logger?.log(
+							"error",
+							`JsonlStorage: bulk hydrate found 0 messages for ${entry.id} (index expects ${entry.messageCount}) — leaving unhydrated for retry`,
+						);
+					} else if (
+						messages.length > 0 &&
+						messages.length < entry.messageCount
+					) {
+						this.deps.logger?.log(
+							"warn",
+							`JsonlStorage: bulk hydrate read ${messages.length}/${entry.messageCount} messages for ${entry.id}`,
+						);
+					}
 				} else {
 					// Index-only boot: metadata now, messages on first open.
 					// Sessions already known-hydrated (mid-session sync re-read)
@@ -225,9 +248,11 @@ class JsonlStorage implements ChatStorage {
 					updatedAt: entry.updatedAt,
 					messages,
 					messageCount: hydrateAll
-						? messages.length
+						? hydrateFailed
+							? entry.messageCount
+							: messages.length
 						: entry.messageCount,
-					hydrated: hydrateAll,
+					hydrated: hydrateAll && !hydrateFailed,
 					contextItems: entry.contextItems ?? [],
 					profileId: entry.profileId,
 					isGroupChat: entry.isGroupChat,

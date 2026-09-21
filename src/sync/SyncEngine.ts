@@ -557,6 +557,16 @@ export class SyncEngine {
 					continue;
 				}
 
+				// Unverified local: message content could not be loaded
+				// (hydrated === false — missing/corrupt message file, failed
+				// hydrate). Metadata may match remote exactly while the real
+				// data is gone, so the only complete, trustworthy copy is
+				// remote. Re-download to self-repair; never upload a stub.
+				if (local.hydrated === false) {
+					download.push(remote);
+					continue;
+				}
+
 				if (local._syncStatus === "synced") {
 					// Both exist, local unchanged since last sync
 					// Use ETag comparison if available (most reliable), fallback to timestamp
@@ -677,7 +687,11 @@ export class SyncEngine {
 					? remotes.filter(
 							(remote) =>
 								conflictIds.has(remote.id) ||
-								!localById.has(remote.id),
+								!localById.has(remote.id) ||
+								// Local copies whose content can't be verified carry
+								// no trustworthy data — remote is the only complete
+								// copy and must replace them, not be skipped.
+								localById.get(remote.id)!.hydrated === false,
 						)
 					: [];
 			const uploadTargets =
@@ -903,6 +917,9 @@ export class SyncEngine {
 		const session: ChatSession = JSON.parse(plaintext);
 		const cached: ChatSession = {
 			...session,
+			// This copy carries the full decrypted remote payload — mark it
+			// hydrated so the unverified-local guard doesn't re-queue it.
+			hydrated: true,
 			// Mark as synced since it came from remote
 		};
 
@@ -1003,6 +1020,22 @@ export class SyncEngine {
 	 *  Preserves synced status for sessions that haven't changed. */
 	async populateCache(sessions: ChatSession[]): Promise<void> {
 		for (const session of sessions) {
+			if (session.hydrated === false) {
+				// The app store could not supply this session's real content
+				// (missing/corrupt message file). A cached "synced" copy is
+				// unverifiable — evict it so the plan treats the session as
+				// remote-only and re-downloads. Never putSession() the stub:
+				// a pending stub would upload and clobber the remote copy.
+				const existing = await this.cache.getSession(session.id);
+				if (existing) {
+					await this.cache.deleteSession(session.id);
+					this.log(
+						"warn",
+						`SyncEngine: evicted unverified cache entry for ${session.id} (hydrate failed)`,
+					);
+				}
+				continue;
+			}
 			// Check if already cached and synced — if so, preserve sync status
 			const existing = await this.cache.getSession(session.id);
 			if (

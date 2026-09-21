@@ -412,3 +412,49 @@ describe("JsonlStorage peekSessionMessages (Codex wave-2)", () => {
 		);
 	});
 });
+
+describe("JsonlStorage bulk hydrate honesty (sync path)", () => {
+	it("hydrate:true leaves a missing message file unhydrated with index messageCount", async () => {
+		const files = new Map<string, string>();
+		await makeStorage(files).storage.saveChatData({
+			sessions: [makeSession("s1", ["hello"])],
+			activeSessionId: "s1",
+		});
+		// Simulate a lost message file (mobile storage eviction): the index
+		// still claims messageCount 1, but the .jsonl is gone.
+		files.delete(sessionPath("s1"));
+
+		const { storage } = makeStorage(files);
+		const loaded = await storage.loadChatData({ hydrate: true });
+		expect(loaded.sessions[0].hydrated).toBe(false);
+		expect(loaded.sessions[0].messages).toEqual([]);
+		expect(loaded.sessions[0].messageCount).toBe(1);
+		expect(storage.isSessionHydrated?.("s1")).toBe(false);
+	});
+
+	it("hydrate:true keeps the save guard after a failed bulk hydrate", async () => {
+		const files = new Map<string, string>();
+		await makeStorage(files).storage.saveChatData({
+			sessions: [makeSession("s1", ["hello"])],
+			activeSessionId: "s1",
+		});
+		files.delete(sessionPath("s1"));
+
+		const { storage, adapter } = makeStorage(files);
+		const loaded = await storage.loadChatData({ hydrate: true });
+		await storage.saveChatData({ ...loaded, activeSessionId: null });
+
+		// The index entry must survive with its messageCount and no empty
+		// .jsonl may be created for the unverified session.
+		const index = JSON.parse(
+			files.get(
+				".obsidian/plugins/obsidian-ai/sessions/index.json",
+			) ?? "{}",
+		);
+		expect(index.sessions[0].messageCount).toBe(1);
+		expect(adapter.write).not.toHaveBeenCalledWith(
+			sessionPath("s1"),
+			expect.anything(),
+		);
+	});
+});

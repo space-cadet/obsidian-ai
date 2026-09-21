@@ -137,6 +137,13 @@ export class SyncIndexManager {
 		const entry = index.entries[local.id];
 		if (!entry) return false;
 
+		// A local session whose message content could not be verified
+		// (hydrated === false: missing/corrupt message file, failed hydrate)
+		// proves nothing about equality — index metadata can match while the
+		// real data is gone. Force the full check so the engine re-verifies
+		// against remote instead of silently skipping.
+		if (local.hydrated === false) return false;
+
 		// Local must match index exactly
 		if (local.updatedAt !== entry.localMtime) {
 			return false;
