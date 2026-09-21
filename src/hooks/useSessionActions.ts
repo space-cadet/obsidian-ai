@@ -93,7 +93,18 @@ export function useSessionActions({
 						);
 						setSessions(sessionsRef.current);
 					})
-					.catch(() => {});
+					.catch((err) => {
+						// Hydration failure now leaves the session unhydrated (retry
+						// on next open) and logs the cause — surface it here too so
+						// the user isn't staring at a silently empty session.
+						console.error(
+							"[ObsidianAI] hydrateSession failed:",
+							err,
+						);
+						new Notice(
+							"Failed to load session messages — will retry on next open",
+						);
+					});
 			}
 			setOpenSessionIds((current) =>
 				current.includes(sessionId) ? current : [...current, sessionId],

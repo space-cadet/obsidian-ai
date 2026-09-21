@@ -304,9 +304,36 @@ class JsonlStorage implements ChatStorage {
 		if (!entry) return [];
 		const adapter = this.deps.app.vault.adapter;
 		const pluginDir = `${this.deps.app.vault.configDir}/plugins/${this.deps.manifest.id}`;
-		const messages = await this._loadMessages(
-			`${pluginDir}/${entry.filePath}`,
-		);
+		const path = `${pluginDir}/${entry.filePath}`;
+		let messages: ChatMessage[];
+		try {
+			messages = await this._loadMessages(path);
+		} catch (err) {
+			// Read failure (e.g. mobile bridge): leave the session unhydrated so
+			// the next open retries, and surface it in the log instead of
+			// silently returning [] and never trying again.
+			this.deps.logger?.log(
+				"error",
+				`ChatStorage: hydrate read failed for ${sessionId} (${path}): ${String(err)}`,
+			);
+			return [];
+		}
+		if (messages.length === 0 && entry.messageCount > 0) {
+			// Missing or fully unparseable .jsonl for a session the index says
+			// has messages. Do NOT mark hydrated — that would permanently show
+			// an empty session with no way to retry.
+			this.deps.logger?.log(
+				"error",
+				`ChatStorage: hydrate found 0 messages for ${sessionId} (index expects ${entry.messageCount}, ${path}) — leaving unhydrated for retry`,
+			);
+			return [];
+		}
+		if (messages.length < entry.messageCount) {
+			this.deps.logger?.log(
+				"warn",
+				`ChatStorage: hydrate read ${messages.length}/${entry.messageCount} messages for ${sessionId} (${path})`,
+			);
+		}
 		this.unhydratedSessions.delete(sessionId);
 		this.hydratedSessionIds.add(sessionId);
 		// Record the true on-disk ids so the next save can append correctly.
