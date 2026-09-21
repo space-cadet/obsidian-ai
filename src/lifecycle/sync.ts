@@ -194,7 +194,7 @@ export async function rebuildSyncIndex(
 	};
 	const emitLog = (entry: SyncLogEntry) => {
 		plugin.syncHub?.publishLog(entry);
-		emitLog(entry);
+		options?.onLog?.(entry);
 	};
 	try {
 		plugin.syncEngine.setProgressHandler((event) => {
@@ -406,7 +406,7 @@ export async function triggerSync(
 	};
 	const emitLog = (entry: SyncLogEntry) => {
 		plugin.syncHub?.publishLog(entry);
-		emitLog(entry);
+		options?.onLog?.(entry);
 	};
 
 	try {
