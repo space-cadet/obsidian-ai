@@ -374,7 +374,7 @@ export function renderRemoteStorageSection(
 			button.setButtonText("Syncing…");
 			button.setDisabled(true);
 
-			const result = await plugin.triggerSync();
+			const result = await plugin.triggerSync(false, { useModal: true });
 
 			button.setButtonText("🔄 Sync Now");
 			button.setDisabled(false);
