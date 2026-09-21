@@ -34,6 +34,10 @@ export interface ChatPluginLike {
 	saveChatData(data: StoredChatData): Promise<void>;
 	saveSettings(): Promise<void>;
 	openRemoteStorageSettings?(): void;
+	/** Set by ChatApp while mounted: switches the view to the __sync__ tab. */
+	openSyncTabNow?: () => void;
+	/** Open request that arrived before ChatApp mounted; consumed on mount. */
+	pendingSyncTabOpen?: boolean;
 	syncHub?: import("../sync/SyncStatusHub").SyncStatusHub;
 	triggerSync?(
 		dryRun?: boolean,

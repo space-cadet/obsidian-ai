@@ -1,6 +1,7 @@
 import { Notice, Setting, requestUrl } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { WebDAVStorageAdapter } from "../sync/WebDAVStorageAdapter";
+import { openSyncPanel } from "../ui/openSyncPanel";
 
 /**
  * Test WebDAV connection using Obsidian's requestUrl for reliable
@@ -374,7 +375,8 @@ export function renderRemoteStorageSection(
 			button.setButtonText("Syncing…");
 			button.setDisabled(true);
 
-			const result = await plugin.triggerSync(false, { useModal: true });
+			await openSyncPanel(plugin);
+			const result = await plugin.triggerSync(false);
 
 			button.setButtonText("🔄 Sync Now");
 			button.setDisabled(false);

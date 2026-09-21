@@ -23,6 +23,7 @@ import {
 import { GIT_COMMIT_HASH, GIT_BRANCH } from "../version-info";
 import { ObsidianAISettingsTab } from "../settings-sections/SettingsTab";
 import type ObsidianAIPlugin from "../main";
+import { openSyncPanel } from "./openSyncPanel";
 
 export const OPEN_CHAT_COMMAND_ID = "open-chat-lab-sidebar";
 export const OPEN_CHAT_COMMAND_NAME = "Open Chat Lab AI sidebar";
@@ -142,19 +143,23 @@ export function registerCommands(plugin: ObsidianAIPlugin): void {
 		callback: () => checkForUpdates(plugin, true),
 	});
 
-	// T42e/T42g: Dry run command (panel surfaces it via the status hub)
+	// Both palette commands open the two-step sync panel first so the run
+	// streams into visible UI (dry run previously ran headless; sync opened
+	// the legacy progress modal).
 	plugin.addCommand({
 		id: "chat-sync-dry-run",
 		name: "Chat Sync: Dry Run",
-		callback: () => plugin.triggerSync(true),
+		callback: () => {
+			void openSyncPanel(plugin).then(() => plugin.triggerSync(true));
+		},
 	});
 
-	// T42g: command-palette sync shows the progress modal — the sidebar
-	// panel may not be visible when this is invoked.
 	plugin.addCommand({
 		id: "chat-sync-now",
 		name: "Chat Sync: Sync Now",
-		callback: () => plugin.triggerSync(false, { useModal: true }),
+		callback: () => {
+			void openSyncPanel(plugin).then(() => plugin.triggerSync(false));
+		},
 	});
 
 	// Command to clear debug log

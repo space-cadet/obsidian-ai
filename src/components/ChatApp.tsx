@@ -141,6 +141,24 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			);
 	}, []);
 
+	// Let the rest of the plugin open the sync tab (palette commands,
+	// settings button). A request that arrived before mount is consumed here.
+	useEffect(() => {
+		plugin.openSyncTabNow = () => {
+			setOpenSessionIds((prev) =>
+				prev.includes("__sync__") ? prev : [...prev, "__sync__"],
+			);
+			setActiveSessionId("__sync__");
+		};
+		if (plugin.pendingSyncTabOpen) {
+			plugin.pendingSyncTabOpen = false;
+			plugin.openSyncTabNow();
+		}
+		return () => {
+			delete plugin.openSyncTabNow;
+		};
+	}, [plugin]);
+
 	// Track if the app was hidden while streaming (for mobile background handling)
 	const wasHiddenRef = useRef(false);
 	const streamingWhenHiddenRef = useRef(false);
