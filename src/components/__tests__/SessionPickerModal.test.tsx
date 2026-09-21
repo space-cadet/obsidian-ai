@@ -21,6 +21,17 @@ const draftSession: ChatSession = {
 	messages: [],
 };
 
+const unhydratedSession: ChatSession = {
+	id: "synced",
+	title: "Synced chat",
+	createdAt: 3,
+	updatedAt: 3,
+	contextItems: [],
+	messages: [],
+	messageCount: 3,
+	hydrated: false,
+};
+
 describe("SessionPickerModal", () => {
 	it("shows saved conversations but not empty draft tabs", () => {
 		render(
@@ -36,5 +47,21 @@ describe("SessionPickerModal", () => {
 
 		expect(screen.getByText("Saved chat")).toBeTruthy();
 		expect(screen.queryByText("Draft chat")).toBeNull();
+	});
+
+	it("shows indexed count for unhydrated sessions instead of 'No messages'", () => {
+		render(
+			<SessionPickerModal
+				sessions={[unhydratedSession]}
+				activeSessionId={null}
+				onLoad={vi.fn()}
+				onDelete={vi.fn()}
+				onRename={vi.fn()}
+				onClose={vi.fn()}
+			/>,
+		);
+
+		expect(screen.getByText("3 messages — open to view")).toBeTruthy();
+		expect(screen.queryByText("No messages")).toBeNull();
 	});
 });

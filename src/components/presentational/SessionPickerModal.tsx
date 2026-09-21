@@ -106,19 +106,22 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 							{sorted.map((session) => {
 								const isActive = session.id === activeSessionId;
 								// Snippet only once hydrated; unhydrated sessions
-								// fall back to their index title.
+								// fall back to their indexed message count.
 								const firstUserMsg =
 									session.hydrated === false
 										? undefined
 										: session.messages.find(
 												(m) => m.role === "user",
 											);
+								const msgCount = sessionMessageCount(session);
 								const preview = firstUserMsg
 									? firstUserMsg.content.slice(0, 60) +
 										(firstUserMsg.content.length > 60
 											? "…"
 											: "")
-									: "No messages";
+									: session.hydrated === false && msgCount > 0
+										? `${msgCount} message${msgCount === 1 ? "" : "s"} — open to view`
+										: "No messages";
 								const displayTitle =
 									session.title ||
 									(firstUserMsg
