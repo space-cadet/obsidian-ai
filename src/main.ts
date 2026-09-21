@@ -49,6 +49,7 @@ import {
 } from "./lifecycle/storage";
 import {
 	initSyncEngine,
+	examineSync,
 	rebuildSyncIndex,
 	triggerSync,
 	cancelSync,
@@ -237,6 +238,10 @@ export default class ObsidianAIPlugin extends Plugin {
 		};
 	}> {
 		return triggerSync(this, dryRun, options);
+	}
+
+	async examineSync(direction?: "both" | "upload" | "download") {
+		return examineSync(this, direction);
 	}
 
 	async syncPluginData(

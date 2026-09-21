@@ -7,6 +7,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Notice } from "obsidian";
 import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 import type { SyncLogEntry, SyncProgressSnapshot } from "../sync/SyncProgress";
+import type { SyncExamination } from "../sync/SyncEngine";
 import {
 	formatBytes,
 	formatRate,
@@ -27,6 +28,8 @@ const DIRECTION_OPTIONS: { value: SyncDirection; label: string }[] = [
 	{ value: "upload", label: "Upload only" },
 	{ value: "download", label: "Download only" },
 ];
+
+const EXAM_ROW_CAP = 10;
 
 // ── Utilities ────────────────────────────────────────────────────────────
 
@@ -118,6 +121,10 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 			"both",
 	);
 	const [busy, setBusy] = useState(false);
+	const [exam, setExam] = useState<SyncExamination | null>(null);
+	const [examBusy, setExamBusy] = useState(false);
+	const [examError, setExamError] = useState<string | null>(null);
+	const [examShowAll, setExamShowAll] = useState(false);
 	const snapRef = useRef(snap);
 	snapRef.current = snap;
 
@@ -127,6 +134,8 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 			setSnap({ ...s, runLog: [...s.runLog] });
 			if (s.state === "syncing") {
 				setShowAll(false);
+				setExam(null);
+				setExamError(null);
 			}
 		});
 		return off;
@@ -156,6 +165,28 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 		}
 	};
 
+	const runExamine = async () => {
+		if (!plugin.examineSync || examBusy) return;
+		setExamBusy(true);
+		setExamError(null);
+		try {
+			const result = await plugin.examineSync(direction);
+			setExam(result);
+		} catch (err: any) {
+			setExamError(err?.message ?? String(err));
+		} finally {
+			setExamBusy(false);
+		}
+	};
+
+	const onDirectionChange = (d: SyncDirection) => {
+		setDirection(d);
+		// A previous examine no longer matches the selected direction.
+		setExam(null);
+		setExamError(null);
+	};
+
+
 	const openLogModal = async () => {
 		const logger = new SyncLogger(plugin.app, plugin.manifest.id);
 		const lines = await logger.readRecent(200);
@@ -175,6 +206,35 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 	}, [runLog]);
 
 	const visibleLog = showAll ? runLog : runLog.slice(-5);
+	const examRowsTotal =
+		(exam?.upload.length ?? 0) +
+		(exam?.download.length ?? 0) +
+		(exam?.conflicts.length ?? 0);
+	const examRows = useMemo<SyncLogEntry[]>(() => {
+		if (!exam) return [];
+		const now = Date.now();
+		const row = (
+			id: string,
+			operation: SyncLogEntry["operation"],
+			title: string,
+		): SyncLogEntry => ({
+			id,
+			operation,
+			title,
+			status: "pending",
+			timestamp: now,
+		});
+		const rows = [
+			...exam.upload.map((s) => row(`up:${s.id}`, "upload", s.title)),
+			...exam.download.map((s) =>
+				row(`down:${s.id}`, "download", s.title),
+			),
+			...exam.conflicts.map((s) =>
+				row(`conf:${s.id}`, "conflict", s.title),
+			),
+		];
+		return examShowAll ? rows : rows.slice(0, EXAM_ROW_CAP);
+	}, [exam, examShowAll]);
 	const activeRows = runLog.filter((e) => e.status === "active").slice(-3);
 
 	// ── Off ──
@@ -256,6 +316,109 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 						)}
 					</div>
 				)}
+
+				<div className="sync-card">
+					<div className="sync-card-eyebrow">Step 1 · Examine</div>
+					<div className="sync-card-title">Compare stores</div>
+					<div className="sync-card-sub">
+						Counts sessions on this device and on the remote store, and
+						lists what a sync would transfer. Nothing moves yet.
+					</div>
+					<button
+						className="sync-btn sync-btn--ghost"
+						disabled={busy || examBusy || !plugin.examineSync}
+						onClick={runExamine}
+					>
+						{examBusy
+							? "Examining…"
+							: exam
+								? "Re-examine"
+								: "Examine stores"}
+					</button>
+					{examError && (
+						<div className="sync-card-error">{examError}</div>
+					)}
+					{exam && (
+						<>
+							<div className="sync-stats-grid">
+								<div className="sync-stat">
+									<div className="sync-stat-num">
+										{exam.localCount}
+									</div>
+									<div className="sync-stat-label">local</div>
+								</div>
+								<div className="sync-stat">
+									<div className="sync-stat-num">
+										{exam.remoteCount}
+									</div>
+									<div className="sync-stat-label">remote</div>
+								</div>
+								<div
+									className={`sync-stat ${exam.upload.length === 0 ? "sync-stat--dim" : ""}`}
+								>
+									<div className="sync-stat-num">
+										{exam.upload.length}
+									</div>
+									<div className="sync-stat-label">
+										to upload
+									</div>
+								</div>
+								<div
+									className={`sync-stat ${exam.download.length === 0 ? "sync-stat--dim" : ""}`}
+								>
+									<div className="sync-stat-num">
+										{exam.download.length}
+									</div>
+									<div className="sync-stat-label">
+										to download
+									</div>
+								</div>
+								<div
+									className={`sync-stat sync-stat--warn ${exam.conflicts.length === 0 ? "sync-stat--dim" : ""}`}
+								>
+									<div className="sync-stat-num">
+										{exam.conflicts.length}
+									</div>
+									<div className="sync-stat-label">
+										conflicts
+									</div>
+								</div>
+								<div
+									className={`sync-stat ${exam.unchanged === 0 ? "sync-stat--dim" : ""}`}
+								>
+									<div className="sync-stat-num">
+										{exam.unchanged}
+									</div>
+									<div className="sync-stat-label">
+										unchanged
+									</div>
+								</div>
+							</div>
+							<div className="sync-card-sub">
+								{examRowsTotal > 0
+									? `Pending: ${examRowsTotal} · ↑${formatBytes(exam.uploadBytes)} ↓${formatBytes(exam.downloadBytes)}`
+								: "Stores match — nothing to transfer."}
+							</div>
+							{examRowsTotal > 0 && (
+								<div className="sync-log">
+									{examRows.map((e) => (
+										<LogRow key={e.id} entry={e} />
+									))}
+								</div>
+							)}
+							{examRowsTotal > EXAM_ROW_CAP && (
+								<button
+									className="sync-link"
+									onClick={() => setExamShowAll((v) => !v)}
+								>
+									{examShowAll
+										? "Show less"
+										: `Show all ${examRowsTotal}`}
+								</button>
+							)}
+						</>
+					)}
+				</div>
 
 				{/* Complete surface: stats grid + full op log persist until the
 				    next run begins (hub clears runLog on beginRun). */}
@@ -340,47 +503,53 @@ const ChatSyncPanel: React.FC<ChatSyncPanelProps> = ({ plugin }) => {
 					</div>
 				)}
 
-				<div className="sync-controls">
-					<select
-						className="sync-select"
-						value={direction}
-						disabled={busy}
-						onChange={(e) =>
-							setDirection(e.target.value as SyncDirection)
-						}
-					>
-						{DIRECTION_OPTIONS.map((o) => (
-							<option key={o.value} value={o.value}>
-								{o.label}
-							</option>
-						))}
-					</select>
-					<div className="sync-controls-row">
-						<button
-							className="sync-btn sync-btn--ghost"
+				<div className="sync-card">
+					<div className="sync-card-eyebrow">Step 2 · Sync</div>
+					<div className="sync-card-sub">
+						Transfers whatever Step 1 found.
+					</div>
+					<div className="sync-controls">
+						<select
+							className="sync-select"
+							value={direction}
 							disabled={busy}
-							onClick={() => startSync(true)}
+							onChange={(e) =>
+								onDirectionChange(e.target.value as SyncDirection)
+							}
 						>
-							🔍 Dry run
-						</button>
-						<button
-							className="sync-btn sync-btn--primary"
-							disabled={busy}
-							onClick={() => startSync(false)}
-						>
-							{busy ? "Syncing…" : "Sync now"}
-						</button>
-						{plugin.openRemoteStorageSettings && (
+							{DIRECTION_OPTIONS.map((o) => (
+								<option key={o.value} value={o.value}>
+									{o.label}
+								</option>
+							))}
+						</select>
+						<div className="sync-controls-row">
 							<button
-								className="sync-btn sync-btn--icon"
-								aria-label="Sync settings"
-								onClick={() =>
-									plugin.openRemoteStorageSettings?.()
-								}
+								className="sync-btn sync-btn--ghost"
+								disabled={busy}
+								onClick={() => startSync(true)}
 							>
-								⚙
+								🔍 Dry run
 							</button>
-						)}
+							<button
+								className="sync-btn sync-btn--primary"
+								disabled={busy}
+								onClick={() => startSync(false)}
+							>
+								{busy ? "Syncing…" : "Sync now"}
+							</button>
+							{plugin.openRemoteStorageSettings && (
+								<button
+									className="sync-btn sync-btn--icon"
+									aria-label="Sync settings"
+									onClick={() =>
+										plugin.openRemoteStorageSettings?.()
+									}
+								>
+									⚙
+								</button>
+							)}
+						</div>
 					</div>
 				</div>
 

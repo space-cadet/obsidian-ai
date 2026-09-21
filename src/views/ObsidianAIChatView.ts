@@ -41,6 +41,10 @@ export interface ChatPluginLike {
 			direction?: "both" | "upload" | "download";
 		},
 	): Promise<{ ok: boolean; message: string }>;
+	/** T46: Read-only comparison of local vs remote stores for the examine step. */
+	examineSync?(
+		direction?: "both" | "upload" | "download",
+	): Promise<import("../sync/SyncEngine").SyncExamination | null>;
 	rebuildSyncIndex?(
 		choice: "remote" | "local" | "compare",
 		options?: {

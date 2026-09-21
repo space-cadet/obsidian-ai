@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
 import { describe, it, expect, beforeEach } from "vitest";
 import ChatSyncPanel from "../ChatSyncPanel";
@@ -189,5 +189,39 @@ describe("ChatSyncPanel (T42g)", () => {
 		});
 		rerender(<ChatSyncPanel plugin={makePlugin({ hub })} />);
 		expect(screen.getAllByText("Building sync plan")).toBeTruthy();
+	});
+
+	it("step 1 examine shows store counts and pending lists", async () => {
+		const hub = new SyncStatusHub();
+		hub.setState("idle");
+		const plugin = makePlugin({ hub });
+		let calledWith: string | undefined;
+		plugin.examineSync = async (direction?: string) => {
+			calledWith = direction;
+			return {
+				localCount: 85,
+				remoteCount: 206,
+				upload: [{ id: "u1", title: "Tablet-only draft" }],
+				download: [
+					{ id: "d1", title: "Black holes draft" },
+					{ id: "d2", title: "Research index" },
+				],
+				conflicts: [],
+				unchanged: 40,
+				uploadBytes: 1024,
+				downloadBytes: 2048,
+			};
+		};
+		render(<ChatSyncPanel plugin={plugin} />);
+		expect(screen.getByText(/Step 1 · Examine/)).toBeTruthy();
+		expect(screen.getByText(/Step 2 · Sync/)).toBeTruthy();
+		fireEvent.click(screen.getByText("Examine stores"));
+		await waitFor(() => expect(screen.getByText("206")).toBeTruthy());
+		expect(screen.getByText("85")).toBeTruthy();
+		expect(screen.getByText("Tablet-only draft")).toBeTruthy();
+		expect(screen.getByText("Black holes draft")).toBeTruthy();
+		expect(screen.getByText("Research index")).toBeTruthy();
+		expect(screen.getByText(/Pending: 3/)).toBeTruthy();
+		expect(calledWith).toBe("both");
 	});
 });

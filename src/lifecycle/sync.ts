@@ -2,6 +2,7 @@
 import { Notice } from "obsidian";
 import type { SyncLogEntry, SyncProgressSnapshot } from "../sync/SyncProgress";
 import { SyncEngine } from "../sync/SyncEngine";
+import type { SyncExamination } from "../sync/SyncEngine";
 import { LocalCache } from "../sync/LocalCache";
 import { EncryptionLayer } from "../sync/EncryptionLayer";
 import { WebDAVStorageAdapter } from "../sync/WebDAVStorageAdapter";
@@ -301,6 +302,20 @@ export async function rebuildSyncIndex(
 
 export function cancelSync(plugin: ObsidianAIPlugin): void {
 	plugin.syncEngine?.cancel();
+}
+
+/** T46: Read-only store comparison feeding the sync panel's examine step. */
+export async function examineSync(
+	plugin: ObsidianAIPlugin,
+	direction?: "both" | "upload" | "download",
+): Promise<SyncExamination | null> {
+	// Lazy-init like triggerSync: user may have just enabled sync.
+	if (!plugin.syncEngine) {
+		await initSyncEngine(plugin);
+	}
+	if (!plugin.syncEngine) return null;
+	await _populateSyncCache(plugin);
+	return plugin.syncEngine.examine(direction);
 }
 
 export async function triggerSync(

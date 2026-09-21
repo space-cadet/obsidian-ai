@@ -19,6 +19,24 @@ import type { SyncEngineProgressEvent } from "./SyncProgress";
 export type SyncState = "idle" | "syncing" | "error" | "locked";
 export type ConflictStrategy = "last-write-wins" | "keep-both" | "manual";
 
+/** T46: Read-only comparison of local and remote stores (SyncEngine.examine). */
+export interface SyncExamination {
+	/** Sessions currently in the local sync cache. */
+	localCount: number;
+	/** Sessions currently listed on the remote store. */
+	remoteCount: number;
+	/** Sessions a sync would upload, with display titles. */
+	upload: Array<{ id: string; title: string }>;
+	/** Sessions a sync would download (remote-only or unverified locals). */
+	download: Array<{ id: string; title: string }>;
+	/** Both-changed pairs a sync would resolve per conflict strategy. */
+	conflicts: Array<{ id: string; title: string }>;
+	/** Sessions identical on both sides — no transfer needed. */
+	unchanged: number;
+	uploadBytes: number;
+	downloadBytes: number;
+}
+
 export interface SyncEngineConfig {
 	adapter: StorageAdapter;
 	cache: LocalCache;
@@ -173,25 +191,7 @@ export class SyncEngine {
 			conflicts = 0;
 
 		// T42a: Load sync index
-		let index: SyncIndex | null = null;
-		let serverSignature = "";
-		if (this.indexManager && this.serverConfig) {
-			serverSignature = SyncIndexManager.makeServerSignature(
-				this.serverConfig,
-			);
-			index = await this.indexManager.load(serverSignature);
-			if (index) {
-				this.log(
-					"info",
-					`SyncEngine: loaded sync index (${Object.keys(index.entries).length} entries)`,
-				);
-			} else {
-				this.log(
-					"info",
-					"SyncEngine: no valid sync index, starting fresh",
-				);
-			}
-		}
+		const { index, serverSignature } = await this._loadIndex();
 
 		// Track successfully synced sessions for index update
 		const syncedLocals: ChatSession[] = [];
@@ -504,6 +504,88 @@ export class SyncEngine {
 				retryable: await this.retryStore?.list(),
 			};
 		}
+	}
+
+	/** T42a: Load the persisted sync index (shared by sync() and examine()). */
+	private async _loadIndex(): Promise<{
+		index: SyncIndex | null;
+		serverSignature: string;
+	}> {
+		let index: SyncIndex | null = null;
+		let serverSignature = "";
+		if (this.indexManager && this.serverConfig) {
+			serverSignature = SyncIndexManager.makeServerSignature(
+				this.serverConfig,
+			);
+			index = await this.indexManager.load(serverSignature);
+			if (index) {
+				this.log(
+					"info",
+					`SyncEngine: loaded sync index (${Object.keys(index.entries).length} entries)`,
+				);
+			} else {
+				this.log(
+					"info",
+					"SyncEngine: no valid sync index, starting fresh",
+				);
+			}
+		}
+		return { index, serverSignature };
+	}
+
+	/** T46: Compare local and remote stores without transferring anything.
+	 *  Mirrors sync()'s plan phase — same index load, same direction filter —
+	 *  so the reported counts and lists match what a real run would do. */
+	async examine(
+		direction?: "both" | "upload" | "download",
+	): Promise<SyncExamination> {
+		if (this.state === "syncing") {
+			throw new Error("Sync in progress");
+		}
+		const { index } = await this._loadIndex();
+		let plan = await this.computeSyncPlan(index);
+		// T43: same direction filter as sync()
+		if (direction === "upload") {
+			plan = { ...plan, download: [], conflicts: [] };
+		} else if (direction === "download") {
+			plan = { ...plan, upload: [], conflicts: [] };
+		}
+		plan = {
+			...plan,
+			uploadBytes: plan.upload.reduce(
+				(n, s) => n + estimateSessionBytes(s),
+				0,
+			),
+			downloadBytes: plan.download.reduce(
+				(n, m) => n + (m.size ?? 0),
+				0,
+			),
+		};
+		const locals = await this.cache.getAllSessions();
+		const byId = new Map<string, CachedSession>();
+		for (const s of locals) byId.set(s.id, s);
+		const titleFor = (id: string): string =>
+			byId.get(id)?.title?.trim() || id.slice(0, 8);
+		const remoteMetas = await this.adapter.listSessions();
+		return {
+			localCount: locals.length,
+			remoteCount: remoteMetas.length,
+			upload: plan.upload.map((s) => ({
+				id: s.id,
+				title: s.title?.trim() || s.id.slice(0, 8),
+			})),
+			download: plan.download.map((m) => ({
+				id: m.id,
+				title: titleFor(m.id),
+			})),
+			conflicts: plan.conflicts.map((c) => ({
+				id: c.local.id,
+				title: c.local.title?.trim() || c.local.id.slice(0, 8),
+			})),
+			unchanged: plan.skipped,
+			uploadBytes: plan.uploadBytes,
+			downloadBytes: plan.downloadBytes,
+		};
 	}
 
 	/** Compute the sync plan by comparing local and remote state.
