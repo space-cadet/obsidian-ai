@@ -1,5 +1,14 @@
 # Active Context
 
+### 2026-09-21 21:58 IST — mobile sync fixes verified on device ✅
+
+- Morning: T42g follow-ups — `8fafd34` (Settings "Sync Now" shows progress modal; auto-sync stays modal-less by design), `5749148` (emitLog self-recursion → "Maximum call stack size exceeded" on every sync path; introduced by `e604eed`, fixed to `options?.onLog?.(entry)`).
+- Afternoon (T24/T48b follow-ons from T42g device testing): `20ae983` hydrate retry — failed/empty first read no longer permanently marks a session hydrated (root cause of synced sessions opening empty); `f812c3f` replay image placeholder — old image parts no longer force an image-capable model on later text sends; `1fb9263` picker preview shows indexed count instead of "No messages" for unhydrated sessions.
+- T42g acceptance: device verify ✅ (Deepak, 16:19 UTC — "Good. It works.").
+- T66 operational note: `styles.css` is generated (`scripts/concat-styles.mjs` from `styles/_*.css`) — hand-appended CSS is clobbered every build; T42g styles correctly relocated to `styles/_sync.css` (working tree, uncommitted, not Cloudy's).
+- Verification: ChatStorage 12/12, picker 2/2, tsc + esbuild green; pushed `5749148..1fb9263`.
+- Next: v1.6.0 release; `latest-dev` build from main is Deepak's call (would pick up the uncommitted CSS). T24a ⏸️ unchanged.
+
 ### 2026-09-19 23:05 IST — T71/T24/T11 perf PR merged to main ✅ (PR #8)
 
 - 23 commits on `perf/chat-scroll-settings-lag` → merged `c83e593`

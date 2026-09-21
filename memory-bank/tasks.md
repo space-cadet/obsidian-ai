@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-09-20 01:55 IST*
+*Last Updated: 2026-09-21 21:58 IST*
 
 ## Overview
 
@@ -29,7 +29,6 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T42c | Concurrency Control for Parallel Sync | 🔄 | HIGH | 2026-08-19 | T42 | [Details](tasks/T42c.md) |
 | T42d | Server Signature and Cache Invalidation | 🔄 | HIGH | 2026-08-19 | T42 | [Details](tasks/T42d.md) |
 | T42e | Sync Dry Run | 🔄 | MEDIUM | 2026-08-19 | T42 | [Details](tasks/T42e.md) |
-| T42g | Sync Visibility & Observability | 🔄 | HIGH | 2026-09-19 | T42, T58d | [Details](tasks/T42g.md) |
 | T58 | Integrated Sync UI into Chat Lab | 🔄 | HIGH | 2026-08-23 | T42 | [Details](tasks/T58.md) |
 | T58d | Unified Sync Progress, Dry-Run Planning, and Index Rebuild UX | 🔄 | HIGH | 2026-08-23 | T42a, T42c, T42e, T57a, T57b, T57c | [Details](tasks/T58d.md) |
 | T57 | Plugin Data Sync Safety and SyncIt Boundary | 🔄 | HIGH | 2026-08-22 | — | T42, T39a | [Details](tasks/T57.md) |
@@ -82,6 +81,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T7 | Release System & CI/CD | ✅ | HIGH | 2026-05-02 | 2026-05-02 | — | [Details](tasks/T7.md) |
 | T9 | Settings & Provider Profiles | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T1 | [Details](tasks/T9.md) |
 | T41 | Plugin Auto-Updater with Stable/Dev Channels | ✅ | HIGH | 2026-08-09 | 2026-08-12 | T7 | [Details](tasks/T41.md) |
+| T42g | Sync Visibility & Observability | ✅ | HIGH | 2026-09-19 | 2026-09-21 | T42, T58d | [Details](tasks/T42g.md) |
 | T43 | Multi-User and Agent Chat with LaTeX Support | ✅ | HIGH | 2026-08-10 | 2026-08-12 | T40 | [Details](tasks/T43.md) |
 | T19a | Group-Chat Attachment Full Replay | ✅ | HIGH | 2026-08-14 | 2026-08-14 | T19, T16, T43 | [Details](tasks/T19a.md) |
 | T20 | Message Selection and Chat History Exports | ✅ | HIGH | 2026-08-14 | 2026-08-14 | T2, T5, T19 | [Details](tasks/T20.md) |

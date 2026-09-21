@@ -1,3 +1,11 @@
+### 2026-09-21 — mobile sync fixes day ✅
+
+- T42g: `8fafd34` settings Sync Now modal; `5749148` emitLog recursion fix; device-verify acceptance ✅; registry row Active → Completed.
+- T24 (addendum): `20ae983` hydrate retry; `1fb9263` picker indexed count + regression test.
+- T48b: `f812c3f` replay image placeholder (historyBuilder canonicalization).
+- T66 (addendum): generated-stylesheet discipline — styles.css from concat-styles.mjs; T42g block → styles/_sync.css (uncommitted).
+- Verification: ChatStorage 12/12, picker 2/2, tsc + esbuild green each commit; pushed `5749148..1fb9263`; Deepak device-verified 16:19 UTC.
+
 ### 2026-09-19 — Perf PR merged to main ✅ (PR #8, `c83e593`)
 
 - Chat scroll perf + follow-scroll (T71), index-only startup (T24),

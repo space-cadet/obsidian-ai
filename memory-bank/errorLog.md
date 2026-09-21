@@ -1,10 +1,24 @@
 # Error Log
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-09-19 03:55 IST*
+*Last Updated: 2026-09-21 21:58 IST*
 
 *Newest entries first. Each entry documents a development error, its cause, and resolution.*
 
 ---
+
+### 2026-09-21 13:21 IST — Sync stack overflow on every path (ERR-20260921-002)
+
+- Symptom: all sync upload/download/conflict ops failing with `Maximum call stack size exceeded`.
+- Cause: two `emitLog` helpers in `src/lifecycle/sync.ts` (~L197 rebuild, ~L409 triggerSync) called `emitLog(entry)` unconditionally — synchronous self-recursion. Introduced by T42g hub-wiring `e604eed`.
+- Resolution: both sites → `options?.onLog?.(entry)`; shipped `5749148`. Unit suites missed it (lifecycle wiring, not hub/engine internals; `emit()` swallows listener errors).
+- Status: ✅ Fixed.
+
+### 2026-09-21 20:54 IST — Synced sessions opened empty, no retry (ERR-20260921-001)
+
+- Symptom: synced sessions showed "No messages" until manually reopened; second open worked.
+- Cause: `_hydrateSessionImpl` marked the session hydrated after a failed/empty first read — permanent for the session lifetime (index-only boot, T24).
+- Resolution: failed read / count-mismatch → stays unhydrated, retries next open, error logged; partial reads warn; UI Notice added. Shipped `20ae983` (+ `1fb9263` for the picker's lying label). Device-verified.
+- Status: ✅ Fixed.
 
 ### 2026-09-19 03:55 IST — Provider tool registration crash (ERR-20260918-001)
 

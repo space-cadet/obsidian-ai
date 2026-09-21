@@ -312,3 +312,9 @@ interface ProviderProfile {
   updatedAt: number
 }
 ```
+
+## Build Pipeline — Generated Stylesheet
+
+- Root `styles.css` is **generated** at build time by `scripts/concat-styles.mjs`, concatenating the `styles/_*.css` partials (e.g. `styles/_sync.css` owns the T42g sync-panel styles).
+- Never hand-edit `styles.css` — every `pnpm run build` rewrites it from the partials and silently discards appended CSS (incident 2026-09-21: ~544-line T42g block lost; relocated to `styles/_sync.css`).
+- Source of truth for shipped styles = the partials. The generated file is committed (Obsidian requires it) but treat it as a build artifact.
