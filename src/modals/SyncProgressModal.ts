@@ -369,6 +369,10 @@ export class SyncProgressModal extends Modal {
 
 	private confirm(): void {
 		if (this.phase !== "examine" || !this.exam || this.dryRunOnly) return;
+		// The examination screen can remain open for an arbitrary amount of
+		// time. The progress timer measures the actual sync run, so start it
+		// when the user approves the Sync action rather than at modal creation.
+		this.startTime = Date.now();
 		this.phase = "progress";
 		this.confirmed = true;
 		const direction = this.direction;

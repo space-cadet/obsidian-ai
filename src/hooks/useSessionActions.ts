@@ -74,8 +74,23 @@ export function useSessionActions({
 			// gate awaits hydration, so a fast type-and-enter can't clobber.
 			const target = sessionsRef.current.find((s) => s.id === sessionId);
 			if (target && target.hydrated === false) {
-				plugin
-					.hydrateSession?.(sessionId)
+				const hydrate = async () => {
+					// A sync refresh can know that a file was written successfully
+					// without registering it as lazy-hydratable. In that case the
+					// normal hydrate call returns [] while the pure peek still has
+					// the newly downloaded payload available on disk.
+					let messages =
+						(await plugin.hydrateSession?.(sessionId)) ?? [];
+					if (
+						messages.length === 0 &&
+						target.messageCount != null &&
+						plugin.peekSessionMessages
+					) {
+						messages = await plugin.peekSessionMessages(sessionId);
+					}
+					return messages;
+				};
+				hydrate()
 					.then((messages) => {
 						if (messages.length === 0) return;
 						// Write through the ref synchronously — anything reading

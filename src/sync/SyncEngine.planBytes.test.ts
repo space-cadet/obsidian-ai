@@ -153,6 +153,24 @@ describe("SyncEngine plan bytes (T42g)", () => {
 		expect(doneEvents.find((e) => e.direction === "download")?.bytes).toBe(
 			256,
 		);
+		expect(
+			events.some(
+				(e) =>
+					e.type === "stage" &&
+					e.id === "sync:persist-downloads" &&
+					e.status === "start" &&
+					e.indeterminate === true,
+			),
+		).toBe(true);
+		expect(
+			events.some(
+				(e) =>
+					e.type === "stage" &&
+					e.id === "sync:persist-downloads" &&
+					e.status === "done" &&
+					e.stage === "Downloaded sessions saved",
+			),
+		).toBe(true);
 	});
 
 	it("persists normal downloads as one batch", async () => {

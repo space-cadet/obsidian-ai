@@ -41,11 +41,31 @@ beforeAll(() => {
 			return el;
 		};
 	}
-	if (!hp.setText) hp.setText = function (t: string) { this.textContent = t; return this; };
-	if (!hp.empty) hp.empty = function () { this.innerHTML = ""; return this; };
-	if (!hp.addClass) hp.addClass = function (...c: string[]) { this.classList.add(...c); return this; };
-	if (!hp.removeClass) hp.removeClass = function (...c: string[]) { this.classList.remove(...c); return this; };
-	if (!hp.setCssProps) hp.setCssProps = function (props: Record<string, string>) { Object.assign(this.style, props); return this; };
+	if (!hp.setText)
+		hp.setText = function (t: string) {
+			this.textContent = t;
+			return this;
+		};
+	if (!hp.empty)
+		hp.empty = function () {
+			this.innerHTML = "";
+			return this;
+		};
+	if (!hp.addClass)
+		hp.addClass = function (...c: string[]) {
+			this.classList.add(...c);
+			return this;
+		};
+	if (!hp.removeClass)
+		hp.removeClass = function (...c: string[]) {
+			this.classList.remove(...c);
+			return this;
+		};
+	if (!hp.setCssProps)
+		hp.setCssProps = function (props: Record<string, string>) {
+			Object.assign(this.style, props);
+			return this;
+		};
 });
 
 import { SyncProgressModal } from "../SyncProgressModal";
@@ -97,7 +117,10 @@ describe("SyncProgressModal examine phase", () => {
 	});
 
 	it("caps the row list at 10 with a +N note", async () => {
-		const download = Array.from({ length: 15 }, (_, i) => ({ id: `s${i}`, title: `Row ${i}` }));
+		const download = Array.from({ length: 15 }, (_, i) => ({
+			id: `s${i}`,
+			title: `Row ${i}`,
+		}));
 		const onExamine = vi.fn().mockResolvedValue(makeExam({ download }));
 		const modal = openModal({ onExamine });
 		await flush();
@@ -108,7 +131,9 @@ describe("SyncProgressModal examine phase", () => {
 	});
 
 	it("shows a 'nothing to transfer' status when stores match", async () => {
-		const onExamine = vi.fn().mockResolvedValue(makeExam({ download: [], downloadBytes: 0 }));
+		const onExamine = vi
+			.fn()
+			.mockResolvedValue(makeExam({ download: [], downloadBytes: 0 }));
 		const modal = openModal({ onExamine });
 		await flush();
 		const text = (modal as any).contentEl.textContent as string;
@@ -118,10 +143,16 @@ describe("SyncProgressModal examine phase", () => {
 	it("marks conflicts with the warn style", async () => {
 		const onExamine = vi
 			.fn()
-			.mockResolvedValue(makeExam({ conflicts: [{ id: "c", title: "plugin-settings" }] }));
+			.mockResolvedValue(
+				makeExam({
+					conflicts: [{ id: "c", title: "plugin-settings" }],
+				}),
+			);
 		const modal = openModal({ onExamine });
 		await flush();
-		const warn = (modal as any).contentEl.querySelector(".sync-exam-stat--warn");
+		const warn = (modal as any).contentEl.querySelector(
+			".sync-exam-stat--warn",
+		);
 		expect(warn).not.toBeNull();
 		expect(warn.textContent).toContain("conflicts");
 	});
@@ -130,11 +161,15 @@ describe("SyncProgressModal examine phase", () => {
 		const onExamine = vi.fn().mockResolvedValue(makeExam());
 		const modal = openModal({ onExamine, dryRunOnly: true });
 		await flush();
-		expect((modal as any).syncNowBtn.classList.contains("sync-btn-hidden")).toBe(true);
-		expect((modal as any).syncNowBtn.classList.contains("mod-cta")).toBe(false);
-		const labels = [...(modal as any).contentEl.querySelectorAll("button")].map(
-			(b: HTMLButtonElement) => b.textContent,
+		expect(
+			(modal as any).syncNowBtn.classList.contains("sync-btn-hidden"),
+		).toBe(true);
+		expect((modal as any).syncNowBtn.classList.contains("mod-cta")).toBe(
+			false,
 		);
+		const labels = [
+			...(modal as any).contentEl.querySelectorAll("button"),
+		].map((b: HTMLButtonElement) => b.textContent);
 		expect(labels).toContain("Close");
 	});
 
@@ -210,6 +245,22 @@ describe("SyncProgressModal examine phase", () => {
 		expect(onConfirm).toHaveBeenCalledWith("both");
 		expect((modal as any).phase).toBe("progress");
 		expect((modal as any).contentEl.textContent).toContain("Syncing");
+	});
+
+	it("starts the elapsed timer when Sync is pressed", async () => {
+		const now = vi
+			.spyOn(Date, "now")
+			.mockReturnValueOnce(1_000)
+			.mockReturnValue(6_000);
+		const modal = openModal({
+			onExamine: vi.fn().mockResolvedValue(makeExam()),
+		});
+		await flush();
+
+		(modal as any).syncNowBtn.click();
+
+		expect((modal as any).startTime).toBe(6_000);
+		now.mockRestore();
 	});
 
 	it("updates live counters from sync progress snapshots", async () => {

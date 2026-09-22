@@ -110,4 +110,67 @@ describe("useSessionActions", () => {
 			expect.objectContaining({ selectedProfileIds: ["gemini-tab"] }),
 		);
 	});
+
+	it("opens a synced session when hydration state is already known to storage", async () => {
+		const session = {
+			id: "downloaded-session",
+			title: "Downloaded chat",
+			createdAt: 0,
+			updatedAt: 0,
+			messages: [],
+			messageCount: 1,
+			hydrated: false,
+			contextItems: [],
+		};
+		const messages = [{ id: "message-1", role: "user", content: "Hello" }];
+		const setSessions = vi.fn();
+		const plugin = {
+			settings: {
+				includeActiveNote: false,
+				selectedProfileIds: [],
+				providerProfiles: [{ id: "default", provider: "ollama" }],
+				activeProviderProfileId: "default",
+			},
+			hydrateSession: vi.fn().mockResolvedValue([]),
+			peekSessionMessages: vi.fn().mockResolvedValue(messages),
+		} as any;
+		const sessionsRef = { current: [session] as any[] };
+		const activeSessionIdRef = { current: null as string | null };
+
+		const { result } = renderHook(() => {
+			const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
+			return useSessionActions({
+				plugin,
+				sessionsRef,
+				activeSessionIdRef,
+				setSessions,
+				setActiveSessionId: vi.fn(),
+				setScrollToMessageId: vi.fn(),
+				createNewSession: vi.fn(),
+				setSelectedProfileIds: vi.fn(),
+				getSelectedProfileIds: () => ["default"],
+				setDebateMode: vi.fn(),
+				setWasTruncated: vi.fn(),
+				isStreaming: false,
+				abortActiveRuntime: vi.fn(),
+				clearSessionRuntime: vi.fn(),
+				openSessionIds,
+				setOpenSessionIds,
+			});
+		});
+
+		await act(async () => {
+			result.current.openSessionInTab(session.id);
+			await Promise.resolve();
+		});
+
+		expect(plugin.peekSessionMessages).toHaveBeenCalledWith(session.id);
+		const savedSessions = setSessions.mock.calls.at(-1)?.[0];
+		expect(savedSessions[0]).toMatchObject({
+			id: session.id,
+			messages,
+			hydrated: true,
+			messageCount: 1,
+		});
+	});
 });

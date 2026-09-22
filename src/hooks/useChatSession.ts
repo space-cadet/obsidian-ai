@@ -123,7 +123,27 @@ export function useChatSession({
 					)
 						? currentActiveId
 						: (savedSessions[0]?.id ?? null);
-					setSessions(savedSessions);
+					// The sync refresh is metadata-only. Preserve messages already
+					// present in React so the active chat and open tabs do not go
+					// blank while the index is being refreshed.
+					const currentById = new Map(
+						sessionsRef.current.map((session) => [
+							session.id,
+							session,
+						]),
+					);
+					const refreshedSessions = savedSessions.map((session) => {
+						const current = currentById.get(session.id);
+						return current && current.messages.length > 0
+							? {
+									...session,
+									messages: current.messages,
+									messageCount: current.messages.length,
+									hydrated: true,
+								}
+							: session;
+					});
+					setSessions(refreshedSessions);
 					setActiveSessionId(nextActiveId);
 					setOpenSessionIds((current) => {
 						const knownIds = new Set(

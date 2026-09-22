@@ -544,6 +544,14 @@ export class SyncEngine {
 			// finish. Rewriting the complete local archive per session makes large
 			// syncs needlessly serial and is the primary download bottleneck.
 			if (!this._cancelled && downloadedSessions.length > 0) {
+				this.progress?.({
+					type: "stage",
+					id: "sync:persist-downloads",
+					phase: "syncing",
+					stage: "Saving downloaded sessions to disk",
+					status: "start",
+					indeterminate: true,
+				});
 				try {
 					if (this.onSessionsDownloaded) {
 						await this.onSessionsDownloaded(downloadedSessions);
@@ -552,6 +560,14 @@ export class SyncEngine {
 							await this.onSessionDownloaded(session);
 						}
 					}
+					this.progress?.({
+						type: "stage",
+						id: "sync:persist-downloads",
+						phase: "syncing",
+						stage: "Downloaded sessions saved",
+						status: "done",
+						indeterminate: false,
+					});
 				} catch (err: any) {
 					const msg = `Downloaded session persistence failed: ${err.message}`;
 					this.log("error", msg);
@@ -608,6 +624,14 @@ export class SyncEngine {
 
 			// T42a: Update sync index after successful operations
 			if (!this._cancelled && this.indexManager && serverSignature) {
+				this.progress?.({
+					type: "stage",
+					id: "sync:update-index",
+					phase: "syncing",
+					stage: "Updating local sync index",
+					status: "start",
+					indeterminate: true,
+				});
 				try {
 					const updatedIndex = await this.indexManager.patchIndex(
 						index,
@@ -623,6 +647,14 @@ export class SyncEngine {
 						"info",
 						`SyncEngine: updated sync index (${Object.keys(updatedIndex.entries).length} entries)`,
 					);
+					this.progress?.({
+						type: "stage",
+						id: "sync:update-index",
+						phase: "syncing",
+						stage: "Local sync index updated",
+						status: "done",
+						indeterminate: false,
+					});
 				} catch (idxErr: any) {
 					this.log(
 						"warn",
@@ -632,6 +664,14 @@ export class SyncEngine {
 			}
 
 			if (!this._cancelled) {
+				this.progress?.({
+					type: "stage",
+					id: "sync:update-manifest",
+					phase: "syncing",
+					stage: "Updating session manifest",
+					status: "start",
+					indeterminate: true,
+				});
 				try {
 					const manifestLocals = await this.cache.getAllSessions();
 					const manifestRemotes = await this.adapter.listSessions();
@@ -639,6 +679,14 @@ export class SyncEngine {
 						manifestLocals,
 						manifestRemotes,
 					);
+					this.progress?.({
+						type: "stage",
+						id: "sync:update-manifest",
+						phase: "syncing",
+						stage: "Session manifest updated",
+						status: "done",
+						indeterminate: false,
+					});
 				} catch (manifestErr: any) {
 					this.log(
 						"warn",
