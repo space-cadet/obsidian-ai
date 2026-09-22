@@ -97,7 +97,9 @@ function verifiedLocal(id: string, etag: string) {
 	return {
 		id,
 		title: id.toUpperCase(),
-		messages: [{ id: `${id}-m`, role: "user", content: "local", timestamp: 1 }],
+		messages: [
+			{ id: `${id}-m`, role: "user", content: "local", timestamp: 1 },
+		],
 		createdAt: 1,
 		updatedAt: 5,
 		contextItems: [],
@@ -133,7 +135,10 @@ describe("SyncIndexManager.isUnchanged — unverified local guard", () => {
 			entries: { s1: makeIndexEntry("etag-1") },
 		};
 		const remote = remoteMeta("s1", "etag-1");
-		const verified = { ...verifiedLocal("s1", "etag-1"), _syncStatus: undefined } as any;
+		const verified = {
+			...verifiedLocal("s1", "etag-1"),
+			_syncStatus: undefined,
+		} as any;
 		const unverified = unverifiedLocal("s1", "etag-1");
 		expect(mgr.isUnchanged(verified, remote, index)).toBe(true);
 		expect(mgr.isUnchanged(unverified, remote, index)).toBe(false);
@@ -143,7 +148,10 @@ describe("SyncIndexManager.isUnchanged — unverified local guard", () => {
 describe("SyncEngine unverified-local plan", () => {
 	it("skips verified-unchanged but re-downloads unverified locals (index fast path)", async () => {
 		const { engine } = makeEngine({
-			locals: [verifiedLocal("s1", "etag-1"), unverifiedLocal("s2", "etag-2")],
+			locals: [
+				verifiedLocal("s1", "etag-1"),
+				unverifiedLocal("s2", "etag-2"),
+			],
 			remotes: [remoteMeta("s1", "etag-1"), remoteMeta("s2", "etag-2")],
 		});
 		const mgr = new SyncIndexManager(
@@ -153,7 +161,10 @@ describe("SyncEngine unverified-local plan", () => {
 		const index: SyncIndex = {
 			lastSyncTime: 1000,
 			serverSignature: "sig",
-			entries: { s1: makeIndexEntry("etag-1"), s2: makeIndexEntry("etag-2") },
+			entries: {
+				s1: makeIndexEntry("etag-1"),
+				s2: makeIndexEntry("etag-2"),
+			},
 		};
 		const plan = await engine.computeSyncPlan(index);
 		expect(plan.download.map((m) => m.id)).toEqual(["s2"]);
@@ -163,7 +174,10 @@ describe("SyncEngine unverified-local plan", () => {
 
 	it("re-downloads unverified locals even without the sync index (etag match)", async () => {
 		const { engine } = makeEngine({
-			locals: [verifiedLocal("s1", "etag-1"), unverifiedLocal("s2", "etag-2")],
+			locals: [
+				verifiedLocal("s1", "etag-1"),
+				unverifiedLocal("s2", "etag-2"),
+			],
 			remotes: [remoteMeta("s1", "etag-1"), remoteMeta("s2", "etag-2")],
 		});
 		const plan = await engine.computeSyncPlan(null);
@@ -225,11 +239,30 @@ describe("SyncEngine.populateCache — unverified sessions", () => {
 		await engine.populateCache([
 			unverifiedLocal("s1", "etag-1"),
 			verifiedLocal("s2", "etag-2"),
-			{ ...verifiedLocal("s3", "etag-3"), _syncStatus: undefined, _etag: undefined, _remoteModifiedAt: undefined },
+			{
+				...verifiedLocal("s3", "etag-3"),
+				_syncStatus: undefined,
+				_etag: undefined,
+				_remoteModifiedAt: undefined,
+			},
 		] as any);
 		expect(deletes).toEqual(["s1"]);
 		expect(puts).toHaveLength(1);
 		expect(puts[0].id).toBe("s3");
 		// Real LocalCache.putSession stamps _syncStatus "pending" on put.
+	});
+
+	it("evicts cache entries that disappeared from live storage", async () => {
+		const deletes: string[] = [];
+		const { engine } = makeEngine({
+			locals: [
+				verifiedLocal("stale", "etag-stale"),
+				verifiedLocal("live", "etag-live"),
+			],
+			remotes: [],
+			deletes,
+		});
+		await engine.populateCache([verifiedLocal("live", "etag-live")] as any);
+		expect(deletes).toEqual(["stale"]);
 	});
 });

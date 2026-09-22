@@ -5,7 +5,7 @@ import type { StorageAdapter } from "./StorageAdapter";
 export interface SyncLogEntry {
 	timestamp: number;
 	deviceId: string;
-	action: "upload" | "download" | "conflict" | "skip" | "error";
+	action: "upload" | "download" | "conflict" | "delete" | "skip" | "error";
 	sessionId?: string;
 	sessionTitle?: string;
 	message: string;
@@ -81,7 +81,7 @@ export class SyncLogger {
 		const ts = new Date(record.timestamp).toISOString();
 		const device = record.deviceId.slice(0, 6);
 		const { result, durationMs } = record;
-		const line = `${ts} [${device}] SESSION  ↑${result.uploaded} ↓${result.downloaded} ⚡${result.conflicts} ⊘${result.skipped} ⚠️${result.errors.length} | ${result.message} | ${durationMs}ms`;
+		const line = `${ts} [${device}] SESSION  ↑${result.uploaded} ↓${result.downloaded} ⌫${result.deleted ?? 0} ⚡${result.conflicts} ⊘${result.skipped} ⚠️${result.errors.length} | ${result.message} | ${durationMs}ms`;
 		this.logBuffer.push(line);
 	}
 

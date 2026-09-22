@@ -36,6 +36,7 @@ export interface RemoteSessionMeta {
 export interface SyncResult {
 	uploaded: number;
 	downloaded: number;
+	deleted?: number;
 	conflicts: number;
 	skipped: number;
 	errors: string[];
@@ -118,6 +119,10 @@ export interface SyncPlan {
 	upload: ChatSession[];
 	download: RemoteSessionMeta[];
 	conflicts: Array<{ local: ChatSession; remote: RemoteSessionMeta }>;
+	/** Sessions explicitly deleted locally and pending remote deletion. */
+	deleteRemote: RemoteSessionMeta[];
+	/** Sessions deleted on another device and pending local removal. */
+	deleteLocal: string[];
 	skipped: number;
 	/** Estimated payload bytes for planned uploads (T42g). */
 	uploadBytes: number;

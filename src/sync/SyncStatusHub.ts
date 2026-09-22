@@ -22,6 +22,7 @@ export interface SyncLastResult {
 	message: string;
 	uploaded: number;
 	downloaded: number;
+	deleted?: number;
 	conflicts: number;
 	skipped: number;
 	uploadedBytes: number;
@@ -127,7 +128,9 @@ export class SyncStatusHub {
 					? "download"
 					: entry.operation === "conflict"
 						? "conflict"
-						: "upload";
+						: entry.operation === "delete"
+							? "delete"
+							: "upload";
 			const failure: SyncOperationFailure = {
 				operation,
 				title: entry.title,

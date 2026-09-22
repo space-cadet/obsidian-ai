@@ -172,6 +172,33 @@ describe("SyncEngine.examine (T46)", () => {
 		expect(exam.download.map((s) => s.id)).toEqual(["s2"]);
 	});
 
+	it("plans deletion of a previously synced remote session when local storage removed it", () => {
+		const engine = makeEngine({
+			locals: [],
+			remotes: [remoteMeta("s1", "etag-1")],
+		});
+		const plan = (engine as any).computeSyncPlanFromState(
+			[],
+			[remoteMeta("s1", "etag-1")],
+			{ entries: { s1: {} } },
+		);
+		expect(plan.deleteRemote.map((s: any) => s.id)).toEqual(["s1"]);
+		expect(plan.download).toEqual([]);
+	});
+
+	it("plans local removal when a remote deletion tombstone is present", () => {
+		const local = verifiedLocal("s1", "etag-1");
+		const engine = makeEngine({ locals: [local], remotes: [] });
+		const plan = (engine as any).computeSyncPlanFromState(
+			[local],
+			[],
+			null,
+			new Set(["s1"]),
+		);
+		expect(plan.deleteLocal).toEqual(["s1"]);
+		expect(plan.upload).toEqual([]);
+	});
+
 	it("throws while a sync is running", async () => {
 		const engine = makeEngine({ locals: [], remotes: [] });
 		(engine as any).state = "syncing";

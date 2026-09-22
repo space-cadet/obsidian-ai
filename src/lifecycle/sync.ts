@@ -121,6 +121,22 @@ export async function initSyncEngine(plugin: ObsidianAIPlugin): Promise<void> {
 					`[SyncEngine] Downloaded session ${session.id} merged into storage`,
 				);
 			},
+			onSessionDeleted: async (sessionId) => {
+				const chatData = await plugin.loadChatData({ hydrate: true });
+				const sessions = (chatData.sessions || []).filter(
+					(session) => session.id !== sessionId,
+				);
+				await plugin.saveChatData({ ...chatData, sessions });
+				window.dispatchEvent(
+					new CustomEvent("obsidian-ai:session-deleted", {
+						detail: { sessionId },
+					}),
+				);
+				plugin.logger?.log(
+					"info",
+					`[SyncEngine] Deleted session ${sessionId} from local storage`,
+				);
+			},
 		});
 
 		if (rs.backend === "webdav" && rs.webdav) {
@@ -153,6 +169,7 @@ export async function rebuildSyncIndex(
 ): Promise<{
 	uploaded: number;
 	downloaded: number;
+	deleted?: number;
 	conflicts: number;
 	skipped: number;
 }> {
@@ -281,6 +298,7 @@ export async function rebuildSyncIndex(
 			message: `Rebuild failed: ${err?.message ?? err}`,
 			uploaded: 0,
 			downloaded: 0,
+			deleted: 0,
 			conflicts: 0,
 			skipped: 0,
 			uploadedBytes: rebuildUploadedBytes,
@@ -323,6 +341,7 @@ export type TriggerSyncResult = {
 	message: string;
 	uploaded: number;
 	downloaded: number;
+	deleted?: number;
 	conflicts: number;
 	skipped: number;
 	errors: string[];
@@ -427,6 +446,7 @@ export async function triggerSync(
 	// Track operation counts for progress callbacks
 	let progressUploaded = 0;
 	let progressDownloaded = 0;
+	let progressDeleted = 0;
 	let progressConflicts = 0;
 	let progressSkipped = 0;
 	let progressUploadedBytes = 0;
@@ -445,6 +465,7 @@ export async function triggerSync(
 			completed: progress.completed ?? completedOps,
 			uploaded: progress.uploaded ?? progressUploaded,
 			downloaded: progress.downloaded ?? progressDownloaded,
+			deleted: progress.deleted ?? progressDeleted,
 			conflicts: progress.conflicts ?? progressConflicts,
 			skipped: progress.skipped ?? progressSkipped,
 			elapsedMs: Date.now() - startTime,
@@ -534,6 +555,7 @@ export async function triggerSync(
 					completedOps++;
 					if (event.direction === "upload") progressUploaded++;
 					if (event.direction === "download") progressDownloaded++;
+					if (event.direction === "delete") progressDeleted++;
 					if (event.direction === "conflict") progressConflicts++;
 					if (event.bytes) {
 						if (event.direction === "upload")
@@ -672,6 +694,7 @@ export async function triggerSync(
 		const parts: string[] = [];
 		if (result.uploaded > 0) parts.push(`↑${result.uploaded}`);
 		if (result.downloaded > 0) parts.push(`↓${result.downloaded}`);
+		if ((result.deleted ?? 0) > 0) parts.push(`⌫${result.deleted}`);
 		if (result.conflicts > 0) parts.push(`⚡${result.conflicts}`);
 		if (result.skipped > 0) parts.push(`⊘${result.skipped}`);
 		if (result.errors.length > 0) parts.push(`⚠️ ${result.errors.length}`);
@@ -742,6 +765,7 @@ export async function triggerSync(
 			message: msg,
 			uploaded: result.uploaded,
 			downloaded: result.downloaded,
+			deleted: result.deleted,
 			conflicts: result.conflicts,
 			skipped: result.skipped,
 			uploadedBytes: progressUploadedBytes,
@@ -759,6 +783,7 @@ export async function triggerSync(
 			message: msg,
 			uploaded: result.uploaded,
 			downloaded: result.downloaded,
+			deleted: result.deleted,
 			conflicts: result.conflicts,
 			skipped: result.skipped,
 			errors: combinedErrors,

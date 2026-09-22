@@ -9,6 +9,7 @@ export type SyncProgressOperation =
 	| "upload"
 	| "download"
 	| "conflict"
+	| "delete"
 	| "skip"
 	| "error"
 	| "system";
@@ -27,6 +28,7 @@ export interface SyncProgressSnapshot {
 	completed: number;
 	uploaded: number;
 	downloaded: number;
+	deleted?: number;
 	conflicts: number;
 	skipped: number;
 	elapsedMs: number;
@@ -53,7 +55,7 @@ export interface SyncLogEntry {
 export interface SyncEngineProgressEvent {
 	type: "session" | "stage";
 	id: string;
-	direction?: "upload" | "download" | "conflict";
+	direction?: "upload" | "download" | "conflict" | "delete";
 	status: "start" | "done" | "error";
 	error?: string;
 	phase?: SyncProgressPhase;

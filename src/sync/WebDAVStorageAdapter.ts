@@ -71,7 +71,10 @@ export class WebDAVStorageAdapter implements StorageAdapter {
 				const filename = item.href.split("/").pop() || "";
 				// Skip temporary files from atomic writes
 				if (isTempPath(filename)) continue;
-				const id = filename.replace(/\.json$/, "");
+				// The sessions directory may also contain WebDAV metadata or
+				// provider-specific files. Only encrypted session payloads count.
+				if (!filename.endsWith(".json")) continue;
+				const id = filename.slice(0, -".json".length);
 				if (!id) continue;
 
 				results.push({

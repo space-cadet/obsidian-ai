@@ -75,6 +75,35 @@ export function useChatSession({
 	sessionsRef.current = sessions;
 	activeSessionIdRef.current = activeSessionId;
 
+	// Remote deletion tombstones can remove a session while the chat view is
+	// mounted. Keep the in-memory picker/tabs aligned with persisted storage.
+	useEffect(() => {
+		const handleRemoteDeletion = (event: Event) => {
+			const sessionId = (event as CustomEvent<{ sessionId?: string }>)
+				.detail?.sessionId;
+			if (!sessionId) return;
+			setSessions((current) => current.filter((s) => s.id !== sessionId));
+			setOpenSessionIds((current) =>
+				current.filter((id) => id !== sessionId),
+			);
+			if (activeSessionIdRef.current === sessionId) {
+				const next = sessionsRef.current
+					.filter((session) => session.id !== sessionId)
+					.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))[0];
+				setActiveSessionId(next?.id ?? null);
+			}
+		};
+		window.addEventListener(
+			"obsidian-ai:session-deleted",
+			handleRemoteDeletion,
+		);
+		return () =>
+			window.removeEventListener(
+				"obsidian-ai:session-deleted",
+				handleRemoteDeletion,
+			);
+	}, []);
+
 	// ─── Load persisted sessions on mount ───
 	useEffect(() => {
 		let cancelled = false;

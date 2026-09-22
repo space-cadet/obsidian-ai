@@ -18,6 +18,7 @@ import type { SyncEngineProgressEvent } from "./SyncProgress";
 
 export type SyncState = "idle" | "syncing" | "error" | "locked";
 export type ConflictStrategy = "last-write-wins" | "keep-both" | "manual";
+const SESSION_DELETIONS_PATH = "session-deletions.json";
 
 /** T46: Read-only comparison of local and remote stores (SyncEngine.examine). */
 export interface SyncExamination {
@@ -33,6 +34,10 @@ export interface SyncExamination {
 	conflicts: Array<{ id: string; title: string }>;
 	/** Sessions identical on both sides — no transfer needed. */
 	unchanged: number;
+	/** Sessions explicitly deleted locally and pending remote deletion. */
+	deleteRemote?: Array<{ id: string; title: string }>;
+	/** Sessions deleted on another device and pending local removal. */
+	deleteLocal?: string[];
 	uploadBytes: number;
 	downloadBytes: number;
 }
@@ -47,6 +52,8 @@ export interface SyncEngineConfig {
 	progress?: (event: SyncEngineProgressEvent) => void;
 	/** Called when a session is downloaded from remote. Implementor should save to app storage. */
 	onSessionDownloaded?: (session: ChatSession) => Promise<void>;
+	/** Called when a deletion tombstone arrives from another device. */
+	onSessionDeleted?: (sessionId: string) => Promise<void>;
 	/** Optional sync index manager for skipping unchanged sessions (T42a). */
 	indexManager?: SyncIndexManager;
 	/** Max parallel upload/download operations (T42c). */
@@ -74,6 +81,7 @@ export class SyncEngine {
 	private progress?: (event: SyncEngineProgressEvent) => void;
 	private logHandler?: (level: string, msg: string) => void;
 	private onSessionDownloaded?: (session: ChatSession) => Promise<void>;
+	private onSessionDeleted?: (sessionId: string) => Promise<void>;
 	private _cancelled = false;
 	private indexManager?: SyncIndexManager;
 	private serverConfig?: {
@@ -96,6 +104,7 @@ export class SyncEngine {
 		this.logger = config.logger;
 		this.progress = config.progress;
 		this.onSessionDownloaded = config.onSessionDownloaded;
+		this.onSessionDeleted = config.onSessionDeleted;
 		this.indexManager = config.indexManager;
 		this.concurrencyLimit = config.concurrencyLimit ?? 3;
 		this.dryRun = config.dryRun ?? false;
@@ -188,14 +197,17 @@ export class SyncEngine {
 		const errors: string[] = [];
 		let uploaded = 0,
 			downloaded = 0,
-			conflicts = 0;
+			conflicts = 0,
+			deleted = 0;
 
 		// T42a: Load sync index
 		const { index, serverSignature } = await this._loadIndex();
+		const deletionLedger = await this.loadSessionDeletions();
 
 		// Track successfully synced sessions for index update
 		const syncedLocals: ChatSession[] = [];
 		const syncedRemotes: RemoteSessionMeta[] = [];
+		const successfulDeletionIds = new Set<string>();
 
 		try {
 			this.progress?.({
@@ -206,13 +218,21 @@ export class SyncEngine {
 				status: "start",
 				indeterminate: true,
 			});
-			let plan = await this.computeSyncPlan(index);
+			let plan = await this.computeSyncPlan(
+				index,
+				new Set(deletionLedger.keys()),
+			);
 
 			// T43: Apply direction filter
 			if (direction === "upload") {
-				plan = { ...plan, download: [], conflicts: [] };
+				plan = {
+					...plan,
+					download: [],
+					conflicts: [],
+					deleteLocal: [],
+				};
 			} else if (direction === "download") {
-				plan = { ...plan, upload: [], conflicts: [] };
+				plan = { ...plan, upload: [], conflicts: [], deleteRemote: [] };
 			}
 			// T42g: recompute planned bytes after direction filtering
 			plan = {
@@ -235,7 +255,9 @@ export class SyncEngine {
 				total:
 					plan.upload.length +
 					plan.download.length +
-					plan.conflicts.length,
+					plan.conflicts.length +
+					plan.deleteRemote.length +
+					plan.deleteLocal.length,
 				completed: 0,
 				planBytes: {
 					upload: plan.uploadBytes,
@@ -312,16 +334,115 @@ export class SyncEngine {
 					conflicts++;
 				}
 
+				for (const meta of plan.deleteRemote) {
+					this.progress?.({
+						type: "session",
+						id: meta.id,
+						direction: "delete",
+						status: "start",
+					});
+					this.progress?.({
+						type: "session",
+						id: meta.id,
+						direction: "delete",
+						status: "done",
+					});
+					deleted++;
+				}
+
+				for (const id of plan.deleteLocal) {
+					this.progress?.({
+						type: "session",
+						id,
+						direction: "delete",
+						status: "start",
+					});
+					this.progress?.({
+						type: "session",
+						id,
+						direction: "delete",
+						status: "done",
+					});
+					deleted++;
+				}
+
 				this.state = errors.length > 0 ? "error" : "idle";
 				return {
 					uploaded,
 					downloaded,
+					deleted,
 					conflicts,
 					skipped: plan.skipped,
 					errors,
 					status: errors.length > 0 ? "partial" : "complete",
 					retryable: await this.retryStore?.list(),
 				};
+			}
+
+			// Apply explicit local deletions to the remote store before any
+			// uploads. A shared tombstone prevents another device from restoring
+			// the deleted session on its next sync.
+			if (!this._cancelled && plan.deleteRemote.length > 0) {
+				for (const meta of plan.deleteRemote) {
+					try {
+						this.progress?.({
+							type: "session",
+							id: meta.id,
+							direction: "delete",
+							status: "start",
+						});
+						await this.adapter.deleteSession(meta.id);
+						deletionLedger.set(meta.id, Date.now());
+						successfulDeletionIds.add(meta.id);
+						deleted++;
+						this.progress?.({
+							type: "session",
+							id: meta.id,
+							direction: "delete",
+							status: "done",
+						});
+					} catch (err: any) {
+						const msg = `Delete failed for ${meta.id}: ${err.message}`;
+						errors.push(msg);
+						this.progress?.({
+							type: "session",
+							id: meta.id,
+							direction: "delete",
+							status: "error",
+							error: msg,
+						});
+					}
+				}
+				if (deletionLedger.size > 0) {
+					await this.saveSessionDeletions(deletionLedger);
+				}
+			}
+
+			if (!this._cancelled && plan.deleteLocal.length > 0) {
+				for (const id of plan.deleteLocal) {
+					try {
+						await this.onSessionDeleted?.(id);
+						await this.cache.deleteSession(id);
+						successfulDeletionIds.add(id);
+						deleted++;
+						this.progress?.({
+							type: "session",
+							id,
+							direction: "delete",
+							status: "done",
+						});
+					} catch (err: any) {
+						const msg = `Local delete failed for ${id}: ${err.message}`;
+						errors.push(msg);
+						this.progress?.({
+							type: "session",
+							id,
+							direction: "delete",
+							status: "error",
+							error: msg,
+						});
+					}
+				}
 			}
 
 			// Upload local changes
@@ -456,6 +577,9 @@ export class SyncEngine {
 						syncedRemotes,
 						serverSignature,
 					);
+					for (const id of successfulDeletionIds) {
+						delete updatedIndex.entries[id];
+					}
 					await this.indexManager.save(updatedIndex);
 					this.log(
 						"info",
@@ -472,19 +596,20 @@ export class SyncEngine {
 			this.state = errors.length > 0 ? "error" : "idle";
 			this.log(
 				"info",
-				`SyncEngine: sync complete. ↑${uploaded} ↓${downloaded} ⚡${conflicts} ⊘${plan.skipped}`,
+				`SyncEngine: sync complete. ↑${uploaded} ↓${downloaded} ⌫${deleted} ⚡${conflicts} ⊘${plan.skipped}`,
 			);
 
 			return {
 				uploaded,
 				downloaded,
+				deleted,
 				conflicts,
 				skipped: plan.skipped,
 				errors,
 				status:
 					errors.length === 0
 						? "complete"
-						: uploaded + downloaded + conflicts > 0
+						: uploaded + downloaded + conflicts > 0 || deleted > 0
 							? "partial"
 							: "failed",
 				retryable: await this.retryStore?.list(),
@@ -497,6 +622,7 @@ export class SyncEngine {
 			return {
 				uploaded: 0,
 				downloaded: 0,
+				deleted: 0,
 				conflicts: 0,
 				skipped: 0,
 				errors,
@@ -543,12 +669,16 @@ export class SyncEngine {
 			throw new Error("Sync in progress");
 		}
 		const { index } = await this._loadIndex();
-		let plan = await this.computeSyncPlan(index);
+		const deletionLedger = await this.loadSessionDeletions();
+		let plan = await this.computeSyncPlan(
+			index,
+			new Set(deletionLedger.keys()),
+		);
 		// T43: same direction filter as sync()
 		if (direction === "upload") {
-			plan = { ...plan, download: [], conflicts: [] };
+			plan = { ...plan, download: [], conflicts: [], deleteLocal: [] };
 		} else if (direction === "download") {
-			plan = { ...plan, upload: [], conflicts: [] };
+			plan = { ...plan, upload: [], conflicts: [], deleteRemote: [] };
 		}
 		plan = {
 			...plan,
@@ -556,17 +686,16 @@ export class SyncEngine {
 				(n, s) => n + estimateSessionBytes(s),
 				0,
 			),
-			downloadBytes: plan.download.reduce(
-				(n, m) => n + (m.size ?? 0),
-				0,
-			),
+			downloadBytes: plan.download.reduce((n, m) => n + (m.size ?? 0), 0),
 		};
 		const locals = await this.cache.getAllSessions();
 		const byId = new Map<string, CachedSession>();
 		for (const s of locals) byId.set(s.id, s);
 		const titleFor = (id: string): string =>
 			byId.get(id)?.title?.trim() || id.slice(0, 8);
-		const remoteMetas = await this.adapter.listSessions();
+		const remoteMetas = (await this.adapter.listSessions()).filter(
+			(meta) => !deletionLedger.has(meta.id),
+		);
 		return {
 			localCount: locals.length,
 			remoteCount: remoteMetas.length,
@@ -582,6 +711,11 @@ export class SyncEngine {
 				id: c.local.id,
 				title: c.local.title?.trim() || c.local.id.slice(0, 8),
 			})),
+			deleteRemote: plan.deleteRemote.map((meta) => ({
+				id: meta.id,
+				title: titleFor(meta.id),
+			})),
+			deleteLocal: plan.deleteLocal,
 			unchanged: plan.skipped,
 			uploadBytes: plan.uploadBytes,
 			downloadBytes: plan.downloadBytes,
@@ -590,10 +724,20 @@ export class SyncEngine {
 
 	/** Compute the sync plan by comparing local and remote state.
 	 *  @param index Optional sync index for skipping unchanged sessions (T42a). */
-	async computeSyncPlan(index?: SyncIndex | null): Promise<SyncPlan> {
+	async computeSyncPlan(
+		index?: SyncIndex | null,
+		deletedIds = new Set<string>(),
+	): Promise<SyncPlan> {
 		const localSessions = await this.cache.getAllSessions();
-		const remoteMetas = await this.adapter.listSessions();
-		return this.computeSyncPlanFromState(localSessions, remoteMetas, index);
+		const remoteMetas = (await this.adapter.listSessions()).filter(
+			(meta) => !deletedIds.has(meta.id),
+		);
+		return this.computeSyncPlanFromState(
+			localSessions,
+			remoteMetas,
+			index,
+			deletedIds,
+		);
 	}
 
 	/** Compute a plan from already-loaded state so rebuild does not rescan. */
@@ -601,6 +745,7 @@ export class SyncEngine {
 		localSessions: CachedSession[],
 		remoteMetas: RemoteSessionMeta[],
 		index?: SyncIndex | null,
+		deletedIds = new Set<string>(),
 	): SyncPlan {
 		const remoteMap = new Map<string, RemoteSessionMeta>();
 		for (const meta of remoteMetas) {
@@ -613,9 +758,15 @@ export class SyncEngine {
 			local: ChatSession;
 			remote: RemoteSessionMeta;
 		}> = [];
+		const deleteRemote: RemoteSessionMeta[] = [];
+		const deleteLocal: string[] = [];
 		let skipped = 0;
 
 		for (const local of localSessions) {
+			if (deletedIds.has(local.id)) {
+				deleteLocal.push(local.id);
+				continue;
+			}
 			const remote = remoteMap.get(local.id);
 			remoteMap.delete(local.id);
 
@@ -683,6 +834,21 @@ export class SyncEngine {
 			}
 		}
 
+		// An index entry with no live local session is an explicit local
+		// deletion. Only a previously synced ID is eligible; a new device with
+		// no index must download remote sessions normally.
+		if (index) {
+			const liveIds = new Set(localSessions.map((session) => session.id));
+			for (const id of Object.keys(index.entries)) {
+				if (liveIds.has(id) || deletedIds.has(id)) continue;
+				const remote = remoteMap.get(id);
+				if (remote) {
+					deleteRemote.push(remote);
+					remoteMap.delete(id);
+				}
+			}
+		}
+
 		// Remaining remotes are not in local cache: download all
 		for (const meta of remoteMap.values()) {
 			download.push(meta);
@@ -692,6 +858,8 @@ export class SyncEngine {
 			upload,
 			download,
 			conflicts,
+			deleteRemote,
+			deleteLocal,
 			skipped,
 			uploadBytes: upload.reduce(
 				(n, s) => n + estimateSessionBytes(s),
@@ -1148,6 +1316,42 @@ export class SyncEngine {
 		this.log(
 			"info",
 			`SyncEngine: cache populated with ${sessions.length} sessions`,
+		);
+	}
+
+	/** Read the shared chat-session deletion tombstones. */
+	private async loadSessionDeletions(): Promise<Map<string, number>> {
+		try {
+			const raw = await this.adapter.readText(SESSION_DELETIONS_PATH);
+			if (!raw) return new Map();
+			const parsed = JSON.parse(raw) as Record<string, unknown>;
+			return new Map(
+				Object.entries(parsed).flatMap(([id, value]) =>
+					typeof value === "number" && Number.isFinite(value)
+						? [[id, value] as [string, number]]
+						: [],
+				),
+			);
+		} catch (err) {
+			this.log(
+				"warn",
+				`SyncEngine: failed to read deletion ledger: ${String(err)}`,
+			);
+			return new Map();
+		}
+	}
+
+	/** Persist the shared chat-session deletion tombstones atomically. */
+	private async saveSessionDeletions(
+		deletions: Map<string, number>,
+	): Promise<void> {
+		const entries = [...deletions.entries()]
+			.sort((a, b) => a[1] - b[1])
+			.slice(-2000);
+		await this.adapter.writeTextAtomic(
+			SESSION_DELETIONS_PATH,
+			JSON.stringify(Object.fromEntries(entries)),
+			"application/json",
 		);
 	}
 
