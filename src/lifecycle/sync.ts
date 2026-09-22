@@ -84,6 +84,9 @@ export async function initSyncEngine(plugin: ObsidianAIPlugin): Promise<void> {
 			},
 			syncIdentity,
 		);
+		// Downloads run concurrently. Serialize the read/merge/write sequence so
+		// two sessions cannot load the same old index and overwrite each other.
+		let downloadedSessionSaveQueue = Promise.resolve();
 		plugin.syncIdentity = syncIdentity;
 		plugin.syncRetryStore = retryStore;
 
@@ -108,20 +111,26 @@ export async function initSyncEngine(plugin: ObsidianAIPlugin): Promise<void> {
 				},
 			},
 			onSessionDownloaded: async (session) => {
-				// Merge downloaded session into app storage
-				const chatData = await plugin.loadChatData();
-				const sessions = chatData.sessions || [];
-				const idx = sessions.findIndex((s) => s.id === session.id);
-				if (idx >= 0) {
-					sessions[idx] = session;
-				} else {
-					sessions.push(session);
-				}
-				await plugin.saveChatData({ ...chatData, sessions });
-				plugin.logger?.log(
-					"info",
-					`[SyncEngine] Downloaded session ${session.id} merged into storage`,
-				);
+				const save = downloadedSessionSaveQueue.then(async () => {
+					// Merge downloaded session into app storage.
+					// Hydrate existing sessions before writing the merged snapshot;
+					// an index-only load would otherwise make their message arrays
+					// look empty and could overwrite their message files.
+					const chatData = await plugin.loadChatData({
+						hydrate: true,
+					});
+					const sessions = chatData.sessions || [];
+					const idx = sessions.findIndex((s) => s.id === session.id);
+					if (idx >= 0) sessions[idx] = session;
+					else sessions.push(session);
+					await plugin.saveChatData({ ...chatData, sessions });
+					plugin.logger?.log(
+						"info",
+						`[SyncEngine] Downloaded session ${session.id} merged into storage`,
+					);
+				});
+				downloadedSessionSaveQueue = save.catch(() => undefined);
+				await save;
 			},
 			onSessionDeleted: async (sessionId) => {
 				const chatData = await plugin.loadChatData({ hydrate: true });
@@ -414,9 +423,12 @@ export async function triggerSync(
 					plugin.syncEngine?.cancel();
 				},
 				onExamine: (direction) => examineSync(plugin, direction),
-				onRebuildIndex: async (direction) => {
+				onRebuildIndex: async (direction, report) => {
+					report?.("Loading local sessions…");
 					await _populateSyncCache(plugin);
+					report?.("Scanning remote sessions and rebuilding index…");
 					await plugin.syncEngine?.rebuildIndexFromCurrentState();
+					report?.("Refreshing sync plan…");
 					return plugin.syncEngine
 						? await plugin.syncEngine.examine(direction)
 						: null;
@@ -466,7 +478,7 @@ export async function triggerSync(
 	const emitProgress = (
 		progress: Partial<SyncProgressSnapshot> &
 			Pick<SyncProgressSnapshot, "phase" | "stage">,
-	) => {
+	): SyncProgressSnapshot => {
 		const snapshot: SyncProgressSnapshot = {
 			phase: progress.phase,
 			stage: progress.stage,
@@ -486,6 +498,8 @@ export async function triggerSync(
 		};
 		plugin.syncHub?.publishProgress(snapshot);
 		options?.onProgress?.(snapshot);
+		modal?.updateFromSnapshot(snapshot);
+		return snapshot;
 	};
 	const emitLog = (entry: SyncLogEntry) => {
 		plugin.syncHub?.publishLog(entry);
@@ -518,9 +532,13 @@ export async function triggerSync(
 		// Set up progress handler now that totalOps is known
 		// Build title map from local sessions for better remote session titles
 		const chatData = await plugin.loadChatData();
-		const titleMap = new Map(
-			chatData.sessions?.map((s: any) => [s.id, s.title]) ?? [],
-		);
+		const titleMap =
+			(await plugin.syncEngine?.getKnownSessionTitles()) ??
+			new Map<string, string>();
+		for (const session of chatData.sessions ?? []) {
+			if (session.title?.trim())
+				titleMap.set(session.id, session.title.trim());
+		}
 
 		plugin.syncEngine?.setProgressHandler((event) => {
 			if (event.type === "stage") {
@@ -627,6 +645,13 @@ export async function triggerSync(
 		});
 
 		const result = await plugin.syncEngine.sync(runDirection);
+		if (result.downloaded > 0) {
+			window.dispatchEvent(
+				new CustomEvent("obsidian-ai:sessions-updated", {
+					detail: { source: "sync", downloaded: result.downloaded },
+				}),
+			);
+		}
 		let pluginDataResult:
 			| Awaited<ReturnType<typeof syncPluginData>>
 			| undefined;

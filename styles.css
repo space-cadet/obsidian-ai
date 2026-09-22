@@ -5381,6 +5381,35 @@
 	margin-bottom: 8px;
 }
 
+.sync-progress-modal .sync-exam-progress {
+	display: none;
+	height: 5px;
+	width: 100%;
+	margin: 0 0 10px;
+	border-radius: 3px;
+	background: linear-gradient(
+		90deg,
+		var(--interactive-accent) 0%,
+		var(--interactive-accent-hover) 50%,
+		var(--interactive-accent) 100%
+	);
+	background-size: 200% 100%;
+	animation: sync-exam-progress 1.2s linear infinite;
+}
+
+.sync-progress-modal .sync-exam-progress.is-active {
+	display: block;
+}
+
+@keyframes sync-exam-progress {
+	from {
+		background-position: 200% 0;
+	}
+	to {
+		background-position: 0 0;
+	}
+}
+
 .sync-progress-modal .sync-exam-grid {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);

@@ -104,6 +104,61 @@ export function useChatSession({
 			);
 	}, []);
 
+	// A completed remote download updates storage outside React's normal edit
+	// path. Reload the lightweight session index so history and counts reflect
+	// the downloaded sessions without requiring a view restart.
+	useEffect(() => {
+		let cancelled = false;
+		const handleSessionsUpdated = () => {
+			void plugin
+				.loadChatData()
+				.then((data) => {
+					if (cancelled) return;
+					const savedSessions = data.sessions.filter(
+						(session) => sessionMessageCount(session) > 0,
+					);
+					const currentActiveId = activeSessionIdRef.current;
+					const nextActiveId = savedSessions.some(
+						(session) => session.id === currentActiveId,
+					)
+						? currentActiveId
+						: (savedSessions[0]?.id ?? null);
+					setSessions(savedSessions);
+					setActiveSessionId(nextActiveId);
+					setOpenSessionIds((current) => {
+						const knownIds = new Set(
+							savedSessions.map((s) => s.id),
+						);
+						const retained = current.filter((id) =>
+							knownIds.has(id),
+						);
+						return retained.length > 0
+							? retained
+							: nextActiveId
+								? [nextActiveId]
+								: [];
+					});
+				})
+				.catch((err: any) => {
+					plugin.logger?.log(
+						"warn",
+						`[Sync] failed to refresh sessions after download: ${err?.message ?? err}`,
+					);
+				});
+		};
+		window.addEventListener(
+			"obsidian-ai:sessions-updated",
+			handleSessionsUpdated,
+		);
+		return () => {
+			cancelled = true;
+			window.removeEventListener(
+				"obsidian-ai:sessions-updated",
+				handleSessionsUpdated,
+			);
+		};
+	}, [plugin]);
+
 	// ─── Load persisted sessions on mount ───
 	useEffect(() => {
 		let cancelled = false;

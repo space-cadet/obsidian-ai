@@ -347,6 +347,21 @@ export function renderDiagnosticsSection(
 		}
 	};
 
+	const handleSessionsUpdated = () => {
+		if (!sectionEl.isConnected) {
+			window.removeEventListener(
+				"obsidian-ai:sessions-updated",
+				handleSessionsUpdated,
+			);
+			return;
+		}
+		void refreshMetrics();
+	};
+	window.addEventListener(
+		"obsidian-ai:sessions-updated",
+		handleSessionsUpdated,
+	);
+
 	new Setting(sectionEl)
 		.setName("Refresh metrics")
 		.setDesc("Update the diagnostic numbers above.")

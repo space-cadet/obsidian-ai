@@ -155,9 +155,49 @@ describe("SyncProgressModal examine phase", () => {
 		) as HTMLButtonElement;
 		rebuild.click();
 		await flush();
-		expect(onRebuildIndex).toHaveBeenCalledWith("both");
+		expect(onRebuildIndex).toHaveBeenCalledWith(
+			"both",
+			expect.any(Function),
+		);
 		expect((modal as any).contentEl.textContent).toContain(
 			"nothing to transfer",
+		);
+	});
+
+	it("shows visible progress while rebuilding the index", async () => {
+		let release!: (exam: SyncExamination) => void;
+		const rebuildPromise = new Promise<SyncExamination>((resolve) => {
+			release = resolve;
+		});
+		const onRebuildIndex = vi.fn(
+			(_direction: string, report?: (message: string) => void) => {
+				report?.("Scanning remote sessions…");
+				return rebuildPromise;
+			},
+		);
+		const modal = openModal({
+			onExamine: vi.fn().mockResolvedValue(makeExam()),
+			onRebuildIndex,
+		});
+		await flush();
+		(
+			[...(modal as any).contentEl.querySelectorAll("button")].find(
+				(button: HTMLButtonElement) =>
+					button.textContent === "Rebuild index",
+			) as HTMLButtonElement
+		).click();
+		await flush();
+		expect((modal as any).contentEl.textContent).toContain(
+			"Scanning remote sessions…",
+		);
+		expect((modal as any).rebuildIndexBtn.textContent).toBe("Rebuilding…");
+		expect(
+			(modal as any).examProgressEl.classList.contains("is-active"),
+		).toBe(true);
+		release(makeExam({ download: [], downloadBytes: 0 }));
+		await flush();
+		expect((modal as any).rebuildIndexBtn.textContent).toBe(
+			"Rebuild index",
 		);
 	});
 
@@ -170,6 +210,31 @@ describe("SyncProgressModal examine phase", () => {
 		expect(onConfirm).toHaveBeenCalledWith("both");
 		expect((modal as any).phase).toBe("progress");
 		expect((modal as any).contentEl.textContent).toContain("Syncing");
+	});
+
+	it("updates live counters from sync progress snapshots", async () => {
+		const modal = openModal({
+			onExamine: vi.fn().mockResolvedValue(makeExam()),
+		});
+		await flush();
+		(modal as any).syncNowBtn.click();
+		(modal as any).updateFromSnapshot({
+			phase: "syncing",
+			stage: "Downloading sessions",
+			total: 4,
+			completed: 2,
+			uploaded: 1,
+			downloaded: 1,
+			deleted: 0,
+			conflicts: 0,
+			skipped: 0,
+			elapsedMs: 1200,
+		});
+		expect((modal as any).sessionCountEl.textContent).toBe("2 / 4");
+		expect((modal as any).summaryEl.textContent).toContain("↑1 ↓1");
+		expect((modal as any).statusEl.textContent).toBe(
+			"Downloading sessions",
+		);
 	});
 
 	it("confirm is a no-op before examine completes", async () => {

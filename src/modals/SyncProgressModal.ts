@@ -1,6 +1,7 @@
 import { Modal, App } from "obsidian";
 import type { SyncResult } from "../sync/StorageAdapter";
 import type { SyncExamination } from "../sync/SyncEngine";
+import type { SyncProgressSnapshot } from "../sync/SyncProgress";
 
 export type SyncDirection = "both" | "upload" | "download";
 
@@ -18,6 +19,7 @@ export interface SyncProgressModalOptions {
 	onExamine?: (direction: SyncDirection) => Promise<SyncExamination | null>;
 	onRebuildIndex?: (
 		direction: SyncDirection,
+		report?: (message: string) => void,
 	) => Promise<SyncExamination | null>;
 	onConfirm?: (direction: SyncDirection) => void;
 	onEarlyClose?: () => void;
@@ -68,6 +70,7 @@ export class SyncProgressModal extends Modal {
 	) => Promise<SyncExamination | null>;
 	private onRebuildIndex?: (
 		direction: SyncDirection,
+		report?: (message: string) => void,
 	) => Promise<SyncExamination | null>;
 	private onConfirm?: (direction: SyncDirection) => void;
 	private onEarlyClose?: () => void;
@@ -80,6 +83,7 @@ export class SyncProgressModal extends Modal {
 	private logEntries: LogEntry[] = [];
 	private maxEntries: number = 100;
 	private examStatusEl: HTMLElement | null = null;
+	private examProgressEl: HTMLElement | null = null;
 	private examBodyEl: HTMLElement | null = null;
 	private examDirEl: HTMLSelectElement | null = null;
 	private syncNowBtn: HTMLButtonElement | null = null;
@@ -148,6 +152,7 @@ export class SyncProgressModal extends Modal {
 
 		this.examStatusEl = contentEl.createDiv("sync-exam-status");
 		this.examStatusEl.setText("Examining stores…");
+		this.examProgressEl = contentEl.createDiv("sync-exam-progress");
 		this.examBodyEl = contentEl.createDiv("sync-exam-body");
 
 		const btnRow = contentEl.createDiv("sync-btn-row");
@@ -180,6 +185,7 @@ export class SyncProgressModal extends Modal {
 		if (this.examDirEl) this.examDirEl.disabled = true;
 		if (this.examStatusEl) this.examStatusEl.setText("Examining stores…");
 		if (this.examBodyEl) this.examBodyEl.empty();
+		this.setExamBusyState("Examining stores…");
 		try {
 			const exam = await this.onExamine(this.direction);
 			if (this.phase !== "examine") return;
@@ -209,6 +215,7 @@ export class SyncProgressModal extends Modal {
 				`Examine failed: ${err instanceof Error ? err.message : String(err)}`,
 			);
 		} finally {
+			this.clearExamBusyState();
 			this.examBusy = false;
 			if (this.examDirEl) this.examDirEl.disabled = false;
 			if (this.rebuildIndexBtn) this.rebuildIndexBtn.disabled = false;
@@ -224,9 +231,15 @@ export class SyncProgressModal extends Modal {
 		if (this.syncNowBtn) this.syncNowBtn.disabled = true;
 		if (this.rebuildIndexBtn) this.rebuildIndexBtn.disabled = true;
 		if (this.examDirEl) this.examDirEl.disabled = true;
-		this.examStatusEl?.setText("Rebuilding sync index…");
+		this.rebuildIndexBtn?.setText("Rebuilding…");
+		this.setExamBusyState("Rebuilding sync index…");
 		try {
-			const exam = await this.onRebuildIndex(this.direction);
+			const exam = await this.onRebuildIndex(
+				this.direction,
+				(message) => {
+					this.setExamBusyState(message);
+				},
+			);
 			if (this.phase !== "examine") return;
 			if (!exam) {
 				this.examStatusEl?.setText(
@@ -255,10 +268,23 @@ export class SyncProgressModal extends Modal {
 				`Index rebuild failed: ${err instanceof Error ? err.message : String(err)}`,
 			);
 		} finally {
+			this.clearExamBusyState();
 			this.examBusy = false;
 			if (this.examDirEl) this.examDirEl.disabled = false;
 			if (this.rebuildIndexBtn) this.rebuildIndexBtn.disabled = false;
+			this.rebuildIndexBtn?.setText("Rebuild index");
 		}
+	}
+
+	private setExamBusyState(message: string): void {
+		this.examStatusEl?.setText(`⟳ ${message}`);
+		this.examProgressEl?.addClass("is-active");
+		this.contentEl.setAttribute("aria-busy", "true");
+	}
+
+	private clearExamBusyState(): void {
+		this.examProgressEl?.removeClass("is-active");
+		this.contentEl.removeAttribute("aria-busy");
 	}
 
 	private renderExamResults(exam: SyncExamination): void {
@@ -534,6 +560,18 @@ export class SyncProgressModal extends Modal {
 		}
 
 		this.updateSessionCount();
+	}
+
+	/** Apply live engine progress to the visible modal, including counters. */
+	updateFromSnapshot(snapshot: SyncProgressSnapshot): void {
+		if (this.phase !== "progress") return;
+		this.setTotal(snapshot.total);
+		this.updateProgress(snapshot.completed);
+		this.statusEl?.setText(snapshot.stage);
+		this.currentFileEl?.setText(snapshot.stage);
+		this.summaryEl?.setText(
+			`⏱ ${(snapshot.elapsedMs / 1000).toFixed(1)}s · ↑${snapshot.uploaded} ↓${snapshot.downloaded} ⚡${snapshot.conflicts} ⌫${snapshot.deleted ?? 0} ⊘${snapshot.skipped}`,
+		);
 	}
 
 	onComplete(result: SyncResult): void {

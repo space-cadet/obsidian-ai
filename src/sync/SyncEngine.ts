@@ -781,6 +781,23 @@ export class SyncEngine {
 		return { localCount: locals.length, remoteCount: remotes.length };
 	}
 
+	/** Return titles known locally or in the plain remote metadata manifest. */
+	async getKnownSessionTitles(): Promise<Map<string, string>> {
+		const titles = new Map<string, string>();
+		const locals = await this.cache.getAllSessions();
+		for (const session of locals) {
+			if (session.title?.trim())
+				titles.set(session.id, session.title.trim());
+		}
+		const manifest = await this.loadSessionManifest();
+		for (const [id, entry] of Object.entries(manifest?.entries ?? {})) {
+			if (entry.title?.trim() && !titles.has(id)) {
+				titles.set(id, entry.title.trim());
+			}
+		}
+		return titles;
+	}
+
 	/** Compute the sync plan by comparing local and remote state.
 	 *  @param index Optional sync index for skipping unchanged sessions (T42a). */
 	async computeSyncPlan(
