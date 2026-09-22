@@ -341,3 +341,12 @@ the latest active row.
 - [ ] Debug log contains sync operations
 - [ ] Settings direction default persists
 - [ ] No 2nd sidebar view registered
+
+## 2026-09-22 Follow-up Implementation Notes
+
+The modal fallback now reports the local disk phase after transfers, including
+downloaded-session persistence, session-index writes, and manifest writes. Its
+elapsed timer starts when the user confirms Sync, not when the review modal is
+opened. Session-title rows use the plain metadata manifest, and downloaded
+session refreshes preserve in-memory messages or read the persisted file on
+open when lazy hydration state has already been consumed.

@@ -1,5 +1,16 @@
 # Active Context
 
+### 2026-09-22 16:33 IST — cross-device sync reconciliation shipped ✅
+
+- T42/T58/T24 follow-up source work is pushed through `4ce4b07`: titles and
+  counters, deletion planning, download-only counts, rebuild-index feedback,
+  plain metadata manifest, batched persistence, visible post-download stages,
+  timer reset, and downloaded-chat hydration repair.
+- Verification: 67 files / 568 tests, TypeScript, production build, and
+  `git diff --check` passed. Memory Bank closeout is being recorded now.
+- Remaining: latest device acceptance, per-conflict decision UX, separate
+  plugin-data rebuild, and T24a search scope.
+
 ### 2026-09-21 21:58 IST — mobile sync fixes verified on device ✅
 
 - Morning: T42g follow-ups — `8fafd34` (Settings "Sync Now" shows progress modal; auto-sync stays modal-less by design), `5749148` (emitLog self-recursion → "Maximum call stack size exceeded" on every sync path; introduced by `e604eed`, fixed to `options?.onLog?.(entry)`).

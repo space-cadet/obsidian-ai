@@ -360,3 +360,12 @@ Sync Error Flow:
 ---
 
 *This design is a starting point. Implementation will refine based on real-world usage.*
+
+## 2026-09-22 Product Scope Decision
+
+Encryption is optional infrastructure, not the central product concern. The
+current functionality-first mode intentionally supports plaintext session
+payloads and a plain metadata manifest so titles and reconciliation state are
+usable while the overall data design is being completed. The assistant must
+not decide what requires encryption; that is a separate user-directed design
+decision.

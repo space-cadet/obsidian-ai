@@ -243,3 +243,10 @@ See [T31: Chat Input Draft Auto-Save](../tasks/T31.md) for implementation detail
 ---
 
 The persisted JSONL sessions are also the source for cross-session retrieval. `SearchIndex` reads the JSONL files, supports both vault-relative and basename adapter responses, and falls back to legacy `data.json` when JSONL data is absent. See [Past-Session Search and Shared Tabs](past-session-search-and-tabs.md) for indexing, navigation, and rendering details.
+
+## 2026-09-22 Sync Refresh and Hydration Note
+
+The sync refresh reads session metadata without replacing messages already in
+React memory. When a downloaded file is known to storage but is not present in
+the lazy-hydration map, opening the session uses a pure disk peek fallback.
+This prevents successful downloads from appearing as empty chat tabs.

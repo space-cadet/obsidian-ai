@@ -81,3 +81,11 @@ where transfers are independent. These follow-ups are tracked in T58d.
 
 - SyncIt: `src/sync/SyncIndex.ts`
 - `src/sync/LocalCache.ts`
+
+## 2026-09-22 Implementation Notes
+
+The session index is paired with a plain metadata manifest so titles can be
+shown during planning and activity logging without fetching each payload.
+Normal transfers use stable IDs, checksums, and ETags for comparison; the
+downloaded batch is persisted once after concurrent transfers complete. Index
+and manifest writes now have visible progress stages.

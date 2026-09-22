@@ -1,5 +1,14 @@
 # Session Cache
 
+### 2026-09-22 16:33 IST — cross-device sync reconciliation ✅
+
+- Session file: `sessions/2026-09-22-chat-sync-reconciliation.md`.
+- T42/T42a/T42c/T42g/T58/T58d/T24 source fixes are pushed at `4ce4b07`.
+- Full verification: 67 files / 568 tests, TypeScript, production build, and
+  `git diff --check` passed.
+- Remaining: latest device acceptance, conflict-decision UX, plugin-data
+  rebuild, and T24a unopened-session search scope.
+
 ### 2026-09-21 21:58 IST — mobile sync fixes day ✅
 
 - Session file: `sessions/2026-09-21-mobile-sync-fixes.md`.

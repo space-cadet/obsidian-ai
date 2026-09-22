@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased — 2026-09-22
+
+### Fixed
+
+- Cross-device sync now shows titles, live counters, deletion candidates,
+  direction-specific download plans, and rebuild-index feedback.
+- Remote session titles are available from a plain metadata manifest without
+  fetching every full session payload.
+- Downloaded sessions are persisted as one batch after concurrent transfers,
+  and the progress UI reports the local persistence, index, and manifest phases.
+- The sync timer starts when the user confirms Sync, and downloaded sessions no
+  longer open as empty tabs after the metadata refresh.
+
+### Verification
+
+- Full suite: 67 files / 568 tests; TypeScript and production build passed.
+
 ## Unreleased — 2026-09-21
 
 ### Fixed
