@@ -16,6 +16,9 @@ interface LogEntry {
 export interface SyncProgressModalOptions {
 	onCancel?: () => void;
 	onExamine?: (direction: SyncDirection) => Promise<SyncExamination | null>;
+	onRebuildIndex?: (
+		direction: SyncDirection,
+	) => Promise<SyncExamination | null>;
 	onConfirm?: (direction: SyncDirection) => void;
 	onEarlyClose?: () => void;
 	dryRunOnly?: boolean;
@@ -63,6 +66,9 @@ export class SyncProgressModal extends Modal {
 	private onExamine?: (
 		direction: SyncDirection,
 	) => Promise<SyncExamination | null>;
+	private onRebuildIndex?: (
+		direction: SyncDirection,
+	) => Promise<SyncExamination | null>;
 	private onConfirm?: (direction: SyncDirection) => void;
 	private onEarlyClose?: () => void;
 	private dryRunOnly: boolean;
@@ -77,6 +83,7 @@ export class SyncProgressModal extends Modal {
 	private examBodyEl: HTMLElement | null = null;
 	private examDirEl: HTMLSelectElement | null = null;
 	private syncNowBtn: HTMLButtonElement | null = null;
+	private rebuildIndexBtn: HTMLButtonElement | null = null;
 
 	constructor(
 		app: App,
@@ -88,6 +95,7 @@ export class SyncProgressModal extends Modal {
 		this.totalSessions = totalSessions;
 		this.onCancel = options?.onCancel;
 		this.onExamine = options?.onExamine;
+		this.onRebuildIndex = options?.onRebuildIndex;
 		this.onConfirm = options?.onConfirm;
 		this.onEarlyClose = options?.onEarlyClose;
 		this.dryRunOnly = options?.dryRunOnly ?? false;
@@ -147,6 +155,15 @@ export class SyncProgressModal extends Modal {
 		this.syncNowBtn.disabled = true;
 		this.syncNowBtn.addEventListener("click", () => this.confirm());
 		if (this.dryRunOnly) this.syncNowBtn.addClass("sync-btn-hidden");
+		this.rebuildIndexBtn = btnRow.createEl("button", {
+			text: "Rebuild index",
+		});
+		this.rebuildIndexBtn.addEventListener("click", () => {
+			void this.rebuildIndex();
+		});
+		if (!this.onRebuildIndex) {
+			this.rebuildIndexBtn.addClass("sync-btn-hidden");
+		}
 		const cancelBtn = btnRow.createEl("button", {
 			text: this.dryRunOnly ? "Close" : "Cancel",
 		});
@@ -159,6 +176,7 @@ export class SyncProgressModal extends Modal {
 		this.examBusy = true;
 		this.exam = null;
 		if (this.syncNowBtn) this.syncNowBtn.disabled = true;
+		if (this.rebuildIndexBtn) this.rebuildIndexBtn.disabled = true;
 		if (this.examDirEl) this.examDirEl.disabled = true;
 		if (this.examStatusEl) this.examStatusEl.setText("Examining stores…");
 		if (this.examBodyEl) this.examBodyEl.empty();
@@ -193,6 +211,53 @@ export class SyncProgressModal extends Modal {
 		} finally {
 			this.examBusy = false;
 			if (this.examDirEl) this.examDirEl.disabled = false;
+			if (this.rebuildIndexBtn) this.rebuildIndexBtn.disabled = false;
+		}
+	}
+
+	private async rebuildIndex(): Promise<void> {
+		if (!this.onRebuildIndex || this.examBusy || this.phase !== "examine") {
+			return;
+		}
+		this.examBusy = true;
+		this.exam = null;
+		if (this.syncNowBtn) this.syncNowBtn.disabled = true;
+		if (this.rebuildIndexBtn) this.rebuildIndexBtn.disabled = true;
+		if (this.examDirEl) this.examDirEl.disabled = true;
+		this.examStatusEl?.setText("Rebuilding sync index…");
+		try {
+			const exam = await this.onRebuildIndex(this.direction);
+			if (this.phase !== "examine") return;
+			if (!exam) {
+				this.examStatusEl?.setText(
+					"Sync index is not configured — enable Remote Storage in settings.",
+				);
+				return;
+			}
+			this.exam = exam;
+			const pending =
+				exam.upload.length +
+				exam.download.length +
+				exam.conflicts.length +
+				(exam.deleteRemote?.length ?? 0) +
+				(exam.deleteLocal?.length ?? 0);
+			this.examStatusEl?.setText(
+				pending > 0
+					? "Index rebuilt — review the refreshed plan."
+					: "Stores match — nothing to transfer.",
+			);
+			this.renderExamResults(exam);
+			if (!this.dryRunOnly && this.syncNowBtn) {
+				this.syncNowBtn.disabled = false;
+			}
+		} catch (err) {
+			this.examStatusEl?.setText(
+				`Index rebuild failed: ${err instanceof Error ? err.message : String(err)}`,
+			);
+		} finally {
+			this.examBusy = false;
+			if (this.examDirEl) this.examDirEl.disabled = false;
+			if (this.rebuildIndexBtn) this.rebuildIndexBtn.disabled = false;
 		}
 	}
 

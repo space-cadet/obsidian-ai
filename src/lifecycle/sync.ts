@@ -49,6 +49,7 @@ export async function initSyncEngine(plugin: ObsidianAIPlugin): Promise<void> {
 		passphrase: rs.passphrase,
 		conflictStrategy: rs.conflictStrategy,
 		concurrencyLimit: rs.concurrencyLimit,
+		allowDeletions: rs.allowDeletions,
 		identity: syncIdentity,
 	});
 
@@ -97,6 +98,7 @@ export async function initSyncEngine(plugin: ObsidianAIPlugin): Promise<void> {
 			passphrase: rs.passphrase,
 			conflictStrategy: rs.conflictStrategy,
 			concurrencyLimit: rs.concurrencyLimit ?? 3,
+			allowDeletions: rs.allowDeletions,
 			indexManager,
 			identity: syncIdentity,
 			retryStore,
@@ -412,6 +414,13 @@ export async function triggerSync(
 					plugin.syncEngine?.cancel();
 				},
 				onExamine: (direction) => examineSync(plugin, direction),
+				onRebuildIndex: async (direction) => {
+					await _populateSyncCache(plugin);
+					await plugin.syncEngine?.rebuildIndexFromCurrentState();
+					return plugin.syncEngine
+						? await plugin.syncEngine.examine(direction)
+						: null;
+				},
 				onConfirm: (direction) => {
 					confirmed = true;
 					resolve({ proceed: true, direction, modal });

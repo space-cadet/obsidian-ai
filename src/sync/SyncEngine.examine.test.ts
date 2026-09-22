@@ -17,7 +17,11 @@ const REMOTE_PLAINTEXT = JSON.stringify({
 	contextItems: [],
 });
 
-function makeEngine(opts: { locals: any[]; remotes: any[] }) {
+function makeEngine(opts: {
+	locals: any[];
+	remotes: any[];
+	manifest?: string;
+}) {
 	const cache = {
 		getAllSessions: async () => opts.locals,
 		getSession: async (id: string) =>
@@ -46,7 +50,7 @@ function makeEngine(opts: { locals: any[]; remotes: any[] }) {
 		putSession: async () => ({ etag: "etag-1", modifiedAt: 5 }),
 		writeText: async () => {},
 		writeTextAtomic: async () => ({ etag: "etag-1" }),
-		readText: async () => null,
+		readText: async () => opts.manifest ?? null,
 		deleteText: async () => {},
 		deleteSession: async () => {},
 		getLastSyncTime: async () => null,
@@ -172,11 +176,28 @@ describe("SyncEngine.examine (T46)", () => {
 		expect(exam.download.map((s) => s.id)).toEqual(["s2"]);
 	});
 
+	it("uses plain manifest titles for remote-only sessions", async () => {
+		const engine = makeEngine({
+			locals: [],
+			remotes: [remoteMeta("s1", "etag-1")],
+			manifest: JSON.stringify({
+				version: 1,
+				generatedAt: 1,
+				entries: { s1: { title: "Reading Current Anki Study Note" } },
+			}),
+		});
+		const exam = await engine.examine("download");
+		expect(exam.download).toEqual([
+			{ id: "s1", title: "Reading Current Anki Study Note" },
+		]);
+	});
+
 	it("plans deletion of a previously synced remote session when local storage removed it", () => {
 		const engine = makeEngine({
 			locals: [],
 			remotes: [remoteMeta("s1", "etag-1")],
 		});
+		(engine as any).allowDeletions = true;
 		const plan = (engine as any).computeSyncPlanFromState(
 			[],
 			[remoteMeta("s1", "etag-1")],
@@ -186,9 +207,24 @@ describe("SyncEngine.examine (T46)", () => {
 		expect(plan.download).toEqual([]);
 	});
 
+	it("downloads an indexed remote session when deletions are disabled", () => {
+		const engine = makeEngine({
+			locals: [],
+			remotes: [remoteMeta("s1", "etag-1")],
+		});
+		const plan = (engine as any).computeSyncPlanFromState(
+			[],
+			[remoteMeta("s1", "etag-1")],
+			{ entries: { s1: {} } },
+		);
+		expect(plan.deleteRemote).toEqual([]);
+		expect(plan.download.map((s: any) => s.id)).toEqual(["s1"]);
+	});
+
 	it("plans local removal when a remote deletion tombstone is present", () => {
 		const local = verifiedLocal("s1", "etag-1");
 		const engine = makeEngine({ locals: [local], remotes: [] });
+		(engine as any).allowDeletions = true;
 		const plan = (engine as any).computeSyncPlanFromState(
 			[local],
 			[],
@@ -197,6 +233,19 @@ describe("SyncEngine.examine (T46)", () => {
 		);
 		expect(plan.deleteLocal).toEqual(["s1"]);
 		expect(plan.upload).toEqual([]);
+	});
+
+	it("does not apply a remote deletion tombstone when deletions are disabled", () => {
+		const local = verifiedLocal("s1", "etag-1");
+		const engine = makeEngine({ locals: [local], remotes: [] });
+		const plan = (engine as any).computeSyncPlanFromState(
+			[local],
+			[],
+			null,
+			new Set(["s1"]),
+		);
+		expect(plan.deleteLocal).toEqual([]);
+		expect(plan.skipped).toBe(1);
 	});
 
 	it("throws while a sync is running", async () => {

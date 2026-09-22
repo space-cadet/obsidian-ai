@@ -107,7 +107,7 @@ export function renderRemoteStorageSection(
 		cls: "setting-item-description",
 		text:
 			"Sync your chat sessions to remote storage for cross-device access and backup. " +
-			"All data is encrypted end-to-end before leaving your device.",
+			"The sync manifest intentionally stores titles and transport metadata as plain remote metadata so review works without downloading every payload.",
 	});
 
 	const rs = plugin.settings.remoteStorage;
@@ -220,6 +220,19 @@ export function renderRemoteStorageSection(
 					await saveSettings({ quiet: true });
 				});
 		});
+
+	// ── Deletion policy ──
+	new Setting(section)
+		.setName("Allow Session Deletions")
+		.setDesc(
+			"When off, sync will never delete sessions automatically. Sessions missing on one side are kept or downloaded instead.",
+		)
+		.addToggle((toggle) =>
+			toggle.setValue(rs.allowDeletions).onChange(async (value) => {
+				rs.allowDeletions = value;
+				await saveSettings({ quiet: true });
+			}),
+		);
 
 	// ═══════════════════════════════════════════════════
 	// WebDAV-specific settings
@@ -375,10 +388,15 @@ export function renderRemoteStorageSection(
 			button.setDisabled(true);
 
 			try {
-				const result = await plugin.triggerSync(false, { useModal: true });
+				const result = await plugin.triggerSync(false, {
+					useModal: true,
+				});
 				if (result.ok) {
 					new Notice(`✅ Sync complete: ${result.message}`);
-				} else if (result.message !== "Cancelled" && result.message !== "Closed") {
+				} else if (
+					result.message !== "Cancelled" &&
+					result.message !== "Closed"
+				) {
 					new Notice(`❌ ${result.message}`, 8000);
 				}
 			} finally {
@@ -411,7 +429,10 @@ export function renderRemoteStorageSection(
 				: "Used to encrypt/decrypt your data. Never stored on the server. Required on every device.",
 		);
 
-		webdavSection.toggleClass("is-hidden", !(enabled && backend === "webdav"));
+		webdavSection.toggleClass(
+			"is-hidden",
+			!(enabled && backend === "webdav"),
+		);
 	}
 
 	updateVisibility();

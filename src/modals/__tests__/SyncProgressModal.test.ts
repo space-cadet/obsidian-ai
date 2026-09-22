@@ -138,6 +138,29 @@ describe("SyncProgressModal examine phase", () => {
 		expect(labels).toContain("Close");
 	});
 
+	it("rebuilds the index and refreshes the examination", async () => {
+		const onExamine = vi.fn().mockResolvedValue(makeExam());
+		const onRebuildIndex = vi
+			.fn()
+			.mockResolvedValue(
+				makeExam({ download: [], downloadBytes: 0, unchanged: 207 }),
+			);
+		const modal = openModal({ onExamine, onRebuildIndex });
+		await flush();
+		const rebuild = [
+			...(modal as any).contentEl.querySelectorAll("button"),
+		].find(
+			(button: HTMLButtonElement) =>
+				button.textContent === "Rebuild index",
+		) as HTMLButtonElement;
+		rebuild.click();
+		await flush();
+		expect(onRebuildIndex).toHaveBeenCalledWith("both");
+		expect((modal as any).contentEl.textContent).toContain(
+			"nothing to transfer",
+		);
+	});
+
 	it("confirm switches to progress and calls onConfirm with direction", async () => {
 		const onExamine = vi.fn().mockResolvedValue(makeExam());
 		const onConfirm = vi.fn();

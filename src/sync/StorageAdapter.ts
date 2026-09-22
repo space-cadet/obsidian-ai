@@ -25,6 +25,8 @@ export interface EncryptedSession {
  */
 export interface RemoteSessionMeta {
 	id: string;
+	/** Optional title supplied by the plain remote sync manifest. */
+	title?: string;
 	modifiedAt: number;
 	etag?: string; // Backend-specific version identifier
 	size?: number; // Content length in bytes

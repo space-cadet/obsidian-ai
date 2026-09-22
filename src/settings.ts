@@ -88,6 +88,8 @@ export interface RemoteStorageConfig {
 	conflictStrategy: "last-write-wins" | "keep-both" | "manual";
 	/** Sync direction: both ways, upload only, or download only (T43) */
 	syncDirection: "both" | "upload" | "download";
+	/** Permit sync to remove sessions inferred as deleted. */
+	allowDeletions: boolean;
 	webdav?: WebDAVStorageConfig;
 	s3?: S3StorageConfig;
 	lastSyncTime: number;
@@ -463,6 +465,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 		syncIntervalMinutes: 30,
 		conflictStrategy: "last-write-wins",
 		syncDirection: "both",
+		allowDeletions: false,
 		concurrencyLimit: 3,
 		webdav: {
 			type: "webdav",
@@ -683,6 +686,9 @@ export const normalizeSettings = (
 					| "both"
 					| "upload"
 					| "download") ?? "both",
+			allowDeletions: Boolean(
+				merged.remoteStorage?.allowDeletions ?? false,
+			),
 			webdav: {
 				type: "webdav" as const,
 				url: merged.remoteStorage?.webdav?.url ?? "",

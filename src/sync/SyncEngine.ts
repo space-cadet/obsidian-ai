@@ -13,6 +13,11 @@ import { EncryptionLayer, checksum } from "./EncryptionLayer";
 import { SyncIndexManager } from "./SyncIndexManager";
 import { runWithConcurrency } from "./ConcurrencyLimiter";
 import type { SyncIndex } from "./SyncIndex";
+import {
+	SYNC_MANIFEST_PATH,
+	parseSyncManifest,
+	type SyncManifest,
+} from "./SyncManifest";
 import { DurableSyncRetryStore } from "./SyncRetryStore";
 import type { SyncEngineProgressEvent } from "./SyncProgress";
 
@@ -58,6 +63,8 @@ export interface SyncEngineConfig {
 	indexManager?: SyncIndexManager;
 	/** Max parallel upload/download operations (T42c). */
 	concurrencyLimit?: number;
+	/** Permit sync to remove sessions inferred as deleted. Defaults to false. */
+	allowDeletions?: boolean;
 	/** Dry run mode: compute plan but do not transfer anything (T42e). */
 	dryRun?: boolean;
 	/** Complete identity used to isolate cache, index, and retry state. */
@@ -93,6 +100,7 @@ export class SyncEngine {
 	private identity?: string;
 	private retryStore?: DurableSyncRetryStore;
 	private concurrencyLimit: number;
+	private allowDeletions: boolean;
 	dryRun: boolean;
 
 	constructor(config: SyncEngineConfig) {
@@ -107,6 +115,7 @@ export class SyncEngine {
 		this.onSessionDeleted = config.onSessionDeleted;
 		this.indexManager = config.indexManager;
 		this.concurrencyLimit = config.concurrencyLimit ?? 3;
+		this.allowDeletions = config.allowDeletions ?? false;
 		this.dryRun = config.dryRun ?? false;
 		this.identity = config.identity;
 		this.retryStore = config.retryStore;
@@ -593,6 +602,22 @@ export class SyncEngine {
 				}
 			}
 
+			if (!this._cancelled) {
+				try {
+					const manifestLocals = await this.cache.getAllSessions();
+					const manifestRemotes = await this.adapter.listSessions();
+					await this.writeSessionManifest(
+						manifestLocals,
+						manifestRemotes,
+					);
+				} catch (manifestErr: any) {
+					this.log(
+						"warn",
+						`SyncEngine: failed to update session manifest: ${manifestErr.message}`,
+					);
+				}
+			}
+
 			this.state = errors.length > 0 ? "error" : "idle";
 			this.log(
 				"info",
@@ -691,8 +716,11 @@ export class SyncEngine {
 		const locals = await this.cache.getAllSessions();
 		const byId = new Map<string, CachedSession>();
 		for (const s of locals) byId.set(s.id, s);
+		const manifest = await this.loadSessionManifest();
 		const titleFor = (id: string): string =>
-			byId.get(id)?.title?.trim() || id.slice(0, 8);
+			byId.get(id)?.title?.trim() ||
+			manifest?.entries[id]?.title?.trim() ||
+			id.slice(0, 8);
 		const remoteMetas = (await this.adapter.listSessions()).filter(
 			(meta) => !deletionLedger.has(meta.id),
 		);
@@ -720,6 +748,37 @@ export class SyncEngine {
 			uploadBytes: plan.uploadBytes,
 			downloadBytes: plan.downloadBytes,
 		};
+	}
+
+	/** Rebuild the local sync index from the current stores without transfers. */
+	async rebuildIndexFromCurrentState(): Promise<{
+		localCount: number;
+		remoteCount: number;
+	}> {
+		if (this.state === "syncing") {
+			throw new Error("Sync in progress");
+		}
+		if (!this.indexManager || !this.serverConfig) {
+			throw new Error("Sync index is not configured");
+		}
+
+		const locals = await this.cache.getAllSessions();
+		const remotes = await this.adapter.listSessions();
+		const serverSignature = SyncIndexManager.makeServerSignature(
+			this.serverConfig,
+		);
+		const rebuilt = await this.indexManager.buildIndex(
+			locals,
+			remotes,
+			serverSignature,
+		);
+		await this.indexManager.save(rebuilt);
+		await this.writeSessionManifest(locals, remotes, true);
+		this.log(
+			"info",
+			`SyncEngine: rebuilt sync index (${Object.keys(rebuilt.entries).length} entries)`,
+		);
+		return { localCount: locals.length, remoteCount: remotes.length };
 	}
 
 	/** Compute the sync plan by comparing local and remote state.
@@ -764,7 +823,11 @@ export class SyncEngine {
 
 		for (const local of localSessions) {
 			if (deletedIds.has(local.id)) {
-				deleteLocal.push(local.id);
+				if (this.allowDeletions) {
+					deleteLocal.push(local.id);
+				} else {
+					skipped++;
+				}
 				continue;
 			}
 			const remote = remoteMap.get(local.id);
@@ -837,7 +900,7 @@ export class SyncEngine {
 		// An index entry with no live local session is an explicit local
 		// deletion. Only a previously synced ID is eligible; a new device with
 		// no index must download remote sessions normally.
-		if (index) {
+		if (index && this.allowDeletions) {
 			const liveIds = new Set(localSessions.map((session) => session.id));
 			for (const id of Object.keys(index.entries)) {
 				if (liveIds.has(id) || deletedIds.has(id)) continue;
@@ -1351,6 +1414,76 @@ export class SyncEngine {
 		await this.adapter.writeTextAtomic(
 			SESSION_DELETIONS_PATH,
 			JSON.stringify(Object.fromEntries(entries)),
+			"application/json",
+		);
+	}
+
+	/** Read the plain remote metadata manifest, if one exists. */
+	private async loadSessionManifest(): Promise<SyncManifest | null> {
+		return parseSyncManifest(
+			await this.adapter.readText(SYNC_MANIFEST_PATH),
+		);
+	}
+
+	/**
+	 * Persist titles and transport metadata separately from session payloads.
+	 * Existing manifest titles are retained for remote-only sessions. Rebuild
+	 * index explicitly opts into a one-time plaintext payload scan to seed
+	 * titles for older remotes that predate the manifest.
+	 */
+	private async writeSessionManifest(
+		locals: ChatSession[],
+		remotes: RemoteSessionMeta[],
+		seedMissingTitles = false,
+	): Promise<void> {
+		const previous = await this.loadSessionManifest();
+		const localById = new Map(
+			locals.map((session) => [session.id, session]),
+		);
+		const entries: SyncManifest["entries"] = {};
+
+		for (const remote of remotes) {
+			let title =
+				remote.title?.trim() || localById.get(remote.id)?.title?.trim();
+			if (!title) title = previous?.entries[remote.id]?.title?.trim();
+
+			if (!title && seedMissingTitles) {
+				try {
+					const payload = await this.adapter.getSession(remote.id);
+					// Only parse the intentionally supported plaintext payload shape.
+					// Encrypted payloads remain opaque and keep the ID fallback.
+					if (
+						payload &&
+						!payload.iv &&
+						!payload.tag &&
+						!payload.salt
+					) {
+						const session = JSON.parse(
+							payload.ciphertext,
+						) as ChatSession;
+						title = session.title?.trim();
+					}
+				} catch {
+					// A missing/unreadable title must not prevent index rebuilding.
+				}
+			}
+
+			entries[remote.id] = {
+				...(title ? { title } : {}),
+				modifiedAt: remote.modifiedAt,
+				size: remote.size,
+				etag: remote.etag,
+			};
+		}
+
+		const manifest: SyncManifest = {
+			version: 1,
+			generatedAt: Date.now(),
+			entries,
+		};
+		await this.adapter.writeTextAtomic(
+			SYNC_MANIFEST_PATH,
+			JSON.stringify(manifest),
 			"application/json",
 		);
 	}
