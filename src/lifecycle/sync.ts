@@ -318,17 +318,7 @@ export async function examineSync(
 	return plugin.syncEngine.examine(direction);
 }
 
-export async function triggerSync(
-	plugin: ObsidianAIPlugin,
-	dryRun = false,
-	options?: {
-		useModal?: boolean;
-		direction?: "both" | "upload" | "download";
-		onProgress?: (progress: SyncProgressSnapshot) => void;
-		onLog?: (entry: SyncLogEntry) => void;
-		trigger?: "manual" | "auto";
-	},
-): Promise<{
+export type TriggerSyncResult = {
 	ok: boolean;
 	message: string;
 	uploaded: number;
@@ -348,7 +338,19 @@ export async function triggerSync(
 		status: "complete" | "partial" | "failed";
 		retryable: number;
 	};
-}> {
+};
+
+export async function triggerSync(
+	plugin: ObsidianAIPlugin,
+	dryRun = false,
+	options?: {
+		useModal?: boolean;
+		direction?: "both" | "upload" | "download";
+		onProgress?: (progress: SyncProgressSnapshot) => void;
+		onLog?: (entry: SyncLogEntry) => void;
+		trigger?: "manual" | "auto";
+	},
+): Promise<TriggerSyncResult> {
 	// Lazy-init sync engine if not already initialized (e.g., user enabled sync after plugin load)
 	if (!plugin.syncEngine) {
 		await initSyncEngine(plugin);
@@ -373,15 +375,51 @@ export async function triggerSync(
 	plugin.syncHub?.beginRun(options?.trigger === "auto" ? "auto" : "manual");
 	const syncLogger = new SyncLogger(plugin.app, plugin.manifest.id);
 
-	// ── Modal: primary progress UI ──
+	// ── Modal: two-phase UI — examine first, run starts on confirm ──
 	let modal: SyncProgressModal | null = null;
+	let runDirection =
+		options?.direction ??
+		plugin.settings.remoteStorage.syncDirection ??
+		"both";
 	if (options?.useModal) {
-		modal = new SyncProgressModal(plugin.app, 0, {
-			onCancel: () => {
-				plugin.syncEngine?.cancel();
-			},
+		const flow = await new Promise<{
+			proceed: boolean;
+			direction: "both" | "upload" | "download";
+			modal: SyncProgressModal;
+		}>((resolve) => {
+			let confirmed = false;
+			const modal = new SyncProgressModal(plugin.app, 0, {
+				onCancel: () => {
+					plugin.syncEngine?.cancel();
+				},
+				onExamine: (direction) => examineSync(plugin, direction),
+				onConfirm: (direction) => {
+					confirmed = true;
+					resolve({ proceed: true, direction, modal });
+				},
+				onEarlyClose: () => {
+					if (!confirmed) {
+						resolve({ proceed: false, direction: "both", modal });
+					}
+				},
+				dryRunOnly: dryRun,
+				defaultDirection: runDirection,
+			});
+			modal.open();
 		});
-		modal.open();
+		if (!flow.proceed) {
+			return {
+				ok: false,
+				message: dryRun ? "Closed" : "Cancelled",
+				uploaded: 0,
+				downloaded: 0,
+				conflicts: 0,
+				skipped: 0,
+				errors: [],
+			};
+		}
+		modal = flow.modal;
+		runDirection = flow.direction;
 	}
 
 	// Wire progress callback into sync engine → modal
@@ -438,10 +476,6 @@ export async function triggerSync(
 			stage: "Reading remote sessions",
 			indeterminate: true,
 		});
-		const direction =
-			options?.direction ??
-			plugin.settings.remoteStorage.syncDirection ??
-			"both";
 		const sc = plugin.settings.syncComponents;
 		const pluginDataOps =
 			Number(sc.pluginSettings || sc.apiKeys) +
@@ -561,7 +595,7 @@ export async function triggerSync(
 			}
 		});
 
-		const result = await plugin.syncEngine.sync(options?.direction);
+		const result = await plugin.syncEngine.sync(runDirection);
 		let pluginDataResult:
 			| Awaited<ReturnType<typeof syncPluginData>>
 			| undefined;
@@ -570,7 +604,7 @@ export async function triggerSync(
 			stage: dryRun ? "Planning plugin data" : "Syncing plugin data",
 			total: totalOps,
 		});
-		pluginDataResult = await syncPluginData(plugin, direction, {
+		pluginDataResult = await syncPluginData(plugin, runDirection, {
 			dryRun,
 			onProgress: (event) => {
 				const title = `Plugin data: ${event.id}`;

@@ -16,7 +16,7 @@ interface ChatTabBarProps {
 }
 
 /** Special tab IDs that don't correspond to sessions */
-const SPECIAL_TABS = new Set(["__sync__"]);
+const SPECIAL_TABS = new Set<string>();
 
 function isSpecialTab(id: string): boolean {
 	return SPECIAL_TABS.has(id);
@@ -24,8 +24,6 @@ function isSpecialTab(id: string): boolean {
 
 function getSpecialTabLabel(id: string): string {
 	switch (id) {
-		case "__sync__":
-			return "🔄 Sync";
 		default:
 			return id;
 	}

@@ -56,7 +56,6 @@ import PendingToolCard from "./presentational/PendingToolCard";
 import ObsidianIcon from "./ObsidianIcon";
 import ChatToolbar from "./ChatToolbar";
 import ChatMainArea from "./ChatMainArea";
-import ChatSyncPanel from "./ChatSyncPanel";
 import ChatOverlays from "./ChatOverlays";
 import SearchInput from "./presentational/SearchInput";
 import SearchResults from "./presentational/search-results";
@@ -140,24 +139,6 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				refreshFromSettings,
 			);
 	}, []);
-
-	// Let the rest of the plugin open the sync tab (palette commands,
-	// settings button). A request that arrived before mount is consumed here.
-	useEffect(() => {
-		plugin.openSyncTabNow = () => {
-			setOpenSessionIds((prev) =>
-				prev.includes("__sync__") ? prev : [...prev, "__sync__"],
-			);
-			setActiveSessionId("__sync__");
-		};
-		if (plugin.pendingSyncTabOpen) {
-			plugin.pendingSyncTabOpen = false;
-			plugin.openSyncTabNow();
-		}
-		return () => {
-			delete plugin.openSyncTabNow;
-		};
-	}, [plugin]);
 
 	// Track if the app was hidden while streaming (for mobile background handling)
 	const wasHiddenRef = useRef(false);
@@ -1037,10 +1018,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					onLoadChat={() => ui.setShowSessionPicker(true)}
 					onExportChat={handleExportChat}
 					onOpenSync={() => {
-						if (!openSessionIds.includes("__sync__")) {
-							setOpenSessionIds((prev) => [...prev, "__sync__"]);
-						}
-						setActiveSessionId("__sync__");
+						void plugin.triggerSync?.(false, { useModal: true });
 					}}
 					onToggleAutoApprove={handleToggleAutoApprove}
 					onToggleAutoName={handleToggleAutoName}
@@ -1093,90 +1071,86 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					<ObsidianIcon icon="eye-off" size={15} />
 				</button>
 			)}
-			{activeSessionId === "__sync__" ? (
-				<ChatSyncPanel plugin={plugin} />
-			) : (
-				<ChatMainArea
-					app={plugin.app}
-					renderMarkdown={renderMarkdown}
-					plugin={plugin}
-					sessionId={activeSessionId}
-					messages={messages}
-					currentAiMessage={activeRuntime.currentAiMessage}
-					currentContentParts={activeRuntime.currentContentParts}
-					isStreaming={activeRuntime.isStreaming}
-					debugMode={plugin.settings.debugMode}
-					isEditing={ui.isEditing}
-					thinkingEnabled={thinkingEnabled}
-					showThinking={thinkingEnabled}
-					scrollToMessageId={scrollToMessageId}
-					restoreScrollTop={
-						plugin.settings.restoreChatTabs
-							? sessions.find(
-									(session) => session.id === activeSessionId,
-								)?.scrollPosition
-							: undefined
+			<ChatMainArea
+				app={plugin.app}
+				renderMarkdown={renderMarkdown}
+				plugin={plugin}
+				sessionId={activeSessionId}
+				messages={messages}
+				currentAiMessage={activeRuntime.currentAiMessage}
+				currentContentParts={activeRuntime.currentContentParts}
+				isStreaming={activeRuntime.isStreaming}
+				debugMode={plugin.settings.debugMode}
+				isEditing={ui.isEditing}
+				thinkingEnabled={thinkingEnabled}
+				showThinking={thinkingEnabled}
+				scrollToMessageId={scrollToMessageId}
+				restoreScrollTop={
+					plugin.settings.restoreChatTabs
+						? sessions.find(
+								(session) => session.id === activeSessionId,
+							)?.scrollPosition
+						: undefined
+				}
+				pendingToolCall={activeRuntime.pendingToolCall}
+				pendingToolDisplay={activeRuntime.pendingToolDisplay}
+				typingUsers={typingUsers}
+				onSend={handleSendWithSync}
+				onStop={actions.handleStop}
+				onTyping={() => syncAdapterRef.current?.sendTyping()}
+				onAddMention={handleAddMention}
+				onCancelEdit={actions.handleCancelEdit}
+				onToggleThinking={() => setThinkingEnabled((t) => !t)}
+				onAppend={actions.handleAppend}
+				onInsertAtCursor={actions.handleInsertAtCursor}
+				onApply={actions.handleApply}
+				onRetry={actions.handleRetry}
+				onEditMessage={actions.handleEditMessage}
+				onApplyToTarget={actions.handleApplyToTarget}
+				onCreateNote={actions.handleCreateNote}
+				onAppendToTarget={actions.handleAppendToTarget}
+				onOpenPastSession={openSessionInTab}
+				onScrollPositionChange={handleScrollPositionChange}
+				onApproveTool={actions.handleApproveTool}
+				onRejectTool={actions.handleRejectTool}
+				attachments={ui.messageAttachments}
+				onAttachmentsChange={ui.setMessageAttachments}
+				pressEnterToSend={plugin.settings.pressEnterToSend}
+				tokenTotal={(() => {
+					const session = activeSessionId
+						? sessions.find((s) => s.id === activeSessionId)
+						: null;
+					const sessionTotal = session
+						? getSessionTotalTokens(session)
+						: 0;
+					const showFullRequest =
+						plugin.settings.showFullRequestTokens;
+					if (
+						activeRuntime.isStreaming &&
+						activeRuntime.runningTokenTotal > 0
+					) {
+						// When full payload mode is on, runningTokenTotal already
+						// includes system + history + user + response tokens.
+						// Show just that to avoid double-counting history.
+						const displayTotal = showFullRequest
+							? activeRuntime.runningTokenTotal
+							: sessionTotal +
+								activeRuntime.runningTokenTotal;
+						return `~${displayTotal.toLocaleString()} tokens`;
 					}
-					pendingToolCall={activeRuntime.pendingToolCall}
-					pendingToolDisplay={activeRuntime.pendingToolDisplay}
-					typingUsers={typingUsers}
-					onSend={handleSendWithSync}
-					onStop={actions.handleStop}
-					onTyping={() => syncAdapterRef.current?.sendTyping()}
-					onAddMention={handleAddMention}
-					onCancelEdit={actions.handleCancelEdit}
-					onToggleThinking={() => setThinkingEnabled((t) => !t)}
-					onAppend={actions.handleAppend}
-					onInsertAtCursor={actions.handleInsertAtCursor}
-					onApply={actions.handleApply}
-					onRetry={actions.handleRetry}
-					onEditMessage={actions.handleEditMessage}
-					onApplyToTarget={actions.handleApplyToTarget}
-					onCreateNote={actions.handleCreateNote}
-					onAppendToTarget={actions.handleAppendToTarget}
-					onOpenPastSession={openSessionInTab}
-					onScrollPositionChange={handleScrollPositionChange}
-					onApproveTool={actions.handleApproveTool}
-					onRejectTool={actions.handleRejectTool}
-					attachments={ui.messageAttachments}
-					onAttachmentsChange={ui.setMessageAttachments}
-					pressEnterToSend={plugin.settings.pressEnterToSend}
-					tokenTotal={(() => {
-						const session = activeSessionId
-							? sessions.find((s) => s.id === activeSessionId)
-							: null;
-						const sessionTotal = session
-							? getSessionTotalTokens(session)
-							: 0;
-						const showFullRequest =
-							plugin.settings.showFullRequestTokens;
-						if (
-							activeRuntime.isStreaming &&
-							activeRuntime.runningTokenTotal > 0
-						) {
-							// When full payload mode is on, runningTokenTotal already
-							// includes system + history + user + response tokens.
-							// Show just that to avoid double-counting history.
-							const displayTotal = showFullRequest
-								? activeRuntime.runningTokenTotal
-								: sessionTotal +
-									activeRuntime.runningTokenTotal;
-							return `~${displayTotal.toLocaleString()} tokens`;
-						}
-						if (sessionTotal > 0) {
-							return `~${sessionTotal.toLocaleString()} tokens`;
-						}
-						return undefined;
-					})()}
-					draft={undefined}
-					onDraftChange={undefined}
-					editMessage={ui.editMessageText}
-					selectionMode={ui.selectionMode}
-					selectedMessageIds={ui.selectedMessageIds}
-					onLongPress={ui.enterSelectionMode}
-					onToggleSelection={ui.toggleMessageSelection}
-				/>
-			)}
+					if (sessionTotal > 0) {
+						return `~${sessionTotal.toLocaleString()} tokens`;
+					}
+					return undefined;
+				})()}
+				draft={undefined}
+				onDraftChange={undefined}
+				editMessage={ui.editMessageText}
+				selectionMode={ui.selectionMode}
+				selectedMessageIds={ui.selectedMessageIds}
+				onLongPress={ui.enterSelectionMode}
+				onToggleSelection={ui.toggleMessageSelection}
+			/>
 			{ui.selectionMode && (
 				<div className="chat-selection-toolbar" role="toolbar">
 					<span>{ui.selectedMessageIds.size} selected</span>

@@ -75,10 +75,6 @@ export default class ObsidianAIPlugin extends Plugin {
 		| import("./sync/SyncRetryStore").DurableSyncRetryStore
 		| null = null;
 	syncHub = new SyncStatusHub();
-	/** Set by ChatApp while mounted; see ui/openSyncPanel.ts. */
-	openSyncTabNow?: () => void;
-	/** Set by openSyncPanel when the chat view is not open yet. */
-	pendingSyncTabOpen?: boolean;
 
 	// Data integrity guards
 	_backupCreated = false;

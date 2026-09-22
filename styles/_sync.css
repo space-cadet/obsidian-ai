@@ -965,3 +965,125 @@
 	background: var(--background-modifier-hover);
 	border-color: var(--background-modifier-border-hover);
 }
+
+/* app status bar */
+.obsidian-ai-sync-status {
+	cursor: pointer;
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+.obsidian-ai-sync-status--syncing {
+	color: var(--text-accent);
+}
+
+.obsidian-ai-sync-status--error {
+	color: var(--text-error);
+}
+
+/* log modal */
+.obsidian-ai-sync-log-modal__body {
+	max-height: 60vh;
+	overflow: auto;
+	font-size: 11px;
+	font-family: var(--font-monospace);
+	white-space: pre-wrap;
+	word-break: break-all;
+	margin: 0;
+}
+
+/* ─── T46: two-phase modal — examine surface ─────────────────────────── */
+.sync-progress-modal .sync-exam-dir {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 12px;
+	color: var(--text-muted);
+	margin: 4px 0 8px;
+}
+
+.sync-progress-modal .sync-exam-dir select {
+	flex: 0 0 auto;
+}
+
+.sync-progress-modal .sync-exam-status {
+	font-size: 12px;
+	color: var(--text-muted);
+	margin-bottom: 8px;
+}
+
+.sync-progress-modal .sync-exam-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 6px;
+	margin-bottom: 8px;
+}
+
+.sync-progress-modal .sync-exam-stat {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 6px 8px;
+	text-align: center;
+}
+
+.sync-progress-modal .sync-exam-stat--dim {
+	opacity: 0.45;
+}
+
+.sync-progress-modal .sync-exam-stat--warn {
+	border-color: var(--background-modifier-error);
+}
+
+.sync-progress-modal .sync-exam-num {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.sync-progress-modal .sync-exam-label {
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--text-muted);
+}
+
+.sync-progress-modal .sync-exam-rows {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	max-height: 180px;
+	overflow-y: auto;
+	margin-bottom: 6px;
+}
+
+.sync-progress-modal .sync-exam-row {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	font-size: 12px;
+	padding: 2px 4px;
+	border-radius: 4px;
+}
+
+.sync-progress-modal .sync-exam-row:nth-child(odd) {
+	background: var(--background-secondary);
+}
+
+.sync-progress-modal .sync-exam-row-icon {
+	flex: 0 0 14px;
+	text-align: center;
+}
+
+.sync-progress-modal .sync-exam-row-title {
+	color: var(--text-normal);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sync-progress-modal .sync-exam-note {
+	font-size: 11px;
+	color: var(--text-muted);
+	margin-top: 4px;
+}

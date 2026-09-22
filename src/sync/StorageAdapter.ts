@@ -41,6 +41,8 @@ export interface SyncResult {
 	errors: string[];
 	status?: "complete" | "partial" | "failed";
 	retryable?: SyncRetryRecord[];
+	/** Human-readable summary line for the modal status/footer. */
+	message?: string;
 }
 
 /**

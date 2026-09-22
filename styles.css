@@ -287,47 +287,20 @@
 }
 
 .obsidian-ai-settings-section .setting-item.is-advanced-hidden,
-.obsidian-ai-settings-section
-	.obsidian-ai-advanced-settings-block.is-advanced-hidden,
-.obsidian-ai-settings-section
-	.obsidian-ai-settings-advanced-group.is-advanced-hidden {
+.obsidian-ai-settings-section .obsidian-ai-advanced-settings-block.is-advanced-hidden,
+.obsidian-ai-settings-section .obsidian-ai-settings-advanced-group.is-advanced-hidden {
 	display: none;
 }
 
 .obsidian-ai-settings-search-dropdown {
-	display: none;
-	position: absolute;
-	left: 0;
-	right: 0;
-	top: 100%;
-	max-height: 320px;
-	overflow-y: auto;
-	padding: 4px;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 0 0 10px 10px;
-	background: var(--background-primary);
-	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+	display: none; position: absolute; left: 0; right: 0; top: 100%; max-height: 320px;
+	overflow-y: auto; padding: 4px; border: 1px solid var(--background-modifier-border);
+	border-radius: 0 0 10px 10px; background: var(--background-primary); box-shadow: 0 8px 24px rgba(0,0,0,.18);
 }
-.obsidian-ai-settings-search-dropdown.is-visible {
-	display: block;
-}
-.obsidian-ai-settings-search-option {
-	display: flex;
-	justify-content: space-between;
-	gap: 12px;
-	padding: 8px 10px;
-	border-radius: 6px;
-	cursor: pointer;
-}
-.obsidian-ai-settings-search-option:hover,
-.obsidian-ai-settings-search-option:focus-visible,
-.obsidian-ai-settings-search-option.is-active {
-	background: var(--background-modifier-hover);
-}
-.obsidian-ai-settings-search-option-section {
-	color: var(--text-muted);
-	font-size: var(--font-ui-smaller);
-}
+.obsidian-ai-settings-search-dropdown.is-visible { display: block; }
+.obsidian-ai-settings-search-option { display: flex; justify-content: space-between; gap: 12px; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
+.obsidian-ai-settings-search-option:hover, .obsidian-ai-settings-search-option:focus-visible, .obsidian-ai-settings-search-option.is-active { background: var(--background-modifier-hover); }
+.obsidian-ai-settings-search-option-section { color: var(--text-muted); font-size: var(--font-ui-smaller); }
 
 .obsidian-ai-settings-section.is-search-hidden,
 .obsidian-ai-settings-toc button.is-search-hidden {
@@ -484,9 +457,7 @@
 	color: var(--text-normal);
 }
 .obsidian-ai-settings-section > h2,
-.obsidian-ai-settings-section > h3 {
-	font-family: var(--font-interface);
-}
+.obsidian-ai-settings-section > h3 { font-family: var(--font-interface); }
 
 /* Keep the description and control columns usable at every panel width. */
 .obsidian-ai-settings-section .setting-item {
@@ -524,26 +495,18 @@
 }
 
 /* Keep Debug Mode compact and make its export controls read as one group. */
-#obsidian-ai-settings-debug-mode
-	> .obsidian-ai-settings-section-body
-	> .setting-item {
+#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item {
 	grid-template-columns: minmax(0, 1fr) auto;
 	align-items: center;
 	min-height: 0;
 	padding: 14px 0;
 }
 
-#obsidian-ai-settings-debug-mode
-	> .obsidian-ai-settings-section-body
-	> .setting-item
-	.setting-item-info {
+#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item .setting-item-info {
 	padding-right: 24px;
 }
 
-#obsidian-ai-settings-debug-mode
-	> .obsidian-ai-settings-section-body
-	> .setting-item
-	.setting-item-control {
+#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item .setting-item-control {
 	width: auto;
 	justify-content: flex-end;
 }
@@ -586,54 +549,23 @@
 }
 
 @media (max-width: 760px) {
-	#obsidian-ai-settings-debug-mode
-		> .obsidian-ai-settings-section-body
-		> .setting-item,
+	#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item,
 	.obsidian-ai-debug-telemetry-group .setting-item {
 		display: flex;
 		align-items: center;
 	}
 
-	#obsidian-ai-settings-debug-mode
-		> .obsidian-ai-settings-section-body
-		> .setting-item
-		.setting-item-control,
+	#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item .setting-item-control,
 	.obsidian-ai-debug-telemetry-group .setting-item .setting-item-control {
 		margin-top: 0;
 	}
 }
 
-.obsidian-ai-slider-value {
-	min-width: 3em;
-	margin-left: 8px;
-	text-align: right;
-	font-variant-numeric: tabular-nums;
-	color: var(--text-muted);
-}
-.obsidian-ai-password-input-wrapper,
-.obsidian-ai-api-key-control {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-}
-.obsidian-ai-password-input-wrapper input,
-.obsidian-ai-api-key-control input {
-	min-width: 0;
-	flex: 1;
-}
-.obsidian-ai-password-input-wrapper button,
-.obsidian-ai-api-key-control button {
-	padding: 4px 6px;
-	border: 0;
-	background: transparent;
-	color: var(--text-muted);
-	cursor: pointer;
-}
-.obsidian-ai-password-input-wrapper button:hover,
-.obsidian-ai-api-key-control button:hover {
-	color: var(--text-normal);
-	background: var(--background-modifier-hover);
-}
+.obsidian-ai-slider-value { min-width: 3em; margin-left: 8px; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted); }
+.obsidian-ai-password-input-wrapper, .obsidian-ai-api-key-control { display: flex; align-items: center; gap: 4px; }
+.obsidian-ai-password-input-wrapper input, .obsidian-ai-api-key-control input { min-width: 0; flex: 1; }
+.obsidian-ai-password-input-wrapper button, .obsidian-ai-api-key-control button { padding: 4px 6px; border: 0; background: transparent; color: var(--text-muted); cursor: pointer; }
+.obsidian-ai-password-input-wrapper button:hover, .obsidian-ai-api-key-control button:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
 
 .obsidian-ai-settings-section-desc {
 	margin: 0 0 12px;
@@ -2258,6 +2190,7 @@
 }
 
 /* ── Tool Call Notifications ────────────────────────────────────────────── */
+
 
 /* Active bubble state (clicked) */
 .chat-bubble.is-active {
@@ -4434,6 +4367,7 @@
 
 /* ── Chat Sync Panel v2 (syncit-inspired) ───────────────────────────────── */
 
+
 .chat-sync-panel-v2 {
 	display: flex;
 	flex-direction: column;
@@ -5351,9 +5285,7 @@
 	align-items: center;
 	justify-content: center;
 	border-radius: 4px;
-	transition:
-		background 0.15s ease,
-		color 0.15s ease;
+	transition: background 0.15s ease, color 0.15s ease;
 }
 
 .obsidian-ai-settings-section-toggle:hover {
@@ -5364,16 +5296,13 @@
 .obsidian-ai-settings-section-body {
 	padding: 16px;
 }
-.obsidian-ai-settings-section-body.is-hidden {
-	display: none;
-}
+.obsidian-ai-settings-section-body.is-hidden { display: none; }
 
 .obsidian-ai-settings-section.is-collapsed {
 	border-color: var(--background-modifier-border-hover);
 }
 
-.obsidian-ai-settings-section.is-collapsed
-	.obsidian-ai-settings-section-header {
+.obsidian-ai-settings-section.is-collapsed .obsidian-ai-settings-section-header {
 	background: var(--background-primary);
 }
 
@@ -5398,14 +5327,134 @@
 	font-size: 0.85em;
 	cursor: pointer;
 	color: var(--text-normal);
-	transition:
-		background 0.15s ease,
-		border-color 0.15s ease;
+	transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .obsidian-ai-settings-collapse-bar button:hover {
 	background: var(--background-modifier-hover);
 	border-color: var(--background-modifier-border-hover);
+}
+
+/* app status bar */
+.obsidian-ai-sync-status {
+	cursor: pointer;
+	font-size: 11px;
+	color: var(--text-muted);
+}
+
+.obsidian-ai-sync-status--syncing {
+	color: var(--text-accent);
+}
+
+.obsidian-ai-sync-status--error {
+	color: var(--text-error);
+}
+
+/* log modal */
+.obsidian-ai-sync-log-modal__body {
+	max-height: 60vh;
+	overflow: auto;
+	font-size: 11px;
+	font-family: var(--font-monospace);
+	white-space: pre-wrap;
+	word-break: break-all;
+	margin: 0;
+}
+
+/* ─── T46: two-phase modal — examine surface ─────────────────────────── */
+.sync-progress-modal .sync-exam-dir {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 12px;
+	color: var(--text-muted);
+	margin: 4px 0 8px;
+}
+
+.sync-progress-modal .sync-exam-dir select {
+	flex: 0 0 auto;
+}
+
+.sync-progress-modal .sync-exam-status {
+	font-size: 12px;
+	color: var(--text-muted);
+	margin-bottom: 8px;
+}
+
+.sync-progress-modal .sync-exam-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 6px;
+	margin-bottom: 8px;
+}
+
+.sync-progress-modal .sync-exam-stat {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 6px 8px;
+	text-align: center;
+}
+
+.sync-progress-modal .sync-exam-stat--dim {
+	opacity: 0.45;
+}
+
+.sync-progress-modal .sync-exam-stat--warn {
+	border-color: var(--background-modifier-error);
+}
+
+.sync-progress-modal .sync-exam-num {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.sync-progress-modal .sync-exam-label {
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--text-muted);
+}
+
+.sync-progress-modal .sync-exam-rows {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	max-height: 180px;
+	overflow-y: auto;
+	margin-bottom: 6px;
+}
+
+.sync-progress-modal .sync-exam-row {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	font-size: 12px;
+	padding: 2px 4px;
+	border-radius: 4px;
+}
+
+.sync-progress-modal .sync-exam-row:nth-child(odd) {
+	background: var(--background-secondary);
+}
+
+.sync-progress-modal .sync-exam-row-icon {
+	flex: 0 0 14px;
+	text-align: center;
+}
+
+.sync-progress-modal .sync-exam-row-title {
+	color: var(--text-normal);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.sync-progress-modal .sync-exam-note {
+	font-size: 11px;
+	color: var(--text-muted);
+	margin-top: 4px;
 }
 
 /* ─── Model Switcher ─────────────────────────────────────────────── */
@@ -5672,548 +5721,4 @@
 	.chat-model-switcher-trigger {
 		min-width: 26px;
 	}
-}
-
-/* ─── T42g: sync visibility panel + status bar ─────────────────────── */
-.sync-panel {
-	display: flex;
-	flex-direction: column;
-	gap: 10px;
-	padding: 12px;
-	font-size: 13px;
-}
-
-.sync-eyebrow,
-.sync-card-eyebrow {
-	font-size: 10px;
-	font-weight: 600;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: var(--text-muted);
-}
-
-.sync-card {
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 8px;
-	padding: 10px 12px;
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
-
-.sync-card--danger {
-	border-color: var(--background-modifier-error);
-}
-
-.sync-card--empty {
-	align-items: flex-start;
-}
-
-.sync-card-title {
-	font-size: 14px;
-	font-weight: 600;
-	color: var(--text-normal);
-}
-
-.sync-card-sub {
-	font-size: 11px;
-	color: var(--text-muted);
-	line-height: 1.5;
-}
-
-.sync-card-error {
-	font-size: 11px;
-	color: var(--text-error);
-}
-
-/* status strip */
-.sync-strip {
-	display: flex;
-	align-items: center;
-	gap: 7px;
-	font-size: 11px;
-	font-weight: 500;
-	padding: 6px 10px;
-	border-radius: 6px;
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	color: var(--text-muted);
-}
-
-.sync-strip--error {
-	color: var(--text-error);
-	border-color: var(--background-modifier-error);
-	background: color-mix(
-		in srgb,
-		var(--background-modifier-error) 8%,
-		var(--background-secondary)
-	);
-}
-
-.sync-strip--syncing {
-	color: var(--text-accent);
-}
-
-.sync-dot {
-	width: 7px;
-	height: 7px;
-	border-radius: 50%;
-	background: var(--text-muted);
-	flex: 0 0 auto;
-}
-
-.sync-dot--ok {
-	background: var(--text-accent);
-}
-
-.sync-dot--error {
-	background: var(--text-error);
-}
-
-.sync-dot--pulse {
-	background: var(--text-accent);
-	animation: sync-dot-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes sync-dot-pulse {
-	0%,
-	100% {
-		opacity: 1;
-	}
-	50% {
-		opacity: 0.35;
-	}
-}
-
-/* controls */
-.sync-controls {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-}
-
-.sync-controls-row {
-	display: flex;
-	gap: 8px;
-}
-
-.sync-select {
-	width: 100%;
-	height: 30px;
-	padding: 0 8px;
-	border-radius: 6px;
-	border: 1px solid var(--background-modifier-border);
-	background: var(--background-primary);
-	color: var(--text-normal);
-	font-size: 12px;
-}
-
-.sync-btn {
-	height: 30px;
-	padding: 0 12px;
-	border-radius: 6px;
-	border: 1px solid var(--background-modifier-border);
-	background: var(--background-secondary);
-	color: var(--text-normal);
-	font-size: 12px;
-	font-weight: 500;
-	cursor: pointer;
-}
-
-.sync-btn:hover {
-	background: var(--background-modifier-hover);
-}
-
-.sync-btn:disabled {
-	opacity: 0.55;
-	cursor: default;
-}
-
-.sync-btn--primary {
-	background: var(--interactive-accent);
-	border-color: var(--interactive-accent);
-	color: var(--text-on-accent);
-	flex: 1;
-}
-
-.sync-btn--primary:hover {
-	background: var(--interactive-accent-hover);
-}
-
-.sync-btn--ghost {
-	flex: 1;
-}
-
-.sync-btn--danger {
-	border-color: var(--background-modifier-error);
-	color: var(--text-error);
-	align-self: flex-start;
-}
-
-.sync-btn--icon {
-	width: 32px;
-	padding: 0;
-	flex: 0 0 auto;
-}
-
-.sync-link {
-	align-self: flex-start;
-	background: none;
-	border: none;
-	padding: 0;
-	font-size: 11px;
-	color: var(--text-accent);
-	cursor: pointer;
-}
-
-/* progress */
-.sync-progress {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
-
-.sync-progress-head {
-	display: flex;
-	justify-content: space-between;
-	align-items: baseline;
-	font-size: 12px;
-	font-weight: 500;
-	color: var(--text-normal);
-}
-
-.sync-progress-count {
-	font-variant-numeric: tabular-nums;
-	color: var(--text-muted);
-	font-size: 11px;
-}
-
-.sync-progress-track {
-	height: 6px;
-	border-radius: 3px;
-	background: var(--background-modifier-border);
-	overflow: hidden;
-}
-
-.sync-progress-fill {
-	height: 100%;
-	border-radius: 3px;
-	background: var(--interactive-accent);
-	transition: width 0.25s ease;
-}
-
-.sync-progress-indeterminate {
-	height: 100%;
-	width: 40%;
-	border-radius: 3px;
-	background: var(--interactive-accent);
-	animation: sync-indeterminate 1.1s ease-in-out infinite;
-}
-
-@keyframes sync-indeterminate {
-	0% {
-		transform: translateX(-100%);
-	}
-	100% {
-		transform: translateX(350%);
-	}
-}
-
-.sync-progress-meta {
-	font-size: 11px;
-	color: var(--text-muted);
-	font-variant-numeric: tabular-nums;
-}
-
-/* active operation rows (shimmer) */
-.sync-ops {
-	display: flex;
-	flex-direction: column;
-	gap: 4px;
-}
-
-.sync-op-row {
-	position: relative;
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 5px 8px;
-	border-radius: 6px;
-	background: var(--background-secondary);
-	font-size: 12px;
-	color: var(--text-normal);
-	overflow: hidden;
-}
-
-.sync-op-row-title {
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.sync-op-shimmer {
-	position: absolute;
-	inset: 0;
-	background: linear-gradient(
-		90deg,
-		transparent,
-		color-mix(in srgb, var(--interactive-accent) 12%, transparent),
-		transparent
-	);
-	animation: sync-shimmer 1.4s linear infinite;
-	pointer-events: none;
-}
-
-@keyframes sync-shimmer {
-	0% {
-		transform: translateX(-100%);
-	}
-	100% {
-		transform: translateX(100%);
-	}
-}
-
-/* tabs */
-.sync-tabs {
-	display: flex;
-	gap: 2px;
-	background: var(--background-secondary);
-	border-radius: 6px;
-	padding: 2px;
-}
-
-.sync-tab {
-	flex: 1;
-	height: 26px;
-	border: none;
-	border-radius: 5px;
-	background: none;
-	font-size: 11px;
-	font-weight: 500;
-	color: var(--text-muted);
-	cursor: pointer;
-}
-
-.sync-tab--active {
-	background: var(--background-primary);
-	color: var(--text-normal);
-}
-
-/* stats grid */
-.sync-stats-grid {
-	display: grid;
-	grid-template-columns: repeat(4, 1fr);
-	gap: 6px;
-}
-
-.sync-stat {
-	background: var(--background-secondary);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
-	padding: 8px 6px;
-	text-align: center;
-}
-
-.sync-stat-num {
-	font-size: 15px;
-	font-weight: 650;
-	font-variant-numeric: tabular-nums;
-	color: var(--text-normal);
-}
-
-.sync-stat--success .sync-stat-num {
-	color: var(--text-accent);
-}
-.sync-stat--warn .sync-stat-num {
-	color: var(--text-warning, #b8860b);
-}
-.sync-stat--danger .sync-stat-num {
-	color: var(--text-error);
-}
-
-.sync-stat--dim .sync-stat-num {
-	color: var(--text-faint);
-}
-
-.sync-stat-label {
-	font-size: 10px;
-	color: var(--text-muted);
-	margin-top: 2px;
-}
-
-/* op log rows + chips */
-.sync-log {
-	display: flex;
-	flex-direction: column;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 8px;
-	overflow: hidden;
-}
-
-.sync-log-row {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	min-height: 34px;
-	padding: 5px 10px;
-	background: var(--background-primary);
-	border-bottom: 1px solid var(--background-modifier-border);
-	font-size: 12px;
-}
-
-.sync-log-row:last-child {
-	border-bottom: none;
-}
-
-.sync-log-row-op {
-	width: 14px;
-	text-align: center;
-	color: var(--text-muted);
-	flex: 0 0 auto;
-}
-
-.sync-log-row-main {
-	flex: 1;
-	min-width: 0;
-	display: flex;
-	flex-direction: column;
-}
-
-.sync-log-row-title {
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	color: var(--text-normal);
-}
-
-.sync-log-row-msg {
-	font-size: 11px;
-	color: var(--text-muted);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.sync-log-row--failed .sync-log-row-title,
-.sync-log-row--failed .sync-log-row-msg {
-	color: var(--text-error);
-}
-
-.sync-chip {
-	flex: 0 0 auto;
-	font-size: 10px;
-	font-weight: 600;
-	padding: 2px 7px;
-	border-radius: 999px;
-	background: var(--background-secondary);
-	color: var(--text-muted);
-}
-
-.sync-chip--done {
-	background: color-mix(in srgb, var(--interactive-accent) 14%, transparent);
-	color: var(--text-accent);
-}
-
-.sync-chip--conflict {
-	background: color-mix(
-		in srgb,
-		var(--text-warning, #b8860b) 14%,
-		transparent
-	);
-	color: var(--text-warning, #b8860b);
-}
-
-.sync-chip--failed {
-	background: color-mix(in srgb, var(--text-error) 12%, transparent);
-	color: var(--text-error);
-}
-
-/* activity feed with scroll fade */
-.sync-feed {
-	position: relative;
-	max-height: 220px;
-	overflow-y: auto;
-	display: flex;
-	flex-direction: column;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 8px;
-}
-
-.sync-feed-empty {
-	padding: 16px;
-	text-align: center;
-	font-size: 11px;
-	color: var(--text-muted);
-}
-
-.sync-feed-fade {
-	position: sticky;
-	bottom: 0;
-	height: 26px;
-	margin-top: -26px;
-	background: linear-gradient(transparent, var(--background-primary));
-	pointer-events: none;
-}
-
-/* failures */
-.sync-fail-row {
-	padding: 6px 0;
-	border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.sync-fail-row:last-of-type {
-	border-bottom: none;
-}
-
-.sync-fail-row-title {
-	font-size: 12px;
-	font-weight: 500;
-	color: var(--text-normal);
-}
-
-.sync-fail-row-msg {
-	font-size: 11px;
-	color: var(--text-error);
-}
-
-.sync-panel-foot {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-}
-
-.sync-panel-foot .sync-btn--ghost {
-	flex: 0 0 auto;
-}
-
-.sync-panel-foot-meta {
-	font-size: 11px;
-	color: var(--text-muted);
-}
-
-/* app status bar */
-.obsidian-ai-sync-status {
-	cursor: pointer;
-	font-size: 11px;
-	color: var(--text-muted);
-}
-
-.obsidian-ai-sync-status--syncing {
-	color: var(--text-accent);
-}
-
-.obsidian-ai-sync-status--error {
-	color: var(--text-error);
-}
-
-/* log modal */
-.obsidian-ai-sync-log-modal__body {
-	max-height: 60vh;
-	overflow: auto;
-	font-size: 11px;
-	font-family: var(--font-monospace);
-	white-space: pre-wrap;
-	word-break: break-all;
-	margin: 0;
 }

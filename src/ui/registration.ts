@@ -23,7 +23,6 @@ import {
 import { GIT_COMMIT_HASH, GIT_BRANCH } from "../version-info";
 import { ObsidianAISettingsTab } from "../settings-sections/SettingsTab";
 import type ObsidianAIPlugin from "../main";
-import { openSyncPanel } from "./openSyncPanel";
 
 export const OPEN_CHAT_COMMAND_ID = "open-chat-lab-sidebar";
 export const OPEN_CHAT_COMMAND_NAME = "Open Chat Lab AI sidebar";
@@ -143,14 +142,13 @@ export function registerCommands(plugin: ObsidianAIPlugin): void {
 		callback: () => checkForUpdates(plugin, true),
 	});
 
-	// Both palette commands open the two-step sync panel first so the run
-	// streams into visible UI (dry run previously ran headless; sync opened
-	// the legacy progress modal).
+	// Both palette commands open the two-phase modal: examine first, then the
+	// run streams into the same surface.
 	plugin.addCommand({
 		id: "chat-sync-dry-run",
 		name: "Chat Sync: Dry Run",
 		callback: () => {
-			void openSyncPanel(plugin).then(() => plugin.triggerSync(true));
+			void plugin.triggerSync(true, { useModal: true });
 		},
 	});
 
@@ -158,7 +156,7 @@ export function registerCommands(plugin: ObsidianAIPlugin): void {
 		id: "chat-sync-now",
 		name: "Chat Sync: Sync Now",
 		callback: () => {
-			void openSyncPanel(plugin).then(() => plugin.triggerSync(false));
+			void plugin.triggerSync(false, { useModal: true });
 		},
 	});
 
