@@ -1099,8 +1099,23 @@ export class SyncEngine {
 	}
 
 	/** Populate the local cache with sessions from Obsidian's storage.
-	 *  Preserves synced status for sessions that haven't changed. */
+	 *  Preserves synced status for sessions that haven't changed.
+	 *  Evicts cache entries whose session no longer exists in live storage. */
 	async populateCache(sessions: ChatSession[]): Promise<void> {
+		// Evict stale entries: anything in the cache that is not in the
+		// live storage list has been deleted/pruned and must not be synced.
+		const liveIds = new Set(sessions.map((s) => s.id));
+		const cached = await this.cache.getAllSessions();
+		for (const entry of cached) {
+			if (!liveIds.has(entry.id)) {
+				await this.cache.deleteSession(entry.id);
+				this.log(
+					"info",
+					`SyncEngine: evicted stale cache entry ${entry.id} (not in live storage)`,
+				);
+			}
+		}
+
 		for (const session of sessions) {
 			if (session.hydrated === false) {
 				// The app store could not supply this session's real content
