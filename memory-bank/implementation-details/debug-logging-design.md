@@ -321,3 +321,11 @@ streaming.abort
 - Whether diagnostics should be a settings section first or a dedicated view later — **Answered**: Settings section first (v1)
 - Whether to include a "copy system info" block with plugin, Obsidian, and platform versions — **Partially answered**: Debug log header includes user agent and Obsidian version
 - When to implement structured event pipeline and redaction — queued for v2 refinement after T13/T14 stability
+
+## 2026-09-22 Hydration and Storage-Safety Diagnostics
+
+Chat hydration now logs session IDs, expected/actual message counts, and
+hydration state transitions without logging message contents. JSONL storage
+also warns when it refuses an empty overwrite for a positive-count session or
+preserves an omitted session from a partial snapshot. These warnings indicate
+that the safety guard blocked a destructive write.

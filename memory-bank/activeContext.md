@@ -1,5 +1,16 @@
 # Active Context
 
+### 2026-09-22 19:06 IST — sync storage-safety repair and recovery ✅
+
+- 3ae26c4 added hydration diagnostics; 7291665 prevents positive-count empty
+  JSONL overwrites, partial-index truncation, and silent retention deletion.
+- Remote WebDAV evidence: 207 session files, zero empty; repaired device build
+  recovered 202 sessions download-only with no errors.
+- Verification: 67 files / 571 tests, TypeScript, and production build pass.
+- T24/T42 session recovery is accepted. Remaining sync work: conflict-choice
+  UX, plugin-data rebuild, T24a search scope, and a future Chat/Plugin Health
+  Settings surface.
+
 ### 2026-09-22 16:33 IST — cross-device sync reconciliation shipped ✅
 
 - T42/T58/T24 follow-up source work is pushed through `4ce4b07`: titles and

@@ -250,3 +250,14 @@ The sync refresh reads session metadata without replacing messages already in
 React memory. When a downloaded file is known to storage but is not present in
 the lazy-hydration map, opening the session uses a pure disk peek fallback.
 This prevents successful downloads from appearing as empty chat tabs.
+
+## 2026-09-22 Final JSONL Safety Rules
+
+- Index-only and metadata-only session snapshots are not authoritative
+  deletions. Omitted sessions remain in the on-disk index unless their IDs are
+  explicitly marked deleted.
+- A session with a positive indexed message count must never be written as an
+  empty JSONL payload, even if hydration bookkeeping was reset.
+- Automatic conversation retention cannot silently remove persisted sessions;
+  removal is an explicit user action.
+- Hydration diagnostics record state and counts, but never message contents.

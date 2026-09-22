@@ -14,10 +14,23 @@ All notable changes to this project will be documented in this file.
   and the progress UI reports the local persistence, index, and manifest phases.
 - The sync timer starts when the user confirms Sync, and downloaded sessions no
   longer open as empty tabs after the metadata refresh.
+- Hydration diagnostics now expose session state and counts without message
+  contents.
+- Positive-count empty JSONL overwrites and partial-index truncation are
+  blocked; omitted sessions survive unless deletion is explicit.
+- Automatic retention pruning can no longer silently remove persisted history.
 
 ### Verification
 
-- Full suite: 67 files / 568 tests; TypeScript and production build passed.
+- Full suite: 67 files / 571 tests; TypeScript and production build passed.
+- Device recovery restored 202 sessions through download-only sync with no
+  errors. The remote archive contained 207 non-empty session files.
+
+### Future Idea
+
+- A Chat/Plugin Health option in Settings could centralize session-index and
+  payload counts, hydration failures, zero-byte checks, sync-index consistency,
+  and recent storage/sync warnings.
 
 ## Unreleased — 2026-09-21
 

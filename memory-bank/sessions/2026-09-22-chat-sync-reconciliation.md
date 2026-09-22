@@ -58,3 +58,36 @@ infrastructure and not used to decide the data model or user-visible behavior.
 - Per-conflict decision UX and plugin-data rebuild remain outside this slice.
 - T24a global search over unopened index-only sessions remains pending.
 - Beads tracking remains unavailable because this checkout has no Beads DB.
+## 2026-09-22 — Final Storage-Safety Repair and Recovery
+
+This append records the continuation after the earlier 4ce4b07 closeout.
+
+### Source Changes
+
+- 3ae26c4 added hydration diagnostics for startup hydration, session opening,
+  successful reads, empty reads, and disk peeks.
+- 7291665 prevented positive-count empty JSONL overwrites, preserved sessions
+  omitted by partial snapshots, made deletion intent explicit, and removed
+  automatic retention pruning from new-session creation.
+
+### Incident Evidence and Recovery
+
+- Read-only WebDAV inspection found 207 remote session files and zero empty
+  payloads, confirming the remote archive was intact.
+- The repaired build was installed. Rebuilding the local index followed by
+  download-only sync restored 202 missing sessions with no errors.
+- Restored chats opened with message content intact. Remaining zero-byte local
+  files are valid only when their index entries report zero messages.
+
+### Verification
+
+- Full suite: 67 files / 571 tests passed.
+- TypeScript, production build, and diff checks passed.
+- Device acceptance passed for the recovery flow.
+
+### Future Idea
+
+A Chat/Plugin Health option in Settings would be useful for showing index and
+payload counts, positive-count zero-byte files, hydration failures/retries,
+sync-index consistency, and recent storage/sync warnings. This is not
+implemented by the current repair.

@@ -1,5 +1,17 @@
 # Session Cache
 
+### 2026-09-22 19:06 IST — sync storage-safety repair and recovery ✅
+
+- Session file: sessions/2026-09-22-chat-sync-reconciliation.md.
+- 3ae26c4 added hydration diagnostics; 7291665 prevents empty payload
+  overwrites and partial-index truncation, and removes silent retention
+  deletion.
+- Remote archive verified intact; repaired build restored 202 sessions
+  download-only with no errors.
+- Verification: 67 files / 571 tests, TypeScript, and production build.
+- Remaining: conflict-decision UX, plugin-data rebuild, T24a search scope,
+  and the future Chat/Plugin Health Settings surface.
+
 ### 2026-09-22 16:33 IST — cross-device sync reconciliation ✅
 
 - Session file: `sessions/2026-09-22-chat-sync-reconciliation.md`.

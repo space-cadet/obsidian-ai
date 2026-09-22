@@ -89,3 +89,12 @@ shown during planning and activity logging without fetching each payload.
 Normal transfers use stable IDs, checksums, and ETags for comparison; the
 downloaded batch is persisted once after concurrent transfers complete. Index
 and manifest writes now have visible progress stages.
+
+## 2026-09-22 Recovery Safety
+
+The index must not be treated as proof that local message content exists.
+Sessions whose payload cannot be verified remain download candidates even when
+their metadata matches the index. Rebuilding the index from current state and
+running download-only recovery restored 202 missing sessions from the intact
+remote archive. The index remains a reconciliation cache, not the source of
+truth.

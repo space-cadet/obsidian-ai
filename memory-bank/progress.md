@@ -1,3 +1,14 @@
+### 2026-09-22 — sync storage-safety repair and recovery ✅
+
+- T24/T42: added hydration diagnostics and repaired the positive-count empty
+  overwrite and partial-index truncation paths.
+- T42a/T58d: rebuilt the local sync index and recovered 202 sessions with
+  download-only sync; the remote archive had 207 non-empty session files.
+- Device acceptance passed with no recovery errors.
+- Verification: 67 test files / 571 tests, TypeScript, production build, and
+  diff checks passed.
+- Future idea recorded under T34: Chat/Plugin Health in Settings.
+
 ### 2026-09-21 — mobile sync fixes day ✅
 
 - T42g: `8fafd34` settings Sync Now modal; `5749148` emitLog recursion fix; device-verify acceptance ✅; registry row Active → Completed.

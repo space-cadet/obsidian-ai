@@ -369,3 +369,12 @@ payloads and a plain metadata manifest so titles and reconciliation state are
 usable while the overall data design is being completed. The assistant must
 not decide what requires encryption; that is a separate user-directed design
 decision.
+
+## 2026-09-22 Recovery Evidence
+
+The configured WebDAV archive was inspected read-only during a local
+truncation incident: 207 remote session files were present and none were
+zero-byte. Recovery was performed with the repaired build using download-only
+direction after rebuilding the local sync index; 202 sessions downloaded with
+no errors. Local empty payloads remain valid only when their index metadata
+reports zero messages.
