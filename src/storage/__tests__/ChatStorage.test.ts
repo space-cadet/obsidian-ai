@@ -414,6 +414,44 @@ describe("JsonlStorage peekSessionMessages (Codex wave-2)", () => {
 });
 
 describe("JsonlStorage bulk hydrate honesty (sync path)", () => {
+	it("logs hydration start and success without exposing message content", async () => {
+		const files = new Map<string, string>();
+		await makeStorage(files).storage.saveChatData({
+			sessions: [makeSession("s1", ["hello"])],
+			activeSessionId: "s1",
+		});
+		const logger = { log: vi.fn() };
+		const storage = createStorage(
+			{
+				app: {
+					vault: {
+						adapter: makeAdapter(files),
+						configDir: ".obsidian",
+					},
+				} as any,
+				manifest: { id: "obsidian-ai" },
+				settings: {} as any,
+				loadData: vi.fn(async () => ({})),
+				saveData: vi.fn(async () => undefined),
+				logger,
+			},
+			"jsonl",
+		);
+
+		await storage.loadChatData();
+		const messages = await storage.hydrateSession?.("s1");
+
+		expect(messages).toHaveLength(1);
+		expect(logger.log).toHaveBeenCalledWith(
+			"debug",
+			"ChatStorage: hydrate started for s1 (sessions/s1.jsonl, expected 1)",
+		);
+		expect(logger.log).toHaveBeenCalledWith(
+			"info",
+			"ChatStorage: hydrated s1 (1/1 messages, sessions/s1.jsonl)",
+		);
+	});
+
 	it("hydrate:true leaves a missing message file unhydrated with index messageCount", async () => {
 		const files = new Map<string, string>();
 		await makeStorage(files).storage.saveChatData({

@@ -241,10 +241,25 @@ export function useChatSession({
 						(id): id is string => typeof id === "string",
 					),
 				)) {
+					plugin.logger?.log(
+						"debug",
+						`[Startup] scheduling hydration for ${id}`,
+					);
 					plugin
 						.hydrateSession?.(id)
 						.then((messages) => {
-							if (cancelled || messages.length === 0) return;
+							if (cancelled) return;
+							if (messages.length === 0) {
+								plugin.logger?.log(
+									"warn",
+									`[Startup] hydration for ${id} resolved with 0 messages`,
+								);
+								return;
+							}
+							plugin.logger?.log(
+								"info",
+								`[Startup] hydrated ${id} with ${messages.length} messages`,
+							);
 							// Write through the ref synchronously (see send gate).
 							sessionsRef.current = sessionsRef.current.map(
 								(s) =>

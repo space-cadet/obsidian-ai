@@ -326,10 +326,20 @@ class JsonlStorage implements ChatStorage {
 		sessionId: string,
 	): Promise<ChatMessage[]> {
 		const entry = this.unhydratedSessions.get(sessionId);
-		if (!entry) return [];
+		if (!entry) {
+			this.deps.logger?.log(
+				"debug",
+				`ChatStorage: hydrate skipped for ${sessionId} (no pending index entry)`,
+			);
+			return [];
+		}
 		const adapter = this.deps.app.vault.adapter;
 		const pluginDir = `${this.deps.app.vault.configDir}/plugins/${this.deps.manifest.id}`;
 		const path = `${pluginDir}/${entry.filePath}`;
+		this.deps.logger?.log(
+			"debug",
+			`ChatStorage: hydrate started for ${sessionId} (${entry.filePath}, expected ${entry.messageCount})`,
+		);
 		let messages: ChatMessage[];
 		try {
 			messages = await this._loadMessages(path);
@@ -366,6 +376,10 @@ class JsonlStorage implements ChatStorage {
 			messageIds: messages.map((m) => m.id),
 			updatedAt: entry.updatedAt,
 		});
+		this.deps.logger?.log(
+			"info",
+			`ChatStorage: hydrated ${sessionId} (${messages.length}/${entry.messageCount} messages, ${entry.filePath})`,
+		);
 		return messages;
 	}
 
@@ -382,7 +396,12 @@ class JsonlStorage implements ChatStorage {
 		const pluginDir = `${this.deps.app.vault.configDir}/plugins/${this.deps.manifest.id}`;
 		const filePath =
 			entry?.filePath ?? `${SESSIONS_DIR}/${sessionId}.jsonl`;
-		return this._loadMessages(`${pluginDir}/${filePath}`);
+		const messages = await this._loadMessages(`${pluginDir}/${filePath}`);
+		this.deps.logger?.log(
+			messages.length > 0 ? "debug" : "warn",
+			`ChatStorage: peek ${sessionId} read ${messages.length} message(s) from ${filePath}`,
+		);
+		return messages;
 	}
 
 	async saveChatData(data: StoredChatData): Promise<void> {

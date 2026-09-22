@@ -73,6 +73,10 @@ export function useSessionActions({
 			// start loading them now and fill state when they arrive. The send
 			// gate awaits hydration, so a fast type-and-enter can't clobber.
 			const target = sessionsRef.current.find((s) => s.id === sessionId);
+			plugin.logger?.log(
+				"debug",
+				`[Session] open ${sessionId}: hydration=${target?.hydrated === false ? "pending" : target?.hydrated === true ? "ready" : target ? "unknown" : "missing"}`,
+			);
 			if (target && target.hydrated === false) {
 				const hydrate = async () => {
 					// A sync refresh can know that a file was written successfully
@@ -92,7 +96,17 @@ export function useSessionActions({
 				};
 				hydrate()
 					.then((messages) => {
-						if (messages.length === 0) return;
+						if (messages.length === 0) {
+							plugin.logger?.log(
+								"warn",
+								`[Session] open ${sessionId}: hydration resolved with 0 messages`,
+							);
+							return;
+						}
+						plugin.logger?.log(
+							"info",
+							`[Session] open ${sessionId}: applied ${messages.length} hydrated messages`,
+						);
 						// Write through the ref synchronously — anything reading
 						// sessionsRef.current before React re-renders must see the
 						// hydrated messages, not the empty boot copy.
