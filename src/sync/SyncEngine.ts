@@ -57,6 +57,8 @@ export interface SyncEngineConfig {
 	progress?: (event: SyncEngineProgressEvent) => void;
 	/** Called when a session is downloaded from remote. Implementor should save to app storage. */
 	onSessionDownloaded?: (session: ChatSession) => Promise<void>;
+	/** Batch callback used by normal sync to persist downloads in one write. */
+	onSessionsDownloaded?: (sessions: ChatSession[]) => Promise<void>;
 	/** Called when a deletion tombstone arrives from another device. */
 	onSessionDeleted?: (sessionId: string) => Promise<void>;
 	/** Optional sync index manager for skipping unchanged sessions (T42a). */
@@ -88,6 +90,7 @@ export class SyncEngine {
 	private progress?: (event: SyncEngineProgressEvent) => void;
 	private logHandler?: (level: string, msg: string) => void;
 	private onSessionDownloaded?: (session: ChatSession) => Promise<void>;
+	private onSessionsDownloaded?: (sessions: ChatSession[]) => Promise<void>;
 	private onSessionDeleted?: (sessionId: string) => Promise<void>;
 	private _cancelled = false;
 	private indexManager?: SyncIndexManager;
@@ -112,6 +115,7 @@ export class SyncEngine {
 		this.logger = config.logger;
 		this.progress = config.progress;
 		this.onSessionDownloaded = config.onSessionDownloaded;
+		this.onSessionsDownloaded = config.onSessionsDownloaded;
 		this.onSessionDeleted = config.onSessionDeleted;
 		this.indexManager = config.indexManager;
 		this.concurrencyLimit = config.concurrencyLimit ?? 3;
@@ -216,6 +220,7 @@ export class SyncEngine {
 		// Track successfully synced sessions for index update
 		const syncedLocals: ChatSession[] = [];
 		const syncedRemotes: RemoteSessionMeta[] = [];
+		const downloadedSessions: ChatSession[] = [];
 		const successfulDeletionIds = new Set<string>();
 
 		try {
@@ -511,10 +516,15 @@ export class SyncEngine {
 							return;
 						}
 						try {
-							const localSession =
-								await this.downloadSession(meta);
+							const localSession = await this.downloadSession(
+								meta,
+								false,
+							);
 							downloaded++;
-							if (localSession) syncedLocals.push(localSession);
+							if (localSession) {
+								syncedLocals.push(localSession);
+								downloadedSessions.push(localSession);
+							}
 							syncedRemotes.push(meta);
 						} catch (err: any) {
 							const msg = `Download failed for ${meta.id}: ${err.message}`;
@@ -528,6 +538,25 @@ export class SyncEngine {
 						}
 					},
 				);
+			}
+
+			// Persist the normal download batch once, after concurrent transfers
+			// finish. Rewriting the complete local archive per session makes large
+			// syncs needlessly serial and is the primary download bottleneck.
+			if (!this._cancelled && downloadedSessions.length > 0) {
+				try {
+					if (this.onSessionsDownloaded) {
+						await this.onSessionsDownloaded(downloadedSessions);
+					} else if (this.onSessionDownloaded) {
+						for (const session of downloadedSessions) {
+							await this.onSessionDownloaded(session);
+						}
+					}
+				} catch (err: any) {
+					const msg = `Downloaded session persistence failed: ${err.message}`;
+					this.log("error", msg);
+					errors.push(msg);
+				}
 			}
 
 			// Handle conflicts (skip if cancelled)
@@ -1197,6 +1226,7 @@ export class SyncEngine {
 	 *  @returns The downloaded local session if successful. */
 	private async downloadSession(
 		meta: RemoteSessionMeta,
+		persist = true,
 	): Promise<ChatSession | undefined> {
 		this.progress?.({
 			type: "session",
@@ -1255,8 +1285,9 @@ export class SyncEngine {
 
 		await this.cache.putSession(cached);
 
-		// Persist to app storage BEFORE marking synced so failures are retryable
-		if (this.onSessionDownloaded) {
+		// Persist immediately only for callers that did not opt into batch mode.
+		// Normal sync marks the cache here and persists the completed batch below.
+		if (persist && this.onSessionDownloaded) {
 			await this.onSessionDownloaded(cached);
 		}
 

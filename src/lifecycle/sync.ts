@@ -14,6 +14,7 @@ import { createPluginIndexStorage } from "../sync/SyncIndex";
 import { makeSyncIdentity } from "../sync/SyncIdentity";
 import { DurableSyncRetryStore } from "../sync/SyncRetryStore";
 import type ObsidianAIPlugin from "../main";
+import type { ChatSession } from "../types";
 import { loadChatData } from "./persistence";
 import { syncPluginData } from "./storage";
 
@@ -87,6 +88,35 @@ export async function initSyncEngine(plugin: ObsidianAIPlugin): Promise<void> {
 		// Downloads run concurrently. Serialize the read/merge/write sequence so
 		// two sessions cannot load the same old index and overwrite each other.
 		let downloadedSessionSaveQueue = Promise.resolve();
+		const persistDownloadedSessions = async (
+			downloadedSessions: ChatSession[],
+		): Promise<void> => {
+			const save = downloadedSessionSaveQueue.then(async () => {
+				// Hydrate once, merge the complete batch, then write once.
+				const chatData = await plugin.loadChatData({ hydrate: true });
+				const sessionsById = new Map(
+					(chatData.sessions || []).map((session) => [
+						session.id,
+						session,
+					]),
+				);
+				for (const session of downloadedSessions) {
+					sessionsById.set(session.id, session);
+				}
+				await plugin.saveChatData({
+					...chatData,
+					sessions: [...sessionsById.values()],
+				});
+				for (const session of downloadedSessions) {
+					plugin.logger?.log(
+						"info",
+						`[SyncEngine] Downloaded session ${session.id} merged into storage`,
+					);
+				}
+			});
+			downloadedSessionSaveQueue = save.catch(() => undefined);
+			await save;
+		};
 		plugin.syncIdentity = syncIdentity;
 		plugin.syncRetryStore = retryStore;
 
@@ -110,28 +140,9 @@ export async function initSyncEngine(plugin: ObsidianAIPlugin): Promise<void> {
 					plugin.logger?.log(level as any, `[SyncEngine] ${msg}`);
 				},
 			},
-			onSessionDownloaded: async (session) => {
-				const save = downloadedSessionSaveQueue.then(async () => {
-					// Merge downloaded session into app storage.
-					// Hydrate existing sessions before writing the merged snapshot;
-					// an index-only load would otherwise make their message arrays
-					// look empty and could overwrite their message files.
-					const chatData = await plugin.loadChatData({
-						hydrate: true,
-					});
-					const sessions = chatData.sessions || [];
-					const idx = sessions.findIndex((s) => s.id === session.id);
-					if (idx >= 0) sessions[idx] = session;
-					else sessions.push(session);
-					await plugin.saveChatData({ ...chatData, sessions });
-					plugin.logger?.log(
-						"info",
-						`[SyncEngine] Downloaded session ${session.id} merged into storage`,
-					);
-				});
-				downloadedSessionSaveQueue = save.catch(() => undefined);
-				await save;
-			},
+			onSessionDownloaded: (session) =>
+				persistDownloadedSessions([session]),
+			onSessionsDownloaded: persistDownloadedSessions,
 			onSessionDeleted: async (sessionId) => {
 				const chatData = await plugin.loadChatData({ hydrate: true });
 				const sessions = (chatData.sessions || []).filter(

@@ -17,6 +17,7 @@ function makeEngine(
 	localSessions: any[],
 	remoteMetas: any[],
 	events: ProgressEvent[] = [],
+	options: { onSessionsDownloaded?: (sessions: any[]) => Promise<void> } = {},
 ) {
 	const cache = {
 		getAllSessions: async () => localSessions,
@@ -30,16 +31,21 @@ function makeEngine(
 		initialize: async () => {},
 		disconnect: async () => {},
 		listSessions: async () => remoteMetas,
-		getSession: async (id: string) =>
-			id === "c"
-				? {
-						id: "c",
-						ciphertext: REMOTE_PLAINTEXT,
-						checksum: await checksum(REMOTE_PLAINTEXT),
-						modifiedAt: 2,
-						version: 1,
-					}
-				: null,
+		getSession: async (id: string) => {
+			if (!remoteMetas.some((remote) => remote.id === id)) return null;
+			const plaintext = JSON.stringify({
+				...JSON.parse(REMOTE_PLAINTEXT),
+				id,
+				title: id.toUpperCase(),
+			});
+			return {
+				id,
+				ciphertext: plaintext,
+				checksum: await checksum(plaintext),
+				modifiedAt: 2,
+				version: 1,
+			};
+		},
 		putSession: async () => ({ etag: "etag-1", modifiedAt: 5 }),
 		writeText: async () => {},
 		writeTextAtomic: async () => ({ etag: "etag-1" }),
@@ -64,6 +70,7 @@ function makeEngine(
 		crypto: crypto as any,
 		passphrase: "",
 		progress: (e) => events.push(e),
+		onSessionsDownloaded: options.onSessionsDownloaded,
 	});
 	return engine;
 }
@@ -146,6 +153,41 @@ describe("SyncEngine plan bytes (T42g)", () => {
 		expect(doneEvents.find((e) => e.direction === "download")?.bytes).toBe(
 			256,
 		);
+	});
+
+	it("persists normal downloads as one batch", async () => {
+		const batches: any[][] = [];
+		const engine = makeEngine(
+			[
+				{
+					id: "a",
+					title: "A",
+					messages: [{ content: "hello" }],
+					createdAt: 1,
+					updatedAt: 1,
+					contextItems: [],
+				},
+			],
+			[
+				{ id: "c", modifiedAt: 2, size: 256 },
+				{ id: "d", modifiedAt: 2, size: 256 },
+			],
+			[],
+			{
+				onSessionsDownloaded: async (sessions) => {
+					batches.push(sessions);
+				},
+			},
+		);
+
+		const result = await engine.sync("download");
+
+		expect(result.downloaded).toBe(2);
+		expect(batches).toHaveLength(1);
+		expect(batches[0].map((session) => session.id).sort()).toEqual([
+			"c",
+			"d",
+		]);
 	});
 
 	it("direction filter recomputes planned bytes", async () => {
