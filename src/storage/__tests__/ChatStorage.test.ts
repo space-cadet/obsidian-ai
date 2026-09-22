@@ -485,14 +485,62 @@ describe("JsonlStorage bulk hydrate honesty (sync path)", () => {
 		// The index entry must survive with its messageCount and no empty
 		// .jsonl may be created for the unverified session.
 		const index = JSON.parse(
-			files.get(
-				".obsidian/plugins/obsidian-ai/sessions/index.json",
-			) ?? "{}",
+			files.get(".obsidian/plugins/obsidian-ai/sessions/index.json") ??
+				"{}",
 		);
 		expect(index.sessions[0].messageCount).toBe(1);
 		expect(adapter.write).not.toHaveBeenCalledWith(
 			sessionPath("s1"),
 			expect.anything(),
 		);
+	});
+
+	it("never overwrites a positive-count session after hydration bookkeeping is reset", async () => {
+		const files = new Map<string, string>();
+		await makeStorage(files).storage.saveChatData({
+			sessions: [makeSession("s1", ["preserve me"])],
+			activeSessionId: "s1",
+		});
+		const { storage, adapter } = makeStorage(files);
+		const metadata = await storage.loadChatData();
+		await storage.hydrateSession?.("s1");
+		// A later metadata refresh previously cleared the save guard while still
+		// returning an empty in-memory messages array.
+		const refreshed = await storage.loadChatData();
+		adapter.write.mockClear();
+
+		await storage.saveChatData(refreshed);
+
+		expect(files.get(sessionPath("s1"))).toContain("preserve me");
+		expect(adapter.write).not.toHaveBeenCalledWith(sessionPath("s1"), "");
+		expect(metadata.sessions[0].messageCount).toBe(1);
+	});
+
+	it("preserves sessions omitted by a partial snapshot unless explicitly deleted", async () => {
+		const files = new Map<string, string>();
+		await makeStorage(files).storage.saveChatData({
+			sessions: [makeSession("s1", ["one"]), makeSession("s2", ["two"])],
+			activeSessionId: "s1",
+		});
+		const { storage } = makeStorage(files);
+		const loaded = await storage.loadChatData({ hydrate: true });
+
+		await storage.saveChatData({
+			sessions: [loaded.sessions[0]],
+			activeSessionId: "s1",
+		});
+		let index = JSON.parse(files.get(indexPath) ?? "{}");
+		expect(index.sessions.map((entry: any) => entry.id).sort()).toEqual([
+			"s1",
+			"s2",
+		]);
+
+		await storage.saveChatData({
+			sessions: [loaded.sessions[0]],
+			activeSessionId: "s1",
+			deletedSessionIds: ["s2"],
+		});
+		index = JSON.parse(files.get(indexPath) ?? "{}");
+		expect(index.sessions.map((entry: any) => entry.id)).toEqual(["s1"]);
 	});
 });

@@ -200,4 +200,8 @@ export interface StoredChatData {
 	activeSessionId: string | null;
 	/** Ordered internal tabs to restore. Drafts are deliberately excluded. */
 	openSessionIds?: string[];
+	/** Session IDs intentionally deleted by the user or remote sync. Omitted
+		IDs are otherwise preserved so a stale partial UI snapshot cannot truncate
+		the authoritative session index. */
+	deletedSessionIds?: string[];
 }

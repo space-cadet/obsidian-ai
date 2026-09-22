@@ -148,7 +148,11 @@ export async function initSyncEngine(plugin: ObsidianAIPlugin): Promise<void> {
 				const sessions = (chatData.sessions || []).filter(
 					(session) => session.id !== sessionId,
 				);
-				await plugin.saveChatData({ ...chatData, sessions });
+				await plugin.saveChatData({
+					...chatData,
+					sessions,
+					deletedSessionIds: [sessionId],
+				});
 				window.dispatchEvent(
 					new CustomEvent("obsidian-ai:session-deleted", {
 						detail: { sessionId },

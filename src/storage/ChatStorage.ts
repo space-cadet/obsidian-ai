@@ -169,6 +169,9 @@ class JsonlStorage implements ChatStorage {
 		doing so would make isSessionHydrated() lie and a later "hydration"
 		could revert newer in-memory messages to disk state (Codex wave-3 P1). */
 	private hydratedSessionIds = new Set<string>();
+	/** Last authoritative index entries. Used to preserve message files and
+		metadata when a UI snapshot is partial or metadata-only. */
+	private indexEntriesById = new Map<string, SessionIndexEntry>();
 
 	constructor(deps: StorageDeps) {
 		this.deps = deps;
@@ -197,6 +200,9 @@ class JsonlStorage implements ChatStorage {
 		} catch {
 			return { sessions: [], activeSessionId: null };
 		}
+		this.indexEntriesById = new Map(
+			index.sessions.map((entry) => [entry.id, entry]),
+		);
 
 		const hydrateAll = opts.hydrate === true;
 		// A full read (diagnostics, usage stats, sync cache) must never disturb
@@ -414,22 +420,40 @@ class JsonlStorage implements ChatStorage {
 		}
 
 		const indexEntries: SessionIndexEntry[] = [];
+		const incomingIds = new Set(data.sessions.map((session) => session.id));
+		const deletedIds = new Set(data.deletedSessionIds ?? []);
 
 		for (const session of data.sessions) {
 			const filePath = `${SESSIONS_DIR}/${session.id}.jsonl`;
 			const fullPath = `${pluginDir}/${filePath}`;
 
-			const originalEntry = this.unhydratedSessions.get(session.id);
-			if (originalEntry && session.messages.length === 0) {
+			const originalEntry =
+				this.unhydratedSessions.get(session.id) ??
+				this.indexEntriesById.get(session.id);
+			const expectedMessageCount =
+				session.messageCount ?? originalEntry?.messageCount ?? 0;
+			if (session.messages.length === 0 && expectedMessageCount > 0) {
 				// Hard guard: this session's messages were never read into memory
-				// (index-only boot, never opened). Writing [] would destroy the
-				// on-disk file. Skip the write and carry the original index entry
-				// forward, letting title/scroll-position edits persist.
+				// or a metadata-only refresh replaced a previously hydrated copy.
+				// Writing [] would destroy the on-disk file. Preserve the index
+				// entry regardless of the transient hydration bookkeeping state.
+				const preservedEntry: SessionIndexEntry = originalEntry ?? {
+					id: session.id,
+					title: session.title,
+					createdAt: session.createdAt,
+					updatedAt: session.updatedAt,
+					messageCount: expectedMessageCount,
+					filePath,
+				};
 				indexEntries.push({
-					...originalEntry,
+					...preservedEntry,
 					title: session.title,
 					scrollPosition: session.scrollPosition,
 				});
+				this.deps.logger?.log(
+					"warn",
+					`JsonlStorage: refused empty overwrite for ${session.id} (index expects ${expectedMessageCount})`,
+				);
 				continue;
 			}
 
@@ -465,6 +489,19 @@ class JsonlStorage implements ChatStorage {
 			});
 		}
 
+		// A mounted chat view can hold a stale or intentionally bounded subset of
+		// sessions. Absence from that snapshot is not deletion. Carry forward all
+		// existing index entries unless the caller explicitly marks the ID deleted.
+		for (const [id, entry] of this.indexEntriesById) {
+			if (!incomingIds.has(id) && !deletedIds.has(id)) {
+				indexEntries.push(entry);
+				this.deps.logger?.log(
+					"warn",
+					`JsonlStorage: preserved omitted session ${id} from partial snapshot`,
+				);
+			}
+		}
+
 		const index: SessionIndex = {
 			version: INDEX_VERSION,
 			sessions: indexEntries,
@@ -475,6 +512,9 @@ class JsonlStorage implements ChatStorage {
 		await adapter.write(
 			`${sessionsDir}/index.json`,
 			JSON.stringify(index, null, 2),
+		);
+		this.indexEntriesById = new Map(
+			indexEntries.map((entry) => [entry.id, entry]),
 		);
 
 		this.lastSavedState = {

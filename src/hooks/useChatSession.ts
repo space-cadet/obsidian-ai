@@ -4,11 +4,7 @@ import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 import type { ProviderProfile } from "../settings";
 import type { ChatApiManager } from "../api";
 import { getActiveProviderProfile } from "../settings";
-import {
-	makeId,
-	pruneSessions,
-	sessionMessageCount,
-} from "../lib/sessionUtils";
+import { makeId, sessionMessageCount } from "../lib/sessionUtils";
 import {
 	generateSessionTitle,
 	generateSessionTitleLLM,
@@ -71,6 +67,7 @@ export function useChatSession({
 	const llmNamedRef = useRef<Set<string>>(new Set());
 	const saveTimerRef = useRef<number | null>(null);
 	const skipNextAutosaveRef = useRef(false);
+	const deletedSessionIdsRef = useRef<Set<string>>(new Set());
 
 	sessionsRef.current = sessions;
 	activeSessionIdRef.current = activeSessionId;
@@ -327,6 +324,7 @@ export function useChatSession({
 				window.clearTimeout(saveTimerRef.current);
 			}
 			saveTimerRef.current = window.setTimeout(() => {
+				const deletedSessionIds = [...deletedSessionIdsRef.current];
 				const persistedSessions = sessions.filter(
 					// messageCount keeps unhydrated sessions in the payload; the
 					// storage layer's guard skips writing their (empty) messages.
@@ -347,6 +345,7 @@ export function useChatSession({
 								),
 							)
 						: [],
+					deletedSessionIds,
 				});
 				saveTimerRef.current = null;
 			}, 150);
@@ -471,21 +470,9 @@ export function useChatSession({
 					void plugin.onSessionEnd(endingSession);
 				}
 
-				const withNew = [...updated, newSession];
-				const max = plugin.settings.maxSavedConversations || 20;
-				const savedSessions = withNew.filter(
-					(session) => sessionMessageCount(session) > 0,
-				);
-				// Mutually exclusive with savedSessions above: index-only sessions
-				// have empty in-memory messages but messages on disk — drafting
-				// them duplicates IDs in state and re-adds pruned sessions.
-				const draftSessions = withNew.filter(
-					(session) => sessionMessageCount(session) === 0,
-				);
-				return [
-					...pruneSessions(savedSessions, max, currentActiveId),
-					...draftSessions,
-				];
+				// Retention limits must never silently delete persisted history.
+				// Users can remove sessions explicitly from the history UI.
+				return [...updated, newSession];
 			});
 			setActiveSessionId(newSession.id);
 			return newSession;
@@ -496,6 +483,7 @@ export function useChatSession({
 	// ─── Delete a session ───
 	const deleteSession = useCallback(
 		(sessionId: string) => {
+			deletedSessionIdsRef.current.add(sessionId);
 			setSessions((prev) => {
 				const filtered = prev.filter((s) => s.id !== sessionId);
 				// If deleting the active session, activate the most recent remaining
