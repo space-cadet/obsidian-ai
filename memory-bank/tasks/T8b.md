@@ -35,3 +35,10 @@ identified after the Chat Lab AI `1.5.0` release was submitted.
 
 - [ ] Confirm the corrected Community Directory scan has no remaining errors.
 - [ ] Record the final review result and close T8b.
+
+## 1.6.0 scan follow-up — 2026-09-24
+
+- The annotated `1.6.0` tag is published at release commit `e8b6629`, and the
+  GitHub release workflow completed successfully. The current directory page
+  still reports 1.5.0; check the refreshed 1.6.0 scorecard before closing this
+  follow-up.

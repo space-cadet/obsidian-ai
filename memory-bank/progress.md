@@ -6,8 +6,10 @@
   release; remaining context work is follow-up rather than a release blocker.
 - Automatic remote sync is disabled in settings and runtime until verified.
   Manual Sync Now remains available.
-- The 1.6.0 version metadata is prepared. The Community Directory scan still
-  needs to run after the matching tag is pushed.
+- Release commit `e8b6629` and annotated tag `1.6.0` are pushed. The GitHub
+  release workflow completed successfully and uploaded the release assets.
+- The Community Directory page still reports 1.5.0 in the latest checked
+  listing; review the 1.6.0 scorecard when the directory refreshes.
 
 ### 2026-09-22 — sync storage-safety repair and recovery ✅
 
