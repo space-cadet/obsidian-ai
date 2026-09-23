@@ -11,7 +11,9 @@ import type ObsidianAIPlugin from "../../main";
 
 // ── Mocks ──────────────────────────────────────────────────────────────
 
-const createMockPlugin = (overrides: Partial<ObsidianAIPlugin> = {}): ObsidianAIPlugin => {
+const createMockPlugin = (
+	overrides: Partial<ObsidianAIPlugin> = {},
+): ObsidianAIPlugin => {
 	return {
 		app: {
 			vault: {
@@ -51,9 +53,15 @@ const localStorageMock = (() => {
 	let store: Record<string, string> = {};
 	return {
 		getItem: vi.fn((key: string) => store[key] || null),
-		setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-		removeItem: vi.fn((key: string) => { delete store[key]; }),
-		clear: vi.fn(() => { store = {}; }),
+		setItem: vi.fn((key: string, value: string) => {
+			store[key] = value;
+		}),
+		removeItem: vi.fn((key: string) => {
+			delete store[key];
+		}),
+		clear: vi.fn(() => {
+			store = {};
+		}),
 		_store: store,
 	};
 })();
@@ -106,11 +114,16 @@ describe("persistence", () => {
 			plugin.loadData = vi.fn().mockResolvedValue({
 				remoteStorage: { webdav: { url: "http://example.com" } },
 			});
-			localStorageMock.setItem("obsidian-ai:webdav-password", "secret123");
+			localStorageMock.setItem(
+				"obsidian-ai:webdav-password",
+				"secret123",
+			);
 
 			await loadSettings(plugin);
 
-			expect(plugin.settings.remoteStorage.webdav?.password).toBe("secret123");
+			expect(plugin.settings.remoteStorage.webdav?.password).toBe(
+				"secret123",
+			);
 		});
 
 		it("sets logger max size from settings", async () => {
@@ -121,7 +134,9 @@ describe("persistence", () => {
 
 			await loadSettings(plugin);
 
-			expect(plugin.logger.setMaxSize).toHaveBeenCalledWith(50 * 1024 * 1024);
+			expect(plugin.logger.setMaxSize).toHaveBeenCalledWith(
+				50 * 1024 * 1024,
+			);
 		});
 	});
 
@@ -165,7 +180,14 @@ describe("persistence", () => {
 				...DEFAULT_SETTINGS,
 				remoteStorage: {
 					...DEFAULT_SETTINGS.remoteStorage,
-					webdav: { type: "webdav", url: "http://example.com", password: "secret", username: "user", prefix: "/", enabled: true },
+					webdav: {
+						type: "webdav",
+						url: "http://example.com",
+						password: "secret",
+						username: "user",
+						prefix: "/",
+						enabled: true,
+					},
 				},
 			};
 
@@ -184,7 +206,14 @@ describe("persistence", () => {
 				...DEFAULT_SETTINGS,
 				remoteStorage: {
 					...DEFAULT_SETTINGS.remoteStorage,
-					webdav: { type: "webdav", url: "http://example.com", password: "secret", username: "user", prefix: "/", enabled: true },
+					webdav: {
+						type: "webdav",
+						url: "http://example.com",
+						password: "secret",
+						username: "user",
+						prefix: "/",
+						enabled: true,
+					},
 				},
 			};
 
@@ -204,7 +233,14 @@ describe("persistence", () => {
 				...DEFAULT_SETTINGS,
 				remoteStorage: {
 					...DEFAULT_SETTINGS.remoteStorage,
-					webdav: { type: "webdav", url: "http://example.com", password: "", username: "user", prefix: "/", enabled: true },
+					webdav: {
+						type: "webdav",
+						url: "http://example.com",
+						password: "",
+						username: "user",
+						prefix: "/",
+						enabled: true,
+					},
 				},
 			};
 
@@ -259,9 +295,14 @@ describe("persistence", () => {
 		it("creates storage if not initialized and delegates load", async () => {
 			const plugin = createMockPlugin();
 			const mockStorage = {
-				loadChatData: vi.fn().mockResolvedValue({ sessions: [], messages: {} }),
+				loadChatData: vi
+					.fn()
+					.mockResolvedValue({ sessions: [], messages: {} }),
 			};
-			plugin.settings = { ...DEFAULT_SETTINGS, chatStorageFormat: "jsonl" };
+			plugin.settings = {
+				...DEFAULT_SETTINGS,
+				chatStorageFormat: "jsonl",
+			};
 			plugin._chatStorage = mockStorage as any;
 
 			const result = await loadChatData(plugin);
@@ -280,7 +321,10 @@ describe("persistence", () => {
 				saveChatData: vi.fn().mockResolvedValue(undefined),
 			};
 			plugin._chatStorage = mockStorage as any;
-			plugin.settings = { ...DEFAULT_SETTINGS, chatStorageFormat: "jsonl" };
+			plugin.settings = {
+				...DEFAULT_SETTINGS,
+				chatStorageFormat: "jsonl",
+			};
 			const chatData = { sessions: [], messages: {} };
 
 			await saveChatData(plugin, chatData as any);
@@ -294,7 +338,10 @@ describe("persistence", () => {
 				saveChatData: vi.fn().mockResolvedValue(undefined),
 			};
 			plugin._chatStorage = mockStorage as any;
-			plugin.settings = { ...DEFAULT_SETTINGS, chatStorageFormat: "jsonl" };
+			plugin.settings = {
+				...DEFAULT_SETTINGS,
+				chatStorageFormat: "jsonl",
+			};
 			const chatData = { sessions: [], messages: {} };
 
 			await saveChatData(plugin, chatData as any);
@@ -315,7 +362,10 @@ describe("persistence", () => {
 				}),
 			};
 			plugin._chatStorage = mockStorage as any;
-			plugin.settings = { ...DEFAULT_SETTINGS, chatStorageFormat: "jsonl" };
+			plugin.settings = {
+				...DEFAULT_SETTINGS,
+				chatStorageFormat: "jsonl",
+			};
 
 			const chatData1 = { sessions: [{ id: "1" }], messages: {} };
 			const chatData2 = { sessions: [{ id: "2" }], messages: {} };
@@ -335,7 +385,7 @@ describe("persistence", () => {
 			);
 		});
 
-		it("schedules auto-sync when remote storage is enabled", async () => {
+		it("keeps auto-sync off even when an old setting is enabled", async () => {
 			const plugin = createMockPlugin();
 			const mockStorage = {
 				saveChatData: vi.fn().mockResolvedValue(undefined),
@@ -353,9 +403,9 @@ describe("persistence", () => {
 
 			await saveChatData(plugin, { sessions: [], messages: {} } as any);
 
-			// Auto-sync is debounced, advance timers
+			// Auto-sync is unavailable even if a stale in-memory value is true.
 			vi.advanceTimersByTime(3000);
-			expect(plugin.triggerSync).toHaveBeenCalled();
+			expect(plugin.triggerSync).not.toHaveBeenCalled();
 		});
 
 		it("invalidates search index after save", async () => {
@@ -375,7 +425,7 @@ describe("persistence", () => {
 	// ── scheduleAutoSync ───────────────────────────────────────────────
 
 	describe("scheduleAutoSync", () => {
-		it("debounces sync calls within 3 seconds", async () => {
+		it("does not schedule auto-sync while the feature is disabled", async () => {
 			const plugin = createMockPlugin();
 			plugin.settings = {
 				...DEFAULT_SETTINGS,
@@ -391,9 +441,9 @@ describe("persistence", () => {
 			scheduleAutoSync(plugin);
 			scheduleAutoSync(plugin);
 
-			// Should only trigger once after 3s
+			// Advancing past the former debounce window must not start a sync.
 			vi.advanceTimersByTime(3000);
-			expect(plugin.triggerSync).toHaveBeenCalledTimes(1);
+			expect(plugin.triggerSync).not.toHaveBeenCalled();
 		});
 
 		it("does not sync when autoSync is disabled", async () => {

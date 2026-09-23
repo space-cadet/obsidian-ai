@@ -1,4 +1,4 @@
-import { normalizeSettings } from "../settings";
+import { AUTO_SYNC_ENABLED, normalizeSettings } from "../settings";
 import type { ChatMessage, StoredChatData } from "../types";
 import {
 	createStorage,
@@ -202,6 +202,7 @@ export async function saveChatData(
 
 			// Auto-sync to remote if enabled (debounced)
 			if (
+				AUTO_SYNC_ENABLED &&
 				plugin.settings.remoteStorage?.enabled &&
 				plugin.settings.remoteStorage?.autoSync
 			) {
@@ -243,6 +244,7 @@ export function fingerprintChatData(chatData: StoredChatData): string {
 let autoSyncTimeout: number | null = null;
 
 export function scheduleAutoSync(plugin: ObsidianAIPlugin): void {
+	if (!AUTO_SYNC_ENABLED) return;
 	if (autoSyncTimeout) {
 		window.clearTimeout(autoSyncTimeout);
 	}

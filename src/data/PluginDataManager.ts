@@ -206,6 +206,8 @@ function mergeSettings(
 			s3: current.remoteStorage.s3,
 		};
 	}
+	// Do not restore automatic sync from imports or another device while disabled.
+	result.remoteStorage.autoSync = false;
 
 	return result;
 }

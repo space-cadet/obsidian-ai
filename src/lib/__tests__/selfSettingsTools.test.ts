@@ -365,7 +365,6 @@ describe("MUTABLE_SETTING_KEYS", () => {
 			"syncRoomId",
 			"syncUserName",
 			"remoteStorage.enabled",
-			"remoteStorage.autoSync",
 			"remoteStorage.syncIntervalMinutes",
 			"remoteStorage.syncDirection",
 		]);

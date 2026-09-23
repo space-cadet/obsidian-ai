@@ -196,6 +196,7 @@ git push origin main
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| 1.6.0 | 2026-09-24 | Chat performance, context and compaction, safer and observable sync, Git write tools; automatic sync disabled pending verification |
 | 1.5.0 | 2026-09-08 | Model/history, orchestration, memory, lifecycle, stylesheet, and final Community scanner fixes; exact tag verified after remote rebase |
 | 1.4.1 | 2026-08-28 | Community Review blocking errors fixed (API compatibility, CSS class refactor) |
 | 1.4.0 | 2026-08-28 | Orchestration decomposition (T46), context efficiency (T48/T62/T64), tool hardening (T60), sync system (T43/T58) |

@@ -46,7 +46,6 @@ export const MUTABLE_SETTING_KEYS = [
 	"syncUserName",
 	// Nested remoteStorage settings
 	"remoteStorage.enabled",
-	"remoteStorage.autoSync",
 	"remoteStorage.syncIntervalMinutes",
 	"remoteStorage.syncDirection",
 ] as const;
@@ -317,7 +316,6 @@ export function validateSettingUpdate(
 		case "intelligence.autoSummarize":
 		case "intelligence.enableMemoryAuditTool":
 		case "remoteStorage.enabled":
-		case "remoteStorage.autoSync":
 		case "debugMode":
 		case "debugTelemetry.includeProviderUsage":
 		case "debugTelemetry.includeRequestEstimates":

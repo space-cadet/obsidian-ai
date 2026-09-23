@@ -1,3 +1,14 @@
+### 2026-09-24 — v1.6.0 release preparation
+
+- Created the project `CHANGELOG.md` and updated the 1.6.0 release announcement
+  from the user-facing history since 1.5.0 plus earlier milestones.
+- Deepak accepted runtime compaction and recovery as working well enough for
+  release; remaining context work is follow-up rather than a release blocker.
+- Automatic remote sync is disabled in settings and runtime until verified.
+  Manual Sync Now remains available.
+- The 1.6.0 version metadata is prepared. The Community Directory scan still
+  needs to run after the matching tag is pushed.
+
 ### 2026-09-22 — sync storage-safety repair and recovery ✅
 
 - T24/T42: added hydration diagnostics and repaired the positive-count empty

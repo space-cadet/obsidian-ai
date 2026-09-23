@@ -1,5 +1,6 @@
 import { Notice, Setting, requestUrl } from "obsidian";
 import ObsidianAIPlugin from "../main";
+import { AUTO_SYNC_ENABLED } from "../settings";
 import { WebDAVStorageAdapter } from "../sync/WebDAVStorageAdapter";
 
 /**
@@ -176,12 +177,18 @@ export function renderRemoteStorageSection(
 	// ── Auto-sync toggle ──
 	new Setting(section)
 		.setName("Auto-sync")
-		.setDesc("Automatically sync when sessions change.")
+		.setDesc(
+			"Temporarily disabled until automatic sync is fully verified. Use Sync Now for manual sync.",
+		)
 		.addToggle((toggle) =>
-			toggle.setValue(rs.autoSync).onChange(async (value) => {
-				rs.autoSync = value;
-				await saveSettings({ quiet: true });
-			}),
+			toggle
+				.setValue(AUTO_SYNC_ENABLED && rs.autoSync)
+				.setDisabled(!AUTO_SYNC_ENABLED)
+				.onChange(async (value) => {
+					if (!AUTO_SYNC_ENABLED) return;
+					rs.autoSync = value;
+					await saveSettings({ quiet: true });
+				}),
 		);
 
 	// ── Conflict strategy ──

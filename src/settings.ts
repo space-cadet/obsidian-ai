@@ -2,6 +2,9 @@ import { cursorPrompt, selectionPrompt } from "./default_prompts";
 import { SlashCommand } from "./modules/commands/source";
 import { migrateRecentModelsToProviders } from "./lib/recentModels";
 
+/** Automatic remote sync stays disabled until its behavior is fully verified. */
+export const AUTO_SYNC_ENABLED = false;
+
 export interface IntelligenceSettings {
 	enableIntelligence: boolean;
 	personaPath: string;
@@ -461,7 +464,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 		enabled: false,
 		backend: "none",
 		passphrase: "",
-		autoSync: false,
+		autoSync: AUTO_SYNC_ENABLED,
 		syncIntervalMinutes: 30,
 		conflictStrategy: "last-write-wins",
 		syncDirection: "both",
@@ -665,7 +668,10 @@ export const normalizeSettings = (
 			backend:
 				(merged.remoteStorage?.backend as StorageBackendType) ?? "none",
 			passphrase: merged.remoteStorage?.passphrase ?? "",
-			autoSync: Boolean(merged.remoteStorage?.autoSync ?? false),
+			// Ignore saved opt-in values while automatic sync is unavailable.
+			autoSync:
+				AUTO_SYNC_ENABLED &&
+				Boolean(merged.remoteStorage?.autoSync ?? false),
 			syncIntervalMinutes: Number.isFinite(
 				merged.remoteStorage?.syncIntervalMinutes,
 			)
