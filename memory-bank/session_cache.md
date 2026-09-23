@@ -1,5 +1,19 @@
 # Session Cache
 
+## 2026-09-24 02:46 IST — v1.6.0 release and review closeout ✅
+
+- Session file: `sessions/2026-09-24-v1.6.0-release-closeout.md`.
+- T8: release commit `e8b6629` and annotated tag `1.6.0` are published; GitHub
+  release workflow uploaded the plugin assets. Deepak confirmed Community
+  Directory review passed and the new version is online; T8b is complete.
+- Release changes include the historical changelog and announcement, aligned
+  version metadata, and auto-sync disabled until verified (manual Sync Now is
+  available). T42g and T48c hold the durable sync and compaction notes.
+- Formatting, TypeScript, production build, and `git diff --check` passed. The
+  test suite was not run for release preparation.
+- Follow-up: validate automatic sync before re-enabling it; T24a search scope
+  and T48c pairing coverage remain open.
+
 ### 2026-09-22 19:06 IST — sync storage-safety repair and recovery ✅
 
 - Session file: sessions/2026-09-22-chat-sync-reconciliation.md.

@@ -1,5 +1,19 @@
 # Active Context
 
+### 2026-09-24 02:46 IST — v1.6.0 release and Community review complete ✅
+
+- T8: `1.6.0` is published from release commit `e8b6629`; Deepak confirmed the
+  Community Directory review passed and the new version is online. Full release
+  history is in `CHANGELOG.md` and user-facing notes are in
+  `docs/release-announcement.md`.
+- T42g: automatic remote sync is disabled pending verification; manual Sync
+  Now remains available. T48c runtime compaction and recovery are accepted as
+  working well enough for this release.
+- Release formatting, TypeScript, production build, and `git diff --check`
+  passed; the release-preparation test suite was not run.
+- Remaining follow-ups: verify auto-sync before re-enabling it; T24a search
+  scope and compaction pairing coverage remain tracked separately.
+
 ### 2026-09-22 19:06 IST — sync storage-safety repair and recovery ✅
 
 - 3ae26c4 added hydration diagnostics; 7291665 prevents positive-count empty

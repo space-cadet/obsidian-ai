@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-09-24 IST*
+*Last Updated: 2026-09-24 02:46:57 IST*
 
 ## Overview
 
@@ -87,7 +87,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T13a | Tool Call Context Persistence Bug Fix | ✅ | HIGH | 2026-08-16 | 2026-08-16 | T13 | [Details](tasks/T13a.md) |
 | T45 | PDF Text Extraction Tool | ✅ | HIGH | 2026-08-16 | 2026-08-16 | T13, T19 | [Details](tasks/T45.md) |
 | T6a | Token Counter Accuracy Fix | ✅ | HIGH | 2026-08-19 | 2026-08-19 | T6 | [Details](tasks/T6a.md) |
-| T8 | Open Source Release with Branding | ✅ | HIGH | 2026-05-02 | 2026-08-28 | T7, T8a | [Details](tasks/T8.md) |
+| T8 | Open Source Release with Branding | ✅ | HIGH | 2026-05-02 | 2026-09-24 | T7, T8a | [Details](tasks/T8.md) |
 | T8a | Community Directory Review Remediation | ✅ | HIGH | 2026-08-15 | 2026-08-28 | T8, T7 | [Details](tasks/T8a.md) |
 | T8b | 1.5.0 Community Scan Follow-up | ✅ | HIGH | 2026-09-09 | 2026-09-24 | T8, T8a | [Details](tasks/T8b.md) |
 | T13b | Tool Call Result Display Consistency | ✅ | MEDIUM | 2026-08-28 | 2026-08-28 | T13 | [Details](tasks/T13b.md) |
