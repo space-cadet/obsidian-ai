@@ -8,8 +8,9 @@
   Manual Sync Now remains available.
 - Release commit `e8b6629` and annotated tag `1.6.0` are pushed. The GitHub
   release workflow completed successfully and uploaded the release assets.
-- The Community Directory page still reports 1.5.0 in the latest checked
-  listing; review the 1.6.0 scorecard when the directory refreshes.
+- Deepak confirmed the 1.6.0 Community Directory review passed and the new
+  version is online. The earlier page snapshot still showed 1.5.0, so it was
+  stale; T8b is closed on the user's confirmation.
 
 ### 2026-09-22 — sync storage-safety repair and recovery ✅
 

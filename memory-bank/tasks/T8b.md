@@ -6,11 +6,11 @@ source_commit: 4a751b6b2f644f73ec45769b9fab223136a75690
 # T8b: 1.5.0 Community Scan Follow-up
 
 *Created: 2026-09-09 IST*
-*Last Updated: 2026-09-09 IST*
+*Last Updated: 2026-09-24 IST*
 
 **Description**: Record and close the Community Directory scanner findings
 identified after the Chat Lab AI `1.5.0` release was submitted.
-**Status**: 🔄 **IN PROGRESS — fixes published; corrected scan pending**
+**Status**: ✅ **COMPLETE — 1.6.0 review passed; version online**
 **Priority**: HIGH
 **Dependencies**: T8, T8a
 
@@ -31,14 +31,9 @@ identified after the Chat Lab AI `1.5.0` release was submitted.
 - Verification: 52 test files / 451 tests, TypeScript, production build,
   package generation, and `git diff --check` passed.
 
-## Remaining closeout
-
-- [ ] Confirm the corrected Community Directory scan has no remaining errors.
-- [ ] Record the final review result and close T8b.
-
 ## 1.6.0 scan follow-up — 2026-09-24
 
 - The annotated `1.6.0` tag is published at release commit `e8b6629`, and the
-  GitHub release workflow completed successfully. The current directory page
-  still reports 1.5.0; check the refreshed 1.6.0 scorecard before closing this
-  follow-up.
+  GitHub release workflow completed successfully.
+- Deepak confirmed the corrected Community Directory review passed and the new
+  version is online. This closes the scanner follow-up.

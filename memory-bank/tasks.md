@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-09-22 16:33:06 IST*
+*Last Updated: 2026-09-24 IST*
 
 ## Overview
 
@@ -56,7 +56,6 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T70 | Active Chat Model Identity and Switcher Consistency | ✅ | HIGH | 2026-09-02 | 2026-09-02 | T9, T15; builds on T35, T36 | [Details](tasks/T70.md) |
 | T71 | Chat View Scroll Performance and Streaming Follow | ✅ | HIGH | 2026-09-19 | 2026-09-19 | T24, T15 | [Details](tasks/T71.md) |
 | T24a | Global Search Scope over Index-Only Sessions | ⏸️ | MEDIUM | 2026-09-19 | T24 | [Details](tasks/T24a.md) |
-| T8b | 1.5.0 Community Scan Follow-up | 🔄 | HIGH | 2026-09-09 | T8, T8a | [Details](tasks/T8b.md) |
 | T18a | Bounded Web Page Retrieval Tool | ⏸️ | MEDIUM | 2026-08-25 | T18, T60a, T60c | [Details](tasks/T18a.md) |
 | T50 | OpenAI Responses API / Threads Support | 🔄 | MEDIUM | — | T14 | [Details](tasks/T50.md) |
 
@@ -90,6 +89,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T6a | Token Counter Accuracy Fix | ✅ | HIGH | 2026-08-19 | 2026-08-19 | T6 | [Details](tasks/T6a.md) |
 | T8 | Open Source Release with Branding | ✅ | HIGH | 2026-05-02 | 2026-08-28 | T7, T8a | [Details](tasks/T8.md) |
 | T8a | Community Directory Review Remediation | ✅ | HIGH | 2026-08-15 | 2026-08-28 | T8, T7 | [Details](tasks/T8a.md) |
+| T8b | 1.5.0 Community Scan Follow-up | ✅ | HIGH | 2026-09-09 | 2026-09-24 | T8, T8a | [Details](tasks/T8b.md) |
 | T13b | Tool Call Result Display Consistency | ✅ | MEDIUM | 2026-08-28 | 2026-08-28 | T13 | [Details](tasks/T13b.md) |
 | T44 | Standalone UI Preview and Obsidian Host Boundary | ✅ | MEDIUM | 2026-08-12 | 2026-08-14 | T1, T22 | [Details](tasks/T44.md) |
 | T46a | Chat Turn Coordinator Decomposition | ✅ | HIGH | 2026-08-27 | 2026-08-28 | T46, T60a, T48b, T48c, T62a | [Details](tasks/T46a.md) |
