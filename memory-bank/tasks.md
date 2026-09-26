@@ -1,7 +1,7 @@
 # Memory Bank - Sage Workspace
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-09-24 02:46:57 IST*
+*Last Updated: 2026-09-26 12:34:55 IST*
 
 ## Overview
 
@@ -13,7 +13,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 |----|-------|--------|----------|---------|--------------|---------|
 | META-1 | Memory Bank Setup and Maintenance | 🔄 | HIGH | 2026-05-02 | — | [Details](tasks/META-1.md) |
 | T11 | Debug Logging & Diagnostics | ✅ | MEDIUM | 2026-05-08 | T9 | [Details](tasks/T11.md) |
-| T14 | Remote Agent Connectivity (OpenResponses) | 🔄 | HIGH | 2026-05-07 | T1, T13, T5, T9 | [Details](tasks/T14.md) |
+| T14 | Remote Agent Connectivity (OpenResponses and OpenClaw Gateway) | 🔄 | HIGH | 2026-05-07 | T1, T13, T5, T9 | [Details](tasks/T14.md) |
 | T15 | Tabbed Chat Interface with Multi-Profile | 🔄 | HIGH | 2026-05-15 | T13, T14, T9 | [Details](tasks/T15.md) |
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
 | T16a | Bounded Group Context and Shared Tool Facts | 🔄 | HIGH | 2026-08-31 | T16, T46, T48b, T48c | [Details](tasks/T16a.md) |
@@ -138,7 +138,7 @@ T13a: Tool Call Context Persistence Bug Fix
   └── T13
 T13b: Tool Call Result Display Consistency
   └── T13
-T14: Remote Agent Connectivity (OpenResponses)
+T14: Remote Agent Connectivity (OpenResponses and OpenClaw Gateway)
   └── T1
   └── T13
   └── T5

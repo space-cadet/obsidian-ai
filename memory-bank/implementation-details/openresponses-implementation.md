@@ -1,12 +1,19 @@
 # T14: Remote Agent Connectivity — Implementation Doc
 *Created: 2026-05-14 21:20 IST*
-*Last Updated: 2026-05-14 21:20 IST*
+*Last Updated: 2026-09-26 12:34:55 IST*
 
 ---
 
 ## Overview
 
 Implement bidirectional remote agent connectivity in the Obsidian AI plugin using the OpenResponses API. The plugin becomes a client that connects to remote OpenClaw agents (Ember on phone, Cloudy on VPS) via HTTP POST + SSE streaming, executes tool calls against the local vault, and sends results back.
+
+This describes the existing HTTP OpenResponses mode, where tool calls are
+executed against the local vault. The user has separately requested an OpenClaw
+Gateway chat frontend for desktop and mobile, where OpenClaw owns chat and tool
+execution and each device pairs directly with the Gateway. Track that as a
+separate transport under T14; do not conflate its pairing, event flow, or
+execution with this HTTP tool bridge.
 
 ## Streaming Observability Boundary — T60e (2026-08-25)
 
@@ -297,7 +304,9 @@ async testConnection(): Promise<{ ok: boolean; error?: string }> {
 ## Notes
 
 - **No new dependencies.** Uses native `fetch` + SSE parsing. No OpenAI SDK needed.
-- **previous_response_id:** OpenResponses docs say currently ignored by OpenClaw, but we should include it for future compatibility.
+- **previous_response_id:** The plugin now sends this on tool continuations.
+  OpenClaw's handling still needs live-provider confirmation before relying on
+  Gateway-side response state.
 - **Model name:** Use `"openclaw"` or `"openclaw:main"` — the agent ID is in the `x-openclaw-agent-id` header.
 - **Session continuity:** The `user` field in OpenResponses derives a stable session key. We'll generate one UUID on first connection and persist it.
 

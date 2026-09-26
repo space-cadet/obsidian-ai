@@ -1,5 +1,27 @@
 # Session Cache
 
+## 2026-09-26 — T69a desktop/mobile Codex auth and T14 OpenClaw pairing
+
+- Confirmed product direction: desktop local Codex auth must work without the
+  Codex desktop GUI; runtime provisioning (installed CLI or managed runtime)
+  remains undecided. Mobile Codex login/use must not depend on a connected
+  desktop. Keep the mobile direct HTTP adapter compatibility-sensitive.
+- Added the OpenClaw frontend mode: Obsidian pairs directly from desktop or
+  mobile, while OpenClaw handles model and tool execution. Each device keeps
+  pairing identity/credentials locally; no private identity or device token
+  goes through plugin sync or export.
+- T14 retains existing OpenResponses HTTP behavior as a separate transport.
+  Corrected two stale source claims: current `AgentApiManager` serializes
+  `previous_response_id`, and `OpenResponsesLoop` submits original input once.
+- Updated T69, T69a, T14, shared auth and OpenResponses design notes, task
+  registry, and today's session/edit history records. No source implementation
+  or tests changed.
+- `bd show` reports no local Beads database; no new issue ID was invented.
+- Next: decide Codex app-server runtime provisioning; define Gateway address,
+  pairing/revocation, reconnect, event mapping, and approval UX; perform separate
+  mobile Codex and Gateway acceptance. Status remains T69/T69a planning, T14 in
+  progress.
+
 ## 2026-09-26 — T69a Codex auth contract check
 
 - Verified the official app-server account API: managed ChatGPT browser and

@@ -1,7 +1,7 @@
 # External Service Authentication and Provider Adapters
 
 *Created: 2026-08-31 02:17:06 IST*
-*Last Updated: 2026-09-26 IST*
+*Last Updated: 2026-09-26 12:34:55 IST*
 *Task: [T69](../tasks/T69.md)*
 
 ## Purpose
@@ -31,6 +31,7 @@ documentation:
 | Local CLI | A locally installed command-line client with its own login state | Codex CLI |
 | Local app-server | A local process exposing a supported integration protocol | Codex `app-server` |
 | Remote agent | A separately hosted service accessed through a documented protocol | OpenResponses agent |
+| Paired chat frontend | A client paired with a remote chat runtime that owns tool execution | OpenClaw Gateway |
 | Proxy | A user-installed compatibility service that owns authentication | `openai-oauth`-style proxy |
 
 Subscription access is not automatically equivalent to API access. Each service
@@ -63,8 +64,9 @@ follow-up below adds public mobile implementations found on 2026-08-31.
 | [OneDrive Sync](https://github.com/jeffsteinbok/obsidian-onedrive) | Direct mobile device-code login with refresh tokens in `SecretStorage` | Conventional cross-platform device-flow and secret-storage example |
 
 The updated recommendation is to develop two Codex options at a small scale:
-use the supported local `app-server` for the maintainable desktop integration,
-and test the direct device-flow HTTP approach for mobile. The second option is
+use the supported local `app-server` for the maintainable desktop integration
+without requiring the Codex desktop GUI, and test the direct device-flow HTTP
+approach for mobile. The second option is
 technically feasible but depends on request details that are not described by
 the public app-server documentation, so it needs a clear compatibility note
 and focused maintenance plan before release.
@@ -149,7 +151,9 @@ the user's ChatGPT plan usage and billing, distinct from API-key billing
 Obsidian mobile with no connected desktop or Codex process. The desktop local
 app-server cannot satisfy that requirement by itself: its default transport is
 local stdio/Unix socket, and its remote WebSocket transport is documented as
-experimental and unsupported for production.
+experimental and unsupported for production. Desktop must retain local Codex
+auth without requiring the Codex desktop application; whether the plugin uses
+an installed CLI or manages the app-server runtime is still open.
 
 **Feasibility finding:** an independent Obsidian plugin publicly documents
 mobile iOS/Android use of ChatGPT-account auth and implements the device-code
@@ -173,6 +177,8 @@ Android. Keep the integration explicitly compatibility-sensitive until the
 auth and response contracts, account behavior, and mobile request handling are
 verified. The documented app-server remains the preferred desktop integration;
 it cannot be the only Codex-auth implementation under this product requirement.
+The desktop GUI is not required, but app-server runtime provisioning remains
+open.
 
 ### Local probe constraint
 
@@ -183,10 +189,12 @@ request probe has not been run in this environment. Re-run the bounded probe
 after installing a working supported Codex CLI; do not infer login reuse or
 turn behavior from the documentation alone.
 
-The desktop implementation should start with the locally installed Codex
-`app-server` and use the user's existing supported Codex authentication state.
-The adapter should translate app-server events into the existing chat turn,
-streaming, tool, approval, and persistence contracts.
+The desktop implementation should use the Codex `app-server` and the user's
+supported Codex authentication state without requiring the Codex desktop GUI.
+It may use an installed Codex CLI or a plugin-managed runtime; choose and
+document that dependency before implementation. The adapter should translate
+app-server events into the existing chat turn, streaming, tool, approval, and
+persistence contracts.
 
 Mobile has a second, concrete implementation path. Chatting with AI performs
 the device authorization flow with `requestUrl()`, keeps access and refresh
@@ -218,6 +226,22 @@ Codex implementation checklist:
 - [x] Confirm the required mobile sign-in flow is technically feasible without
   a desktop host; its current reference implementation uses undocumented
   endpoints, so compatibility and support risks remain open.
+
+## OpenClaw Gateway Chat Frontend
+
+The user wants Obsidian to work as a chat frontend for a running OpenClaw
+instance, like Telegram. This is a paired Gateway client mode, distinct from
+Codex account authentication and the existing OpenAI API-key provider. It must
+work from desktop and mobile without relying on the Codex desktop app or a
+connected desktop host. OpenClaw owns model and tool execution; the plugin
+connects to the Gateway and renders the conversation rather than executing
+Gateway tool calls against the local vault.
+
+Pair each device directly with the Gateway. Keep device identity and pairing
+credentials in local secure storage; do not sync private keys or device tokens.
+Define pairing approval and revocation, reconnect/session handling, event
+mapping, and approval display before implementation. See [T14](../tasks/T14.md)
+for remote connectivity and its separate OpenResponses transport.
 
 ## Claude Code
 
