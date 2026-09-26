@@ -1,5 +1,20 @@
 # Active Context
 
+### 2026-09-26 — T69a Codex authentication contract checked
+
+- Official Codex app-server documentation supports managed ChatGPT browser
+  login and device-code login over the app-server account API. The server owns
+  managed token persistence/refresh and exposes account status and logout.
+- User requirement: Codex subscription sign-in must work directly on Obsidian
+  mobile without a connected desktop Codex process. Official app-server's
+  managed device-code flow exists, but its local transports require a host;
+  direct mobile device auth is technically demonstrated by another Obsidian
+  plugin, using undocumented Codex backend endpoints. Keep desktop and mobile
+  adapters distinct and treat mobile as compatibility-sensitive.
+- The local `codex` launcher currently fails because its bundled executable is
+  missing, so no real authenticated probe has been run. See T69a and
+  `implementation-details/external-service-authentication.md`.
+
 ### 2026-09-24 02:46 IST — v1.6.0 release and Community review complete ✅
 
 - T8: `1.6.0` is published from release commit `e8b6629`; Deepak confirmed the

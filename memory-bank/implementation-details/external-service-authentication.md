@@ -1,7 +1,7 @@
 # External Service Authentication and Provider Adapters
 
 *Created: 2026-08-31 02:17:06 IST*
-*Last Updated: 2026-08-31 02:42:18 IST*
+*Last Updated: 2026-09-26 IST*
 *Task: [T69](../tasks/T69.md)*
 
 ## Purpose
@@ -127,6 +127,62 @@ The exact TypeScript shape is provisional. The contract must cover:
 
 See [T69a](../tasks/T69a.md).
 
+### Official app-server contract check — 2026-09-26
+
+The current [Codex app-server documentation](https://developers.openai.com/codex/app-server)
+explicitly identifies app-server as the integration surface for authentication,
+conversation history, approvals, and streamed agent events. Its default local
+transport is newline-delimited JSON over stdio; clients initialize once, then
+create/resume a thread and start turns while consuming notifications.
+
+The documented account methods include `account/read`,
+`account/login/start`, `account/login/cancel`, and `account/logout`. For
+subscription login, the supported managed modes are `chatgpt` (browser callback)
+and `chatgptDeviceCode`; app-server stores and refreshes managed ChatGPT tokens.
+`account/updated` reports the auth mode and plan type when available. The
+separate `chatgptAuthTokens` mode is explicitly experimental and expects the
+host application to own token refresh. OpenAI describes Codex sign-in as using
+the user's ChatGPT plan usage and billing, distinct from API-key billing
+([ChatGPT Work and Codex](https://help.openai.com/en/articles/20001275-chatgpt-work-and-codex)).
+
+**Product requirement:** Codex subscription sign-in must work directly on
+Obsidian mobile with no connected desktop or Codex process. The desktop local
+app-server cannot satisfy that requirement by itself: its default transport is
+local stdio/Unix socket, and its remote WebSocket transport is documented as
+experimental and unsupported for production.
+
+**Feasibility finding:** an independent Obsidian plugin publicly documents
+mobile iOS/Android use of ChatGPT-account auth and implements the device-code
+flow with Obsidian `requestUrl()`, including polling, token exchange, and
+refresh. Its request adapter calls
+`chatgpt.com/backend-api/codex/responses`, an undocumented backend endpoint,
+with Codex-specific request headers and body. This establishes technical
+feasibility without a desktop host, but not a stable or OpenAI-supported plugin
+integration. The endpoint, client ID, and request contract can change without
+notice; the external project itself describes this provider as experimental.
+
+**Implementation direction:** meet the mobile requirement with an independent
+mobile-capable device authorization and HTTP adapter, separate from the
+desktop app-server adapter and from OpenAI API-key profiles. Use Obsidian's
+cross-platform `requestUrl()` and a secure credential store supported by the
+plugin's minimum Obsidian version (the reference plugin uses `SecretStorage`);
+do not require Node processes, localhost callbacks, or a paired desktop. First build a
+small compatibility proof covering device authorization, token refresh,
+account identification, one response, cancellation, and logout on iOS and
+Android. Keep the integration explicitly compatibility-sensitive until the
+auth and response contracts, account behavior, and mobile request handling are
+verified. The documented app-server remains the preferred desktop integration;
+it cannot be the only Codex-auth implementation under this product requirement.
+
+### Local probe constraint
+
+The development host resolves a `codex` command, but invoking it fails with
+`ENOENT` because the packaged native executable is missing. Therefore the
+official protocol has been reviewed, but a real app-server authentication or
+request probe has not been run in this environment. Re-run the bounded probe
+after installing a working supported Codex CLI; do not infer login reuse or
+turn behavior from the documentation alone.
+
 The desktop implementation should start with the locally installed Codex
 `app-server` and use the user's existing supported Codex authentication state.
 The adapter should translate app-server events into the existing chat turn,
@@ -147,14 +203,21 @@ account behavior have been tested across supported Obsidian mobile versions.
 
 Codex implementation checklist:
 
-- Verify the current official app-server authentication and protocol contract.
-- Confirm whether app-server owns login, refresh, and logout state.
+- [x] Verify the current official app-server authentication and protocol contract.
+- [x] Confirm that app-server owns managed ChatGPT login, token persistence,
+  refresh, and logout state.
 - Define process startup, readiness, crash, restart, and shutdown behavior.
 - Map streamed text, tool calls, approvals, results, and cancellation.
-- Reproduce the mobile device-flow and direct-HTTP approach in a redacted
-  compatibility probe.
+- Reproduce the mobile device-code flow and response path in a redacted
+  compatibility probe, with no desktop host involved.
+- Validate the mobile path on iOS and Android, including secure credential
+  storage, refresh, cancellation, and logout.
+- Separately evaluate the official desktop app-server adapter; a working local
+  Codex CLI is required for its bounded login and one-turn probe.
 - Keep the existing OpenAI API provider independently usable.
-- Decide whether the first release includes mobile direct HTTP or desktop only.
+- [x] Confirm the required mobile sign-in flow is technically feasible without
+  a desktop host; its current reference implementation uses undocumented
+  endpoints, so compatibility and support risks remain open.
 
 ## Claude Code
 

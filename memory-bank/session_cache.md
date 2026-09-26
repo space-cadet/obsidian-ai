@@ -1,5 +1,21 @@
 # Session Cache
 
+## 2026-09-26 — T69a Codex auth contract check
+
+- Verified the official app-server account API: managed ChatGPT browser and
+  device-code login, account status/plan, cancellation, logout, and locally
+  hosted stdio JSON-RPC are documented.
+- User requires Codex login on mobile without a connected desktop host. Another
+  Obsidian plugin demonstrates device-code auth and Codex requests on iOS and
+  Android via `requestUrl()`, but the request endpoint is undocumented and
+  compatibility-sensitive. Keep mobile and desktop app-server adapters distinct.
+- No authenticated probe was run: the local `codex` launcher fails with
+  `ENOENT` because its bundled executable is missing.
+- Updated T69a and `implementation-details/external-service-authentication.md`.
+- Next: run a redacted mobile compatibility probe for device login, token
+  refresh, one response, cancellation, and logout on iOS and Android. No source
+  adapter has been implemented yet.
+
 ## 2026-09-24 02:46 IST — v1.6.0 release and review closeout ✅
 
 - Session file: `sessions/2026-09-24-v1.6.0-release-closeout.md`.
