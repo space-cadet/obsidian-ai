@@ -1,7 +1,7 @@
 # External Service Authentication and Provider Adapters
 
 *Created: 2026-08-31 02:17:06 IST*
-*Last Updated: 2026-10-16 18:44:08 IST*
+*Last Updated: 2026-10-16 18:46:24 IST*
 *Task: [T69](../tasks/T69.md)*
 
 ## Purpose
@@ -242,10 +242,11 @@ Codex implementation checklist:
   refresh, and logout state.
 - Define process startup, readiness, crash, restart, and shutdown behavior.
 - Map streamed text, tool calls, approvals, results, and cancellation.
-- Reproduce the mobile device-code flow and response path in a redacted
-  compatibility probe, with no desktop host involved.
-- Validate the mobile path on iOS and Android, including secure credential
-  storage, refresh, cancellation, and logout.
+- [x] Implement the developer-only mobile device-code compatibility probe
+  with one response request, optional refresh, cancellation, and in-memory
+  credential cleanup.
+- Validate the probe on real iOS and Android devices. Mocked tests do not
+  establish mobile acceptance.
 - Separately evaluate the official desktop app-server adapter; a working local
   Codex CLI is required for its bounded login and one-turn probe.
 - Keep the existing OpenAI API provider independently usable.
