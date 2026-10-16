@@ -322,7 +322,7 @@ export const getDefaultEndpoint = (provider: ProviderType): string => {
 		case "openai":
 			return "https://api.openai.com/v1";
 		case "codex":
-			return "https://api.openai.com/v1";
+			return "https://chatgpt.com/backend-api/codex";
 		case "anthropic":
 			return "https://api.anthropic.com/v1";
 		case "gemini":

@@ -13,6 +13,9 @@ import {
 	getFreshCodexCredential,
 	refreshCodexCredential,
 } from "../auth/CodexCredentials";
+import { PLUGIN_VERSION } from "../version-info";
+
+const CODEX_ORIGINATOR = "chat-lab";
 
 const codexResponseError = (responseText: string): string | null => {
 	try {
@@ -67,7 +70,7 @@ export function validateProfile(
 		case "codex":
 			return app && getCodexCredential(app, profile.id)
 				? null
-				: "Sign in with ChatGPT and allow plan use for this Codex profile.";
+				: "Sign in to your Codex account first.";
 		case "anthropic":
 			return profile.apiKey ? null : "Anthropic API key is required.";
 		case "deepseek":
@@ -249,22 +252,28 @@ export function createLanguageModel(
 	}
 }
 
-const createCodexFetch =
+export const createCodexFetch =
 	(app: App, profileId: string): typeof fetch =>
 	async (input, init) => {
 		const original = new Request(input, init);
-		const send = async (accessToken: string): Promise<Response> => {
+		const send = async (
+			accessToken: string,
+			accountId?: string,
+		): Promise<Response> => {
 			const headers = new Headers(original.headers);
 			headers.set("Authorization", `Bearer ${accessToken}`);
+			headers.set("originator", CODEX_ORIGINATOR);
+			headers.set("User-Agent", `Chat Lab AI/${PLUGIN_VERSION}`);
+			if (accountId) headers.set("ChatGPT-Account-Id", accountId);
 			return fetch(new Request(original.clone(), { headers }));
 		};
 
 		let credential = await getFreshCodexCredential(app, profileId);
-		let response = await send(credential.accessToken);
+		let response = await send(credential.accessToken, credential.accountId);
 		if (response.status !== 401) return response;
 
 		credential = await refreshCodexCredential(app, profileId, credential);
-		response = await send(credential.accessToken);
+		response = await send(credential.accessToken, credential.accountId);
 		return response;
 	};
 
@@ -291,9 +300,16 @@ export async function fetchProviderModels(
 				let credential = await getFreshCodexCredential(app, profile.id);
 				const fetchModels = async (accessToken: string) =>
 					requestUrl({
-						url: `${getDefaultEndpoint("codex")}/models`,
+						url: `${getDefaultEndpoint("codex")}/models?client_version=${encodeURIComponent(PLUGIN_VERSION)}`,
 						method: "GET",
-						headers: { Authorization: `Bearer ${accessToken}` },
+						headers: {
+							Authorization: `Bearer ${accessToken}`,
+							originator: CODEX_ORIGINATOR,
+							"User-Agent": `Chat Lab AI/${PLUGIN_VERSION}`,
+							...(credential.accountId
+								? { "ChatGPT-Account-Id": credential.accountId }
+								: {}),
+						},
 						throw: false,
 					});
 				let response = await fetchModels(credential.accessToken);
