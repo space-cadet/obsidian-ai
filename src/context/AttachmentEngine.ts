@@ -182,6 +182,7 @@ export async function resolveAttachment(
 			if (
 				provider === "gemini" ||
 				provider === "openai" ||
+				provider === "codex" ||
 				provider === "anthropic" ||
 				provider === "openrouter"
 			) {
@@ -253,6 +254,7 @@ export async function resolveAttachment(
 		if (
 			provider === "gemini" ||
 			provider === "openai" ||
+			provider === "codex" ||
 			provider === "anthropic" ||
 			provider === "openrouter"
 		) {

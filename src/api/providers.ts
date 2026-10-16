@@ -5,8 +5,14 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import type { App } from "obsidian";
 import { getDefaultEndpoint, ProviderProfile } from "../settings";
 import type { ProviderTokenUsage } from "../types";
+import {
+	getCodexCredential,
+	getFreshCodexCredential,
+	refreshCodexCredential,
+} from "../auth/CodexCredentials";
 
 export function normalizeProviderUsage(usage: {
 	inputTokens?: number;
@@ -28,10 +34,17 @@ export function normalizeProviderUsage(usage: {
  * Maps a provider type to its required credential fields.
  * Returns an error message string if validation fails, or null if valid.
  */
-export function validateProfile(profile: ProviderProfile): string | null {
+export function validateProfile(
+	profile: ProviderProfile,
+	app?: App,
+): string | null {
 	switch (profile.provider) {
 		case "openai":
 			return profile.apiKey ? null : "OpenAI API key is required.";
+		case "codex":
+			return app && getCodexCredential(app, profile.id)
+				? null
+				: "Sign in to your Codex account first.";
 		case "anthropic":
 			return profile.apiKey ? null : "Anthropic API key is required.";
 		case "deepseek":
@@ -63,6 +76,7 @@ export function getThinkingProviderOptions(
 	profile: ProviderProfile,
 	thinkingEnabled?: boolean,
 ): Record<string, any> | undefined {
+	if (profile.provider === "codex") return { openai: { store: false } };
 	if (!thinkingEnabled) return undefined;
 	switch (profile.provider) {
 		case "deepseek":
@@ -93,8 +107,9 @@ export function getThinkingProviderOptions(
  */
 export function createLanguageModel(
 	profile: ProviderProfile,
+	app?: App,
 ): LanguageModelV4 | null {
-	const error = validateProfile(profile);
+	const error = validateProfile(profile, app);
 	if (error) {
 		new Notice(`⚠️ ${error} Please check your settings.`);
 		return null;
@@ -110,6 +125,18 @@ export function createLanguageModel(
 						getDefaultEndpoint("openai"),
 				});
 				return provider.chat(profile.model);
+			}
+
+			case "codex": {
+				if (!app) {
+					throw new Error("Codex account storage is unavailable.");
+				}
+				const provider = createOpenAI({
+					apiKey: "codex-account-session",
+					baseURL: getDefaultEndpoint("codex"),
+					fetch: createCodexFetch(app, profile.id),
+				});
+				return provider.responses(profile.model);
 			}
 
 			case "anthropic": {
@@ -199,12 +226,32 @@ export function createLanguageModel(
 	}
 }
 
+const createCodexFetch =
+	(app: App, profileId: string): typeof fetch =>
+	async (input, init) => {
+		const original = new Request(input, init);
+		const send = async (accessToken: string): Promise<Response> => {
+			const headers = new Headers(original.headers);
+			headers.set("Authorization", `Bearer ${accessToken}`);
+			return fetch(new Request(original.clone(), { headers }));
+		};
+
+		let credential = await getFreshCodexCredential(app, profileId);
+		let response = await send(credential.accessToken);
+		if (response.status !== 401) return response;
+
+		credential = await refreshCodexCredential(app, profileId, credential);
+		response = await send(credential.accessToken);
+		return response;
+	};
+
 /**
  * Fetches available models from the provider's API.
  * Returns a list of model IDs or an empty array on error.
  */
 export async function fetchProviderModels(
 	profile: ProviderProfile,
+	app?: App,
 ): Promise<string[]> {
 	const requestJson = async (
 		url: string,
@@ -215,6 +262,41 @@ export async function fetchProviderModels(
 	};
 	try {
 		switch (profile.provider) {
+			case "codex": {
+				if (!app)
+					throw new Error("Codex account storage is unavailable.");
+				let credential = await getFreshCodexCredential(app, profile.id);
+				const fetchModels = async (accessToken: string) =>
+					requestUrl({
+						url: `${getDefaultEndpoint("codex")}/models`,
+						method: "GET",
+						headers: { Authorization: `Bearer ${accessToken}` },
+						throw: false,
+					});
+				let response = await fetchModels(credential.accessToken);
+				if (response.status === 401) {
+					credential = await refreshCodexCredential(
+						app,
+						profile.id,
+						credential,
+					);
+					response = await fetchModels(credential.accessToken);
+				}
+				if (response.status < 200 || response.status >= 300) {
+					throw new Error(
+						`Codex model list request failed (HTTP ${response.status}).`,
+					);
+				}
+				const data = JSON.parse(response.text);
+				return (data.models ?? [])
+					.filter(
+						(model: any) =>
+							model?.visibility === "list" &&
+							typeof model.slug === "string",
+					)
+					.map((model: any) => model.slug);
+			}
+
 			case "openai": {
 				const baseURL =
 					profile.customURL?.trim() || getDefaultEndpoint("openai");

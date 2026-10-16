@@ -7,6 +7,7 @@ import {
 	normalizeProviderUsage,
 } from "./providers";
 import type { ProviderProfile } from "../settings";
+import type { App } from "obsidian";
 
 /**
  * Streams a chat conversation with tool calling support.
@@ -25,8 +26,9 @@ export async function* streamChatWithTools(
 	signal: AbortSignal | undefined,
 	profile: ProviderProfile,
 	thinkingEnabled: boolean | undefined,
+	app?: App,
 ): AsyncIterable<StreamEvent> {
-	const model = createLanguageModel(profile);
+	const model = createLanguageModel(profile, app);
 	if (!model) {
 		throw new Error("Chat client is not initialized.");
 	}

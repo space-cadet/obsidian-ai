@@ -18,6 +18,7 @@ export interface CodexProbeCredential {
 	accessToken: string;
 	refreshToken: string;
 	accountId?: string;
+	expiresAt?: number;
 }
 
 export class CodexMobileProbeError extends Error {
@@ -174,6 +175,7 @@ const extractSseOutput = (text: string): string => {
 const parseTokenResponse = (
 	response: TokenResponse,
 	fallbackRefreshToken?: string,
+	now = Date.now(),
 ): CodexProbeCredential => {
 	const accessToken = asNonEmptyString(response.access_token);
 	const refreshToken =
@@ -184,9 +186,14 @@ const parseTokenResponse = (
 		);
 	}
 	const idToken = asNonEmptyString(response.id_token);
+	const expiresIn = Number(response.expires_in);
 	return {
 		accessToken,
 		refreshToken,
+		expiresAt:
+			Number.isFinite(expiresIn) && expiresIn > 0
+				? now + expiresIn * 1000
+				: undefined,
 		accountId:
 			(idToken ? extractAccountId(idToken) : undefined) ??
 			extractAccountId(accessToken),
@@ -343,7 +350,11 @@ export class CodexMobileCompatibilityProbe {
 			response.text,
 			"The token refresh response could not be read.",
 		);
-		const renewed = parseTokenResponse(data, credential.refreshToken);
+		const renewed = parseTokenResponse(
+			data,
+			credential.refreshToken,
+			this.now(),
+		);
 		return {
 			...renewed,
 			accountId: credential.accountId ?? renewed.accountId,
@@ -439,7 +450,7 @@ export class CodexMobileCompatibilityProbe {
 			response.text,
 			"The sign-in token response could not be read.",
 		);
-		return parseTokenResponse(data);
+		return parseTokenResponse(data, undefined, this.now());
 	}
 
 	private async waitForNextPoll(
