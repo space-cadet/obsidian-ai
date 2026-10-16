@@ -839,6 +839,13 @@
 	border-radius: 6px;
 }
 
+.chat-textarea-overlay-text {
+	min-height: 100%;
+	white-space: inherit;
+	word-wrap: inherit;
+	transform: translateY(0);
+}
+
 /* Buttons */
 .chat-btn {
 	padding: 4px 10px;

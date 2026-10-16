@@ -944,6 +944,15 @@
 	box-sizing: border-box;
 }
 
+.chat-textarea-container {
+	--chat-textarea-padding: 6px 8px;
+	--chat-textarea-font-size: var(--font-ui-small);
+}
+
+.chat-input-attach-menu {
+	position: relative;
+}
+
 .chat-input-right {
 	display: flex;
 	align-items: center;
@@ -975,8 +984,8 @@
 	resize: none;
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 6px;
-	padding: 6px 8px;
-	font-size: var(--font-ui-small);
+	padding: var(--chat-textarea-padding, 6px 8px);
+	font-size: var(--chat-textarea-font-size, var(--font-ui-small));
 	font-family: inherit;
 	background: var(--background-primary);
 	color: var(--text-normal);
@@ -1284,6 +1293,24 @@
 	background: transparent;
 }
 
+.chat-textarea::placeholder {
+	color: var(--text-muted);
+	-webkit-text-fill-color: var(--text-muted);
+	opacity: 1;
+}
+
+.chat-textarea-container .chat-textarea-overlay {
+	padding: var(--chat-textarea-padding, 6px 8px);
+	font-size: var(--chat-textarea-font-size, var(--font-ui-small));
+	line-height: 1.4;
+	letter-spacing: inherit;
+}
+
+.chat-textarea-overlay-text {
+	font: inherit;
+	letter-spacing: inherit;
+}
+
 .chat-textarea-overlay .chat-mention-pill {
 	padding: 0;
 	border: 0;
@@ -1353,24 +1380,31 @@
 
 /* Mobile: tighter input */
 @media (max-width: 768px) {
+	.chat-textarea-container {
+		--chat-textarea-padding: 5px 6px;
+		--chat-textarea-font-size: var(--font-ui-smaller);
+	}
+
 	.chat-input-area {
 		padding: 6px;
 		gap: 4px;
 	}
 
 	.chat-textarea {
-		padding: 5px 6px;
-		font-size: var(--font-ui-smaller);
-	}
-	.chat-textarea-overlay {
-		padding: 5px 6px;
-		font-size: var(--font-ui-smaller);
+		padding: var(--chat-textarea-padding);
+		font-size: var(--chat-textarea-font-size);
 	}
 
 	.chat-send-icon {
 		min-width: 28px;
 		min-height: 28px;
 		padding: 3px 6px;
+	}
+}
+
+@media (max-width: 420px) {
+	.chat-textarea-container {
+		--chat-textarea-padding: 4px 5px;
 	}
 }
 
