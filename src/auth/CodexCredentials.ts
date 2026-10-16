@@ -6,7 +6,31 @@ import {
 
 const SECRET_PREFIX = "chat-lab-codex-";
 const REFRESH_MARGIN_MS = 30_000;
-const refreshes = new Map<string, Promise<CodexProbeCredential>>();
+interface PendingRefresh {
+	revision: number;
+	credential: CodexProbeCredential;
+	promise: Promise<CodexProbeCredential>;
+}
+
+const refreshes = new Map<string, PendingRefresh>();
+const credentialRevisions = new Map<string, number>();
+
+const getCredentialRevision = (secretId: string): number =>
+	credentialRevisions.get(secretId) ?? 0;
+
+const markCredentialChanged = (secretId: string): void => {
+	credentialRevisions.set(secretId, getCredentialRevision(secretId) + 1);
+	refreshes.delete(secretId);
+};
+
+const credentialsMatch = (
+	left: CodexProbeCredential,
+	right: CodexProbeCredential,
+): boolean =>
+	left.accessToken === right.accessToken &&
+	left.refreshToken === right.refreshToken &&
+	left.accountId === right.accountId &&
+	left.expiresAt === right.expiresAt;
 
 const secretStorageFor = (app: App): SecretStorage | null => {
 	const storage = (app as App & { secretStorage?: SecretStorage })
@@ -79,13 +103,16 @@ export const saveCodexCredential = (
 		getCodexCredentialSecretId(profileId),
 		JSON.stringify(credential),
 	);
+	markCredentialChanged(getCodexCredentialSecretId(profileId));
 };
 
 export const clearCodexCredential = (app: App, profileId: string): void => {
 	const storage = secretStorageFor(app);
 	if (!storage) return;
 	// SecretStorage currently exposes set/get/list but no delete operation.
-	storage.setSecret(getCodexCredentialSecretId(profileId), "");
+	const secretId = getCodexCredentialSecretId(profileId);
+	storage.setSecret(secretId, "");
+	markCredentialChanged(secretId);
 };
 
 export const refreshCodexCredential = async (
@@ -95,27 +122,46 @@ export const refreshCodexCredential = async (
 ): Promise<CodexProbeCredential> => {
 	const secretId = getCodexCredentialSecretId(profileId);
 	const stored = getCodexCredential(app, profileId);
-	if (
-		stored &&
-		(stored.accessToken !== credential.accessToken ||
-			stored.refreshToken !== credential.refreshToken)
-	) {
+	if (stored && !credentialsMatch(stored, credential)) {
 		return stored;
 	}
+	if (!stored) {
+		throw new Error(
+			"Codex credentials were cleared before token refresh started.",
+		);
+	}
+	const revision = getCredentialRevision(secretId);
 	const pending = refreshes.get(secretId);
-	if (pending) return pending;
+	if (
+		pending?.revision === revision &&
+		credentialsMatch(pending.credential, credential)
+	) {
+		return pending.promise;
+	}
 
 	const request = new CodexMobileCompatibilityProbe()
 		.refreshCredential(credential)
 		.then((updated) => {
+			const current = getCodexCredential(app, profileId);
+			if (
+				getCredentialRevision(secretId) !== revision ||
+				!current ||
+				!credentialsMatch(current, credential)
+			) {
+				throw new Error(
+					"Codex credentials changed during token refresh; sign in again before retrying.",
+				);
+			}
 			saveCodexCredential(app, profileId, updated);
 			return updated;
 		});
-	refreshes.set(secretId, request);
+	const pendingRefresh = { revision, credential, promise: request };
+	refreshes.set(secretId, pendingRefresh);
 	try {
 		return await request;
 	} finally {
-		if (refreshes.get(secretId) === request) refreshes.delete(secretId);
+		if (refreshes.get(secretId) === pendingRefresh)
+			refreshes.delete(secretId);
 	}
 };
 
