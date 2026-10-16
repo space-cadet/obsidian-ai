@@ -1,7 +1,7 @@
 # External Service Authentication and Provider Adapters
 
 *Created: 2026-08-31 02:17:06 IST*
-*Last Updated: 2026-10-16 18:46:24 IST*
+*Last Updated: 2026-10-16 20:31:46 IST*
 *Task: [T69](../tasks/T69.md)*
 
 ## Purpose
@@ -186,23 +186,18 @@ feasibility without a desktop host, but not a stable or OpenAI-supported plugin
 integration. The endpoint, client ID, and request contract can change without
 notice; the external project itself describes this provider as experimental.
 
-**Mobile probe direction:** the mobile experiment remains separate from
-official desktop OAuth, the app-server adapter, and OpenAI API-key profiles.
-Use Obsidian `requestUrl()` to exercise Codex's device-code login, then send
-one short request through the reference's undocumented
-`chatgpt.com/backend-api/codex/responses` endpoint. Offer an explicit token
-refresh check and cancellation. Keep tokens in memory only, clear them when
-the probe closes, and do not add the credentials to settings, exports, or
-sync. This does not test durable login across relaunches and is not a
-production provider. Validate on real iOS and Android devices before deciding
-whether any supported mobile implementation exists.
+The earlier manual-probe-only plan was superseded by the provider
+implementation below. Device-code sign-in uses the standard Codex account
+authorization flow; the mobile model and response backend calls remain
+compatibility-sensitive because their endpoint contract is not documented as
+a public API.
 
 For desktop, evaluate the official open-source OAuth flow for a direct,
 supported Responses API client and the documented app-server for full Codex
 agent behavior. Neither desktop path requires the Codex desktop GUI, but the
 runtime and feature scope still need a decision.
 
-### Local probe constraint
+### Local app-server constraint
 
 The development host resolves a `codex` command, but invoking it fails with
 `ENOENT` because the packaged native executable is missing. Therefore the
@@ -218,22 +213,76 @@ Codex desktop GUI. It may use an installed CLI or a plugin-managed runtime;
 choose that dependency before implementation. Translate app-server events into
 the existing chat turn, streaming, tool, approval, and persistence contracts.
 
-Mobile has a second, concrete implementation path. Chatting with AI performs
-the device authorization flow with `requestUrl()`, keeps access and refresh
-tokens in `SecretStorage`, refreshes expired access, and sends requests to
-`chatgpt.com/backend-api/codex/responses`. Its source shows that a local CLI is
-not required for mobile chat. It also buffers the streamed response and
-reconstructs the final result on the client.
+### Implemented Codex provider — 2026-10-16
 
-The mobile path is implemented as a manual compatibility probe, separate
-from the desktop OAuth and app-server adapters. The command is available in
-Developer Mode. It displays a device code, polls for authorization, sends one
-fixed short request to the private Codex response endpoint, and offers a
-separate refresh check. Tokens stay in memory for the modal only; clearing the
-temporary login does not revoke the remote app grant. Errors are redacted and
-raw response bodies are not shown. Focused mocked tests and TypeScript pass.
-Real iOS and Android acceptance remains outstanding. The probe is not a normal
-provider and does not establish a supported mobile authentication route.
+The plugin now exposes **Codex** as a provider profile, separate from the
+OpenAI API-key provider. Profile settings offer sign-in, reconnect, and sign
+out. A successful sign-in triggers model discovery. The default model is
+`gpt-6-luna`; the fetched model list comes from the Codex models endpoint and
+includes entries whose visibility is `list`.
+
+#### Sign-in and credentials
+
+Sign-in uses the Codex device-code authorization flow. The plugin requests a
+one-time code from `auth.openai.com/api/accounts/deviceauth/usercode`, shows
+the code and verification page (`/codex/device`), and polls
+`/api/accounts/deviceauth/token` at the returned interval (5 seconds if none
+is supplied), until approval, cancellation, or the 15-minute timeout. The
+browser is used to enter the code; the user does not paste a callback URL into
+Obsidian. The authorization response's code and verifier are exchanged at
+`/oauth/token` with the fixed device-flow redirect URI
+`https://auth.openai.com/deviceauth/callback`; this is an OAuth exchange
+parameter, not a browser callback into the plugin. Access and refresh tokens,
+expiry, and an optional ChatGPT account ID are stored per provider profile in
+Obsidian `SecretStorage` under a `chat-lab-codex-<profile>` key. This requires
+Obsidian 1.11.4 or newer. Sign out or changing the profile away from Codex
+clears the value by storing an empty string, because `SecretStorage` has no
+delete method. Closing the login dialog after sign-in does not revoke the
+account grant.
+
+Expired credentials are refreshed with the OAuth token endpoint when within 30
+seconds of expiry. Concurrent refreshes for a profile share one request. A
+401 from model discovery or a chat request triggers refresh and one retry.
+The OpenAI API-key provider keeps its own credentials and endpoint.
+
+#### Model and response requests
+
+Model discovery calls
+`https://chatgpt.com/backend-api/codex/models?client_version=<plugin version>`.
+Chat requests use the OpenAI SDK's Responses interface with the Codex base URL
+`https://chatgpt.com/backend-api/codex`, which resolves to the Codex
+`/responses` route. Requests include the bearer access token, `originator`,
+plugin user-agent, and account ID when available; Responses requests set
+`store: false`.
+
+The SDK fetch adapter sends requests through Obsidian's native `requestUrl()`
+bridge to avoid renderer CORS failures on mobile. It wraps the native response
+in a web `Response` for the SDK's SSE parser. Since `requestUrl()` buffers the
+response, generated text appears after the response completes rather than
+token by token. The native bridge cannot cancel an in-flight request; abort
+stops the plugin from waiting for it, while the underlying native request may
+continue.
+
+Codex tool names must match `^[a-zA-Z0-9_-]+$`. Before sending a chat request,
+invalid integration tool names are mapped to unique API-safe aliases across
+tool definitions and conversation history; tool-call names are restored before
+plugin execution. Stream errors are drained through SDK settlement before
+being surfaced to avoid a secondary unhandled no-output rejection.
+
+#### Verification and support limits
+
+Focused provider, credential, tool-name, and stream-error tests passed, as did
+the production build. The full suite reported 589 passing tests and one
+unrelated existing `useMessageActions` AbortSignal assertion failure. On
+2026-10-16 the user confirmed the updated Android mobile flow works. iOS
+acceptance and desktop app-server integration remain open. Desktop runtime
+provisioning (installed CLI or managed app-server runtime) is undecided.
+
+The device-code sign-in flow is distinct from the mobile API compatibility
+limit: the Codex models and Responses backend endpoints used here are not
+documented as a stable public provider API and may change. Keep that
+compatibility risk visible in maintenance decisions. The existing OpenAI
+API-key path remains available independently.
 
 Codex implementation checklist:
 
@@ -242,11 +291,10 @@ Codex implementation checklist:
   refresh, and logout state.
 - Define process startup, readiness, crash, restart, and shutdown behavior.
 - Map streamed text, tool calls, approvals, results, and cancellation.
-- [x] Implement the developer-only mobile device-code compatibility probe
-  with one response request, optional refresh, cancellation, and in-memory
-  credential cleanup.
-- Validate the probe on real iOS and Android devices. Mocked tests do not
-  establish mobile acceptance.
+- [x] Implement the Codex profile provider with device-code sign-in, secure
+  credential storage/refresh, model discovery, and Responses requests.
+- [ ] Complete real-device acceptance on iOS; Android mobile flow was confirmed
+  working by the user on 2026-10-16.
 - Separately evaluate the official desktop app-server adapter; a working local
   Codex CLI is required for its bounded login and one-turn probe.
 - Keep the existing OpenAI API provider independently usable.
@@ -317,12 +365,9 @@ must not become a generic shell or credential bridge for T69.
 
 - Evaluate the documented open-source OAuth flow and app-server separately
   for desktop; neither requires the Codex desktop GUI.
-- Implement the mobile device-code check only as a manual compatibility probe,
-  with one short response request, optional refresh, cancellation, and
-  in-memory-only credentials.
-- Run the probe on iOS and Android. Do not infer mobile acceptance from mocks
-  or source inspection, and do not promote the private endpoint to a normal
-  provider without a supported contract.
+- The Codex provider is implemented for mobile and Android use was confirmed
+  on 2026-10-16. Verify iOS separately and continue to track the backend
+  endpoint's compatibility risk.
 
 ### Phase 3: Service adapters
 

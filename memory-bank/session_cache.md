@@ -1,5 +1,21 @@
 # Session Cache
 
+## 2026-10-16 — T69a Codex provider implementation and mobile acceptance
+
+- Codex is implemented as a provider separate from the OpenAI API-key provider;
+  the user confirmed the updated Android mobile flow works.
+- Detailed device-code login, secure credential lifecycle, model discovery,
+  native mobile requests, streaming limitation, and compatibility notes are in
+  `implementation-details/external-service-authentication.md#codex`. T69a has
+  been reduced to scope, acceptance, and a pointer to that document.
+- Focused tests and production build passed. Full suite: 589 passed, with one
+  existing unrelated `useMessageActions` AbortSignal assertion failure.
+- iOS acceptance and desktop app-server/runtime decisions remain open. Source
+  is pushed at `bc1d8cb` on `t69a-mobile-codex-auth-plan`.
+- Session record: `sessions/2026-10-16-codex-provider-mobile-implementation.md`.
+- Text is authoritative. No safe text edit-history generator is available;
+  database regeneration was not used, so `edit_history.md` was not regenerated.
+
 ## 2026-10-06 — T73 reference-pill source reconciliation
 
 - Corrected the task registry header to Obsidian AI and recorded source commit
