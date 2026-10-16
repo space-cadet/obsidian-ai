@@ -57,6 +57,11 @@ describe("Codex provider", () => {
 		const { app } = createApp({
 			accessToken: "codex-access-token",
 			refreshToken: "codex-refresh-token",
+			clientId: "oaiapp_test-client",
+			idToken: "validated-id-token",
+			subject: "test-subject",
+			extAgentHostId: "urn:uuid:test-host",
+			scopes: ["chatgpt.tokens.use.direct", "resource.invoke"],
 		});
 
 		expect(validateProfile(profile, app)).toBeNull();
@@ -92,6 +97,11 @@ describe("Codex provider", () => {
 		const { app, secrets } = createApp({
 			accessToken: "expired-access-token",
 			refreshToken: "old-refresh-token",
+			clientId: "oaiapp_test-client",
+			idToken: "validated-id-token",
+			subject: "test-subject",
+			extAgentHostId: "urn:uuid:test-host",
+			scopes: ["chatgpt.tokens.use.direct", "resource.invoke"],
 		});
 
 		await expect(fetchProviderModels(profile, app)).resolves.toEqual([
@@ -104,5 +114,43 @@ describe("Codex provider", () => {
 			accessToken: "renewed-access-token",
 			refreshToken: "renewed-refresh-token",
 		});
+	});
+
+	it("does not use a ChatGPT sign-in that lacks plan-use permission", async () => {
+		const { app } = createApp({
+			accessToken: "identity-only-access-token",
+			refreshToken: "identity-only-refresh-token",
+			clientId: "oaiapp_test-client",
+			idToken: "validated-id-token",
+			subject: "test-subject",
+			extAgentHostId: "urn:uuid:test-host",
+			scopes: ["openid", "profile", "email"],
+		});
+
+		expect(validateProfile(profile, app)).toContain("allow plan use");
+		await expect(fetchProviderModels(profile, app)).rejects.toThrow(
+			"approve ChatGPT plan use",
+		);
+		expect(requestUrlMock).not.toHaveBeenCalled();
+	});
+
+	it("shows the API's concise reason when model access is rejected", async () => {
+		requestUrlMock.mockResolvedValue({
+			status: 403,
+			text: JSON.stringify({ detail: "Plan access is unavailable." }),
+		});
+		const { app } = createApp({
+			accessToken: "codex-access-token",
+			refreshToken: "codex-refresh-token",
+			clientId: "oaiapp_test-client",
+			idToken: "validated-id-token",
+			subject: "test-subject",
+			extAgentHostId: "urn:uuid:test-host",
+			scopes: ["chatgpt.tokens.use.direct", "resource.invoke"],
+		});
+
+		await expect(fetchProviderModels(profile, app)).rejects.toThrow(
+			"Codex model list request failed (HTTP 403): Plan access is unavailable.",
+		);
 	});
 });

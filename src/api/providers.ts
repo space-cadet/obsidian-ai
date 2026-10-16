@@ -14,6 +14,29 @@ import {
 	refreshCodexCredential,
 } from "../auth/CodexCredentials";
 
+const codexResponseError = (responseText: string): string | null => {
+	try {
+		const data: unknown = JSON.parse(responseText);
+		if (typeof data !== "object" || data === null) return null;
+		const body = data as Record<string, unknown>;
+		const error =
+			typeof body.error === "object" && body.error !== null
+				? (body.error as Record<string, unknown>)
+				: null;
+		const detail =
+			(typeof body.detail === "string" && body.detail) ||
+			(typeof body.error_description === "string" &&
+				body.error_description) ||
+			(typeof body.message === "string" && body.message) ||
+			(typeof body.error === "string" && body.error) ||
+			(typeof error?.message === "string" && error.message) ||
+			(typeof error?.code === "string" && error.code);
+		return typeof detail === "string" ? detail.slice(0, 500) : null;
+	} catch {
+		return null;
+	}
+};
+
 export function normalizeProviderUsage(usage: {
 	inputTokens?: number;
 	outputTokens?: number;
@@ -44,7 +67,7 @@ export function validateProfile(
 		case "codex":
 			return app && getCodexCredential(app, profile.id)
 				? null
-				: "Sign in to your Codex account first.";
+				: "Sign in with ChatGPT and allow plan use for this Codex profile.";
 		case "anthropic":
 			return profile.apiKey ? null : "Anthropic API key is required.";
 		case "deepseek":
@@ -283,8 +306,9 @@ export async function fetchProviderModels(
 					response = await fetchModels(credential.accessToken);
 				}
 				if (response.status < 200 || response.status >= 300) {
+					const detail = codexResponseError(response.text);
 					throw new Error(
-						`Codex model list request failed (HTTP ${response.status}).`,
+						`Codex model list request failed (HTTP ${response.status})${detail ? `: ${detail}` : ""}.`,
 					);
 				}
 				const data = JSON.parse(response.text);

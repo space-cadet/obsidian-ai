@@ -180,9 +180,13 @@ function ProfileEditForm({
 			);
 			return;
 		}
-		new CodexLoginModal(plugin.app, async (credential) => {
+		new CodexLoginModal(plugin.app, profile.id, async (credential) => {
 			saveCodexCredential(plugin.app, profile.id, credential);
-			setCodexConnected(true);
+			const planAccessGranted =
+				credential.scopes.includes("chatgpt.tokens.use.direct") &&
+				credential.scopes.includes("resource.invoke");
+			setCodexConnected(planAccessGranted);
+			if (!planAccessGranted) return;
 			try {
 				const codexProfile = { ...draft, provider: "codex" as const };
 				const fetched = await plugin.chatapi.fetchModels(codexProfile);
@@ -334,8 +338,8 @@ function ProfileEditForm({
 							onClick={handleCodexSignIn}
 						>
 							{codexConnected
-								? "Reconnect"
-								: "Sign in with Codex"}
+								? "Reconnect ChatGPT"
+								: "Sign in with ChatGPT"}
 						</button>
 						{codexConnected && (
 							<button type="button" onClick={handleCodexSignOut}>
