@@ -112,6 +112,7 @@ export class ChatApiManager {
 			estimateTokens(systemMessage) + estimateTokens(message);
 		const model = createLanguageModel(
 			profile ?? getActiveProviderProfile(this.settings),
+			this.app,
 		);
 		if (!model) {
 			new Notice(
@@ -125,6 +126,26 @@ export class ChatApiManager {
 		}
 
 		try {
+			const activeProfile =
+				profile ?? getActiveProviderProfile(this.settings);
+			if (activeProfile.provider === "codex") {
+				const result = streamText({
+					model,
+					system: systemMessage,
+					messages: [{ role: "user", content: message }],
+					abortSignal: signal,
+					providerOptions: getThinkingProviderOptions(activeProfile),
+				});
+				let text = "";
+				for await (const chunk of result.textStream) text += chunk;
+				return {
+					text,
+					requestTokenEstimate,
+					providerUsage: normalizeProviderUsage(await result.usage),
+					responseTimeMs: Date.now() - startedAt,
+				};
+			}
+
 			const result = await generateText({
 				model,
 				system: systemMessage,
@@ -170,7 +191,7 @@ export class ChatApiManager {
 			"debug",
 			`[API] stream start — model ${activeProfile.model}, ${messages.length} message(s)`,
 		);
-		const model = createLanguageModel(activeProfile);
+		const model = createLanguageModel(activeProfile, this.app);
 		if (!model) {
 			throw new Error("Chat client is not initialized.");
 		}
@@ -252,6 +273,7 @@ export class ChatApiManager {
 				signal,
 				activeProfile,
 				thinkingEnabled,
+				this.app,
 			);
 		} catch (e: any) {
 			if (!signal?.aborted && e?.name !== "AbortError") {
@@ -270,7 +292,7 @@ export class ChatApiManager {
 	 * @returns Array of model IDs.
 	 */
 	public async fetchModels(profile: ProviderProfile): Promise<string[]> {
-		return fetchProviderModels(profile);
+		return fetchProviderModels(profile, this.app);
 	}
 
 	/**
@@ -373,7 +395,7 @@ export class ChatApiManager {
 	 */
 	public testConnection(): boolean {
 		const profile = getActiveProviderProfile(this.settings);
-		return validateProfile(profile) === null;
+		return validateProfile(profile, this.app) === null;
 	}
 
 	/**
@@ -385,12 +407,12 @@ export class ChatApiManager {
 		message: string;
 	}> {
 		const profile = getActiveProviderProfile(this.settings);
-		const fieldError = validateProfile(profile);
+		const fieldError = validateProfile(profile, this.app);
 		if (fieldError) {
 			return { ok: false, message: fieldError };
 		}
 
-		const model = createLanguageModel(profile);
+		const model = createLanguageModel(profile, this.app);
 		if (!model) {
 			return {
 				ok: false,
@@ -399,10 +421,21 @@ export class ChatApiManager {
 		}
 
 		try {
-			await generateText({
-				model,
-				messages: [{ role: "user", content: "Hi" }],
-			});
+			if (profile.provider === "codex") {
+				const result = streamText({
+					model,
+					messages: [{ role: "user", content: "Hi" }],
+					providerOptions: getThinkingProviderOptions(profile),
+				});
+				for await (const _chunk of result.textStream) {
+					// Consume the stream so the provider's completion status is checked.
+				}
+			} else {
+				await generateText({
+					model,
+					messages: [{ role: "user", content: "Hi" }],
+				});
+			}
 			return {
 				ok: true,
 				message: `${profile.name} is connected and responding.`,
@@ -413,7 +446,10 @@ export class ChatApiManager {
 			if (msg.includes("401") || msg.includes("Unauthorized")) {
 				return {
 					ok: false,
-					message: "Invalid API key. Check your credentials.",
+					message:
+						profile.provider === "codex"
+							? "Codex authorization failed. Sign in again."
+							: "Invalid API key. Check your credentials.",
 				};
 			}
 			if (msg.includes("404") || msg.includes("Not Found")) {

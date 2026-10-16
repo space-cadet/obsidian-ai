@@ -9,7 +9,14 @@ import {
 	ObsidianAISettings,
 } from "../settings";
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
-import { Notice } from "obsidian";
+import { App, Notice } from "obsidian";
+import {
+	clearCodexCredential,
+	getCodexCredential,
+	hasCodexSecretStorage,
+	saveCodexCredential,
+} from "../auth/CodexCredentials";
+import { CodexLoginModal } from "../modals/CodexLoginModal";
 
 // ─── Provider metadata ─────────────────────────────────────────────
 
@@ -17,6 +24,7 @@ const PROVIDER_META: Partial<
 	Record<ProviderType, { label: string; color: string; icon: string }>
 > = {
 	openai: { label: "OpenAI", color: "#10A37F", icon: "O" },
+	codex: { label: "Codex", color: "#242424", icon: "C" },
 	anthropic: { label: "Anthropic", color: "#D97757", icon: "A" },
 	deepseek: { label: "DeepSeek", color: "#4D6BFA", icon: "D" },
 	kimi: { label: "Kimi", color: "#FF6B6B", icon: "K" },
@@ -38,11 +46,21 @@ function maskKey(key?: string): string {
 	return `${key.slice(0, 4)}…${key.slice(-4)}`;
 }
 
-function validateProfileQuick(profile: ProviderProfile): {
+function validateProfileQuick(
+	profile: ProviderProfile,
+	app: App,
+): {
 	ok: boolean;
 	hint?: string;
 } {
 	switch (profile.provider) {
+		case "codex":
+			if (!hasCodexSecretStorage(app)) {
+				return { ok: false, hint: "Obsidian 1.11.4+ is required" };
+			}
+			return getCodexCredential(app, profile.id)
+				? { ok: true }
+				: { ok: false, hint: "Codex sign-in required" };
 		case "openai":
 		case "anthropic":
 		case "deepseek":
@@ -105,6 +123,9 @@ function ProfileEditForm({
 	);
 	const [modelSearch, setModelSearch] = useState("");
 	const [showApiKey, setShowApiKey] = useState(false);
+	const [codexConnected, setCodexConnected] = useState(
+		Boolean(getCodexCredential(plugin.app, profile.id)),
+	);
 	const [testStatus, setTestStatus] = useState<null | {
 		ok: boolean;
 		message: string;
@@ -135,17 +156,62 @@ function ProfileEditForm({
 				provider,
 				model: getDefaultModel(provider),
 				name,
-				apiKey: prev.apiKey,
 				customURL: "",
 				azureEndpoint: "",
 				endpointUrl: "",
 				modelCache: undefined,
 				updatedAt: Date.now(),
 			}));
+			setCodexConnected(
+				provider === "codex" &&
+					Boolean(getCodexCredential(plugin.app, profile.id)),
+			);
 			setModels([]);
 		},
-		[draft.name, draft.provider],
+		[draft.name, draft.provider, plugin.app, profile.id],
 	);
+
+	const handleCodexSignIn = useCallback(() => {
+		if (!hasCodexSecretStorage(plugin.app)) {
+			new Notice(
+				"Codex sign-in requires Obsidian 1.11.4 or newer.",
+				4000,
+			);
+			return;
+		}
+		new CodexLoginModal(plugin.app, async (credential) => {
+			saveCodexCredential(plugin.app, profile.id, credential);
+			setCodexConnected(true);
+			try {
+				const codexProfile = { ...draft, provider: "codex" as const };
+				const fetched = await plugin.chatapi.fetchModels(codexProfile);
+				setModels(fetched);
+				setDraft((previous) => ({
+					...previous,
+					model: fetched.includes(previous.model)
+						? previous.model
+						: fetched.includes("gpt-6-luna")
+							? "gpt-6-luna"
+							: (fetched[0] ?? previous.model),
+					modelCache: { models: fetched, fetchedAt: Date.now() },
+				}));
+				new Notice(`Loaded ${fetched.length} Codex models.`, 2500);
+			} catch (error: any) {
+				new Notice(
+					`Signed in, but could not load Codex models: ${error?.message ?? "request failed"}`,
+					5000,
+				);
+			}
+		}).open();
+	}, [draft, plugin, profile.id]);
+
+	const handleCodexSignOut = useCallback(() => {
+		clearCodexCredential(plugin.app, profile.id);
+		setCodexConnected(false);
+		setModels([]);
+		updateDraft("modelCache", undefined);
+		new Notice("Codex account disconnected from this profile.", 2500);
+	}, [plugin.app, profile.id, updateDraft]);
 
 	const handleFetchModels = useCallback(async () => {
 		setFetching(true);
@@ -169,7 +235,7 @@ function ProfileEditForm({
 	const handleTest = useCallback(async () => {
 		setTestStatus(null);
 		const { validateProfile } = await import("../api");
-		const error = validateProfile(draft);
+		const error = validateProfile(draft, plugin.app);
 		if (error) {
 			setTestStatus({ ok: false, message: error });
 			return;
@@ -206,7 +272,7 @@ function ProfileEditForm({
 				message: "Testing requires saving the profile first.",
 			});
 		}
-	}, [draft]);
+	}, [draft, plugin.app]);
 
 	const filteredModels = modelSearch.trim()
 		? models.filter((m) =>
@@ -237,6 +303,7 @@ function ProfileEditForm({
 					}
 				>
 					<option value="openai">OpenAI</option>
+					<option value="codex">Codex</option>
 					<option value="anthropic">Anthropic</option>
 					<option value="deepseek">DeepSeek</option>
 					<option value="kimi">Kimi</option>
@@ -247,6 +314,36 @@ function ProfileEditForm({
 					<option value="agent">Agent (OpenResponses)</option>
 				</select>
 			</div>
+
+			{draft.provider === "codex" && (
+				<div className="obsidian-ai-profile-edit-row">
+					<label>Codex account</label>
+					<div>
+						<span>
+							{!hasCodexSecretStorage(plugin.app)
+								? "Secure storage requires Obsidian 1.11.4+"
+								: codexConnected
+									? "Connected"
+									: "Not connected"}
+						</span>{" "}
+						<button
+							type="button"
+							className="mod-cta"
+							disabled={!hasCodexSecretStorage(plugin.app)}
+							onClick={handleCodexSignIn}
+						>
+							{codexConnected
+								? "Reconnect"
+								: "Sign in with Codex"}
+						</button>
+						{codexConnected && (
+							<button type="button" onClick={handleCodexSignOut}>
+								Sign out
+							</button>
+						)}
+					</div>
+				</div>
+			)}
 
 			<div className="obsidian-ai-profile-edit-row">
 				<label>Model</label>
@@ -304,39 +401,70 @@ function ProfileEditForm({
 				)}
 			</div>
 
-			{draft.provider !== "ollama" && (
+			{draft.provider !== "ollama" && draft.provider !== "codex" && (
 				<div className="obsidian-ai-profile-edit-row">
 					<label>API Key</label>
 					<div className="obsidian-ai-api-key-control">
-						<input type={showApiKey ? "text" : "password"} value={draft.apiKey || ""} onChange={(e) => updateDraft("apiKey", e.target.value)} placeholder={draft.provider === "agent" ? "Bearer token…" : "sk-…"} />
-						<button type="button" aria-label={showApiKey ? "Hide API key" : "Show API key"} onClick={() => setShowApiKey((visible) => !visible)}>{showApiKey ? "◉" : "◌"}</button>
-						<button type="button" aria-label="Copy API key" onClick={() => { void navigator.clipboard?.writeText(draft.apiKey || ""); }}>⧉</button>
+						<input
+							type={showApiKey ? "text" : "password"}
+							value={draft.apiKey || ""}
+							onChange={(e) =>
+								updateDraft("apiKey", e.target.value)
+							}
+							placeholder={
+								draft.provider === "agent"
+									? "Bearer token…"
+									: "sk-…"
+							}
+						/>
+						<button
+							type="button"
+							aria-label={
+								showApiKey ? "Hide API key" : "Show API key"
+							}
+							onClick={() => setShowApiKey((visible) => !visible)}
+						>
+							{showApiKey ? "◉" : "◌"}
+						</button>
+						<button
+							type="button"
+							aria-label="Copy API key"
+							onClick={() => {
+								void navigator.clipboard?.writeText(
+									draft.apiKey || "",
+								);
+							}}
+						>
+							⧉
+						</button>
 					</div>
 				</div>
 			)}
 
-			<div className="obsidian-ai-profile-edit-row">
-				<label>Endpoint</label>
-				<input
-					type="text"
-					value={
-						draft.provider === "azure"
-							? draft.azureEndpoint || ""
-							: draft.provider === "agent"
-								? draft.endpointUrl || ""
-								: draft.customURL || ""
-					}
-					onChange={(e) => {
-						const v = e.target.value;
-						if (draft.provider === "azure")
-							updateDraft("azureEndpoint", v);
-						else if (draft.provider === "agent")
-							updateDraft("endpointUrl", v);
-						else updateDraft("customURL", v);
-					}}
-					placeholder={getDefaultEndpoint(draft.provider)}
-				/>
-			</div>
+			{draft.provider !== "codex" && (
+				<div className="obsidian-ai-profile-edit-row">
+					<label>Endpoint</label>
+					<input
+						type="text"
+						value={
+							draft.provider === "azure"
+								? draft.azureEndpoint || ""
+								: draft.provider === "agent"
+									? draft.endpointUrl || ""
+									: draft.customURL || ""
+						}
+						onChange={(e) => {
+							const v = e.target.value;
+							if (draft.provider === "azure")
+								updateDraft("azureEndpoint", v);
+							else if (draft.provider === "agent")
+								updateDraft("endpointUrl", v);
+							else updateDraft("customURL", v);
+						}}
+						placeholder={getDefaultEndpoint(draft.provider)}
+					/>
+				</div>
+			)}
 
 			{draft.provider === "azure" && (
 				<div className="obsidian-ai-profile-edit-row">
@@ -460,7 +588,7 @@ export function ProfileCard({
 	plugin,
 }: ProfileCardProps) {
 	const meta = getProviderMeta(profile.provider);
-	const auth = validateProfileQuick(profile);
+	const auth = validateProfileQuick(profile, plugin.app);
 
 	if (isEditing) {
 		return (
@@ -554,7 +682,11 @@ export function ProfileCard({
 				<span
 					className={`obsidian-ai-profile-key${!auth.ok ? " is-missing" : ""}`}
 				>
-					{maskKey(profile.apiKey)}
+					{profile.provider === "codex"
+						? auth.ok
+							? "Connected"
+							: "Not connected"
+						: maskKey(profile.apiKey)}
 				</span>
 			</div>
 
@@ -650,8 +782,21 @@ export function ProfileList({ plugin }: ProfileListProps) {
 
 	const handleSave = useCallback(
 		(updated: ProviderProfile) => {
+			const savedProfile =
+				updated.provider === "codex"
+					? { ...updated, apiKey: "" }
+					: updated;
+			const previous = profiles.find(
+				(profile) => profile.id === savedProfile.id,
+			);
+			if (
+				previous?.provider === "codex" &&
+				savedProfile.provider !== "codex"
+			) {
+				clearCodexCredential(plugin.app, savedProfile.id);
+			}
 			const next = profiles.map((p) =>
-				p.id === updated.id ? updated : p,
+				p.id === savedProfile.id ? savedProfile : p,
 			);
 			setProfiles(next);
 			setEditingId(null);
@@ -671,6 +816,7 @@ export function ProfileList({ plugin }: ProfileListProps) {
 				new Notice("Keep at least one provider profile.", 3000);
 				return;
 			}
+			clearCodexCredential(plugin.app, id);
 			const next = profiles.filter((p) => p.id !== id);
 			setProfiles(next);
 			if (activeId === id) {

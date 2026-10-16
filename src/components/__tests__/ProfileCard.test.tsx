@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ProfileList } from "../ProfileCard";
 import type { ProviderProfile } from "../../settings";
@@ -85,5 +85,67 @@ describe("ProfileList", () => {
 		expect(
 			screen.getByRole("button", { name: /New Profile/i }),
 		).toBeTruthy();
+	});
+
+	it("preserves an API key when switching to Codex and back before saving", () => {
+		const plugin = {
+			...mockPlugin,
+			settings: {
+				...mockPlugin.settings,
+				providerProfiles: mockPlugin.settings.providerProfiles.map(
+					(profile) => ({ ...profile }),
+				),
+			},
+			saveSettings: vi.fn().mockResolvedValue(undefined),
+			chatapi: { updateSettings: vi.fn() },
+		};
+		render(<ProfileList plugin={plugin as any} />);
+
+		fireEvent.click(document.querySelector('button[title="Edit"]')!);
+		const provider = document.querySelector(
+			".obsidian-ai-profile-edit-form select",
+		)!;
+		fireEvent.change(provider, { target: { value: "codex" } });
+		fireEvent.change(provider, { target: { value: "openai" } });
+
+		expect(screen.getByPlaceholderText("sk-…")).toHaveProperty(
+			"value",
+			"sk-test1234",
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+		expect(plugin.settings.providerProfiles[0]).toMatchObject({
+			provider: "openai",
+			apiKey: "sk-test1234",
+		});
+	});
+
+	it("clears an API key when saving the profile as Codex", () => {
+		const plugin = {
+			...mockPlugin,
+			settings: {
+				...mockPlugin.settings,
+				providerProfiles: mockPlugin.settings.providerProfiles.map(
+					(profile) => ({ ...profile }),
+				),
+			},
+			saveSettings: vi.fn().mockResolvedValue(undefined),
+			chatapi: { updateSettings: vi.fn() },
+		};
+		render(<ProfileList plugin={plugin as any} />);
+
+		fireEvent.click(document.querySelector('button[title="Edit"]')!);
+		fireEvent.change(
+			document.querySelector(".obsidian-ai-profile-edit-form select")!,
+			{
+				target: { value: "codex" },
+			},
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+		expect(plugin.settings.providerProfiles[0]).toMatchObject({
+			provider: "codex",
+			apiKey: "",
+		});
 	});
 });

@@ -3,6 +3,8 @@ export function getAgentColor(provider: string): string {
 	switch (provider) {
 		case "gemini":
 			return "#6366f1";
+		case "codex":
+			return "#242424";
 		case "openai":
 			return "#10b981";
 		case "anthropic":
@@ -19,6 +21,8 @@ export function getAgentIcon(provider: string): string {
 	switch (provider) {
 		case "gemini":
 			return "💎";
+		case "codex":
+			return "✳️";
 		case "openai":
 			return "🌐";
 		case "anthropic":

@@ -1,5 +1,18 @@
 # Active Context
 
+### 2026-10-16 — T69a Codex provider implementation and mobile acceptance
+
+- Codex account access is implemented as a provider separate from OpenAI API
+  keys. The user confirmed that the updated Android mobile flow works.
+- Implementation details and compatibility limits are recorded in
+  `implementation-details/external-service-authentication.md#codex`; T69a now
+  links to that canonical implementation record instead of duplicating it.
+- Focused tests and production build passed. One existing unrelated full-suite
+  failure remains. iOS acceptance and desktop app-server/runtime decisions are
+  still open.
+- Source branch `t69a-mobile-codex-auth-plan`, source commit
+  `bc1d8cb902fb5b9c567c801561a5160fddfcbbef`. See the T69a session record.
+
 ### 2026-10-06 — T73 reference-pill source reconciliation
 
 - Corrected the task registry identity from Sage Workspace to Obsidian AI.

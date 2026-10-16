@@ -43,6 +43,7 @@ export interface DebugTelemetrySettings {
 
 export type ProviderType =
 	| "openai"
+	| "codex"
 	| "ollama"
 	| "custom"
 	| "gemini"
@@ -245,6 +246,7 @@ const generateId = (): string => {
 export const getProviderColor = (provider: ProviderType): string => {
 	const colors: Record<string, string> = {
 		openai: "#10a37f",
+		codex: "#242424",
 		anthropic: "#d97757",
 		google: "#4285f4",
 		gemini: "#4285f4",
@@ -263,6 +265,8 @@ export const getDefaultProfileName = (provider: ProviderType): string => {
 	switch (provider) {
 		case "openai":
 			return "OpenAI";
+		case "codex":
+			return "Codex";
 		case "azure":
 			return "Azure OpenAI";
 		case "gemini":
@@ -289,6 +293,8 @@ export const getDefaultModel = (provider: ProviderType): string => {
 	switch (provider) {
 		case "openai":
 			return "gpt-4o-mini";
+		case "codex":
+			return "gpt-6-luna";
 		case "gemini":
 			return "gemini-pro";
 		case "azure":
@@ -315,6 +321,8 @@ export const getDefaultEndpoint = (provider: ProviderType): string => {
 	switch (provider) {
 		case "openai":
 			return "https://api.openai.com/v1";
+		case "codex":
+			return "https://chatgpt.com/backend-api/codex";
 		case "anthropic":
 			return "https://api.anthropic.com/v1";
 		case "gemini":
