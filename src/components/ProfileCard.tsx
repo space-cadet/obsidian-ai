@@ -156,7 +156,6 @@ function ProfileEditForm({
 				provider,
 				model: getDefaultModel(provider),
 				name,
-				apiKey: provider === "codex" ? "" : prev.apiKey,
 				customURL: "",
 				azureEndpoint: "",
 				endpointUrl: "",
@@ -783,17 +782,21 @@ export function ProfileList({ plugin }: ProfileListProps) {
 
 	const handleSave = useCallback(
 		(updated: ProviderProfile) => {
+			const savedProfile =
+				updated.provider === "codex"
+					? { ...updated, apiKey: "" }
+					: updated;
 			const previous = profiles.find(
-				(profile) => profile.id === updated.id,
+				(profile) => profile.id === savedProfile.id,
 			);
 			if (
 				previous?.provider === "codex" &&
-				updated.provider !== "codex"
+				savedProfile.provider !== "codex"
 			) {
-				clearCodexCredential(plugin.app, updated.id);
+				clearCodexCredential(plugin.app, savedProfile.id);
 			}
 			const next = profiles.map((p) =>
-				p.id === updated.id ? updated : p,
+				p.id === savedProfile.id ? savedProfile : p,
 			);
 			setProfiles(next);
 			setEditingId(null);
