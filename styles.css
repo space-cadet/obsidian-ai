@@ -1574,6 +1574,13 @@
 	border-radius: 6px;
 }
 
+.chat-textarea-overlay-text {
+	min-height: 100%;
+	white-space: inherit;
+	word-wrap: inherit;
+	transform: translateY(0);
+}
+
 /* Buttons */
 .chat-btn {
 	padding: 4px 10px;
@@ -3418,6 +3425,15 @@
 	box-sizing: border-box;
 }
 
+.chat-textarea-container {
+	--chat-textarea-padding: 6px 8px;
+	--chat-textarea-font-size: var(--font-ui-small);
+}
+
+.chat-input-attach-menu {
+	position: relative;
+}
+
 .chat-input-right {
 	display: flex;
 	align-items: center;
@@ -3449,8 +3465,8 @@
 	resize: none;
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 6px;
-	padding: 6px 8px;
-	font-size: var(--font-ui-small);
+	padding: var(--chat-textarea-padding, 6px 8px);
+	font-size: var(--chat-textarea-font-size, var(--font-ui-small));
 	font-family: inherit;
 	background: var(--background-primary);
 	color: var(--text-normal);
@@ -3758,6 +3774,24 @@
 	background: transparent;
 }
 
+.chat-textarea::placeholder {
+	color: var(--text-muted);
+	-webkit-text-fill-color: var(--text-muted);
+	opacity: 1;
+}
+
+.chat-textarea-container .chat-textarea-overlay {
+	padding: var(--chat-textarea-padding, 6px 8px);
+	font-size: var(--chat-textarea-font-size, var(--font-ui-small));
+	line-height: 1.4;
+	letter-spacing: inherit;
+}
+
+.chat-textarea-overlay-text {
+	font: inherit;
+	letter-spacing: inherit;
+}
+
 .chat-textarea-overlay .chat-mention-pill {
 	padding: 0;
 	border: 0;
@@ -3785,20 +3819,14 @@
 	position: relative;
 	z-index: 0;
 	isolation: isolate;
+	-webkit-box-decoration-break: clone;
+	box-decoration-break: clone;
 	color: #075e57;
+	background: #e2f3ef;
+	border-radius: 7px;
+	box-shadow: 0 0 0 1px #087e74;
 	font-weight: inherit;
 	text-decoration: none;
-}
-
-.chat-textarea-overlay .chat-mention-pill-reference::before {
-	content: "";
-	position: absolute;
-	z-index: -1;
-	inset: -2px -5px;
-	border: 1px solid #087e74;
-	border-radius: 7px;
-	background: #e2f3ef;
-	pointer-events: none;
 }
 
 .chat-bubble-user .chat-mention-pill-reference {
@@ -3827,24 +3855,31 @@
 
 /* Mobile: tighter input */
 @media (max-width: 768px) {
+	.chat-textarea-container {
+		--chat-textarea-padding: 5px 6px;
+		--chat-textarea-font-size: var(--font-ui-smaller);
+	}
+
 	.chat-input-area {
 		padding: 6px;
 		gap: 4px;
 	}
 
 	.chat-textarea {
-		padding: 5px 6px;
-		font-size: var(--font-ui-smaller);
-	}
-	.chat-textarea-overlay {
-		padding: 5px 6px;
-		font-size: var(--font-ui-smaller);
+		padding: var(--chat-textarea-padding);
+		font-size: var(--chat-textarea-font-size);
 	}
 
 	.chat-send-icon {
 		min-width: 28px;
 		min-height: 28px;
 		padding: 3px 6px;
+	}
+}
+
+@media (max-width: 420px) {
+	.chat-textarea-container {
+		--chat-textarea-padding: 4px 5px;
 	}
 }
 
