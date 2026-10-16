@@ -8,6 +8,7 @@ import {
 } from "./providers";
 import type { ProviderProfile } from "../settings";
 import type { App } from "obsidian";
+import { prepareCodexTools } from "./toolNames";
 
 /**
  * Streams a chat conversation with tool calling support.
@@ -63,16 +64,25 @@ export async function* streamChatWithTools(
 			: {}),
 	};
 
+	const prepared =
+		profile.provider === "codex"
+			? prepareCodexTools(tools ?? {}, chatMessages)
+			: {
+					tools,
+					messages: chatMessages,
+					restoreName: (name: string) => name,
+				};
 	const result = streamText({
 		model,
 		system,
-		messages: chatMessages as any,
-		tools,
+		messages: prepared.messages as any,
+		tools: prepared.tools,
 		stopWhen: isStepCount(1),
 		abortSignal: signal,
 		providerOptions,
 	});
 
+	let streamError: string | undefined;
 	for await (const part of result.stream) {
 		switch (part.type) {
 			case "reasoning-delta":
@@ -86,7 +96,7 @@ export async function* streamChatWithTools(
 					type: "tool-call",
 					call: {
 						toolCallId: part.toolCallId,
-						toolName: part.toolName,
+						toolName: prepared.restoreName(part.toolName),
 						args: part.input as Record<string, unknown>,
 						providerMetadata: part.providerMetadata as
 							| Record<string, unknown>
@@ -116,8 +126,13 @@ export async function* streamChatWithTools(
 				};
 				break;
 			case "error":
-				yield { type: "error", message: String(part.error) };
+				// Finish consuming the SDK stream before the caller throws on this
+				// event, so its result promises can settle and clean up.
+				streamError ??= String(part.error);
 				break;
 		}
+	}
+	if (streamError !== undefined) {
+		yield { type: "error", message: streamError };
 	}
 }
