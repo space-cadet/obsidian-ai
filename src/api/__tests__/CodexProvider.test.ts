@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { requestUrlMock } = vi.hoisted(() => ({
 	requestUrlMock: vi.fn(),
@@ -45,8 +45,9 @@ const createApp = (credential: Record<string, unknown>) => {
 };
 
 describe("Codex provider", () => {
-	beforeEach(() => requestUrlMock.mockReset());
-	afterEach(() => vi.unstubAllGlobals());
+	beforeEach(() => {
+		requestUrlMock.mockReset();
+	});
 
 	it("loads only account-listed models from the Codex catalog", async () => {
 		requestUrlMock.mockResolvedValue({
@@ -93,30 +94,63 @@ describe("Codex provider", () => {
 			refreshToken: "codex-refresh-token",
 			accountId: "chatgpt-account-id",
 		});
-		const fetchMock = vi.fn(
-			async (_request: Request) => new Response("{}", { status: 200 }),
-		);
-		vi.stubGlobal("fetch", fetchMock);
-
-		const codexFetch = createCodexFetch(app, profile.id);
-		await codexFetch("https://chatgpt.com/backend-api/codex/responses", {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ model: profile.model, stream: true }),
+		const responseBody = [
+			"event: response.output_text.delta",
+			'data: {"type":"response.output_text.delta","delta":"Hello"}',
+			"",
+		].join("\n");
+		requestUrlMock.mockResolvedValue({
+			status: 200,
+			headers: { "content-type": "text/event-stream" },
+			text: responseBody,
 		});
 
-		const request = fetchMock.mock.calls[0][0];
-		expect(request.url).toBe(
+		const codexFetch = createCodexFetch(app, profile.id);
+		const response = await codexFetch(
 			"https://chatgpt.com/backend-api/codex/responses",
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ model: profile.model, stream: true }),
+			},
 		);
-		expect(request.headers.get("Authorization")).toBe(
-			"Bearer codex-access-token",
+
+		const request = requestUrlMock.mock.calls[0][0];
+		expect(request).toMatchObject({
+			url: "https://chatgpt.com/backend-api/codex/responses",
+			method: "POST",
+			body: JSON.stringify({ model: profile.model, stream: true }),
+			throw: false,
+		});
+		const headers = new Headers(request.headers);
+		expect(headers.get("Authorization")).toBe("Bearer codex-access-token");
+		expect(headers.get("ChatGPT-Account-Id")).toBe("chatgpt-account-id");
+		expect(headers.get("originator")).toBe("chat-lab");
+		expect(headers.get("User-Agent")).toBe("Chat Lab AI/1.6.0");
+		expect(response.status).toBe(200);
+		expect(response.headers.get("content-type")).toBe("text/event-stream");
+		expect(await response.text()).toBe(responseBody);
+	});
+
+	it("stops waiting for a native request when the chat is aborted", async () => {
+		const { app } = createApp({
+			accessToken: "codex-access-token",
+			refreshToken: "codex-refresh-token",
+		});
+		requestUrlMock.mockReturnValue(new Promise(() => {}));
+		const controller = new AbortController();
+		const pending = createCodexFetch(app, profile.id)(
+			"https://chatgpt.com/backend-api/codex/responses",
+			{
+				method: "POST",
+				signal: controller.signal,
+				body: JSON.stringify({ model: profile.model, stream: true }),
+			},
 		);
-		expect(request.headers.get("ChatGPT-Account-Id")).toBe(
-			"chatgpt-account-id",
-		);
-		expect(request.headers.get("originator")).toBe("chat-lab");
-		expect(request.headers.get("User-Agent")).toBe("Chat Lab AI/1.6.0");
+
+		await vi.waitFor(() => expect(requestUrlMock).toHaveBeenCalledOnce());
+		controller.abort();
+		await expect(pending).rejects.toHaveProperty("name", "AbortError");
 	});
 
 	it("refreshes an expired API authorization and retries model discovery", async () => {

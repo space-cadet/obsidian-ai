@@ -256,16 +256,74 @@ export const createCodexFetch =
 	(app: App, profileId: string): typeof fetch =>
 	async (input, init) => {
 		const original = new Request(input, init);
-		const send = async (
-			accessToken: string,
-			accountId?: string,
-		): Promise<Response> => {
+		const send = async (accessToken: string, accountId?: string) => {
 			const headers = new Headers(original.headers);
+			const signal = original.signal;
 			headers.set("Authorization", `Bearer ${accessToken}`);
 			headers.set("originator", CODEX_ORIGINATOR);
 			headers.set("User-Agent", `Chat Lab AI/${PLUGIN_VERSION}`);
 			if (accountId) headers.set("ChatGPT-Account-Id", accountId);
-			return fetch(new Request(original.clone(), { headers }));
+			const requestHeaders: Record<string, string> = {};
+			headers.forEach((value, key) => {
+				requestHeaders[key] = value;
+			});
+
+			// Use Obsidian's native bridge for this cross-origin endpoint. It bypasses
+			// renderer CORS restrictions, but buffers the response body. The bridge
+			// cannot cancel an in-flight native request, so abort rejects our fetch.
+			const body =
+				original.body === null
+					? undefined
+					: await original.clone().text();
+			if (signal.aborted) {
+				throw (
+					signal.reason ??
+					new DOMException("The operation was aborted.", "AbortError")
+				);
+			}
+			const nativeRequest = requestUrl({
+				url: original.url,
+				method: original.method,
+				headers: requestHeaders,
+				...(body !== undefined ? { body } : {}),
+				throw: false,
+			});
+			const nativeResponse = await new Promise<
+				Awaited<typeof nativeRequest>
+			>((resolve, reject) => {
+				const onAbort = () => {
+					signal.removeEventListener("abort", onAbort);
+					reject(
+						signal.reason ??
+							new DOMException(
+								"The operation was aborted.",
+								"AbortError",
+							),
+					);
+				};
+				if (signal.aborted) {
+					onAbort();
+				} else {
+					signal.addEventListener("abort", onAbort, { once: true });
+				}
+				nativeRequest.then(
+					(response) => {
+						signal.removeEventListener("abort", onAbort);
+						resolve(response);
+					},
+					(error: unknown) => {
+						signal.removeEventListener("abort", onAbort);
+						reject(error);
+					},
+				);
+			});
+			const bodyForbidden = [204, 205, 304].includes(
+				nativeResponse.status,
+			);
+			return new Response(bodyForbidden ? null : nativeResponse.text, {
+				status: nativeResponse.status,
+				headers: nativeResponse.headers,
+			});
 		};
 
 		let credential = await getFreshCodexCredential(app, profileId);
