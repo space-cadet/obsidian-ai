@@ -103,16 +103,20 @@ When Enter is configured for a new line, Shift+Enter and Cmd/Ctrl+Enter still se
 
 Selected note, folder, tag, and active-note references use the teal inline pill
 style in the composer, edit/resubmit mode, and rendered user messages. The
-composer draws the pill border and fill in a positioned pseudo-element so the
-reference text keeps the same width as the textarea and the caret remains
-aligned. The composer omits the folder icon for this reason; displayed folder
-references retain it. Paperclip attachments (notes, images, and PDFs) remain
-separate removable attachment chips rather than inline context pills.
+composer decoration preserves the reference text width and caret alignment,
+while the pill border and fill repeat around each wrapped line. The composer
+omits the folder icon for this reason; displayed folder references retain it.
+Paperclip attachments (notes, images, and PDFs) remain separate removable
+attachment chips rather than inline context pills. The composer rewrite also
+separates attachment and decoration behavior into dedicated modules.
 
-Implementation: `ChatInput.tsx` renders selected-context highlights;
-`MessageBubble.tsx` styles references in user messages;
+Implementation: `ChatInputDecorations.tsx` handles composer reference
+decorations; `ChatInputAttachments.tsx` handles attachment interactions;
+`ChatInput.tsx` composes these behaviors. `MessageBubble.tsx` styles references
+in user messages;
 `styles/_chat-extensions.css` contains the shared visual treatment and generated
-`styles.css`. Source fix: `dba88eb`.
+`styles.css`. The composer rewrite and wrapped-pill fix shipped in `085afe0`
+and `e47da0a`.
 
 ## File Attachments (📎)
 

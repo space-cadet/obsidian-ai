@@ -1,5 +1,18 @@
 # Session Cache
 
+## 2026-10-16 — T73 composer rewrite and T69a refresh-race fix
+
+- Composer commits `085afe0` and `e47da0a` were merged to `main` at `a76ca2e`.
+  The user confirmed the wrapped reference-pill rendering fix; the production
+  build passed. Composer tests and broader live Obsidian acceptance were not
+  reported.
+- PR #11 (`d492062`) guards Codex refresh persistence against a credential
+  cleared or replaced while refresh is in flight; a regression test was added.
+- Session record: `sessions/2026-10-16-composer-and-credential-refresh-closeout.md`.
+- T73's broader map audit and T69a's iOS and desktop acceptance remain open.
+- Text is authoritative. No safe text edit-history generator is available;
+  do not regenerate from the database snapshot.
+
 ## 2026-10-16 — T69a Codex provider implementation and mobile acceptance
 
 - Codex is implemented as a provider separate from the OpenAI API-key provider;

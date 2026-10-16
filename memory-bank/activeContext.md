@@ -1,5 +1,21 @@
 # Active Context
 
+### 2026-10-16 — T73 composer rewrite and T69a refresh-race fix
+
+- The chat composer was rewritten on `fix/chat-input-composer` and merged to
+  `main` at `a76ca2e`. The rewrite separates attachment and reference
+  decoration behavior; the follow-up keeps pill outlines visible across wrapped
+  lines without shifting caret alignment. The user confirmed the pill fix;
+  production build passed. Composer tests and broader live Obsidian acceptance
+  were not reported.
+- PR #11 (`d492062`) prevents an in-flight Codex refresh from restoring a
+  credential after sign-out or account/profile changes by checking that the
+  stored credential still matches the refresh input. Regression coverage was
+  added. T69a iOS and desktop acceptance remain open; T73's broader source map
+  audit remains open.
+- See `sessions/2026-10-16-composer-and-credential-refresh-closeout.md` and
+  the T73/T69a records.
+
 ### 2026-10-16 — T69a Codex provider implementation and mobile acceptance
 
 - Codex account access is implemented as a provider separate from OpenAI API

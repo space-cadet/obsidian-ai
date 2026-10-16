@@ -85,6 +85,7 @@ The composer supports multiline text, automatic height growth, draft restoration
 The composer also supports:
 
 - Resource mentions/references, with searchable, disambiguated candidates and keyboard selection. Selected references appear as inline pills while composing, editing, and viewing a user message; attached files remain separate removable chips. Mentioning a resource (often with `@`) is a general interaction pattern; reference syntax and rendering depend on the host/adapter, with Obsidian-style `[[...]]` as one format.
+- Wrapped reference pills keep an outline on each visual line without changing text layout, preserving caret alignment in the composer.
 - Optional action shortcuts for edit, create, and append requests. The verbs and target selection are general concepts; exact slash syntax and available actions depend on the adapter.
 - Attachment selection and removal, with visible chips.
 - A thinking/reasoning request toggle where the model supports it.

@@ -243,6 +243,10 @@ account grant.
 Expired credentials are refreshed with the OAuth token endpoint when within 30
 seconds of expiry. Concurrent refreshes for a profile share one request. A
 401 from model discovery or a chat request triggers refresh and one retry.
+Before saving a refresh result, the provider verifies that the stored
+credential still matches the credential that initiated the refresh. If sign-out,
+profile deletion, a provider change, or reconnecting another account cleared or
+replaced it while the request was in flight, the stale result is discarded.
 The OpenAI API-key provider keeps its own credentials and endpoint.
 
 #### Model and response requests
