@@ -1,7 +1,7 @@
 # External Service Authentication and Provider Adapters
 
 *Created: 2026-08-31 02:17:06 IST*
-*Last Updated: 2026-09-26 12:34:55 IST*
+*Last Updated: 2026-10-16 18:44:08 IST*
 *Task: [T69](../tasks/T69.md)*
 
 ## Purpose
@@ -129,6 +129,27 @@ The exact TypeScript shape is provisional. The contract must cover:
 
 See [T69a](../tasks/T69a.md).
 
+### Sign in with ChatGPT for open-source clients — 2026-10-16
+
+OpenAI now documents a public-client flow for open-source/local tools to request
+eligible ChatGPT plan use through the public Responses API. It uses dynamic
+client registration, a stable host ID, PKCE, account/workspace consent, token
+refresh, and the OAuth-issued client ID. The documented inference request uses
+`https://api.openai.com/v1/responses`, `store: false`, and `stream: true`.
+
+The callback requirement is a hard platform constraint: start a local HTTP
+listener and use an exact callback URI on `http://127.0.0.1:<port>/auth/callback`.
+OpenAI explicitly says not to replace `127.0.0.1` with `localhost`. Obsidian
+mobile exposes outbound `requestUrl()` but no plugin-owned inbound listener or
+Node/Electron runtime, so this flow cannot complete inside a standalone mobile
+plugin. Consider it for desktop/local use; do not claim it solves mobile login.
+
+References:
+- [Sign in with ChatGPT for open-source clients](https://developers.openai.com/siwc/token-sharing-open-source)
+- [Registration and sign-in](https://developers.openai.com/siwc/token-sharing-open-source/sign-in)
+- [Preview limitations](https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations)
+- [Codex device-code login implementation](https://github.com/openai/codex/blob/main/codex-rs/login/src/device_code_auth.rs)
+
 ### Official app-server contract check — 2026-09-26
 
 The current [Codex app-server documentation](https://developers.openai.com/codex/app-server)
@@ -165,20 +186,21 @@ feasibility without a desktop host, but not a stable or OpenAI-supported plugin
 integration. The endpoint, client ID, and request contract can change without
 notice; the external project itself describes this provider as experimental.
 
-**Implementation direction:** meet the mobile requirement with an independent
-mobile-capable device authorization and HTTP adapter, separate from the
-desktop app-server adapter and from OpenAI API-key profiles. Use Obsidian's
-cross-platform `requestUrl()` and a secure credential store supported by the
-plugin's minimum Obsidian version (the reference plugin uses `SecretStorage`);
-do not require Node processes, localhost callbacks, or a paired desktop. First build a
-small compatibility proof covering device authorization, token refresh,
-account identification, one response, cancellation, and logout on iOS and
-Android. Keep the integration explicitly compatibility-sensitive until the
-auth and response contracts, account behavior, and mobile request handling are
-verified. The documented app-server remains the preferred desktop integration;
-it cannot be the only Codex-auth implementation under this product requirement.
-The desktop GUI is not required, but app-server runtime provisioning remains
-open.
+**Mobile probe direction:** the mobile experiment remains separate from
+official desktop OAuth, the app-server adapter, and OpenAI API-key profiles.
+Use Obsidian `requestUrl()` to exercise Codex's device-code login, then send
+one short request through the reference's undocumented
+`chatgpt.com/backend-api/codex/responses` endpoint. Offer an explicit token
+refresh check and cancellation. Keep tokens in memory only, clear them when
+the probe closes, and do not add the credentials to settings, exports, or
+sync. This does not test durable login across relaunches and is not a
+production provider. Validate on real iOS and Android devices before deciding
+whether any supported mobile implementation exists.
+
+For desktop, evaluate the official open-source OAuth flow for a direct,
+supported Responses API client and the documented app-server for full Codex
+agent behavior. Neither desktop path requires the Codex desktop GUI, but the
+runtime and feature scope still need a decision.
 
 ### Local probe constraint
 
@@ -189,12 +211,12 @@ request probe has not been run in this environment. Re-run the bounded probe
 after installing a working supported Codex CLI; do not infer login reuse or
 turn behavior from the documentation alone.
 
-The desktop implementation should use the Codex `app-server` and the user's
-supported Codex authentication state without requiring the Codex desktop GUI.
-It may use an installed Codex CLI or a plugin-managed runtime; choose and
-document that dependency before implementation. The adapter should translate
-app-server events into the existing chat turn, streaming, tool, approval, and
-persistence contracts.
+For desktop, evaluate the official open-source OAuth flow for a direct
+Responses client and the Codex `app-server` for full agent behavior. The
+app-server path must use supported Codex authentication without requiring the
+Codex desktop GUI. It may use an installed CLI or a plugin-managed runtime;
+choose that dependency before implementation. Translate app-server events into
+the existing chat turn, streaming, tool, approval, and persistence contracts.
 
 Mobile has a second, concrete implementation path. Chatting with AI performs
 the device authorization flow with `requestUrl()`, keeps access and refresh
@@ -203,11 +225,15 @@ tokens in `SecretStorage`, refreshes expired access, and sends requests to
 not required for mobile chat. It also buffers the streamed response and
 reconstructs the final result on the client.
 
-The mobile path should begin as a compatibility adapter, separate from the
-desktop app-server adapter. It should have a small probe and clear diagnostics
-for device login, token refresh, model rejection, response parsing, and rate
-limits. We should only make it a normal provider after the request format and
-account behavior have been tested across supported Obsidian mobile versions.
+The mobile path is implemented as a manual compatibility probe, separate
+from the desktop OAuth and app-server adapters. The command is available in
+Developer Mode. It displays a device code, polls for authorization, sends one
+fixed short request to the private Codex response endpoint, and offers a
+separate refresh check. Tokens stay in memory for the modal only; clearing the
+temporary login does not revoke the remote app grant. Errors are redacted and
+raw response bodies are not shown. Focused mocked tests and TypeScript pass.
+Real iOS and Android acceptance remains outstanding. The probe is not a normal
+provider and does not establish a supported mobile authentication route.
 
 Codex implementation checklist:
 
@@ -288,11 +314,14 @@ must not become a generic shell or credential bridge for T69.
 
 ### Phase 2: Codex proof of concept
 
-- Implement the desktop app-server probe and the mobile direct-HTTP probe as
-  separate small adapters.
-- Verify login reuse or device login, one request, response handling, one tool
-  call, approval behavior where available, cancellation, and clean shutdown.
-- Use the results to choose which path is ready for normal provider settings.
+- Evaluate the documented open-source OAuth flow and app-server separately
+  for desktop; neither requires the Codex desktop GUI.
+- Implement the mobile device-code check only as a manual compatibility probe,
+  with one short response request, optional refresh, cancellation, and
+  in-memory-only credentials.
+- Run the probe on iOS and Android. Do not infer mobile acceptance from mocks
+  or source inspection, and do not promote the private endpoint to a normal
+  provider without a supported contract.
 
 ### Phase 3: Service adapters
 

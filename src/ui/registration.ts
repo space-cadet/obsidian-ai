@@ -22,6 +22,7 @@ import {
 } from "../updater/PluginUpdater";
 import { GIT_COMMIT_HASH, GIT_BRANCH } from "../version-info";
 import { ObsidianAISettingsTab } from "../settings-sections/SettingsTab";
+import { CodexMobileProbeModal } from "../modals/CodexMobileProbeModal";
 import type ObsidianAIPlugin from "../main";
 
 export const OPEN_CHAT_COMMAND_ID = "open-chat-lab-sidebar";
@@ -41,6 +42,23 @@ export function registerRibbonIcon(plugin: ObsidianAIPlugin): void {
 }
 
 export function registerCommands(plugin: ObsidianAIPlugin): void {
+	plugin.addCommand({
+		id: "codex-mobile-compatibility-probe",
+		name: "Experimental: Test Codex login on this device",
+		callback: () => {
+			if (!plugin.settings.developerMode) {
+				new Notice(
+					"Enable Developer Mode in Chat Lab AI settings before running this experimental test.",
+				);
+				return;
+			}
+			new CodexMobileProbeModal(
+				plugin.app,
+				plugin.manifest.version,
+			).open();
+		},
+	});
+
 	plugin.addCommand({
 		id: "open-obsidian-ai-chat",
 		name: "Open Chat Lab",
