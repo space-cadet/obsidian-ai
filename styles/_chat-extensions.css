@@ -1338,20 +1338,14 @@
 	position: relative;
 	z-index: 0;
 	isolation: isolate;
+	-webkit-box-decoration-break: clone;
+	box-decoration-break: clone;
 	color: #075e57;
+	background: #e2f3ef;
+	border-radius: 7px;
+	box-shadow: 0 0 0 1px #087e74;
 	font-weight: inherit;
 	text-decoration: none;
-}
-
-.chat-textarea-overlay .chat-mention-pill-reference::before {
-	content: "";
-	position: absolute;
-	z-index: -1;
-	inset: -2px -5px;
-	border: 1px solid #087e74;
-	border-radius: 7px;
-	background: #e2f3ef;
-	pointer-events: none;
 }
 
 .chat-bubble-user .chat-mention-pill-reference {
