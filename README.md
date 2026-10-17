@@ -1,7 +1,5 @@
 <h1 align="center">Chat Lab AI</h1>
 
-> **Obsidian AI** is the product subtitle and branding used throughout the documentation and interface.
-
 <p align="center">
   <a href="https://github.com/space-cadet/obsidian-ai">GitHub</a>
   ·
@@ -14,15 +12,7 @@
 
 > **🤖 Collaborative AI + Human Chat for Obsidian**
 >
-> A persistent chat panel where **AI agents and humans participate as equals** — across devices, in real time. Agents can read and edit your vault through native tool calling. Bring your own API keys. Your data stays in your vault unless you explicitly send it to a configured provider, search service, or relay.
-
-## 🔐 Privacy and network behavior
-
-Obsidian AI includes no telemetry or analytics service. Network requests occur only when you use a configured feature: chat and AI memory/pruning send the selected prompt, context, and (when enabled) memory to the selected LLM provider; web search sends your query to the selected search provider; model discovery contacts the provider endpoint; and multi-device chat sends conversation messages to the relay URL you configure. Vault files are read or changed only when you select context, invoke an agent tool, or use an editing feature. API keys are stored in plugin settings and sent only to the provider or search service they configure.
-
-Agent tools that create, modify, move, or delete vault files require approval by default. Automatic updates are disabled by default; downloaded release files are backed up before installation, but users who need cryptographic verification should install manually from a verified release.
-
----
+> A persistent chat panel where **AI agents and humans participate as equals** — across devices, in real time. Agents can read and edit your vault through native tool calling. Bring your own API keys.
 
 ## ✨ What It Does
 
