@@ -3,6 +3,29 @@
 Notable user-facing changes are recorded here. Dates reflect the project release
 records; unreleased development notes remain in the Memory Bank.
 
+## [1.7.0] - 2026-10-17
+
+### Added
+
+- Codex account sign-in as a provider profile, with device-code login, model
+  discovery, and credential refresh. Requires Obsidian 1.11.4 or newer.
+- Optional, bounded, read-only Dataview DQL queries when Dataview is available.
+- Agent access to a summary of the plugin's identity and available capabilities.
+
+### Changed
+
+- Reworked the chat composer with per-chat attachment drafts and clearer
+  references to selected notes, folders, and tags.
+- Improved the responsive chat toolbar and made wide Markdown tables scroll
+  horizontally.
+
+### Fixed
+
+- Prevented an in-flight Codex credential refresh from restoring credentials
+  after sign-out or a profile change.
+- Improved mobile vault-link navigation and cancellation of pending tool
+  approvals.
+
 ## [1.6.0] - 2026-09-24
 
 ### Added

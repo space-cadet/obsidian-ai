@@ -76,13 +76,13 @@ describe("Codex provider", () => {
 			"gpt-6-sol",
 		]);
 		expect(requestUrlMock).toHaveBeenCalledWith({
-			url: "https://chatgpt.com/backend-api/codex/models?client_version=1.6.0",
+			url: "https://chatgpt.com/backend-api/codex/models?client_version=1.7.0",
 			method: "GET",
 			headers: {
 				Authorization: "Bearer codex-access-token",
 				"ChatGPT-Account-Id": "chatgpt-account-id",
 				originator: "chat-lab",
-				"User-Agent": "Chat Lab AI/1.6.0",
+				"User-Agent": "Chat Lab AI/1.7.0",
 			},
 			throw: false,
 		});
@@ -126,7 +126,7 @@ describe("Codex provider", () => {
 		expect(headers.get("Authorization")).toBe("Bearer codex-access-token");
 		expect(headers.get("ChatGPT-Account-Id")).toBe("chatgpt-account-id");
 		expect(headers.get("originator")).toBe("chat-lab");
-		expect(headers.get("User-Agent")).toBe("Chat Lab AI/1.6.0");
+		expect(headers.get("User-Agent")).toBe("Chat Lab AI/1.7.0");
 		expect(response.status).toBe(200);
 		expect(response.headers.get("content-type")).toBe("text/event-stream");
 		expect(await response.text()).toBe(responseBody);

@@ -767,6 +767,7 @@ describe("useMessageActions", () => {
 			expect(mockToolExecutorInstances).toHaveLength(1);
 			expect(mockToolExecutorInstances[0].execute).toHaveBeenCalledWith(
 				toolCall,
+				expect.any(AbortSignal),
 			);
 		});
 	});
