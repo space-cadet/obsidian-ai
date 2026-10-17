@@ -12,7 +12,7 @@
 
 > **🤖 Multi-Agent AI Chat for Obsidian**
 >
-> A persistent chat panel where you can work with one or several AI profiles in a shared conversation. The optional WebSocket relay connects you with other people across devices. Agents can use selected vault context and tools; connect providers with API keys or supported account sign-in.
+> A persistent chat panel where you can work with one or several AI profiles in a shared conversation. Agents can use selected vault context and tools; connect providers with API keys or supported account sign-in.
 
 ## ✨ Feature Highlights
 
@@ -26,7 +26,10 @@
 | **Dataview Queries** | Run optional, read-only DQL queries when Dataview is available |
 | **Model Providers** | OpenAI, Codex, Anthropic, Google, DeepSeek, Kimi, Ollama, OpenRouter, Azure, and custom endpoints |
 | **Web Search** | DuckDuckGo, Brave, Tavily, Exa, and SearXNG |
-| **Chat History** | Save and restore conversations across Obsidian restarts |
+| **Session History & Search** | Save and restore conversations; agents can search past sessions by topic, keyword, or content |
+| **Remote Sync** | Sync chat sessions across devices through WebDAV storage |
+| **Agent Introspection** | Let agents report the plugin version and currently available capabilities |
+| **Token Usage & Statistics** | Track context usage and review token totals, model usage, and response statistics |
 
 ### Additional features
 
@@ -39,15 +42,17 @@
 
 ## ✨ What It Does
 
-Chat Lab AI adds a persistent chat panel to your Obsidian sidebar. Its primary chat flow lets you select multiple AI profiles to participate in the same conversation. You can optionally connect remote people through a WebSocket relay for multi-user chat.
-
-Messages identify their sender, whether it is you, an AI profile, or a remote person connected through the relay. Agents can use structured tools to search and work with vault notes.
+Chat Lab AI adds a persistent chat panel to Obsidian with multi-agent conversations, vault-aware context, and structured tools for working with notes.
 
 ## 🚀 Core Features
 
 ### Multi-Agent Chat
 
 Select one or several AI profiles to participate in a chat. Each selected agent receives the shared conversation and can respond. Use `@AgentName` to route a request to a specific agent.
+
+### Agent Introspection
+
+Agents can inspect the plugin's name, version, creator, and currently available capabilities, then answer questions about what they can do.
 
 ### Agentic Note Editing (13 Tools)
 
@@ -100,12 +105,20 @@ Connect supported providers using API keys or account sign-in. Available provide
 - **Model Discovery** — Fetch available models from your provider automatically.
 - **Mid-Session Switching** — Change profile without starting a new chat.
 
+### Session History, Search & Remote Sync
+
+- **Session History** — Save and restore conversations across Obsidian restarts; archive and rename past chats.
+- **Past Session Search** — Ask agents to find earlier conversations by topic, keyword, or content.
+- **Remote Sync** — Sync chat sessions through WebDAV storage for cross-device access and backup. Start a manual sync with **Sync Now** in Settings.
+
+### Token Usage & Statistics
+
+- **Context Usage** — See a visual indicator of the current context budget in chat.
+- **Usage Statistics** — Review input and output token totals, usage by model, completed responses, and average response time in Diagnostics. Provider-reported usage is used when available; otherwise, the plugin shows estimates.
+
 ### Streaming & Quality-of-Life
 
 - **Streaming Responses** — See generated text as it arrives; behavior varies by provider. Codex mobile responses appear after the request completes.
-- **Token Usage Indicator** — Visual feedback on context budget (green → amber → red).
-- **Session History** — Conversations saved and restored across restarts.
-- **Archive & Rename** — Organize past chats, auto-name sessions.
 - **Abort** — Cancel streaming mid-generation.
 - **Retry** — Regenerate a response with one click.
 
