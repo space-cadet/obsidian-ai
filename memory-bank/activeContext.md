@@ -1,5 +1,25 @@
 # Active Context
 
+### 2026-10-17 — v1.7.0/v1.7.1 release closeout
+
+- The user requested a README refresh for the plugin listing: removed the
+  branding and privacy sections, reordered feature highlights and details,
+  clarified multi-agent chat and multi-user relay, added history, sync,
+  introspection, and usage highlights, prioritized Community Plugins, and
+  shortened tool examples. The project-structure map was checked and
+  “UI and design patterns” was removed from the tools section. Remote-human
+  chat is marked in progress and omitted from Quick Start.
+- Version `1.7.0` added Codex account sign-in, optional read-only Dataview DQL,
+  capability introspection, and chat UI/reliability improvements. Version
+  `1.7.1` raises the minimum Obsidian version to `1.11.4` and uses Obsidian CSS
+  helpers for composer sizing and reference overlay positioning.
+- Tag `1.7.1` is on `main` at `6db4933`; the user confirmed the release is
+  online. Source-specific evidence remains under T69a, T17a, T28, and T73.
+- Open follow-ups: T69a iOS and desktop acceptance, live Dataview runtime
+  acceptance, and T73's broader capability-map audit.
+- See `sessions/2026-10-17-v1.7.1-release-closeout.md` and the T8 release
+  records.
+
 ### 2026-10-16 — T73 composer rewrite and T69a refresh-race fix
 
 - The chat composer was rewritten on `fix/chat-input-composer` and merged to

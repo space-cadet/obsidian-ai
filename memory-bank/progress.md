@@ -1,3 +1,17 @@
+### 2026-10-17 — v1.7.0/v1.7.1 releases and README refresh ✅
+
+- Published v1.7.0 with Codex account sign-in, optional read-only Dataview
+  queries, capability introspection, and chat UI/reliability improvements.
+- Published v1.7.1 at tag `1.7.1` / commit `6db4933` on `main`; the user
+  confirmed it is online. The release raises the minimum Obsidian version to
+  1.11.4 and uses Obsidian CSS helpers for composer sizing and overlays.
+- Reworked the README feature order and descriptions, clarified core
+  multi-agent chat versus multi-user relay, added session/search/sync,
+  introspection, and usage highlights, prioritized Community Plugins, and
+  shortened the tool examples. Remote-human chat is identified as in progress.
+- Release workflow succeeded per the release handoff. iOS/desktop Codex and
+  live Dataview acceptance remain open; T73's broader map audit continues.
+
 ### 2026-09-24 — v1.6.0 release preparation
 
 - Created the project `CHANGELOG.md` and updated the 1.6.0 release announcement

@@ -1,7 +1,7 @@
 # Release Process
 
 *Created: 2026-08-28*
-*Last Updated: 2026-09-09*
+*Last Updated: 2026-10-17*
 *Task: T8 (Open Source Release)*
 
 ## Overview
@@ -168,12 +168,10 @@ git push origin main
 |---------|--------|----------|------------------|
 | **Stable** | GitHub Release + Community Directory | End users | Built-in auto-updater (stable channel) |
 | **Dev** | GitHub pre-release (`latest-dev`) | Developers, testers | Built-in auto-updater (dev channel) |
-| **BRAT** | Manual BRAT plugin install | Beta testers | BRAT's own update mechanism |
 
 **Notes:**
 - Auto-updater is disabled on mobile by default
 - GitHub API rate limit: 60 req/hr unauthenticated
-- BRAT is separate from the built-in updater — BRAT for beta testing, built-in updater for end users
 
 ---
 
@@ -196,6 +194,8 @@ git push origin main
 
 | Version | Date | Key Changes |
 |---------|------|-------------|
+| 1.7.1 | 2026-10-17 | Raise minimum Obsidian version to 1.11.4 for Codex SecretStorage; use Obsidian CSS helpers for composer sizing and reference overlay positioning |
+| 1.7.0 | 2026-10-17 | Codex account sign-in, optional read-only Dataview DQL, plugin capability introspection, composer and toolbar improvements, and mobile link/tool-cancellation fixes |
 | 1.6.0 | 2026-09-24 | Chat performance, context and compaction, safer and observable sync, Git write tools; automatic sync disabled pending verification |
 | 1.5.0 | 2026-09-08 | Model/history, orchestration, memory, lifecycle, stylesheet, and final Community scanner fixes; exact tag verified after remote rebase |
 | 1.4.1 | 2026-08-28 | Community Review blocking errors fixed (API compatibility, CSS class refactor) |

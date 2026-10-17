@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## Released — 2026-10-17
+
+- `1.7.0` added Codex account sign-in, optional read-only Dataview DQL, and
+  plugin capability introspection; it also included composer, toolbar, mobile
+  link, and tool-cancellation improvements.
+- `1.7.1` raised the minimum Obsidian version to `1.11.4` for Codex secure
+  credential storage and moved composer sizing and reference-overlay styling
+  to Obsidian CSS helpers. The user confirmed the release is online.
+- The README removed its branding and privacy sections, reordered features and
+  descriptions, clarified multi-agent and multi-user relay features, prioritized
+  Community Plugins, shortened the tool list, and marked remote-human chat as
+  in progress. Its project-structure map was checked and “UI and design
+  patterns” was removed from the tools section. See the root `CHANGELOG.md` and
+  `sessions/2026-10-17-v1.7.1-release-closeout.md` for details.
+
 ## Unreleased — 2026-09-30
 
 ### Fixed

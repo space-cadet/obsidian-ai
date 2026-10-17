@@ -1,5 +1,23 @@
 # Session Cache
 
+## 2026-10-17 — v1.7.0/v1.7.1 release closeout
+
+- README feature ordering and installation content were corrected for the
+  plugin listing. Multi-agent chat is a primary feature; relay is described as
+  multi-user chat. Session history, search/sync, introspection, and usage are
+  highlighted. Remote-human chat remains in progress and is not in Quick Start;
+  the tools section uses representative examples.
+- Versions `1.7.0` and `1.7.1` are published; tag `1.7.1` points to `6db4933`
+  on `main`, and the user confirmed it is online. The 1.7.1 compatibility floor
+  is Obsidian `1.11.4` for Codex `SecretStorage`.
+- Release history and T8 are updated. Feature records remain with T69a, T17a,
+  T28, T58, T73, and their existing implementation/session files.
+- Follow-ups: T69a iOS and desktop acceptance, Dataview runtime acceptance,
+  and T73's broader source-to-map audit.
+- Text is authoritative. No safe edit-history generator is available; do not
+  regenerate `edit_history.md` from the database snapshot.
+- Session record: `sessions/2026-10-17-v1.7.1-release-closeout.md`.
+
 ## 2026-10-16 — T73 composer rewrite and T69a refresh-race fix
 
 - Composer commits `085afe0` and `e47da0a` were merged to `main` at `a76ca2e`.
