@@ -50,11 +50,7 @@ Chat Lab AI adds a persistent chat panel to Obsidian with multi-agent conversati
 
 Select one or several AI profiles to participate in a chat. Each selected agent receives the shared conversation and can respond. Use `@AgentName` to route a request to a specific agent.
 
-### Agent Introspection
-
-Agents can inspect the plugin's name, version, creator, and currently available capabilities, then answer questions about what they can do.
-
-### Agentic Note Editing (13 Tools)
+### Agentic Vault Tools (13 Tools)
 
 The AI can directly manage your vault through structured tool calls:
 
@@ -78,16 +74,24 @@ The AI can directly manage your vault through structured tool calls:
 
 **Smart Results**: Tool outputs are formatted as markdown tables and lists before the AI sees them — no raw JSON dumps in your chat.
 
-### Dataview Queries (Optional)
-
-When the Dataview plugin exposes its query API, the agent can run read-only Dataview Query Language (DQL) queries against your vault. Queries and returned output are bounded. DataviewJS is not executed.
-
 ### Vault-Aware Context
 
 - **`@mention` Notes** — Reference any note in chat.
 - **Folder & Tag Context** — Attach folders or tags (returns file listings, not full contents — no token bloat).
 - **Active Note** — Include the note you're currently editing.
 - **Embed Expansion** — `![[...]]` embeds resolved recursively up to depth 2.
+
+### Dataview Queries (Optional)
+
+When the Dataview plugin exposes its query API, the agent can run read-only Dataview Query Language (DQL) queries against your vault. Queries and returned output are bounded. DataviewJS is not executed.
+
+### Model Providers
+
+Connect supported providers using API keys or account sign-in. Available providers include OpenAI, Codex, Anthropic, Google Gemini, DeepSeek, Kimi, Ollama, OpenRouter, Azure OpenAI, and custom OpenAI-compatible endpoints. Model availability depends on the provider and account. Codex account sign-in requires Obsidian 1.11.4 or newer.
+
+- **Per-Provider Profiles** — Save multiple configurations and switch between them.
+- **Model Discovery** — Fetch available models from your provider automatically.
+- **Mid-Session Switching** — Change profile without starting a new chat.
 
 ### Web Search
 
@@ -97,19 +101,18 @@ Ask about recent events or facts beyond the model's training data:
 - **No extra setup** for DuckDuckGo — works immediately.
 - **API keys** for Brave, Tavily, Exa entered in Settings.
 
-### Multi-Provider Support
-
-Connect supported providers using API keys or account sign-in. Available providers include OpenAI, Codex, Anthropic, Google Gemini, DeepSeek, Kimi, Ollama, OpenRouter, Azure OpenAI, and custom OpenAI-compatible endpoints. Model availability depends on the provider and account. Codex account sign-in requires Obsidian 1.11.4 or newer.
-
-- **Per-Provider Profiles** — Save multiple configurations and switch between them.
-- **Model Discovery** — Fetch available models from your provider automatically.
-- **Mid-Session Switching** — Change profile without starting a new chat.
-
-### Session History, Search & Remote Sync
+### Session History & Search
 
 - **Session History** — Save and restore conversations across Obsidian restarts; archive and rename past chats.
 - **Past Session Search** — Ask agents to find earlier conversations by topic, keyword, or content.
-- **Remote Sync** — Sync chat sessions through WebDAV storage for cross-device access and backup. Start a manual sync with **Sync Now** in Settings.
+
+### Remote Sync
+
+Sync chat sessions through WebDAV storage for cross-device access and backup. Start a manual sync with **Sync Now** in Settings.
+
+### Agent Introspection
+
+Agents can inspect the plugin's name, version, creator, and currently available capabilities, then answer questions about what they can do.
 
 ### Token Usage & Statistics
 
