@@ -10,70 +10,44 @@
 
 ---
 
-> **🤖 Collaborative AI + Human Chat for Obsidian**
+> **🤖 Multi-Agent AI Chat for Obsidian**
 >
-> A persistent chat panel where **AI agents and humans participate as equals** — across devices, in real time. Agents can read and edit your vault through native tool calling. Bring your own API keys.
+> A persistent chat panel where you can work with one or several AI profiles in a shared conversation. The optional WebSocket relay connects you with other people across devices. Agents can use selected vault context and tools; connect providers with API keys or supported account sign-in.
+
+## ✨ Feature Highlights
+
+### Core features
+
+| Feature | What It Does |
+| --- | --- |
+| **Multi-Agent Chat** | Select multiple AI profiles to participate in one conversation |
+| **Agentic Vault Tools** | Ask agents to read, search, create, and edit vault notes |
+| **Vault-Aware Context** | Include notes, folders, tags, the active note, and expanded embeds |
+| **Dataview Queries** | Run optional, read-only DQL queries when Dataview is available |
+| **Model Providers** | OpenAI, Codex, Anthropic, Google, DeepSeek, Kimi, Ollama, OpenRouter, Azure, and custom endpoints |
+| **Web Search** | DuckDuckGo, Brave, Tavily, Exa, and SearXNG |
+| **Chat History** | Save and restore conversations across Obsidian restarts |
+
+### Additional features
+
+| Feature | What It Does |
+| --- | --- |
+| **Multi-User Chat Relay** | Connect with other people across devices through an optional self-hosted relay |
+| **Inline AI Editing** | Review context-aware note edits in a visual diff before applying them |
+| **Mobile Layout** | Responsive chat controls for phone and tablet screens |
+| **Auto-Updater** | Check and install stable or development releases |
 
 ## ✨ What It Does
 
-Chat Lab: Obsidian AI adds a **persistent chat panel** to your Obsidian sidebar. Unlike typical chat plugins, it treats **AI agents and remote humans as equal participants** in the same conversation. Everyone broadcasts to everyone. Each participant decides whether and how to respond.
+Chat Lab AI adds a persistent chat panel to your Obsidian sidebar. Its primary chat flow lets you select multiple AI profiles to participate in the same conversation. You can optionally connect remote people through a WebSocket relay for multi-user chat.
 
-**Key idea:** You can have a chat tab with:
+Messages identify their sender, whether it is you, an AI profile, or a remote person connected through the relay. Agents can use structured tools to search and work with vault notes.
 
-- Just you and an AI agent
-- You + multiple AI agents
-- You + remote humans (via WebSocket relay) — with or without AI agents present
-- Any mix of the above
+## 🚀 Core Features
 
-Messages are tagged with the sender's identity. You always know who said what — whether it's a local AI agent, a remote user on another device, or yourself.
+### Multi-Agent Chat
 
-The AI can also **directly manipulate your vault** through structured tool calls — search notes, edit content, create files, move documents, and more — all from the conversation.
-
-## 🚀 Feature Highlights
-
-| Feature                    | What It Does                                                                                   |
-| -------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Collaborative Chat**     | AI agents, remote humans, and you as equal participants                                        |
-| **Multi-Agent Chat Relay** | Real-time chat across devices via self-hosted WebSocket relay                                  |
-| **Agentic Note Editing**   | 13 vault tools with approval flow — read, edit, create, move, search                           |
-| **Inline AI Editing**      | Context-aware suggestions with visual diff preview                                             |
-| **Vault-Aware Context**    | `@mention` notes, folders, tags, active note, embed expansion                                  |
-| **Web Search**             | DuckDuckGo, Brave, Tavily, Exa, SearXNG                                                        |
-| **Multi-Provider**         | OpenAI, Anthropic, Google, DeepSeek, OpenRouter, Azure, and custom OpenAI-compatible endpoints |
-| **Auto-Updater**           | One-click updates with stable/dev channels                                                     |
-| **Mobile-Responsive**      | Full functionality on iOS/Android                                                              |
-
----
-
-## 🚀 Features
-
-### Collaborative Chat (AI + Human Peers)
-
-The core of Chat Lab: Obsidian AI is a **multi-participant chat** where everyone is a first-class citizen:
-
-- **Equal-Footing Participant Model** — AI agents, remote humans, and the local user all broadcast messages to each other. No special orchestrator hierarchy.
-- **Message Attribution** — Every message shows who sent it: local user ("You"), an AI agent (with colored dot), or a remote human (with their device/user ID).
-- **Participant List Bar** — Persistent bar below the chat header showing all active participants: selected AI agents and connected remote users, each with a colored status dot.
-- **Typing Indicators** — See when remote users or agents are typing ("Alice is typing…" with animated dots). Auto-clears after 3 seconds.
-- **Multi-Agent Panel** — Select which AI profiles participate via checkbox dropdown. Each agent sees the full conversation context.
-- **Mention Routing** — `@Cloudy fetch arxiv` sends that request only to the agent named Cloudy.
-- **Zen Mode** — Hide all chrome, see only messages and input.
-- **Mobile-Responsive** — Works on tablet and phone layouts.
-
-### Multi-Device Chat Relay (WebSocket)
-
-Chat with remote humans across devices — laptop, tablet, phone — in real time:
-
-- **Real-Time Message Relay** — Chat messages broadcast instantly between devices via WebSocket relay.
-- **Human-Only Chat** — Chat with other humans without any AI agents present. Pure peer-to-peer messaging.
-- **Mixed Chat** — Have both AI agents and remote humans in the same tab. Agents see human messages; humans see agent responses.
-- **Self-Hosted Relay** — Run the relay on your own machine or VPS; no third-party servers.
-- **LAN Discovery** — Auto-detect your local IP for easy same-network setup.
-- **Zero Persistence** — Relay is stateless; no messages stored on the server.
-
-> **Note:** This relays chat messages between clients, not vault content. Notes are not synced — only the conversation is.
-
-See [Multi-User Chat Design](memory-bank/implementation/multi-user-chat-design.md) for architecture details.
+Select one or several AI profiles to participate in a chat. Each selected agent receives the shared conversation and can respond. Use `@AgentName` to route a request to a specific agent.
 
 ### Agentic Note Editing (13 Tools)
 
@@ -95,20 +69,13 @@ The AI can directly manage your vault through structured tool calls:
 | `delete_note`       | Delete notes (to system trash)           |
 | `list_folders`      | Navigate vault structure                 |
 
-**Approval Flow**: By default, every tool call shows a preview card in chat — you approve or reject before it executes. Toggle **Auto-Apply** (🤖) to skip approval for trusted workflows.
+**Approval Flow**: Read-only tools run directly. Vault-changing tools require approval by default; **Auto-Apply** can skip approval for supported workflows.
 
 **Smart Results**: Tool outputs are formatted as markdown tables and lists before the AI sees them — no raw JSON dumps in your chat.
 
-### Inline AI Editing
+### Dataview Queries (Optional)
 
-<p align="center">
-  <img src="docs/demo.gif" alt="Inline AI Editing Demo" width="600">
-</p>
-
-- **Context-Aware Suggestions** — Highlight text or place your cursor, press `Ctrl/Cmd + K`, and get AI-powered transformations.
-- **Visual Diff Preview** — See exactly what changed with inline markers for additions and deletions before you commit.
-- **One-Click Apply / Discard** — Accept changes instantly or dismiss them without touching your note.
-- **Custom Slash Commands** — Define your own system prompts and trigger them with `/` shortcuts.
+When the Dataview plugin exposes its query API, the agent can run read-only Dataview Query Language (DQL) queries against your vault. Queries and returned output are bounded. DataviewJS is not executed.
 
 ### Vault-Aware Context
 
@@ -127,18 +94,7 @@ Ask about recent events or facts beyond the model's training data:
 
 ### Multi-Provider Support
 
-Bring your own keys. No data leaves your machine unless you choose it to.
-
-| Provider         | Models                                                                                     | Local / Cloud |
-| ---------------- | ------------------------------------------------------------------------------------------ | ------------- |
-| **OpenAI**       | GPT-4o, GPT-4, GPT-3.5                                                                     | Cloud         |
-| **Anthropic**    | Claude 3.5 Sonnet, Claude 3 Opus                                                           | Cloud         |
-| **Google**       | Gemini 1.5 Pro, Gemini Flash                                                               | Cloud         |
-| **DeepSeek**     | DeepSeek V3, DeepSeek R1                                                                   | Cloud         |
-| **OpenRouter**   | 200+ models via unified endpoint                                                           | Cloud         |
-| **Local models** | Use a custom OpenAI-compatible endpoint; official Ollama integration is deferred for 1.3.1 | **Optional**  |
-| **Azure OpenAI** | Enterprise GPT models                                                                      | Cloud         |
-| **Custom**       | Any OpenAI-compatible endpoint                                                             | Either        |
+Connect supported providers using API keys or account sign-in. Available providers include OpenAI, Codex, Anthropic, Google Gemini, DeepSeek, Kimi, Ollama, OpenRouter, Azure OpenAI, and custom OpenAI-compatible endpoints. Model availability depends on the provider and account. Codex account sign-in requires Obsidian 1.11.4 or newer.
 
 - **Per-Provider Profiles** — Save multiple configurations and switch between them.
 - **Model Discovery** — Fetch available models from your provider automatically.
@@ -146,12 +102,35 @@ Bring your own keys. No data leaves your machine unless you choose it to.
 
 ### Streaming & Quality-of-Life
 
-- **Streaming Responses** — See output appear in real time.
+- **Streaming Responses** — See generated text as it arrives; behavior varies by provider. Codex mobile responses appear after the request completes.
 - **Token Usage Indicator** — Visual feedback on context budget (green → amber → red).
 - **Session History** — Conversations saved and restored across restarts.
 - **Archive & Rename** — Organize past chats, auto-name sessions.
 - **Abort** — Cancel streaming mid-generation.
 - **Retry** — Regenerate a response with one click.
+
+## ✨ Additional Features
+
+### Collaborative Chat with Remote Users
+
+Chat with remote people in a shared conversation, with or without AI agents. Messages show who sent them; the participant list and typing indicators show who is connected. Use the relay to connect remote users across devices.
+
+### Multi-User Chat Relay (WebSocket)
+
+The optional relay carries conversation messages between Chat Lab users on different devices. It does not sync vault notes. You can run the relay on your own machine or server.
+
+See [Multi-User Chat Design](memory-bank/implementation-details/multi-user-chat-design.md) for architecture details.
+
+### Inline AI Editing
+
+<p align="center">
+  <img src="docs/demo.gif" alt="Inline AI Editing Demo" width="600">
+</p>
+
+- **Context-Aware Suggestions** — Highlight text or place your cursor, press `Ctrl/Cmd + K`, and get AI-powered transformations.
+- **Visual Diff Preview** — See exactly what changed with inline markers for additions and deletions before you commit.
+- **One-Click Apply / Discard** — Accept changes instantly or dismiss them without touching your note.
+- **Custom Slash Commands** — Define your own system prompts and trigger them with `/` shortcuts.
 
 For the complete, implementation-independent capability and behavior map of
 the chat component, see the
