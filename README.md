@@ -49,25 +49,17 @@ Chat Lab AI adds a persistent chat panel to Obsidian with multi-agent conversati
 
 Select one or several AI profiles to participate in a chat. Each selected agent receives the shared conversation and can respond. Use `@AgentName` to route a request to a specific agent.
 
-### Agentic Vault Tools (13 Tools)
+### Agentic Vault Tools
 
-The AI can directly manage your vault through structured tool calls:
+Agents can use structured tools to read, search, create, and update vault content. A few representative tools:
 
-| Tool                | What It Does                             |
-| ------------------- | ---------------------------------------- |
-| `read_note`         | Read any note's full content             |
-| `edit_note`         | Overwrite a note with new content        |
-| `append_to_note`    | Add content to the end of a note         |
-| `create_note`       | Create a new note in any folder          |
-| `patch_note`        | Find-and-replace inside a note           |
-| `edit_section`      | Rewrite content under a specific heading |
-| `search_notes`      | Search by filename or path               |
-| `list_notes`        | Browse folders with subfolder support    |
-| `get_note_metadata` | File stats (size, dates, word count)     |
-| `create_folder`     | Create new folders                       |
-| `move_note`         | Move or rename notes                     |
-| `delete_note`       | Delete notes (to system trash)           |
-| `list_folders`      | Navigate vault structure                 |
+| Tool | What It Does |
+| --- | --- |
+| `read_note` | Read a note's full content |
+| `search_notes`, `search_note_content` | Find notes by name or path, or search within note text |
+| `create_note`, `edit_note`, `patch_note` | Create notes or update existing content |
+| `query_dataview` | Run read-only DQL queries when Dataview is available |
+| `read_pdf` | Extract text from a PDF URL or vault file |
 
 **Approval Flow**: Read-only tools run directly. Vault-changing tools require approval by default; **Auto-Apply** can skip approval for supported workflows.
 
@@ -103,7 +95,7 @@ Ask about recent events or facts beyond the model's training data:
 ### Session History & Search
 
 - **Session History** — Save and restore conversations across Obsidian restarts; archive and rename past chats.
-- **Past Session Search** — Ask agents to find earlier conversations by topic, keyword, or content.
+- **Past Session Search** — The `search_past_sessions` tool finds earlier conversations by topic, keyword, or content.
 
 ### Remote Sync
 
@@ -111,7 +103,7 @@ Sync chat sessions through WebDAV storage for cross-device access and backup. St
 
 ### Agent Introspection
 
-Agents can inspect the plugin's name, version, creator, and currently available capabilities, then answer questions about what they can do.
+The `get_plugin_info` tool lets agents inspect the plugin's name, version, creator, and currently available capabilities, then answer questions about what they can do.
 
 ### Token Usage & Statistics
 
@@ -354,7 +346,7 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 
 This plugin was originally forked from [FBarrca/obsidian-inlineAI](https://github.com/FBarrca/obsidian-inlineAI) and has been significantly extended with chat, context, agentic tools, and multi-user/agent collaborative features.
 
-UI and design patterns inspired by [Logan Yang](https://github.com/logancyang)'s excellent [Obsidian Copilot](https://github.com/logancyang/obsidian-copilot) plugin.
+Inspired by [Logan Yang](https://github.com/logancyang)'s excellent [Obsidian Copilot](https://github.com/logancyang/obsidian-copilot) plugin.
 
 ## License
 
