@@ -35,7 +35,6 @@
 
 | Feature | What It Does |
 | --- | --- |
-| **Multi-User Chat Relay** | Connect with other people across devices through an optional self-hosted relay |
 | **Inline AI Editing** | Review context-aware note edits in a visual diff before applying them |
 | **Mobile Layout** | Responsive chat controls for phone and tablet screens |
 | **Auto-Updater** | Check and install stable or development releases |
@@ -127,13 +126,9 @@ Agents can inspect the plugin's name, version, creator, and currently available 
 
 ## ✨ Additional Features
 
-### Collaborative Chat with Remote Users
+### In Progress: Multi-User Chat
 
-Chat with remote people in a shared conversation, with or without AI agents. Messages show who sent them; the participant list and typing indicators show who is connected. Use the relay to connect remote users across devices.
-
-### Multi-User Chat Relay (WebSocket)
-
-The optional relay carries conversation messages between Chat Lab users on different devices. It does not sync vault notes. You can run the relay on your own machine or server.
+The optional WebSocket relay lets Chat Lab users on different devices join shared conversations. This feature is in progress and still needs full testing. You can run the relay on your own machine or server.
 
 See [Multi-User Chat Design](memory-bank/implementation-details/multi-user-chat-design.md) for architecture details.
 
@@ -172,21 +167,18 @@ Stay current without manual downloads:
 
 ## 📦 Installation
 
-### Via BRAT (Recommended for Beta Users)
+### From Community Plugins (Recommended)
 
-The fastest way to install and get automatic updates:
-
-1. Install the [**BRAT**](https://github.com/TfTHacker/obsidian42-brat) plugin from Community Plugins
-2. Open **BRAT Settings** → **Add Beta plugin**
-3. Paste: `https://github.com/space-cadet/obsidian-ai`
-4. Click **Add Plugin** — BRAT will install the latest release and auto-update
+1. In Obsidian, open **Settings** → **Community plugins** → **Browse**.
+2. Search for **Chat Lab AI** and select **Install**.
+3. Enable Chat Lab AI in **Settings** → **Community plugins**.
 
 ### Manual Installation
 
 1. Download the latest release from [GitHub Releases](https://github.com/space-cadet/obsidian-ai/releases)
 2. Extract `main.js`, `styles.css`, and `manifest.json`
 3. Copy them to your vault: `.obsidian/plugins/chat-lab/`
-4. Enable in **Settings** → \*\*Community Plugins`
+4. Enable in **Settings** → **Community plugins**.
 
 ---
 
@@ -213,21 +205,7 @@ Click **Add Profile**, choose your provider, and enter:
 3. Use `@AgentName` to route a message to a specific agent
 4. Toggle **Zen Mode** (🧘) to hide all chrome
 
-### 4. Chat with Remote Humans
-
-1. **Start the relay** on one device (or a server):
-    ```bash
-    pnpm run relay
-    # or
-    node relay/relay-server.js
-    ```
-2. **Note the IP** — The relay logs the listening address (e.g., `ws://192.168.1.42:8080`)
-3. **Connect other devices** — In each device's **Settings** → **Sync**, enter the relay URL and a room ID
-4. **Open the chat** on all devices — Messages sync in real time, with attribution showing who sent each message
-
-You can have AI agents and remote humans in the same tab, or humans only.
-
-### 5. Edit Notes from Chat
+### 4. Edit Notes from Chat
 
 When the AI generates content you want to keep:
 
@@ -241,7 +219,7 @@ Or use slash commands in your message:
 - `/edit [[Note Name]]` — overwrite an existing note
 - `/append [[Note Name]]` — append to an existing note
 
-### 6. Agentic Tools
+### 5. Agentic Tools
 
 Ask the AI to manage your vault directly:
 
@@ -253,7 +231,7 @@ The AI will:
 2. Generate a summary
 3. Create the draft via `create_note` — pending your approval (unless Auto-Apply is on)
 
-### 7. Inline Editing (Optional)
+### 6. Inline Editing (Optional)
 
 1. Select text in any note (or place your cursor)
 2. Press `Ctrl/Cmd + K` (customizable in Hotkeys)
@@ -261,7 +239,7 @@ The AI will:
 4. Review the diff preview
 5. Click **✓ Accept** to apply, or **✗ Discard** to cancel
 
-### 8. Web Search (Optional)
+### 7. Web Search (Optional)
 
 Open **Settings** → **Web Search**. Choose a provider (DuckDuckGo works without setup). Now you can ask:
 
@@ -324,29 +302,42 @@ pnpm run relay
 
 ```
 src/
-├── agent/               # Agentic tool calling: AgentLoop, ToolExecutor, tools, types
-│   ├── AgentLoop.ts     # Multi-step tool calling orchestration
-│   ├── ToolExecutor.ts  # Vault operation handlers (13 tools)
-│   ├── tools.ts         # Zod tool definitions
-│   ├── types.ts         # StreamEvent union, ToolCall, ToolResult
-│   └── Orchestrator.ts  # Participant-agnostic dispatch for multi-user chat
-├── components/          # React UI (ChatApp, ChatInput, MessageBubble, PendingToolCard, etc.)
-├── context/             # ContextEngine (vault context assembly, token estimation)
-├── core/                # ChatEngine, useChat hook, streaming logic
-├── adapters/            # LLMAdapter, ToolAdapter, RAGAdapter, PersistenceAdapter
-├── modules/             # CodeMirror extensions (inline tooltip, diff, commands)
-├── noteEditing/         # NoteEditingBridge (apply, append, create from chat)
-├── sync/                # WebSocket sync adapter for multi-device relay
-│   ├── SyncAdapter.ts   # Interface: send, receive, sendTyping, onTyping
-│   └── WebSocketSyncAdapter.ts  # Relay implementation
-├── views/               # Obsidian ItemView registration
-├── api.ts               # Provider abstractions & streaming
-├── settings.ts          # Plugin settings & configuration UI
+├── agent/               # Agent orchestration, tools, and execution
+├── api/                 # Provider APIs, streaming, and response history
+├── auth/                # Codex login and compatibility support
+├── components/          # React chat interface
+├── context/             # Vault context, attachments, and token budgeting
+├── data/                # Plugin data management
+├── hooks/               # Chat, session, context, and settings hooks
+├── host/                # Obsidian and fixture chat hosts
+├── integrations/        # Provider registry
+├── intelligence/        # Memory, session summaries, and persona
+├── lib/                 # Shared helpers, prompts, and usage statistics
+├── lifecycle/           # Persistence and plugin sync lifecycle
+├── modals/              # Login, migration, and sync dialogs
+├── modules/             # Editor extensions and commands
+├── noteEditing/         # Apply, append, and create note editing bridge
+├── preview/             # Standalone chat UI preview
+├── search/              # Saved-session search
+├── settings-sections/   # Plugin settings UI
+├── storage/             # Chat and session storage
+├── sync/                # WebDAV storage and WebSocket relay sync
+├── ui/                  # UI registration and events
+├── updater/             # Plugin update support
+├── utils/               # PDF extraction and export helpers
+├── views/               # Obsidian chat view
+├── api.ts               # Public chat/provider API
 ├── default_prompts.ts   # Built-in system prompts
-└── main.ts              # Plugin entry point
+├── logger.ts            # File-based logging
+├── main.ts              # Plugin entry point
+├── settings.ts          # Plugin settings and defaults
+├── types.ts             # Shared data types
+└── version-info.ts      # Generated build metadata
 
 relay/
-└── server.js            # Standalone WebSocket relay for multi-device sync
+├── relay-server.js      # Relay server used by `pnpm run relay`
+├── server.js            # Presence-aware WebSocket relay server
+└── package.json         # Relay package metadata and scripts
 ```
 
 ---
