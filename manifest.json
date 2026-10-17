@@ -1,8 +1,8 @@
 {
 	"id": "chat-lab",
 	"name": "Chat Lab AI",
-	"version": "1.7.0",
-	"minAppVersion": "1.4.5",
+	"version": "1.7.1",
+	"minAppVersion": "1.11.4",
 	"description": "AI-powered chat with multi-device relay, agentic tools, and collaborative conversation.",
 	"author": "space-cadet",
 	"authorUrl": "https://github.com/space-cadet/",

@@ -78,7 +78,7 @@ When the Dataview plugin exposes its query API, the agent can run read-only Data
 
 ### Model Providers
 
-Connect supported providers using API keys or account sign-in. Available providers include OpenAI, Codex, Anthropic, Google Gemini, DeepSeek, Kimi, Ollama, OpenRouter, Azure OpenAI, and custom OpenAI-compatible endpoints. Model availability depends on the provider and account. Codex account sign-in requires Obsidian 1.11.4 or newer.
+Connect supported providers using API keys or account sign-in. Available providers include OpenAI, Codex, Anthropic, Google Gemini, DeepSeek, Kimi, Ollama, OpenRouter, Azure OpenAI, and custom OpenAI-compatible endpoints. Model availability depends on the provider and account.
 
 - **Per-Provider Profiles** — Save multiple configurations and switch between them.
 - **Model Discovery** — Fetch available models from your provider automatically.
@@ -158,6 +158,8 @@ Stay current without manual downloads:
 ---
 
 ## 📦 Installation
+
+Requires Obsidian 1.11.4 or newer.
 
 ### From Community Plugins (Recommended)
 

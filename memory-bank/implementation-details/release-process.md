@@ -88,7 +88,7 @@ Release must contain **only**:
 ### 6. Manifest Compliance
 - `id`: `chat-lab` (not `obsidian-ai`, not containing "Obsidian" or colon)
 - `name`: `Chat Lab AI` (directory name)
-- `minAppVersion`: matches lowest API used (raised to `1.4.5` after review)
+- `minAppVersion`: matches the lowest Obsidian API used (currently `1.11.4` for `App.secretStorage`)
 - `version`: matches git tag exactly
 
 ### 7. Documentation

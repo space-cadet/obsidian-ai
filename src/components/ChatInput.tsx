@@ -235,15 +235,19 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		const textarea = textareaRef.current;
 		const overlay = overlayTextRef.current;
 		if (textarea && overlay) {
-			overlay.style.transform = `translateY(-${textarea.scrollTop}px)`;
+			overlay.setCssStyles({
+				transform: `translateY(-${textarea.scrollTop}px)`,
+			});
 		}
 	}, []);
 
 	useLayoutEffect(() => {
 		const textarea = textareaRef.current;
 		if (!textarea) return;
-		textarea.style.height = "auto";
-		textarea.style.height = `${Math.min(textarea.scrollHeight, 96)}px`;
+		textarea.setCssStyles({ height: "auto" });
+		textarea.setCssStyles({
+			height: `${Math.min(textarea.scrollHeight, 96)}px`,
+		});
 		syncOverlayScroll();
 	}, [value, syncOverlayScroll]);
 

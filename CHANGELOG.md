@@ -3,6 +3,15 @@
 Notable user-facing changes are recorded here. Dates reflect the project release
 records; unreleased development notes remain in the Memory Bank.
 
+## [1.7.1] - 2026-10-17
+
+### Fixed
+
+- Require Obsidian 1.11.4 or newer, matching the secure credential storage API
+  used for Codex account sign-in.
+- Use Obsidian CSS helpers for chat composer sizing and reference overlay
+  positioning.
+
 ## [1.7.0] - 2026-10-17
 
 ### Added
