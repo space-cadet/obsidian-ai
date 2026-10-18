@@ -159,6 +159,25 @@ export function getThinkingModeLabel(mode: ThinkingMode): string {
 	return labels[mode];
 }
 
+export function getThinkingLevelBarCount(mode: ThinkingMode): number {
+	switch (mode) {
+		case "minimal":
+			return 1;
+		case "low":
+			return 2;
+		case "medium":
+			return 3;
+		case "high":
+			return 4;
+		case "xhigh":
+		case "max":
+		case "enabled":
+			return 5;
+		default:
+			return 0;
+	}
+}
+
 export function getSdkReasoningLevel(
 	mode: ThinkingMode,
 	profile?: ProviderProfile,

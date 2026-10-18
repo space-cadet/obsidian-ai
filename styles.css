@@ -3562,6 +3562,8 @@
 .chat-thinking-control {
 	position: relative;
 	display: inline-flex;
+	align-items: center;
+	gap: 4px;
 	flex-shrink: 0;
 }
 
@@ -3572,6 +3574,28 @@
 	width: 34px;
 	height: 34px;
 	padding: 0;
+}
+
+.chat-thinking-level-indicator {
+	display: inline-flex;
+	flex-direction: column-reverse;
+	align-items: flex-start;
+	justify-content: center;
+	gap: 2px;
+	width: 12px;
+	height: 26px;
+}
+
+.chat-thinking-level-bar {
+	display: block;
+	width: 10px;
+	height: 2px;
+	border-radius: 2px;
+	background: var(--background-modifier-border);
+}
+
+.chat-thinking-level-bar.is-active {
+	background: var(--interactive-accent);
 }
 
 .chat-thinking-control .chat-input-thinking:focus-visible,

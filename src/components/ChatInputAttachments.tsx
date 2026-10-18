@@ -3,7 +3,10 @@ import { App, Notice, TFile } from "obsidian";
 import { Attachment } from "../types";
 import type { ThinkingMode } from "../types";
 import type { ThinkingModeOption } from "../api/thinkingModes";
-import { getThinkingModeLabel } from "../api/thinkingModes";
+import {
+	getThinkingLevelBarCount,
+	getThinkingModeLabel,
+} from "../api/thinkingModes";
 import { createAttachment } from "../context/AttachmentEngine";
 import ObsidianIcon from "./ObsidianIcon";
 
@@ -85,6 +88,7 @@ const ChatInputAttachments: React.FC<ChatInputAttachmentsProps> = ({
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [thinkingMenuOpen, setThinkingMenuOpen] = useState(false);
 	const thinkingMenuId = useId();
+	const thinkingLevelBarCount = getThinkingLevelBarCount(thinkingMode);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -259,6 +263,20 @@ const ChatInputAttachments: React.FC<ChatInputAttachmentsProps> = ({
 							<ObsidianIcon icon="brain" size={16} />
 						</span>
 					</button>
+					{thinkingEnabled && (
+						<span
+							className="chat-thinking-level-indicator"
+							title={`Thinking level: ${getThinkingModeLabel(thinkingMode)}`}
+							aria-hidden="true"
+						>
+							{Array.from({ length: 5 }, (_, index) => (
+								<span
+									key={index}
+									className={`chat-thinking-level-bar${index < thinkingLevelBarCount ? " is-active" : ""}`}
+								/>
+							))}
+						</span>
+					)}
 					{thinkingMenuOpen && (
 						<div
 							className="chat-thinking-dropdown"
