@@ -7,6 +7,7 @@ import type {
 	ChatSession,
 	ContextItem,
 	GroupChatParticipant,
+	ThinkingMode,
 } from "../types";
 import type { ProviderProfile } from "../settings";
 import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
@@ -21,7 +22,7 @@ export interface UseMessageActionsDeps {
 	resolvedProfile: ProviderProfile;
 	isGroupChat: boolean;
 	participants: GroupChatParticipant[];
-	thinkingEnabled: boolean;
+	thinkingMode: ThinkingMode;
 
 	// Session
 	sessionsRef: React.MutableRefObject<ChatSession[]>;

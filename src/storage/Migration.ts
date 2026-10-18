@@ -96,6 +96,7 @@ export class ChatStorageMigration {
 						participants: session.participants,
 						selectedProfileIds: session.selectedProfileIds,
 						thinkingEnabled: session.thinkingEnabled,
+						thinkingMode: session.thinkingMode,
 						draft: session.draft,
 						draftAttachmentsFile,
 						contextItems: session.contextItems,

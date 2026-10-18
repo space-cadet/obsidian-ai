@@ -15,7 +15,13 @@ import {
 } from "obsidian";
 
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
-import { ChatMessage, ChatSession, ContextItem, ContentPart } from "../types";
+import {
+	ChatMessage,
+	ChatSession,
+	ContextItem,
+	ContentPart,
+	ThinkingMode,
+} from "../types";
 import { resolveContextItems } from "../context/ContextEngine";
 import { resolveAttachments } from "../context/AttachmentEngine";
 import { estimateTokens } from "../context/tokenEstimator";
@@ -64,6 +70,7 @@ import { ChatApiManager } from "../api";
 import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
 import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
 import { getActiveProviderProfile, ProviderProfile } from "../settings";
+import { getThinkingModeOptions } from "../api/thinkingModes";
 import { resolveSessionProfile as resolveProfileForSession } from "../lib/sessionProfile";
 import { rememberRecentModel } from "../lib/recentModels";
 import { stripThinkingTags } from "./MessageBubble";
@@ -111,7 +118,6 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	const [scrollToMessageId, setScrollToMessageId] = useState<
 		string | undefined
 	>(initialMessageId);
-	const [thinkingEnabled, setThinkingEnabled] = useState(false);
 	const savedSessions = useMemo(
 		() => sessions.filter((session) => sessionMessageCount(session) > 0),
 		[sessions],
@@ -271,6 +277,37 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		settingsTick,
 		resolveSessionProfile,
 	]);
+	const thinkingModeOptions = useMemo(
+		() => getThinkingModeOptions(resolvedProfile),
+		[resolvedProfile.provider, resolvedProfile.model],
+	);
+	const storedThinkingMode: ThinkingMode =
+		activeSession?.thinkingMode ??
+		(activeSession?.thinkingEnabled ? "medium" : "provider-default");
+	const thinkingMode = thinkingModeOptions.some(
+		(option) => option.value === storedThinkingMode,
+	)
+		? storedThinkingMode
+		: "provider-default";
+	const thinkingEnabled =
+		thinkingMode !== "provider-default" && thinkingMode !== "none";
+	const handleThinkingModeChange = useCallback(
+		(mode: ThinkingMode) => {
+			if (!activeSessionId) return;
+			setSessions((current) =>
+				current.map((session) =>
+					session.id === activeSessionId
+						? {
+								...session,
+								thinkingMode: mode,
+								updatedAt: Date.now(),
+							}
+						: session,
+				),
+			);
+		},
+		[activeSessionId, setSessions],
+	);
 
 	const resolvedSelectedProfiles = useMemo(
 		() =>
@@ -632,7 +669,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		resolvedProfile,
 		isGroupChat,
 		participants,
-		thinkingEnabled,
+		thinkingMode,
 		sessionsRef,
 		activeSessionIdRef,
 		setSessions,
@@ -1138,6 +1175,8 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				isStreaming={activeRuntime.isStreaming}
 				debugMode={plugin.settings.debugMode}
 				isEditing={ui.isEditing}
+				thinkingMode={thinkingMode}
+				thinkingModeOptions={thinkingModeOptions}
 				thinkingEnabled={thinkingEnabled}
 				showThinking={thinkingEnabled}
 				scrollToMessageId={scrollToMessageId}
@@ -1156,7 +1195,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				onTyping={() => syncAdapterRef.current?.sendTyping()}
 				onAddMention={handleAddMention}
 				onCancelEdit={actions.handleCancelEdit}
-				onToggleThinking={() => setThinkingEnabled((t) => !t)}
+				onThinkingModeChange={handleThinkingModeChange}
 				onAppend={actions.handleAppend}
 				onInsertAtCursor={actions.handleInsertAtCursor}
 				onApply={actions.handleApply}

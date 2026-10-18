@@ -133,6 +133,7 @@ interface SessionIndexEntry {
 	selectedProfileIds?: string[];
 	modelOverrides?: Record<string, string>;
 	thinkingEnabled?: boolean;
+	thinkingMode?: ChatSession["thinkingMode"];
 	draft?: string;
 	draftAttachmentsFile?: string;
 	contextItems?: ContextItem[];
@@ -294,6 +295,7 @@ class JsonlStorage implements ChatStorage {
 					selectedProfileIds: entry.selectedProfileIds,
 					modelOverrides: entry.modelOverrides,
 					thinkingEnabled: entry.thinkingEnabled,
+					thinkingMode: entry.thinkingMode,
 					draft: entry.draft,
 					draftAttachments,
 					scrollPosition: entry.scrollPosition,
@@ -545,6 +547,7 @@ class JsonlStorage implements ChatStorage {
 				selectedProfileIds: session.selectedProfileIds,
 				modelOverrides: session.modelOverrides,
 				thinkingEnabled: session.thinkingEnabled,
+				thinkingMode: session.thinkingMode,
 				draft: session.draft,
 				draftAttachmentsFile,
 				scrollPosition: session.scrollPosition,

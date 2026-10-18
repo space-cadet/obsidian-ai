@@ -16,7 +16,11 @@ interface UseChatSessionOptions {
 }
 
 function hasDraftState(session: ChatSession): boolean {
-	return Boolean(session.draft?.trim() || session.draftAttachments?.length);
+	return Boolean(
+		session.draft?.trim() ||
+		session.draftAttachments?.length ||
+		(session.thinkingMode && session.thinkingMode !== "provider-default"),
+	);
 }
 
 function shouldPersistSession(session: ChatSession): boolean {

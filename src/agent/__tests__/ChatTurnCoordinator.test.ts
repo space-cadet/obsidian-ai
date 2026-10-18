@@ -49,7 +49,7 @@ describe("runChatTurn", () => {
 			preserveRecentMessages: 8,
 			requestResponseReserveTokens: 200,
 			maxToolResultTokens: 400,
-			thinkingEnabled: false,
+			thinkingMode: "provider-default",
 			onTextDelta: vi.fn(),
 			onToolCall: vi.fn(),
 			requestApproval: vi.fn(),

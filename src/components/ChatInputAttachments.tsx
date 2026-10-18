@@ -1,7 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { App, Notice, TFile } from "obsidian";
 import { Attachment } from "../types";
+import type { ThinkingMode } from "../types";
+import type { ThinkingModeOption } from "../api/thinkingModes";
+import { getThinkingModeLabel } from "../api/thinkingModes";
 import { createAttachment } from "../context/AttachmentEngine";
+import ObsidianIcon from "./ObsidianIcon";
 
 interface ChatInputAttachmentsProps {
 	app: App;
@@ -9,7 +13,9 @@ interface ChatInputAttachmentsProps {
 	onAttachmentsChange?: (attachments: Attachment[]) => void;
 	onFiles: (files: FileList | null) => void;
 	thinkingEnabled?: boolean;
-	onToggleThinking?: () => void;
+	thinkingMode: ThinkingMode;
+	thinkingModeOptions: ThinkingModeOption[];
+	onThinkingModeChange: (mode: ThinkingMode) => void;
 	tokenTotal?: string;
 }
 
@@ -67,12 +73,18 @@ const ChatInputAttachments: React.FC<ChatInputAttachmentsProps> = ({
 	onAttachmentsChange,
 	onFiles,
 	thinkingEnabled,
-	onToggleThinking,
+	thinkingMode,
+	thinkingModeOptions,
+	onThinkingModeChange,
 	tokenTotal,
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
+	const thinkingMenuRef = useRef<HTMLDivElement>(null);
+	const thinkingButtonRef = useRef<HTMLButtonElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [thinkingMenuOpen, setThinkingMenuOpen] = useState(false);
+	const thinkingMenuId = useId();
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -88,6 +100,66 @@ const ChatInputAttachments: React.FC<ChatInputAttachmentsProps> = ({
 		return () =>
 			document.removeEventListener("mousedown", handlePointerDown);
 	}, [isOpen]);
+
+	useEffect(() => {
+		if (!thinkingMenuOpen) return;
+		thinkingMenuRef.current
+			?.querySelector<HTMLButtonElement>(
+				"[role=radio][aria-checked=true]",
+			)
+			?.focus();
+		const handlePointerDown = (event: MouseEvent) => {
+			if (
+				thinkingMenuRef.current &&
+				!thinkingMenuRef.current.contains(event.target as Node)
+			) {
+				setThinkingMenuOpen(false);
+			}
+		};
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key === "Escape") {
+				setThinkingMenuOpen(false);
+				thinkingButtonRef.current?.focus();
+			}
+		};
+		document.addEventListener("mousedown", handlePointerDown);
+		document.addEventListener("keydown", handleKeyDown);
+		return () => {
+			document.removeEventListener("mousedown", handlePointerDown);
+			document.removeEventListener("keydown", handleKeyDown);
+		};
+	}, [thinkingMenuOpen]);
+
+	const handleThinkingMenuKeyDown = (
+		event: React.KeyboardEvent<HTMLDivElement>,
+	) => {
+		if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key))
+			return;
+		event.preventDefault();
+		const buttons = Array.from(
+			thinkingMenuRef.current?.querySelectorAll<HTMLButtonElement>(
+				"[role=radio]",
+			) ?? [],
+		);
+		if (buttons.length === 0) return;
+		const currentIndex = buttons.indexOf(
+			document.activeElement as HTMLButtonElement,
+		);
+		const nextIndex =
+			event.key === "Home"
+				? 0
+				: event.key === "End"
+					? buttons.length - 1
+					: (currentIndex +
+							(event.key === "ArrowDown" ? 1 : -1) +
+							buttons.length) %
+						buttons.length;
+		buttons[nextIndex].focus();
+		const nextMode = buttons[nextIndex].dataset.thinkingMode as
+			| ThinkingMode
+			| undefined;
+		if (nextMode) onThinkingModeChange(nextMode);
+	};
 
 	const addVaultFile = (type: VaultFileType) => {
 		setIsOpen(false);
@@ -172,20 +244,66 @@ const ChatInputAttachments: React.FC<ChatInputAttachmentsProps> = ({
 						</div>
 					)}
 				</div>
-				{onToggleThinking && (
+				<div className="chat-thinking-control" ref={thinkingMenuRef}>
 					<button
+						ref={thinkingButtonRef}
 						className={`chat-input-thinking${thinkingEnabled ? " is-active" : ""}`}
 						type="button"
-						onClick={onToggleThinking}
-						title={
-							thinkingEnabled
-								? "Thinking mode ON — Click to disable"
-								: "Thinking mode OFF — Click to enable"
-						}
+						onClick={() => setThinkingMenuOpen((open) => !open)}
+						title={`Thinking mode: ${getThinkingModeLabel(thinkingMode)}`}
+						aria-label={`Thinking mode: ${getThinkingModeLabel(thinkingMode)}`}
+						aria-expanded={thinkingMenuOpen}
+						aria-controls={thinkingMenuId}
 					>
-						{thinkingEnabled ? "🧠" : "💤"}
+						<span aria-hidden="true">
+							<ObsidianIcon icon="brain" size={16} />
+						</span>
 					</button>
-				)}
+					{thinkingMenuOpen && (
+						<div
+							className="chat-thinking-dropdown"
+							id={thinkingMenuId}
+							role="radiogroup"
+							aria-label="Thinking mode"
+							onKeyDown={handleThinkingMenuKeyDown}
+						>
+							<div className="chat-thinking-dropdown-title">
+								Thinking mode
+							</div>
+							{thinkingModeOptions.map((option) => (
+								<button
+									key={option.value}
+									className="chat-thinking-option"
+									type="button"
+									role="radio"
+									data-thinking-mode={option.value}
+									aria-checked={thinkingMode === option.value}
+									tabIndex={
+										thinkingMode === option.value ? 0 : -1
+									}
+									onClick={() => {
+										onThinkingModeChange(option.value);
+										setThinkingMenuOpen(false);
+										thinkingButtonRef.current?.focus();
+									}}
+								>
+									<span className="chat-thinking-option-label">
+										{option.label}
+									</span>
+									<span className="chat-thinking-option-description">
+										{option.description}
+									</span>
+								</button>
+							))}
+							{thinkingModeOptions.length === 1 && (
+								<p className="chat-thinking-unavailable">
+									This model does not expose adjustable
+									thinking modes.
+								</p>
+							)}
+						</div>
+					)}
+				</div>
 				{tokenTotal && (
 					<span className="chat-input-token-total">{tokenTotal}</span>
 				)}

@@ -7,9 +7,10 @@ import React, {
 	useState,
 } from "react";
 import { App, Notice, TFolder } from "obsidian";
-import type { Attachment, ContextItem } from "../types";
+import type { Attachment, ContextItem, ThinkingMode } from "../types";
 import { createExternalAttachment } from "../context/AttachmentEngine";
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
+import type { ThinkingModeOption } from "../api/thinkingModes";
 import ChatInputAttachments from "./ChatInputAttachments";
 import {
 	AutocompleteMenu,
@@ -31,7 +32,9 @@ interface ChatInputProps {
 	onCancel?: () => void;
 	editMessage?: string;
 	thinkingEnabled?: boolean;
-	onToggleThinking?: () => void;
+	thinkingMode: ThinkingMode;
+	thinkingModeOptions: ThinkingModeOption[];
+	onThinkingModeChange: (mode: ThinkingMode) => void;
 	attachments?: Attachment[];
 	onAttachmentsChange?: (attachments: Attachment[]) => void;
 	pressEnterToSend?: boolean;
@@ -183,7 +186,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	onCancel,
 	editMessage,
 	thinkingEnabled,
-	onToggleThinking,
+	thinkingMode,
+	thinkingModeOptions,
+	onThinkingModeChange,
 	attachments = [],
 	onAttachmentsChange,
 	pressEnterToSend = true,
@@ -192,6 +197,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	onDraftChange,
 	onTyping,
 }) => {
+	const maxComposerHeight = 160;
 	const [value, setValue] = useState(draft ?? "");
 	const [auto, setAuto] = useState<AutoState | null>(null);
 	const [isDragOver, setIsDragOver] = useState(false);
@@ -241,15 +247,59 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		}
 	}, []);
 
+	const syncOverlayMetrics = useCallback(() => {
+		const textarea = textareaRef.current;
+		const overlayText = overlayTextRef.current;
+		if (!textarea || !overlayText) return;
+		const computed = window.getComputedStyle(textarea);
+		for (const property of [
+			"font-family",
+			"font-size",
+			"font-style",
+			"font-weight",
+			"font-variant",
+			"line-height",
+			"letter-spacing",
+			"word-spacing",
+			"text-indent",
+			"text-transform",
+			"tab-size",
+			"white-space",
+			"overflow-wrap",
+			"word-break",
+		]) {
+			overlayText.style.setProperty(
+				property,
+				computed.getPropertyValue(property),
+			);
+		}
+	}, []);
+
 	useLayoutEffect(() => {
 		const textarea = textareaRef.current;
 		if (!textarea) return;
 		textarea.setCssStyles({ height: "auto" });
 		textarea.setCssStyles({
-			height: `${Math.min(textarea.scrollHeight, 96)}px`,
+			height: `${Math.min(textarea.scrollHeight, maxComposerHeight)}px`,
 		});
+		syncOverlayMetrics();
 		syncOverlayScroll();
-	}, [value, syncOverlayScroll]);
+	}, [value, syncOverlayMetrics, syncOverlayScroll]);
+
+	useEffect(() => {
+		const textarea = textareaRef.current;
+		if (!textarea) return;
+		const observer = new ResizeObserver(() => {
+			syncOverlayMetrics();
+			syncOverlayScroll();
+		});
+		observer.observe(textarea);
+		window.addEventListener("resize", syncOverlayMetrics);
+		return () => {
+			observer.disconnect();
+			window.removeEventListener("resize", syncOverlayMetrics);
+		};
+	}, [syncOverlayMetrics, syncOverlayScroll]);
 
 	const allCandidates = useMemo(
 		() => (auto ? buildCandidates(app, plugin, auto.type) : []),
@@ -559,7 +609,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
 					onAttachmentsChange={onAttachmentsChange}
 					onFiles={handleFiles}
 					thinkingEnabled={thinkingEnabled}
-					onToggleThinking={onToggleThinking}
+					thinkingMode={thinkingMode}
+					thinkingModeOptions={thinkingModeOptions}
+					onThinkingModeChange={onThinkingModeChange}
 					tokenTotal={tokenTotal}
 				/>
 			</div>

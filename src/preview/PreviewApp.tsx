@@ -220,7 +220,16 @@ const PreviewApp: React.FC = () => {
 						isEditing={false}
 						onCancel={noop}
 						thinkingEnabled={false}
-						onToggleThinking={noop}
+						thinkingMode="provider-default"
+						thinkingModeOptions={[
+							{
+								value: "provider-default",
+								label: "Auto",
+								description:
+									"Let the provider choose its default reasoning level.",
+							},
+						]}
+						onThinkingModeChange={noop}
 						attachments={[]}
 						onAttachmentsChange={noop}
 						pressEnterToSend={true}

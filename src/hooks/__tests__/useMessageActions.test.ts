@@ -205,7 +205,7 @@ function makeDeps(
 		} as any,
 		isGroupChat: false,
 		participants: [],
-		thinkingEnabled: false,
+		thinkingMode: "provider-default",
 		sessionsRef,
 		activeSessionIdRef,
 		setSessions,

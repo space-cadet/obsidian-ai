@@ -51,7 +51,7 @@ describe("TurnLifecycle compaction command", () => {
 			},
 			isGroupChat: false,
 			participants: [],
-			thinkingEnabled: false,
+			thinkingMode: "provider-default",
 			sessionsRef,
 			activeSessionIdRef: { current: "session-1" },
 			setSessions: (update: any) => {
@@ -115,7 +115,7 @@ describe("TurnLifecycle compaction command", () => {
 			},
 			isGroupChat: false,
 			participants: [],
-			thinkingEnabled: false,
+			thinkingMode: "provider-default",
 			sessionsRef: { current: sessions },
 			activeSessionIdRef: { current: "session-1" },
 			setSessions: vi.fn(),

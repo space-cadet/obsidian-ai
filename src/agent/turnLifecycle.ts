@@ -11,6 +11,7 @@ import type {
 	AgentStepTelemetry,
 	CompactionMetadata,
 	CompactionTelemetry,
+	ThinkingMode,
 } from "../types";
 import type { ApiCallTelemetryResult } from "../api";
 import type { ProviderProfile } from "../settings";
@@ -25,6 +26,7 @@ import { resolveContextItems } from "../context/ContextEngine";
 import { resolveAttachments } from "../context/AttachmentEngine";
 import {
 	estimateTokens,
+	estimateStructuredTokens,
 	estimateContentPartsTokens,
 	estimateAttachmentTokens,
 } from "../context/tokenEstimator";
@@ -65,7 +67,7 @@ export interface TurnLifecycleDeps {
 	resolvedProfile: ProviderProfile;
 	isGroupChat: boolean;
 	participants: GroupChatParticipant[];
-	thinkingEnabled: boolean;
+	thinkingMode: ThinkingMode;
 	sessionsRef: { current: ChatSession[] };
 	activeSessionIdRef: { current: string | null };
 	setSessions: (
@@ -975,7 +977,7 @@ export class TurnLifecycle {
 
 		const fullPayloadTokenEstimate = deps.plugin.settings
 			.showFullRequestTokens
-			? estimateTokens(JSON.stringify(chatMessages))
+			? estimateStructuredTokens(chatMessages)
 			: userTokenEstimate;
 
 		// Update runtime with full payload estimate so UI shows correct starting count
@@ -1021,7 +1023,7 @@ export class TurnLifecycle {
 							deps.plugin.settings.debugTelemetry
 								?.includeRequestBreakdown,
 						),
-					thinkingEnabled: deps.thinkingEnabled,
+					thinkingMode: deps.thinkingMode,
 					onTextDelta: (text) => {
 						fullText = text;
 						turnOutput.setText(text);
@@ -1090,7 +1092,7 @@ export class TurnLifecycle {
 					chatMessages as any,
 					controller.signal,
 					activeProfile,
-					deps.thinkingEnabled,
+					deps.thinkingMode,
 					(usage) => {
 						providerUsage = usage;
 					},

@@ -5,6 +5,7 @@ import type {
 	ContentPart,
 	ContextItem,
 	Attachment,
+	ThinkingMode,
 } from "../types";
 import type { ToolCall } from "../agent/types";
 import type { ToolDisplayDescriptor } from "../agent/toolRegistry";
@@ -12,6 +13,7 @@ import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
 import PendingToolCard from "./presentational/PendingToolCard";
 import type { ChatPluginLike } from "../views/ObsidianAIChatView";
+import type { ThinkingModeOption } from "../api/thinkingModes";
 
 interface ChatMainAreaProps {
 	app: App;
@@ -30,6 +32,8 @@ interface ChatMainAreaProps {
 	debugMode: boolean;
 	isEditing: boolean;
 	thinkingEnabled: boolean;
+	thinkingMode: ThinkingMode;
+	thinkingModeOptions: ThinkingModeOption[];
 	showThinking: boolean;
 	scrollToMessageId?: string;
 	restoreScrollTop?: number;
@@ -41,7 +45,7 @@ interface ChatMainAreaProps {
 	onTyping: () => void;
 	onAddMention: (item: ContextItem) => void;
 	onCancelEdit: () => void;
-	onToggleThinking: () => void;
+	onThinkingModeChange: (mode: ThinkingMode) => void;
 	onAppend: (text: string) => void;
 	onInsertAtCursor: (text: string) => void;
 	onApply: (text: string) => void;
@@ -80,6 +84,8 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 	debugMode,
 	isEditing,
 	thinkingEnabled,
+	thinkingMode,
+	thinkingModeOptions,
 	showThinking,
 	scrollToMessageId,
 	restoreScrollTop,
@@ -91,7 +97,7 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 	onTyping,
 	onAddMention,
 	onCancelEdit,
-	onToggleThinking,
+	onThinkingModeChange,
 	onAppend,
 	onInsertAtCursor,
 	onApply,
@@ -178,7 +184,9 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 				onCancel={onCancelEdit}
 				editMessage={editMessage}
 				thinkingEnabled={thinkingEnabled}
-				onToggleThinking={onToggleThinking}
+				thinkingMode={thinkingMode}
+				thinkingModeOptions={thinkingModeOptions}
+				onThinkingModeChange={onThinkingModeChange}
 				attachments={attachments}
 				onAttachmentsChange={onAttachmentsChange}
 				pressEnterToSend={pressEnterToSend}
