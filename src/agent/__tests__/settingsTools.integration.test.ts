@@ -82,6 +82,49 @@ function makeApp() {
 }
 
 describe("T61 settings tools through ToolExecutor", () => {
+	it("reports the current turn profile separately from global settings", async () => {
+		const fixture = makeApp();
+		const executor = new ToolExecutor(
+			fixture.app,
+			makeSettings(false) as any,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			{
+				profileId: "session-codex",
+				provider: "codex",
+				profileName: "Session Codex",
+				model: "gpt-6-luna",
+				thinkingMode: "medium",
+			},
+		);
+
+		const result = await executor.execute({
+			toolCallId: "read-current-turn",
+			toolName: "read_settings",
+			args: {},
+		});
+
+		expect(result.currentTurn).toEqual({
+			profileId: "session-codex",
+			provider: "codex",
+			profileName: "Session Codex",
+			configuredModel: "gpt-6-luna",
+			thinkingMode: "medium",
+			thinkingModeRequest:
+				"requested from provider; effective behavior is not confirmed",
+		});
+		expect(result.currentTurnNote).toContain(
+			"global active profile in settings is only the default",
+		);
+	});
+
 	it("returns settings without exposing credentials", async () => {
 		const fixture = makeApp();
 		const executor = new ToolExecutor(

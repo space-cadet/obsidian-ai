@@ -5,7 +5,17 @@ import type { SearchIndex } from "../../search/index";
 import type { ProviderRegistry } from "../../integrations/ProviderRegistry";
 import { ContinuationStore } from "../pagination";
 import { ToolResolver } from "./ToolResolver";
-import type { ChatMessage } from "../../types";
+import type { ChatMessage, ThinkingMode } from "../../types";
+import type { ProviderType } from "../../settings";
+
+/** Model/profile context resolved for the turn that invoked a tool. */
+export interface CurrentTurnModelContext {
+	profileId: string;
+	provider: ProviderType;
+	profileName: string;
+	model: string;
+	thinkingMode: ThinkingMode;
+}
 
 /** Services shared by the capability-specific handlers. */
 export interface ToolHandlerContext {
@@ -21,6 +31,7 @@ export interface ToolHandlerContext {
 		| undefined;
 	integrationRegistry?: ProviderRegistry;
 	saveSettings?: () => Promise<void>;
+	currentTurnModelContext?: CurrentTurnModelContext;
 	continuations: ContinuationStore;
 }
 
@@ -38,6 +49,7 @@ export abstract class ToolHandlerBase {
 		| undefined;
 	protected readonly integrationRegistry?: ProviderRegistry;
 	protected readonly saveSettings?: () => Promise<void>;
+	protected readonly currentTurnModelContext?: CurrentTurnModelContext;
 	protected readonly continuations: ContinuationStore;
 
 	protected constructor(context: ToolHandlerContext) {
@@ -51,6 +63,7 @@ export abstract class ToolHandlerBase {
 		this.getSessions = context.getSessions;
 		this.integrationRegistry = context.integrationRegistry;
 		this.saveSettings = context.saveSettings;
+		this.currentTurnModelContext = context.currentTurnModelContext;
 		this.continuations = context.continuations;
 	}
 }

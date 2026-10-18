@@ -112,6 +112,17 @@ export interface ToolResult {
 	risk?: "read" | "write" | "remote-write" | "destructive";
 	/** Sanitized plugin settings returned by read_settings. */
 	settings?: Record<string, unknown>;
+	/** Resolved profile and thinking selection for the current chat turn. */
+	currentTurn?: {
+		profileId: string;
+		provider: string;
+		profileName: string;
+		configuredModel: string;
+		thinkingMode: string;
+		thinkingModeRequest: string;
+	} | null;
+	/** Explains the scope and limitations of currentTurn. */
+	currentTurnNote?: string;
 	/** Updated setting key returned by update_setting. */
 	key?: string;
 	/** Updated setting value returned by update_setting. */

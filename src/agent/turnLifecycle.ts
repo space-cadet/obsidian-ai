@@ -915,6 +915,13 @@ export class TurnLifecycle {
 			undefined,
 			() => deps.sessionsRef.current,
 			deps.plugin.logger,
+			{
+				profileId: activeProfile.id,
+				provider: activeProfile.provider,
+				profileName: activeProfile.name,
+				model: activeProfile.model,
+				thinkingMode: deps.thinkingMode,
+			},
 		);
 		this.currentToolExecutor = toolExecutor;
 		const resolvedToolRegistry = toolExecutor.getResolvedToolRegistry();
