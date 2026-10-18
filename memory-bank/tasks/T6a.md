@@ -1,6 +1,6 @@
 # Task: T6a
 *Created: 2026-08-19 13:31:15 IST*
-*Last Updated: 2026-08-23 00:14 IST*
+*Last Updated: 2026-10-18 13:23:10 IST*
 
 ## Task Information
 **Title:** Token Counter Accuracy Fix — Full Request Payload Counting
@@ -54,6 +54,13 @@ reported usage, which explains large differences from OpenRouter totals.
   the saved user estimate a second time.
 - Responses without provider usage store the full request estimate for a more
   useful fallback; legacy messages remain explicitly estimated.
+
+### External-image estimate correction — 2026-10-18
+
+Commit `ab97b7c` corrected the visible token estimate for externally attached
+images, which had been greatly inflated. The displayed value remains a local
+estimate; provider-reported usage is preferred when available. Production
+build passed. No live provider-billing comparison was reported.
 
 ## Acceptance Criteria
 - [x] Full payload token count computed and displayed

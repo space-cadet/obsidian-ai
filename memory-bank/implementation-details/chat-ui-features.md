@@ -43,28 +43,23 @@ setSelectedProfileIds(new Set([fallbackId]));
 
 ---
 
-## Thinking Toggle (💭)
+## Thinking Mode Selector (2026-10-18)
 
-**Feature:** Allow user to show/hide model reasoning (`<thinking>...</thinking>` tags) in assistant messages.
+The brain control below the composer opens a menu of thinking modes supported by
+the current provider/model profile. The selected mode is stored per chat
+session and sent as a request option where the provider adapter supports it.
+Provider handling and actual reasoning behavior are not confirmed by the UI.
 
-**State:**
-- `showThinking: boolean` in `ChatApp.tsx` — defaults to `false` (thinking stripped)
-- Passed down: `ChatApp` → `ChatMessages` → `MessageBubble`
+The button shows vertical level bars for an enabled mode. Auto uses an `A`
+marker and Off uses the plain brain icon; neither shows bars. This selector
+controls the request mode, not a universal guarantee that a provider exposes
+or follows a particular internal reasoning level.
 
-**UI:**
-- 💭 toggle button in `ChatInput.tsx`, placed before the send button
-- `title` attribute: "Show thinking" / "Hide thinking"
-- Visual feedback: button gets `is-active` class when `showThinking=true`
-
-**Behavior:**
-- `showThinking=false` (default): `stripThinkingTags()` removes `<thinking>...</thinking>` blocks from rendered text
-- `showThinking=true`: thinking blocks rendered as normal text (or styled separately if desired)
-
-**Files:**
-- `src/components/ChatApp.tsx` — `showThinking` state, `handleToggleThinking` callback
-- `src/components/ChatInput.tsx` — 💭 button with `onToggleThinking` prop
-- `src/components/ChatMessages.tsx` — forwards `showThinking` to `MessageBubble`
-- `src/components/MessageBubble.tsx` — `TextSegment` conditionally strips thinking tags
+Implementation: `src/api/thinkingModes.ts` defines provider/model options;
+`src/components/ChatApp.tsx` resolves and stores the session choice;
+`src/components/ChatInputAttachments.tsx` renders the button and menu; and
+`src/api/providers.ts` / `src/api/streaming.ts` map selections to request
+options where supported. Commits: `ab97b7c`, `ddb94d3`, `dddc18a`.
 
 ## Wide Markdown Tables (2026-09-28)
 
@@ -152,6 +147,11 @@ and `e47da0a`.
 - `src/context/AttachmentEngine.ts` — attachment resolution engine
 - `src/api.ts` — `SdkMessage`, `MessageContentPart` multimodal types
 - `src/types.ts` — `Attachment` interface
+
+The composer token estimate accounts for externally attached images with an
+image-aware estimate rather than counting the encoded image payload as ordinary
+text. It remains an estimate; provider-reported usage is retained separately
+when available. This correction shipped in `ab97b7c`.
 
 Unsent composer text and attachments belong to their session and are saved
 locally before the first message is sent. JSONL storage keeps attachment draft

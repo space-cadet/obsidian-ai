@@ -1,5 +1,22 @@
 # Active Context
 
+### 2026-10-18 — ui-chat-fixes closeout
+
+- Source commits `ab97b7c`, `ddb94d3`, `dddc18a`, and `f024a14` are pushed on
+  `ui-chat-fixes`; local and remote heads match at `f024a14`.
+- Composer wrapping and external-image token estimates were corrected. The
+  thinking menu is calibrated to provider/model; Auto has an `A` marker and
+  enabled levels show stacked bars. `read_settings` reports current-turn
+  settings separately from global defaults without claiming provider-effective
+  model or reasoning behavior.
+- Production build, focused settings-tool tests (6), formatting, and diff
+  checks passed. Live UI/tool acceptance was not reported.
+- Deleted 15 old GitHub release records and 1,231 completed workflow runs.
+  Six merged remote and four stale local branches were removed. Three old
+  unmerged remote branches remain after auto-review rejected deletion.
+- See `sessions/2026-10-18-ui-chat-fixes-closeout.md`. T73's broader map audit
+  continues; T69a iOS/desktop and Dataview runtime acceptance remain open.
+
 ### 2026-10-17 — v1.7.0/v1.7.1 release closeout
 
 - The user requested a README refresh for the plugin listing: removed the

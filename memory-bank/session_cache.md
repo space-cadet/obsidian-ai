@@ -1,5 +1,25 @@
 # Session Cache
 
+## 2026-10-18 — UI fixes, thinking modes, and current-turn settings
+
+- T73/T6a: fixed composer layout at three or more lines, corrected inflated
+  external-image estimates, and added a provider/model-calibrated thinking
+  menu. Auto is distinguished with `A`; enabled levels use stacked bars.
+- T61: `read_settings` now returns the current turn's resolved profile,
+  configured model, and thinking selection separately from global defaults.
+  It does not verify actual provider routing or effective reasoning behavior.
+- T7/T8 housekeeping: deleted 15 old release records and 1,231 completed old
+  workflow runs; removed six merged remote and four stale local branches.
+  Three older unmerged remote branches remain after auto-review rejected the
+  deletion attempt: `debug/chat-diagnostics`, `feat/chat-loading-fixes`,
+  `t42-remote-storage`.
+- Source branch `ui-chat-fixes`; commits `ab97b7c`, `ddb94d3`, `dddc18a`,
+  `f024a14`; pushed and clean at `f024a14`. Build, focused tests (6), format,
+  and diff checks passed. Live Obsidian acceptance was not reported.
+- Session record: `sessions/2026-10-18-ui-chat-fixes-closeout.md`.
+- Text is authoritative. No safe edit-history generator is available; do not
+  regenerate from the database. Beads has no local database in this checkout.
+
 ## 2026-10-17 — v1.7.0/v1.7.1 release closeout
 
 - README feature ordering and installation content were corrected for the

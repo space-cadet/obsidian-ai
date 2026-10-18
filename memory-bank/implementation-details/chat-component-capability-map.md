@@ -80,7 +80,7 @@ Reasoning/thinking content is hidden by default when identifiable as a separate 
 
 ### 3.3 Composer
 
-The composer supports multiline text, automatic height growth, draft restoration, send, and stop. Enter-to-send is configurable; when disabled, Enter inserts a newline and Shift+Enter or Cmd/Ctrl+Enter sends. While a response is active, Send becomes Stop. Stop cancels the active generation/tool sequence and clears any pending approval so no later continuation starts.
+The composer supports multiline text, automatic height growth (including messages spanning three or more lines), draft restoration, send, and stop. Enter-to-send is configurable; when disabled, Enter inserts a newline and Shift+Enter or Cmd/Ctrl+Enter sends. While a response is active, Send becomes Stop. Stop cancels the active generation/tool sequence and clears any pending approval so no later continuation starts.
 
 The composer also supports:
 
@@ -88,7 +88,12 @@ The composer also supports:
 - Wrapped reference pills keep an outline on each visual line without changing text layout, preserving caret alignment in the composer.
 - Optional action shortcuts for edit, create, and append requests. The verbs and target selection are general concepts; exact slash syntax and available actions depend on the adapter.
 - Attachment selection and removal, with visible chips.
-- A thinking/reasoning request toggle where the model supports it.
+- A thinking-mode menu calibrated to the selected provider/model. Auto is marked
+  with `A`, Off has no level marker, and enabled levels use vertical stacked
+  bars beside the brain control. The selection is a request setting; provider
+  support and effective reasoning behavior can vary.
+- A composer token estimate that includes approximate costs for attached
+  external images; it is an estimate, not a provider billing total.
 - Optional typing notifications to collaborators.
 - Editing mode for resubmitting a prior user message, with a cancel path.
 
@@ -318,7 +323,7 @@ Users can configure multiple named profiles. Current model connections include O
 
 An active session can use one selected profile or several AI profiles. The effective model is session-specific: its saved model override takes precedence; older sessions can recover model identity from prior assistant messages; otherwise use the chosen profile's default. Switching the toolbar selection changes the active session's next request and does not rewrite old assistant messages.
 
-Requests stream where the transport supports streaming. Provider usage is retained when reported; local token estimates are available when it is not. Reasoning controls are passed only for compatible provider/model pairs. No provider capability should be assumed universal: images, PDFs, tools, cancellation, usage details, and reasoning vary by endpoint.
+Requests stream where the transport supports streaming. Provider usage is retained when reported; local token estimates are available when it is not. Thinking choices are calibrated to the selected provider/model and passed as request options where supported; neither the selected profile nor the request option alone confirms the provider's effective model or reasoning behavior. No provider capability should be assumed universal: images, PDFs, tools, cancellation, usage details, and reasoning vary by endpoint.
 
 ### 6.2 Multiple AI participants
 
@@ -418,7 +423,7 @@ The current Obsidian AI built-in chat registry contains 33 capabilities. These n
 | Memory | `cull_core` | Curate/remove core memory entries under the memory policy. |
 | Conversation | `search_past_sessions` | Search saved chat history, excluding the current session, and return navigable references. |
 | Conversation | `read_tool_result` | Retrieve a previously stored full tool result by its session/call reference when available. |
-| Chat settings | `read_settings` | Read the supported user-facing plugin settings. |
+| Chat settings | `read_settings` | Read sanitized plugin settings plus the current turn's resolved profile/model/thinking selection when available; global defaults may differ, and this does not confirm effective provider routing. |
 | Chat settings | `update_setting` | Change an allow-listed setting when Developer mode permits it. |
 | Chat settings | `get_plugin_info` | Report plugin identity and currently available built-in capabilities. |
 
