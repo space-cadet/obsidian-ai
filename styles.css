@@ -3568,12 +3568,31 @@
 }
 
 .chat-thinking-control .chat-input-thinking {
+	position: relative;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	width: 34px;
 	height: 34px;
 	padding: 0;
+}
+
+.chat-thinking-auto-indicator {
+	position: absolute;
+	top: -3px;
+	right: -3px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 13px;
+	height: 13px;
+	border: 1px solid var(--background-primary);
+	border-radius: 50%;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent, #ffffff);
+	font-size: 9px;
+	font-weight: 700;
+	line-height: 1;
 }
 
 .chat-thinking-level-indicator {

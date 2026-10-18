@@ -262,6 +262,14 @@ const ChatInputAttachments: React.FC<ChatInputAttachmentsProps> = ({
 						<span aria-hidden="true">
 							<ObsidianIcon icon="brain" size={16} />
 						</span>
+						{thinkingMode === "provider-default" && (
+							<span
+								className="chat-thinking-auto-indicator"
+								aria-hidden="true"
+							>
+								A
+							</span>
+						)}
 					</button>
 					{thinkingEnabled && (
 						<span
