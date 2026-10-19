@@ -18,6 +18,26 @@
   edit history was refreshed manually from this update's canonical chunk.
   Beads has no local database in this checkout.
 
+### Later follow-up — health checks, transcript persistence, and Android
+
+- Source branch `ui-chat-fixes` is now pushed at `d835fe4`. Health checks remain
+  read-only; repair previews and bounded report scrolling were reverted. New
+  subtask T11a tracks their safe completion and acceptance.
+- `ef93f3d` guards transcript loads/appends; `008c2e7` normalizes duplicate
+  messages before save; `d835fe4` carries explicit deletion IDs from the UI and
+  removes deleted transcript/draft files. Auto sync was disabled.
+- Health report: 228 files checked, 157 warnings (98 duplicate-ID findings,
+  two count mismatches, 57 unindexed transcripts), zero errors. Do not treat
+  these as proof that all duplicate records are identical or all unindexed
+  transcripts should be repaired automatically. Missing messages are out of
+  scope.
+- Build, TypeScript, and ChatStorage tests (21) passed. The UI regression test
+  hit a Vitest worker out-of-memory error under Node 26. Android launched with
+  `d835fe4`; delete-and-reload acceptance and crash root cause remain open.
+- `bd prime` reports no local Beads DB. T11a is documented in the text Memory
+  Bank; no Beads database was initialized. No commit or push was made for this
+  Memory Bank update.
+
 ## 2026-10-18 — UI fixes, thinking modes, and current-turn settings
 
 - T73/T6a: fixed composer layout at three or more lines, corrected inflated

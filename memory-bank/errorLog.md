@@ -16,10 +16,14 @@
   (`752e74c`) was reverted, then startup hydration was limited to the active
   session (`d1aa297`). The user still reported a crash. The branch was then
   hard-reset and force-pushed to `2004e30`, removing both changes. Neither
-  hypothesis establishes the cause; the reset build has not been re-tested on
-  the device.
-- Status: 🔄 Unresolved. No Android system/WebView crash trace is available.
-  Continue from `ui-chat-fixes` at `2004e30`; see T15 and T24.
+  hypothesis establishes the cause.
+- Later evidence (2026-10-19): restarting the phone stopped the crash
+  temporarily, then it returned during plugin load. The build at `d835fe4` was
+  installed and Obsidian stayed running during a brief launch check, with no
+  FATAL EXCEPTION or ANR in the queried logcat window. No Android
+  system/WebView crash trace or sustained acceptance is available.
+- Status: 🔄 Unresolved. Continue from `ui-chat-fixes` at `d835fe4`; see T15,
+  T24, and T11a.
 
 ### 2026-09-29 20:10 IST — Loaded-chat vault link still crashes (ERR-20260929-001)
 

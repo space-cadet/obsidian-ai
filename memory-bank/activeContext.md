@@ -1,5 +1,25 @@
 # Active Context
 
+### 2026-10-19 — Health checks, repair scope, and persistence follow-up
+
+- Current source branch is `ui-chat-fixes` at `d835fe4`; local and remote
+  match. `ef93f3d` guards transcript loading/appends, `008c2e7` normalizes
+  duplicate messages before save, and `d835fe4` persists explicit UI deletions
+  and removes deleted transcript/draft files.
+- T11a is active under T11 for finishing the read-only health check UI and
+  safely previewed, backed-up repairs. Repair previews (`9ae0bd3`) and bounded
+  report scrolling (`4c11442`) were reverted; do not describe them as present.
+- The supplied 2026-10-19 health report checked 228 files and returned 157
+  warnings (98 duplicate-ID findings, two count mismatches, 57 unindexed
+  transcripts) and no errors. Missing messages are outside the user's requested
+  repair scope; findings alone do not prove identical duplicate content.
+- The deletion fix built and passed 21 storage tests and TypeScript. It was
+  installed on Android; Obsidian launched and remained running during a brief
+  check. The delete-and-reload flow was not tested. Crash cause remains unknown.
+- `bd prime` reports that this checkout has no Beads database. T11a is recorded
+  in the text Memory Bank; no database was initialized. See today's session
+  record and T11a/T15/T24.
+
 ### 2026-10-19 — Codex chat fixes and unresolved Android startup crash
 
 - The Codex note-edit fingerprint fix (`9344ea5`) is user-confirmed. The
