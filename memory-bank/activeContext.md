@@ -2,10 +2,10 @@
 
 ### 2026-10-19 — Shared session-state coordination plan
 
-- Created Beads issue `OBSIDIANAI-brl` (label `T24c`, P1, open) to coordinate
-  session loading, mutation, deletion, sync application, and persistence through
-  one plugin-owned state owner. Its associated proposal is
-  `implementation-details/session-state-coordination.md`.
+- Created Memory Bank subtask [T24c](tasks/T24c.md) and Beads issue
+  `OBSIDIANAI-brl` (P1, open) to coordinate session loading, mutation, deletion,
+  sync application, and persistence through one plugin-owned state owner. The
+  detailed proposal is `implementation-details/session-state-coordination.md`.
 - The plan reuses the current JSONL/index format and `ChatStorage` transaction
   boundary. It is a proposed ownership refactor; no product implementation,
   test result, or device acceptance is claimed.
@@ -14,9 +14,9 @@
   absent. T24b remains focused on transcript write integrity and its targeted
   tests remain open.
 - Product source baseline reviewed: `ui-chat-fixes` at `cd4478b`. Beads setup
-  added local commit `bbd3dab`. Automatic approval review rejected syncing the
-  new Beads issue and design metadata to the configured GitHub Dolt remote;
-  that issue remains local until the export is approved.
+  commit `bbd3dab` and plan documentation are pushed. Automatic approval
+  review rejected exporting the Beads issue and design metadata to GitHub's
+  Dolt data ref; the issue remains local until that export is approved.
 
 ### 2026-10-19 — Productized chat repair and Settings shortcuts
 

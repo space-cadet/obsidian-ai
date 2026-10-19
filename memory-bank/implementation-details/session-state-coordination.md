@@ -2,6 +2,7 @@
 
 *Created: 2026-10-19 20:54 IST*
 *Status: PROPOSED — design only; no implementation is recorded here.*
+*Memory Bank task: [T24c](../tasks/T24c.md)*
 *Beads task: `OBSIDIANAI-brl` (label: `T24c`)*
 
 ## Purpose

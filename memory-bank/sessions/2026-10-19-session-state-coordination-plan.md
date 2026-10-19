@@ -1,9 +1,9 @@
 # Session 2026-10-19 — Shared Session-State Coordination Plan
 *Created: 2026-10-19 20:56:45 IST*
-*Last Updated: 2026-10-19 20:58:03 IST*
+*Last Updated: 2026-10-19 21:02:15 IST*
 
 ## Focus Task
-`OBSIDIANAI-brl`: Coordinate shared chat session state and persistence operations
+T24c: Shared Session State and Operation Coordination
 
 **Status**: 🔄 OPEN — proposed work; implementation has not started.
 
@@ -17,19 +17,23 @@ Memory Bank documentation. No product source files were changed.
 
 **Work Completed**:
 
-1. Created Beads issue `OBSIDIANAI-brl`, labeled `T24c`, with P1 priority and
-   linked the implementation plan as its specification.
-2. Created `memory-bank/implementation-details/session-state-coordination.md`
+1. Created Beads issue `OBSIDIANAI-brl`, with P1 priority and linked the
+   implementation plan as its specification.
+2. Created Memory Bank subtask `T24c` and added it to the T24 task registry and
+   hierarchy.
+3. Created `memory-bank/implementation-details/session-state-coordination.md`
    with the proposed state owner, operation rules, migration path, boundaries,
    risks, and validation cases.
-3. Linked the plan from T24b and recorded that the latest hydration P1 remains
+4. Linked T24c from T24b and recorded that the latest hydration P1 remains
    unresolved and outside T24b's narrower transcript-integrity acceptance.
 
 ## Context and Working State
 
 **Code Status**: The source audit used `ui-chat-fixes` at `cd4478b`
 (`T24b: Preserve deletions across queued saves`). Beads initialization added
-local setup commit `bbd3dab`. No product source edits or tests were performed.
+setup commit `bbd3dab`; the initial plan docs were pushed in `4d776cc`. This
+follow-up adds the Memory Bank T24c task. No product source edits or tests were
+performed.
 Automatic approval review rejected syncing the new Beads issue and design
 metadata to the configured GitHub Dolt remote; the issue remains local. No
 alternate sync path was used.
@@ -53,13 +57,14 @@ risks are not presented as device-reproduced failures.
 ## Critical Files
 
 - `memory-bank/implementation-details/session-state-coordination.md`
+- `memory-bank/tasks/T24c.md` and `memory-bank/tasks.md`
 - `memory-bank/tasks/T24b.md`
 - `memory-bank/activeContext.md`
 - `memory-bank/session_cache.md`
 
 ## Next Steps
 
-1. Implement the plan under `OBSIDIANAI-brl` after reviewing its operation
+1. Implement T24c (Beads issue `OBSIDIANAI-brl`) after reviewing its operation
    contract against current source.
 2. Migrate hydration, session actions, message/context updates, agent callbacks,
    deletion, sync application, and shutdown flushing through the shared owner.
@@ -69,5 +74,5 @@ risks are not presented as device-reproduced failures.
 
 ## Session Outcome
 
-**Status**: ✅ PLAN RECORDED — issue and associated design are open for
-implementation; no source fix is claimed.
+**Status**: ✅ PLAN RECORDED — Memory Bank subtask T24c and its associated
+Beads issue are open for implementation; no source fix is claimed.
