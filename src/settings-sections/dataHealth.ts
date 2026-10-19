@@ -1,10 +1,13 @@
 import { App, Notice, Setting } from "obsidian";
 import { checkDataHealth, type HealthReport } from "../diagnostics/dataHealth";
+import { DataRepairModal } from "../modals/DataRepairModal";
+import type { FileLogger } from "../logger";
 
 export function renderDataHealth(
 	container: HTMLElement,
 	app: App,
 	pluginId: string,
+	logger?: Pick<FileLogger, "log">,
 ): void {
 	let report: HealthReport | undefined;
 	const status = container.createEl("p", {
@@ -24,15 +27,17 @@ export function renderDataHealth(
 	new Setting(container)
 		.setName("Check data health")
 		.setDesc(
-			"Inspect plugin assets, settings, session indexes and transcripts, attachment drafts, and saved AI memory. No automatic repairs.",
+			"Inspect plugin assets, settings, session indexes and transcripts, attachment drafts, and saved AI memory. This check does not change files.",
 		)
 		.addButton((btn) =>
 			btn.setButtonText("Run check").onClick(async () => {
+				const startedAt = Date.now();
 				btn.setDisabled(true);
 				exportButton.setDisabled(true);
 				report = undefined;
 				output.empty();
 				status.textContent = "Checking saved data…";
+				logger?.log("debug", "[DataHealth] Check started");
 				try {
 					report = await checkDataHealth(
 						app.vault.adapter,
@@ -43,6 +48,10 @@ export function renderDataHealth(
 						},
 					);
 					const { counts } = report;
+					logger?.log(
+						"info",
+						`[DataHealth] Check complete: filesRead=${report.filesChecked}, filesSkipped=${report.filesSkipped}, errors=${counts.error}, warnings=${counts.warning}, notes=${counts.info}, durationMs=${Date.now() - startedAt}`,
+					);
 					status.textContent = `${report.filesChecked} data files read. ${counts.error} errors, ${counts.warning} warnings, ${counts.info} notes; ${report.filesSkipped} files skipped. ${counts.error || counts.warning || report.filesSkipped ? "Review findings below." : "No issues found within the checks performed."}`;
 					for (const finding of report.findings) {
 						const row = output.createDiv();
@@ -69,7 +78,8 @@ export function renderDataHealth(
 						});
 					details.open = true;
 					exportButton.setDisabled(false);
-				} catch {
+				} catch (error) {
+					logger?.log("error", "[DataHealth] Check failed", error);
 					status.textContent =
 						"Check could not finish. No files were changed. Check storage access and try again.";
 				} finally {
@@ -90,8 +100,14 @@ export function renderDataHealth(
 							filename,
 							JSON.stringify(report, null, 2),
 						);
+						logger?.log("info", "[DataHealth] Report exported");
 						new Notice(`Health report saved to ${filename}`);
-					} catch {
+					} catch (error) {
+						logger?.log(
+							"error",
+							"[DataHealth] Report export failed",
+							error,
+						);
 						new Notice(
 							"Could not save health report. Check vault write access and try again.",
 						);
@@ -100,4 +116,17 @@ export function renderDataHealth(
 					}
 				});
 		});
+
+	new Setting(container)
+		.setName("Repair chat data")
+		.setDesc(
+			"Preview safe transcript repairs and choose whether to recover valid unindexed chats. Repairs are backed up and applied after Obsidian restarts.",
+		)
+		.addButton((btn) =>
+			btn
+				.setButtonText("Review repairs")
+				.onClick(() =>
+					new DataRepairModal(app, pluginId, logger).open(),
+				),
+		);
 }

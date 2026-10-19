@@ -1,5 +1,26 @@
 # Active Context
 
+### 2026-10-19 — Productized chat repair and Settings shortcuts
+
+- Source branch `ui-chat-fixes` is at `9b446dbd3b5a7ac8bdbabf3c2b6c19357afc5682`;
+  product code changes remain local and uncommitted. T11a is back in progress
+  for final device confirmation and targeted repair coverage.
+- The health-check repair modal previews safe duplicate cleanup and optional
+  recovery of valid unindexed chats. It preserves conflicting or ambiguous
+  records, gives skip reasons, and schedules verified, backed-up changes for
+  startup after the user pauses sync on all devices.
+- Health checks and repair actions use the existing logger. The modal reports
+  scan progress. Health check limits are 3,000 files at 8 MiB each; repair
+  preview limits are 1,000 files at 8 MiB each.
+- Production build passed. `styles.css` was installed on `.21` with matching
+  SHA-256 `337f4aad79cf252fa0eaee583628e1170eb72ebf999443a313d35640556d7a9d`.
+  Obsidian remained running; final post-reload UI acceptance is pending. No
+  tests were run and no repairs were applied because none were needed.
+- Settings shortcuts now use a responsive visible-button grid; current
+  collapsible sections and Expand/Collapse All controls are unchanged (T34).
+- See `sessions/2026-10-19-chat-repair-ui-and-settings-shortcuts.md`, T11a,
+  and T34. T24b remains the separate prevention task.
+
 ### 2026-10-19 — Chat Lab health repair closeout
 
 - Source branch `ui-chat-fixes` is at `c366aae`; the current source and

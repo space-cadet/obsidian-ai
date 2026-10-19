@@ -1,8 +1,30 @@
 # Edit History
 
-*Last Updated: 2026-10-19 14:23:39 IST*
+*Last Updated: 2026-10-19 18:13:11 IST*
 
 ### 2026-10-19
+#### 18:13:11 IST - T11a/T34: Record chat repair UI and settings shortcuts
+- Created `src/diagnostics/dataRepair.ts` and `src/modals/DataRepairModal.ts` - Implemented reviewed, backed-up chat repair scheduling and startup application.
+- Modified `src/lifecycle/storage.ts`, `src/settings-sections/dataHealth.ts`, and `src/settings-sections/diagnostics.ts` - Integrated repair application, health-check controls, and logging.
+- Modified `styles/_settings.css`, `styles/_chat-extensions.css`, and `styles.css` - Added repair modal/progress styles and the responsive Settings shortcut grid.
+- Updated `memory-bank/tasks/T11a.md`, `memory-bank/tasks/T11.md`, `memory-bank/tasks/T34.md`, and `memory-bank/tasks.md` - Reconciled task ownership, status, scope, and pending acceptance.
+- Updated `memory-bank/activeContext.md` and `memory-bank/session_cache.md` - Recorded implementation, build/install evidence, and follow-ups.
+- Created `memory-bank/sessions/2026-10-19-chat-repair-ui-and-settings-shortcuts.md` and `memory-bank/edits/2026-10-19/20261019-181311-T11a-T34-repair-ui-and-shortcuts.md` - Added session handoff and canonical edit record.
+
+#### 16:14:09 IST - T11a: Record health repair closeout
+- Updated `memory-bank/tasks/T11a.md` - Recorded the backed-up transcript/index recovery, generated-title limitation, and user-reported zero-error, zero-warning health result; completed the scoped health-check and manual recovery task.
+- Updated `memory-bank/tasks/T24b.md` - Distinguished completed data recovery under T11a from persistence prevention; retained the pending targeted automated coverage.
+- Updated `memory-bank/tasks/T24.md` - Linked final data recovery and health acceptance to T11a.
+- Updated `memory-bank/tasks.md` - Moved completed T11a from active tasks to completed tasks.
+- Updated `memory-bank/activeContext.md` - Recorded current branch, repair outcome, clean health result, and T24b follow-up.
+- Updated `memory-bank/session_cache.md` and `memory-bank/sessions/2026-10-19-chat-fixes-android-startup-crash.md` - Recorded device recovery, verification, backup, and task status.
+
+#### 15:23:06 IST - T24b: Prevent new transcript and index inconsistencies
+- Created `memory-bank/tasks/T24b.md` - Tracked idempotent writes, crash-safe index updates, and zero-message file prevention under T24.
+- Updated `memory-bank/tasks.md`, `memory-bank/tasks/T24.md`, and `memory-bank/tasks/T11a.md` - Recorded prevention scope, report findings, and task relationships.
+- Modified `src/storage/ChatStorage.ts`, `src/storage/session-storage.ts`, `src/storage/Migration.ts`, and `src/diagnostics/dataHealth.ts` - Added staged persistence, conflict handling, and empty-transcript safeguards.
+- Built successfully and installed `main.js` and `styles.css` on `.21`; device hashes matched. User reported a test chat worked after reload; targeted tests remained pending.
+
 #### 14:23:39 IST - T11a: Record health, repair, and persistence follow-ups
 - Created `memory-bank/tasks/T11a.md` - Defined the health-check and safe-repair subtask, acceptance criteria, report findings, and reverted prototypes.
 - Updated `memory-bank/tasks/T11.md` - Linked the active health-check and repair subtask.

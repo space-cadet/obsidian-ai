@@ -1,5 +1,22 @@
 # Session Cache
 
+*Last Updated: 2026-10-19 18:13:11 IST*
+
+## 2026-10-19 — Productized chat repair and Settings shortcuts
+
+- T11a is in progress for final `.21` post-reload acceptance and targeted
+  repair tests. The repair modal, preview safeguards, verified backup/startup
+  application, summary logging, and scan progress are implemented.
+- Repair only removes byte-identical same-ID duplicates. It offers selected
+  recovery for valid unindexed transcripts and leaves ambiguous findings
+  unchanged. Pause sync on all devices before applying scheduled repairs.
+- Production build passed. The installed `styles.css` hash matches local;
+  Obsidian remained running, so final UI confirmation awaits reload. No tests
+  or data repairs were performed.
+- T34: section shortcuts use a compact responsive grid of visible buttons;
+  existing navigation and collapsible settings are unchanged.
+- Session: `sessions/2026-10-19-chat-repair-ui-and-settings-shortcuts.md`.
+
 ## 2026-10-19 — Chat Lab health repair closeout
 
 - Branch `ui-chat-fixes` is at `c366aae`. Source and Memory Bank changes are

@@ -378,7 +378,7 @@ export function renderDiagnosticsSection(
 				}),
 		);
 
-	renderDataHealth(sectionEl, app, plugin.manifest.id);
+	renderDataHealth(sectionEl, app, plugin.manifest.id, plugin.logger);
 
 	new Setting(sectionEl)
 		.setName("Export diagnostics")
