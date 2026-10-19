@@ -44,37 +44,24 @@ export async function initializeStorage(
 	};
 
 	await migrateStorage(plugin);
-	// Initialize logging before repair checks so failures there are observable.
+	// Repairs must precede every storage cache, restored chat and sync engine.
+	const repair = await applyPendingDataRepair(
+		plugin.app.vault.adapter,
+		`${plugin.app.vault.configDir}/plugins/${plugin.manifest.id}`,
+	);
+	if (repair) {
+		new Notice(repair.message, 15000);
+		if (repair.status === "interrupted") throw new Error(repair.message);
+	}
+	// Logger not yet created — timing reported after init below.
+
+	// Initialize file logger FIRST so any crash during load is captured.
 	plugin.logger = createFileLogger(plugin.app, plugin.manifest.id);
 	await plugin.logger.init();
 	mark("migrateStorage + logger.init");
 
 	await loadSettings(plugin);
 	mark("loadSettings");
-
-	// Repairs still precede every chat/intelligence cache and the sync engine.
-	plugin.logger.log("info", "[Startup] checking pending data repair");
-	plugin.logger.flushNow();
-	try {
-		const repair = await applyPendingDataRepair(
-			plugin.app.vault.adapter,
-			`${plugin.app.vault.configDir}/plugins/${plugin.manifest.id}`,
-		);
-		if (repair) {
-			new Notice(repair.message, 15000);
-			if (repair.status === "interrupted")
-				throw new Error(repair.message);
-		}
-		mark("pending data repair check");
-	} catch (error) {
-		plugin.logger.log(
-			"error",
-			"[Startup] pending data repair check failed",
-			error,
-		);
-		plugin.logger.flushNow();
-		throw error;
-	}
 
 	plugin.integrationRegistry = new ProviderRegistry(
 		plugin.app,
