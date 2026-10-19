@@ -242,54 +242,6 @@ export function useChatSession({
 							? [restoredActiveId]
 							: [],
 				);
-				// Index-only boot: message files load in the background for the
-				// sessions visible right now (active + open tabs); every other
-				// session hydrates on first open via the open/send gates.
-				for (const id of new Set(
-					[restoredActiveId, ...restoredOpenIds].filter(
-						(id): id is string => typeof id === "string",
-					),
-				)) {
-					plugin.logger?.log(
-						"debug",
-						`[Startup] scheduling hydration for ${id}`,
-					);
-					plugin
-						.hydrateSession?.(id)
-						.then((messages) => {
-							if (cancelled) return;
-							if (messages.length === 0) {
-								plugin.logger?.log(
-									"warn",
-									`[Startup] hydration for ${id} resolved with 0 messages`,
-								);
-								return;
-							}
-							plugin.logger?.log(
-								"info",
-								`[Startup] hydrated ${id} with ${messages.length} messages`,
-							);
-							// Write through the ref synchronously (see send gate).
-							sessionsRef.current = sessionsRef.current.map(
-								(s) =>
-									s.id === id
-										? {
-												...s,
-												messages,
-												messageCount: messages.length,
-												hydrated: true,
-											}
-										: s,
-							);
-							setSessions(sessionsRef.current);
-						})
-						.catch((err: any) =>
-							plugin.logger?.log(
-								"warn",
-								`[Startup] hydrate ${id} failed: ${err?.message}`,
-							),
-						);
-				}
 			} else {
 				// No saved data — create an empty session
 				const activeProfile = getActiveProviderProfile(plugin.settings);
@@ -323,6 +275,64 @@ export function useChatSession({
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- session initialization runs once for the plugin instance.
 	}, [plugin]);
+
+	// Load the active transcript on every activation, including the tab selected
+	// after closing another tab. Background restored tabs stay index-only.
+	useEffect(() => {
+		if (!chatDataLoaded || !activeSessionId) return;
+		const target = sessionsRef.current.find(
+			(s) => s.id === activeSessionId,
+		);
+		if (!target || target.hydrated !== false) return;
+		let cancelled = false;
+		const id = activeSessionId;
+		plugin.logger?.log("debug", `[Session] scheduling hydration for ${id}`);
+		const loadMessages = async () => {
+			const messages = (await plugin.hydrateSession?.(id)) ?? [];
+			// Another open may have already loaded storage while this view was
+			// inactive. Read its payload without treating an empty result as success.
+			return messages.length === 0 &&
+				target.messageCount != null &&
+				plugin.peekSessionMessages
+				? plugin.peekSessionMessages(id)
+				: messages;
+		};
+		void loadMessages()
+			.then((messages) => {
+				if (cancelled) return;
+				if (messages.length === 0) {
+					plugin.logger?.log(
+						"warn",
+						`[Session] hydrate ${id} resolved with 0 messages; leaving retryable`,
+					);
+					return;
+				}
+				plugin.logger?.log(
+					"info",
+					`[Session] hydrated ${id} with ${messages.length} messages`,
+				);
+				sessionsRef.current = sessionsRef.current.map((s) =>
+					s.id === id && s.hydrated === false
+						? {
+								...s,
+								messages,
+								messageCount: messages.length,
+								hydrated: true,
+							}
+						: s,
+				);
+				setSessions(sessionsRef.current);
+			})
+			.catch((err: unknown) => {
+				plugin.logger?.log(
+					"warn",
+					`[Session] hydrate ${id} failed: ${String(err)}`,
+				);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [activeSessionId, chatDataLoaded, plugin]);
 
 	// ─── Persist sessions whenever they change (debounced) ───
 	useEffect(() => {
