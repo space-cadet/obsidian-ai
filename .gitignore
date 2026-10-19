@@ -42,3 +42,6 @@ benchmarks/benchmark-report.json
 *.db
 .beads-credential-key
 .session-state.json
+
+# Beads / Dolt files (added by bd init)
+.beads/proxieddb/

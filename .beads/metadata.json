@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "OBSIDIANAI",
+  "project_id": "17d1343b-ce27-4c69-80b7-cee9f21719dc"
+}
