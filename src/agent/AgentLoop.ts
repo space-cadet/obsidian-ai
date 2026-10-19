@@ -362,6 +362,9 @@ export class AgentLoop {
 						break;
 					case "tool-call":
 						pendingCalls.push(event.call);
+						// Show a complete call as soon as the provider emits it. Tool
+						// execution and approval still wait until the stream step ends.
+						this.opts.onToolCall(event.call);
 						break;
 					case "error":
 						throw new Error(event.message);
@@ -428,7 +431,6 @@ export class AgentLoop {
 					`[AgentLoop] step ${step} tool-call: ${pendingCall.toolName}`,
 					pendingCall.args,
 				);
-				this.opts.onToolCall(pendingCall);
 
 				// Count tokens for tool call args only (text already counted incrementally)
 				const callTokens = estimateTokens(
