@@ -8,6 +8,27 @@ export interface MigrationResult {
 	error?: string;
 }
 
+function normalizeMessagesForMigration(
+	sessionId: string,
+	messages: ChatSession["messages"],
+): ChatSession["messages"] {
+	const seen = new Map<string, string>();
+	const normalized: ChatSession["messages"] = [];
+	for (const message of messages) {
+		const serialized = JSON.stringify(message);
+		const previous = seen.get(message.id);
+		if (previous === serialized) continue;
+		if (previous !== undefined) {
+			throw new Error(
+				`Cannot migrate session ${sessionId}: conflicting records share message ID ${message.id}`,
+			);
+		}
+		seen.set(message.id, serialized);
+		normalized.push(message);
+	}
+	return normalized;
+}
+
 export class ChatStorageMigration {
 	constructor(private deps: StorageDeps) {}
 
@@ -49,6 +70,12 @@ export class ChatStorageMigration {
 			for (const session of chatData.sessions) {
 				if (!session.id) session.id = crypto.randomUUID();
 			}
+			const messagesBySession = new Map(
+				chatData.sessions.map((session) => [
+					session.id,
+					normalizeMessagesForMigration(session.id, session.messages),
+				]),
+			);
 
 			// 3. Write JSONL files
 			const adapter = this.deps.app.vault.adapter;
@@ -62,17 +89,17 @@ export class ChatStorageMigration {
 			let totalMessages = 0;
 			const indexEntries = await Promise.all(
 				chatData.sessions.map(async (session) => {
+					const messages = messagesBySession.get(session.id) ?? [];
 					const filePath = `sessions/${session.id}.jsonl`;
 					const fullPath = `${pluginDir}/${filePath}`;
-					const content = session.messages
+					const content = messages
 						.map((m) => JSON.stringify(m))
 						.join("\n");
 
-					await adapter.write(
-						fullPath,
-						content ? content + "\n" : "",
-					);
-					totalMessages += session.messages.length;
+					// A zero-message session can remain in the index for draft state,
+					// but it does not need an empty transcript file.
+					if (content) await adapter.write(fullPath, content + "\n");
+					totalMessages += messages.length;
 					const draftAttachmentsFile = session.draftAttachments
 						?.length
 						? `sessions/${session.id}.draft.json`
@@ -89,7 +116,7 @@ export class ChatStorageMigration {
 						title: session.title,
 						createdAt: session.createdAt,
 						updatedAt: session.updatedAt,
-						messageCount: session.messages.length,
+						messageCount: messages.length,
 						filePath,
 						profileId: session.profileId,
 						isGroupChat: session.isGroupChat,

@@ -1,7 +1,7 @@
 # Memory Bank - Obsidian AI
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-10-19 14:23:39 IST*
+*Last Updated: 2026-10-19 16:14:09 IST*
 
 ## Overview
 
@@ -13,7 +13,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 |----|-------|--------|----------|---------|--------------|---------|
 | META-1 | Memory Bank Setup and Maintenance | 🔄 | HIGH | 2026-05-02 | — | [Details](tasks/META-1.md) |
 | T11 | Debug Logging & Diagnostics | ✅ | MEDIUM | 2026-05-08 | T9 | [Details](tasks/T11.md) |
-| T11a | Chat Lab Data Health Check and Repair Tools | 🔄 | HIGH | 2026-10-19 | T11, T24 | [Details](tasks/T11a.md) |
+| T24b | Idempotent Transcript Writes and Index Reconciliation | 🔄 | HIGH | 2026-10-19 | T24 | [Details](tasks/T24b.md) |
 | T14 | Remote Agent Connectivity (OpenResponses and OpenClaw Gateway) | 🔄 | HIGH | 2026-05-07 | T1, T13, T5, T9 | [Details](tasks/T14.md) |
 | T15 | Tabbed Chat Interface with Multi-Profile | 🔄 | HIGH | 2026-05-15 | T13, T14, T9 | [Details](tasks/T15.md) |
 | T16 | Group Chat (Multi-Agent Conversation) | 🔄 | HIGH | 2026-05-16 | T15 | [Details](tasks/T16.md) |
@@ -75,6 +75,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T19 | File Attachments for Chat Messages | ✅ | HIGH | 2026-05-25 | 2026-05-25 | T13, T4, T9 | [Details](tasks/T19.md) |
 | T2 | Conversation Chain & Memory | ✅ | HIGH | 2026-05-02 | 2026-05-02 | T1 | [Details](tasks/T2.md) |
 | T21 | CLI Test Harness for AI Features | ✅ | MEDIUM | 2026-05-25 | 2026-05-25 | T13, T19, T4 | [Details](tasks/T21.md) |
+| T11a | Chat Lab Data Health Check and Recovery | ✅ | HIGH | 2026-10-19 | 2026-10-19 | T11, T24 | [Details](tasks/T11a.md) |
 | T24 | SessionStorage — JSONL Chat Persistence | ✅ | HIGH | 2026-06-14 | 2026-06-14 | — | [Details](tasks/T24.md) |
 | T28 | Fix Obsidian Note Link Click Crash | ✅ | HIGH | 2026-07-28 | 2026-09-30 | T4, T13 | [Details](tasks/T28.md) |
 | T23 | Settings.ts Decomposition | ✅ | HIGH | 2026-05-28 | 2026-05-28 | — | [Details](tasks/T23.md) |
@@ -136,9 +137,12 @@ T10: Model Discovery & Picker UX
 T11: Debug Logging & Diagnostics
   └── T9
   └── T11a
-T11a: Chat Lab Data Health Check and Repair Tools
+T11a: Chat Lab Data Health Check and Recovery
   └── T11
   └── T24
+T24: SessionStorage — JSONL Chat Persistence
+  └── T24a
+  └── T24b
 T13: Agentic Tool Calling for Note Editing
   └── T1
   └── T3

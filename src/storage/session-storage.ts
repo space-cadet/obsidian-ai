@@ -7,7 +7,7 @@ export interface SessionStorageDeps {
 	logger?: { log(level: string, msg: string): void };
 }
 
-/** Per-session JSONL storage — low-level read/write for individual session files. */
+/** Read-only compatibility helper. Persistence is owned by ChatStorage. */
 export class SessionStorage {
 	private deps: SessionStorageDeps;
 	private readonly sessionsDir: string;
@@ -15,14 +15,6 @@ export class SessionStorage {
 	constructor(deps: SessionStorageDeps) {
 		this.deps = deps;
 		this.sessionsDir = `${this.deps.app.vault.configDir}/plugins/${this.deps.manifest.id}/sessions`;
-	}
-
-	/** Ensure the sessions directory exists. */
-	async ensureDir(): Promise<void> {
-		const adapter = this.deps.app.vault.adapter;
-		if (!(await adapter.exists(this.sessionsDir))) {
-			await adapter.mkdir(this.sessionsDir);
-		}
 	}
 
 	/** Read all messages from a session JSONL file. */
@@ -49,67 +41,14 @@ export class SessionStorage {
 		}
 	}
 
-	/** Append a single message to a session JSONL file. */
-	async appendMessage(
-		sessionId: string,
-		message: ChatMessage,
-	): Promise<void> {
-		const adapter = this.deps.app.vault.adapter;
-		const path = `${this.sessionsDir}/${sessionId}.jsonl`;
-
-		try {
-			await this.ensureDir();
-			const line = JSON.stringify(message) + "\n";
-			await adapter.append(path, line);
-		} catch (err) {
-			this.log(
-				"error",
-				`SessionStorage.appendMessage failed for ${sessionId}: ${err}`,
-			);
-			throw err;
-		}
-	}
-
-	/** Create a new empty session file and return its UUID. */
+	/** Allocate an ID; ChatStorage creates the indexed transcript on first save. */
 	async createSession(): Promise<string> {
-		const adapter = this.deps.app.vault.adapter;
 		const sessionId = crypto.randomUUID();
-		const path = `${this.sessionsDir}/${sessionId}.jsonl`;
-
-		try {
-			await this.ensureDir();
-			await adapter.write(path, "");
-			this.log(
-				"info",
-				`SessionStorage.createSession: created ${sessionId}`,
-			);
-			return sessionId;
-		} catch (err) {
-			this.log("error", `SessionStorage.createSession failed: ${err}`);
-			throw err;
-		}
-	}
-
-	/** Delete a session JSONL file. */
-	async deleteSession(sessionId: string): Promise<void> {
-		const adapter = this.deps.app.vault.adapter;
-		const path = `${this.sessionsDir}/${sessionId}.jsonl`;
-
-		try {
-			if (await adapter.exists(path)) {
-				await adapter.remove(path);
-				this.log(
-					"info",
-					`SessionStorage.deleteSession: removed ${sessionId}`,
-				);
-			}
-		} catch (err) {
-			this.log(
-				"error",
-				`SessionStorage.deleteSession failed for ${sessionId}: ${err}`,
-			);
-			throw err;
-		}
+		this.log(
+			"info",
+			`SessionStorage.createSession: allocated ${sessionId}`,
+		);
+		return sessionId;
 	}
 
 	private log(level: string, msg: string): void {

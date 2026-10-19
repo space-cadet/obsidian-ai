@@ -1,6 +1,6 @@
 # Session 2026-10-19 — Chat Fixes and Android Startup Crash
 *Created: 2026-10-19 10:41:46 IST*
-*Last Updated: 2026-10-19 14:23:39 IST*
+*Last Updated: 2026-10-19 16:14:09 IST*
 
 ## Focus Task
 T15/T24: Tabbed chat, session restore, and Android startup crash
@@ -99,3 +99,37 @@ tools, and updated T11/T15/T24 plus the registry and current context. `bd prime`
 reported no local Beads database, so no Beads issue was created and no database
 was initialized. The Memory Bank update remains uncommitted and unpushed at the
 user's request.
+
+## Later Follow-up — Chat Lab Health Repair Closeout (16:14 IST)
+
+**Scope**: Finish the read-only health-check UI and persistence prevention, then
+repair the saved-data findings from the user's latest report on Android `.21`.
+
+**Work Completed**:
+1. Updated the health scanner to inspect unindexed transcript records and
+   display findings in a bounded, scrollable Settings region.
+2. Implemented staged session/index persistence, serialized local I/O,
+   idempotent exact-duplicate handling, conflicting-ID rejection, and safe
+   zero-message session behavior. TypeScript and the production build passed
+   before device installation; T24b targeted automated coverage remains
+   pending.
+3. Backed up the 64 flagged transcript files and original index to
+   `/storage/emulated/0/Download/chat-lab-health-repair-20261019-1011` before
+   repairing data. Removed 101 byte-identical duplicate rows across 49 files,
+   corrected five index counts, added 42 nonempty orphan chats to the index,
+   and removed 15 empty orphan files.
+4. Obsidian launched successfully and the user saw the recovered chats. Local
+   structural checks found no duplicate IDs or malformed rows in the 49
+   rewritten transcripts, and their counts matched the index. The index kept
+   the same 264 session IDs after launch; only one scroll-position field
+   changed. The user reported the final health check had no errors or warnings.
+
+**Recovery Notes**: The recovered transcripts had no original title metadata
+in the pre-repair index, so their entries use generated `Recovered chat
+<id-prefix>` titles. The phone backup remains available; private local copies
+were removed after verification. T11a is complete for the health-check and
+manual recovery scope. T24b remains active pending targeted automated tests.
+
+**Working State**: Source and Memory Bank changes remain uncommitted on
+`ui-chat-fixes` at `c366aae`. No commit or push was made. The user said Beads is
+not needed, so no Beads update was made.

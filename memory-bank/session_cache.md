@@ -1,5 +1,26 @@
 # Session Cache
 
+## 2026-10-19 — Chat Lab health repair closeout
+
+- Branch `ui-chat-fixes` is at `c366aae`. Source and Memory Bank changes are
+  local and uncommitted; do not commit or push. Beads was not used per the
+  user's instruction.
+- T11a is complete for the health check, bounded findings UI, and backed-up
+  manual recovery. T24b remains active because targeted persistence tests are
+  pending.
+- Repaired the 10:07 UTC report findings under T11a: removed 101 byte-identical
+  duplicate rows from 49 transcripts, corrected five index counts, indexed 42
+  nonempty orphan transcripts, and removed 15 empty files after backup. The
+  264-entry index retained the same session IDs after Obsidian launched; its
+  only observed change was one scroll position. The user reports zero errors
+  and zero warnings in the final health check.
+- Phone backup remains at
+  `/storage/emulated/0/Download/chat-lab-health-repair-20261019-1011`;
+  private local transcript copies were removed. The 42 recovered chats use
+  generated titles because the original title metadata was absent from the
+  original index.
+- Session record: `sessions/2026-10-19-chat-fixes-android-startup-crash.md`.
+
 ## 2026-10-19 — Codex fixes, tab rollback, and Android crash
 
 - Confirmed: the Codex note-edit fingerprint fix (`9344ea5`) works per the

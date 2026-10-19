@@ -1,24 +1,28 @@
 # Active Context
 
-### 2026-10-19 — Health checks, repair scope, and persistence follow-up
+### 2026-10-19 — Chat Lab health repair closeout
 
-- Current source branch is `ui-chat-fixes` at `d835fe4`; local and remote
-  match. `ef93f3d` guards transcript loading/appends, `008c2e7` normalizes
-  duplicate messages before save, and `d835fe4` persists explicit UI deletions
-  and removes deleted transcript/draft files.
-- T11a is active under T11 for finishing the read-only health check UI and
-  safely previewed, backed-up repairs. Repair previews (`9ae0bd3`) and bounded
-  report scrolling (`4c11442`) were reverted; do not describe them as present.
-- The supplied 2026-10-19 health report checked 228 files and returned 157
-  warnings (98 duplicate-ID findings, two count mismatches, 57 unindexed
-  transcripts) and no errors. Missing messages are outside the user's requested
-  repair scope; findings alone do not prove identical duplicate content.
-- The deletion fix built and passed 21 storage tests and TypeScript. It was
-  installed on Android; Obsidian launched and remained running during a brief
-  check. The delete-and-reload flow was not tested. Crash cause remains unknown.
-- `bd prime` reports that this checkout has no Beads database. T11a is recorded
-  in the text Memory Bank; no database was initialized. See today's session
-  record and T11a/T15/T24.
+- Source branch `ui-chat-fixes` is at `c366aae`; the current source and
+  Memory Bank changes are local and uncommitted. Do not commit or push.
+- T11a is complete for the read-only health check, bounded findings UI, and
+  user-approved manual recovery. Productized repair controls remain out of
+  scope. T24b remains active for persistence prevention; its targeted automated
+  coverage is pending.
+- The latest pre-repair report checked 287 files and showed 101 repeated IDs,
+  two count mismatches, and 57 unindexed transcripts (15 empty). The backed-up
+  recovery removed 101 byte-identical repeated rows, corrected five counts,
+  indexed 42 nonempty transcripts, and removed 15 empty files. The original
+  data backup remains on `.21` at
+  `/storage/emulated/0/Download/chat-lab-health-repair-20261019-1011`.
+- Obsidian launched with the recovered chats visible. Structural verification
+  found 264 stable index entries; only one session's scroll position changed
+  on launch. The user reports the final health check had no errors and no
+  warnings. Recovered sessions have generated titles because their original
+  title metadata was absent from the backed-up index.
+- Build and Android install were recorded separately from test status. No
+  targeted T24b tests were run for this closeout. The user said Beads is not
+  needed; no Beads update was made.
+- See today's session record and T11a/T24/T24b.
 
 ### 2026-10-19 — Codex chat fixes and unresolved Android startup crash
 

@@ -230,6 +230,57 @@ export async function checkDataHealth(
 		});
 		return valid;
 	};
+	const inspectTranscript = (
+		path: string,
+		raw: string,
+		expectedMessageCount?: number,
+	) => {
+		let records = 0;
+		let valid = 0;
+		const ids = new Set<string>();
+		lines(raw, path, (m, line) => {
+			records++;
+			if (
+				!object(m) ||
+				typeof m.id !== "string" ||
+				!m.id ||
+				!["user", "assistant", "system"].includes(m.role) ||
+				typeof m.content !== "string"
+			) {
+				add(
+					"error",
+					"invalid-message",
+					path,
+					"Message has invalid id, role, or content.",
+					undefined,
+					line,
+				);
+				return;
+			}
+			valid++;
+			if (ids.has(m.id))
+				add(
+					"warning",
+					"duplicate-message-id",
+					path,
+					"Repeated message ID; review append/update history.",
+					"Compare repeated records before deciding whether any are redundant.",
+					line,
+				);
+			ids.add(m.id);
+		});
+		if (
+			expectedMessageCount !== undefined &&
+			valid !== expectedMessageCount
+		)
+			add(
+				"warning",
+				"message-count-mismatch",
+				path,
+				`Index expects ${expectedMessageCount} messages; found ${valid} structurally valid records (${records} parsed records).`,
+				"Pause sync and rerun; compare index and transcript backups if the mismatch persists.",
+			);
+	};
 	for (const file of [
 		"manifest.json",
 		"main.js",
@@ -364,62 +415,23 @@ export async function checkDataHealth(
 						indexPath,
 						"Session has an invalid expected message count.",
 					);
-				if (!(await exists(path)))
-					add(
-						"error",
-						"missing-transcript",
-						path,
-						"Indexed session transcript is missing.",
-						"Check sync completion and backups; do not delete the index entry automatically.",
-					);
-				else {
-					const raw = await read(path);
-					if (raw !== undefined) {
-						let records = 0,
-							valid = 0;
-						const ids = new Set<string>();
-						lines(raw, path, (m, line) => {
-							records++;
-							if (
-								!object(m) ||
-								typeof m.id !== "string" ||
-								!m.id ||
-								!["user", "assistant", "system"].includes(
-									m.role,
-								) ||
-								typeof m.content !== "string"
-							) {
-								add(
-									"error",
-									"invalid-message",
-									path,
-									"Message has invalid id, role, or content.",
-									undefined,
-									line,
-								);
-								return;
-							}
-							valid++;
-							if (ids.has(m.id))
-								add(
-									"warning",
-									"duplicate-message-id",
-									path,
-									"Repeated message ID; review append/update history.",
-									"Compare repeated records before deciding whether any are redundant.",
-									line,
-								);
-							ids.add(m.id);
-						});
-						if (valid !== entry.messageCount)
-							add(
-								"warning",
-								"message-count-mismatch",
-								path,
-								`Index expects ${entry.messageCount} messages; found ${valid} structurally valid records (${records} parsed records).`,
-								"Pause sync and rerun; compare index and transcript backups if the mismatch persists.",
-							);
+				if (!(await exists(path))) {
+					// Draft-only sessions with no messages intentionally have no
+					// transcript file. Missing content is a finding only when the
+					// index says messages should exist.
+					if (entry.messageCount !== 0) {
+						add(
+							"error",
+							"missing-transcript",
+							path,
+							"Indexed session transcript is missing.",
+							"Check sync completion and backups; do not delete the index entry automatically.",
+						);
 					}
+				} else {
+					const raw = await read(path);
+					if (raw !== undefined)
+						inspectTranscript(path, raw, entry.messageCount);
 				}
 				if (entry.draftAttachmentsFile != null) {
 					const draft = localPath(
@@ -493,8 +505,8 @@ export async function checkDataHealth(
 	if (await exists(sessionDir)) {
 		try {
 			const listing = await adapter.list(sessionDir);
-			for (const path of listing.files)
-				if (path.endsWith(".jsonl") && !referenced.has(path))
+			for (const path of listing.files) {
+				if (path.endsWith(".jsonl") && !referenced.has(path)) {
 					add(
 						"warning",
 						"unindexed-transcript",
@@ -504,6 +516,20 @@ export async function checkDataHealth(
 							: "Transcript could not be matched to a valid session index.",
 						"Keep the file; check whether it should be recovered into history.",
 					);
+					const raw = await read(path);
+					if (raw !== undefined) {
+						if (!raw.trim())
+							add(
+								"info",
+								"empty-unindexed-transcript",
+								path,
+								"Unindexed transcript contains no records.",
+								"Keep it until you confirm it is not part of an interrupted write.",
+							);
+						else inspectTranscript(path, raw);
+					}
+				}
+			}
 			if (listing.folders.length)
 				add(
 					"info",
