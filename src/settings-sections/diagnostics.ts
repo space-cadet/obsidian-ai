@@ -1,7 +1,6 @@
 import { App, Notice, Platform, Setting, TFile } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection } from "./helpers";
-import { renderDataRepair } from "./dataRepair";
 import { renderDataHealth } from "./dataHealth";
 import { summarizeLlmUsage } from "../lib/usageStats";
 
@@ -380,7 +379,6 @@ export function renderDiagnosticsSection(
 		);
 
 	renderDataHealth(sectionEl, app, plugin.manifest.id);
-	renderDataRepair(sectionEl, app, plugin.manifest.id);
 
 	new Setting(sectionEl)
 		.setName("Export diagnostics")

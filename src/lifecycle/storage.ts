@@ -1,5 +1,3 @@
-import { Notice } from "obsidian";
-import { applyPendingDataRepair } from "../diagnostics/dataRepair";
 import type { ChatSession } from "../types";
 import { createFileLogger } from "../logger";
 import { createStorage } from "../storage/ChatStorage";
@@ -44,15 +42,6 @@ export async function initializeStorage(
 	};
 
 	await migrateStorage(plugin);
-	// Repairs must precede every storage cache, restored chat and sync engine.
-	const repair = await applyPendingDataRepair(
-		plugin.app.vault.adapter,
-		`${plugin.app.vault.configDir}/plugins/${plugin.manifest.id}`,
-	);
-	if (repair) {
-		new Notice(repair.message, 15000);
-		if (repair.status === "interrupted") throw new Error(repair.message);
-	}
 	// Logger not yet created — timing reported after init below.
 
 	// Initialize file logger FIRST so any crash during load is captured.
