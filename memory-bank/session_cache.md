@@ -1,6 +1,23 @@
 # Session Cache
 
-*Last Updated: 2026-10-19 21:02:15 IST*
+*Last Updated: 2026-10-19 22:13:00 IST*
+
+## 2026-10-19 — T24c shared session state implementation started
+
+- Claimed Beads issue `OBSIDIANAI-brl`. Added the plugin-scoped
+  `SessionStateOwner` and connected Chat Lab views through a shared external
+  store. Hydration payload/readiness now install together in that owner, with
+  shared in-flight reads and deletion invalidation.
+- Routed session view initialization, open/send hydration, captured send IDs,
+  sync refresh, deletion tombstones, and debounced durable writes through the
+  owner. Added unload flushing; existing JSONL/ChatStorage remains underneath.
+- Focused owner/session/message-action/turn-lifecycle tests: 35 passed.
+  TypeScript, production build, formatting, and diff checks passed.
+  `useSessionActions.test.ts` ran out of Node heap before tests executed.
+- Migration is partial: many consumers still use the transitional shared
+  `setSessions` adapter. Sync/local revision coverage, full race suite, and live
+  Obsidian/device acceptance remain open. No commit or push was made in this
+  session.
 
 ## 2026-10-19 — Shared session-state coordination plan
 

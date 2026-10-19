@@ -234,9 +234,11 @@ export class TurnLifecycle {
 	}
 
 	/** Run a user-requested compaction immediately and report the result in chat. */
-	private async runManualCompaction(): Promise<string> {
+	private async runManualCompaction(
+		targetSessionId?: string,
+	): Promise<string> {
 		const deps = this.getDeps();
-		const sessionId = deps.activeSessionIdRef.current;
+		const sessionId = targetSessionId ?? deps.activeSessionIdRef.current;
 		if (!sessionId) {
 			return "**Compaction Test**\n\nNo active session.";
 		}
@@ -348,19 +350,24 @@ export class TurnLifecycle {
 	// ─────────────────────────────────────────────────────
 	// SEND
 	// ─────────────────────────────────────────────────────
-	send = async (text: string, attachments?: Attachment[]): Promise<void> => {
+	send = async (
+		text: string,
+		attachments?: Attachment[],
+		targetSessionId?: string,
+	): Promise<void> => {
 		const deps = this.getDeps();
+		const sessionId = targetSessionId ?? deps.activeSessionIdRef.current;
 
 		if (
 			(!text.trim() && (!attachments || attachments.length === 0)) ||
-			deps.getRuntime(deps.activeSessionIdRef.current).controller
+			deps.getRuntime(sessionId).controller
 		)
 			return;
 
 		// Check for local debug commands before selecting the single- or group-chat
 		// execution path. Built-in ! commands must never reach a model.
 		const currentSession = deps.sessionsRef.current.find(
-			(s) => s.id === deps.activeSessionIdRef.current,
+			(s) => s.id === sessionId,
 		);
 		const debugResult = handleDebugCommand(
 			text,
@@ -382,9 +389,9 @@ export class TurnLifecycle {
 		if (debugResult.handled) {
 			const response =
 				debugResult.action === "compact"
-					? await this.runManualCompaction()
+					? await this.runManualCompaction(sessionId ?? undefined)
 					: debugResult.response || "";
-			this.appendDebugMessage(response);
+			this.appendDebugMessageToSession(sessionId ?? "", response);
 			return;
 		}
 
@@ -419,7 +426,7 @@ export class TurnLifecycle {
 						: undefined,
 				estimatedTokens: userTokenEstimate,
 			};
-			const currentActiveId = deps.activeSessionIdRef.current;
+			const currentActiveId = sessionId;
 			if (!currentActiveId) return;
 			deps.setSessions((prev) =>
 				prev.map((s) =>
@@ -594,7 +601,7 @@ export class TurnLifecycle {
 		deps.setContextTokenCount(resolved.stats.estimatedTokens);
 
 		const selectedIds = Array.from(deps.ui.selectedProfileIds);
-		const currentActiveId = deps.activeSessionIdRef.current;
+		const currentActiveId = sessionId;
 		if (!currentActiveId) return;
 
 		// ─── HUMAN-ONLY TAB: No AI selected ───
@@ -701,7 +708,7 @@ export class TurnLifecycle {
 
 		const maxContextMessages =
 			deps.plugin.settings.maxContextMessages || 10;
-		const sessionIdForCompaction = deps.activeSessionIdRef.current;
+		const sessionIdForCompaction = sessionId;
 		const activeSessionForCompaction = sessionIdForCompaction
 			? deps.sessionsRef.current.find(
 					(session) => session.id === sessionIdForCompaction,

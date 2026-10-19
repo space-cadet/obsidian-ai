@@ -1,10 +1,17 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import {
+	useState,
+	useRef,
+	useCallback,
+	useEffect,
+	useSyncExternalStore,
+} from "react";
 import type { ChatSession, ChatMessage, ContextItem } from "../types";
 import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 import type { ProviderProfile } from "../settings";
 import type { ChatApiManager } from "../api";
 import { getActiveProviderProfile } from "../settings";
 import { makeId, sessionMessageCount } from "../lib/sessionUtils";
+import { SessionStateOwner } from "../state/SessionStateOwner";
 import {
 	generateSessionTitle,
 	generateSessionTitleLLM,
@@ -71,25 +78,102 @@ export function useChatSession({
 	plugin,
 	profileId,
 }: UseChatSessionOptions): UseChatSessionResult {
-	const [sessions, setSessions] = useState<ChatSession[]>([]);
-	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+	const ownerRef = useRef<SessionStateOwner | null>(null);
+	if (!ownerRef.current) {
+		ownerRef.current =
+			plugin.sessionState ??
+			new SessionStateOwner({
+				load: () => plugin.loadChatData(),
+				hydrate: (id) =>
+					plugin.hydrateSession?.(id) ?? Promise.resolve([]),
+				peek: (id) =>
+					plugin.peekSessionMessages?.(id) ?? Promise.resolve([]),
+				save: (data) => plugin.saveChatData(data),
+			});
+		if (!plugin.sessionState) plugin.sessionState = ownerRef.current;
+	}
+	const owner = ownerRef.current;
+	const sessionSnapshot = useSyncExternalStore(
+		owner.subscribe,
+		owner.getSnapshot,
+		owner.getServerSnapshot,
+	);
+	const sessions = sessionSnapshot.sessions;
+	const setSessions = useCallback<
+		React.Dispatch<React.SetStateAction<ChatSession[]>>
+	>(
+		(update) => {
+			const current = owner.getSnapshot();
+			const nextSessions =
+				typeof update === "function"
+					? update(current.sessions)
+					: update;
+			owner.replaceSnapshot({
+				sessions: nextSessions,
+				activeSessionId: current.activeSessionId,
+				openSessionIds: current.openSessionIds,
+			});
+		},
+		[owner],
+	);
+	const [activeSessionId, setActiveSessionIdState] = useState<string | null>(
+		null,
+	);
 	const [chatDataLoaded, setChatDataLoaded] = useState(false);
-	const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
+	const [openSessionIds, setOpenSessionIdsState] = useState<string[]>([]);
+	const activeSessionIdRef = useRef<string | null>(null);
+	const openSessionIdsRef = useRef<string[]>([]);
+	const setActiveSessionId = useCallback<
+		React.Dispatch<React.SetStateAction<string | null>>
+	>(
+		(update) => {
+			const next =
+				typeof update === "function"
+					? update(activeSessionIdRef.current)
+					: update;
+			activeSessionIdRef.current = next;
+			setActiveSessionIdState(next);
+			const state = owner.getSnapshot();
+			owner.replaceSnapshot({
+				sessions: state.sessions,
+				activeSessionId: next,
+				openSessionIds: state.openSessionIds,
+			});
+		},
+		[owner],
+	);
+	const setOpenSessionIds = useCallback<
+		React.Dispatch<React.SetStateAction<string[]>>
+	>(
+		(update) => {
+			const next =
+				typeof update === "function"
+					? update(openSessionIdsRef.current)
+					: update;
+			openSessionIdsRef.current = next;
+			setOpenSessionIdsState(next);
+			const state = owner.getSnapshot();
+			owner.replaceSnapshot({
+				sessions: state.sessions,
+				activeSessionId: state.activeSessionId,
+				openSessionIds: next,
+			});
+		},
+		[owner],
+	);
 
 	const sessionsRef = useRef<ChatSession[]>([]);
-	const activeSessionIdRef = useRef<string | null>(null);
 	const llmNamedRef = useRef<Set<string>>(new Set());
-	const saveTimerRef = useRef<number | null>(null);
-	const skipNextAutosaveRef = useRef(false);
-	const deletedSessionIdsRef = useRef<Map<string, number>>(new Map());
-	const deletionVersionRef = useRef(0);
-	const markSessionDeleted = useCallback((sessionId: string) => {
-		deletionVersionRef.current += 1;
-		deletedSessionIdsRef.current.set(sessionId, deletionVersionRef.current);
-	}, []);
+	const markSessionDeleted = useCallback(
+		(sessionId: string) => {
+			owner.markDeleted(sessionId);
+		},
+		[owner],
+	);
 
 	sessionsRef.current = sessions;
 	activeSessionIdRef.current = activeSessionId;
+	openSessionIdsRef.current = openSessionIds;
 
 	// Remote deletion tombstones can remove a session while the chat view is
 	// mounted. Keep the in-memory picker/tabs aligned with persisted storage.
@@ -98,6 +182,7 @@ export function useChatSession({
 			const sessionId = (event as CustomEvent<{ sessionId?: string }>)
 				.detail?.sessionId;
 			if (!sessionId) return;
+			owner.markDeleted(sessionId);
 			setSessions((current) => current.filter((s) => s.id !== sessionId));
 			setOpenSessionIds((current) =>
 				current.filter((id) => id !== sessionId),
@@ -118,7 +203,7 @@ export function useChatSession({
 				"obsidian-ai:session-deleted",
 				handleRemoteDeletion,
 			);
-	}, []);
+	}, [owner]);
 
 	// A completed remote download updates storage outside React's normal edit
 	// path. Reload the lightweight session index so history and counts reflect
@@ -141,24 +226,10 @@ export function useChatSession({
 					// The sync refresh is metadata-only. Preserve messages already
 					// present in React so the active chat and open tabs do not go
 					// blank while the index is being refreshed.
-					const currentById = new Map(
-						sessionsRef.current.map((session) => [
-							session.id,
-							session,
-						]),
-					);
-					const refreshedSessions = savedSessions.map((session) => {
-						const current = currentById.get(session.id);
-						return current && current.messages.length > 0
-							? {
-									...session,
-									messages: current.messages,
-									messageCount: current.messages.length,
-									hydrated: true,
-								}
-							: session;
+					owner.applySyncSnapshot({
+						...data,
+						sessions: savedSessions,
 					});
-					setSessions(refreshedSessions);
 					setActiveSessionId(nextActiveId);
 					setOpenSessionIds((current) => {
 						const knownIds = new Set(
@@ -192,7 +263,7 @@ export function useChatSession({
 				handleSessionsUpdated,
 			);
 		};
-	}, [plugin]);
+	}, [plugin, owner]);
 
 	// ─── Load persisted sessions on mount ───
 	useEffect(() => {
@@ -202,12 +273,13 @@ export function useChatSession({
 			"info",
 			"[Startup] ChatApp mount — loading chat data…",
 		);
-		plugin.loadChatData().then((data) => {
+		owner.initialize().then((state) => {
 			if (cancelled) return;
 			plugin.logger?.log(
 				"info",
 				`[Startup] loadChatData resolved in ${Date.now() - loadStart}ms`,
 			);
+			const data = state;
 			const savedSessions = data.sessions.filter(
 				// messageCount comes from the index, so this stays correct even
 				// when messages haven't been hydrated yet (index-only boot). Draft
@@ -217,8 +289,6 @@ export function useChatSession({
 			if (savedSessions.length > 0) {
 				// Preserve the loaded storage untouched unless this also removes legacy
 				// zero-message entries; those should be cleaned up on the next autosave.
-				skipNextAutosaveRef.current =
-					savedSessions.length === data.sessions.length;
 				const totalMessages = savedSessions.reduce(
 					(sum, s) => sum + sessionMessageCount(s),
 					0,
@@ -227,7 +297,13 @@ export function useChatSession({
 					"info",
 					`[Chat] restored ${savedSessions.length} session(s), ${totalMessages} message(s)`,
 				);
-				setSessions(savedSessions);
+				if (savedSessions.length !== data.sessions.length) {
+					owner.replaceSnapshot({
+						sessions: savedSessions,
+						activeSessionId: data.activeSessionId,
+						openSessionIds: data.openSessionIds,
+					});
+				}
 				const restoredActiveId = savedSessions.some(
 					(session) => session.id === data.activeSessionId,
 				)
@@ -271,7 +347,11 @@ export function useChatSession({
 					remoteUsers: [],
 					selectedRemoteUserIds: [],
 				};
-				setSessions([newSession]);
+				owner.replaceSnapshot({
+					sessions: [newSession],
+					activeSessionId: newSession.id,
+					openSessionIds: [newSession.id],
+				});
 				setActiveSessionId(newSession.id);
 				setOpenSessionIds([newSession.id]);
 			}
@@ -281,7 +361,7 @@ export function useChatSession({
 			cancelled = true;
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- session initialization runs once for the plugin instance.
-	}, [plugin]);
+	}, [plugin, owner]);
 
 	// Load the active transcript on every activation, including the tab selected
 	// after closing another tab. Background restored tabs stay index-only.
@@ -294,20 +374,15 @@ export function useChatSession({
 		let cancelled = false;
 		const id = activeSessionId;
 		plugin.logger?.log("debug", `[Session] scheduling hydration for ${id}`);
-		const loadMessages = async () => {
-			const messages = (await plugin.hydrateSession?.(id)) ?? [];
-			// Another open may have already loaded storage while this view was
-			// inactive. Read its payload without treating an empty result as success.
-			return messages.length === 0 &&
-				target.messageCount != null &&
-				plugin.peekSessionMessages
-				? plugin.peekSessionMessages(id)
-				: messages;
-		};
-		void loadMessages()
-			.then((messages) => {
+		void owner
+			.ensureLoaded(id)
+			.then((loaded) => {
 				if (cancelled) return;
-				if (messages.length === 0) {
+				if (
+					!loaded ||
+					(loaded.messages.length === 0 &&
+						(loaded.messageCount ?? 0) > 0)
+				) {
 					plugin.logger?.log(
 						"warn",
 						`[Session] hydrate ${id} resolved with 0 messages; leaving retryable`,
@@ -316,19 +391,8 @@ export function useChatSession({
 				}
 				plugin.logger?.log(
 					"info",
-					`[Session] hydrated ${id} with ${messages.length} messages`,
+					`[Session] hydrated ${id} with ${loaded.messages.length} messages`,
 				);
-				sessionsRef.current = sessionsRef.current.map((s) =>
-					s.id === id && s.hydrated === false
-						? {
-								...s,
-								messages,
-								messageCount: messages.length,
-								hydrated: true,
-							}
-						: s,
-				);
-				setSessions(sessionsRef.current);
 			})
 			.catch((err: unknown) => {
 				plugin.logger?.log(
@@ -339,71 +403,7 @@ export function useChatSession({
 		return () => {
 			cancelled = true;
 		};
-	}, [activeSessionId, chatDataLoaded, plugin]);
-
-	// ─── Persist sessions whenever they change (debounced) ───
-	useEffect(() => {
-		if (!chatDataLoaded) return;
-		if (skipNextAutosaveRef.current) {
-			skipNextAutosaveRef.current = false;
-			return;
-		}
-		if (sessions.length > 0) {
-			if (saveTimerRef.current) {
-				window.clearTimeout(saveTimerRef.current);
-			}
-			saveTimerRef.current = window.setTimeout(() => {
-				const deletedSessionVersions = new Map(
-					deletedSessionIdsRef.current,
-				);
-				const deletedSessionIds = [...deletedSessionVersions.keys()];
-				const persistedSessions = sessions.filter(
-					// messageCount keeps unhydrated sessions in the payload; the
-					// storage layer's guard skips writing their (empty) messages.
-					shouldPersistSession,
-				);
-				const persistedActiveSessionId = persistedSessions.some(
-					(session) => session.id === activeSessionId,
-				)
-					? activeSessionId
-					: (persistedSessions[0]?.id ?? null);
-				void plugin
-					.saveChatData({
-						sessions: persistedSessions,
-						activeSessionId: persistedActiveSessionId,
-						openSessionIds: plugin.settings.restoreChatTabs
-							? openSessionIds.filter((id) =>
-									persistedSessions.some(
-										(session) => session.id === id,
-									),
-								)
-							: [],
-						deletedSessionIds,
-					})
-					.then(() => {
-						for (const [id, version] of deletedSessionVersions) {
-							if (
-								deletedSessionIdsRef.current.get(id) === version
-							)
-								deletedSessionIdsRef.current.delete(id);
-						}
-					})
-					.catch((error: unknown) => {
-						plugin.logger?.log(
-							"warn",
-							`[Session] autosave failed: ${String(error)}`,
-						);
-					});
-				saveTimerRef.current = null;
-			}, 150);
-		}
-		return () => {
-			if (saveTimerRef.current) {
-				window.clearTimeout(saveTimerRef.current);
-				saveTimerRef.current = null;
-			}
-		};
-	}, [sessions, activeSessionId, openSessionIds, plugin, chatDataLoaded]);
+	}, [activeSessionId, chatDataLoaded, plugin, owner]);
 
 	// ─── Auto-title session after it has a few messages ───
 	const [autoNameSessions, setAutoNameSessions] = useState(

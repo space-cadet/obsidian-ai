@@ -10,6 +10,7 @@ import { createStorage } from "../storage/ChatStorage";
 import { ChatStorageMigration } from "../storage/Migration";
 import { MigrationPromptModal } from "../modals/MigrationPromptModal";
 import { SessionStorage } from "../storage/session-storage";
+import { SessionStateOwner } from "../state/SessionStateOwner";
 import { PersonaLoader } from "../intelligence/PersonaLoader";
 import { SearchIndex } from "../search/index";
 import { SessionSummarizer } from "../intelligence/SessionSummarizer";
@@ -131,6 +132,12 @@ export async function initializeStorage(
 		createStorageDeps(plugin),
 		plugin.settings.chatStorageFormat,
 	);
+	plugin.sessionState = new SessionStateOwner({
+		load: () => plugin.loadChatData(),
+		hydrate: (sessionId) => plugin.hydrateSession(sessionId),
+		peek: (sessionId) => plugin.peekSessionMessages(sessionId),
+		save: (data) => plugin.saveChatData(data),
+	});
 
 	// Detect legacy format and prompt for migration (non-blocking, once per session)
 	if (plugin.settings.chatStorageFormat === "legacy") {

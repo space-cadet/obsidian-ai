@@ -80,25 +80,32 @@ export function useSessionActions({
 				`[Session] open ${sessionId}: hydration=${target?.hydrated === false ? "pending" : target?.hydrated === true ? "ready" : target ? "unknown" : "missing"}`,
 			);
 			if (target && target.hydrated === false) {
-				const hydrate = async () => {
-					// A sync refresh can know that a file was written successfully
-					// without registering it as lazy-hydratable. In that case the
-					// normal hydrate call returns [] while the pure peek still has
-					// the newly downloaded payload available on disk.
-					let messages =
-						(await plugin.hydrateSession?.(sessionId)) ?? [];
-					if (
-						messages.length === 0 &&
-						target.messageCount != null &&
-						plugin.peekSessionMessages
-					) {
-						messages = await plugin.peekSessionMessages(sessionId);
-					}
-					return messages;
-				};
-				hydrate()
-					.then((messages) => {
-						if (messages.length === 0) {
+				const hydrate = plugin.sessionState
+					? plugin.sessionState.ensureLoaded(sessionId)
+					: (async () => {
+							let messages =
+								(await plugin.hydrateSession?.(sessionId)) ??
+								[];
+							if (
+								messages.length === 0 &&
+								(target.messageCount ?? 0) > 0 &&
+								plugin.peekSessionMessages
+							) {
+								messages =
+									await plugin.peekSessionMessages(sessionId);
+							}
+							return { messages };
+						})();
+				hydrate
+					.then((loaded) => {
+						const messages = Array.isArray(loaded)
+							? loaded
+							: (loaded?.messages ?? []);
+						if (
+							!loaded ||
+							(messages.length === 0 &&
+								(target.messageCount ?? 0) > 0)
+						) {
 							plugin.logger?.log(
 								"warn",
 								`[Session] open ${sessionId}: hydration resolved with 0 messages`,
@@ -112,17 +119,20 @@ export function useSessionActions({
 						// Write through the ref synchronously — anything reading
 						// sessionsRef.current before React re-renders must see the
 						// hydrated messages, not the empty boot copy.
-						sessionsRef.current = sessionsRef.current.map((s) =>
-							s.id === sessionId
-								? {
-										...s,
-										messages,
-										messageCount: messages.length,
-										hydrated: true,
-									}
-								: s,
-						);
-						setSessions(sessionsRef.current);
+						sessionsRef.current =
+							plugin.sessionState?.getSnapshot().sessions ??
+							sessionsRef.current.map((s) =>
+								s.id === sessionId
+									? {
+											...s,
+											messages,
+											messageCount: messages.length,
+											hydrated: true,
+										}
+									: s,
+							);
+						if (!plugin.sessionState)
+							setSessions(sessionsRef.current);
 					})
 					.catch((err) => {
 						// Hydration failure now leaves the session unhydrated (retry

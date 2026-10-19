@@ -13,6 +13,7 @@ import { mountSyncStatusBar } from "./sync/SyncStatusBar";
 import { ProviderRegistry } from "./integrations/ProviderRegistry";
 import { AgentApiManager } from "./api/AgentApiManager";
 import { ChatStorage } from "./storage/ChatStorage";
+import { SessionStateOwner } from "./state/SessionStateOwner";
 import { PluginUpdater } from "./updater/PluginUpdater";
 import { StoredChatData, ChatSession } from "./types";
 import type { SyncLogEntry, SyncProgressSnapshot } from "./sync/SyncProgress";
@@ -84,6 +85,7 @@ export default class ObsidianAIPlugin extends Plugin {
 	_uncommittedSessionDeletions = new Set<string>();
 	_lastSavedChatDataFingerprint: string | null = null;
 	_chatStorage: ChatStorage | null = null;
+	sessionState: SessionStateOwner | null = null;
 	_migrationPromptShown = false;
 	_chatViewActivation: Promise<void> | null = null;
 	_updater: PluginUpdater | null = null;
@@ -128,7 +130,13 @@ export default class ObsidianAIPlugin extends Plugin {
 		});
 	}
 
-	onunload() {
+	async onunload() {
+		await this.sessionState?.flush().catch((error) => {
+			this.logger?.log(
+				"error",
+				`[Session] unload flush failed: ${String(error)}`,
+			);
+		});
 		cleanupStorage(this);
 	}
 

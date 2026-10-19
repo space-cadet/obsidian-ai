@@ -93,7 +93,7 @@ describe("restored session hydration", () => {
 		);
 	});
 
-	it("recovers messages already read by storage after switching away mid-load", async () => {
+	it("retains shared hydration after switching away mid-load", async () => {
 		let resolveActive!: (messages: any[]) => void;
 		const hydrate = vi
 			.fn()
@@ -110,15 +110,13 @@ describe("restored session hydration", () => {
 		await act(async () => {
 			resolveActive([{ id: "old", role: "user", content: "Hello" }]);
 		});
-		expect(result.current.sessions[0].hydrated).toBe(false);
-		plugin.peekSessionMessages.mockResolvedValue([
-			{ id: "recovered", role: "user", content: "Hello" },
-		]);
+		expect(result.current.sessions[0].hydrated).toBe(true);
+		expect(result.current.sessions[0].messages[0].id).toBe("old");
 		act(() => result.current.setActiveSessionId("active"));
 		await waitFor(() =>
 			expect(result.current.sessions[0].hydrated).toBe(true),
 		);
-		expect(result.current.sessions[0].messages[0].id).toBe("recovered");
+		expect(result.current.sessions[0].messages[0].id).toBe("old");
 	});
 });
 
