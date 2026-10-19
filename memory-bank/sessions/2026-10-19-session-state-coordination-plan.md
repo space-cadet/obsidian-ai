@@ -107,3 +107,12 @@ recorded below.
   open. All six focused suites pass (57 tests); production build passes.
 - The user reported the plugin appears to work and identified this sequence;
   live retest after the fix remains pending.
+
+## Older Session Restore Path — 2026-10-19 23:15 IST
+
+- The same tabless session can be displaced by restoring an older session.
+  Moved preservation into `openSessionInTab`, the shared route used by restore,
+  search, and external open actions; new-chat creation preserves the current
+  session before adding a fresh one.
+- Added a restore-older-session regression test. All six focused suites pass
+  (58 tests), and the production build passes. Live retest remains pending.

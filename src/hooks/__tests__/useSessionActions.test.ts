@@ -172,6 +172,81 @@ describe("useSessionActions", () => {
 		]);
 	});
 
+	it("keeps an active tabless session open when restoring an older session", () => {
+		const sessionsRef = {
+			current: [
+				{
+					id: "tabless-session",
+					title: "Sent chat",
+					createdAt: 0,
+					updatedAt: 2,
+					messages: [
+						{ id: "message-1", role: "user", content: "Hello" },
+					],
+					contextItems: [],
+				},
+				{
+					id: "older-session",
+					title: "Older chat",
+					createdAt: 0,
+					updatedAt: 1,
+					messages: [
+						{ id: "message-2", role: "user", content: "Earlier" },
+					],
+					contextItems: [],
+				},
+			] as any[],
+		};
+		const activeSessionIdRef = {
+			current: "tabless-session" as string | null,
+		};
+		const plugin = {
+			settings: {
+				includeActiveNote: false,
+				selectedProfileIds: [],
+				providerProfiles: [{ id: "default", provider: "ollama" }],
+				activeProviderProfileId: "default",
+			},
+		} as any;
+
+		const { result } = renderHook(() => {
+			const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
+			return useSessionActions({
+				plugin,
+				sessionsRef,
+				activeSessionIdRef,
+				updateSessionMetadata: vi.fn(),
+				updateSessionMessages: vi.fn(),
+				setActiveSessionId: (value) => {
+					activeSessionIdRef.current =
+						typeof value === "function"
+							? value(activeSessionIdRef.current)
+							: value;
+				},
+				setScrollToMessageId: vi.fn(),
+				createNewSession: vi.fn(),
+				setSelectedProfileIds: vi.fn(),
+				getSelectedProfileIds: () => [],
+				setDebateMode: vi.fn(),
+				setWasTruncated: vi.fn(),
+				isStreaming: false,
+				abortActiveRuntime: vi.fn(),
+				clearSessionRuntime: vi.fn(),
+				markSessionDeleted: vi.fn(),
+				openSessionIds,
+				setOpenSessionIds,
+			});
+		});
+
+		act(() => result.current.handleLoadSession("older-session"));
+
+		expect(result.current.openSessionIds).toEqual([
+			"tabless-session",
+			"older-session",
+		]);
+		expect(activeSessionIdRef.current).toBe("older-session");
+	});
+
 	it("inherits the active tab model when opening a new tab", () => {
 		const createNewSession = vi.fn(() => ({
 			id: "draft-1",

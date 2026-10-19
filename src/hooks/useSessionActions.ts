@@ -81,6 +81,19 @@ export function useSessionActions({
 }: UseSessionActionsOptions): UseSessionActionsResult {
 	const openSessionInTab = useCallback(
 		(sessionId: string, messageId?: string) => {
+			const activeId = activeSessionIdRef.current;
+			if (
+				activeId &&
+				activeId !== sessionId &&
+				!openSessionIds.includes(activeId) &&
+				sessionsRef.current.some((session) => session.id === activeId)
+			) {
+				setOpenSessionIds((current) =>
+					current.includes(activeId)
+						? current
+						: [...current, activeId],
+				);
+			}
 			// Index-only boot: if this session's messages haven't been read yet,
 			// start loading them now and fill state when they arrive. The send
 			// gate awaits hydration, so a fast type-and-enter can't clobber.
@@ -156,6 +169,9 @@ export function useSessionActions({
 		[
 			plugin,
 			sessionsRef,
+			activeSessionIdRef,
+			openSessionIds,
+			setOpenSessionIds,
 			updateSessionMessages,
 			setActiveSessionId,
 			setScrollToMessageId,
@@ -194,9 +210,7 @@ export function useSessionActions({
 			!openSessionIds.includes(activeId) &&
 			sessionsRef.current.some((session) => session.id === activeId)
 		) {
-			setOpenSessionIds((current) =>
-				current.includes(activeId) ? current : [...current, activeId],
-			);
+			openSessionInTab(activeId);
 		}
 
 		// T26 Phase 2: Auto-summarize the ending session before starting a new one
@@ -237,6 +251,7 @@ export function useSessionActions({
 		getModelOverrides,
 		setDebateMode,
 		setWasTruncated,
+		openSessionInTab,
 		abortActiveRuntime,
 		activeSessionIdRef,
 		sessionsRef,
