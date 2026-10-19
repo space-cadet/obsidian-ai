@@ -36,7 +36,6 @@ function shouldPersistSession(session: ChatSession): boolean {
 
 export interface UseChatSessionResult {
 	sessions: ChatSession[];
-	setSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>;
 	activeSessionId: string | null;
 	setActiveSessionId: React.Dispatch<React.SetStateAction<string | null>>;
 	chatDataLoaded: boolean;
@@ -59,7 +58,14 @@ export interface UseChatSessionResult {
 	/** Rename a session. */
 	renameSession: (sessionId: string, title: string) => void;
 	/** Update a session's messages. */
-	updateSessionMessages: (sessionId: string, messages: ChatMessage[]) => void;
+	updateSessionMessages: (
+		sessionId: string,
+		messages: ChatMessage[] | ((messages: ChatMessage[]) => ChatMessage[]),
+	) => void;
+	updateSessionMetadata: (
+		sessionId: string,
+		patch: Partial<Omit<ChatSession, "id" | "messages">>,
+	) => void;
 	/** Update a session's context items. */
 	updateSessionContextItems: (
 		sessionId: string,
@@ -99,23 +105,6 @@ export function useChatSession({
 		owner.getServerSnapshot,
 	);
 	const sessions = sessionSnapshot.sessions;
-	const setSessions = useCallback<
-		React.Dispatch<React.SetStateAction<ChatSession[]>>
-	>(
-		(update) => {
-			const current = owner.getSnapshot();
-			const nextSessions =
-				typeof update === "function"
-					? update(current.sessions)
-					: update;
-			owner.replaceSnapshot({
-				sessions: nextSessions,
-				activeSessionId: current.activeSessionId,
-				openSessionIds: current.openSessionIds,
-			});
-		},
-		[owner],
-	);
 	const [activeSessionId, setActiveSessionIdState] = useState<string | null>(
 		null,
 	);
@@ -133,12 +122,7 @@ export function useChatSession({
 					: update;
 			activeSessionIdRef.current = next;
 			setActiveSessionIdState(next);
-			const state = owner.getSnapshot();
-			owner.replaceSnapshot({
-				sessions: state.sessions,
-				activeSessionId: next,
-				openSessionIds: state.openSessionIds,
-			});
+			owner.setActiveSessionId(next);
 		},
 		[owner],
 	);
@@ -152,12 +136,7 @@ export function useChatSession({
 					: update;
 			openSessionIdsRef.current = next;
 			setOpenSessionIdsState(next);
-			const state = owner.getSnapshot();
-			owner.replaceSnapshot({
-				sessions: state.sessions,
-				activeSessionId: state.activeSessionId,
-				openSessionIds: next,
-			});
+			owner.setOpenSessionIds(next);
 		},
 		[owner],
 	);
@@ -183,7 +162,6 @@ export function useChatSession({
 				.detail?.sessionId;
 			if (!sessionId) return;
 			owner.markDeleted(sessionId);
-			setSessions((current) => current.filter((s) => s.id !== sessionId));
 			setOpenSessionIds((current) =>
 				current.filter((id) => id !== sessionId),
 			);
@@ -298,11 +276,13 @@ export function useChatSession({
 					`[Chat] restored ${savedSessions.length} session(s), ${totalMessages} message(s)`,
 				);
 				if (savedSessions.length !== data.sessions.length) {
-					owner.replaceSnapshot({
-						sessions: savedSessions,
-						activeSessionId: data.activeSessionId,
-						openSessionIds: data.openSessionIds,
-					});
+					const keep = new Set(
+						savedSessions.map((session) => session.id),
+					);
+					for (const session of data.sessions) {
+						if (!keep.has(session.id))
+							owner.discardDraft(session.id);
+					}
 				}
 				const restoredActiveId = savedSessions.some(
 					(session) => session.id === data.activeSessionId,
@@ -347,11 +327,7 @@ export function useChatSession({
 					remoteUsers: [],
 					selectedRemoteUserIds: [],
 				};
-				owner.replaceSnapshot({
-					sessions: [newSession],
-					activeSessionId: newSession.id,
-					openSessionIds: [newSession.id],
-				});
+				owner.addSession(newSession);
 				setActiveSessionId(newSession.id);
 				setOpenSessionIds([newSession.id]);
 			}
@@ -378,11 +354,7 @@ export function useChatSession({
 			.ensureLoaded(id)
 			.then((loaded) => {
 				if (cancelled) return;
-				if (
-					!loaded ||
-					(loaded.messages.length === 0 &&
-						(loaded.messageCount ?? 0) > 0)
-				) {
+				if (!loaded || loaded.hydrated === false) {
 					plugin.logger?.log(
 						"warn",
 						`[Session] hydrate ${id} resolved with 0 messages; leaving retryable`,
@@ -433,20 +405,10 @@ export function useChatSession({
 					plugin.chatapi,
 				);
 				if (title) {
-					setSessions((prev) =>
-						prev.map((s) =>
-							s.id === currentActiveId ? { ...s, title } : s,
-						),
-					);
+					owner.updateMetadata(currentActiveId, { title });
 				} else {
 					const fallback = generateSessionTitle(session.messages);
-					setSessions((prev) =>
-						prev.map((s) =>
-							s.id === currentActiveId
-								? { ...s, title: fallback }
-								: s,
-						),
-					);
+					owner.updateMetadata(currentActiveId, { title: fallback });
 				}
 			})();
 		}
@@ -493,152 +455,138 @@ export function useChatSession({
 				selectedRemoteUserIds: [],
 			};
 
-			setSessions((prev) => {
-				const updated = prev.map((s) =>
-					s.id === currentActiveId
-						? {
-								...s,
-								title:
-									(opts?.autoNameSessions ??
-									plugin.settings.autoNameSessions)
-										? s.title ||
-											generateSessionTitle(s.messages)
-										: s.title,
-								updatedAt: Date.now(),
-							}
-						: s,
-				);
-
-				// Trigger auto-summarization for the ending session (fire-and-forget)
-				const endingSession = prev.find(
-					(s) => s.id === currentActiveId,
-				);
-				if (endingSession && plugin.onSessionEnd) {
+			const endingSession = sessionsRef.current.find(
+				(session) => session.id === currentActiveId,
+			);
+			if (endingSession) {
+				owner.updateMetadata(endingSession.id, {
+					title:
+						(opts?.autoNameSessions ??
+						plugin.settings.autoNameSessions)
+							? endingSession.title ||
+								generateSessionTitle(endingSession.messages)
+							: endingSession.title,
+					updatedAt: Date.now(),
+				});
+				if (plugin.onSessionEnd)
 					void plugin.onSessionEnd(endingSession);
-				}
-
-				// Retention limits must never silently delete persisted history.
-				// Users can remove sessions explicitly from the history UI.
-				return [...updated, newSession];
-			});
+			}
+			owner.addSession(newSession);
 			setActiveSessionId(newSession.id);
 			return newSession;
 		},
-		[plugin, profileId],
+		[plugin, profileId, owner, sessionsRef],
 	);
 
 	// ─── Delete a session ───
 	const deleteSession = useCallback(
 		(sessionId: string) => {
+			const remaining = sessionsRef.current.filter(
+				(session) => session.id !== sessionId,
+			);
 			markSessionDeleted(sessionId);
-			setSessions((prev) => {
-				const filtered = prev.filter((s) => s.id !== sessionId);
-				// If deleting the active session, activate the most recent remaining
-				if (activeSessionIdRef.current === sessionId) {
-					const mostRecent = filtered.sort(
-						(a, b) => b.updatedAt - a.updatedAt,
-					)[0];
-					if (mostRecent) {
-						setActiveSessionId(mostRecent.id);
-					} else {
-						// No sessions left — create a new empty one
-						const empty: ChatSession = {
-							id: makeId(),
-							title: "",
-							createdAt: Date.now(),
-							updatedAt: Date.now(),
-							messages: [],
-							contextItems: plugin.settings.includeActiveNote
-								? [{ type: "active-note", id: makeId() }]
-								: [],
-							profileId: profileId || undefined,
-							remoteUsers: [],
-							selectedRemoteUserIds: [],
-						};
-						filtered.push(empty);
-						setActiveSessionId(empty.id);
-					}
-				}
-				return filtered;
-			});
+			if (activeSessionIdRef.current !== sessionId) return;
+			const next = remaining.sort((a, b) => b.updatedAt - a.updatedAt)[0];
+			if (next) {
+				setActiveSessionId(next.id);
+				return;
+			}
+			const empty: ChatSession = {
+				id: makeId(),
+				title: "",
+				createdAt: Date.now(),
+				updatedAt: Date.now(),
+				messages: [],
+				contextItems: plugin.settings.includeActiveNote
+					? [{ type: "active-note", id: makeId() }]
+					: [],
+				profileId: profileId || undefined,
+				remoteUsers: [],
+				selectedRemoteUserIds: [],
+			};
+			owner.addSession(empty);
+			setActiveSessionId(empty.id);
 		},
-		[markSessionDeleted, plugin, profileId],
+		[
+			markSessionDeleted,
+			plugin,
+			profileId,
+			sessionsRef,
+			owner,
+			setActiveSessionId,
+		],
 	);
 
-	// ─── Rename a session ───
-	const renameSession = useCallback((sessionId: string, newTitle: string) => {
-		setSessions((prev) =>
-			prev.map((s) =>
-				s.id === sessionId ? { ...s, title: newTitle.trim() } : s,
-			),
-		);
-	}, []);
+	const renameSession = useCallback(
+		(sessionId: string, newTitle: string) => {
+			owner.updateMetadata(sessionId, { title: newTitle.trim() });
+		},
+		[owner],
+	);
 
 	// ─── Update session messages ───
 	const updateSessionMessages = useCallback(
-		(sessionId: string, messages: ChatMessage[]) => {
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === sessionId
-						? { ...s, messages, updatedAt: Date.now() }
-						: s,
-				),
-			);
+		(
+			sessionId: string,
+			messages:
+				| ChatMessage[]
+				| ((messages: ChatMessage[]) => ChatMessage[]),
+		) => {
+			owner.updateMessages(sessionId, messages);
 		},
-		[],
+		[owner],
+	);
+	const updateSessionMetadata = useCallback(
+		(
+			sessionId: string,
+			patch: Partial<Omit<ChatSession, "id" | "messages">>,
+		) => {
+			owner.updateMetadata(sessionId, patch);
+		},
+		[owner],
 	);
 
 	// ─── Update session context items ───
 	const updateSessionContextItems = useCallback(
 		(sessionId: string, contextItems: ContextItem[]) => {
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === sessionId ? { ...s, contextItems } : s,
-				),
-			);
+			owner.updateMetadata(sessionId, { contextItems });
 		},
-		[],
+		[owner],
 	);
 
 	// ─── Manual LLM rename of active session ───
-	const manualRenameActiveSession = useCallback(async function (
-		resolvedProfile: ProviderProfile,
-		chatapi: ChatApiManager,
-	): Promise<string | null> {
-		const currentActiveId = activeSessionIdRef.current;
-		if (!currentActiveId) return null;
-		const session = sessionsRef.current.find(
-			(s) => s.id === currentActiveId,
-		);
-		if (!session || session.messages.length === 0) {
-			return null;
-		}
-		const title = await generateSessionTitleLLM(
-			session.messages,
-			resolvedProfile,
-			chatapi,
-		);
-		if (title) {
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === currentActiveId ? { ...s, title } : s,
-				),
+	const manualRenameActiveSession = useCallback(
+		async function (
+			resolvedProfile: ProviderProfile,
+			chatapi: ChatApiManager,
+		): Promise<string | null> {
+			const currentActiveId = activeSessionIdRef.current;
+			if (!currentActiveId) return null;
+			const session = sessionsRef.current.find(
+				(s) => s.id === currentActiveId,
 			);
-			return title;
-		} else {
-			const fallback = generateSessionTitle(session.messages);
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === currentActiveId ? { ...s, title: fallback } : s,
-				),
+			if (!session || session.messages.length === 0) {
+				return null;
+			}
+			const title = await generateSessionTitleLLM(
+				session.messages,
+				resolvedProfile,
+				chatapi,
 			);
-			return fallback;
-		}
-	}, []);
+			if (title) {
+				owner.updateMetadata(currentActiveId, { title });
+				return title;
+			} else {
+				const fallback = generateSessionTitle(session.messages);
+				owner.updateMetadata(currentActiveId, { title: fallback });
+				return fallback;
+			}
+		},
+		[owner],
+	);
 
 	return {
 		sessions,
-		setSessions,
 		activeSessionId,
 		setActiveSessionId,
 		chatDataLoaded,
@@ -651,6 +599,7 @@ export function useChatSession({
 		markSessionDeleted,
 		renameSession,
 		updateSessionMessages,
+		updateSessionMetadata,
 		updateSessionContextItems,
 		manualRenameActiveSession,
 		autoNameSessions,

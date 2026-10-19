@@ -8,19 +8,18 @@
   rejects late hydration after deletion, and serializes retryable persistence.
 - Session initialization, view subscription, active-session hydration, send
   readiness, session-open hydration, captured send IDs, deletion tombstones,
-  and sync refresh application have started moving through the owner. Existing
+  sync refresh, and persistent mutation operations now use the owner. Existing
   JSONL/index storage remains the durable layer.
-- Focused owner/session/send/lifecycle tests passed (35); TypeScript,
-  production build, formatting, and `git diff --check` passed. The separate
-  `useSessionActions` test worker exited with a Node heap out-of-memory error
-  before executing tests. Device acceptance has not been performed.
-- Remaining T24c work includes migrating all raw session mutation callbacks,
-  completing stale sync/local revision handling and shutdown failure coverage,
-  and passing the full focused suite. T24b targeted persistence coverage is
-  still a separate open item.
+- Five focused owner/session/send/lifecycle suites pass (52 tests); TypeScript
+  and production build pass, and `git diff --check` is clean. The separate
+  `useSessionActions` suite exits before test execution because its Vitest
+  worker runs out of JS heap. Device acceptance has not been performed.
+- Remaining T24c work is live Obsidian/device acceptance and validating the
+  worker-limited hook suite. T24b targeted persistence coverage remains a
+  separate open item.
 - The source baseline was `ui-chat-fixes` at `cd4478b`. The Beads issue remains
   local because the earlier Dolt export was rejected by automatic review.
-- Partial implementation checkpoint `e599138` is pushed to
+- Implementation checkpoints `e599138` and `7a594df` are pushed to
   `origin/ui-chat-fixes`; T24c remains open.
 
 ### 2026-10-19 — Productized chat repair and Settings shortcuts

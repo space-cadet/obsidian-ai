@@ -27,7 +27,14 @@ export interface UseMessageActionsDeps {
 	// Session
 	sessionsRef: React.MutableRefObject<ChatSession[]>;
 	activeSessionIdRef: React.MutableRefObject<string | null>;
-	setSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>;
+	updateMessages: (
+		sessionId: string,
+		messages: ChatMessage[] | ((messages: ChatMessage[]) => ChatMessage[]),
+	) => void;
+	updateMetadata: (
+		sessionId: string,
+		patch: Partial<Omit<ChatSession, "id" | "messages">>,
+	) => void;
 
 	// Session-keyed streaming display state
 	getRuntime: (sessionId: string | null | undefined) => ChatRuntimeState;
@@ -69,46 +76,42 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 		async (text: string, attachments?: import("../types").Attachment[]) => {
 			const sessionId = depsRef.current.activeSessionIdRef.current;
 			const d = depsRef.current;
-			if (sessionId && d.plugin.sessionState) {
-				const loaded =
-					await d.plugin.sessionState.ensureLoaded(sessionId);
-				if (
-					!loaded ||
-					(loaded.messages.length === 0 &&
-						(loaded.messageCount ?? 0) > 0)
-				) {
-					d.plugin.logger?.log(
-						"warn",
-						`[Session] send blocked; ${sessionId} transcript is not ready`,
+			if (sessionId) {
+				if (d.plugin.sessionState) {
+					const loaded =
+						await d.plugin.sessionState.ensureLoaded(sessionId);
+					if (!loaded || loaded.hydrated === false) {
+						d.plugin.logger?.log(
+							"warn",
+							`[Session] send blocked; ${sessionId} transcript is not ready`,
+						);
+						return;
+					}
+					d.sessionsRef.current =
+						d.plugin.sessionState.getSnapshot().sessions;
+				} else if (d.plugin.isSessionHydrated?.(sessionId) === false) {
+					const messages = await d.plugin.hydrateSession?.(sessionId);
+					const current = d.sessionsRef.current.find(
+						(session) => session.id === sessionId,
 					);
-					return;
+					if (
+						!messages ||
+						messages.length < (current?.messageCount ?? 0)
+					)
+						return;
+					d.updateMessages(sessionId, messages);
+					d.sessionsRef.current = d.sessionsRef.current.map(
+						(session) =>
+							session.id === sessionId
+								? {
+										...session,
+										messages,
+										messageCount: messages.length,
+										hydrated: true,
+									}
+								: session,
+					);
 				}
-				d.sessionsRef.current =
-					d.plugin.sessionState.getSnapshot().sessions;
-			} else if (
-				sessionId &&
-				d.plugin.isSessionHydrated?.(sessionId) === false
-			) {
-				// Compatibility for isolated hook consumers without the plugin owner.
-				const messages = await d.plugin.hydrateSession?.(sessionId);
-				if (
-					!messages ||
-					(messages.length === 0 &&
-						d.sessionsRef.current.find((s) => s.id === sessionId)
-							?.messageCount)
-				)
-					return;
-				d.sessionsRef.current = d.sessionsRef.current.map((session) =>
-					session.id === sessionId
-						? {
-								...session,
-								messages,
-								messageCount: messages.length,
-								hydrated: true,
-							}
-						: session,
-				);
-				d.setSessions(d.sessionsRef.current);
 			}
 			await lifecycleRef.current!.send(
 				text,

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useMessageActions, UseMessageActionsDeps } from "../useMessageActions";
 import { emptyChatRuntime, ChatRuntimeState } from "../useChatRuntimeState";
+import { TurnLifecycle } from "../../agent/turnLifecycle";
 
 // ── Mocks ─────────────────────────────────────────────────────────
 const mockToolExecutorConstructor = vi.hoisted(() => vi.fn());
@@ -144,7 +145,8 @@ function makeDeps(
 	const messagesRef = { current: [] as any[] };
 	const contextItemsRef = { current: [] as any[] };
 	const lastMarkdownLeafRef = { current: null };
-	const setSessions = vi.fn();
+	const updateMessages = vi.fn();
+	const updateMetadata = vi.fn();
 	const setWasTruncated = vi.fn();
 	const setContextTokenCount = vi.fn();
 	const setContextItems = vi.fn();
@@ -208,7 +210,8 @@ function makeDeps(
 		thinkingMode: "provider-default",
 		sessionsRef,
 		activeSessionIdRef,
-		setSessions,
+		updateMessages,
+		updateMetadata,
 		getRuntime,
 		patchRuntime,
 		clearRuntime,
@@ -225,6 +228,37 @@ function makeDeps(
 
 // ── Tests ─────────────────────────────────────────────────────────
 describe("useMessageActions", () => {
+	it("keeps a send pinned to its captured session through hydration", async () => {
+		const activeSessionIdRef = { current: "session-A" as string | null };
+		const session = {
+			id: "session-A",
+			messages: [],
+			hydrated: true,
+			messageCount: 0,
+			contextItems: [],
+		};
+		const owner = {
+			ensureLoaded: vi.fn(async () => {
+				activeSessionIdRef.current = "session-B";
+				return session;
+			}),
+			getSnapshot: () => ({ sessions: [session] }),
+		};
+		const send = vi
+			.spyOn(TurnLifecycle.prototype, "send")
+			.mockResolvedValue(undefined);
+		const deps = makeDeps({
+			plugin: { ...mockPlugin, sessionState: owner } as any,
+			activeSessionIdRef,
+			sessionsRef: { current: [session] as any[] },
+		});
+		const { result } = renderHook(() => useMessageActions(deps));
+		await act(async () => result.current.handleSend("hello"));
+		expect(owner.ensureLoaded).toHaveBeenCalledWith("session-A");
+		expect(send).toHaveBeenCalledWith("hello", undefined, "session-A");
+		send.mockRestore();
+	});
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockRunChatTurn.mockReset();
@@ -259,7 +293,7 @@ describe("useMessageActions", () => {
 
 	describe("handleEditMessage", () => {
 		it("sets editing state and truncates messages at the user message", () => {
-			const setSessions = vi.fn();
+			const updateMessages = vi.fn();
 			const ui = makeDeps().ui;
 			const session = {
 				id: "session-1",
@@ -273,7 +307,7 @@ describe("useMessageActions", () => {
 			const deps = makeDeps({
 				sessionsRef: { current: [session] },
 				activeSessionIdRef: { current: "session-1" },
-				setSessions,
+				updateMessages,
 				ui,
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
@@ -285,11 +319,11 @@ describe("useMessageActions", () => {
 			);
 			expect(ui.setIsEditing).toHaveBeenCalledWith(true);
 			expect(ui.setEditMessageText).toHaveBeenCalledWith("retry me");
-			expect(setSessions).toHaveBeenCalled();
+			expect(updateMessages).toHaveBeenCalled();
 		});
 
 		it("does nothing if message is not a user message", () => {
-			const setSessions = vi.fn();
+			const updateMessages = vi.fn();
 			const ui = makeDeps().ui;
 			const session = {
 				id: "session-1",
@@ -310,39 +344,39 @@ describe("useMessageActions", () => {
 			const deps = makeDeps({
 				sessionsRef: { current: [session] },
 				activeSessionIdRef: { current: "session-1" },
-				setSessions,
+				updateMessages,
 				ui,
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			act(() => {
 				result.current.handleEditMessage("m2");
 			});
-			expect(setSessions).not.toHaveBeenCalled();
+			expect(updateMessages).not.toHaveBeenCalled();
 			expect(ui.setIsEditing).not.toHaveBeenCalled();
 		});
 
 		it("does nothing if controller is active", () => {
-			const setSessions = vi.fn();
+			const updateMessages = vi.fn();
 			const ui = makeDeps().ui;
 			const deps = makeDeps({
 				getRuntime: vi.fn(() => ({
 					...emptyChatRuntime,
 					controller: {} as any,
 				})),
-				setSessions,
+				updateMessages,
 				ui,
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			act(() => {
 				result.current.handleEditMessage("m1");
 			});
-			expect(setSessions).not.toHaveBeenCalled();
+			expect(updateMessages).not.toHaveBeenCalled();
 		});
 	});
 
 	describe("handleCancelEdit", () => {
 		it("restores original messages and clears editing state", () => {
-			const setSessions = vi.fn();
+			const updateMessages = vi.fn();
 			const ui = makeDeps().ui;
 			ui.originalMessages = [
 				{ id: "m1", role: "user", content: "hello", timestamp: 1 },
@@ -350,39 +384,39 @@ describe("useMessageActions", () => {
 			];
 			const deps = makeDeps({
 				activeSessionIdRef: { current: "session-1" },
-				setSessions,
+				updateMessages,
 				ui,
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			act(() => {
 				result.current.handleCancelEdit();
 			});
-			expect(setSessions).toHaveBeenCalled();
+			expect(updateMessages).toHaveBeenCalled();
 			expect(ui.setIsEditing).toHaveBeenCalledWith(false);
 			expect(ui.setOriginalMessages).toHaveBeenCalledWith([]);
 			expect(ui.setEditMessageText).toHaveBeenCalledWith("");
 		});
 
 		it("does nothing if no original messages", () => {
-			const setSessions = vi.fn();
+			const updateMessages = vi.fn();
 			const ui = makeDeps().ui;
 			ui.originalMessages = [];
 			const deps = makeDeps({
 				activeSessionIdRef: { current: "session-1" },
-				setSessions,
+				updateMessages,
 				ui,
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			act(() => {
 				result.current.handleCancelEdit();
 			});
-			expect(setSessions).not.toHaveBeenCalled();
+			expect(updateMessages).not.toHaveBeenCalled();
 		});
 	});
 
 	describe("handleRetry", () => {
 		it("truncates to before the assistant message and re-sends user content", async () => {
-			const setSessions = vi.fn();
+			const updateMessages = vi.fn();
 			const session = {
 				id: "session-1",
 				messages: [
@@ -409,17 +443,17 @@ describe("useMessageActions", () => {
 			const deps = makeDeps({
 				sessionsRef: { current: [session] },
 				activeSessionIdRef: { current: "session-1" },
-				setSessions,
+				updateMessages,
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			await act(async () => {
 				await result.current.handleRetry("m4");
 			});
-			expect(setSessions).toHaveBeenCalled();
+			expect(updateMessages).toHaveBeenCalled();
 		});
 
 		it("does nothing if no preceding user message found", async () => {
-			const setSessions = vi.fn();
+			const updateMessages = vi.fn();
 			const session = {
 				id: "session-1",
 				messages: [
@@ -438,29 +472,29 @@ describe("useMessageActions", () => {
 			const deps = makeDeps({
 				sessionsRef: { current: [session] },
 				activeSessionIdRef: { current: "session-1" },
-				setSessions,
+				updateMessages,
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			await act(async () => {
 				await result.current.handleRetry("m1");
 			});
-			expect(setSessions).not.toHaveBeenCalled();
+			expect(updateMessages).not.toHaveBeenCalled();
 		});
 
 		it("does nothing if controller is active", async () => {
-			const setSessions = vi.fn();
+			const updateMessages = vi.fn();
 			const deps = makeDeps({
 				getRuntime: vi.fn(() => ({
 					...emptyChatRuntime,
 					controller: {} as any,
 				})),
-				setSessions,
+				updateMessages,
 			});
 			const { result } = renderHook(() => useMessageActions(deps));
 			await act(async () => {
 				await result.current.handleRetry("m1");
 			});
-			expect(setSessions).not.toHaveBeenCalled();
+			expect(updateMessages).not.toHaveBeenCalled();
 		});
 	});
 
@@ -570,7 +604,7 @@ describe("useMessageActions", () => {
 
 	describe("handleSend — group chat path", () => {
 		it("dispatches to orchestrator and adds user + assistant messages", async () => {
-			const setSessions = vi.fn();
+			const updateMessages = vi.fn();
 			const patchRuntime = vi.fn();
 			const ui = makeDeps().ui;
 			const mockStream = async function* () {
@@ -603,7 +637,7 @@ describe("useMessageActions", () => {
 				orchestrator: orchestrator as any,
 				activeSessionIdRef: { current: "session-1" },
 				sessionsRef: { current: [session] },
-				setSessions,
+				updateMessages,
 				patchRuntime,
 				ui,
 			});
@@ -623,7 +657,7 @@ describe("useMessageActions", () => {
 				"session-1",
 				expect.objectContaining({ isStreaming: false }),
 			);
-			expect(setSessions).toHaveBeenCalled();
+			expect(updateMessages).toHaveBeenCalled();
 		});
 
 		it("does nothing if text is empty", async () => {
@@ -632,7 +666,7 @@ describe("useMessageActions", () => {
 			await act(async () => {
 				await result.current.handleSend("  ");
 			});
-			expect(deps.setSessions).not.toHaveBeenCalled();
+			expect(deps.updateMessages).not.toHaveBeenCalled();
 		});
 
 		it("does nothing if controller is already active", async () => {
@@ -646,7 +680,7 @@ describe("useMessageActions", () => {
 			await act(async () => {
 				await result.current.handleSend("hello");
 			});
-			expect(deps.setSessions).not.toHaveBeenCalled();
+			expect(deps.updateMessages).not.toHaveBeenCalled();
 		});
 	});
 

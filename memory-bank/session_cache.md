@@ -1,6 +1,6 @@
 # Session Cache
 
-*Last Updated: 2026-10-19 22:13:00 IST*
+*Last Updated: 2026-10-19 22:30:37 IST*
 
 ## 2026-10-19 — T24c shared session state implementation started
 
@@ -9,15 +9,14 @@
   store. Hydration payload/readiness now install together in that owner, with
   shared in-flight reads and deletion invalidation.
 - Routed session view initialization, open/send hydration, captured send IDs,
-  sync refresh, deletion tombstones, and debounced durable writes through the
-  owner. Added unload flushing; existing JSONL/ChatStorage remains underneath.
-- Focused owner/session/message-action/turn-lifecycle tests: 35 passed.
-  TypeScript, production build, formatting, and diff checks passed.
-  `useSessionActions.test.ts` ran out of Node heap before tests executed.
-- Migration is partial: many consumers still use the transitional shared
-  `setSessions` adapter. Sync/local revision coverage, full race suite, and live
-  Obsidian/device acceptance remain open. Partial checkpoint `e599138` is
-  pushed to `origin/ui-chat-fixes`; the Beads task remains in progress.
+  sync refresh, deletion tombstones, persistent mutations, and debounced writes
+  through the owner. Added unload flushing; JSONL/ChatStorage remains underneath.
+- Five focused owner/session/message-action/turn-lifecycle suites pass (52
+  tests). TypeScript, production build, and diff checks pass. The
+  `useSessionActions.test.ts` worker still runs out of JS heap before executing.
+- No production view-level `setSessions` path remains. Live Obsidian/device
+  acceptance is pending. Checkpoints `e599138` and `7a594df` are pushed to
+  `origin/ui-chat-fixes`; Beads issue `OBSIDIANAI-brl` remains in progress.
 
 ## 2026-10-19 — Shared session-state coordination plan
 

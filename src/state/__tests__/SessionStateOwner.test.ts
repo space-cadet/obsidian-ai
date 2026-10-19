@@ -69,6 +69,22 @@ describe("SessionStateOwner", () => {
 		expect(owner.getSnapshot().deletedSessionIds).toContain("s1");
 	});
 
+	it("keeps an explicit deletion authoritative over a sync snapshot", async () => {
+		const storage = makeStorage({
+			sessions: [session()],
+			activeSessionId: "s1",
+		});
+		const owner = new SessionStateOwner(storage);
+		await owner.initialize();
+		owner.markDeleted("s1");
+		owner.applySyncSnapshot({
+			sessions: [session({ hydrated: true })],
+			activeSessionId: "s1",
+		});
+		expect(owner.getSnapshot().sessions).toEqual([]);
+		expect(owner.getSnapshot().deletedSessionIds).toContain("s1");
+	});
+
 	it("does not replace a newer edit with a late hydration result", async () => {
 		let finish!: (messages: any[]) => void;
 		const storage = makeStorage(
@@ -84,7 +100,7 @@ describe("SessionStateOwner", () => {
 		await owner.initialize();
 		const loading = owner.ensureLoaded("s1");
 		await vi.waitFor(() => expect(storage.hydrate).toHaveBeenCalledOnce());
-		owner.replaceSnapshot({
+		owner.applySyncSnapshot({
 			sessions: [
 				session({
 					hydrated: true,
@@ -142,6 +158,72 @@ describe("SessionStateOwner", () => {
 		expect(owner.getSnapshot().sessions[0].title).toBe("Local edit");
 	});
 
+	it("keeps loaded messages during a matching index refresh", async () => {
+		const loaded = session({
+			hydrated: true,
+			messageCount: 1,
+			updatedAt: 10,
+			messages: [
+				{ id: "m1", role: "user", content: "local", timestamp: 1 },
+			],
+		});
+		const storage = makeStorage({
+			sessions: [loaded],
+			activeSessionId: "s1",
+		});
+		const owner = new SessionStateOwner(storage);
+		await owner.initialize();
+		owner.applySyncSnapshot({
+			sessions: [session({ updatedAt: 10, hydrated: false })],
+			activeSessionId: "s1",
+		});
+		expect(owner.getSnapshot().sessions[0]).toMatchObject({
+			hydrated: true,
+			messages: [{ id: "m1", content: "local" }],
+		});
+	});
+
+	it("retries hydration after a newer sync snapshot supersedes the read", async () => {
+		let finishFirst!: (messages: any[]) => void;
+		const hydrate = vi
+			.fn()
+			.mockImplementationOnce(
+				() =>
+					new Promise((resolve) => {
+						finishFirst = resolve;
+					}),
+			)
+			.mockResolvedValueOnce([
+				{ id: "m1", role: "user", content: "one", timestamp: 1 },
+				{ id: "m2", role: "assistant", content: "two", timestamp: 2 },
+			]);
+		const storage = makeStorage(
+			{ sessions: [session()], activeSessionId: "s1" },
+			hydrate,
+		);
+		const owner = new SessionStateOwner(storage);
+		await owner.initialize();
+		const loading = owner.ensureLoaded("s1");
+		await vi.waitFor(() => expect(hydrate).toHaveBeenCalledTimes(1));
+		owner.applySyncSnapshot({
+			sessions: [session({ updatedAt: 2, messageCount: 2 })],
+			activeSessionId: "s1",
+		});
+		finishFirst([
+			{ id: "stale", role: "user", content: "old", timestamp: 1 },
+		]);
+		await loading;
+		await vi.waitFor(() =>
+			expect(owner.getSnapshot().sessions[0].hydrated).toBe(true),
+		);
+		expect(hydrate).toHaveBeenCalledTimes(2);
+		expect(
+			owner
+				.getSnapshot()
+				.sessions[0].messages.map((message) => message.id),
+		).toEqual(["m1", "m2"]);
+	});
+
 	it("allows a failed write to be retried by a later flush", async () => {
 		const storage = makeStorage({
 			sessions: [session({ hydrated: true, messageCount: 0 })],
@@ -154,5 +236,20 @@ describe("SessionStateOwner", () => {
 		await expect(owner.flush()).rejects.toThrow("disk busy");
 		await owner.flush();
 		expect(storage.save).toHaveBeenCalledTimes(2);
+	});
+
+	it("retains deletion IDs until the durable write succeeds", async () => {
+		const storage = makeStorage({
+			sessions: [session()],
+			activeSessionId: "s1",
+		});
+		storage.save.mockRejectedValueOnce(new Error("disk busy"));
+		const owner = new SessionStateOwner(storage);
+		await owner.initialize();
+		owner.markDeleted("s1");
+		await expect(owner.flush()).rejects.toThrow("disk busy");
+		expect(owner.getSnapshot().deletedSessionIds).toContain("s1");
+		await owner.flush();
+		expect(owner.getSnapshot().deletedSessionIds).not.toContain("s1");
 	});
 });

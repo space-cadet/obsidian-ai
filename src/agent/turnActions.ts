@@ -14,8 +14,17 @@ export class TurnActionController {
 		private readonly send: (
 			text: string,
 			attachments?: Attachment[],
+			sessionId?: string,
 		) => Promise<void>,
 	) {}
+
+	private updateMessages(
+		sessionId: string,
+		messages: import("../types").ChatMessage[],
+	): void {
+		const deps = this.getDeps();
+		deps.updateMessages(sessionId, messages);
+	}
 
 	stop = (): void => {
 		const deps = this.getDeps();
@@ -65,17 +74,7 @@ export class TurnActionController {
 		const truncated = session.messages.slice(0, userIndex);
 		deps.messagesRef.current = truncated;
 
-		deps.setSessions((prev) =>
-			prev.map((s) =>
-				s.id === currentActiveId
-					? {
-							...s,
-							messages: truncated,
-							updatedAt: Date.now(),
-						}
-					: s,
-			),
-		);
+		this.updateMessages(currentActiveId, truncated);
 
 		if (userMsg.attachments && userMsg.attachments.length > 0) {
 			deps.ui.setMessageAttachments(userMsg.attachments);
@@ -90,7 +89,7 @@ export class TurnActionController {
 				`${userMsg.contextItems?.length ?? 0} context item(s)`,
 		);
 
-		void this.send(userMsg.content, userMsg.attachments);
+		void this.send(userMsg.content, userMsg.attachments, currentActiveId);
 	};
 
 	edit = (messageId: string): void => {
@@ -115,17 +114,7 @@ export class TurnActionController {
 		deps.ui.setMessageAttachments(msg.attachments ?? []);
 		deps.setContextItems(msg.contextItems ?? []);
 
-		deps.setSessions((prev) =>
-			prev.map((s) =>
-				s.id === currentActiveId
-					? {
-							...s,
-							messages: truncated,
-							updatedAt: Date.now(),
-						}
-					: s,
-			),
-		);
+		this.updateMessages(currentActiveId, truncated);
 		deps.plugin.logger?.log(
 			"info",
 			`[Chat] edit — session ${currentActiveId.slice(0, 8)}, ` +
@@ -141,17 +130,7 @@ export class TurnActionController {
 		const currentActiveId = deps.activeSessionIdRef.current;
 		if (!currentActiveId || deps.ui.originalMessages.length === 0) return;
 
-		deps.setSessions((prev) =>
-			prev.map((s) =>
-				s.id === currentActiveId
-					? {
-							...s,
-							messages: deps.ui.originalMessages,
-							updatedAt: Date.now(),
-						}
-					: s,
-			),
-		);
+		this.updateMessages(currentActiveId, deps.ui.originalMessages);
 		deps.ui.setIsEditing(false);
 		deps.ui.setOriginalMessages([]);
 		deps.ui.setEditMessageText("");

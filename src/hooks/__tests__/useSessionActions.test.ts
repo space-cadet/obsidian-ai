@@ -25,7 +25,8 @@ describe("useSessionActions", () => {
 				plugin,
 				sessionsRef: { current: [] },
 				activeSessionIdRef: { current: null },
-				setSessions: vi.fn(),
+				updateSessionMetadata: vi.fn(),
+				updateSessionMessages: vi.fn(),
 				setActiveSessionId: vi.fn(),
 				setScrollToMessageId: vi.fn(),
 				createNewSession: vi.fn(),
@@ -74,7 +75,8 @@ describe("useSessionActions", () => {
 				plugin,
 				sessionsRef,
 				activeSessionIdRef,
-				setSessions: vi.fn(),
+				updateSessionMetadata: vi.fn(),
+				updateSessionMessages: vi.fn(),
 				setActiveSessionId: vi.fn(),
 				setScrollToMessageId: vi.fn(),
 				createNewSession,
@@ -123,7 +125,8 @@ describe("useSessionActions", () => {
 				plugin,
 				sessionsRef,
 				activeSessionIdRef,
-				setSessions: vi.fn(),
+				updateSessionMetadata: vi.fn(),
+				updateSessionMessages: vi.fn(),
 				setActiveSessionId: vi.fn(),
 				setScrollToMessageId: vi.fn(),
 				createNewSession,
@@ -158,7 +161,7 @@ describe("useSessionActions", () => {
 			contextItems: [],
 		};
 		const messages = [{ id: "message-1", role: "user", content: "Hello" }];
-		const setSessions = vi.fn();
+		const updateSessionMessages = vi.fn();
 		const plugin = {
 			settings: {
 				includeActiveNote: false,
@@ -178,7 +181,8 @@ describe("useSessionActions", () => {
 				plugin,
 				sessionsRef,
 				activeSessionIdRef,
-				setSessions,
+				updateSessionMetadata: vi.fn(),
+				updateSessionMessages,
 				setActiveSessionId: vi.fn(),
 				setScrollToMessageId: vi.fn(),
 				createNewSession: vi.fn(),
@@ -201,12 +205,9 @@ describe("useSessionActions", () => {
 		});
 
 		expect(plugin.peekSessionMessages).toHaveBeenCalledWith(session.id);
-		const savedSessions = setSessions.mock.calls.at(-1)?.[0];
-		expect(savedSessions[0]).toMatchObject({
-			id: session.id,
+		expect(updateSessionMessages).toHaveBeenCalledWith(
+			session.id,
 			messages,
-			hydrated: true,
-			messageCount: 1,
-		});
+		);
 	});
 });

@@ -10,7 +10,16 @@ interface UseSessionActionsOptions {
 	profileId?: string;
 	sessionsRef: React.MutableRefObject<ChatSession[]>;
 	activeSessionIdRef: React.MutableRefObject<string | null>;
-	setSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>;
+	updateSessionMetadata: (
+		sessionId: string,
+		patch: Partial<Omit<ChatSession, "id" | "messages">>,
+	) => void;
+	updateSessionMessages: (
+		sessionId: string,
+		updater:
+			| ChatSession["messages"]
+			| ((current: ChatSession["messages"]) => ChatSession["messages"]),
+	) => void;
 	setActiveSessionId: React.Dispatch<React.SetStateAction<string | null>>;
 	setScrollToMessageId: React.Dispatch<
 		React.SetStateAction<string | undefined>
@@ -53,7 +62,8 @@ export function useSessionActions({
 	profileId,
 	sessionsRef,
 	activeSessionIdRef,
-	setSessions,
+	updateSessionMetadata,
+	updateSessionMessages,
 	setActiveSessionId,
 	setScrollToMessageId,
 	createNewSession,
@@ -103,6 +113,8 @@ export function useSessionActions({
 							: (loaded?.messages ?? []);
 						if (
 							!loaded ||
+							("hydrated" in loaded &&
+								loaded.hydrated === false) ||
 							(messages.length === 0 &&
 								(target.messageCount ?? 0) > 0)
 						) {
@@ -119,20 +131,8 @@ export function useSessionActions({
 						// Write through the ref synchronously — anything reading
 						// sessionsRef.current before React re-renders must see the
 						// hydrated messages, not the empty boot copy.
-						sessionsRef.current =
-							plugin.sessionState?.getSnapshot().sessions ??
-							sessionsRef.current.map((s) =>
-								s.id === sessionId
-									? {
-											...s,
-											messages,
-											messageCount: messages.length,
-											hydrated: true,
-										}
-									: s,
-							);
 						if (!plugin.sessionState)
-							setSessions(sessionsRef.current);
+							updateSessionMessages(sessionId, messages);
 					})
 					.catch((err) => {
 						// Hydration failure now leaves the session unhydrated (retry
@@ -156,7 +156,7 @@ export function useSessionActions({
 		[
 			plugin,
 			sessionsRef,
-			setSessions,
+			updateSessionMessages,
 			setActiveSessionId,
 			setScrollToMessageId,
 		],
@@ -265,9 +265,8 @@ export function useSessionActions({
 			const isDraft =
 				!!closeTarget && sessionMessageCount(closeTarget) === 0;
 			if (isDraft) {
-				setSessions((current) =>
-					current.filter((session) => session.id !== sessionId),
-				);
+				if (plugin.sessionState)
+					plugin.sessionState.discardDraft(sessionId);
 			}
 			setOpenSessionIds((current) => {
 				if (current.length <= 1) {
@@ -292,7 +291,6 @@ export function useSessionActions({
 		[
 			createNewSession,
 			plugin.settings,
-			setSessions,
 			setActiveSessionId,
 			setScrollToMessageId,
 			activeSessionIdRef,
@@ -346,58 +344,44 @@ export function useSessionActions({
 
 	const handleDeleteSession = useCallback(
 		(sessionId: string) => {
+			const filtered = sessionsRef.current.filter(
+				(session) => session.id !== sessionId,
+			);
 			markSessionDeleted(sessionId);
 			clearSessionRuntime(sessionId);
-			setSessions((prev) => {
-				const filtered = prev.filter((s) => s.id !== sessionId);
-				if (activeSessionIdRef.current === sessionId) {
-					const mostRecent = filtered.sort(
-						(a, b) => b.updatedAt - a.updatedAt,
-					)[0];
-					if (mostRecent) {
-						if (
-							mostRecent.selectedProfileIds &&
-							mostRecent.selectedProfileIds.length > 0
-						) {
-							setSelectedProfileIds(
-								new Set(mostRecent.selectedProfileIds),
-							);
-						} else if (
-							mostRecent.participants &&
-							mostRecent.participants.length > 0
-						) {
-							setSelectedProfileIds(
-								new Set(
-									mostRecent.participants.map((p) => p.id),
-								),
-							);
-						} else {
-							setSelectedProfileIds(new Set());
-						}
-						setDebateMode(false);
-						setActiveSessionId(mostRecent.id);
-					} else {
-						const empty: ChatSession = {
-							id: makeId(),
-							title: "",
-							createdAt: Date.now(),
-							updatedAt: Date.now(),
-							messages: [],
-							contextItems: plugin.settings.includeActiveNote
-								? [{ type: "active-note", id: makeId() }]
-								: [],
-							profileId: profileId || undefined,
-						};
-						filtered.push(empty);
-						setActiveSessionId(empty.id);
-						setSelectedProfileIds(new Set());
-					}
-				}
-				return filtered;
-			});
+			if (activeSessionIdRef.current !== sessionId) return;
+			const mostRecent = filtered.sort(
+				(a, b) => b.updatedAt - a.updatedAt,
+			)[0];
+			if (mostRecent) {
+				setSelectedProfileIds(
+					new Set(
+						mostRecent.selectedProfileIds ??
+							mostRecent.participants?.map((p) => p.id) ??
+							[],
+					),
+				);
+				setDebateMode(false);
+				setActiveSessionId(mostRecent.id);
+				return;
+			}
+			const empty: ChatSession = {
+				id: makeId(),
+				title: "",
+				createdAt: Date.now(),
+				updatedAt: Date.now(),
+				messages: [],
+				contextItems: plugin.settings.includeActiveNote
+					? [{ type: "active-note", id: makeId() }]
+					: [],
+				profileId: profileId || undefined,
+			};
+			plugin.sessionState?.addSession(empty);
+			setActiveSessionId(empty.id);
+			setSelectedProfileIds(new Set());
 		},
 		[
-			setSessions,
+			sessionsRef,
 			setActiveSessionId,
 			setSelectedProfileIds,
 			setDebateMode,
@@ -411,13 +395,9 @@ export function useSessionActions({
 
 	const handleRenameSession = useCallback(
 		(sessionId: string, newTitle: string) => {
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === sessionId ? { ...s, title: newTitle.trim() } : s,
-				),
-			);
+			updateSessionMetadata(sessionId, { title: newTitle.trim() });
 		},
-		[setSessions],
+		[updateSessionMetadata],
 	);
 
 	return {

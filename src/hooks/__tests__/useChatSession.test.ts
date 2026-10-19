@@ -37,6 +37,21 @@ function setup(
 }
 
 describe("restored session hydration", () => {
+	it("shares session updates across views using one plugin instance", async () => {
+		const { result, plugin } = setup();
+		await waitFor(() => expect(result.current.chatDataLoaded).toBe(true));
+		const secondView = renderHook(() => useChatSession({ plugin }));
+		await waitFor(() =>
+			expect(secondView.result.current.chatDataLoaded).toBe(true),
+		);
+		act(() => result.current.renameSession("active", "Shared title"));
+		expect(
+			secondView.result.current.sessions.find((s) => s.id === "active")
+				?.title,
+		).toBe("Shared title");
+		secondView.unmount();
+	});
+
 	it("loads only the active transcript at startup and loads another on activation", async () => {
 		const { result, plugin } = setup();
 		await waitFor(() =>

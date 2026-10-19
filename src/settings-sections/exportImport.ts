@@ -233,14 +233,13 @@ export function renderExportImportSection(
 					});
 					confirmBtn.classList.add("mod-warning");
 					confirmBtn.addEventListener("click", async () => {
-						const existing = await plugin.loadChatData();
-						await plugin.saveChatData({
-							sessions: [],
-							activeSessionId: null,
-							deletedSessionIds: existing.sessions.map(
-								(session) => session.id,
-							),
-						});
+						const owner = plugin.sessionState;
+						if (!owner)
+							throw new Error(
+								"Session state owner is unavailable",
+							);
+						await owner.initialize();
+						await owner.deleteAllSessions();
 						modal.close();
 						new Notice("✓ All chat history cleared.");
 					});

@@ -27,6 +27,7 @@ export class SessionStateOwner {
 	private revisions = new Map<string, number>();
 	private persistedRevisions = new Map<string, number>();
 	private pendingLoads = new Map<string, Promise<ChatSession | null>>();
+	private pendingInitialization: Promise<SessionStateSnapshot> | null = null;
 	private deleted = new Set<string>();
 	private saveTail: Promise<void> = Promise.resolve();
 	private generation = 0;
@@ -47,8 +48,18 @@ export class SessionStateOwner {
 		for (const listener of this.listeners) listener();
 	}
 
-	async initialize(): Promise<SessionStateSnapshot> {
-		if (this.snapshot.ready) return this.snapshot;
+	initialize(): Promise<SessionStateSnapshot> {
+		if (this.snapshot.ready) return Promise.resolve(this.snapshot);
+		if (this.pendingInitialization) return this.pendingInitialization;
+		const pending = this.loadInitialState().finally(() => {
+			if (this.pendingInitialization === pending)
+				this.pendingInitialization = null;
+		});
+		this.pendingInitialization = pending;
+		return pending;
+	}
+
+	private async loadInitialState(): Promise<SessionStateSnapshot> {
 		const generation = this.generation;
 		const data = await this.storage.load();
 		if (generation !== this.generation || this.snapshot.ready)
@@ -77,6 +88,7 @@ export class SessionStateOwner {
 		if (inFlight) return inFlight;
 		const revision = this.revisions.get(sessionId) ?? 0;
 		const generation = this.generation;
+		let reloadSupersedingSnapshot = false;
 		const load = this.storage
 			.hydrate(sessionId)
 			.then(async (messages) => {
@@ -99,10 +111,11 @@ export class SessionStateOwner {
 					generation !== this.generation
 				)
 					return null;
-				if ((this.revisions.get(sessionId) ?? 0) !== revision)
+				if ((this.revisions.get(sessionId) ?? 0) !== revision) {
+					reloadSupersedingSnapshot = latest.hydrated === false;
 					return latest;
-				if (messages.length === 0 && (latest.messageCount ?? 0) > 0)
-					return latest;
+				}
+				if (messages.length < (latest.messageCount ?? 0)) return latest;
 				const loaded = {
 					...latest,
 					messages,
@@ -117,7 +130,12 @@ export class SessionStateOwner {
 				});
 				return loaded;
 			})
-			.finally(() => this.pendingLoads.delete(sessionId));
+			.finally(() => {
+				this.pendingLoads.delete(sessionId);
+				if (reloadSupersedingSnapshot && !this.deleted.has(sessionId)) {
+					queueMicrotask(() => void this.ensureLoaded(sessionId));
+				}
+			});
 		this.pendingLoads.set(sessionId, load);
 		return load;
 	}
@@ -134,9 +152,37 @@ export class SessionStateOwner {
 		}));
 	}
 
+	addSession(session: ChatSession): void {
+		if (this.deleted.has(session.id)) this.deleted.delete(session.id);
+		this.revisions.set(
+			session.id,
+			(this.revisions.get(session.id) ?? 0) + 1,
+		);
+		this.publish({
+			...this.snapshot,
+			sessions: [
+				...this.snapshot.sessions.filter(
+					(item) => item.id !== session.id,
+				),
+				session,
+			],
+		});
+		this.scheduleFlush();
+	}
+
+	setActiveSessionId(sessionId: string | null): void {
+		this.publish({ ...this.snapshot, activeSessionId: sessionId });
+		this.scheduleFlush();
+	}
+
+	setOpenSessionIds(sessionIds: string[]): void {
+		this.publish({ ...this.snapshot, openSessionIds: sessionIds });
+		this.scheduleFlush();
+	}
+
 	updateMessages(
 		sessionId: string,
-		messages: ChatMessage[],
+		change: ChatMessage[] | ((messages: ChatMessage[]) => ChatMessage[]),
 	): ChatSession | null {
 		const session = this.snapshot.sessions.find(
 			(item) => item.id === sessionId,
@@ -147,6 +193,8 @@ export class SessionStateOwner {
 			this.deleted.has(sessionId)
 		)
 			return null;
+		const messages =
+			typeof change === "function" ? change(session.messages) : change;
 		return this.update(sessionId, (current) => ({
 			...current,
 			messages,
@@ -154,6 +202,13 @@ export class SessionStateOwner {
 			hydrated: true,
 			updatedAt: Date.now(),
 		}));
+	}
+
+	appendMessage(sessionId: string, message: ChatMessage): ChatSession | null {
+		return this.updateMessages(sessionId, (messages) => [
+			...messages,
+			message,
+		]);
 	}
 
 	private update(
@@ -187,6 +242,31 @@ export class SessionStateOwner {
 		});
 	}
 
+	async deleteAllSessions(): Promise<void> {
+		for (const session of this.snapshot.sessions)
+			this.deleted.add(session.id);
+		this.generation++;
+		for (const session of this.snapshot.sessions) {
+			this.revisions.set(
+				session.id,
+				(this.revisions.get(session.id) ?? 0) + 1,
+			);
+		}
+		this.publish({
+			...this.snapshot,
+			sessions: [],
+			activeSessionId: null,
+			openSessionIds: [],
+			deletedSessionIds: [...this.deleted],
+		});
+		if (this.saveTimer) clearTimeout(this.saveTimer);
+		await this.flush();
+		this.publish({
+			...this.snapshot,
+			deletedSessionIds: [...this.deleted],
+		});
+	}
+
 	markDeleted(sessionId: string): void {
 		this.deleted.add(sessionId);
 		this.generation++;
@@ -197,6 +277,27 @@ export class SessionStateOwner {
 				(session) => session.id !== sessionId,
 			),
 			deletedSessionIds: [...this.deleted],
+			activeSessionId:
+				this.snapshot.activeSessionId === sessionId
+					? null
+					: this.snapshot.activeSessionId,
+			openSessionIds: this.snapshot.openSessionIds?.filter(
+				(id) => id !== sessionId,
+			),
+		});
+		this.scheduleFlush();
+	}
+
+	discardDraft(sessionId: string): void {
+		if (!this.snapshot.sessions.some((session) => session.id === sessionId))
+			return;
+		this.generation++;
+		this.revisions.set(sessionId, (this.revisions.get(sessionId) ?? 0) + 1);
+		this.publish({
+			...this.snapshot,
+			sessions: this.snapshot.sessions.filter(
+				(session) => session.id !== sessionId,
+			),
 			activeSessionId:
 				this.snapshot.activeSessionId === sessionId
 					? null
@@ -227,19 +328,34 @@ export class SessionStateOwner {
 				(this.revisions.get(incoming.id) ?? 0) ===
 				(this.persistedRevisions.get(incoming.id) ?? 0)
 			) {
-				merged[
-					merged.findIndex((session) => session.id === incoming.id)
-				] =
-					current.hydrated === false && incoming.messages.length === 0
+				const refreshed =
+					incoming.messages.length === 0 &&
+					current.hydrated !== false &&
+					incoming.messageCount === current.messageCount &&
+					incoming.updatedAt <= current.updatedAt
 						? {
 								...incoming,
 								messages: current.messages,
-								hydrated: false,
+								messageCount: current.messageCount,
+								hydrated: true,
 							}
-						: incoming;
+						: current.hydrated === false &&
+							  incoming.messages.length === 0
+							? {
+									...incoming,
+									messages: current.messages,
+									hydrated: false,
+								}
+							: incoming;
+				merged[
+					merged.findIndex((session) => session.id === incoming.id)
+				] = refreshed;
 				if (
 					incoming.hydrated !== false ||
-					incoming.messages.length > 0
+					incoming.messages.length > 0 ||
+					incoming.updatedAt !== current.updatedAt ||
+					incoming.messageCount !== current.messageCount ||
+					incoming.title !== current.title
 				) {
 					this.revisions.set(
 						incoming.id,
@@ -254,32 +370,6 @@ export class SessionStateOwner {
 			activeSessionId: data.activeSessionId,
 			openSessionIds: data.openSessionIds,
 			deletedSessionIds: [...this.deleted],
-		});
-		this.scheduleFlush();
-	}
-
-	/** Transitional snapshot import; callers should migrate to explicit operations. */
-	replaceSnapshot(data: StoredChatData): void {
-		const prior = new Map(
-			this.snapshot.sessions.map((session) => [session.id, session]),
-		);
-		const sessions = data.sessions.filter(
-			(session) => !this.deleted.has(session.id),
-		);
-		for (const session of sessions) {
-			if (prior.get(session.id) !== session)
-				this.revisions.set(
-					session.id,
-					(this.revisions.get(session.id) ?? 0) + 1,
-				);
-		}
-		this.publish({
-			...this.snapshot,
-			sessions,
-			activeSessionId: data.activeSessionId,
-			openSessionIds: data.openSessionIds,
-			deletedSessionIds: [...this.deleted],
-			ready: true,
 		});
 		this.scheduleFlush();
 	}
