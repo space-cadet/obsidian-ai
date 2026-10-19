@@ -41,6 +41,13 @@ setSelectedProfileIds(new Set([fallbackId]));
 
 **File:** `src/components/ChatApp.tsx` (~line 1380)
 
+### Provider-Scoped Model Choices (2026-10-19)
+
+The model picker keeps fetched caches and recent-model entries scoped to the
+active provider/profile. Codex profiles ignore legacy model caches without a
+Codex provider tag and use a Codex fallback list when no provider-scoped cache
+is available. Implemented in `152f2d0`; user acceptance was not reported.
+
 ---
 
 ## Thinking Mode Selector (2026-10-18)
@@ -70,13 +77,16 @@ wide columns remain reachable on narrow or mobile chat panes. The renderer is
 the layout styles in `styles/_chat.css` and generated `styles.css`. The user
 confirmed the horizontal overflow fix works.
 
-## Provider-Adaptive Progress — T60e/T15 (planned)
+## Provider-Adaptive Progress — T60e/T15
 
-The current chat UI updates visible text incrementally but does not expose
-partial tool-call arguments or a distinct waiting state when a provider buffers
-reasoning/tool events. The planned follow-up adds generic Thinking, Preparing
-tool, Waiting for provider, Executing tool, and Finishing states plus
-provisional tool-call cards. Raw hidden reasoning remains undisplayed.
+The native `AgentLoop` displays a complete tool call as soon as its stream event
+arrives, before the step finishes; approval and execution still wait for that
+step to end (`2004e30`). Providers can buffer this complete event, so the UI
+still does not expose partial arguments or a distinct waiting state while the
+provider is preparing a call. The remaining planned follow-up adds generic
+Thinking, Preparing tool, Waiting for provider, Executing tool, and Finishing
+states plus provisional tool-call cards. Raw hidden reasoning remains
+undisplayed. User acceptance of the timing change was not reported.
 
 Transport and execution lifecycle belong to T60e; visual rendering belongs to
 T15. Implementation must occur on the separate branch
@@ -112,6 +122,11 @@ in user messages;
 `styles/_chat-extensions.css` contains the shared visual treatment and generated
 `styles.css`. The composer rewrite and wrapped-pill fix shipped in `085afe0`
 and `e47da0a`.
+
+The latest cursor-position change applies reference-overlay styling only when
+the composer text contains a matching reference (`2154721`). The user reported
+that cursor placement still needed work; live acceptance of this change remains
+pending.
 
 ## File Attachments (📎)
 

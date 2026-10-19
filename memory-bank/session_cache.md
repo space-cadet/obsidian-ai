@@ -1,5 +1,23 @@
 # Session Cache
 
+## 2026-10-19 — Codex fixes, tab rollback, and Android crash
+
+- Confirmed: the Codex note-edit fingerprint fix (`9344ea5`) works per the
+  user. The Codex model picker fix (`152f2d0`) and composer caret change
+  (`2154721`) still need user acceptance. `2004e30` surfaces complete tool
+  calls when emitted; provider buffering and partial arguments remain.
+- Android startup crash: Chat Lab crashes before tab selection; restored chat
+  is blank, no reply is active, and `debug.log` lacks useful detail. Cause is
+  unknown. The new-tab fix (`752e74c`) and active-only hydration attempt
+  (`d1aa297`) did not resolve the reported crash and are absent after reset.
+- Source branch `ui-chat-fixes` was hard-reset and force-pushed to `2004e30`;
+  local and remote match and the worktree is clean. Production build passed at
+  `d1aa297` before reset; no post-reset build or Android acceptance was done.
+- Session record: `sessions/2026-10-19-chat-fixes-android-startup-crash.md`.
+- Text is authoritative. No safe edit-history generator is available; the
+  edit history was refreshed manually from this update's canonical chunk.
+  Beads has no local database in this checkout.
+
 ## 2026-10-18 — UI fixes, thinking modes, and current-turn settings
 
 - T73/T6a: fixed composer layout at three or more lines, corrected inflated

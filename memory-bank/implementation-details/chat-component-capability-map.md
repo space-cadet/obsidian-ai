@@ -57,7 +57,7 @@ The responsive toolbar provides:
 - Open overflow actions for session rename, automatic naming, tool auto-approval, debate mode when multiple AI participants are selected, relay controls/member list, and bulk session export.
 - Show the active AI and connected/selected human participants with attribution/status cues.
 
-Controls remain usable on narrow/mobile layouts, with touch-sized targets. Less-frequent actions may be placed in an overflow menu. The participant and model controls reflect the active session's saved choices rather than keeping a conflicting global selection.
+Controls remain usable on narrow/mobile layouts, with touch-sized targets. Less-frequent actions may be placed in an overflow menu. The participant and model controls reflect the active session's saved choices rather than keeping a conflicting global selection. Model choices and recent entries are constrained to the selected provider/profile; a provider's cached list must not leak into another provider's picker.
 
 ### 3.2 Transcript
 
@@ -85,7 +85,7 @@ The composer supports multiline text, automatic height growth (including message
 The composer also supports:
 
 - Resource mentions/references, with searchable, disambiguated candidates and keyboard selection. Selected references appear as inline pills while composing, editing, and viewing a user message; attached files remain separate removable chips. Mentioning a resource (often with `@`) is a general interaction pattern; reference syntax and rendering depend on the host/adapter, with Obsidian-style `[[...]]` as one format.
-- Wrapped reference pills keep an outline on each visual line without changing text layout, preserving caret alignment in the composer.
+- Wrapped reference pills keep an outline on each visual line without changing text layout, preserving caret alignment in the composer. When no reference decoration matches the text, the composer skips the reference-overlay styling path; the latest cursor-position adjustment is awaiting live user confirmation.
 - Optional action shortcuts for edit, create, and append requests. The verbs and target selection are general concepts; exact slash syntax and available actions depend on the adapter.
 - Attachment selection and removal, with visible chips.
 - A thinking-mode menu calibrated to the selected provider/model. Auto is marked
@@ -538,6 +538,6 @@ A replacement should not be considered feature-complete until it can demonstrate
 
 - The provider, attachment, tool, and host-feature surfaces are capability-dependent. A replacement should expose unavailable features honestly rather than displaying unusable controls.
 - Obsidian Dataview querying is an optional, read-only adapter capability. Web search requires a supported search backend; remote collaboration requires a configured relay; saved-chat sync requires a configured sync backend.
-- Provider-adaptive intermediate progress and partial tool-argument display are not part of the current guaranteed behavior.
+- A complete direct-provider tool call may appear as soon as its call event is emitted, before execution begins. Provider buffering can delay that event; partial-argument and provider-waiting progress are not part of the current guaranteed behavior.
 - The current message bubble renders model name, response duration, usage/estimated tokens, timestamp, and copy/retry or copy/edit actions. The provider name is not currently rendered in the message bubble; the provider/model pairing in the mobile mockups records the requested target presentation.
 - This document maps chat-visible functionality. It does not claim that every provider supports the same multimodal formats, reasoning controls, tool transport, usage reporting, or cancellation quality.

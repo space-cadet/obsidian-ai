@@ -6,6 +6,21 @@
 
 ---
 
+### 2026-10-19 10:41 IST — Android Chat Lab startup crash (ERR-20261019-001)
+
+- Symptom: on Android, Obsidian crashes while opening Chat Lab before a tab is
+  selected; the restored chat shows no messages. The user reports the plugin is
+  the only affected component, and no reply was running. `debug.log` had no
+  useful crash detail.
+- Investigation: the session/tab change was suspected. The new-tab change
+  (`752e74c`) was reverted, then startup hydration was limited to the active
+  session (`d1aa297`). The user still reported a crash. The branch was then
+  hard-reset and force-pushed to `2004e30`, removing both changes. Neither
+  hypothesis establishes the cause; the reset build has not been re-tested on
+  the device.
+- Status: 🔄 Unresolved. No Android system/WebView crash trace is available.
+  Continue from `ui-chat-fixes` at `2004e30`; see T15 and T24.
+
 ### 2026-09-29 20:10 IST — Loaded-chat vault link still crashes (ERR-20260929-001)
 
 - Symptom: clicking a vault-document link in a previously loaded chat crashes

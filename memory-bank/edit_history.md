@@ -1,6 +1,19 @@
 # Edit History
 
-*Last Updated: 2026-09-30 03:45:08 IST*
+*Last Updated: 2026-10-19 10:41:46 IST*
+
+### 2026-10-19
+#### 10:41:46 IST - T5/T10/T15/T24/T60e/T73: Record chat fixes and crash status
+- Updated `memory-bank/tasks/T5.md` - Recorded the Codex note-edit fingerprint metadata fix and user confirmation.
+- Updated `memory-bank/tasks/T10.md` and `memory-bank/implementation-details/chat-ui-features.md` - Recorded provider-scoped model choices and pending user acceptance.
+- Updated `memory-bank/tasks/T15.md` and `memory-bank/tasks/T24.md` - Recorded the Android startup crash report, unsuccessful hypotheses, and current reset state.
+- Updated `memory-bank/errorLog.md` - Added ERR-20261019-001 with unresolved status.
+- Updated `memory-bank/tasks/T60e.md`, `memory-bank/implementation-details/chat-ui-features.md`, and `memory-bank/implementation-details/chat-component-capability-map.md` - Recorded complete tool-call display timing and provider-buffering limits.
+- Updated `memory-bank/tasks/T73.md`, `memory-bank/implementation-details/chat-ui-features.md`, and `memory-bank/implementation-details/chat-component-capability-map.md` - Recorded the composer cursor change and pending acceptance.
+- Created `memory-bank/sessions/2026-10-19-chat-fixes-android-startup-crash.md` - Captured source commits, rollback, verification, and follow-up.
+- Updated `memory-bank/activeContext.md` and `memory-bank/session_cache.md` - Recorded current source head, unresolved crash, and acceptance limits.
+- Created `memory-bank/edits/2026-10-19/104146-chat-fixes-crash-closeout.md` - Added the canonical edit chunk for this Memory Bank update.
+- Refreshed this history view manually from the canonical chunk because no generator is available.
 
 ### 2026-09-30
 #### 03:45:08 IST - T28/T58: Record mobile link fix and toolbar merge

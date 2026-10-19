@@ -1,5 +1,24 @@
 # Active Context
 
+### 2026-10-19 — Codex chat fixes and unresolved Android startup crash
+
+- The Codex note-edit fingerprint fix (`9344ea5`) is user-confirmed. The
+  Codex-scoped model picker (`152f2d0`) and composer cursor adjustment
+  (`2154721`) remain without user acceptance. `2004e30` surfaces a complete
+  tool call when its event arrives; provider buffering and partial arguments
+  remain limitations.
+- Android Chat Lab still crashes before tab selection, with the restored chat
+  blank and no reply running. Reverting the tab change and trying active-only
+  startup hydration did not resolve the reported crash. The cause is unknown.
+- `ui-chat-fixes` was hard-reset and force-pushed to `2004e30`; both local and
+  remote are clean at that commit. The startup hydration attempt (`d1aa297`) and
+  the new-tab change (`752e74c`) are no longer on the branch.
+- A production build passed while `d1aa297` was present; no Android acceptance
+  or system/WebView crash trace is available, and no build was run after reset.
+- See `sessions/2026-10-19-chat-fixes-android-startup-crash.md`, T15/T24, and
+  `errorLog.md` ERR-20261019-001. Composer cursor acceptance remains open under
+  T73.
+
 ### 2026-10-18 — ui-chat-fixes closeout
 
 - Source commits `ab97b7c`, `ddb94d3`, `dddc18a`, and `f024a14` are pushed on
