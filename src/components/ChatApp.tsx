@@ -769,7 +769,8 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	// Wrap handleSend to also sync to relay (only if ParticipantRouter is not handling it)
 	const handleSendWithSync = useCallback(
 		async (text: string, attachments?: import("../types").Attachment[]) => {
-			await actions.handleSend(text, attachments);
+			const accepted = await actions.handleSend(text, attachments);
+			if (accepted === false) return false;
 			// Only do legacy relay sync if ParticipantRouter is not active
 			if (
 				!participantRouter &&
@@ -798,6 +799,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					console.warn("[ChatApp] Failed to sync message:", err);
 				});
 			}
+			return true;
 		},
 		[
 			actions.handleSend,

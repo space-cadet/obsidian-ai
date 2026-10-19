@@ -1,4 +1,9 @@
-import type { ChatMessage, ChatSession, StoredChatData } from "../types";
+import type {
+	ChatMessage,
+	ChatSession,
+	SessionHydrationResult,
+	StoredChatData,
+} from "../types";
 
 const SAVE_DEBOUNCE_MS = 150;
 const MAX_SAVE_RETRY_DELAY_MS = 30_000;
@@ -14,6 +19,7 @@ export interface SessionStateSnapshot {
 export interface SessionStateStorage {
 	load(): Promise<StoredChatData>;
 	hydrate(sessionId: string): Promise<ChatMessage[]>;
+	hydrateWithMetadata?(sessionId: string): Promise<SessionHydrationResult>;
 	peek?(sessionId: string): Promise<ChatMessage[]>;
 	save(data: StoredChatData): Promise<void>;
 }
@@ -92,19 +98,37 @@ export class SessionStateOwner {
 		if (inFlight) return inFlight;
 		const revision = this.revisions.get(sessionId) ?? 0;
 		let reloadSupersedingSnapshot = false;
-		const load = this.storage
-			.hydrate(sessionId)
-			.then(async (messages) => {
+		const load = (
+			this.storage.hydrateWithMetadata
+				? this.storage.hydrateWithMetadata(sessionId)
+				: this.storage.hydrate(sessionId).then((messages) => ({
+						messages,
+						indexedMessageCount:
+							current.messageCount ?? messages.length,
+						exactDuplicateCount: 0,
+						invalidRecordCount: 0,
+						countMismatchExplainedByExactDeduplication: false,
+					}))
+		)
+			.then(async (result) => {
+				let messages = result.messages;
 				if (
 					messages.length === 0 &&
 					(current.messageCount ?? 0) > 0 &&
 					this.storage.peek
 				) {
-					return this.storage.peek(sessionId);
+					messages = await this.storage.peek(sessionId);
+					return {
+						...result,
+						messages,
+						exactDuplicateCount: 0,
+						countMismatchExplainedByExactDeduplication: false,
+					};
 				}
-				return messages;
+				return result;
 			})
-			.then((messages) => {
+			.then((result) => {
+				const { messages } = result;
 				const latest = this.snapshot.sessions.find(
 					(session) => session.id === sessionId,
 				);
@@ -113,7 +137,15 @@ export class SessionStateOwner {
 					reloadSupersedingSnapshot = latest.hydrated === false;
 					return latest;
 				}
-				if (messages.length < (latest.messageCount ?? 0)) return latest;
+				const duplicateOnlyReduction =
+					result.countMismatchExplainedByExactDeduplication &&
+					(latest.messageCount ?? result.indexedMessageCount) ===
+						result.indexedMessageCount;
+				if (
+					messages.length < (latest.messageCount ?? 0) &&
+					!duplicateOnlyReduction
+				)
+					return latest;
 				const loaded = {
 					...latest,
 					messages,

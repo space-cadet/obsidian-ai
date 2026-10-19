@@ -40,7 +40,10 @@ interface ChatMainAreaProps {
 	pendingToolCall: ToolCall | null;
 	pendingToolDisplay: ToolDisplayDescriptor | null;
 	typingUsers: string[];
-	onSend: (text: string, attachments?: Attachment[]) => void;
+	onSend: (
+		text: string,
+		attachments?: Attachment[],
+	) => void | boolean | Promise<void | boolean>;
 	onStop: () => void;
 	onTyping: () => void;
 	onAddMention: (item: ContextItem) => void;

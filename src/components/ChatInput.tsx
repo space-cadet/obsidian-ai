@@ -25,7 +25,10 @@ interface ChatInputProps {
 	app: App;
 	plugin: ChatPluginLike;
 	contextItems: ContextItem[];
-	onSend: (text: string, attachments?: Attachment[]) => void;
+	onSend: (
+		text: string,
+		attachments?: Attachment[],
+	) => void | boolean | Promise<void | boolean>;
 	onStop: () => void;
 	onAddMention: (item: ContextItem) => void;
 	isStreaming: boolean;
@@ -206,7 +209,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const overlayTextRef = useRef<HTMLDivElement>(null);
 	const isComposingRef = useRef(false);
+	const isSendingRef = useRef(false);
 	const typingTimerRef = useRef<number | null>(null);
+	const currentValueRef = useRef(value);
+	currentValueRef.current = value;
+	const currentAttachmentsRef = useRef(attachments);
+	currentAttachmentsRef.current = attachments;
 
 	const updateValue = useCallback(
 		(nextValue: string) => {
@@ -397,13 +405,41 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		[auto, onAddMention, updateValue, value],
 	);
 
-	const sendMessage = useCallback(() => {
-		const trimmed = value.trim();
-		if ((!trimmed && attachments.length === 0) || isStreaming) return;
-		onSend(trimmed, attachments.length > 0 ? attachments : undefined);
-		updateValue("");
-		setAuto(null);
-		onAttachmentsChange?.([]);
+	const sendMessage = useCallback(async () => {
+		const submittedValue = value;
+		const submittedAttachments = [...attachments];
+		const trimmed = submittedValue.trim();
+		if (
+			isSendingRef.current ||
+			(!trimmed && submittedAttachments.length === 0) ||
+			isStreaming
+		)
+			return;
+		isSendingRef.current = true;
+		try {
+			const accepted = await onSend(
+				trimmed,
+				submittedAttachments.length > 0
+					? submittedAttachments
+					: undefined,
+			);
+			if (accepted === false) return;
+			if (currentValueRef.current === submittedValue) {
+				updateValue("");
+				setAuto(null);
+			}
+			if (
+				currentAttachmentsRef.current.length ===
+					submittedAttachments.length &&
+				currentAttachmentsRef.current.every(
+					(attachment, index) =>
+						attachment === submittedAttachments[index],
+				)
+			)
+				onAttachmentsChange?.([]);
+		} finally {
+			isSendingRef.current = false;
+		}
 	}, [
 		attachments,
 		isStreaming,

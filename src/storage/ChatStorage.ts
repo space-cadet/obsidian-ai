@@ -6,6 +6,7 @@ import type {
 	ContextItem,
 	CompactionMetadata,
 	Attachment,
+	SessionHydrationResult,
 } from "../types";
 import type { ObsidianAISettings } from "../settings";
 
@@ -31,6 +32,9 @@ export interface ChatStorage {
 	detectLegacyFormat(): Promise<boolean>;
 	/** Read one session's message file into memory. Returns the messages. */
 	hydrateSession?(sessionId: string): Promise<ChatMessage[]>;
+	hydrateSessionWithMetadata?(
+		sessionId: string,
+	): Promise<SessionHydrationResult>;
 	peekSessionMessages?(sessionId: string): Promise<ChatMessage[]>;
 	/** False while a session's messages exist on disk but haven't been read. */
 	isSessionHydrated?(sessionId: string): boolean;
@@ -148,6 +152,12 @@ interface SessionIndex {
 	openSessionIds?: string[];
 }
 
+interface LoadedSessionMessages {
+	messages: ChatMessage[];
+	exactDuplicateCount: number;
+	invalidRecordCount: number;
+}
+
 const INDEX_VERSION = 1;
 const SESSIONS_DIR = "sessions";
 // Obsidian's mobile filesystem bridge materializes the complete file as a
@@ -250,7 +260,10 @@ class JsonlStorage implements ChatStorage {
 	private activeSessionWriteStages = new Set<string>();
 	private transcriptFingerprints = new Map<string, string>();
 	/** In-flight hydrateSession calls — concurrent callers share one read. */
-	private pendingHydrations = new Map<string, Promise<ChatMessage[]>>();
+	private pendingHydrations = new Map<
+		string,
+		Promise<SessionHydrationResult>
+	>();
 	private sessionIoTail: Promise<void> = Promise.resolve();
 	/** Sessions known to have their messages in UI memory (hydrated via
 		hydrateSession() or saved carrying real messages). Metadata-only index
@@ -331,20 +344,35 @@ class JsonlStorage implements ChatStorage {
 				// Mirror the lazy hydrateSession() honesty guard.
 				let hydrateFailed = false;
 				if (hydrateAll) {
-					messages = await this._loadMessages(
+					const loaded = await this._loadMessagesWithDetails(
 						`${pluginDir}/${entry.filePath}`,
 					);
-					if (messages.length === 0 && entry.messageCount > 0) {
+					messages = loaded.messages;
+					const deduplicationExplainsMismatch =
+						this.countMismatchExplainedByExactDeduplication(
+							messages,
+							entry.messageCount,
+							loaded.exactDuplicateCount,
+							loaded.invalidRecordCount,
+						);
+					if (
+						(messages.length === 0 && entry.messageCount > 0) ||
+						(messages.length < entry.messageCount &&
+							!deduplicationExplainsMismatch)
+					) {
 						hydrateFailed = true;
 						// Keep it retryable via hydrateSession() and under the
 						// save-guard so an autosave can't clobber the index.
 						this.unhydratedSessions.set(entry.id, entry);
 						this.deps.logger?.log(
 							"error",
-							`JsonlStorage: bulk hydrate found 0 messages for ${entry.id} (index expects ${entry.messageCount}) — leaving unhydrated for retry`,
+							`JsonlStorage: bulk hydrate read ${messages.length}/${entry.messageCount} verified messages for ${entry.id} — leaving unhydrated for retry`,
 						);
-					} else if (
-						messages.length > 0 &&
+					} else {
+						this.hydratedSessionIds.add(entry.id);
+					}
+					if (
+						!hydrateFailed &&
 						messages.length < entry.messageCount
 					) {
 						this.deps.logger?.log(
@@ -458,6 +486,12 @@ class JsonlStorage implements ChatStorage {
 	/** Read one session's message file into memory. Idempotent; returns [] for
 		already-hydrated or unknown ids so callers can fire it unconditionally. */
 	async hydrateSession(sessionId: string): Promise<ChatMessage[]> {
+		return (await this.hydrateSessionWithMetadata(sessionId)).messages;
+	}
+
+	async hydrateSessionWithMetadata(
+		sessionId: string,
+	): Promise<SessionHydrationResult> {
 		const pending = this.pendingHydrations.get(sessionId);
 		if (pending) return pending;
 		const p = this._withSessionIoLock(() =>
@@ -469,14 +503,20 @@ class JsonlStorage implements ChatStorage {
 
 	private async _hydrateSessionImpl(
 		sessionId: string,
-	): Promise<ChatMessage[]> {
+	): Promise<SessionHydrationResult> {
 		const entry = this.unhydratedSessions.get(sessionId);
 		if (!entry) {
 			this.deps.logger?.log(
 				"debug",
 				`ChatStorage: hydrate skipped for ${sessionId} (no pending index entry)`,
 			);
-			return [];
+			return {
+				messages: [],
+				indexedMessageCount: 0,
+				exactDuplicateCount: 0,
+				invalidRecordCount: 0,
+				countMismatchExplainedByExactDeduplication: false,
+			};
 		}
 		const adapter = this.deps.app.vault.adapter;
 		const pluginDir = `${this.deps.app.vault.configDir}/plugins/${this.deps.manifest.id}`;
@@ -485,9 +525,9 @@ class JsonlStorage implements ChatStorage {
 			"debug",
 			`ChatStorage: hydrate started for ${sessionId} (${entry.filePath}, expected ${entry.messageCount})`,
 		);
-		let messages: ChatMessage[];
+		let loaded: LoadedSessionMessages;
 		try {
-			messages = await this._loadMessages(path);
+			loaded = await this._loadMessagesWithDetails(path);
 		} catch (err) {
 			// Read failure (e.g. mobile bridge): leave the session unhydrated so
 			// the next open retries, and surface it in the log instead of
@@ -499,17 +539,39 @@ class JsonlStorage implements ChatStorage {
 			// Do not let the view's empty-result fallback call peekSessionMessages
 			// and repeat an oversized native bridge read.
 			if (err instanceof SessionTooLargeError) throw err;
-			return [];
+			return {
+				messages: [],
+				indexedMessageCount: entry.messageCount,
+				exactDuplicateCount: 0,
+				invalidRecordCount: 0,
+				countMismatchExplainedByExactDeduplication: false,
+			};
 		}
-		if (messages.length === 0 && entry.messageCount > 0) {
-			// Missing or fully unparseable .jsonl for a session the index says
-			// has messages. Do NOT mark hydrated — that would permanently show
-			// an empty session with no way to retry.
+		const { messages } = loaded;
+		const deduplicationExplainsMismatch =
+			this.countMismatchExplainedByExactDeduplication(
+				messages,
+				entry.messageCount,
+				loaded.exactDuplicateCount,
+				loaded.invalidRecordCount,
+			);
+		if (
+			messages.length < entry.messageCount &&
+			!deduplicationExplainsMismatch
+		) {
+			// Missing, malformed, or truncated content cannot be treated as a
+			// complete transcript. Leave it retryable and keep the index count.
 			this.deps.logger?.log(
 				"error",
-				`ChatStorage: hydrate found 0 messages for ${sessionId} (index expects ${entry.messageCount}, ${path}) — leaving unhydrated for retry`,
+				`ChatStorage: hydrate read ${messages.length}/${entry.messageCount} verified messages for ${sessionId} (${path}) — leaving unhydrated for retry`,
 			);
-			return [];
+			return {
+				messages: [],
+				indexedMessageCount: entry.messageCount,
+				exactDuplicateCount: loaded.exactDuplicateCount,
+				invalidRecordCount: loaded.invalidRecordCount,
+				countMismatchExplainedByExactDeduplication: false,
+			};
 		}
 		if (messages.length < entry.messageCount) {
 			this.deps.logger?.log(
@@ -528,7 +590,33 @@ class JsonlStorage implements ChatStorage {
 			"info",
 			`ChatStorage: hydrated ${sessionId} (${messages.length}/${entry.messageCount} messages, ${entry.filePath})`,
 		);
-		return messages;
+		return {
+			messages,
+			indexedMessageCount: entry.messageCount,
+			exactDuplicateCount: loaded.exactDuplicateCount,
+			invalidRecordCount: loaded.invalidRecordCount,
+			countMismatchExplainedByExactDeduplication:
+				this.countMismatchExplainedByExactDeduplication(
+					messages,
+					entry.messageCount,
+					loaded.exactDuplicateCount,
+					loaded.invalidRecordCount,
+				),
+		};
+	}
+
+	private countMismatchExplainedByExactDeduplication(
+		messages: ChatMessage[],
+		indexedMessageCount: number,
+		exactDuplicateCount: number,
+		invalidRecordCount: number,
+	): boolean {
+		return (
+			messages.length < indexedMessageCount &&
+			exactDuplicateCount > 0 &&
+			invalidRecordCount === 0 &&
+			messages.length + exactDuplicateCount === indexedMessageCount
+		);
 	}
 
 	isSessionHydrated(sessionId: string): boolean {
@@ -663,6 +751,17 @@ class JsonlStorage implements ChatStorage {
 				preservedUnhydratedSessions++;
 				preservedUnhydratedMessages += expectedMessageCount;
 				continue;
+			}
+			if (
+				session.messages.length === 0 &&
+				expectedMessageCount === 0 &&
+				(originalEntry?.messageCount ?? 0) > 0 &&
+				(session.hydrated === true ||
+					this.hydratedSessionIds.has(session.id))
+			) {
+				// This was a verified transcript that the caller intentionally
+				// cleared. Remove its old JSONL file along with the zero-count index.
+				pendingDeletes.add(filePath);
 			}
 
 			const previous = this.lastSavedState?.sessions.get(session.id);
@@ -1120,10 +1219,20 @@ class JsonlStorage implements ChatStorage {
 	}
 
 	private async _loadMessages(path: string): Promise<ChatMessage[]> {
+		return (await this._loadMessagesWithDetails(path)).messages;
+	}
+
+	private async _loadMessagesWithDetails(
+		path: string,
+	): Promise<LoadedSessionMessages> {
 		const adapter = this.deps.app.vault.adapter;
 		if (!(await adapter.exists(path))) {
 			this.transcriptFingerprints.delete(path);
-			return [];
+			return {
+				messages: [],
+				exactDuplicateCount: 0,
+				invalidRecordCount: 0,
+			};
 		}
 		const stat = await adapter.stat(path);
 		if (stat && stat.size > MAX_SESSION_READ_BYTES) {
@@ -1132,11 +1241,18 @@ class JsonlStorage implements ChatStorage {
 		}
 		const raw = await adapter.read(path);
 		this.transcriptFingerprints.set(path, hashText(raw));
-		if (!raw.trim()) return [];
+		if (!raw.trim()) {
+			return {
+				messages: [],
+				exactDuplicateCount: 0,
+				invalidRecordCount: 0,
+			};
+		}
 		const lines = raw.split("\n").filter((l) => l.trim());
 		const messages: ChatMessage[] = [];
 		const seenById = new Map<string, string>();
 		let exactDuplicates = 0;
+		let invalidRecordCount = 0;
 		for (const line of lines) {
 			try {
 				const parsed = JSON.parse(line);
@@ -1158,12 +1274,14 @@ class JsonlStorage implements ChatStorage {
 						seenById.set(parsed.id, serialized);
 					messages.push(parsed as ChatMessage);
 				} else {
+					invalidRecordCount++;
 					this.deps.logger?.log(
 						"warn",
 						`ChatStorage: skipping malformed message line in ${path}`,
 					);
 				}
 			} catch {
+				invalidRecordCount++;
 				this.deps.logger?.log(
 					"warn",
 					`ChatStorage: failed to parse message line in ${path}`,
@@ -1176,6 +1294,10 @@ class JsonlStorage implements ChatStorage {
 				`ChatStorage: ignored ${exactDuplicates} exact duplicate message record(s) in ${path}`,
 			);
 		}
-		return messages;
+		return {
+			messages,
+			exactDuplicateCount: exactDuplicates,
+			invalidRecordCount,
+		};
 	}
 }

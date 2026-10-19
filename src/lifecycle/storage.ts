@@ -135,6 +135,20 @@ export async function initializeStorage(
 	plugin.sessionState = new SessionStateOwner({
 		load: () => plugin.loadChatData(),
 		hydrate: (sessionId) => plugin.hydrateSession(sessionId),
+		hydrateWithMetadata: async (sessionId) => {
+			const storage = plugin._chatStorage;
+			if (storage?.hydrateSessionWithMetadata) {
+				return storage.hydrateSessionWithMetadata(sessionId);
+			}
+			const messages = await plugin.hydrateSession(sessionId);
+			return {
+				messages,
+				indexedMessageCount: messages.length,
+				exactDuplicateCount: 0,
+				invalidRecordCount: 0,
+				countMismatchExplainedByExactDeduplication: false,
+			};
+		},
 		peek: (sessionId) => plugin.peekSessionMessages(sessionId),
 		save: (data) => plugin.saveChatData(data),
 	});

@@ -85,7 +85,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 							"warn",
 							`[Session] send blocked; ${sessionId} transcript is not ready`,
 						);
-						return;
+						return false;
 					}
 					d.sessionsRef.current =
 						d.plugin.sessionState.getSnapshot().sessions;
@@ -98,7 +98,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 						!messages ||
 						messages.length < (current?.messageCount ?? 0)
 					)
-						return;
+						return false;
 					d.updateMessages(sessionId, messages);
 					d.sessionsRef.current = d.sessionsRef.current.map(
 						(session) =>
@@ -113,11 +113,18 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					);
 				}
 			}
-			await lifecycleRef.current!.send(
+			const send = lifecycleRef.current!.send(
 				text,
 				attachments,
 				sessionId ?? undefined,
 			);
+			void send.catch((error: unknown) => {
+				d.plugin.logger?.log(
+					"error",
+					`[Session] send failed: ${String(error)}`,
+				);
+			});
+			return true;
 		},
 		[],
 	);

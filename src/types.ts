@@ -137,6 +137,15 @@ export interface ChatMessage {
 	isDebug?: boolean;
 }
 
+/** Result of loading a transcript, including evidence for safe deduplication. */
+export interface SessionHydrationResult {
+	messages: ChatMessage[];
+	indexedMessageCount: number;
+	exactDuplicateCount: number;
+	invalidRecordCount: number;
+	countMismatchExplainedByExactDeduplication: boolean;
+}
+
 /** Participant in a group chat session */
 export interface GroupChatParticipant {
 	id: string;
