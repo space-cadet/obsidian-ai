@@ -88,3 +88,11 @@ recorded below.
   fails before execution because its Vitest worker runs out of JS heap.
 - Live Obsidian/device acceptance remains pending. T24c and Beads issue
   `OBSIDIANAI-brl` remain in progress.
+
+## Test Fixture Follow-up — 2026-10-19 23:02 IST
+
+- The hook test created `sessionsRef` inside the render callback, changing its
+  identity each render and repeatedly triggering the session-list effect.
+  Moving it outside the callback stopped the render loop.
+- The standalone hook suite passes (4 tests); all six focused T24c suites pass
+  (56 tests). Live Obsidian/device acceptance remains pending.

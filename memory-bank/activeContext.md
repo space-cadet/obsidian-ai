@@ -10,16 +10,15 @@
   readiness, session-open hydration, captured send IDs, deletion tombstones,
   sync refresh, and persistent mutation operations now use the owner. Existing
   JSONL/index storage remains the durable layer.
-- Five focused owner/session/send/lifecycle suites pass (52 tests); TypeScript
-  and production build pass, and `git diff --check` is clean. The separate
-  `useSessionActions` suite exits before test execution because its Vitest
-  worker runs out of JS heap. Device acceptance has not been performed.
-- Remaining T24c work is live Obsidian/device acceptance and validating the
-  worker-limited hook suite. T24b targeted persistence coverage remains a
-  separate open item.
+- Six focused owner/session/send/lifecycle suites pass (56 tests); TypeScript
+  and production build pass, and formatting and `git diff --check` are clean.
+  Stabilizing a test ref fixed the `useSessionActions` render loop. Device
+  acceptance has not been performed.
+- Remaining T24c work is live Obsidian/device acceptance. T24b targeted
+  persistence coverage remains a separate open item.
 - The source baseline was `ui-chat-fixes` at `cd4478b`. The Beads issue remains
   local because the earlier Dolt export was rejected by automatic review.
-- Implementation checkpoints `e599138` and `7a594df` are pushed to
+- Implementation checkpoints `e599138`, `7a594df`, and `59ca66b` are pushed to
   `origin/ui-chat-fixes`; T24c remains open.
 
 ### 2026-10-19 — Productized chat repair and Settings shortcuts

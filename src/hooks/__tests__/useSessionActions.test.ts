@@ -19,12 +19,14 @@ describe("useSessionActions", () => {
 		const plugin = {
 			settings: { includeActiveNote: false },
 		} as any;
+		const sessionsRef = { current: [] as any[] };
+		const activeSessionIdRef = { current: null as string | null };
 		const { result } = renderHook(() => {
 			const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
 			return useSessionActions({
 				plugin,
-				sessionsRef: { current: [] },
-				activeSessionIdRef: { current: null },
+				sessionsRef,
+				activeSessionIdRef,
 				updateSessionMetadata: vi.fn(),
 				updateSessionMessages: vi.fn(),
 				setActiveSessionId: vi.fn(),
