@@ -232,7 +232,7 @@ export function useSessionActions({
 			modelOverrides: getModelOverrides?.(),
 			autoNameSessions: plugin.settings.autoNameSessions,
 		});
-		setOpenSessionIds((current) => [...current, newSession.id]);
+		openSessionInTab(newSession.id);
 		const selectedProfileIds = getSelectedProfileIds();
 		if (selectedProfileIds.length > 0) {
 			setSelectedProfileIds(new Set(selectedProfileIds));

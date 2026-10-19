@@ -1,6 +1,6 @@
 # Session Cache
 
-*Last Updated: 2026-10-19 23:15:12 IST*
+*Last Updated: 2026-10-19 23:17:23 IST*
 
 ## 2026-10-19 — T24c shared session state implementation started
 
@@ -14,9 +14,8 @@
 - Six focused owner/session/message-action/turn-lifecycle suites pass (58
   tests). TypeScript, production build, formatting, and diff checks pass. The
   hook suite's render loop was fixed by keeping its session ref stable.
-- Fixed tabless-session regressions for both `+` and restoring an older chat:
-  keep the active session in the tab list before opening another session.
-  Device retest is pending.
+- Centralized tabless-session preservation in `openSessionInTab`; both `+` and
+  restoring an older chat use the same path. Device retest is pending.
 - No production view-level `setSessions` path remains. Live Obsidian/device
   acceptance is pending. Checkpoints `e599138`, `7a594df`, `59ca66b`, `4562d14`, and `ca90f06` are pushed to
   `origin/ui-chat-fixes`; Beads issue `OBSIDIANAI-brl` remains in progress.

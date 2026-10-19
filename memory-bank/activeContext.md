@@ -12,8 +12,8 @@
   JSONL/index storage remains the durable layer.
 - Six focused owner/session/send/lifecycle suites pass (58 tests); TypeScript
   and production build pass, and formatting and `git diff --check` are clean.
-  Both new-chat and restore-older-session paths now preserve an active session
-  that has no tab. Device retest of these sequences is pending.
+  Tabless-session preservation is centralized in `openSessionInTab`; both
+  new-chat and restore-older-session paths use it. Device retest is pending.
 - Remaining T24c work is live Obsidian/device acceptance. T24b targeted
   persistence coverage remains a separate open item.
 - The source baseline was `ui-chat-fixes` at `cd4478b`. The Beads issue remains

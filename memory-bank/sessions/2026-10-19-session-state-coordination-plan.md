@@ -116,3 +116,11 @@ recorded below.
   session before adding a fresh one.
 - Added a restore-older-session regression test. All six focused suites pass
   (58 tests), and the production build passes. Live retest remains pending.
+
+## Shared Tab-Opening Rule — 2026-10-19 23:17 IST
+
+- Routed the new-chat session through `openSessionInTab` as well. New-chat and
+  restore-older-session paths now use the same tab-opening operation and
+  preserve the same active tabless session.
+- All six focused suites pass (58 tests); production build passes. Device retest
+  of both paths remains pending.
