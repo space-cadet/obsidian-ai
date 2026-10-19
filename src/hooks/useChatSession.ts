@@ -81,9 +81,11 @@ export function useChatSession({
 	const llmNamedRef = useRef<Set<string>>(new Set());
 	const saveTimerRef = useRef<number | null>(null);
 	const skipNextAutosaveRef = useRef(false);
-	const deletedSessionIdsRef = useRef<Set<string>>(new Set());
+	const deletedSessionIdsRef = useRef<Map<string, number>>(new Map());
+	const deletionVersionRef = useRef(0);
 	const markSessionDeleted = useCallback((sessionId: string) => {
-		deletedSessionIdsRef.current.add(sessionId);
+		deletionVersionRef.current += 1;
+		deletedSessionIdsRef.current.set(sessionId, deletionVersionRef.current);
 	}, []);
 
 	sessionsRef.current = sessions;
@@ -351,7 +353,10 @@ export function useChatSession({
 				window.clearTimeout(saveTimerRef.current);
 			}
 			saveTimerRef.current = window.setTimeout(() => {
-				const deletedSessionIds = [...deletedSessionIdsRef.current];
+				const deletedSessionVersions = new Map(
+					deletedSessionIdsRef.current,
+				);
+				const deletedSessionIds = [...deletedSessionVersions.keys()];
 				const persistedSessions = sessions.filter(
 					// messageCount keeps unhydrated sessions in the payload; the
 					// storage layer's guard skips writing their (empty) messages.
@@ -362,18 +367,33 @@ export function useChatSession({
 				)
 					? activeSessionId
 					: (persistedSessions[0]?.id ?? null);
-				void plugin.saveChatData({
-					sessions: persistedSessions,
-					activeSessionId: persistedActiveSessionId,
-					openSessionIds: plugin.settings.restoreChatTabs
-						? openSessionIds.filter((id) =>
-								persistedSessions.some(
-									(session) => session.id === id,
-								),
+				void plugin
+					.saveChatData({
+						sessions: persistedSessions,
+						activeSessionId: persistedActiveSessionId,
+						openSessionIds: plugin.settings.restoreChatTabs
+							? openSessionIds.filter((id) =>
+									persistedSessions.some(
+										(session) => session.id === id,
+									),
+								)
+							: [],
+						deletedSessionIds,
+					})
+					.then(() => {
+						for (const [id, version] of deletedSessionVersions) {
+							if (
+								deletedSessionIdsRef.current.get(id) === version
 							)
-						: [],
-					deletedSessionIds,
-				});
+								deletedSessionIdsRef.current.delete(id);
+						}
+					})
+					.catch((error: unknown) => {
+						plugin.logger?.log(
+							"warn",
+							`[Session] autosave failed: ${String(error)}`,
+						);
+					});
 				saveTimerRef.current = null;
 			}, 150);
 		}
@@ -510,7 +530,7 @@ export function useChatSession({
 	// ─── Delete a session ───
 	const deleteSession = useCallback(
 		(sessionId: string) => {
-			deletedSessionIdsRef.current.add(sessionId);
+			markSessionDeleted(sessionId);
 			setSessions((prev) => {
 				const filtered = prev.filter((s) => s.id !== sessionId);
 				// If deleting the active session, activate the most recent remaining
@@ -542,7 +562,7 @@ export function useChatSession({
 				return filtered;
 			});
 		},
-		[plugin, profileId],
+		[markSessionDeleted, plugin, profileId],
 	);
 
 	// ─── Rename a session ───

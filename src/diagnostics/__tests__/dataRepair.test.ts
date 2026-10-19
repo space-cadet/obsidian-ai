@@ -52,6 +52,15 @@ function duplicateTranscript(id: string): string {
 	return `${message}\n${message}\n`;
 }
 
+function transcript(content: string): string {
+	return `${JSON.stringify({
+		id: "orphan-message",
+		role: "user",
+		content,
+		timestamp: 1,
+	})}\n`;
+}
+
 function session(id: string) {
 	return {
 		id,
@@ -94,6 +103,30 @@ describe("scheduleDataRepair", () => {
 
 		await expect(
 			scheduleDataRepair(adapter, root, approvedPlan),
+		).rejects.toThrow("Files changed since the preview. Preview again.");
+		expect(files.has(`${root}/health-repair-request.json`)).toBe(false);
+	});
+
+	it("rejects selected recovery files changed after the preview", async () => {
+		const orphanPath = `${root}/sessions/orphan-chat.jsonl`;
+		const files = new Map<string, string>([
+			[
+				indexPath,
+				JSON.stringify({
+					version: 1,
+					activeSessionId: null,
+					sessions: [],
+				}),
+			],
+			[orphanPath, transcript("Previewed content")],
+		]);
+		const adapter = makeAdapter(files);
+		const approvedPlan = await previewDataRepair(adapter, root);
+
+		files.set(orphanPath, transcript("Changed after preview"));
+
+		await expect(
+			scheduleDataRepair(adapter, root, approvedPlan, [orphanPath]),
 		).rejects.toThrow("Files changed since the preview. Preview again.");
 		expect(files.has(`${root}/health-repair-request.json`)).toBe(false);
 	});

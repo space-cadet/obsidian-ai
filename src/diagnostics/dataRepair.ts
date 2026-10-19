@@ -29,6 +29,7 @@ export interface RepairProgress {
 }
 export interface RecoverableChat {
 	path: string;
+	contentHash: string;
 	id: string;
 	title: string;
 	messageCount: number;
@@ -423,6 +424,7 @@ async function prepare(
 							}
 							const recovery: RecoverableChat = {
 								path,
+								contentHash: await checksum(text),
 								id,
 								title: `Recovered chat ${id.slice(0, 8)}`,
 								messageCount: result.kept.length,
@@ -566,16 +568,21 @@ export async function scheduleDataRepair(
 				refreshed.description !== approved.description)
 		);
 	});
-	if (
-		staleSafeChange ||
-		staleSelectedChange ||
-		selectedRecoveryPaths.some(
-			(path) =>
-				!current.plan.recoverableChats.some(
-					(chat) => chat.path === path,
-				),
-		)
-	)
+	const staleSelectedRecovery = selectedRecoveryPaths.some((path) => {
+		const approved = plan.recoverableChats.find(
+			(chat) => chat.path === path,
+		);
+		const refreshed = selectedPlan.plan.recoverableChats.find(
+			(chat) => chat.path === path,
+		);
+		return (
+			!approved ||
+			!refreshed ||
+			approved.contentHash !== refreshed.contentHash ||
+			!current.plan.recoverableChats.some((chat) => chat.path === path)
+		);
+	});
+	if (staleSafeChange || staleSelectedChange || staleSelectedRecovery)
 		throw new Error("Files changed since the preview. Preview again.");
 	await adapter.write(
 		requestPath(root),

@@ -121,3 +121,40 @@ describe("restored session hydration", () => {
 		expect(result.current.sessions[0].messages[0].id).toBe("recovered");
 	});
 });
+
+describe("session deletion tombstones", () => {
+	it("retains them after a failed save and clears them after success", async () => {
+		const { result, plugin } = setup();
+		plugin.saveChatData
+			.mockRejectedValueOnce(new Error("disk full"))
+			.mockResolvedValue(undefined);
+
+		await waitFor(() => expect(result.current.chatDataLoaded).toBe(true));
+		act(() => result.current.deleteSession("background"));
+		await waitFor(() =>
+			expect(plugin.saveChatData).toHaveBeenCalledTimes(1),
+		);
+		expect(plugin.saveChatData.mock.calls[0][0].deletedSessionIds).toEqual([
+			"background",
+		]);
+
+		act(() => result.current.setOpenSessionIds(["active"]));
+		await waitFor(() =>
+			expect(plugin.saveChatData).toHaveBeenCalledTimes(2),
+		);
+		expect(plugin.saveChatData.mock.calls[1][0].deletedSessionIds).toEqual([
+			"background",
+		]);
+		await act(async () => {
+			await Promise.resolve();
+		});
+
+		act(() => result.current.setOpenSessionIds([]));
+		await waitFor(() =>
+			expect(plugin.saveChatData).toHaveBeenCalledTimes(3),
+		);
+		expect(plugin.saveChatData.mock.calls[2][0].deletedSessionIds).toEqual(
+			[],
+		);
+	});
+});
