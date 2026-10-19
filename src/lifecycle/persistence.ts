@@ -145,14 +145,25 @@ export async function saveChatData(
 	plugin: ObsidianAIPlugin,
 	chatData: StoredChatData,
 ): Promise<void> {
-	const fingerprint = fingerprintChatData(chatData);
 	if (!plugin._chatStorage) {
 		plugin._chatStorage = createStorage(
 			createStorageDeps(plugin),
 			plugin.settings.chatStorageFormat,
 		);
 	}
-	if (plugin._saveInProgress) {
+	const chatStorage = plugin._chatStorage;
+	// Autosaves may replace a queued snapshot, but explicit deletions must
+	// survive until the storage transaction that applies them has completed.
+	for (const sessionId of chatData.deletedSessionIds ?? []) {
+		plugin._uncommittedSessionDeletions.add(sessionId);
+	}
+	chatData = includeUncommittedDeletions(
+		chatData,
+		plugin._uncommittedSessionDeletions,
+	);
+	const fingerprint = fingerprintChatData(chatData);
+	const activeSavePromise = plugin._chatSavePromise;
+	if (activeSavePromise) {
 		if (
 			plugin._pendingChatData &&
 			fingerprintChatData(plugin._pendingChatData) === fingerprint
@@ -161,68 +172,98 @@ export async function saveChatData(
 				"debug",
 				"saveChatData skipped: identical snapshot already queued",
 			);
-			return;
+			return activeSavePromise;
 		}
 		plugin._pendingChatData = chatData;
 		plugin.logger?.log(
 			"debug",
 			"saveChatData queued: save already in progress",
 		);
-		return;
+		// Callers use this promise to know that the queued snapshot was written,
+		// not merely accepted into the in-memory queue.
+		return activeSavePromise;
 	}
 	if (plugin._lastSavedChatDataFingerprint === fingerprint) {
 		plugin.logger?.log("debug", "saveChatData skipped: snapshot unchanged");
+		plugin._pendingChatData = null;
+		plugin._uncommittedSessionDeletions.clear();
 		return;
 	}
-	plugin._saveInProgress = true;
-
-	try {
-		let nextChatData: StoredChatData | null = chatData;
-		while (nextChatData) {
-			const nextFingerprint = fingerprintChatData(nextChatData);
-			plugin._pendingChatData = null;
-			if (plugin._lastSavedChatDataFingerprint === nextFingerprint) {
-				plugin.logger?.log(
-					"debug",
-					"saveChatData skipped: queued snapshot unchanged",
-				);
-				nextChatData = plugin._pendingChatData;
-				continue;
-			}
-			plugin.logger?.log(
-				"info",
-				"saveChatData: writing via storage layer",
-			);
-			await plugin._chatStorage.saveChatData(nextChatData);
-			plugin._lastSavedChatDataFingerprint = nextFingerprint;
-			plugin.logger?.log(
-				"info",
-				"saveChatData: storage layer wrote successfully",
-			);
-
-			// Auto-sync to remote if enabled (debounced)
-			if (
-				AUTO_SYNC_ENABLED &&
-				plugin.settings.remoteStorage?.enabled &&
-				plugin.settings.remoteStorage?.autoSync
-			) {
-				scheduleAutoSync(plugin);
-			}
-
-			// Invalidate search index so next search picks up new messages
-			plugin.searchIndex?.invalidate();
-
-			nextChatData = plugin._pendingChatData;
-			if (nextChatData) {
+	// Any leftover snapshot came from a failed drain. Its deletion IDs are now
+	// merged into this latest snapshot; retry from the latest state, not stale data.
+	plugin._pendingChatData = null;
+	let savePromise!: Promise<void>;
+	savePromise = (async () => {
+		// Yield once so the in-progress promise is visible before any write can
+		// finish, including when an adapter throws synchronously.
+		await Promise.resolve();
+		let completed = false;
+		try {
+			let nextChatData: StoredChatData | null = chatData;
+			while (nextChatData) {
+				const nextFingerprint = fingerprintChatData(nextChatData);
+				if (plugin._lastSavedChatDataFingerprint === nextFingerprint) {
+					plugin.logger?.log(
+						"debug",
+						"saveChatData skipped: queued snapshot unchanged",
+					);
+					nextChatData = plugin._pendingChatData;
+					plugin._pendingChatData = null;
+					continue;
+				}
 				plugin.logger?.log(
 					"info",
-					"saveChatData: flushing queued snapshot",
+					"saveChatData: writing via storage layer",
 				);
+				await chatStorage.saveChatData(nextChatData);
+				plugin._lastSavedChatDataFingerprint = nextFingerprint;
+				plugin.logger?.log(
+					"info",
+					"saveChatData: storage layer wrote successfully",
+				);
+
+				// Auto-sync to remote if enabled (debounced)
+				if (
+					AUTO_SYNC_ENABLED &&
+					plugin.settings.remoteStorage?.enabled &&
+					plugin.settings.remoteStorage?.autoSync
+				) {
+					scheduleAutoSync(plugin);
+				}
+
+				// Invalidate search index so next search picks up new messages
+				plugin.searchIndex?.invalidate();
+
+				nextChatData = plugin._pendingChatData;
+				plugin._pendingChatData = null;
+				if (nextChatData) {
+					plugin.logger?.log(
+						"info",
+						"saveChatData: flushing queued snapshot",
+					);
+				}
+			}
+			completed = true;
+		} finally {
+			if (completed) plugin._uncommittedSessionDeletions.clear();
+			if (plugin._chatSavePromise === savePromise) {
+				plugin._chatSavePromise = null;
 			}
 		}
-	} finally {
-		plugin._saveInProgress = false;
-	}
+	})();
+	plugin._chatSavePromise = savePromise;
+	return savePromise;
+}
+
+function includeUncommittedDeletions(
+	chatData: StoredChatData,
+	uncommittedDeletions: Set<string>,
+): StoredChatData {
+	if (uncommittedDeletions.size === 0) return chatData;
+	return {
+		...chatData,
+		deletedSessionIds: [...uncommittedDeletions],
+	};
 }
 
 /**

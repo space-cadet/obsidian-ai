@@ -79,8 +79,9 @@ export default class ObsidianAIPlugin extends Plugin {
 	// Data integrity guards
 	_backupCreated = false;
 	_settingsLoadedFromFile = false;
-	_saveInProgress = false;
+	_chatSavePromise: Promise<void> | null = null;
 	_pendingChatData: StoredChatData | null = null;
+	_uncommittedSessionDeletions = new Set<string>();
 	_lastSavedChatDataFingerprint: string | null = null;
 	_chatStorage: ChatStorage | null = null;
 	_migrationPromptShown = false;

@@ -38,8 +38,9 @@ const createMockPlugin = (
 			flushNow: vi.fn(),
 		} as any,
 		_chatStorage: null,
-		_saveInProgress: false,
+		_chatSavePromise: null,
 		_pendingChatData: null,
+		_uncommittedSessionDeletions: new Set(),
 		_settingsLoadedFromFile: false,
 		loadData: vi.fn().mockResolvedValue(null),
 		saveData: vi.fn().mockResolvedValue(undefined),
@@ -354,11 +355,16 @@ describe("persistence", () => {
 			);
 		});
 
-		it("queues writes when save is already in progress", async () => {
+		it("keeps queued deletions and resolves callers after the queue flushes", async () => {
 			const plugin = createMockPlugin();
+			const writes: any[] = [];
+			const finishWrites: Array<() => void> = [];
 			const mockStorage = {
-				saveChatData: vi.fn().mockImplementation(() => {
-					return new Promise((resolve) => setTimeout(resolve, 100));
+				saveChatData: vi.fn().mockImplementation((chatData) => {
+					writes.push(chatData);
+					return new Promise<void>((resolve) =>
+						finishWrites.push(resolve),
+					);
 				}),
 			};
 			plugin._chatStorage = mockStorage as any;
@@ -367,22 +373,78 @@ describe("persistence", () => {
 				chatStorageFormat: "jsonl",
 			};
 
-			const chatData1 = { sessions: [{ id: "1" }], messages: {} };
-			const chatData2 = { sessions: [{ id: "2" }], messages: {} };
+			const firstSnapshot = {
+				sessions: [{ id: "1" }],
+				activeSessionId: "1",
+			} as any;
+			const deletionSnapshot = {
+				sessions: [{ id: "1" }],
+				activeSessionId: "1",
+				deletedSessionIds: ["deleted"],
+			} as any;
+			const newerSnapshot = {
+				sessions: [{ id: "1" }, { id: "3" }],
+				activeSessionId: "3",
+			} as any;
+			const laterSyncSnapshot = {
+				sessions: [{ id: "1" }, { id: "deleted" }],
+				activeSessionId: "deleted",
+			} as any;
 
-			// Start first save
-			const promise1 = saveChatData(plugin, chatData1 as any);
-			await Promise.resolve(); // let the microtask queue run
+			const firstSave = saveChatData(plugin, firstSnapshot);
+			let queuedSaveResolved = false;
+			const deletionSave = saveChatData(plugin, deletionSnapshot).then(
+				() => {
+					queuedSaveResolved = true;
+				},
+			);
+			const newerSave = saveChatData(plugin, newerSnapshot);
+			await Promise.resolve();
+			expect(writes).toHaveLength(1);
 
-			// While first is in progress, trigger second
-			plugin._saveInProgress = true;
-			const promise2 = saveChatData(plugin, chatData2 as any);
-
-			expect(plugin._pendingChatData).toEqual(chatData2);
+			expect(plugin._pendingChatData).toEqual({
+				...newerSnapshot,
+				deletedSessionIds: ["deleted"],
+			});
+			expect(queuedSaveResolved).toBe(false);
 			expect(plugin.logger.log).toHaveBeenCalledWith(
 				"debug",
 				expect.stringContaining("queued"),
 			);
+
+			finishWrites[0]();
+			await Promise.resolve();
+			await Promise.resolve();
+			expect(writes).toHaveLength(2);
+			expect(writes[1]).toEqual({
+				...newerSnapshot,
+				deletedSessionIds: ["deleted"],
+			});
+			expect(queuedSaveResolved).toBe(false);
+
+			const laterSyncSave = saveChatData(plugin, laterSyncSnapshot);
+			expect(plugin._pendingChatData).toEqual({
+				...laterSyncSnapshot,
+				deletedSessionIds: ["deleted"],
+			});
+			finishWrites[1]();
+			await Promise.resolve();
+			await Promise.resolve();
+			expect(writes).toHaveLength(3);
+			expect(writes[2]).toEqual({
+				...laterSyncSnapshot,
+				deletedSessionIds: ["deleted"],
+			});
+			expect(queuedSaveResolved).toBe(false);
+
+			finishWrites[2]();
+			await Promise.all([
+				firstSave,
+				deletionSave,
+				newerSave,
+				laterSyncSave,
+			]);
+			expect(queuedSaveResolved).toBe(true);
 		});
 
 		it("keeps auto-sync off even when an old setting is enabled", async () => {
