@@ -1,6 +1,85 @@
 # Edit History
 
-*Last Updated: 2026-09-30 03:45:08 IST*
+*Last Updated: 2026-10-19 23:29:06 IST*
+
+### 2026-10-19
+#### 23:28:30 IST - T24c: Complete task records and project guidance
+- Updated `memory-bank/tasks/T24c.md`, `memory-bank/tasks.md`, and `memory-bank/tasks/T24.md` - Recorded T24c completion and kept T24b separate.
+- Updated `memory-bank/implementation-details/session-state-coordination.md`, `memory-bank/activeContext.md`, `memory-bank/session_cache.md`, and `memory-bank/sessions/2026-10-19-session-state-coordination-plan.md` - Recorded final implementation status and user-confirmed behavior.
+- Updated `AGENTS.md`, `CLAUDE.md`, `.claude/settings.json`, and `.gitignore` - Use the Memory Bank task hierarchy and remove unused project tracker configuration.
+- Removed the unused project tracker configuration and local data directory.
+- Updated historical Memory Bank task, session, progress, and edit records to remove obsolete tracker references.
+- Created `memory-bank/edits/2026-10-19/232830-T24c-task-records-and-project-guidance.md` - Recorded this Memory Bank update.
+
+#### 21:02:15 IST - T24c: Add Memory Bank subtask for session coordination
+- Created `memory-bank/tasks/T24c.md` - Defined the shared session-state ownership task, acceptance criteria, migration steps, and relation to the T24 task hierarchy.
+- Updated `memory-bank/tasks.md` - Added T24c to the active registry and under T24 in the task hierarchy.
+- Updated `memory-bank/tasks/T24.md` - Linked T24c as the broader session coordination subtask.
+- Updated `memory-bank/tasks/T24b.md` - Linked T24c while keeping its transcript integrity scope and pending tests distinct.
+- Updated `memory-bank/implementation-details/session-state-coordination.md` - Linked the detailed plan to Memory Bank task T24c.
+- Updated `memory-bank/activeContext.md` - Recorded T24c and its source baseline.
+- Updated `memory-bank/session_cache.md` - Recorded T24c and the plan.
+- Updated `memory-bank/sessions/2026-10-19-session-state-coordination-plan.md` - Added the task creation and registry handoff.
+- Created `memory-bank/edits/2026-10-19/210215-T24c-memory-bank-subtask.md` - Added this canonical edit record.
+
+#### 20:58:03 IST - T24c: Record shared session coordination plan
+- Created `memory-bank/implementation-details/session-state-coordination.md` - Documented the proposed shared session state owner, operation rules, migration scope, non-goals, and validation plan.
+- Updated `memory-bank/tasks/T24b.md` - Linked the broader coordination plan while keeping the hydration P1 unresolved and T24b's transcript-integrity coverage pending.
+- Updated `memory-bank/activeContext.md` - Recorded the open plan and source audit baseline.
+- Updated `memory-bank/session_cache.md` - Recorded the open plan and source audit baseline.
+- Created `memory-bank/sessions/2026-10-19-session-state-coordination-plan.md` - Captured the architecture assessment, task link, and implementation handoff.
+- Created `memory-bank/edits/2026-10-19/205803-T24c-session-state-plan.md` - Added this canonical edit record.
+
+#### 18:19:09 IST - T11a/T34: Record commit and push outcome
+- Updated `memory-bank/activeContext.md`, `memory-bank/session_cache.md`, and `memory-bank/sessions/2026-10-19-chat-repair-ui-and-settings-shortcuts.md` - Record commit `b77f72df755a4718d2662a4326a6efec27c77a6d`, push to origin, and clean worktree.
+- Created `memory-bank/edits/2026-10-19/20261019-181909-T11a-T34-push-followup.md` - Record this status correction.
+
+#### 18:13:11 IST - T11a/T34: Record chat repair UI and settings shortcuts
+- Created `src/diagnostics/dataRepair.ts` and `src/modals/DataRepairModal.ts` - Implemented reviewed, backed-up chat repair scheduling and startup application.
+- Modified `src/lifecycle/storage.ts`, `src/settings-sections/dataHealth.ts`, and `src/settings-sections/diagnostics.ts` - Integrated repair application, health-check controls, and logging.
+- Modified `styles/_settings.css`, `styles/_chat-extensions.css`, and `styles.css` - Added repair modal/progress styles and the responsive Settings shortcut grid.
+- Updated `memory-bank/tasks/T11a.md`, `memory-bank/tasks/T11.md`, `memory-bank/tasks/T34.md`, and `memory-bank/tasks.md` - Reconciled task ownership, status, scope, and pending acceptance.
+- Updated `memory-bank/activeContext.md` and `memory-bank/session_cache.md` - Recorded implementation, build/install evidence, and follow-ups.
+- Created `memory-bank/sessions/2026-10-19-chat-repair-ui-and-settings-shortcuts.md` and `memory-bank/edits/2026-10-19/20261019-181311-T11a-T34-repair-ui-and-shortcuts.md` - Added session handoff and canonical edit record.
+
+#### 16:14:09 IST - T11a: Record health repair closeout
+- Updated `memory-bank/tasks/T11a.md` - Recorded the backed-up transcript/index recovery, generated-title limitation, and user-reported zero-error, zero-warning health result; completed the scoped health-check and manual recovery task.
+- Updated `memory-bank/tasks/T24b.md` - Distinguished completed data recovery under T11a from persistence prevention; retained the pending targeted automated coverage.
+- Updated `memory-bank/tasks/T24.md` - Linked final data recovery and health acceptance to T11a.
+- Updated `memory-bank/tasks.md` - Moved completed T11a from active tasks to completed tasks.
+- Updated `memory-bank/activeContext.md` - Recorded current branch, repair outcome, clean health result, and T24b follow-up.
+- Updated `memory-bank/session_cache.md` and `memory-bank/sessions/2026-10-19-chat-fixes-android-startup-crash.md` - Recorded device recovery, verification, backup, and task status.
+
+#### 15:23:06 IST - T24b: Prevent new transcript and index inconsistencies
+- Created `memory-bank/tasks/T24b.md` - Tracked idempotent writes, crash-safe index updates, and zero-message file prevention under T24.
+- Updated `memory-bank/tasks.md`, `memory-bank/tasks/T24.md`, and `memory-bank/tasks/T11a.md` - Recorded prevention scope, report findings, and task relationships.
+- Modified `src/storage/ChatStorage.ts`, `src/storage/session-storage.ts`, `src/storage/Migration.ts`, and `src/diagnostics/dataHealth.ts` - Added staged persistence, conflict handling, and empty-transcript safeguards.
+- Built successfully and installed `main.js` and `styles.css` on `.21`; device hashes matched. User reported a test chat worked after reload; targeted tests remained pending.
+
+#### 14:23:39 IST - T11a: Record health, repair, and persistence follow-ups
+- Created `memory-bank/tasks/T11a.md` - Defined the health-check and safe-repair subtask, acceptance criteria, report findings, and reverted prototypes.
+- Updated `memory-bank/tasks/T11.md` - Linked the active health-check and repair subtask.
+- Updated `memory-bank/tasks.md` - Added T11a to the registry and task relationships; refreshed task counts.
+- Updated `memory-bank/tasks/T24.md` - Recorded transcript-load, duplicate-normalization, and explicit-deletion fixes with test and device-acceptance limits.
+- Updated `memory-bank/tasks/T15.md` - Recorded later Android launch evidence and removal of 752e74c-related tab behavior.
+- Updated `memory-bank/errorLog.md` - Added the latest Android crash evidence while keeping the cause unresolved.
+- Updated `memory-bank/activeContext.md` - Refreshed the current branch, health report, test, and device status.
+- Updated `memory-bank/session_cache.md` - Recorded source changes, report findings, and acceptance limits.
+- Updated `memory-bank/sessions/2026-10-19-chat-fixes-android-startup-crash.md` - Appended the health-check, repair, persistence, and device follow-up.
+- Created `memory-bank/edits/2026-10-19/142339-T11a-T24-T15-health-storage-closeout.md` - Added the canonical edit chunk for this Memory Bank update.
+- Refreshed this history view manually from the canonical chunk because no generator is available.
+
+#### 10:41:46 IST - T5/T10/T15/T24/T60e/T73: Record chat fixes and crash status
+- Updated `memory-bank/tasks/T5.md` - Recorded the Codex note-edit fingerprint metadata fix and user confirmation.
+- Updated `memory-bank/tasks/T10.md` and `memory-bank/implementation-details/chat-ui-features.md` - Recorded provider-scoped model choices and pending user acceptance.
+- Updated `memory-bank/tasks/T15.md` and `memory-bank/tasks/T24.md` - Recorded the Android startup crash report, unsuccessful hypotheses, and current reset state.
+- Updated `memory-bank/errorLog.md` - Added ERR-20261019-001 with unresolved status.
+- Updated `memory-bank/tasks/T60e.md`, `memory-bank/implementation-details/chat-ui-features.md`, and `memory-bank/implementation-details/chat-component-capability-map.md` - Recorded complete tool-call display timing and provider-buffering limits.
+- Updated `memory-bank/tasks/T73.md`, `memory-bank/implementation-details/chat-ui-features.md`, and `memory-bank/implementation-details/chat-component-capability-map.md` - Recorded the composer cursor change and pending acceptance.
+- Created `memory-bank/sessions/2026-10-19-chat-fixes-android-startup-crash.md` - Captured source commits, rollback, verification, and follow-up.
+- Updated `memory-bank/activeContext.md` and `memory-bank/session_cache.md` - Recorded current source head, unresolved crash, and acceptance limits.
+- Created `memory-bank/edits/2026-10-19/104146-chat-fixes-crash-closeout.md` - Added the canonical edit chunk for this Memory Bank update.
+- Refreshed this history view manually from the canonical chunk because no generator is available.
 
 ### 2026-09-30
 #### 03:45:08 IST - T28/T58: Record mobile link fix and toolbar merge

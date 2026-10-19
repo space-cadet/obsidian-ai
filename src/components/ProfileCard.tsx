@@ -119,7 +119,9 @@ function ProfileEditForm({
 	const [draft, setDraft] = useState<ProviderProfile>({ ...profile });
 	const [fetching, setFetching] = useState(false);
 	const [models, setModels] = useState<string[]>(
-		profile.modelCache?.models ?? [],
+		profile.provider === "codex" && profile.modelCache?.provider !== "codex"
+			? []
+			: (profile.modelCache?.models ?? []),
 	);
 	const [modelSearch, setModelSearch] = useState("");
 	const [showApiKey, setShowApiKey] = useState(false);
@@ -193,7 +195,11 @@ function ProfileEditForm({
 						: fetched.includes("gpt-6-luna")
 							? "gpt-6-luna"
 							: (fetched[0] ?? previous.model),
-					modelCache: { models: fetched, fetchedAt: Date.now() },
+					modelCache: {
+						models: fetched,
+						fetchedAt: Date.now(),
+						provider: "codex",
+					},
 				}));
 				new Notice(`Loaded ${fetched.length} Codex models.`, 2500);
 			} catch (error: any) {
@@ -223,6 +229,7 @@ function ProfileEditForm({
 			updateDraft("modelCache", {
 				models: fetched,
 				fetchedAt: Date.now(),
+				provider: draft.provider,
 			});
 			new Notice(`Fetched ${fetched.length} models`, 2000);
 		} catch (err: any) {

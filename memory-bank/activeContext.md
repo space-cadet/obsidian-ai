@@ -1,5 +1,103 @@
 # Active Context
 
+### 2026-10-19 — Shared session-state coordination plan
+
+- T24c is complete. A plugin-scoped `SessionStateOwner` backs Chat Lab views, owns transcript
+  readiness with its installed message payload, shares hydration requests,
+  rejects late hydration after deletion, and serializes retryable persistence.
+- Session initialization, view subscription, active-session hydration, send
+  readiness, session-open hydration, captured send IDs, deletion tombstones,
+  sync refresh, and persistent mutation operations now use the owner. Existing
+  JSONL/index storage remains the durable layer.
+- Six focused owner/session/send/lifecycle suites pass (58 tests); TypeScript
+  and production build pass, and formatting and `git diff --check` are clean.
+  Tabless-session preservation is centralized in `openSessionInTab`; both
+  new-chat and restore-older-session paths use it. The user confirmed both
+  flows work in the plugin. Focused suites passed (58 tests), and TypeScript,
+  production build, formatting, and diff checks passed. Source commit
+  `57fa849` is pushed to `origin/ui-chat-fixes`.
+- T24b targeted persistence coverage remains a separate open item.
+
+### 2026-10-19 — Productized chat repair and Settings shortcuts
+
+- Source branch `ui-chat-fixes` is at `b77f72df755a4718d2662a4326a6efec27c77a6d`,
+  pushed to `origin`; the worktree is clean. T11a remains in progress for final
+  device confirmation and targeted repair coverage.
+- The health-check repair modal previews safe duplicate cleanup and optional
+  recovery of valid unindexed chats. It preserves conflicting or ambiguous
+  records, gives skip reasons, and schedules verified, backed-up changes for
+  startup after the user pauses sync on all devices.
+- Health checks and repair actions use the existing logger. The modal reports
+  scan progress. Health check limits are 3,000 files at 8 MiB each; repair
+  preview limits are 1,000 files at 8 MiB each.
+- Production build passed. `styles.css` was installed on `.21` with matching
+  SHA-256 `337f4aad79cf252fa0eaee583628e1170eb72ebf999443a313d35640556d7a9d`.
+  Obsidian remained running; final post-reload UI acceptance is pending. No
+  tests were run and no repairs were applied because none were needed.
+- Settings shortcuts now use a responsive visible-button grid; current
+  collapsible sections and Expand/Collapse All controls are unchanged (T34).
+- See `sessions/2026-10-19-chat-repair-ui-and-settings-shortcuts.md`, T11a,
+  and T34. T24b remains the separate prevention task.
+
+### 2026-10-19 — Chat Lab health repair closeout
+
+- Source branch `ui-chat-fixes` is at `c366aae`; the current source and
+  Memory Bank changes are local and uncommitted. Do not commit or push.
+- T11a is complete for the read-only health check, bounded findings UI, and
+  user-approved manual recovery. Productized repair controls remain out of
+  scope. T24b remains active for persistence prevention; its targeted automated
+  coverage is pending.
+- The latest pre-repair report checked 287 files and showed 101 repeated IDs,
+  two count mismatches, and 57 unindexed transcripts (15 empty). The backed-up
+  recovery removed 101 byte-identical repeated rows, corrected five counts,
+  indexed 42 nonempty transcripts, and removed 15 empty files. The original
+  data backup remains on `.21` at
+  `/storage/emulated/0/Download/chat-lab-health-repair-20261019-1011`.
+- Obsidian launched with the recovered chats visible. Structural verification
+  found 264 stable index entries; only one session's scroll position changed
+  on launch. The user reports the final health check had no errors and no
+  warnings. Recovered sessions have generated titles because their original
+  title metadata was absent from the backed-up index.
+- Build and Android install were recorded separately from test status. No
+  targeted T24b tests were run for this closeout.
+- See today's session record and T11a/T24/T24b.
+
+### 2026-10-19 — Codex chat fixes and unresolved Android startup crash
+
+- The Codex note-edit fingerprint fix (`9344ea5`) is user-confirmed. The
+  Codex-scoped model picker (`152f2d0`) and composer cursor adjustment
+  (`2154721`) remain without user acceptance. `2004e30` surfaces a complete
+  tool call when its event arrives; provider buffering and partial arguments
+  remain limitations.
+- Android Chat Lab still crashes before tab selection, with the restored chat
+  blank and no reply running. Reverting the tab change and trying active-only
+  startup hydration did not resolve the reported crash. The cause is unknown.
+- `ui-chat-fixes` was hard-reset and force-pushed to `2004e30`; both local and
+  remote are clean at that commit. The startup hydration attempt (`d1aa297`) and
+  the new-tab change (`752e74c`) are no longer on the branch.
+- A production build passed while `d1aa297` was present; no Android acceptance
+  or system/WebView crash trace is available, and no build was run after reset.
+- See `sessions/2026-10-19-chat-fixes-android-startup-crash.md`, T15/T24, and
+  `errorLog.md` ERR-20261019-001. Composer cursor acceptance remains open under
+  T73.
+
+### 2026-10-18 — ui-chat-fixes closeout
+
+- Source commits `ab97b7c`, `ddb94d3`, `dddc18a`, and `f024a14` are pushed on
+  `ui-chat-fixes`; local and remote heads match at `f024a14`.
+- Composer wrapping and external-image token estimates were corrected. The
+  thinking menu is calibrated to provider/model; Auto has an `A` marker and
+  enabled levels show stacked bars. `read_settings` reports current-turn
+  settings separately from global defaults without claiming provider-effective
+  model or reasoning behavior.
+- Production build, focused settings-tool tests (6), formatting, and diff
+  checks passed. Live UI/tool acceptance was not reported.
+- Deleted 15 old GitHub release records and 1,231 completed workflow runs.
+  Six merged remote and four stale local branches were removed. Three old
+  unmerged remote branches remain after auto-review rejected deletion.
+- See `sessions/2026-10-18-ui-chat-fixes-closeout.md`. T73's broader map audit
+  continues; T69a iOS/desktop and Dataview runtime acceptance remain open.
+
 ### 2026-10-17 — v1.7.0/v1.7.1 release closeout
 
 - The user requested a README refresh for the plugin listing: removed the
@@ -151,8 +249,8 @@
   OpenResponses path. Current source sends `previous_response_id` and submits
   the original request once; T14's old defect claims were corrected. Remaining
   protocol and live-provider acceptance is open.
-- Beads commands report no local database, so no new task ID was created. See
-  today's session record and the T69/T69a/T14 task notes.
+- The Memory Bank task hierarchy remains the project task record. See today's
+  session record and the T69/T69a/T14 task notes.
 
 ### 2026-09-26 — T69a Codex authentication contract checked
 
@@ -1158,9 +1256,8 @@ The user approved the following direction:
 - T57a–T57d cover the common file path, two-way conflicts and recovery,
   identity/retry/reporting, and the SyncIt integration boundary.
 
-Beads issue creation was attempted but blocked because this checkout has no
-`.beads` database. Do not initialize a new issue database without explicit
-direction.
+The Memory Bank task hierarchy is the project task record; no separate issue
+tracker is configured.
 
 ### 2026-08-22 — Sync and Memory Bank Audit Corrections
 

@@ -10,6 +10,61 @@ export function estimateTokens(text: string): number {
 	return Math.ceil(text.length / TOKEN_ESTIMATE_RATIO);
 }
 
+/** Estimate structured model input without treating encoded images as text. */
+export function estimateStructuredTokens(value: unknown): number {
+	const visited = new WeakSet<object>();
+	const visit = (current: unknown): number => {
+		if (typeof current === "string") {
+			return current.startsWith("data:image/")
+				? IMAGE_TOKEN_ESTIMATE
+				: estimateTokens(current);
+		}
+		if (Array.isArray(current))
+			return current.reduce((sum, item) => sum + visit(item), 0);
+		if (typeof current !== "object" || current === null) return 0;
+		if (visited.has(current)) return 0;
+		visited.add(current);
+
+		const record = current as Record<string, unknown>;
+		const type = typeof record.type === "string" ? record.type : "";
+		const mimeType =
+			typeof record.mimeType === "string" ? record.mimeType : "";
+		if (
+			type === "image" ||
+			type === "image_url" ||
+			type === "input_image" ||
+			mimeType.startsWith("image/")
+		) {
+			return IMAGE_TOKEN_ESTIMATE;
+		}
+		if (type === "text" && typeof record.text === "string") {
+			return estimateTokens(record.text);
+		}
+		if (type === "file" && typeof record.data === "string") {
+			return estimateContentPartTokens({
+				type: "file",
+				data: record.data,
+				mimeType,
+			});
+		}
+
+		return Object.entries(record).reduce((sum, [key, child]) => {
+			if (key === "image" || key === "image_url")
+				return sum + IMAGE_TOKEN_ESTIMATE;
+			if (key === "data" && typeof child === "string") {
+				return (
+					sum +
+					(child.startsWith("data:image/")
+						? IMAGE_TOKEN_ESTIMATE
+						: visit(child))
+				);
+			}
+			return sum + estimateTokens(key) + visit(child);
+		}, 0);
+	};
+	return visit(value);
+}
+
 /** Approximate tokens per image (OpenAI convention: ~85 per tile, ~765 for 1024x1024) */
 const IMAGE_TOKEN_ESTIMATE = 255;
 

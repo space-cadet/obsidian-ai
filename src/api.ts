@@ -11,6 +11,7 @@ import { setGeneratedResponseEffect } from "./modules/AIExtension";
 import { parseCommand } from "./modules/commands/parser";
 import { MessageQueue, HistoryMessage } from "./api/history";
 import type { ProviderTokenUsage } from "./types";
+import type { ThinkingMode } from "./types";
 import { estimateTokens } from "./context/tokenEstimator";
 import {
 	createLanguageModel,
@@ -20,6 +21,7 @@ import {
 	getThinkingProviderOptions,
 } from "./api/providers";
 import { streamChatWithTools as _streamChatWithTools } from "./api/streaming";
+import { getSdkReasoningLevel } from "./api/thinkingModes";
 
 /**
  * Content part for multimodal messages — text, image, or file.
@@ -182,7 +184,7 @@ export class ChatApiManager {
 		messages: SdkMessage[],
 		signal?: AbortSignal,
 		profile?: ProviderProfile,
-		thinkingEnabled?: boolean,
+		thinkingMode?: ThinkingMode,
 		onUsage?: (usage: ProviderTokenUsage) => void,
 	): AsyncIterable<string> {
 		const activeProfile =
@@ -222,8 +224,15 @@ export class ChatApiManager {
 			abortSignal: signal,
 			providerOptions: getThinkingProviderOptions(
 				profile ?? getActiveProviderProfile(this.settings),
-				thinkingEnabled,
+				thinkingMode,
 			),
+			reasoning:
+				activeProfile.provider === "openrouter"
+					? undefined
+					: getSdkReasoningLevel(
+							thinkingMode ?? "provider-default",
+							activeProfile,
+						),
 		});
 
 		try {
@@ -258,7 +267,7 @@ export class ChatApiManager {
 		tools: any,
 		signal?: AbortSignal,
 		profile?: ProviderProfile,
-		thinkingEnabled?: boolean,
+		thinkingMode?: ThinkingMode,
 	): AsyncIterable<StreamEvent> {
 		const activeProfile =
 			profile ?? getActiveProviderProfile(this.settings);
@@ -272,7 +281,7 @@ export class ChatApiManager {
 				tools,
 				signal,
 				activeProfile,
-				thinkingEnabled,
+				thinkingMode,
 				this.app,
 			);
 		} catch (e: any) {

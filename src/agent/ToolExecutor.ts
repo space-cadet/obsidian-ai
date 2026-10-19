@@ -24,7 +24,10 @@ import {
 	DataviewHandlers,
 	hasDataviewQueryApi,
 } from "./tools/handlers/DataviewHandlers";
-import { type ToolHandlerContext } from "./tools/ToolHandlerContext";
+import {
+	type CurrentTurnModelContext,
+	type ToolHandlerContext,
+} from "./tools/ToolHandlerContext";
 import {
 	mutationTargets,
 	TargetLockManager,
@@ -66,6 +69,7 @@ export class ToolExecutor {
 			  }>
 			| undefined,
 		logger?: { log: (level: string, ...args: any[]) => void },
+		currentTurnModelContext?: CurrentTurnModelContext,
 	) {
 		this.logger = logger;
 		this.targetLocks = targetLocks;
@@ -81,6 +85,7 @@ export class ToolExecutor {
 			getSessions,
 			integrationRegistry,
 			saveSettings,
+			currentTurnModelContext,
 			continuations: this.continuations,
 		};
 		this.noteHandlers = new NoteHandlers(context);

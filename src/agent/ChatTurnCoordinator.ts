@@ -2,6 +2,7 @@ import type { ChatApiManager } from "../api";
 import { AgentApiManager } from "../api/AgentApiManager";
 import type { App } from "obsidian";
 import { estimateTokens } from "../context/tokenEstimator";
+import type { ThinkingMode } from "../types";
 import type { ProviderProfile } from "../settings";
 import type { AgentStepTelemetry, ProviderTokenUsage } from "../types";
 import { AgentLoop } from "./AgentLoop";
@@ -28,7 +29,7 @@ export interface ChatTurnCoordinatorOptions {
 	requestResponseReserveTokens: number;
 	maxToolResultTokens: number;
 	captureStepTelemetry?: boolean;
-	thinkingEnabled: boolean;
+	thinkingMode: ThinkingMode;
 	onTextDelta: (text: string) => void;
 	onToolCall: (call: ToolCall) => void;
 	requestApproval: (call: ToolCall) => Promise<ToolResult | null>;
@@ -124,7 +125,7 @@ export async function runChatTurn(
 		maxToolResultTokens: options.maxToolResultTokens,
 		captureStepTelemetry: options.captureStepTelemetry,
 		profile,
-		thinkingEnabled: options.thinkingEnabled,
+		thinkingMode: options.thinkingMode,
 		onTextDelta,
 		onToolCall,
 		requestApproval,

@@ -35,7 +35,7 @@ describe("tool stream errors", () => {
 			{},
 			undefined,
 			{ provider: "codex" } as any,
-			false,
+			"provider-default",
 		))
 			events.push(event);
 		expect(events).toContainEqual({
@@ -58,7 +58,7 @@ describe("tool stream errors", () => {
 			{},
 			undefined,
 			{ provider: "codex" } as any,
-			false,
+			"provider-default",
 		);
 		const event = await stream[Symbol.asyncIterator]().next();
 		expect(settled).toBe(true);

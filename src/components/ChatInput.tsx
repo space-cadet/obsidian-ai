@@ -7,15 +7,17 @@ import React, {
 	useState,
 } from "react";
 import { App, Notice, TFolder } from "obsidian";
-import type { Attachment, ContextItem } from "../types";
+import type { Attachment, ContextItem, ThinkingMode } from "../types";
 import { createExternalAttachment } from "../context/AttachmentEngine";
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
+import type { ThinkingModeOption } from "../api/thinkingModes";
 import ChatInputAttachments from "./ChatInputAttachments";
 import {
 	AutocompleteMenu,
 	AutoCandidate,
 	AutoState,
 	detectAutocomplete,
+	hasReferenceDecoration,
 	ReferenceTextOverlay,
 } from "./ChatInputDecorations";
 
@@ -23,7 +25,10 @@ interface ChatInputProps {
 	app: App;
 	plugin: ChatPluginLike;
 	contextItems: ContextItem[];
-	onSend: (text: string, attachments?: Attachment[]) => void;
+	onSend: (
+		text: string,
+		attachments?: Attachment[],
+	) => void | boolean | Promise<void | boolean>;
 	onStop: () => void;
 	onAddMention: (item: ContextItem) => void;
 	isStreaming: boolean;
@@ -31,7 +36,9 @@ interface ChatInputProps {
 	onCancel?: () => void;
 	editMessage?: string;
 	thinkingEnabled?: boolean;
-	onToggleThinking?: () => void;
+	thinkingMode: ThinkingMode;
+	thinkingModeOptions: ThinkingModeOption[];
+	onThinkingModeChange: (mode: ThinkingMode) => void;
 	attachments?: Attachment[];
 	onAttachmentsChange?: (attachments: Attachment[]) => void;
 	pressEnterToSend?: boolean;
@@ -183,7 +190,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	onCancel,
 	editMessage,
 	thinkingEnabled,
-	onToggleThinking,
+	thinkingMode,
+	thinkingModeOptions,
+	onThinkingModeChange,
 	attachments = [],
 	onAttachmentsChange,
 	pressEnterToSend = true,
@@ -192,13 +201,20 @@ const ChatInput: React.FC<ChatInputProps> = ({
 	onDraftChange,
 	onTyping,
 }) => {
+	const maxComposerHeight = 160;
 	const [value, setValue] = useState(draft ?? "");
+	const hasReferenceDecorations = hasReferenceDecoration(value, contextItems);
 	const [auto, setAuto] = useState<AutoState | null>(null);
 	const [isDragOver, setIsDragOver] = useState(false);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const overlayTextRef = useRef<HTMLDivElement>(null);
 	const isComposingRef = useRef(false);
+	const isSendingRef = useRef(false);
 	const typingTimerRef = useRef<number | null>(null);
+	const currentValueRef = useRef(value);
+	currentValueRef.current = value;
+	const currentAttachmentsRef = useRef(attachments);
+	currentAttachmentsRef.current = attachments;
 
 	const updateValue = useCallback(
 		(nextValue: string) => {
@@ -241,15 +257,59 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		}
 	}, []);
 
+	const syncOverlayMetrics = useCallback(() => {
+		const textarea = textareaRef.current;
+		const overlayText = overlayTextRef.current;
+		if (!textarea || !overlayText) return;
+		const computed = window.getComputedStyle(textarea);
+		for (const property of [
+			"font-family",
+			"font-size",
+			"font-style",
+			"font-weight",
+			"font-variant",
+			"line-height",
+			"letter-spacing",
+			"word-spacing",
+			"text-indent",
+			"text-transform",
+			"tab-size",
+			"white-space",
+			"overflow-wrap",
+			"word-break",
+		]) {
+			overlayText.style.setProperty(
+				property,
+				computed.getPropertyValue(property),
+			);
+		}
+	}, []);
+
 	useLayoutEffect(() => {
 		const textarea = textareaRef.current;
 		if (!textarea) return;
 		textarea.setCssStyles({ height: "auto" });
 		textarea.setCssStyles({
-			height: `${Math.min(textarea.scrollHeight, 96)}px`,
+			height: `${Math.min(textarea.scrollHeight, maxComposerHeight)}px`,
 		});
+		syncOverlayMetrics();
 		syncOverlayScroll();
-	}, [value, syncOverlayScroll]);
+	}, [value, syncOverlayMetrics, syncOverlayScroll]);
+
+	useEffect(() => {
+		const textarea = textareaRef.current;
+		if (!textarea) return;
+		const observer = new ResizeObserver(() => {
+			syncOverlayMetrics();
+			syncOverlayScroll();
+		});
+		observer.observe(textarea);
+		window.addEventListener("resize", syncOverlayMetrics);
+		return () => {
+			observer.disconnect();
+			window.removeEventListener("resize", syncOverlayMetrics);
+		};
+	}, [syncOverlayMetrics, syncOverlayScroll]);
 
 	const allCandidates = useMemo(
 		() => (auto ? buildCandidates(app, plugin, auto.type) : []),
@@ -345,13 +405,41 @@ const ChatInput: React.FC<ChatInputProps> = ({
 		[auto, onAddMention, updateValue, value],
 	);
 
-	const sendMessage = useCallback(() => {
-		const trimmed = value.trim();
-		if ((!trimmed && attachments.length === 0) || isStreaming) return;
-		onSend(trimmed, attachments.length > 0 ? attachments : undefined);
-		updateValue("");
-		setAuto(null);
-		onAttachmentsChange?.([]);
+	const sendMessage = useCallback(async () => {
+		const submittedValue = value;
+		const submittedAttachments = [...attachments];
+		const trimmed = submittedValue.trim();
+		if (
+			isSendingRef.current ||
+			(!trimmed && submittedAttachments.length === 0) ||
+			isStreaming
+		)
+			return;
+		isSendingRef.current = true;
+		try {
+			const accepted = await onSend(
+				trimmed,
+				submittedAttachments.length > 0
+					? submittedAttachments
+					: undefined,
+			);
+			if (accepted === false) return;
+			if (currentValueRef.current === submittedValue) {
+				updateValue("");
+				setAuto(null);
+			}
+			if (
+				currentAttachmentsRef.current.length ===
+					submittedAttachments.length &&
+				currentAttachmentsRef.current.every(
+					(attachment, index) =>
+						attachment === submittedAttachments[index],
+				)
+			)
+				onAttachmentsChange?.([]);
+		} finally {
+			isSendingRef.current = false;
+		}
 	}, [
 		attachments,
 		isStreaming,
@@ -491,7 +579,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 						/>
 						<textarea
 							ref={textareaRef}
-							className="chat-textarea chat-textarea-with-overlay"
+							className={`chat-textarea${hasReferenceDecorations ? " chat-textarea-with-overlay" : ""}`}
 							rows={1}
 							placeholder={placeholder}
 							value={value}
@@ -559,7 +647,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
 					onAttachmentsChange={onAttachmentsChange}
 					onFiles={handleFiles}
 					thinkingEnabled={thinkingEnabled}
-					onToggleThinking={onToggleThinking}
+					thinkingMode={thinkingMode}
+					thinkingModeOptions={thinkingModeOptions}
+					onThinkingModeChange={onThinkingModeChange}
 					tokenTotal={tokenTotal}
 				/>
 			</div>

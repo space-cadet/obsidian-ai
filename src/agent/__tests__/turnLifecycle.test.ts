@@ -51,12 +51,31 @@ describe("TurnLifecycle compaction command", () => {
 			},
 			isGroupChat: false,
 			participants: [],
-			thinkingEnabled: false,
+			thinkingMode: "provider-default",
 			sessionsRef,
 			activeSessionIdRef: { current: "session-1" },
-			setSessions: (update: any) => {
-				sessions =
-					typeof update === "function" ? update(sessions) : update;
+			updateMessages: (sessionId: string, change: any) => {
+				const current = sessions.find(
+					(session) => session.id === sessionId,
+				);
+				if (!current) return;
+				const messages =
+					typeof change === "function"
+						? change(current.messages)
+						: change;
+				sessions = sessions.map((session) =>
+					session.id === sessionId
+						? { ...session, messages, updatedAt: Date.now() }
+						: session,
+				);
+				sessionsRef.current = sessions;
+			},
+			updateMetadata: (sessionId: string, patch: any) => {
+				sessions = sessions.map((session) =>
+					session.id === sessionId
+						? { ...session, ...patch }
+						: session,
+				);
 				sessionsRef.current = sessions;
 			},
 			getRuntime: () => ({ controller: null }) as any,
@@ -115,10 +134,11 @@ describe("TurnLifecycle compaction command", () => {
 			},
 			isGroupChat: false,
 			participants: [],
-			thinkingEnabled: false,
+			thinkingMode: "provider-default",
 			sessionsRef: { current: sessions },
 			activeSessionIdRef: { current: "session-1" },
-			setSessions: vi.fn(),
+			updateMessages: vi.fn(),
+			updateMetadata: vi.fn(),
 			getRuntime: () => ({ controller: null }) as any,
 			patchRuntime: vi.fn(),
 			clearRuntime: vi.fn(),

@@ -8,6 +8,7 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { App } from "obsidian";
 import { getDefaultEndpoint, ProviderProfile } from "../settings";
 import type { ProviderTokenUsage } from "../types";
+import type { ThinkingMode } from "../types";
 import {
 	getCodexCredential,
 	getFreshCodexCredential,
@@ -100,32 +101,54 @@ export function validateProfile(
 
 export function getThinkingProviderOptions(
 	profile: ProviderProfile,
-	thinkingEnabled?: boolean,
+	thinkingMode: ThinkingMode = "provider-default",
 ): Record<string, any> | undefined {
-	if (profile.provider === "codex") return { openai: { store: false } };
-	if (!thinkingEnabled) return undefined;
-	switch (profile.provider) {
-		case "deepseek":
-			return { deepseek: { reasoningEffort: "medium" } };
-		case "openai":
-			// Only reasoning models (o1, o3, etc.) support reasoningEffort
-			if (profile.model?.startsWith("o")) {
-				return { openai: { reasoningEffort: "medium" } };
-			}
-			return undefined;
-		case "anthropic":
-			// Claude 3.7 Sonnet supports extended thinking via providerOptions
-			if (profile.model?.includes("claude-3-7")) {
-				return {
-					anthropic: {
-						thinking: { type: "enabled", budgetTokens: 12000 },
-					},
-				};
-			}
-			return undefined;
-		default:
-			return undefined;
+	const options: Record<string, any> = {};
+	if (profile.provider === "codex") options.openai = { store: false };
+	const isDeepSeekV32 = /deepseek-v3[.-]2(?:-|$)/i.test(profile.model ?? "");
+	if (
+		isDeepSeekV32 &&
+		(profile.provider === "deepseek" ||
+			profile.provider === "openrouter") &&
+		(thinkingMode === "enabled" || thinkingMode === "none")
+	) {
+		options[profile.provider] =
+			profile.provider === "deepseek"
+				? {
+						thinking: {
+							type:
+								thinkingMode === "enabled"
+									? "enabled"
+									: "disabled",
+						},
+					}
+				: {
+						reasoning: {
+							enabled: thinkingMode === "enabled",
+						},
+					};
+		return options;
 	}
+	if (thinkingMode === "provider-default" || thinkingMode === "none") {
+		if (profile.provider === "openrouter" && thinkingMode === "none") {
+			options.openrouter = { reasoning: { effort: "none" } };
+		}
+		return Object.keys(options).length > 0 ? options : undefined;
+	}
+	if (profile.provider === "deepseek" && thinkingMode === "enabled") {
+		options.deepseek = { thinking: { type: "enabled" } };
+	}
+	if (profile.provider === "deepseek" && thinkingMode === "max") {
+		options.deepseek = { reasoningEffort: "max" };
+	}
+	if (profile.provider === "openrouter") {
+		options.openrouter = {
+			reasoning: {
+				effort: thinkingMode === "enabled" ? "high" : thinkingMode,
+			},
+		};
+	}
+	return Object.keys(options).length > 0 ? options : undefined;
 }
 
 /**

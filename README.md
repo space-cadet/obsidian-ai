@@ -18,26 +18,26 @@
 
 ### Core features
 
-| Feature | What It Does |
-| --- | --- |
-| **Multi-Agent Chat** | Select multiple AI profiles to participate in one conversation |
-| **Agentic Vault Tools** | Ask agents to read, search, create, and edit vault notes |
-| **Vault-Aware Context** | Include notes, folders, tags, the active note, and expanded embeds |
-| **Dataview Queries** | Run optional, read-only DQL queries when Dataview is available |
-| **Model Providers** | OpenAI, Codex, Anthropic, Google, DeepSeek, Kimi, Ollama, OpenRouter, Azure, and custom endpoints |
-| **Web Search** | DuckDuckGo, Brave, Tavily, Exa, and SearXNG |
-| **Session History & Search** | Save and restore conversations; agents can search past sessions by topic, keyword, or content |
-| **Remote Sync** | Sync chat sessions across devices through WebDAV storage |
-| **Agent Introspection** | Let agents report the plugin version and currently available capabilities |
-| **Token Usage & Statistics** | Track context usage and review token totals, model usage, and response statistics |
+| Feature                      | What It Does                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Multi-Agent Chat**         | Select multiple AI profiles to participate in one conversation                                    |
+| **Agentic Vault Tools**      | Ask agents to read, search, create, and edit vault notes                                          |
+| **Vault-Aware Context**      | Include notes, folders, tags, the active note, and expanded embeds                                |
+| **Dataview Queries**         | Run optional, read-only DQL queries when Dataview is available                                    |
+| **Model Providers**          | OpenAI, Codex, Anthropic, Google, DeepSeek, Kimi, Ollama, OpenRouter, Azure, and custom endpoints |
+| **Web Search**               | DuckDuckGo, Brave, Tavily, Exa, and SearXNG                                                       |
+| **Session History & Search** | Save and restore conversations; agents can search past sessions by topic, keyword, or content     |
+| **Remote Sync**              | Sync chat sessions across devices through WebDAV storage                                          |
+| **Agent Introspection**      | Let agents report the plugin version and currently available capabilities                         |
+| **Token Usage & Statistics** | Track context usage and review token totals, model usage, and response statistics                 |
 
 ### Additional features
 
-| Feature | What It Does |
-| --- | --- |
+| Feature               | What It Does                                                          |
+| --------------------- | --------------------------------------------------------------------- |
 | **Inline AI Editing** | Review context-aware note edits in a visual diff before applying them |
-| **Mobile Layout** | Responsive chat controls for phone and tablet screens |
-| **Auto-Updater** | Check and install stable or development releases |
+| **Mobile Layout**     | Responsive chat controls for phone and tablet screens                 |
+| **Auto-Updater**      | Check and install stable or development releases                      |
 
 ## ✨ What It Does
 
@@ -53,13 +53,13 @@ Select one or several AI profiles to participate in a chat. Each selected agent 
 
 Agents can use structured tools to read, search, create, and update vault content. A few representative tools:
 
-| Tool | What It Does |
-| --- | --- |
-| `read_note` | Read a note's full content |
-| `search_notes`, `search_note_content` | Find notes by name or path, or search within note text |
-| `create_note`, `edit_note`, `patch_note` | Create notes or update existing content |
-| `query_dataview` | Run read-only DQL queries when Dataview is available |
-| `read_pdf` | Extract text from a PDF URL or vault file |
+| Tool                                     | What It Does                                           |
+| ---------------------------------------- | ------------------------------------------------------ |
+| `read_note`                              | Read a note's full content                             |
+| `search_notes`, `search_note_content`    | Find notes by name or path, or search within note text |
+| `create_note`, `edit_note`, `patch_note` | Create notes or update existing content                |
+| `query_dataview`                         | Run read-only DQL queries when Dataview is available   |
+| `read_pdf`                               | Extract text from a PDF URL or vault file              |
 
 **Approval Flow**: Read-only tools run directly. Vault-changing tools require approval by default; **Auto-Apply** can skip approval for supported workflows.
 
@@ -151,6 +151,7 @@ Stay current without manual downloads:
 ### Debug & Diagnostics
 
 - **Diagnostics Panel** — Memory usage, DOM nodes, chat sessions, total messages.
+- **Data Health Check** — In Settings → Advanced controls → Diagnostics, run a read-only check of plugin assets, settings, session files, and saved AI memory. Review file-specific findings and export a report. No automatic repairs; oversized files and scan limits are reported.
 - **File-Based Logger** — Debug logs written to disk for troubleshooting.
 - **Error Boundary** — Catches React render crashes, shows fallback UI.
 - **Build Info in Settings** — Version badge, git commit hash, and branch name visible in Settings hero.

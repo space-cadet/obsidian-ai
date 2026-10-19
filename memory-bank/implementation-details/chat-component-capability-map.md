@@ -57,7 +57,7 @@ The responsive toolbar provides:
 - Open overflow actions for session rename, automatic naming, tool auto-approval, debate mode when multiple AI participants are selected, relay controls/member list, and bulk session export.
 - Show the active AI and connected/selected human participants with attribution/status cues.
 
-Controls remain usable on narrow/mobile layouts, with touch-sized targets. Less-frequent actions may be placed in an overflow menu. The participant and model controls reflect the active session's saved choices rather than keeping a conflicting global selection.
+Controls remain usable on narrow/mobile layouts, with touch-sized targets. Less-frequent actions may be placed in an overflow menu. The participant and model controls reflect the active session's saved choices rather than keeping a conflicting global selection. Model choices and recent entries are constrained to the selected provider/profile; a provider's cached list must not leak into another provider's picker.
 
 ### 3.2 Transcript
 
@@ -80,15 +80,20 @@ Reasoning/thinking content is hidden by default when identifiable as a separate 
 
 ### 3.3 Composer
 
-The composer supports multiline text, automatic height growth, draft restoration, send, and stop. Enter-to-send is configurable; when disabled, Enter inserts a newline and Shift+Enter or Cmd/Ctrl+Enter sends. While a response is active, Send becomes Stop. Stop cancels the active generation/tool sequence and clears any pending approval so no later continuation starts.
+The composer supports multiline text, automatic height growth (including messages spanning three or more lines), draft restoration, send, and stop. Enter-to-send is configurable; when disabled, Enter inserts a newline and Shift+Enter or Cmd/Ctrl+Enter sends. While a response is active, Send becomes Stop. Stop cancels the active generation/tool sequence and clears any pending approval so no later continuation starts.
 
 The composer also supports:
 
 - Resource mentions/references, with searchable, disambiguated candidates and keyboard selection. Selected references appear as inline pills while composing, editing, and viewing a user message; attached files remain separate removable chips. Mentioning a resource (often with `@`) is a general interaction pattern; reference syntax and rendering depend on the host/adapter, with Obsidian-style `[[...]]` as one format.
-- Wrapped reference pills keep an outline on each visual line without changing text layout, preserving caret alignment in the composer.
+- Wrapped reference pills keep an outline on each visual line without changing text layout, preserving caret alignment in the composer. When no reference decoration matches the text, the composer skips the reference-overlay styling path; the latest cursor-position adjustment is awaiting live user confirmation.
 - Optional action shortcuts for edit, create, and append requests. The verbs and target selection are general concepts; exact slash syntax and available actions depend on the adapter.
 - Attachment selection and removal, with visible chips.
-- A thinking/reasoning request toggle where the model supports it.
+- A thinking-mode menu calibrated to the selected provider/model. Auto is marked
+  with `A`, Off has no level marker, and enabled levels use vertical stacked
+  bars beside the brain control. The selection is a request setting; provider
+  support and effective reasoning behavior can vary.
+- A composer token estimate that includes approximate costs for attached
+  external images; it is an estimate, not a provider billing total.
 - Optional typing notifications to collaborators.
 - Editing mode for resubmitting a prior user message, with a cancel path.
 
@@ -318,7 +323,7 @@ Users can configure multiple named profiles. Current model connections include O
 
 An active session can use one selected profile or several AI profiles. The effective model is session-specific: its saved model override takes precedence; older sessions can recover model identity from prior assistant messages; otherwise use the chosen profile's default. Switching the toolbar selection changes the active session's next request and does not rewrite old assistant messages.
 
-Requests stream where the transport supports streaming. Provider usage is retained when reported; local token estimates are available when it is not. Reasoning controls are passed only for compatible provider/model pairs. No provider capability should be assumed universal: images, PDFs, tools, cancellation, usage details, and reasoning vary by endpoint.
+Requests stream where the transport supports streaming. Provider usage is retained when reported; local token estimates are available when it is not. Thinking choices are calibrated to the selected provider/model and passed as request options where supported; neither the selected profile nor the request option alone confirms the provider's effective model or reasoning behavior. No provider capability should be assumed universal: images, PDFs, tools, cancellation, usage details, and reasoning vary by endpoint.
 
 ### 6.2 Multiple AI participants
 
@@ -418,7 +423,7 @@ The current Obsidian AI built-in chat registry contains 33 capabilities. These n
 | Memory | `cull_core` | Curate/remove core memory entries under the memory policy. |
 | Conversation | `search_past_sessions` | Search saved chat history, excluding the current session, and return navigable references. |
 | Conversation | `read_tool_result` | Retrieve a previously stored full tool result by its session/call reference when available. |
-| Chat settings | `read_settings` | Read the supported user-facing plugin settings. |
+| Chat settings | `read_settings` | Read sanitized plugin settings plus the current turn's resolved profile/model/thinking selection when available; global defaults may differ, and this does not confirm effective provider routing. |
 | Chat settings | `update_setting` | Change an allow-listed setting when Developer mode permits it. |
 | Chat settings | `get_plugin_info` | Report plugin identity and currently available built-in capabilities. |
 
@@ -533,6 +538,6 @@ A replacement should not be considered feature-complete until it can demonstrate
 
 - The provider, attachment, tool, and host-feature surfaces are capability-dependent. A replacement should expose unavailable features honestly rather than displaying unusable controls.
 - Obsidian Dataview querying is an optional, read-only adapter capability. Web search requires a supported search backend; remote collaboration requires a configured relay; saved-chat sync requires a configured sync backend.
-- Provider-adaptive intermediate progress and partial tool-argument display are not part of the current guaranteed behavior.
+- A complete direct-provider tool call may appear as soon as its call event is emitted, before execution begins. Provider buffering can delay that event; partial-argument and provider-waiting progress are not part of the current guaranteed behavior.
 - The current message bubble renders model name, response duration, usage/estimated tokens, timestamp, and copy/retry or copy/edit actions. The provider name is not currently rendered in the message bubble; the provider/model pairing in the mobile mockups records the requested target presentation.
 - This document maps chat-visible functionality. It does not claim that every provider supports the same multimodal formats, reasoning controls, tool transport, usage reporting, or cancellation quality.

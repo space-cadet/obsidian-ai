@@ -1,3 +1,17 @@
+### 2026-10-18 — Chat UI, thinking controls, settings context, and cleanup ✅
+
+- On `ui-chat-fixes`, fixed three-plus-line composer layout and inflated
+  external-image token estimates; added provider/model-specific thinking modes
+  with an `A` marker for Auto and stacked bars for enabled levels.
+- Fixed `read_settings` to distinguish the current turn's resolved
+  profile/model/mode from the saved global default. Provider-effective routing
+  and reasoning behavior remain unconfirmed.
+- Deleted 15 old GitHub release records and 1,231 completed workflow runs;
+  deleted merged/stale branches. Three old unmerged remote branches remain
+  after automatic review rejected deletion.
+- Build, focused settings-tool tests (6), formatting, and diff checks passed.
+  Live Obsidian acceptance was not reported. See the 2026-10-18 session record.
+
 ### 2026-10-17 — v1.7.0/v1.7.1 releases and README refresh ✅
 
 - Published v1.7.0 with Codex account sign-in, optional read-only Dataview
@@ -741,7 +755,6 @@ matches found.
 - Created T57 and subtasks T57a–T57d.
 - Created `implementation-details/plugin-data-sync-and-syncit-boundary.md`.
 - Kept the existing AI integration provider separate from the future data-sync provider contract.
-- Beads issue creation was attempted but blocked because this checkout has no `.beads` database.
 - No sync code was changed in the original planning pass; T57a is now the
   first implementation slice.
 
@@ -1087,7 +1100,7 @@ Implemented the first pass on the three architectural improvements from the T55 
 ### 2026-07-10 — T74: Cron Job Token Optimization
 
 - Bash pre-processor pattern: bash does fetching, AI only does reasoning
-- beads-executor empty runs: ~18.8K → ~4.1K tokens (~78% reduction)
+- Executor empty runs: ~18.8K → ~4.1K tokens (~78% reduction)
 - Applied `lightContext: true` + restricted `toolsAllow`
 
 ### 2026-07-07 — Token Usage Skill v1.0.2

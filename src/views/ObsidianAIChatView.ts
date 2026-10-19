@@ -20,6 +20,9 @@ export interface ChatPluginLike {
 	chatapi: ChatApiManager;
 	manifest: { id: string };
 	settings: ObsidianAISettings;
+	sessionState?:
+		| import("../state/SessionStateOwner").SessionStateOwner
+		| null;
 	logger?: ChatLogger;
 	personaLoader: import("../intelligence/PersonaLoader").PersonaLoader | null;
 	searchIndex: import("../search/index").SearchIndex | null;

@@ -1,4 +1,4 @@
-import { estimateTokens } from "./tokenEstimator";
+import { estimateTokens, estimateStructuredTokens } from "./tokenEstimator";
 
 export interface ContextBudgetOptions {
 	/** Total model request budget, including prompt and response reserve. */
@@ -22,7 +22,7 @@ export interface BudgetedHistoryResult<T> {
 
 function estimateValue(value: unknown): number {
 	try {
-		return estimateTokens(JSON.stringify(value) ?? "");
+		return estimateStructuredTokens(value);
 	} catch {
 		// A tool registry or provider object may contain cycles/functions. It is
 		// safer to under-count that opaque value than to block the request.

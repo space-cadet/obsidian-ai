@@ -14,6 +14,42 @@ vi.mock("../../settings", () => ({
 }));
 
 describe("useSessionActions", () => {
+	it("marks UI deletions so the storage autosave can persist them", () => {
+		const markSessionDeleted = vi.fn();
+		const plugin = {
+			settings: { includeActiveNote: false },
+		} as any;
+		const sessionsRef = { current: [] as any[] };
+		const activeSessionIdRef = { current: null as string | null };
+		const { result } = renderHook(() => {
+			const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
+			return useSessionActions({
+				plugin,
+				sessionsRef,
+				activeSessionIdRef,
+				updateSessionMetadata: vi.fn(),
+				updateSessionMessages: vi.fn(),
+				setActiveSessionId: vi.fn(),
+				setScrollToMessageId: vi.fn(),
+				createNewSession: vi.fn(),
+				setSelectedProfileIds: vi.fn(),
+				getSelectedProfileIds: () => [],
+				setDebateMode: vi.fn(),
+				setWasTruncated: vi.fn(),
+				isStreaming: false,
+				abortActiveRuntime: vi.fn(),
+				clearSessionRuntime: vi.fn(),
+				markSessionDeleted,
+				openSessionIds,
+				setOpenSessionIds,
+			});
+		});
+
+		act(() => result.current.handleDeleteSession("deleted-id"));
+
+		expect(markSessionDeleted).toHaveBeenCalledWith("deleted-id");
+	});
+
 	it("opens a distinct draft tab for every new-chat action", () => {
 		let draftNumber = 0;
 		const createNewSession = vi.fn(() => ({
@@ -41,7 +77,8 @@ describe("useSessionActions", () => {
 				plugin,
 				sessionsRef,
 				activeSessionIdRef,
-				setSessions: vi.fn(),
+				updateSessionMetadata: vi.fn(),
+				updateSessionMessages: vi.fn(),
 				setActiveSessionId: vi.fn(),
 				setScrollToMessageId: vi.fn(),
 				createNewSession,
@@ -52,6 +89,7 @@ describe("useSessionActions", () => {
 				isStreaming: false,
 				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
+				markSessionDeleted: vi.fn(),
 				openSessionIds,
 				setOpenSessionIds,
 			});
@@ -62,6 +100,151 @@ describe("useSessionActions", () => {
 
 		expect(createNewSession).toHaveBeenCalledTimes(2);
 		expect(result.current.openSessionIds).toEqual(["draft-1", "draft-2"]);
+	});
+
+	it("keeps an active tabless session open when creating a new tab", () => {
+		const sentSession = {
+			id: "tabless-session",
+			title: "Sent chat",
+			createdAt: 0,
+			updatedAt: 1,
+			messages: [{ id: "message-1", role: "user", content: "Hello" }],
+			contextItems: [],
+		};
+		const sessionsRef = { current: [sentSession] as any[] };
+		const activeSessionIdRef = { current: sentSession.id as string | null };
+		const createNewSession = vi.fn(() => {
+			const freshSession = {
+				id: "fresh-session",
+				title: "",
+				createdAt: 2,
+				updatedAt: 2,
+				messages: [],
+				contextItems: [],
+			};
+			sessionsRef.current = [...sessionsRef.current, freshSession];
+			activeSessionIdRef.current = freshSession.id;
+			return freshSession;
+		});
+		const plugin = {
+			settings: {
+				includeActiveNote: false,
+				selectedProfileIds: [],
+				providerProfiles: [{ id: "default", provider: "ollama" }],
+				activeProviderProfileId: "default",
+			},
+		} as any;
+
+		const { result } = renderHook(() => {
+			const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
+			return useSessionActions({
+				plugin,
+				sessionsRef,
+				activeSessionIdRef,
+				updateSessionMetadata: vi.fn(),
+				updateSessionMessages: vi.fn(),
+				setActiveSessionId: (value) => {
+					activeSessionIdRef.current =
+						typeof value === "function"
+							? value(activeSessionIdRef.current)
+							: value;
+				},
+				setScrollToMessageId: vi.fn(),
+				createNewSession,
+				setSelectedProfileIds: vi.fn(),
+				getSelectedProfileIds: () => ["default"],
+				setDebateMode: vi.fn(),
+				setWasTruncated: vi.fn(),
+				isStreaming: false,
+				abortActiveRuntime: vi.fn(),
+				clearSessionRuntime: vi.fn(),
+				markSessionDeleted: vi.fn(),
+				openSessionIds,
+				setOpenSessionIds,
+			});
+		});
+
+		act(() => result.current.handleNewChat());
+
+		expect(result.current.openSessionIds).toEqual([
+			"tabless-session",
+			"fresh-session",
+		]);
+	});
+
+	it("keeps an active tabless session open when restoring an older session", () => {
+		const sessionsRef = {
+			current: [
+				{
+					id: "tabless-session",
+					title: "Sent chat",
+					createdAt: 0,
+					updatedAt: 2,
+					messages: [
+						{ id: "message-1", role: "user", content: "Hello" },
+					],
+					contextItems: [],
+				},
+				{
+					id: "older-session",
+					title: "Older chat",
+					createdAt: 0,
+					updatedAt: 1,
+					messages: [
+						{ id: "message-2", role: "user", content: "Earlier" },
+					],
+					contextItems: [],
+				},
+			] as any[],
+		};
+		const activeSessionIdRef = {
+			current: "tabless-session" as string | null,
+		};
+		const plugin = {
+			settings: {
+				includeActiveNote: false,
+				selectedProfileIds: [],
+				providerProfiles: [{ id: "default", provider: "ollama" }],
+				activeProviderProfileId: "default",
+			},
+		} as any;
+
+		const { result } = renderHook(() => {
+			const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
+			return useSessionActions({
+				plugin,
+				sessionsRef,
+				activeSessionIdRef,
+				updateSessionMetadata: vi.fn(),
+				updateSessionMessages: vi.fn(),
+				setActiveSessionId: (value) => {
+					activeSessionIdRef.current =
+						typeof value === "function"
+							? value(activeSessionIdRef.current)
+							: value;
+				},
+				setScrollToMessageId: vi.fn(),
+				createNewSession: vi.fn(),
+				setSelectedProfileIds: vi.fn(),
+				getSelectedProfileIds: () => [],
+				setDebateMode: vi.fn(),
+				setWasTruncated: vi.fn(),
+				isStreaming: false,
+				abortActiveRuntime: vi.fn(),
+				clearSessionRuntime: vi.fn(),
+				markSessionDeleted: vi.fn(),
+				openSessionIds,
+				setOpenSessionIds,
+			});
+		});
+
+		act(() => result.current.handleLoadSession("older-session"));
+
+		expect(result.current.openSessionIds).toEqual([
+			"tabless-session",
+			"older-session",
+		]);
+		expect(activeSessionIdRef.current).toBe("older-session");
 	});
 
 	it("inherits the active tab model when opening a new tab", () => {
@@ -89,7 +272,8 @@ describe("useSessionActions", () => {
 				plugin,
 				sessionsRef,
 				activeSessionIdRef,
-				setSessions: vi.fn(),
+				updateSessionMetadata: vi.fn(),
+				updateSessionMessages: vi.fn(),
 				setActiveSessionId: vi.fn(),
 				setScrollToMessageId: vi.fn(),
 				createNewSession,
@@ -100,6 +284,7 @@ describe("useSessionActions", () => {
 				isStreaming: false,
 				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
+				markSessionDeleted: vi.fn(),
 				openSessionIds,
 				setOpenSessionIds,
 			});
@@ -123,7 +308,7 @@ describe("useSessionActions", () => {
 			contextItems: [],
 		};
 		const messages = [{ id: "message-1", role: "user", content: "Hello" }];
-		const setSessions = vi.fn();
+		const updateSessionMessages = vi.fn();
 		const plugin = {
 			settings: {
 				includeActiveNote: false,
@@ -143,7 +328,8 @@ describe("useSessionActions", () => {
 				plugin,
 				sessionsRef,
 				activeSessionIdRef,
-				setSessions,
+				updateSessionMetadata: vi.fn(),
+				updateSessionMessages,
 				setActiveSessionId: vi.fn(),
 				setScrollToMessageId: vi.fn(),
 				createNewSession: vi.fn(),
@@ -154,6 +340,7 @@ describe("useSessionActions", () => {
 				isStreaming: false,
 				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
+				markSessionDeleted: vi.fn(),
 				openSessionIds,
 				setOpenSessionIds,
 			});
@@ -165,12 +352,9 @@ describe("useSessionActions", () => {
 		});
 
 		expect(plugin.peekSessionMessages).toHaveBeenCalledWith(session.id);
-		const savedSessions = setSessions.mock.calls.at(-1)?.[0];
-		expect(savedSessions[0]).toMatchObject({
-			id: session.id,
+		expect(updateSessionMessages).toHaveBeenCalledWith(
+			session.id,
 			messages,
-			hydrated: true,
-			messageCount: 1,
-		});
+		);
 	});
 });

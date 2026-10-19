@@ -15,7 +15,13 @@ import {
 } from "obsidian";
 
 import { ChatPluginLike } from "../views/ObsidianAIChatView";
-import { ChatMessage, ChatSession, ContextItem, ContentPart } from "../types";
+import {
+	ChatMessage,
+	ChatSession,
+	ContextItem,
+	ContentPart,
+	ThinkingMode,
+} from "../types";
 import { resolveContextItems } from "../context/ContextEngine";
 import { resolveAttachments } from "../context/AttachmentEngine";
 import { estimateTokens } from "../context/tokenEstimator";
@@ -64,6 +70,7 @@ import { ChatApiManager } from "../api";
 import { OpenResponsesLoop } from "../agent/OpenResponsesLoop";
 import { noteToolsToOpenResponses } from "../agent/tools/toOpenResponses";
 import { getActiveProviderProfile, ProviderProfile } from "../settings";
+import { getThinkingModeOptions } from "../api/thinkingModes";
 import { resolveSessionProfile as resolveProfileForSession } from "../lib/sessionProfile";
 import { rememberRecentModel } from "../lib/recentModels";
 import { stripThinkingTags } from "./MessageBubble";
@@ -88,7 +95,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 }) => {
 	const {
 		sessions,
-		setSessions,
+		updateSessionMetadata,
 		activeSessionId,
 		setActiveSessionId,
 		chatDataLoaded,
@@ -97,6 +104,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		openSessionIds: persistedOpenSessionIds,
 		setOpenSessionIds: setPersistedOpenSessionIds,
 		createNewSession,
+		markSessionDeleted,
 		renameSession,
 		updateSessionMessages,
 		updateSessionContextItems,
@@ -111,7 +119,6 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	const [scrollToMessageId, setScrollToMessageId] = useState<
 		string | undefined
 	>(initialMessageId);
-	const [thinkingEnabled, setThinkingEnabled] = useState(false);
 	const savedSessions = useMemo(
 		() => sessions.filter((session) => sessionMessageCount(session) > 0),
 		[sessions],
@@ -171,19 +178,13 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		}
 
 		const originalMessages = ui.originalMessages;
-		setSessions((current) =>
-			current.map((session) =>
-				session.id === previousSessionId
-					? { ...session, messages: originalMessages }
-					: session,
-			),
-		);
+		updateSessionMessages(previousSessionId, originalMessages);
 		ui.setIsEditing(false);
 		ui.setOriginalMessages([]);
 		ui.setEditMessageText("");
 	}, [
 		activeSessionId,
-		setSessions,
+		updateSessionMessages,
 		ui.clearMessageSelection,
 		ui.isEditing,
 		ui.originalMessages,
@@ -215,21 +216,12 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		(attachments: import("../types").Attachment[]) => {
 			ui.setMessageAttachments(attachments);
 			if (!activeSessionId) return;
-			setSessions((current) =>
-				current.map((session) =>
-					session.id === activeSessionId
-						? {
-								...session,
-								draftAttachments:
-									attachments.length > 0
-										? attachments
-										: undefined,
-							}
-						: session,
-				),
-			);
+			updateSessionMetadata(activeSessionId, {
+				draftAttachments:
+					attachments.length > 0 ? attachments : undefined,
+			});
 		},
-		[activeSessionId, setSessions, ui.setMessageAttachments],
+		[activeSessionId, updateSessionMetadata, ui.setMessageAttachments],
 	);
 	const modelOverrides = activeSession?.modelOverrides;
 	const isMultiAgentSelection = ui.selectedProfileIds.size > 1;
@@ -271,6 +263,30 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		settingsTick,
 		resolveSessionProfile,
 	]);
+	const thinkingModeOptions = useMemo(
+		() => getThinkingModeOptions(resolvedProfile),
+		[resolvedProfile.provider, resolvedProfile.model],
+	);
+	const storedThinkingMode: ThinkingMode =
+		activeSession?.thinkingMode ??
+		(activeSession?.thinkingEnabled ? "medium" : "provider-default");
+	const thinkingMode = thinkingModeOptions.some(
+		(option) => option.value === storedThinkingMode,
+	)
+		? storedThinkingMode
+		: "provider-default";
+	const thinkingEnabled =
+		thinkingMode !== "provider-default" && thinkingMode !== "none";
+	const handleThinkingModeChange = useCallback(
+		(mode: ThinkingMode) => {
+			if (!activeSessionId) return;
+			updateSessionMetadata(activeSessionId, {
+				thinkingMode: mode,
+				updatedAt: Date.now(),
+			});
+		},
+		[activeSessionId, updateSessionMetadata],
+	);
 
 	const resolvedSelectedProfiles = useMemo(
 		() =>
@@ -501,7 +517,8 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		profileId,
 		sessionsRef,
 		activeSessionIdRef,
-		setSessions,
+		updateSessionMetadata,
+		updateSessionMessages,
 		setActiveSessionId,
 		setScrollToMessageId,
 		createNewSession,
@@ -515,6 +532,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			abortRuntime(sessionId);
 			clearRuntime(sessionId);
 		},
+		markSessionDeleted,
 		openSessionIds: persistedOpenSessionIds,
 		setOpenSessionIds: setPersistedOpenSessionIds,
 		getModelOverrides,
@@ -556,22 +574,19 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	const handleModelChange = useCallback(
 		(profileId: string, model: string) => {
 			if (!activeSessionId) return;
-			setSessions((prev) =>
-				prev.map((session) => {
-					if (session.id !== activeSessionId) return session;
-					const nextOverrides = {
-						...(session.modelOverrides ?? {}),
-						[profileId]: model,
-					};
-					return {
-						...session,
-						modelOverrides: nextOverrides,
-						updatedAt: Date.now(),
-					};
-				}),
+			const session = sessionsRef.current.find(
+				(item) => item.id === activeSessionId,
 			);
+			if (!session) return;
+			updateSessionMetadata(activeSessionId, {
+				modelOverrides: {
+					...(session.modelOverrides ?? {}),
+					[profileId]: model,
+				},
+				updatedAt: Date.now(),
+			});
 		},
-		[activeSessionId, setSessions],
+		[activeSessionId, sessionsRef, updateSessionMetadata],
 	);
 
 	// ─── Settings Actions ───
@@ -619,7 +634,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		plugin,
 		sessionsRef,
 		activeSessionIdRef,
-		setSessions,
+		updateSessionMetadata,
 		setWasTruncated,
 		() => ui.setShowContextPicker(false),
 	);
@@ -632,10 +647,11 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		resolvedProfile,
 		isGroupChat,
 		participants,
-		thinkingEnabled,
+		thinkingMode,
 		sessionsRef,
 		activeSessionIdRef,
-		setSessions,
+		updateMessages: updateSessionMessages,
+		updateMetadata: updateSessionMetadata,
 		setWasTruncated,
 		setContextTokenCount,
 		setContextItems,
@@ -685,17 +701,11 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			});
 			adapter.onMessage((remoteMsg) => {
 				// Append remote message to current session
-				setSessions((prev) =>
-					prev.map((s) =>
-						s.id === activeSessionId
-							? {
-									...s,
-									messages: [...s.messages, remoteMsg],
-									updatedAt: Date.now(),
-								}
-							: s,
-					),
-				);
+				if (activeSessionId)
+					updateSessionMessages(activeSessionId, (messages) => [
+						...messages,
+						remoteMsg,
+					]);
 			});
 			adapter.onTyping((userId) => {
 				// Show typing indicator for 3 seconds then remove
@@ -742,6 +752,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		};
 	}, [
 		activeSessionId,
+		updateSessionMessages,
 		activeSessionRelayEnabled,
 		plugin.settings.syncRelayUrl,
 		plugin.settings.syncRoomId,
@@ -750,19 +761,16 @@ const ChatApp: React.FC<ChatAppProps> = ({
 
 	const handleToggleRelay = useCallback(() => {
 		if (!activeSessionId) return;
-		setSessions((prev) =>
-			prev.map((s) =>
-				s.id === activeSessionId
-					? { ...s, relayEnabled: !s.relayEnabled }
-					: s,
-			),
-		);
-	}, [activeSessionId, setSessions]);
+		updateSessionMetadata(activeSessionId, {
+			relayEnabled: !activeSessionRelayEnabled,
+		});
+	}, [activeSessionId, activeSessionRelayEnabled, updateSessionMetadata]);
 
 	// Wrap handleSend to also sync to relay (only if ParticipantRouter is not handling it)
 	const handleSendWithSync = useCallback(
 		async (text: string, attachments?: import("../types").Attachment[]) => {
-			await actions.handleSend(text, attachments);
+			const accepted = await actions.handleSend(text, attachments);
+			if (accepted === false) return false;
 			// Only do legacy relay sync if ParticipantRouter is not active
 			if (
 				!participantRouter &&
@@ -791,6 +799,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					console.warn("[ChatApp] Failed to sync message:", err);
 				});
 			}
+			return true;
 		},
 		[
 			actions.handleSend,
@@ -809,56 +818,48 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			return;
 		}
 		const ids = Array.from(ui.selectedProfileIds);
-		setSessions((prev) =>
-			prev.map((s) => {
-				if (s.id !== activeSessionId) return s;
-				const nextParticipants =
-					ids.length >= 2
-						? ids.map((id) => {
-								const profile =
-									plugin.settings.providerProfiles.find(
-										(p) => p.id === id,
-									);
-								return {
-									id,
-									name: profile?.name ?? "Unknown",
-									profileId: id,
-									color: getAgentColor(
-										profile?.provider ?? "custom",
-									),
-									icon: getAgentIcon(
-										profile?.provider ?? "custom",
-									),
-								};
-							})
-						: [];
-				const alreadyMatches =
-					s.profileId === (ids.length === 1 ? ids[0] : undefined) &&
-					JSON.stringify(s.selectedProfileIds ?? []) ===
-						JSON.stringify(ids) &&
-					s.isGroupChat === ids.length >= 2 &&
-					JSON.stringify(s.selectedRemoteUserIds ?? []) ===
-						JSON.stringify(Array.from(ui.selectedRemoteUserIds));
-				return alreadyMatches
-					? s
-					: {
-							...s,
-							profileId: ids.length === 1 ? ids[0] : undefined,
-							selectedProfileIds: ids,
-							isGroupChat:
-								ids.length >= 2 ||
-								ui.selectedRemoteUserIds.size > 0,
-							participants: nextParticipants,
-							selectedRemoteUserIds: Array.from(
-								ui.selectedRemoteUserIds,
-							),
-						};
-			}),
+		const current = sessionsRef.current.find(
+			(s) => s.id === activeSessionId,
 		);
+		if (!current) return;
+		const nextParticipants =
+			ids.length >= 2
+				? ids.map((id) => {
+						const profile = plugin.settings.providerProfiles.find(
+							(p) => p.id === id,
+						);
+						return {
+							id,
+							name: profile?.name ?? "Unknown",
+							profileId: id,
+							color: getAgentColor(profile?.provider ?? "custom"),
+							icon: getAgentIcon(profile?.provider ?? "custom"),
+						};
+					})
+				: [];
+		const nextRemoteIds = Array.from(ui.selectedRemoteUserIds);
+		const alreadyMatches =
+			current.profileId === (ids.length === 1 ? ids[0] : undefined) &&
+			JSON.stringify(current.selectedProfileIds ?? []) ===
+				JSON.stringify(ids) &&
+			current.isGroupChat ===
+				(ids.length >= 2 || nextRemoteIds.length > 0) &&
+			JSON.stringify(current.selectedRemoteUserIds ?? []) ===
+				JSON.stringify(nextRemoteIds);
+		if (alreadyMatches) return;
+		updateSessionMetadata(activeSessionId, {
+			profileId: ids.length === 1 ? ids[0] : undefined,
+			selectedProfileIds: ids,
+			isGroupChat: ids.length >= 2 || nextRemoteIds.length > 0,
+			participants: nextParticipants,
+			selectedRemoteUserIds: nextRemoteIds,
+		});
 	}, [
 		ui.selectedProfileIds,
 		ui.selectedRemoteUserIds,
 		activeSessionId,
+		sessionsRef,
+		updateSessionMetadata,
 		plugin.settings.providerProfiles,
 	]);
 
@@ -869,19 +870,14 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			scrollSaveTimersRef.current.set(
 				sessionId,
 				window.setTimeout(() => {
-					setSessions((current) =>
-						current.map((session) =>
-							session.id === sessionId &&
-							session.scrollPosition !== scrollTop
-								? { ...session, scrollPosition: scrollTop }
-								: session,
-						),
-					);
+					updateSessionMetadata(sessionId, {
+						scrollPosition: scrollTop,
+					});
 					scrollSaveTimersRef.current.delete(sessionId);
 				}, 200),
 			);
 		},
-		[setSessions],
+		[updateSessionMetadata],
 	);
 	useEffect(
 		() => () => {
@@ -902,15 +898,11 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				window.clearTimeout(draftTimerRef.current);
 			}
 			draftTimerRef.current = window.setTimeout(() => {
-				setSessions((prev) =>
-					prev.map((s) =>
-						s.id === currentActiveId ? { ...s, draft: text } : s,
-					),
-				);
+				updateSessionMetadata(currentActiveId, { draft: text });
 				draftTimerRef.current = null;
 			}, 500);
 		},
-		[setSessions],
+		[updateSessionMetadata],
 	);
 	useEffect(() => {
 		return () => {
@@ -1138,6 +1130,8 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				isStreaming={activeRuntime.isStreaming}
 				debugMode={plugin.settings.debugMode}
 				isEditing={ui.isEditing}
+				thinkingMode={thinkingMode}
+				thinkingModeOptions={thinkingModeOptions}
 				thinkingEnabled={thinkingEnabled}
 				showThinking={thinkingEnabled}
 				scrollToMessageId={scrollToMessageId}
@@ -1156,7 +1150,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				onTyping={() => syncAdapterRef.current?.sendTyping()}
 				onAddMention={handleAddMention}
 				onCancelEdit={actions.handleCancelEdit}
-				onToggleThinking={() => setThinkingEnabled((t) => !t)}
+				onThinkingModeChange={handleThinkingModeChange}
 				onAppend={actions.handleAppend}
 				onInsertAtCursor={actions.handleInsertAtCursor}
 				onApply={actions.handleApply}

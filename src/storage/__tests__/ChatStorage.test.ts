@@ -5,17 +5,7 @@ import { createStorage } from "../ChatStorage";
 describe("ChatStorage", () => {
 	it("round-trips compaction metadata through the JSONL session index", async () => {
 		const files = new Map<string, string>();
-		const adapter = {
-			exists: vi.fn(async (path: string) => files.has(path)),
-			mkdir: vi.fn(async () => undefined),
-			read: vi.fn(async (path: string) => files.get(path) ?? ""),
-			write: vi.fn(async (path: string, content: string) => {
-				files.set(path, content);
-			}),
-			append: vi.fn(async (path: string, content: string) => {
-				files.set(path, (files.get(path) ?? "") + content);
-			}),
-		};
+		const adapter = makeAdapter(files);
 		const metadata: CompactionMetadata = {
 			version: 1,
 			sourceMessageIds: ["message-1"],
@@ -75,15 +65,73 @@ describe("ChatStorage", () => {
 });
 
 function makeAdapter(files: Map<string, string>) {
+	const directories = new Set<string>();
 	return {
-		exists: vi.fn(async (path: string) => files.has(path)),
-		mkdir: vi.fn(async () => undefined),
+		exists: vi.fn(
+			async (path: string) => files.has(path) || directories.has(path),
+		),
+		stat: vi.fn(async (path: string) => {
+			const content = files.get(path);
+			return content === undefined
+				? null
+				: {
+						size: new TextEncoder().encode(content).byteLength,
+						mtime: 0,
+					};
+		}),
+		mkdir: vi.fn(async (path: string) => {
+			let current = path;
+			while (current) {
+				directories.add(current);
+				const separator = current.lastIndexOf("/");
+				if (separator < 0) break;
+				current = current.slice(0, separator);
+			}
+		}),
 		read: vi.fn(async (path: string) => files.get(path) ?? ""),
 		write: vi.fn(async (path: string, content: string) => {
 			files.set(path, content);
 		}),
 		append: vi.fn(async (path: string, content: string) => {
 			files.set(path, (files.get(path) ?? "") + content);
+		}),
+		remove: vi.fn(async (path: string) => {
+			files.delete(path);
+		}),
+		rename: vi.fn(async (from: string, to: string) => {
+			const content = files.get(from);
+			if (content === undefined) throw new Error(`Missing file: ${from}`);
+			files.set(to, content);
+			files.delete(from);
+		}),
+		list: vi.fn(async (path: string) => {
+			const prefix = `${path.replace(/\/$/, "")}/`;
+			const filesInFolder: string[] = [];
+			const foldersInFolder = new Set<string>();
+			for (const candidate of [...files.keys(), ...directories]) {
+				if (!candidate.startsWith(prefix)) continue;
+				const relative = candidate.slice(prefix.length);
+				if (!relative) continue;
+				const separator = relative.indexOf("/");
+				if (separator < 0) {
+					if (files.has(candidate)) filesInFolder.push(candidate);
+				} else {
+					foldersInFolder.add(
+						`${prefix}${relative.slice(0, separator)}`,
+					);
+				}
+			}
+			return { files: filesInFolder, folders: [...foldersInFolder] };
+		}),
+		rmdir: vi.fn(async (path: string) => {
+			const prefix = `${path.replace(/\/$/, "")}/`;
+			for (const candidate of files.keys()) {
+				if (candidate.startsWith(prefix)) files.delete(candidate);
+			}
+			for (const candidate of directories) {
+				if (candidate === path || candidate.startsWith(prefix))
+					directories.delete(candidate);
+			}
 		}),
 	};
 }
@@ -238,6 +286,95 @@ describe("JsonlStorage index-only boot", () => {
 		});
 		expect(reloaded.sessions[0].messages).toHaveLength(2);
 		expect(reloaded.sessions[0].messages[1].content).toBe("new");
+	});
+
+	it("ignores exact duplicate JSONL records and rewrites them on the next save", async () => {
+		const files = new Map<string, string>();
+		const first = makeSession("s1", ["hello"]).messages[0];
+		const line = JSON.stringify(first);
+		files.set(sessionPath("s1"), `${line}\n${line}\n`);
+		files.set(
+			indexPath,
+			JSON.stringify({
+				version: 1,
+				sessions: [
+					{
+						id: "s1",
+						title: "Session s1",
+						createdAt: 1,
+						updatedAt: 2,
+						messageCount: 2,
+						filePath: "sessions/s1.jsonl",
+					},
+				],
+				activeSessionId: "s1",
+			}),
+		);
+		const { storage, adapter } = makeStorage(files);
+		const data = await storage.loadChatData({ hydrate: true });
+		expect(data.sessions[0].messages).toHaveLength(1);
+		expect(data.sessions[0].messageCount).toBe(1);
+
+		await storage.saveChatData(data);
+		expect(files.get(sessionPath("s1"))).toBe(`${line}\n`);
+		expect(adapter.write).toHaveBeenCalledWith(
+			sessionPath("s1"),
+			`${line}\n`,
+		);
+	});
+
+	it("rejects an oversized transcript before reading it", async () => {
+		const files = new Map<string, string>();
+		await makeStorage(files).storage.saveChatData({
+			sessions: [makeSession("s1", ["hello"])],
+			activeSessionId: "s1",
+		});
+		const { storage, adapter } = makeStorage(files);
+		await storage.loadChatData();
+		(adapter.stat as any).mockResolvedValue({
+			size: 16 * 1024 * 1024 + 1,
+			mtime: 0,
+		});
+
+		await expect(storage.hydrateSession?.("s1")).rejects.toThrow(
+			/too large to load safely/,
+		);
+		expect(adapter.read).not.toHaveBeenCalledWith(sessionPath("s1"));
+	});
+
+	it("removes exact duplicate message ids before writing and indexing", async () => {
+		const files = new Map<string, string>();
+		const session = makeSession("s1", ["hello"]);
+		session.messages.push({ ...session.messages[0] });
+		await makeStorage(files).storage.saveChatData({
+			sessions: [session],
+			activeSessionId: "s1",
+		});
+
+		expect(files.get(sessionPath("s1"))?.trim().split("\n")).toHaveLength(
+			1,
+		);
+		expect(
+			JSON.parse(files.get(indexPath) ?? "{}").sessions[0].messageCount,
+		).toBe(1);
+	});
+
+	it("rewrites instead of appending when the disk prefix size is inconsistent", async () => {
+		const files = new Map<string, string>();
+		await makeStorage(files).storage.saveChatData({
+			sessions: [makeSession("s1", ["hello"])],
+			activeSessionId: "s1",
+		});
+		const { storage, adapter } = makeStorage(files);
+		const loaded = await storage.loadChatData({ hydrate: true });
+		const original = files.get(sessionPath("s1")) ?? "";
+		files.set(sessionPath("s1"), `${original}${original}`);
+		await storage.saveChatData(loaded);
+
+		expect(adapter.append).not.toHaveBeenCalled();
+		expect(files.get(sessionPath("s1"))).toBe(
+			`${JSON.stringify(loaded.sessions[0].messages[0])}\n`,
+		);
 	});
 
 	it("sync-style replacement (session gains messages unhydrated) writes full file", async () => {
@@ -542,5 +679,30 @@ describe("JsonlStorage bulk hydrate honesty (sync path)", () => {
 		});
 		index = JSON.parse(files.get(indexPath) ?? "{}");
 		expect(index.sessions.map((entry: any) => entry.id)).toEqual(["s1"]);
+		expect(files.has(sessionPath("s2"))).toBe(false);
+	});
+
+	it("lets deletion tombstones override sessions reintroduced by sync", async () => {
+		const files = new Map<string, string>();
+		await makeStorage(files).storage.saveChatData({
+			sessions: [makeSession("s1", ["one"]), makeSession("s2", ["two"])],
+			activeSessionId: "s2",
+			openSessionIds: ["s1", "s2"],
+		});
+		const { storage } = makeStorage(files);
+		const staleSnapshot = await storage.loadChatData({ hydrate: true });
+
+		await storage.saveChatData({
+			sessions: staleSnapshot.sessions,
+			activeSessionId: "s2",
+			openSessionIds: ["s1", "s2"],
+			deletedSessionIds: ["s2"],
+		});
+
+		const index = JSON.parse(files.get(indexPath) ?? "{}");
+		expect(index.sessions.map((entry: any) => entry.id)).toEqual(["s1"]);
+		expect(index.activeSessionId).toBeNull();
+		expect(index.openSessionIds).toEqual(["s1"]);
+		expect(files.has(sessionPath("s2"))).toBe(false);
 	});
 });

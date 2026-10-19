@@ -31,15 +31,15 @@ the `MarkdownRenderer` dependency up to `ChatApp` controller.
 ## Decisions
 
 - Remaining T44 work (T44.2 fixtures, T44.3 Storybook, T44.4 real-browser checks)
-  delegated to beads executor for async execution.
-- T44.2 is well-suited for beads (mechanical, clear acceptance criteria).
+- delegated to an async executor.
+- T44.2 is well-suited for async execution (mechanical, clear acceptance criteria).
 - T44.3 partially suited (config is mechanical, story selection needs judgment).
 - T44.4 better interactive (subjective evaluation of mobile UX).
 
 ## Next Steps
 
-- Await beads executor completion of T44.2 fixtures.
-- Review beads output when ready.
+- Await async executor completion of T44.2 fixtures.
+- Review executor output when ready.
 - Continue T44.3/4 in next interactive session or delegate with looser criteria.
 
 ## Commits

@@ -137,6 +137,15 @@ export interface ChatMessage {
 	isDebug?: boolean;
 }
 
+/** Result of loading a transcript, including evidence for safe deduplication. */
+export interface SessionHydrationResult {
+	messages: ChatMessage[];
+	indexedMessageCount: number;
+	exactDuplicateCount: number;
+	invalidRecordCount: number;
+	countMismatchExplainedByExactDeduplication: boolean;
+}
+
 /** Participant in a group chat session */
 export interface GroupChatParticipant {
 	id: string;
@@ -185,6 +194,8 @@ export interface ChatSession {
 	selectedRemoteUserIds?: string[];
 	/** Whether thinking/reasoning is enabled for this session */
 	thinkingEnabled?: boolean;
+	/** Provider-calibrated reasoning effort for this session. */
+	thinkingMode?: ThinkingMode;
 	/** Unsent composer text saved for recovery across restarts and tab switches. */
 	draft?: string;
 	/** Unsent composer attachments scoped to this chat and saved separately. */
@@ -196,6 +207,18 @@ export interface ChatSession {
 	/** Vertical message-list offset captured for restoring this tab after reload. */
 	scrollPosition?: number;
 }
+
+/** AI SDK reasoning setting saved with a chat. */
+export type ThinkingMode =
+	| "provider-default"
+	| "none"
+	| "minimal"
+	| "low"
+	| "medium"
+	| "high"
+	| "xhigh"
+	| "max"
+	| "enabled";
 
 export interface StoredChatData {
 	sessions: ChatSession[];

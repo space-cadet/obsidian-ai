@@ -1,7 +1,11 @@
 import { ChatApiManager } from "../api";
 import { ToolExecutor } from "./ToolExecutor";
 import type { ToolCall, ToolResult, StreamEvent } from "./types";
-import { estimateTokens } from "../context/tokenEstimator";
+import {
+	estimateTokens,
+	estimateStructuredTokens,
+} from "../context/tokenEstimator";
+import type { ThinkingMode } from "../types";
 import { buildBudgetedModelMessages } from "../context/modelHistory";
 import type { ProviderProfile } from "../settings";
 import type { AgentStepTelemetry, ProviderTokenUsage } from "../types";
@@ -14,8 +18,8 @@ export interface AgentLoopOptions {
 	autoApprove: boolean;
 	/** Optional profile to use for API calls. */
 	profile?: ProviderProfile;
-	/** Whether to enable thinking/reasoning mode for LLM requests. */
-	thinkingEnabled?: boolean;
+	/** Provider-calibrated reasoning mode for model requests. */
+	thinkingMode?: ThinkingMode;
 	/** Maximum estimated tokens for a model-facing tool result. */
 	maxToolResultTokens?: number;
 	/** Total request budget to re-apply before each tool-loop continuation. */
@@ -148,6 +152,12 @@ function formatToolResult(toolName: string, result: ToolResult): string {
 
 		case "read_note": {
 			let output = result.content ?? "(empty note)";
+			if (result.content_fingerprint) {
+				output =
+					`[Note metadata — do not include in note content]\n` +
+					`content_fingerprint: ${result.content_fingerprint}\n\n` +
+					output;
+			}
 			if (result.warning) {
 				output = `\n\n> ${result.warning}\n\n---\n\n` + output;
 			}
@@ -229,12 +239,12 @@ export class AgentLoop {
 		const systemTokens = estimateTokens(
 			JSON.stringify(systemMessage?.content ?? "") ?? "",
 		);
-		const currentMessageTokens = estimateTokens(
-			JSON.stringify(currentMessage?.content ?? "") ?? "",
+		const currentMessageTokens = estimateStructuredTokens(
+			currentMessage?.content ?? "",
 		);
 		const estimateMessageList = (messagesToEstimate: any[]) =>
 			messagesToEstimate.length > 0
-				? estimateTokens(JSON.stringify(messagesToEstimate) ?? "")
+				? estimateStructuredTokens(messagesToEstimate)
 				: 0;
 		const budgetMessages = () => {
 			const maxRequestTokens = this.opts.maxRequestTokens ?? 0;
@@ -334,7 +344,7 @@ export class AgentLoop {
 				tools,
 				signal,
 				this.opts.profile,
-				this.opts.thinkingEnabled,
+				this.opts.thinkingMode,
 			)) {
 				if (signal.aborted) break;
 
@@ -352,6 +362,9 @@ export class AgentLoop {
 						break;
 					case "tool-call":
 						pendingCalls.push(event.call);
+						// Show a complete call as soon as the provider emits it. Tool
+						// execution and approval still wait until the stream step ends.
+						this.opts.onToolCall(event.call);
 						break;
 					case "error":
 						throw new Error(event.message);
@@ -418,7 +431,6 @@ export class AgentLoop {
 					`[AgentLoop] step ${step} tool-call: ${pendingCall.toolName}`,
 					pendingCall.args,
 				);
-				this.opts.onToolCall(pendingCall);
 
 				// Count tokens for tool call args only (text already counted incrementally)
 				const callTokens = estimateTokens(

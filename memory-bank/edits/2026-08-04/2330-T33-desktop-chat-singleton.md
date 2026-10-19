@@ -15,4 +15,4 @@
 
 ## Notes
 
-`bd` task tracking could not be used because this checkout has no `.beads` database. The project Memory Bank records the work instead.
+The project Memory Bank records this work in its task hierarchy.

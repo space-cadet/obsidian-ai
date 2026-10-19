@@ -35,6 +35,3 @@
 - Define Gateway address entry, pairing approval/revocation, reconnect/session
   behavior, streaming event mapping, and approval display.
 - Run mobile Codex compatibility checks and per-device Gateway acceptance.
-
-The local Beads commands report that no database is present, so this update did
-not create a new Beads issue ID.

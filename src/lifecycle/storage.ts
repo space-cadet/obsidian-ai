@@ -1,9 +1,16 @@
 import type { ChatSession } from "../types";
+import { Notice } from "obsidian";
+import {
+	applyPendingDataRepair,
+	type RepairAdapter,
+	type RepairResult,
+} from "../diagnostics/dataRepair";
 import { createFileLogger } from "../logger";
 import { createStorage } from "../storage/ChatStorage";
 import { ChatStorageMigration } from "../storage/Migration";
 import { MigrationPromptModal } from "../modals/MigrationPromptModal";
 import { SessionStorage } from "../storage/session-storage";
+import { SessionStateOwner } from "../state/SessionStateOwner";
 import { PersonaLoader } from "../intelligence/PersonaLoader";
 import { SearchIndex } from "../search/index";
 import { SessionSummarizer } from "../intelligence/SessionSummarizer";
@@ -42,15 +49,45 @@ export async function initializeStorage(
 	};
 
 	await migrateStorage(plugin);
-	// Logger not yet created — timing reported after init below.
 
-	// Initialize file logger FIRST so any crash during load is captured.
+	// Initialize file logging and load its configured verbosity before applying
+	// a scheduled repair so startup repair outcomes are recorded as well.
 	plugin.logger = createFileLogger(plugin.app, plugin.manifest.id);
 	await plugin.logger.init();
 	mark("migrateStorage + logger.init");
 
 	await loadSettings(plugin);
 	mark("loadSettings");
+
+	plugin.logger.log(
+		"debug",
+		"[DataRepair] Checking for pending startup repair",
+	);
+	let repair: RepairResult | null;
+	try {
+		repair = await applyPendingDataRepair(
+			plugin.app.vault.adapter as unknown as RepairAdapter,
+			`${plugin.app.vault.configDir}/plugins/${plugin.manifest.id}`,
+		);
+	} catch (error) {
+		plugin.logger.log(
+			"error",
+			"[DataRepair] Startup application failed",
+			error,
+		);
+		throw error;
+	}
+	if (repair) {
+		plugin.logger.log(
+			repair.status === "failed" || repair.status === "interrupted"
+				? "error"
+				: "info",
+			`[DataRepair] Startup result: status=${repair.status}, filesChanged=${repair.filesChanged}, backupCreated=${Boolean(repair.backupDir)}`,
+		);
+		new Notice(repair.message, 15000);
+		if (repair.status === "interrupted") throw new Error(repair.message);
+	}
+	mark("pending data repair");
 
 	plugin.integrationRegistry = new ProviderRegistry(
 		plugin.app,
@@ -95,6 +132,26 @@ export async function initializeStorage(
 		createStorageDeps(plugin),
 		plugin.settings.chatStorageFormat,
 	);
+	plugin.sessionState = new SessionStateOwner({
+		load: () => plugin.loadChatData(),
+		hydrate: (sessionId) => plugin.hydrateSession(sessionId),
+		hydrateWithMetadata: async (sessionId) => {
+			const storage = plugin._chatStorage;
+			if (storage?.hydrateSessionWithMetadata) {
+				return storage.hydrateSessionWithMetadata(sessionId);
+			}
+			const messages = await plugin.hydrateSession(sessionId);
+			return {
+				messages,
+				indexedMessageCount: messages.length,
+				exactDuplicateCount: 0,
+				invalidRecordCount: 0,
+				countMismatchExplainedByExactDeduplication: false,
+			};
+		},
+		peek: (sessionId) => plugin.peekSessionMessages(sessionId),
+		save: (data) => plugin.saveChatData(data),
+	});
 
 	// Detect legacy format and prompt for migration (non-blocking, once per session)
 	if (plugin.settings.chatStorageFormat === "legacy") {

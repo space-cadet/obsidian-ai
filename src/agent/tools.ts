@@ -675,7 +675,9 @@ export const readToolResultTool = t({
 
 export const readSettingsTool = t({
 	description:
-		"Read the current plugin settings. " +
+		"Read the current plugin settings and the resolved profile/model/thinking selection for this chat turn when available. " +
+		"The global active profile in settings is only the default and can differ from the profile used by this chat. " +
+		"This reports configured request values, not proof of the provider's effective model or whether it honored a thinking setting. " +
 		"Use this to self-diagnose configuration issues or understand current behavior. " +
 		"Sensitive fields like API keys and credentials are automatically redacted.",
 	inputSchema: z.object({}),

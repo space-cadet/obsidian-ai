@@ -1,5 +1,134 @@
 # Session Cache
 
+*Last Updated: 2026-10-19 23:29:06 IST*
+
+## 2026-10-19 — T24c shared session state complete
+
+- Added the plugin-scoped `SessionStateOwner` and connected Chat Lab views through a shared external
+  store. Hydration payload/readiness now install together in that owner, with
+  shared in-flight reads and deletion invalidation.
+- Routed session view initialization, open/send hydration, captured send IDs,
+  sync refresh, deletion tombstones, persistent mutations, and debounced writes
+  through the owner. Added unload flushing; JSONL/ChatStorage remains underneath.
+- Six focused owner/session/message-action/turn-lifecycle suites pass (58
+  tests). TypeScript, production build, formatting, and diff checks pass. The
+  hook suite's render loop was fixed by keeping its session ref stable.
+- Centralized tabless-session preservation in `openSessionInTab`; both `+` and
+  restoring an older chat use the same path. The user confirmed both flows
+  work in the plugin.
+- No production view-level `setSessions` path remains. Source commit `57fa849`
+  is pushed to `origin/ui-chat-fixes`; the worktree was clean after the push.
+
+## 2026-10-19 — Shared session-state coordination plan
+
+- Created Memory Bank subtask `T24c`. Its design is
+  `implementation-details/session-state-coordination.md`.
+- The plan covers shared readiness and messages, revision-guarded operations,
+  pinned session IDs, metadata-only updates, explicit deletion, sync merges,
+  and write flushing while retaining the existing JSONL transaction layer.
+- This is planned work only. The hydration P1 from the latest PR #12 review is
+  still unresolved; no source implementation, tests, or device acceptance are
+  claimed. T24b's targeted persistence coverage remains pending.
+- Product-source audit baseline: `ui-chat-fixes` at `cd4478b`; the initial plan
+  commit is pushed. This follow-up adds
+  the Memory Bank T24c subtask.
+- `memory-bank/tasks.md` now lists T24c under T24; T24b remains the separate
+  transcript-integrity task.
+- Session: `sessions/2026-10-19-session-state-coordination-plan.md`.
+
+## 2026-10-19 — Productized chat repair and Settings shortcuts
+
+- T11a is in progress for final `.21` post-reload acceptance and targeted
+  repair tests. The repair modal, preview safeguards, verified backup/startup
+  application, summary logging, and scan progress are implemented.
+- Repair only removes byte-identical same-ID duplicates. It offers selected
+  recovery for valid unindexed transcripts and leaves ambiguous findings
+  unchanged. Pause sync on all devices before applying scheduled repairs.
+- Production build passed. The installed `styles.css` hash matches local;
+  Obsidian remained running, so final UI confirmation awaits reload. No tests
+  or data repairs were performed.
+- T34: section shortcuts use a compact responsive grid of visible buttons;
+  existing navigation and collapsible settings are unchanged.
+- Commit `b77f72df755a4718d2662a4326a6efec27c77a6d` was pushed to
+  `origin/ui-chat-fixes`; the worktree is clean.
+- Session: `sessions/2026-10-19-chat-repair-ui-and-settings-shortcuts.md`.
+
+## 2026-10-19 — Chat Lab health repair closeout
+
+- Branch `ui-chat-fixes` is at `c366aae`. Source and Memory Bank changes were
+  local and uncommitted at that point.
+- T11a is complete for the health check, bounded findings UI, and backed-up
+  manual recovery. T24b remains active because targeted persistence tests are
+  pending.
+- Repaired the 10:07 UTC report findings under T11a: removed 101 byte-identical
+  duplicate rows from 49 transcripts, corrected five index counts, indexed 42
+  nonempty orphan transcripts, and removed 15 empty files after backup. The
+  264-entry index retained the same session IDs after Obsidian launched; its
+  only observed change was one scroll position. The user reports zero errors
+  and zero warnings in the final health check.
+- Phone backup remains at
+  `/storage/emulated/0/Download/chat-lab-health-repair-20261019-1011`;
+  private local transcript copies were removed. The 42 recovered chats use
+  generated titles because the original title metadata was absent from the
+  original index.
+- Session record: `sessions/2026-10-19-chat-fixes-android-startup-crash.md`.
+
+## 2026-10-19 — Codex fixes, tab rollback, and Android crash
+
+- Confirmed: the Codex note-edit fingerprint fix (`9344ea5`) works per the
+  user. The Codex model picker fix (`152f2d0`) and composer caret change
+  (`2154721`) still need user acceptance. `2004e30` surfaces complete tool
+  calls when emitted; provider buffering and partial arguments remain.
+- Android startup crash: Chat Lab crashes before tab selection; restored chat
+  is blank, no reply is active, and `debug.log` lacks useful detail. Cause is
+  unknown. The new-tab fix (`752e74c`) and active-only hydration attempt
+  (`d1aa297`) did not resolve the reported crash and are absent after reset.
+- Source branch `ui-chat-fixes` was hard-reset and force-pushed to `2004e30`;
+  local and remote match and the worktree is clean. Production build passed at
+  `d1aa297` before reset; no post-reset build or Android acceptance was done.
+- Session record: `sessions/2026-10-19-chat-fixes-android-startup-crash.md`.
+- Text is authoritative. No safe edit-history generator is available; the
+  edit history was refreshed manually from this update's canonical chunk.
+
+### Later follow-up — health checks, transcript persistence, and Android
+
+- Source branch `ui-chat-fixes` is now pushed at `d835fe4`. Health checks remain
+  read-only; repair previews and bounded report scrolling were reverted. New
+  subtask T11a tracks their safe completion and acceptance.
+- `ef93f3d` guards transcript loads/appends; `008c2e7` normalizes duplicate
+  messages before save; `d835fe4` carries explicit deletion IDs from the UI and
+  removes deleted transcript/draft files. Auto sync was disabled.
+- Health report: 228 files checked, 157 warnings (98 duplicate-ID findings,
+  two count mismatches, 57 unindexed transcripts), zero errors. Do not treat
+  these as proof that all duplicate records are identical or all unindexed
+  transcripts should be repaired automatically. Missing messages are out of
+  scope.
+- Build, TypeScript, and ChatStorage tests (21) passed. The UI regression test
+  hit a Vitest worker out-of-memory error under Node 26. Android launched with
+  `d835fe4`; delete-and-reload acceptance and crash root cause remain open.
+- T11a is documented in the text Memory Bank. No commit or push was made for
+  this Memory Bank update.
+
+## 2026-10-18 — UI fixes, thinking modes, and current-turn settings
+
+- T73/T6a: fixed composer layout at three or more lines, corrected inflated
+  external-image estimates, and added a provider/model-calibrated thinking
+  menu. Auto is distinguished with `A`; enabled levels use stacked bars.
+- T61: `read_settings` now returns the current turn's resolved profile,
+  configured model, and thinking selection separately from global defaults.
+  It does not verify actual provider routing or effective reasoning behavior.
+- T7/T8 housekeeping: deleted 15 old release records and 1,231 completed old
+  workflow runs; removed six merged remote and four stale local branches.
+  Three older unmerged remote branches remain after auto-review rejected the
+  deletion attempt: `debug/chat-diagnostics`, `feat/chat-loading-fixes`,
+  `t42-remote-storage`.
+- Source branch `ui-chat-fixes`; commits `ab97b7c`, `ddb94d3`, `dddc18a`,
+  `f024a14`; pushed and clean at `f024a14`. Build, focused tests (6), format,
+  and diff checks passed. Live Obsidian acceptance was not reported.
+- Session record: `sessions/2026-10-18-ui-chat-fixes-closeout.md`.
+- Text is authoritative. No safe edit-history generator is available; do not
+  regenerate from the database.
+
 ## 2026-10-17 — v1.7.0/v1.7.1 release closeout
 
 - README feature ordering and installation content were corrected for the
@@ -91,7 +220,7 @@
   one unchanged `useMessageActions` AbortSignal assertion failed. No release
   bump. Source branch `main`, source commit `62b2db599decc91288e94436610a8993ab1af635`.
 - Updated T28, T58, toolbar/sync design notes, task registry, changelog, and
-  implementation notes. No local Beads database; no new task ID created.
+  implementation notes.
 - Next: no required work for the reported crash or toolbar. If revisiting
   T28 coverage, separately exercise aliased and external links.
 
@@ -128,8 +257,7 @@
   acceptance were not run. Dataview-installed runtime acceptance remains open.
 - Source commits: `274d2d6`, `2a0d175`, and `00bd848`. Working branch was clean
   and current at `00bd848` before this Memory Bank update.
-- No local Beads database is initialized; T17a is recorded in the existing
-  Memory Bank task hierarchy without inventing a Beads issue ID.
+- T17a is recorded in the existing Memory Bank task hierarchy.
 - See `sessions/2026-09-28-chat-ui-dataview-tooling.md` and the T17a/T31/T24/
   T60c task records.
 
@@ -149,7 +277,6 @@
 - Updated T69, T69a, T14, shared auth and OpenResponses design notes, task
   registry, and today's session/edit history records. No source implementation
   or tests changed.
-- `bd show` reports no local Beads database; no new issue ID was invented.
 - Next: decide Codex app-server runtime provisioning; define Gateway address,
   pairing/revocation, reconnect, event mapping, and approval UX; perform separate
   mobile Codex and Gateway acceptance. Status remains T69/T69a planning, T14 in
@@ -918,7 +1045,6 @@ See `sessions/2026-08-29-t64d-expanded-live-validation.md` and
 - SyncIt is the whole-vault sync owner; Chat Lab retains plugin-specific sync.
 - Created the plugin-data/SyncIt boundary design doc.
 - Kept the existing AI integration provider separate from the future data-sync contract.
-- Beads issue creation was blocked because this checkout has no `.beads` database.
 - The planning pass preceded the T57a implementation recorded above.
 
 ## Work Completed (2026-08-21 Afternoon)

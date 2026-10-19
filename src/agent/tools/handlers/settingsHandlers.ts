@@ -22,6 +22,24 @@ export class SettingsHandlers extends ToolHandlerBase {
 		return {
 			success: true,
 			settings: sanitizeSettings(this.settings),
+			currentTurn: this.currentTurnModelContext
+				? {
+						profileId: this.currentTurnModelContext.profileId,
+						provider: this.currentTurnModelContext.provider,
+						profileName: this.currentTurnModelContext.profileName,
+						configuredModel: this.currentTurnModelContext.model,
+						thinkingMode: this.currentTurnModelContext.thinkingMode,
+						thinkingModeRequest:
+							this.currentTurnModelContext.provider === "agent"
+								? "not sent by this plugin"
+								: this.currentTurnModelContext.thinkingMode ===
+									  "provider-default"
+									? "provider default; no override requested"
+									: "requested from provider; effective behavior is not confirmed",
+					}
+				: null,
+			currentTurnNote:
+				"currentTurn describes this chat turn's configured request. The global active profile in settings is only the default and may differ. Provider or remote-agent routing can still change the effective model or thinking behavior.",
 		};
 	}
 

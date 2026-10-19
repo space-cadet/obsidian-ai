@@ -10,7 +10,16 @@ interface UseSessionActionsOptions {
 	profileId?: string;
 	sessionsRef: React.MutableRefObject<ChatSession[]>;
 	activeSessionIdRef: React.MutableRefObject<string | null>;
-	setSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>;
+	updateSessionMetadata: (
+		sessionId: string,
+		patch: Partial<Omit<ChatSession, "id" | "messages">>,
+	) => void;
+	updateSessionMessages: (
+		sessionId: string,
+		updater:
+			| ChatSession["messages"]
+			| ((current: ChatSession["messages"]) => ChatSession["messages"]),
+	) => void;
 	setActiveSessionId: React.Dispatch<React.SetStateAction<string | null>>;
 	setScrollToMessageId: React.Dispatch<
 		React.SetStateAction<string | undefined>
@@ -29,6 +38,7 @@ interface UseSessionActionsOptions {
 	isStreaming: boolean;
 	abortActiveRuntime: () => void;
 	clearSessionRuntime: (sessionId: string) => void;
+	markSessionDeleted: (sessionId: string) => void;
 	openSessionIds: string[];
 	setOpenSessionIds: React.Dispatch<React.SetStateAction<string[]>>;
 	getModelOverrides?: () => Record<string, string> | undefined;
@@ -52,7 +62,8 @@ export function useSessionActions({
 	profileId,
 	sessionsRef,
 	activeSessionIdRef,
-	setSessions,
+	updateSessionMetadata,
+	updateSessionMessages,
 	setActiveSessionId,
 	setScrollToMessageId,
 	createNewSession,
@@ -63,12 +74,26 @@ export function useSessionActions({
 	isStreaming,
 	abortActiveRuntime,
 	clearSessionRuntime,
+	markSessionDeleted,
 	openSessionIds,
 	setOpenSessionIds,
 	getModelOverrides,
 }: UseSessionActionsOptions): UseSessionActionsResult {
 	const openSessionInTab = useCallback(
 		(sessionId: string, messageId?: string) => {
+			const activeId = activeSessionIdRef.current;
+			if (
+				activeId &&
+				activeId !== sessionId &&
+				!openSessionIds.includes(activeId) &&
+				sessionsRef.current.some((session) => session.id === activeId)
+			) {
+				setOpenSessionIds((current) =>
+					current.includes(activeId)
+						? current
+						: [...current, activeId],
+				);
+			}
 			// Index-only boot: if this session's messages haven't been read yet,
 			// start loading them now and fill state when they arrive. The send
 			// gate awaits hydration, so a fast type-and-enter can't clobber.
@@ -78,25 +103,34 @@ export function useSessionActions({
 				`[Session] open ${sessionId}: hydration=${target?.hydrated === false ? "pending" : target?.hydrated === true ? "ready" : target ? "unknown" : "missing"}`,
 			);
 			if (target && target.hydrated === false) {
-				const hydrate = async () => {
-					// A sync refresh can know that a file was written successfully
-					// without registering it as lazy-hydratable. In that case the
-					// normal hydrate call returns [] while the pure peek still has
-					// the newly downloaded payload available on disk.
-					let messages =
-						(await plugin.hydrateSession?.(sessionId)) ?? [];
-					if (
-						messages.length === 0 &&
-						target.messageCount != null &&
-						plugin.peekSessionMessages
-					) {
-						messages = await plugin.peekSessionMessages(sessionId);
-					}
-					return messages;
-				};
-				hydrate()
-					.then((messages) => {
-						if (messages.length === 0) {
+				const hydrate = plugin.sessionState
+					? plugin.sessionState.ensureLoaded(sessionId)
+					: (async () => {
+							let messages =
+								(await plugin.hydrateSession?.(sessionId)) ??
+								[];
+							if (
+								messages.length === 0 &&
+								(target.messageCount ?? 0) > 0 &&
+								plugin.peekSessionMessages
+							) {
+								messages =
+									await plugin.peekSessionMessages(sessionId);
+							}
+							return { messages };
+						})();
+				hydrate
+					.then((loaded) => {
+						const messages = Array.isArray(loaded)
+							? loaded
+							: (loaded?.messages ?? []);
+						if (
+							!loaded ||
+							("hydrated" in loaded &&
+								loaded.hydrated === false) ||
+							(messages.length === 0 &&
+								(target.messageCount ?? 0) > 0)
+						) {
 							plugin.logger?.log(
 								"warn",
 								`[Session] open ${sessionId}: hydration resolved with 0 messages`,
@@ -110,17 +144,8 @@ export function useSessionActions({
 						// Write through the ref synchronously — anything reading
 						// sessionsRef.current before React re-renders must see the
 						// hydrated messages, not the empty boot copy.
-						sessionsRef.current = sessionsRef.current.map((s) =>
-							s.id === sessionId
-								? {
-										...s,
-										messages,
-										messageCount: messages.length,
-										hydrated: true,
-									}
-								: s,
-						);
-						setSessions(sessionsRef.current);
+						if (!plugin.sessionState)
+							updateSessionMessages(sessionId, messages);
 					})
 					.catch((err) => {
 						// Hydration failure now leaves the session unhydrated (retry
@@ -144,7 +169,10 @@ export function useSessionActions({
 		[
 			plugin,
 			sessionsRef,
-			setSessions,
+			activeSessionIdRef,
+			openSessionIds,
+			setOpenSessionIds,
+			updateSessionMessages,
 			setActiveSessionId,
 			setScrollToMessageId,
 		],
@@ -173,9 +201,20 @@ export function useSessionActions({
 
 	const handleNewChat = useCallback(() => {
 		if (isStreaming) abortActiveRuntime();
+		// A message can be sent from the fresh draft left behind after the last
+		// tab closes. If that active session now contains history but has no tab,
+		// keep it visible when the user creates another chat.
+		const activeId = activeSessionIdRef.current;
+		if (
+			activeId &&
+			!openSessionIds.includes(activeId) &&
+			sessionsRef.current.some((session) => session.id === activeId)
+		) {
+			openSessionInTab(activeId);
+		}
 
 		// T26 Phase 2: Auto-summarize the ending session before starting a new one
-		const endingSessionId = activeSessionIdRef.current;
+		const endingSessionId = activeId;
 		if (endingSessionId) {
 			const endingSession = sessionsRef.current.find(
 				(s) => s.id === endingSessionId,
@@ -193,7 +232,7 @@ export function useSessionActions({
 			modelOverrides: getModelOverrides?.(),
 			autoNameSessions: plugin.settings.autoNameSessions,
 		});
-		setOpenSessionIds((current) => [...current, newSession.id]);
+		openSessionInTab(newSession.id);
 		const selectedProfileIds = getSelectedProfileIds();
 		if (selectedProfileIds.length > 0) {
 			setSelectedProfileIds(new Set(selectedProfileIds));
@@ -212,9 +251,12 @@ export function useSessionActions({
 		getModelOverrides,
 		setDebateMode,
 		setWasTruncated,
+		openSessionInTab,
 		abortActiveRuntime,
 		activeSessionIdRef,
 		sessionsRef,
+		openSessionIds,
+		setOpenSessionIds,
 	]);
 
 	const handleLoadSession = useCallback(
@@ -253,9 +295,8 @@ export function useSessionActions({
 			const isDraft =
 				!!closeTarget && sessionMessageCount(closeTarget) === 0;
 			if (isDraft) {
-				setSessions((current) =>
-					current.filter((session) => session.id !== sessionId),
-				);
+				if (plugin.sessionState)
+					plugin.sessionState.discardDraft(sessionId);
 			}
 			setOpenSessionIds((current) => {
 				if (current.length <= 1) {
@@ -280,7 +321,6 @@ export function useSessionActions({
 		[
 			createNewSession,
 			plugin.settings,
-			setSessions,
 			setActiveSessionId,
 			setScrollToMessageId,
 			activeSessionIdRef,
@@ -334,57 +374,44 @@ export function useSessionActions({
 
 	const handleDeleteSession = useCallback(
 		(sessionId: string) => {
+			const filtered = sessionsRef.current.filter(
+				(session) => session.id !== sessionId,
+			);
+			markSessionDeleted(sessionId);
 			clearSessionRuntime(sessionId);
-			setSessions((prev) => {
-				const filtered = prev.filter((s) => s.id !== sessionId);
-				if (activeSessionIdRef.current === sessionId) {
-					const mostRecent = filtered.sort(
-						(a, b) => b.updatedAt - a.updatedAt,
-					)[0];
-					if (mostRecent) {
-						if (
-							mostRecent.selectedProfileIds &&
-							mostRecent.selectedProfileIds.length > 0
-						) {
-							setSelectedProfileIds(
-								new Set(mostRecent.selectedProfileIds),
-							);
-						} else if (
-							mostRecent.participants &&
-							mostRecent.participants.length > 0
-						) {
-							setSelectedProfileIds(
-								new Set(
-									mostRecent.participants.map((p) => p.id),
-								),
-							);
-						} else {
-							setSelectedProfileIds(new Set());
-						}
-						setDebateMode(false);
-						setActiveSessionId(mostRecent.id);
-					} else {
-						const empty: ChatSession = {
-							id: makeId(),
-							title: "",
-							createdAt: Date.now(),
-							updatedAt: Date.now(),
-							messages: [],
-							contextItems: plugin.settings.includeActiveNote
-								? [{ type: "active-note", id: makeId() }]
-								: [],
-							profileId: profileId || undefined,
-						};
-						filtered.push(empty);
-						setActiveSessionId(empty.id);
-						setSelectedProfileIds(new Set());
-					}
-				}
-				return filtered;
-			});
+			if (activeSessionIdRef.current !== sessionId) return;
+			const mostRecent = filtered.sort(
+				(a, b) => b.updatedAt - a.updatedAt,
+			)[0];
+			if (mostRecent) {
+				setSelectedProfileIds(
+					new Set(
+						mostRecent.selectedProfileIds ??
+							mostRecent.participants?.map((p) => p.id) ??
+							[],
+					),
+				);
+				setDebateMode(false);
+				setActiveSessionId(mostRecent.id);
+				return;
+			}
+			const empty: ChatSession = {
+				id: makeId(),
+				title: "",
+				createdAt: Date.now(),
+				updatedAt: Date.now(),
+				messages: [],
+				contextItems: plugin.settings.includeActiveNote
+					? [{ type: "active-note", id: makeId() }]
+					: [],
+				profileId: profileId || undefined,
+			};
+			plugin.sessionState?.addSession(empty);
+			setActiveSessionId(empty.id);
+			setSelectedProfileIds(new Set());
 		},
 		[
-			setSessions,
+			sessionsRef,
 			setActiveSessionId,
 			setSelectedProfileIds,
 			setDebateMode,
@@ -392,18 +419,15 @@ export function useSessionActions({
 			plugin.settings.includeActiveNote,
 			profileId,
 			clearSessionRuntime,
+			markSessionDeleted,
 		],
 	);
 
 	const handleRenameSession = useCallback(
 		(sessionId: string, newTitle: string) => {
-			setSessions((prev) =>
-				prev.map((s) =>
-					s.id === sessionId ? { ...s, title: newTitle.trim() } : s,
-				),
-			);
+			updateSessionMetadata(sessionId, { title: newTitle.trim() });
 		},
-		[setSessions],
+		[updateSessionMetadata],
 	);
 
 	return {

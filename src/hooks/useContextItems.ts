@@ -21,7 +21,10 @@ export function useContextItems(
 	plugin: ChatPluginLike,
 	sessionsRef: React.MutableRefObject<ChatSession[]>,
 	activeSessionIdRef: React.MutableRefObject<string | null>,
-	setSessions: React.Dispatch<React.SetStateAction<ChatSession[]>>,
+	updateSessionMetadata: (
+		sessionId: string,
+		patch: Partial<Omit<ChatSession, "id" | "messages">>,
+	) => void,
 	setWasTruncated: (v: boolean) => void,
 	onCloseContextPicker: () => void,
 ): UseContextItemsResult {
@@ -82,17 +85,20 @@ export function useContextItems(
 	useEffect(() => {
 		const currentActiveId = activeSessionIdRef.current;
 		if (!currentActiveId) return;
-		setSessions((prev) => {
-			const s = prev.find((s) => s.id === currentActiveId);
-			if (s && sameContextItems(s.contextItems, contextItems)) {
-				return prev;
-			}
-			return prev.map((s) =>
-				s.id === currentActiveId ? { ...s, contextItems } : s,
-			);
-		});
+		const current = sessionsRef.current.find(
+			(s) => s.id === currentActiveId,
+		);
+		if (!current || sameContextItems(current.contextItems, contextItems))
+			return;
+		updateSessionMetadata(currentActiveId, { contextItems });
 		setWasTruncated(false);
-	}, [contextItems, activeSessionIdRef, setSessions, setWasTruncated]);
+	}, [
+		contextItems,
+		sessionsRef,
+		activeSessionIdRef,
+		updateSessionMetadata,
+		setWasTruncated,
+	]);
 
 	const handleToggleActiveNote = useCallback(() => {
 		setContextItems((prev) => {

@@ -9,6 +9,8 @@ import {
 import type { ProviderProfile } from "../settings";
 import type { App } from "obsidian";
 import { prepareCodexTools } from "./toolNames";
+import { getSdkReasoningLevel } from "./thinkingModes";
+import type { ThinkingMode } from "../types";
 
 /**
  * Streams a chat conversation with tool calling support.
@@ -19,14 +21,14 @@ import { prepareCodexTools } from "./toolNames";
  * @param tools - Record of tool definitions.
  * @param signal - AbortSignal for cancellation.
  * @param profile - Resolved provider profile.
- * @param thinkingEnabled - Whether extended thinking is enabled.
+ * @param thinkingMode - Provider-calibrated reasoning mode.
  */
 export async function* streamChatWithTools(
 	messages: SdkMessage[],
 	tools: any,
 	signal: AbortSignal | undefined,
 	profile: ProviderProfile,
-	thinkingEnabled: boolean | undefined,
+	thinkingMode: ThinkingMode | undefined,
 	app?: App,
 ): AsyncIterable<StreamEvent> {
 	const model = createLanguageModel(profile, app);
@@ -55,7 +57,7 @@ export async function* streamChatWithTools(
 
 	// ── Gemini-specific: disable structured outputs to avoid thought_signature errors ──
 	const providerOptions = {
-		...getThinkingProviderOptions(profile, thinkingEnabled),
+		...getThinkingProviderOptions(profile, thinkingMode),
 		// Gemini requires special handling for tool calls
 		...(profile.provider === "gemini"
 			? {
@@ -80,6 +82,13 @@ export async function* streamChatWithTools(
 		stopWhen: isStepCount(1),
 		abortSignal: signal,
 		providerOptions,
+		reasoning:
+			profile.provider === "openrouter"
+				? undefined
+				: getSdkReasoningLevel(
+						thinkingMode ?? "provider-default",
+						profile,
+					),
 	});
 
 	let streamError: string | undefined;
