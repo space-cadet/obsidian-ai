@@ -1,6 +1,23 @@
 # Session Cache
 
-*Last Updated: 2026-10-19 18:19:09 IST*
+*Last Updated: 2026-10-19 20:58:03 IST*
+
+## 2026-10-19 — Shared session-state coordination plan
+
+- Created Beads issue `OBSIDIANAI-brl` (label `T24c`, P1, open) and linked its
+  design to `implementation-details/session-state-coordination.md`.
+- The plan covers shared readiness and messages, revision-guarded operations,
+  pinned session IDs, metadata-only updates, explicit deletion, sync merges,
+  and write flushing while retaining the existing JSONL transaction layer.
+- This is planned work only. The hydration P1 from the latest PR #12 review is
+  still unresolved; no source implementation, tests, or device acceptance are
+  claimed. T24b's targeted persistence coverage remains pending.
+- Product-source audit baseline: `ui-chat-fixes` at `cd4478b`; Beads
+  initialization added local setup commit `bbd3dab`.
+- Automatic approval review rejected `bd dolt push` because it would export the
+  new task and design metadata to GitHub. The Beads task is currently local;
+  no alternate sync path was used.
+- Session: `sessions/2026-10-19-session-state-coordination-plan.md`.
 
 ## 2026-10-19 — Productized chat repair and Settings shortcuts
 

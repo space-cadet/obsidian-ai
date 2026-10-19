@@ -1,5 +1,23 @@
 # Active Context
 
+### 2026-10-19 — Shared session-state coordination plan
+
+- Created Beads issue `OBSIDIANAI-brl` (label `T24c`, P1, open) to coordinate
+  session loading, mutation, deletion, sync application, and persistence through
+  one plugin-owned state owner. Its associated proposal is
+  `implementation-details/session-state-coordination.md`.
+- The plan reuses the current JSONL/index format and `ChatStorage` transaction
+  boundary. It is a proposed ownership refactor; no product implementation,
+  test result, or device acceptance is claimed.
+- The latest PR #12 review finding remains unresolved: a cancelled hydration
+  callback can leave storage marked hydrated while view-facing messages are
+  absent. T24b remains focused on transcript write integrity and its targeted
+  tests remain open.
+- Product source baseline reviewed: `ui-chat-fixes` at `cd4478b`. Beads setup
+  added local commit `bbd3dab`. Automatic approval review rejected syncing the
+  new Beads issue and design metadata to the configured GitHub Dolt remote;
+  that issue remains local until the export is approved.
+
 ### 2026-10-19 — Productized chat repair and Settings shortcuts
 
 - Source branch `ui-chat-fixes` is at `b77f72df755a4718d2662a4326a6efec27c77a6d`,
