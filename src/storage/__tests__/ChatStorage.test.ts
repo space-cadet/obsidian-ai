@@ -312,6 +312,23 @@ describe("JsonlStorage index-only boot", () => {
 		expect(adapter.read).not.toHaveBeenCalledWith(sessionPath("s1"));
 	});
 
+	it("removes exact duplicate message ids before writing and indexing", async () => {
+		const files = new Map<string, string>();
+		const session = makeSession("s1", ["hello"]);
+		session.messages.push({ ...session.messages[0] });
+		await makeStorage(files).storage.saveChatData({
+			sessions: [session],
+			activeSessionId: "s1",
+		});
+
+		expect(files.get(sessionPath("s1"))?.trim().split("\n")).toHaveLength(
+			1,
+		);
+		expect(
+			JSON.parse(files.get(indexPath) ?? "{}").sessions[0].messageCount,
+		).toBe(1);
+	});
+
 	it("rewrites instead of appending when the disk prefix size is inconsistent", async () => {
 		const files = new Map<string, string>();
 		await makeStorage(files).storage.saveChatData({

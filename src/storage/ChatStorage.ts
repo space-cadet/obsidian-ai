@@ -473,6 +473,7 @@ class JsonlStorage implements ChatStorage {
 		const deletedIds = new Set(data.deletedSessionIds ?? []);
 		let preservedUnhydratedSessions = 0;
 		let preservedUnhydratedMessages = 0;
+		const savedMessageIds = new Map<string, string[]>();
 
 		for (const session of data.sessions) {
 			const filePath = `${SESSIONS_DIR}/${session.id}.jsonl`;
@@ -540,11 +541,20 @@ class JsonlStorage implements ChatStorage {
 
 			const previous = this.lastSavedState?.sessions.get(session.id);
 			const previousMessageIds = previous?.messageIds ?? null;
-
-			await this._writeMessages(
-				fullPath,
+			const messages = this._removeExactDuplicateMessages(
 				session.messages,
-				previousMessageIds,
+			);
+			if (messages.length < session.messages.length) {
+				this.deps.logger?.log(
+					"warn",
+					`ChatStorage: removed ${session.messages.length - messages.length} exact duplicate message record(s) before saving ${session.id}`,
+				);
+			}
+
+			await this._writeMessages(fullPath, messages, previousMessageIds);
+			savedMessageIds.set(
+				session.id,
+				messages.map((message) => message.id),
 			);
 			// Real messages are now on disk (either they were already, or this
 			// write put them there) — the session is hydrated from here on.
@@ -556,7 +566,7 @@ class JsonlStorage implements ChatStorage {
 				title: session.title,
 				createdAt: session.createdAt,
 				updatedAt: session.updatedAt,
-				messageCount: session.messages.length,
+				messageCount: messages.length,
 				filePath,
 				profileId: session.profileId,
 				isGroupChat: session.isGroupChat,
@@ -647,7 +657,8 @@ class JsonlStorage implements ChatStorage {
 					{
 						messageIds: this.unhydratedSessions.has(s.id)
 							? null
-							: s.messages.map((m) => m.id),
+							: (savedMessageIds.get(s.id) ??
+								s.messages.map((m) => m.id)),
 						updatedAt: s.updatedAt,
 					},
 				]),
@@ -711,6 +722,19 @@ class JsonlStorage implements ChatStorage {
 			);
 		}
 		return messages;
+	}
+
+	private _removeExactDuplicateMessages(
+		messages: ChatMessage[],
+	): ChatMessage[] {
+		const seenById = new Map<string, string>();
+		return messages.filter((message) => {
+			const serialized = JSON.stringify(message);
+			const prior = seenById.get(message.id);
+			if (prior === serialized) return false;
+			if (prior === undefined) seenById.set(message.id, serialized);
+			return true;
+		});
 	}
 
 	private async _writeMessages(
