@@ -27,6 +27,7 @@ interface UseSessionActionsOptions {
 	setDebateMode: (v: boolean) => void;
 	setWasTruncated: (v: boolean) => void;
 	isStreaming: boolean;
+	abortActiveRuntime: () => void;
 	clearSessionRuntime: (sessionId: string) => void;
 	openSessionIds: string[];
 	setOpenSessionIds: React.Dispatch<React.SetStateAction<string[]>>;
@@ -60,6 +61,7 @@ export function useSessionActions({
 	setDebateMode,
 	setWasTruncated,
 	isStreaming,
+	abortActiveRuntime,
 	clearSessionRuntime,
 	openSessionIds,
 	setOpenSessionIds,
@@ -170,7 +172,18 @@ export function useSessionActions({
 	}, [sessionsRef]);
 
 	const handleNewChat = useCallback(() => {
+		if (isStreaming) abortActiveRuntime();
+
+		// T26 Phase 2: Auto-summarize the ending session before starting a new one
 		const endingSessionId = activeSessionIdRef.current;
+		if (endingSessionId) {
+			const endingSession = sessionsRef.current.find(
+				(s) => s.id === endingSessionId,
+			);
+			if (endingSession) {
+				void plugin.onSessionEnd?.(endingSession);
+			}
+		}
 
 		const newSession = createNewSession({
 			includeActiveNote: plugin.settings.includeActiveNote,
@@ -180,17 +193,7 @@ export function useSessionActions({
 			modelOverrides: getModelOverrides?.(),
 			autoNameSessions: plugin.settings.autoNameSessions,
 		});
-		setOpenSessionIds((current) => {
-			// If the last tab was closed, a fresh draft can still be streaming
-			// without a tab. Keep that session reachable as its own tab.
-			const withRunningSession =
-				isStreaming &&
-				endingSessionId &&
-				!current.includes(endingSessionId)
-					? [...current, endingSessionId]
-					: current;
-			return [...withRunningSession, newSession.id];
-		});
+		setOpenSessionIds((current) => [...current, newSession.id]);
 		const selectedProfileIds = getSelectedProfileIds();
 		if (selectedProfileIds.length > 0) {
 			setSelectedProfileIds(new Set(selectedProfileIds));
@@ -209,7 +212,9 @@ export function useSessionActions({
 		getModelOverrides,
 		setDebateMode,
 		setWasTruncated,
+		abortActiveRuntime,
 		activeSessionIdRef,
+		sessionsRef,
 	]);
 
 	const handleLoadSession = useCallback(

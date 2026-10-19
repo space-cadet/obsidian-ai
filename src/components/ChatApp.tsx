@@ -547,6 +547,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		setDebateMode: ui.setDebateMode,
 		setWasTruncated,
 		isStreaming: activeRuntime.isStreaming,
+		abortActiveRuntime: () => abortRuntime(activeSessionIdRef.current),
 		clearSessionRuntime: (sessionId) => {
 			abortRuntime(sessionId);
 			clearRuntime(sessionId);

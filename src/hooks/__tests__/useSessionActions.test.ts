@@ -50,6 +50,7 @@ describe("useSessionActions", () => {
 				setDebateMode: vi.fn(),
 				setWasTruncated: vi.fn(),
 				isStreaming: false,
+				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
 				openSessionIds,
 				setOpenSessionIds,
@@ -62,71 +63,6 @@ describe("useSessionActions", () => {
 		expect(createNewSession).toHaveBeenCalledTimes(2);
 		expect(result.current.openSessionIds).toEqual(["draft-1", "draft-2"]);
 	});
-
-	it.each([{ tabs: [] as string[] }, { tabs: ["running-session"] }])(
-		"keeps an in-flight session open when creating a new tab (existing tabs: %j)",
-		({ tabs: initialTabs }) => {
-			const runningSession = {
-				id: "running-session",
-				title: "",
-				createdAt: 0,
-				updatedAt: 0,
-				messages: [{ id: "user-message", role: "user", content: "Hi" }],
-				contextItems: [],
-			};
-			const createNewSession = vi.fn(() => ({
-				id: "new-session",
-				title: "",
-				createdAt: 1,
-				updatedAt: 1,
-				messages: [],
-				contextItems: [],
-			}));
-			const plugin = {
-				settings: {
-					includeActiveNote: false,
-					selectedProfileIds: [],
-					providerProfiles: [{ id: "default", provider: "ollama" }],
-					activeProviderProfileId: "default",
-				},
-			} as any;
-			const sessionsRef = { current: [runningSession] as any[] };
-			const activeSessionIdRef = {
-				current: runningSession.id as string | null,
-			};
-
-			const clearSessionRuntime = vi.fn();
-			const { result } = renderHook(() => {
-				const [openSessionIds, setOpenSessionIds] =
-					useState<string[]>(initialTabs);
-				return useSessionActions({
-					plugin,
-					sessionsRef,
-					activeSessionIdRef,
-					setSessions: vi.fn(),
-					setActiveSessionId: vi.fn(),
-					setScrollToMessageId: vi.fn(),
-					createNewSession,
-					setSelectedProfileIds: vi.fn(),
-					getSelectedProfileIds: () => ["default"],
-					setDebateMode: vi.fn(),
-					setWasTruncated: vi.fn(),
-					isStreaming: true,
-					clearSessionRuntime,
-					openSessionIds,
-					setOpenSessionIds,
-				});
-			});
-
-			act(() => result.current.handleNewChat());
-			expect(clearSessionRuntime).not.toHaveBeenCalled();
-
-			expect(result.current.openSessionIds).toEqual([
-				runningSession.id,
-				"new-session",
-			]);
-		},
-	);
 
 	it("inherits the active tab model when opening a new tab", () => {
 		const createNewSession = vi.fn(() => ({
@@ -162,6 +98,7 @@ describe("useSessionActions", () => {
 				setDebateMode: vi.fn(),
 				setWasTruncated: vi.fn(),
 				isStreaming: false,
+				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
 				openSessionIds,
 				setOpenSessionIds,
@@ -215,6 +152,7 @@ describe("useSessionActions", () => {
 				setDebateMode: vi.fn(),
 				setWasTruncated: vi.fn(),
 				isStreaming: false,
+				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
 				openSessionIds,
 				setOpenSessionIds,
