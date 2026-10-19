@@ -60,9 +60,10 @@ the health check and improve the presentation of Settings section shortcuts.
 
 ## Working Tree
 
-Source changes are uncommitted on `ui-chat-fixes` at
-`9b446dbd3b5a7ac8bdbabf3c2b6c19357afc5682`. Current files and verification
-are reflected in the Memory Bank update and its canonical edit chunk.
+Source changes were committed as
+`b77f72df755a4718d2662a4326a6efec27c77a6d` and pushed to
+`origin/ui-chat-fixes`. The worktree was clean after the push. This session
+record and its canonical edit chunk document the committed source scope.
 
 ## Critical Files
 

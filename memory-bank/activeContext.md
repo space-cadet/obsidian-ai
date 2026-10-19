@@ -2,9 +2,9 @@
 
 ### 2026-10-19 — Productized chat repair and Settings shortcuts
 
-- Source branch `ui-chat-fixes` is at `9b446dbd3b5a7ac8bdbabf3c2b6c19357afc5682`;
-  product code changes remain local and uncommitted. T11a is back in progress
-  for final device confirmation and targeted repair coverage.
+- Source branch `ui-chat-fixes` is at `b77f72df755a4718d2662a4326a6efec27c77a6d`,
+  pushed to `origin`; the worktree is clean. T11a remains in progress for final
+  device confirmation and targeted repair coverage.
 - The health-check repair modal previews safe duplicate cleanup and optional
   recovery of valid unindexed chats. It preserves conflicting or ambiguous
   records, gives skip reasons, and schedules verified, backed-up changes for
