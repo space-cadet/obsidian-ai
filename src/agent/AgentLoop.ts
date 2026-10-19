@@ -152,6 +152,12 @@ function formatToolResult(toolName: string, result: ToolResult): string {
 
 		case "read_note": {
 			let output = result.content ?? "(empty note)";
+			if (result.content_fingerprint) {
+				output =
+					`[Note metadata — do not include in note content]\n` +
+					`content_fingerprint: ${result.content_fingerprint}\n\n` +
+					output;
+			}
 			if (result.warning) {
 				output = `\n\n> ${result.warning}\n\n---\n\n` + output;
 			}
