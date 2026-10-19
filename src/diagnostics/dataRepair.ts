@@ -50,6 +50,25 @@ const MAX_FILES = 1000;
 const requestPath = (root: string) => `${root}/health-repair-request.json`;
 const runningPath = (root: string) => `${root}/health-repair-running.json`;
 const resultPath = (root: string) => `${root}/health-repair-result.json`;
+const sameChanges = (
+	approved: RepairChange[],
+	refreshed: RepairChange[],
+): boolean => {
+	if (approved.length !== refreshed.length) return false;
+	const refreshedByPath = new Map(
+		refreshed.map((change) => [change.path, change]),
+	);
+	return approved.every((change) => {
+		const current = refreshedByPath.get(change.path);
+		return (
+			current !== undefined &&
+			current.beforeHash === change.beforeHash &&
+			current.afterHash === change.afterHash &&
+			current.description === change.description &&
+			current.repairCount === change.repairCount
+		);
+	});
+};
 
 /** Read-only proposal. Only identical serialized records with the same ID are removed. */
 async function prepare(
@@ -530,12 +549,9 @@ export async function scheduleDataRepair(
 		);
 	const current = await prepare(adapter, root);
 	const selectedPlan = await prepare(adapter, root, selectedRecoveryPaths);
-	const staleSafeChange = plan.changes.some((approved) => {
-		const refreshed = current.plan.changes.find(
-			(change) => change.path === approved.path,
-		);
-		return JSON.stringify(refreshed) !== JSON.stringify(approved);
-	});
+	// Require the full safe-change set to match the user's preview. Checking
+	// only approved paths would silently include a newly discovered repair.
+	const staleSafeChange = !sameChanges(plan.changes, current.plan.changes);
 	const staleSelectedChange = current.plan.changes.some((approved) => {
 		const refreshed = selectedPlan.plan.changes.find(
 			(change) => change.path === approved.path,

@@ -5,29 +5,7 @@ import { createStorage } from "../ChatStorage";
 describe("ChatStorage", () => {
 	it("round-trips compaction metadata through the JSONL session index", async () => {
 		const files = new Map<string, string>();
-		const adapter = {
-			exists: vi.fn(async (path: string) => files.has(path)),
-			stat: vi.fn(async (path: string) => {
-				const content = files.get(path);
-				return content === undefined
-					? null
-					: {
-							size: new TextEncoder().encode(content).byteLength,
-							mtime: 0,
-						};
-			}),
-			mkdir: vi.fn(async () => undefined),
-			read: vi.fn(async (path: string) => files.get(path) ?? ""),
-			write: vi.fn(async (path: string, content: string) => {
-				files.set(path, content);
-			}),
-			append: vi.fn(async (path: string, content: string) => {
-				files.set(path, (files.get(path) ?? "") + content);
-			}),
-			remove: vi.fn(async (path: string) => {
-				files.delete(path);
-			}),
-		};
+		const adapter = makeAdapter(files);
 		const metadata: CompactionMetadata = {
 			version: 1,
 			sourceMessageIds: ["message-1"],
@@ -87,8 +65,11 @@ describe("ChatStorage", () => {
 });
 
 function makeAdapter(files: Map<string, string>) {
+	const directories = new Set<string>();
 	return {
-		exists: vi.fn(async (path: string) => files.has(path)),
+		exists: vi.fn(
+			async (path: string) => files.has(path) || directories.has(path),
+		),
 		stat: vi.fn(async (path: string) => {
 			const content = files.get(path);
 			return content === undefined
@@ -98,7 +79,15 @@ function makeAdapter(files: Map<string, string>) {
 						mtime: 0,
 					};
 		}),
-		mkdir: vi.fn(async () => undefined),
+		mkdir: vi.fn(async (path: string) => {
+			let current = path;
+			while (current) {
+				directories.add(current);
+				const separator = current.lastIndexOf("/");
+				if (separator < 0) break;
+				current = current.slice(0, separator);
+			}
+		}),
 		read: vi.fn(async (path: string) => files.get(path) ?? ""),
 		write: vi.fn(async (path: string, content: string) => {
 			files.set(path, content);
@@ -108,6 +97,41 @@ function makeAdapter(files: Map<string, string>) {
 		}),
 		remove: vi.fn(async (path: string) => {
 			files.delete(path);
+		}),
+		rename: vi.fn(async (from: string, to: string) => {
+			const content = files.get(from);
+			if (content === undefined) throw new Error(`Missing file: ${from}`);
+			files.set(to, content);
+			files.delete(from);
+		}),
+		list: vi.fn(async (path: string) => {
+			const prefix = `${path.replace(/\/$/, "")}/`;
+			const filesInFolder: string[] = [];
+			const foldersInFolder = new Set<string>();
+			for (const candidate of [...files.keys(), ...directories]) {
+				if (!candidate.startsWith(prefix)) continue;
+				const relative = candidate.slice(prefix.length);
+				if (!relative) continue;
+				const separator = relative.indexOf("/");
+				if (separator < 0) {
+					if (files.has(candidate)) filesInFolder.push(candidate);
+				} else {
+					foldersInFolder.add(
+						`${prefix}${relative.slice(0, separator)}`,
+					);
+				}
+			}
+			return { files: filesInFolder, folders: [...foldersInFolder] };
+		}),
+		rmdir: vi.fn(async (path: string) => {
+			const prefix = `${path.replace(/\/$/, "")}/`;
+			for (const candidate of files.keys()) {
+				if (candidate.startsWith(prefix)) files.delete(candidate);
+			}
+			for (const candidate of directories) {
+				if (candidate === path || candidate.startsWith(prefix))
+					directories.delete(candidate);
+			}
 		}),
 	};
 }

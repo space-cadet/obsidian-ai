@@ -363,11 +363,7 @@ export class DataRepairModal extends Modal {
 			await cancelDataRepair(this.adapter, this.root);
 			this.logger?.log("info", "[DataRepair] Scheduled repair cancelled");
 			this.scheduled = false;
-			this.statusEl.textContent =
-				"Scheduled repair cancelled. No chat files were changed.";
-			this.secondaryButton.textContent = "Cancel";
-			this.actionButton.textContent = "Done";
-			this.actionButton.disabled = false;
+			this.close();
 		} catch (error) {
 			this.logger?.log(
 				"error",
