@@ -150,6 +150,20 @@ interface SessionIndex {
 
 const INDEX_VERSION = 1;
 const SESSIONS_DIR = "sessions";
+// Obsidian's mobile filesystem bridge materializes the complete file as a
+// native JSON value before returning it to JavaScript. Keep individual
+// transcript reads bounded so an unexpectedly duplicated JSONL file cannot
+// take down the whole app.
+const MAX_SESSION_READ_BYTES = 16 * 1024 * 1024;
+
+class SessionTooLargeError extends Error {
+	constructor(path: string, size: number) {
+		super(
+			`Session transcript is too large to load safely (${size} bytes): ${path}`,
+		);
+		this.name = "SessionTooLargeError";
+	}
+}
 
 class JsonlStorage implements ChatStorage {
 	private deps: StorageDeps;
@@ -389,6 +403,9 @@ class JsonlStorage implements ChatStorage {
 				"error",
 				`ChatStorage: hydrate read failed for ${sessionId} (${path}): ${String(err)}`,
 			);
+			// Do not let the view's empty-result fallback call peekSessionMessages
+			// and repeat an oversized native bridge read.
+			if (err instanceof SessionTooLargeError) throw err;
 			return [];
 		}
 		if (messages.length === 0 && entry.messageCount > 0) {
@@ -644,10 +661,16 @@ class JsonlStorage implements ChatStorage {
 		if (!(await adapter.exists(path))) {
 			return [];
 		}
+		const stat = await adapter.stat(path);
+		if (stat && stat.size > MAX_SESSION_READ_BYTES) {
+			throw new SessionTooLargeError(path, stat.size);
+		}
 		const raw = await adapter.read(path);
 		if (!raw.trim()) return [];
 		const lines = raw.split("\n").filter((l) => l.trim());
 		const messages: ChatMessage[] = [];
+		const seenById = new Map<string, string>();
+		let exactDuplicates = 0;
 		for (const line of lines) {
 			try {
 				const parsed = JSON.parse(line);
@@ -659,6 +682,14 @@ class JsonlStorage implements ChatStorage {
 					typeof parsed.role === "string" &&
 					["user", "assistant", "system"].includes(parsed.role)
 				) {
+					const serialized = JSON.stringify(parsed);
+					const prior = seenById.get(parsed.id);
+					if (prior === serialized) {
+						exactDuplicates++;
+						continue;
+					}
+					if (prior === undefined)
+						seenById.set(parsed.id, serialized);
 					messages.push(parsed as ChatMessage);
 				} else {
 					this.deps.logger?.log(
@@ -673,6 +704,12 @@ class JsonlStorage implements ChatStorage {
 				);
 			}
 		}
+		if (exactDuplicates > 0) {
+			this.deps.logger?.log(
+				"warn",
+				`ChatStorage: ignored ${exactDuplicates} exact duplicate message record(s) in ${path}`,
+			);
+		}
 		return messages;
 	}
 
@@ -683,14 +720,28 @@ class JsonlStorage implements ChatStorage {
 	): Promise<void> {
 		const adapter = this.deps.app.vault.adapter;
 
-		const canAppend =
+		const hasMatchingMessagePrefix =
 			previousMessageIds !== null &&
 			messages.length >= previousMessageIds.length &&
 			messages
 				.slice(0, previousMessageIds.length)
 				.every((m, i) => m.id === previousMessageIds[i]);
+		let canAppend = false;
+		if (hasMatchingMessagePrefix && previousMessageIds) {
+			const stat = await adapter.stat(path);
+			const prefixLines = messages
+				.slice(0, previousMessageIds.length)
+				.map((m) => JSON.stringify(m));
+			const expectedPrefix = prefixLines.length
+				? `${prefixLines.join("\n")}\n`
+				: "";
+			canAppend =
+				stat !== null &&
+				stat.size ===
+					new TextEncoder().encode(expectedPrefix).byteLength;
+		}
 
-		if (canAppend) {
+		if (canAppend && previousMessageIds) {
 			const newMessages = messages.slice(previousMessageIds.length);
 			if (newMessages.length > 0) {
 				const lines =
@@ -698,6 +749,12 @@ class JsonlStorage implements ChatStorage {
 				await adapter.append(path, lines);
 			}
 		} else {
+			if (hasMatchingMessagePrefix) {
+				this.deps.logger?.log(
+					"warn",
+					`ChatStorage: rewriting ${path}; on-disk transcript does not match the expected message prefix`,
+				);
+			}
 			const content = messages.map((m) => JSON.stringify(m)).join("\n");
 			await adapter.write(path, content ? content + "\n" : "");
 		}
