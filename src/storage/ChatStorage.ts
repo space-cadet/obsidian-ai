@@ -577,8 +577,14 @@ class JsonlStorage implements ChatStorage {
 		// Validate every in-memory transcript before touching any files. Exact
 		// replayed records are safe to collapse; conflicting payloads for one ID
 		// must be surfaced rather than silently persisted or discarded.
+		const deletedIds = new Set(data.deletedSessionIds ?? []);
+		// A sync refresh can reintroduce a session after local deletion but before
+		// autosave. Explicit tombstones take precedence over that stale snapshot.
+		const incomingSessions = data.sessions.filter(
+			(session) => !deletedIds.has(session.id),
+		);
 		const messagesBySession = new Map<string, ChatMessage[]>();
-		for (const session of data.sessions) {
+		for (const session of incomingSessions) {
 			try {
 				messagesBySession.set(
 					session.id,
@@ -594,8 +600,9 @@ class JsonlStorage implements ChatStorage {
 		}
 
 		const indexEntries: SessionIndexEntry[] = [];
-		const incomingIds = new Set(data.sessions.map((session) => session.id));
-		const deletedIds = new Set(data.deletedSessionIds ?? []);
+		const incomingIds = new Set(
+			incomingSessions.map((session) => session.id),
+		);
 		let preservedUnhydratedSessions = 0;
 		let preservedUnhydratedMessages = 0;
 		const savedMessageIds = new Map<string, string[]>();
@@ -604,7 +611,7 @@ class JsonlStorage implements ChatStorage {
 		const draftRefsToSave = new Map<string, Attachment[]>();
 		const draftRefsToDelete = new Set<string>();
 
-		for (const session of data.sessions) {
+		for (const session of incomingSessions) {
 			const filePath = `${SESSIONS_DIR}/${session.id}.jsonl`;
 			const draftAttachmentsFile = session.draftAttachments?.length
 				? `${SESSIONS_DIR}/${session.id}.draft.json`
@@ -751,8 +758,13 @@ class JsonlStorage implements ChatStorage {
 		const index: SessionIndex = {
 			version: INDEX_VERSION,
 			sessions: indexEntries,
-			activeSessionId: data.activeSessionId,
-			openSessionIds: data.openSessionIds,
+			activeSessionId:
+				data.activeSessionId && !deletedIds.has(data.activeSessionId)
+					? data.activeSessionId
+					: null,
+			openSessionIds: data.openSessionIds?.filter(
+				(sessionId) => !deletedIds.has(sessionId),
+			),
 		};
 
 		pendingWrites.push({
@@ -768,7 +780,7 @@ class JsonlStorage implements ChatStorage {
 		for (const sessionId of draftRefsToDelete) {
 			this.savedDraftAttachmentRefs.delete(sessionId);
 		}
-		for (const session of data.sessions) {
+		for (const session of incomingSessions) {
 			if (savedMessageIds.has(session.id)) {
 				this.unhydratedSessions.delete(session.id);
 				this.hydratedSessionIds.add(session.id);
@@ -780,7 +792,7 @@ class JsonlStorage implements ChatStorage {
 
 		this.lastSavedState = {
 			sessions: new Map(
-				data.sessions.map((s) => [
+				incomingSessions.map((s) => [
 					s.id,
 					{
 						messageIds: this.unhydratedSessions.has(s.id)
@@ -791,7 +803,7 @@ class JsonlStorage implements ChatStorage {
 					},
 				]),
 			),
-			activeSessionId: data.activeSessionId,
+			activeSessionId: index.activeSessionId,
 		};
 	}
 

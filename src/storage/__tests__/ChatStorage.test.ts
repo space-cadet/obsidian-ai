@@ -681,4 +681,28 @@ describe("JsonlStorage bulk hydrate honesty (sync path)", () => {
 		expect(index.sessions.map((entry: any) => entry.id)).toEqual(["s1"]);
 		expect(files.has(sessionPath("s2"))).toBe(false);
 	});
+
+	it("lets deletion tombstones override sessions reintroduced by sync", async () => {
+		const files = new Map<string, string>();
+		await makeStorage(files).storage.saveChatData({
+			sessions: [makeSession("s1", ["one"]), makeSession("s2", ["two"])],
+			activeSessionId: "s2",
+			openSessionIds: ["s1", "s2"],
+		});
+		const { storage } = makeStorage(files);
+		const staleSnapshot = await storage.loadChatData({ hydrate: true });
+
+		await storage.saveChatData({
+			sessions: staleSnapshot.sessions,
+			activeSessionId: "s2",
+			openSessionIds: ["s1", "s2"],
+			deletedSessionIds: ["s2"],
+		});
+
+		const index = JSON.parse(files.get(indexPath) ?? "{}");
+		expect(index.sessions.map((entry: any) => entry.id)).toEqual(["s1"]);
+		expect(index.activeSessionId).toBeNull();
+		expect(index.openSessionIds).toEqual(["s1"]);
+		expect(files.has(sessionPath("s2"))).toBe(false);
+	});
 });
