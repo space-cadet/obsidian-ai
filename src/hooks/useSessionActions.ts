@@ -185,9 +185,22 @@ export function useSessionActions({
 
 	const handleNewChat = useCallback(() => {
 		if (isStreaming) abortActiveRuntime();
+		// A message can be sent from the fresh draft left behind after the last
+		// tab closes. If that active session now contains history but has no tab,
+		// keep it visible when the user creates another chat.
+		const activeId = activeSessionIdRef.current;
+		if (
+			activeId &&
+			!openSessionIds.includes(activeId) &&
+			sessionsRef.current.some((session) => session.id === activeId)
+		) {
+			setOpenSessionIds((current) =>
+				current.includes(activeId) ? current : [...current, activeId],
+			);
+		}
 
 		// T26 Phase 2: Auto-summarize the ending session before starting a new one
-		const endingSessionId = activeSessionIdRef.current;
+		const endingSessionId = activeId;
 		if (endingSessionId) {
 			const endingSession = sessionsRef.current.find(
 				(s) => s.id === endingSessionId,
@@ -227,6 +240,8 @@ export function useSessionActions({
 		abortActiveRuntime,
 		activeSessionIdRef,
 		sessionsRef,
+		openSessionIds,
+		setOpenSessionIds,
 	]);
 
 	const handleLoadSession = useCallback(

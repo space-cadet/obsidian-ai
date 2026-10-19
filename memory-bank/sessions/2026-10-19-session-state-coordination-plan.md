@@ -96,3 +96,14 @@ recorded below.
   Moving it outside the callback stopped the render loop.
 - The standalone hook suite passes (4 tests); all six focused T24c suites pass
   (56 tests). Live Obsidian/device acceptance remains pending.
+
+## Tabless Session Regression — 2026-10-19 23:10 IST
+
+- The last-tab close path intentionally leaves a fresh active session with no
+  open tabs. After a message is sent there, pressing `+` previously opened only
+  the new session, leaving the sent session absent from the tab list.
+- `handleNewChat` now restores an existing active session to the open-tab list
+  before adding the new session. A regression test confirms both IDs remain
+  open. All six focused suites pass (57 tests); production build passes.
+- The user reported the plugin appears to work and identified this sequence;
+  live retest after the fix remains pending.
