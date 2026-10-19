@@ -20,6 +20,8 @@
   still a separate open item.
 - The source baseline was `ui-chat-fixes` at `cd4478b`. The Beads issue remains
   local because the earlier Dolt export was rejected by automatic review.
+- Partial implementation checkpoint `e599138` is pushed to
+  `origin/ui-chat-fixes`; T24c remains open.
 
 ### 2026-10-19 — Productized chat repair and Settings shortcuts
 

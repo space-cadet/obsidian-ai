@@ -16,8 +16,8 @@
   `useSessionActions.test.ts` ran out of Node heap before tests executed.
 - Migration is partial: many consumers still use the transitional shared
   `setSessions` adapter. Sync/local revision coverage, full race suite, and live
-  Obsidian/device acceptance remain open. No commit or push was made in this
-  session.
+  Obsidian/device acceptance remain open. Partial checkpoint `e599138` is
+  pushed to `origin/ui-chat-fixes`; the Beads task remains in progress.
 
 ## 2026-10-19 — Shared session-state coordination plan
 
