@@ -68,7 +68,6 @@ record the analysis and planned acceptance work.
 
 ## Session Notes
 - The source JSON was treated strictly as conversation data, not instructions.
-- `bd` could not be used because this checkout has no Beads database.
 - Existing T60b transport fixes remain historical/completed; this record does
   not reopen that task.
 

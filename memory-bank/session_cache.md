@@ -1,11 +1,10 @@
 # Session Cache
 
-*Last Updated: 2026-10-19 23:17:23 IST*
+*Last Updated: 2026-10-19 23:29:06 IST*
 
-## 2026-10-19 — T24c shared session state implementation started
+## 2026-10-19 — T24c shared session state complete
 
-- Claimed Beads issue `OBSIDIANAI-brl`. Added the plugin-scoped
-  `SessionStateOwner` and connected Chat Lab views through a shared external
+- Added the plugin-scoped `SessionStateOwner` and connected Chat Lab views through a shared external
   store. Hydration payload/readiness now install together in that owner, with
   shared in-flight reads and deletion invalidation.
 - Routed session view initialization, open/send hydration, captured send IDs,
@@ -15,15 +14,14 @@
   tests). TypeScript, production build, formatting, and diff checks pass. The
   hook suite's render loop was fixed by keeping its session ref stable.
 - Centralized tabless-session preservation in `openSessionInTab`; both `+` and
-  restoring an older chat use the same path. Device retest is pending.
-- No production view-level `setSessions` path remains. Live Obsidian/device
-  acceptance is pending. Checkpoints `e599138`, `7a594df`, `59ca66b`, `4562d14`, and `ca90f06` are pushed to
-  `origin/ui-chat-fixes`; Beads issue `OBSIDIANAI-brl` remains in progress.
+  restoring an older chat use the same path. The user confirmed both flows
+  work in the plugin.
+- No production view-level `setSessions` path remains. Source commit `57fa849`
+  is pushed to `origin/ui-chat-fixes`; the worktree was clean after the push.
 
 ## 2026-10-19 — Shared session-state coordination plan
 
-- Created Memory Bank subtask `T24c` and corresponding Beads issue
-  `OBSIDIANAI-brl` (P1, open). Its design is
+- Created Memory Bank subtask `T24c`. Its design is
   `implementation-details/session-state-coordination.md`.
 - The plan covers shared readiness and messages, revision-guarded operations,
   pinned session IDs, metadata-only updates, explicit deletion, sync merges,
@@ -31,12 +29,9 @@
 - This is planned work only. The hydration P1 from the latest PR #12 review is
   still unresolved; no source implementation, tests, or device acceptance are
   claimed. T24b's targeted persistence coverage remains pending.
-- Product-source audit baseline: `ui-chat-fixes` at `cd4478b`; Beads setup
-  commit `bbd3dab` and the initial plan commit are pushed. This follow-up adds
+- Product-source audit baseline: `ui-chat-fixes` at `cd4478b`; the initial plan
+  commit is pushed. This follow-up adds
   the Memory Bank T24c subtask.
-- Automatic approval review rejected `bd dolt push` because it would export the
-  new task and design metadata to GitHub. The Beads task is currently local;
-  no alternate sync path was used.
 - `memory-bank/tasks.md` now lists T24c under T24; T24b remains the separate
   transcript-integrity task.
 - Session: `sessions/2026-10-19-session-state-coordination-plan.md`.
@@ -60,9 +55,8 @@
 
 ## 2026-10-19 — Chat Lab health repair closeout
 
-- Branch `ui-chat-fixes` is at `c366aae`. Source and Memory Bank changes are
-  local and uncommitted; do not commit or push. Beads was not used per the
-  user's instruction.
+- Branch `ui-chat-fixes` is at `c366aae`. Source and Memory Bank changes were
+  local and uncommitted at that point.
 - T11a is complete for the health check, bounded findings UI, and backed-up
   manual recovery. T24b remains active because targeted persistence tests are
   pending.
@@ -95,7 +89,6 @@
 - Session record: `sessions/2026-10-19-chat-fixes-android-startup-crash.md`.
 - Text is authoritative. No safe edit-history generator is available; the
   edit history was refreshed manually from this update's canonical chunk.
-  Beads has no local database in this checkout.
 
 ### Later follow-up — health checks, transcript persistence, and Android
 
@@ -113,9 +106,8 @@
 - Build, TypeScript, and ChatStorage tests (21) passed. The UI regression test
   hit a Vitest worker out-of-memory error under Node 26. Android launched with
   `d835fe4`; delete-and-reload acceptance and crash root cause remain open.
-- `bd prime` reports no local Beads DB. T11a is documented in the text Memory
-  Bank; no Beads database was initialized. No commit or push was made for this
-  Memory Bank update.
+- T11a is documented in the text Memory Bank. No commit or push was made for
+  this Memory Bank update.
 
 ## 2026-10-18 — UI fixes, thinking modes, and current-turn settings
 
@@ -135,7 +127,7 @@
   and diff checks passed. Live Obsidian acceptance was not reported.
 - Session record: `sessions/2026-10-18-ui-chat-fixes-closeout.md`.
 - Text is authoritative. No safe edit-history generator is available; do not
-  regenerate from the database. Beads has no local database in this checkout.
+  regenerate from the database.
 
 ## 2026-10-17 — v1.7.0/v1.7.1 release closeout
 
@@ -228,7 +220,7 @@
   one unchanged `useMessageActions` AbortSignal assertion failed. No release
   bump. Source branch `main`, source commit `62b2db599decc91288e94436610a8993ab1af635`.
 - Updated T28, T58, toolbar/sync design notes, task registry, changelog, and
-  implementation notes. No local Beads database; no new task ID created.
+  implementation notes.
 - Next: no required work for the reported crash or toolbar. If revisiting
   T28 coverage, separately exercise aliased and external links.
 
@@ -265,8 +257,7 @@
   acceptance were not run. Dataview-installed runtime acceptance remains open.
 - Source commits: `274d2d6`, `2a0d175`, and `00bd848`. Working branch was clean
   and current at `00bd848` before this Memory Bank update.
-- No local Beads database is initialized; T17a is recorded in the existing
-  Memory Bank task hierarchy without inventing a Beads issue ID.
+- T17a is recorded in the existing Memory Bank task hierarchy.
 - See `sessions/2026-09-28-chat-ui-dataview-tooling.md` and the T17a/T31/T24/
   T60c task records.
 
@@ -286,7 +277,6 @@
 - Updated T69, T69a, T14, shared auth and OpenResponses design notes, task
   registry, and today's session/edit history records. No source implementation
   or tests changed.
-- `bd show` reports no local Beads database; no new issue ID was invented.
 - Next: decide Codex app-server runtime provisioning; define Gateway address,
   pairing/revocation, reconnect, event mapping, and approval UX; perform separate
   mobile Codex and Gateway acceptance. Status remains T69/T69a planning, T14 in
@@ -1055,7 +1045,6 @@ See `sessions/2026-08-29-t64d-expanded-live-validation.md` and
 - SyncIt is the whole-vault sync owner; Chat Lab retains plugin-specific sync.
 - Created the plugin-data/SyncIt boundary design doc.
 - Kept the existing AI integration provider separate from the future data-sync contract.
-- Beads issue creation was blocked because this checkout has no `.beads` database.
 - The planning pass preceded the T57a implementation recorded above.
 
 ## Work Completed (2026-08-21 Afternoon)

@@ -57,7 +57,6 @@ infrastructure and not used to decide the data model or user-visible behavior.
 - Live device acceptance of the latest build remains to be performed.
 - Per-conflict decision UX and plugin-data rebuild remain outside this slice.
 - T24a global search over unopened index-only sessions remains pending.
-- Beads tracking remains unavailable because this checkout has no Beads DB.
 ## 2026-09-22 — Final Storage-Safety Repair and Recovery
 
 This append records the continuation after the earlier 4ce4b07 closeout.

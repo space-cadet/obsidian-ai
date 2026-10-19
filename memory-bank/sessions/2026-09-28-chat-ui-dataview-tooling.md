@@ -40,7 +40,6 @@ T17a: Optional Dataview DQL Query Tool
 **Key Decisions Made**:
 - T17 owns the built-in Dataview query capability; T26/T39's provider integration remains separate future work.
 - DataviewJS is not executed.
-- No Beads database exists in this checkout, so no Beads ID was invented.
 
 ## Critical Files
 

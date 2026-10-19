@@ -95,10 +95,8 @@ logcat window. The delete-and-reload flow was not exercised, and the Android
 crash cause remains unknown.
 
 **Memory Bank Tracking**: Created T11a under T11 for the health check and repair
-tools, and updated T11/T15/T24 plus the registry and current context. `bd prime`
-reported no local Beads database, so no Beads issue was created and no database
-was initialized. The Memory Bank update remains uncommitted and unpushed at the
-user's request.
+tools, and updated T11/T15/T24 plus the registry and current context. The
+Memory Bank update remains uncommitted and unpushed at the user's request.
 
 ## Later Follow-up — Chat Lab Health Repair Closeout (16:14 IST)
 
@@ -131,5 +129,4 @@ were removed after verification. T11a is complete for the health-check and
 manual recovery scope. T24b remains active pending targeted automated tests.
 
 **Working State**: Source and Memory Bank changes remain uncommitted on
-`ui-chat-fixes` at `c366aae`. No commit or push was made. The user said Beads is
-not needed, so no Beads update was made.
+`ui-chat-fixes` at `c366aae`. No commit or push was made.

@@ -1,26 +1,34 @@
 # Edit History
 
-*Last Updated: 2026-10-19 21:02:15 IST*
+*Last Updated: 2026-10-19 23:29:06 IST*
 
 ### 2026-10-19
+#### 23:28:30 IST - T24c: Complete task records and project guidance
+- Updated `memory-bank/tasks/T24c.md`, `memory-bank/tasks.md`, and `memory-bank/tasks/T24.md` - Recorded T24c completion and kept T24b separate.
+- Updated `memory-bank/implementation-details/session-state-coordination.md`, `memory-bank/activeContext.md`, `memory-bank/session_cache.md`, and `memory-bank/sessions/2026-10-19-session-state-coordination-plan.md` - Recorded final implementation status and user-confirmed behavior.
+- Updated `AGENTS.md`, `CLAUDE.md`, `.claude/settings.json`, and `.gitignore` - Use the Memory Bank task hierarchy and remove unused project tracker configuration.
+- Removed the unused project tracker configuration and local data directory.
+- Updated historical Memory Bank task, session, progress, and edit records to remove obsolete tracker references.
+- Created `memory-bank/edits/2026-10-19/232830-T24c-task-records-and-project-guidance.md` - Recorded this Memory Bank update.
+
 #### 21:02:15 IST - T24c: Add Memory Bank subtask for session coordination
-- Created `memory-bank/tasks/T24c.md` - Defined the shared session-state ownership task, acceptance criteria, migration steps, and relation to Beads issue `OBSIDIANAI-brl`.
+- Created `memory-bank/tasks/T24c.md` - Defined the shared session-state ownership task, acceptance criteria, migration steps, and relation to the T24 task hierarchy.
 - Updated `memory-bank/tasks.md` - Added T24c to the active registry and under T24 in the task hierarchy.
 - Updated `memory-bank/tasks/T24.md` - Linked T24c as the broader session coordination subtask.
 - Updated `memory-bank/tasks/T24b.md` - Linked T24c while keeping its transcript integrity scope and pending tests distinct.
 - Updated `memory-bank/implementation-details/session-state-coordination.md` - Linked the detailed plan to Memory Bank task T24c.
-- Updated `memory-bank/activeContext.md` - Recorded T24c, its Beads association, source baseline, and sync limitation.
-- Updated `memory-bank/session_cache.md` - Recorded T24c, the plan, and the local Beads issue status.
+- Updated `memory-bank/activeContext.md` - Recorded T24c and its source baseline.
+- Updated `memory-bank/session_cache.md` - Recorded T24c and the plan.
 - Updated `memory-bank/sessions/2026-10-19-session-state-coordination-plan.md` - Added the task creation and registry handoff.
 - Created `memory-bank/edits/2026-10-19/210215-T24c-memory-bank-subtask.md` - Added this canonical edit record.
 
-#### 20:58:03 IST - OBSIDIANAI-brl: Record shared session coordination plan
-- Created `memory-bank/implementation-details/session-state-coordination.md` - Documented the proposed shared session state owner, operation rules, migration scope, non-goals, and validation plan; linked Beads issue `OBSIDIANAI-brl`.
+#### 20:58:03 IST - T24c: Record shared session coordination plan
+- Created `memory-bank/implementation-details/session-state-coordination.md` - Documented the proposed shared session state owner, operation rules, migration scope, non-goals, and validation plan.
 - Updated `memory-bank/tasks/T24b.md` - Linked the broader coordination plan while keeping the hydration P1 unresolved and T24b's transcript-integrity coverage pending.
-- Updated `memory-bank/activeContext.md` - Recorded the open plan, source audit baseline, and rejected Beads remote sync.
-- Updated `memory-bank/session_cache.md` - Recorded the open plan, source audit baseline, and rejected Beads remote sync.
-- Created `memory-bank/sessions/2026-10-19-session-state-coordination-plan.md` - Captured the architecture assessment, task link, remote-sync limit, and implementation handoff.
-- Created `memory-bank/edits/2026-10-19/205803-OBSIDIANAI-brl-session-state-plan.md` - Added this canonical edit record.
+- Updated `memory-bank/activeContext.md` - Recorded the open plan and source audit baseline.
+- Updated `memory-bank/session_cache.md` - Recorded the open plan and source audit baseline.
+- Created `memory-bank/sessions/2026-10-19-session-state-coordination-plan.md` - Captured the architecture assessment, task link, and implementation handoff.
+- Created `memory-bank/edits/2026-10-19/205803-T24c-session-state-plan.md` - Added this canonical edit record.
 
 #### 18:19:09 IST - T11a/T34: Record commit and push outcome
 - Updated `memory-bank/activeContext.md`, `memory-bank/session_cache.md`, and `memory-bank/sessions/2026-10-19-chat-repair-ui-and-settings-shortcuts.md` - Record commit `b77f72df755a4718d2662a4326a6efec27c77a6d`, push to origin, and clean worktree.
@@ -55,8 +63,8 @@
 - Updated `memory-bank/tasks/T24.md` - Recorded transcript-load, duplicate-normalization, and explicit-deletion fixes with test and device-acceptance limits.
 - Updated `memory-bank/tasks/T15.md` - Recorded later Android launch evidence and removal of 752e74c-related tab behavior.
 - Updated `memory-bank/errorLog.md` - Added the latest Android crash evidence while keeping the cause unresolved.
-- Updated `memory-bank/activeContext.md` - Refreshed the current branch, health report, test, device, and Beads status.
-- Updated `memory-bank/session_cache.md` - Recorded source changes, report findings, acceptance limits, and the unavailable Beads workspace.
+- Updated `memory-bank/activeContext.md` - Refreshed the current branch, health report, test, and device status.
+- Updated `memory-bank/session_cache.md` - Recorded source changes, report findings, and acceptance limits.
 - Updated `memory-bank/sessions/2026-10-19-chat-fixes-android-startup-crash.md` - Appended the health-check, repair, persistence, and device follow-up.
 - Created `memory-bank/edits/2026-10-19/142339-T11a-T24-T15-health-storage-closeout.md` - Added the canonical edit chunk for this Memory Bank update.
 - Refreshed this history view manually from the canonical chunk because no generator is available.

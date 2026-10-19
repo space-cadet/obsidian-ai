@@ -54,7 +54,6 @@ acceptance and a user-run `read_settings` confirmation were not reported.
   routing or effective thinking behavior.
 - A post-push `git pull --rebase` could not write `.git/FETCH_HEAD`; push had
   succeeded and local/remote commit hashes matched.
-- No Beads database is initialized in this checkout.
 - The Memory Bank is text-primary. No safe edit-history generator is
   available, so `edit_history.md` was not edited or regenerated.
 

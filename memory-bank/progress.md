@@ -755,7 +755,6 @@ matches found.
 - Created T57 and subtasks T57a–T57d.
 - Created `implementation-details/plugin-data-sync-and-syncit-boundary.md`.
 - Kept the existing AI integration provider separate from the future data-sync provider contract.
-- Beads issue creation was attempted but blocked because this checkout has no `.beads` database.
 - No sync code was changed in the original planning pass; T57a is now the
   first implementation slice.
 
@@ -1101,7 +1100,7 @@ Implemented the first pass on the three architectural improvements from the T55 
 ### 2026-07-10 — T74: Cron Job Token Optimization
 
 - Bash pre-processor pattern: bash does fetching, AI only does reasoning
-- beads-executor empty runs: ~18.8K → ~4.1K tokens (~78% reduction)
+- Executor empty runs: ~18.8K → ~4.1K tokens (~78% reduction)
 - Applied `lightContext: true` + restricted `toolsAllow`
 
 ### 2026-07-07 — Token Usage Skill v1.0.2

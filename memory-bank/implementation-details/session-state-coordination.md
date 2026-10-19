@@ -1,10 +1,9 @@
 # Shared Session State Coordination Plan
 
 *Created: 2026-10-19 20:54 IST*
-*Status: IN PROGRESS — owner operations and session-opening paths implemented; live retest remains in T24c.*
-*Last Updated: 2026-10-19 23:15:12 IST*
+*Status: COMPLETE — shared session ownership and session-opening paths implemented and user-confirmed.*
+*Last Updated: 2026-10-19 23:29:06 IST*
 *Memory Bank task: [T24c](../tasks/T24c.md)*
-*Beads task: `OBSIDIANAI-brl` (label: `T24c`)*
 
 ## Purpose
 
@@ -252,6 +251,7 @@ evidence.
 
 This plan follows the source audit recorded on October 19, 2026. The source
 audit was performed on `ui-chat-fixes` at `cd4478b` (T24b queued-save
-preservation), before Beads initialization created the local setup commit
-`bbd3dab`. The hydration review finding was still unresolved. No product code
-change, test result, or device acceptance is implied by this document.
+preservation). The hydration finding and related coordination work are
+implemented under T24c; focused tests and production build passed. The user
+confirmed the tabless-session behavior for both new-chat and restored-session
+flows in the plugin. Source is at `57fa849` on `ui-chat-fixes`.

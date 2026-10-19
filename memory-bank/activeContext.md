@@ -2,8 +2,7 @@
 
 ### 2026-10-19 — Shared session-state coordination plan
 
-- T24c implementation is in progress under Beads issue `OBSIDIANAI-brl`.
-  A plugin-scoped `SessionStateOwner` now backs Chat Lab views, owns transcript
+- T24c is complete. A plugin-scoped `SessionStateOwner` backs Chat Lab views, owns transcript
   readiness with its installed message payload, shares hydration requests,
   rejects late hydration after deletion, and serializes retryable persistence.
 - Session initialization, view subscription, active-session hydration, send
@@ -13,13 +12,11 @@
 - Six focused owner/session/send/lifecycle suites pass (58 tests); TypeScript
   and production build pass, and formatting and `git diff --check` are clean.
   Tabless-session preservation is centralized in `openSessionInTab`; both
-  new-chat and restore-older-session paths use it. Device retest is pending.
-- Remaining T24c work is live Obsidian/device acceptance. T24b targeted
-  persistence coverage remains a separate open item.
-- The source baseline was `ui-chat-fixes` at `cd4478b`. The Beads issue remains
-  local because the earlier Dolt export was rejected by automatic review.
-- Implementation checkpoints `e599138`, `7a594df`, `59ca66b`, `4562d14`, and `ca90f06` are pushed to
-  `origin/ui-chat-fixes`; T24c remains open.
+  new-chat and restore-older-session paths use it. The user confirmed both
+  flows work in the plugin. Focused suites passed (58 tests), and TypeScript,
+  production build, formatting, and diff checks passed. Source commit
+  `57fa849` is pushed to `origin/ui-chat-fixes`.
+- T24b targeted persistence coverage remains a separate open item.
 
 ### 2026-10-19 — Productized chat repair and Settings shortcuts
 
@@ -62,8 +59,7 @@
   warnings. Recovered sessions have generated titles because their original
   title metadata was absent from the backed-up index.
 - Build and Android install were recorded separately from test status. No
-  targeted T24b tests were run for this closeout. The user said Beads is not
-  needed; no Beads update was made.
+  targeted T24b tests were run for this closeout.
 - See today's session record and T11a/T24/T24b.
 
 ### 2026-10-19 — Codex chat fixes and unresolved Android startup crash
@@ -253,8 +249,8 @@
   OpenResponses path. Current source sends `previous_response_id` and submits
   the original request once; T14's old defect claims were corrected. Remaining
   protocol and live-provider acceptance is open.
-- Beads commands report no local database, so no new task ID was created. See
-  today's session record and the T69/T69a/T14 task notes.
+- The Memory Bank task hierarchy remains the project task record. See today's
+  session record and the T69/T69a/T14 task notes.
 
 ### 2026-09-26 — T69a Codex authentication contract checked
 
@@ -1260,9 +1256,8 @@ The user approved the following direction:
 - T57a–T57d cover the common file path, two-way conflicts and recovery,
   identity/retry/reporting, and the SyncIt integration boundary.
 
-Beads issue creation was attempted but blocked because this checkout has no
-`.beads` database. Do not initialize a new issue database without explicit
-direction.
+The Memory Bank task hierarchy is the project task record; no separate issue
+tracker is configured.
 
 ### 2026-08-22 — Sync and Memory Bank Audit Corrections
 
