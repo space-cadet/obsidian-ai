@@ -17,6 +17,7 @@ import { getRecentModels, rememberRecentModel } from "../../lib/recentModels";
 // ─── Fallback model lists per provider ─────────────────────────────
 
 const FALLBACK_MODELS: Record<string, string[]> = {
+	codex: ["gpt-6-luna"],
 	openai: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
 	anthropic: [
 		"claude-3-5-sonnet-latest",
@@ -58,6 +59,10 @@ const FALLBACK_MODELS: Record<string, string[]> = {
 
 function getFallbackModels(provider: string): string[] {
 	return FALLBACK_MODELS[provider] ?? [];
+}
+
+function modelCacheKey(profile: ProviderProfile): string {
+	return `${profile.id}:${profile.provider}`;
 }
 
 // ─── Types ─────────────────────────────────────────────────────────
@@ -137,13 +142,23 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 	// Sync cached models when a profile changes. Caches belong to profiles, not
 	// providers: two credentials for the same provider may expose different models.
 	useEffect(() => {
-		if (activeProfile.modelCache?.models) {
+		if (
+			activeProfile.modelCache?.models &&
+			(activeProfile.provider !== "codex" ||
+				activeProfile.modelCache.provider === "codex")
+		) {
 			setModels((prev) => ({
 				...prev,
-				[activeProfile.id]: activeProfile.modelCache!.models,
+				[modelCacheKey(activeProfile)]:
+					activeProfile.modelCache!.models,
 			}));
 		}
-	}, [activeProfile.modelCache?.models, activeProfile.id]);
+	}, [
+		activeProfile.modelCache?.models,
+		activeProfile.modelCache?.provider,
+		activeProfile.id,
+		activeProfile.provider,
+	]);
 
 	// Do not leave a stale nested view behind when the selected agents change.
 	useEffect(() => {
@@ -242,16 +257,33 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 
 	const getModelsForProfile = useCallback(
 		(target: ProviderProfile): string[] => {
-			const cached = models[target.id] ?? target.modelCache?.models ?? [];
+			const cachedFromState = models[modelCacheKey(target)] ?? [];
+			const cachedFromProfile =
+				target.provider === "codex" &&
+				target.modelCache?.provider !== "codex"
+					? []
+					: (target.modelCache?.models ?? []);
+			const cached =
+				cachedFromState.length > 0
+					? cachedFromState
+					: cachedFromProfile;
 			const fallback = getFallbackModels(target.provider);
 			const recent = getRecentModels(
 				plugin.settings.recentModels,
 				target.provider,
 			);
+			const codexModels = target.provider === "codex";
+			const allowedModels = new Set(
+				cached.length > 0 ? cached : fallback,
+			);
 			const combined = [
 				...(cached.length > 0 ? cached : fallback),
-				...recent,
-				target.model,
+				...(codexModels
+					? recent.filter((model) => allowedModels.has(model))
+					: recent),
+				...(!codexModels || allowedModels.has(target.model)
+					? [target.model]
+					: []),
 			];
 			const seen = new Set<string>();
 			const deduped: string[] = [];
@@ -275,16 +307,20 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 			plugin.settings.recentModels,
 			activeProfile.provider,
 		);
-		return recent.filter(
+		const uniqueRecent = recent.filter(
 			(m, index) =>
 				typeof m === "string" &&
 				m.trim() &&
 				recent.indexOf(m) === index,
 		);
+		return activeProfile.provider === "codex"
+			? uniqueRecent.filter((model) => allModels.includes(model))
+			: uniqueRecent;
 	}, [
 		plugin.settings.recentModels,
 		activeProfile.id,
 		activeProfile.provider,
+		allModels,
 	]);
 
 	const filteredModels = useMemo(() => {
@@ -350,7 +386,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 			const fetched = await chatApi.fetchModels(activeProfile);
 			setModels((prev) => ({
 				...prev,
-				[activeProfile.id]: fetched,
+				[modelCacheKey(activeProfile)]: fetched,
 			}));
 
 			// Update modelCache on the profile
@@ -361,6 +397,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 							modelCache: {
 								models: fetched,
 								fetchedAt: Date.now(),
+								provider: activeProfile.provider,
 							},
 							updatedAt: Date.now(),
 						}

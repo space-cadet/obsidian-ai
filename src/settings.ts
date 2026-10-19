@@ -104,6 +104,8 @@ export interface RemoteStorageConfig {
 export interface ModelCache {
 	models: string[];
 	fetchedAt: number;
+	/** Provider that produced this cache; omitted only on legacy settings. */
+	provider?: ProviderType;
 	error?: string;
 }
 
