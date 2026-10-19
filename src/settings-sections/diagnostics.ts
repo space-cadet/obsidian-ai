@@ -1,6 +1,7 @@
 import { App, Notice, Platform, Setting, TFile } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection } from "./helpers";
+import { renderDataHealth } from "./dataHealth";
 import { summarizeLlmUsage } from "../lib/usageStats";
 
 interface DiskUsageBreakdown {
@@ -376,6 +377,8 @@ export function renderDiagnosticsSection(
 					});
 				}),
 		);
+
+	renderDataHealth(sectionEl, app, plugin.manifest.id);
 
 	new Setting(sectionEl)
 		.setName("Export diagnostics")
