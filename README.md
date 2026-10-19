@@ -152,6 +152,7 @@ Stay current without manual downloads:
 
 - **Diagnostics Panel** — Memory usage, DOM nodes, chat sessions, total messages.
 - **Data Health Check** — In Settings → Advanced controls → Diagnostics, run a read-only check of plugin assets, settings, session files, and saved AI memory. Review file-specific findings and export a report. No automatic repairs; oversized files and scan limits are reported.
+- **Repair Preview** — Diagnostics → Repair data previews conservative repairs. Pause sync on all devices, preview, choose Schedule repairs, then restart Obsidian. Repairs run before chat loading and sync, with verified originals saved in `health-backups`. Changed files cancel the plan; conflicting records, unindexed history, and files over 8 MiB remain for review.
 - **File-Based Logger** — Debug logs written to disk for troubleshooting.
 - **Error Boundary** — Catches React render crashes, shows fallback UI.
 - **Build Info in Settings** — Version badge, git commit hash, and branch name visible in Settings hero.
