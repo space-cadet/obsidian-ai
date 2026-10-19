@@ -594,6 +594,12 @@ class JsonlStorage implements ChatStorage {
 		// existing index entries unless the caller explicitly marks the ID deleted.
 		for (const [id, entry] of this.indexEntriesById) {
 			if (deletedIds.has(id)) {
+				if (adapter.remove) {
+					const sessionPath = `${pluginDir}/${entry.filePath}`;
+					if (await adapter.exists(sessionPath)) {
+						await adapter.remove(sessionPath);
+					}
+				}
 				if (
 					entry.draftAttachmentsFile &&
 					adapter.remove &&

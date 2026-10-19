@@ -14,6 +14,39 @@ vi.mock("../../settings", () => ({
 }));
 
 describe("useSessionActions", () => {
+	it("marks UI deletions so the storage autosave can persist them", () => {
+		const markSessionDeleted = vi.fn();
+		const plugin = {
+			settings: { includeActiveNote: false },
+		} as any;
+		const { result } = renderHook(() => {
+			const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
+			return useSessionActions({
+				plugin,
+				sessionsRef: { current: [] },
+				activeSessionIdRef: { current: null },
+				setSessions: vi.fn(),
+				setActiveSessionId: vi.fn(),
+				setScrollToMessageId: vi.fn(),
+				createNewSession: vi.fn(),
+				setSelectedProfileIds: vi.fn(),
+				getSelectedProfileIds: () => [],
+				setDebateMode: vi.fn(),
+				setWasTruncated: vi.fn(),
+				isStreaming: false,
+				abortActiveRuntime: vi.fn(),
+				clearSessionRuntime: vi.fn(),
+				markSessionDeleted,
+				openSessionIds,
+				setOpenSessionIds,
+			});
+		});
+
+		act(() => result.current.handleDeleteSession("deleted-id"));
+
+		expect(markSessionDeleted).toHaveBeenCalledWith("deleted-id");
+	});
+
 	it("opens a distinct draft tab for every new-chat action", () => {
 		let draftNumber = 0;
 		const createNewSession = vi.fn(() => ({
@@ -52,6 +85,7 @@ describe("useSessionActions", () => {
 				isStreaming: false,
 				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
+				markSessionDeleted: vi.fn(),
 				openSessionIds,
 				setOpenSessionIds,
 			});
@@ -100,6 +134,7 @@ describe("useSessionActions", () => {
 				isStreaming: false,
 				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
+				markSessionDeleted: vi.fn(),
 				openSessionIds,
 				setOpenSessionIds,
 			});
@@ -154,6 +189,7 @@ describe("useSessionActions", () => {
 				isStreaming: false,
 				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
+				markSessionDeleted: vi.fn(),
 				openSessionIds,
 				setOpenSessionIds,
 			});

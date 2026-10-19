@@ -29,6 +29,7 @@ interface UseSessionActionsOptions {
 	isStreaming: boolean;
 	abortActiveRuntime: () => void;
 	clearSessionRuntime: (sessionId: string) => void;
+	markSessionDeleted: (sessionId: string) => void;
 	openSessionIds: string[];
 	setOpenSessionIds: React.Dispatch<React.SetStateAction<string[]>>;
 	getModelOverrides?: () => Record<string, string> | undefined;
@@ -63,6 +64,7 @@ export function useSessionActions({
 	isStreaming,
 	abortActiveRuntime,
 	clearSessionRuntime,
+	markSessionDeleted,
 	openSessionIds,
 	setOpenSessionIds,
 	getModelOverrides,
@@ -334,6 +336,7 @@ export function useSessionActions({
 
 	const handleDeleteSession = useCallback(
 		(sessionId: string) => {
+			markSessionDeleted(sessionId);
 			clearSessionRuntime(sessionId);
 			setSessions((prev) => {
 				const filtered = prev.filter((s) => s.id !== sessionId);
@@ -392,6 +395,7 @@ export function useSessionActions({
 			plugin.settings.includeActiveNote,
 			profileId,
 			clearSessionRuntime,
+			markSessionDeleted,
 		],
 	);
 

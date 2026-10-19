@@ -24,6 +24,9 @@ describe("ChatStorage", () => {
 			append: vi.fn(async (path: string, content: string) => {
 				files.set(path, (files.get(path) ?? "") + content);
 			}),
+			remove: vi.fn(async (path: string) => {
+				files.delete(path);
+			}),
 		};
 		const metadata: CompactionMetadata = {
 			version: 1,
@@ -102,6 +105,9 @@ function makeAdapter(files: Map<string, string>) {
 		}),
 		append: vi.fn(async (path: string, content: string) => {
 			files.set(path, (files.get(path) ?? "") + content);
+		}),
+		remove: vi.fn(async (path: string) => {
+			files.delete(path);
 		}),
 	};
 }
@@ -649,5 +655,6 @@ describe("JsonlStorage bulk hydrate honesty (sync path)", () => {
 		});
 		index = JSON.parse(files.get(indexPath) ?? "{}");
 		expect(index.sessions.map((entry: any) => entry.id)).toEqual(["s1"]);
+		expect(files.has(sessionPath("s2"))).toBe(false);
 	});
 });

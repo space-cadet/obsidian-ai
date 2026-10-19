@@ -47,6 +47,8 @@ export interface UseChatSessionResult {
 	}) => ChatSession;
 	/** Delete a session. If active, switches to the most recent remaining. */
 	deleteSession: (sessionId: string) => void;
+	/** Mark a deletion performed by the session-action layer for autosave. */
+	markSessionDeleted: (sessionId: string) => void;
 	/** Rename a session. */
 	renameSession: (sessionId: string, title: string) => void;
 	/** Update a session's messages. */
@@ -80,6 +82,9 @@ export function useChatSession({
 	const saveTimerRef = useRef<number | null>(null);
 	const skipNextAutosaveRef = useRef(false);
 	const deletedSessionIdsRef = useRef<Set<string>>(new Set());
+	const markSessionDeleted = useCallback((sessionId: string) => {
+		deletedSessionIdsRef.current.add(sessionId);
+	}, []);
 
 	sessionsRef.current = sessions;
 	activeSessionIdRef.current = activeSessionId;
@@ -623,6 +628,7 @@ export function useChatSession({
 		setOpenSessionIds,
 		createNewSession,
 		deleteSession,
+		markSessionDeleted,
 		renameSession,
 		updateSessionMessages,
 		updateSessionContextItems,

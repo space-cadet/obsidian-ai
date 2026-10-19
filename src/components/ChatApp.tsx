@@ -104,6 +104,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		openSessionIds: persistedOpenSessionIds,
 		setOpenSessionIds: setPersistedOpenSessionIds,
 		createNewSession,
+		markSessionDeleted,
 		renameSession,
 		updateSessionMessages,
 		updateSessionContextItems,
@@ -552,6 +553,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			abortRuntime(sessionId);
 			clearRuntime(sessionId);
 		},
+		markSessionDeleted,
 		openSessionIds: persistedOpenSessionIds,
 		setOpenSessionIds: setPersistedOpenSessionIds,
 		getModelOverrides,
