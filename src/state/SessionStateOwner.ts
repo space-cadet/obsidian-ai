@@ -1,5 +1,8 @@
 import type { ChatMessage, ChatSession, StoredChatData } from "../types";
 
+const SAVE_DEBOUNCE_MS = 150;
+const MAX_SAVE_RETRY_DELAY_MS = 30_000;
+
 export interface SessionStateSnapshot {
 	sessions: ChatSession[];
 	activeSessionId: string | null;
@@ -32,6 +35,7 @@ export class SessionStateOwner {
 	private saveTail: Promise<void> = Promise.resolve();
 	private generation = 0;
 	private saveTimer: ReturnType<typeof setTimeout> | null = null;
+	private saveRetryDelayMs = SAVE_DEBOUNCE_MS;
 
 	constructor(private readonly storage: SessionStateStorage) {}
 
@@ -87,7 +91,6 @@ export class SessionStateOwner {
 		const inFlight = this.pendingLoads.get(sessionId);
 		if (inFlight) return inFlight;
 		const revision = this.revisions.get(sessionId) ?? 0;
-		const generation = this.generation;
 		let reloadSupersedingSnapshot = false;
 		const load = this.storage
 			.hydrate(sessionId)
@@ -105,12 +108,7 @@ export class SessionStateOwner {
 				const latest = this.snapshot.sessions.find(
 					(session) => session.id === sessionId,
 				);
-				if (
-					!latest ||
-					this.deleted.has(sessionId) ||
-					generation !== this.generation
-				)
-					return null;
+				if (!latest || this.deleted.has(sessionId)) return null;
 				if ((this.revisions.get(sessionId) ?? 0) !== revision) {
 					reloadSupersedingSnapshot = latest.hydrated === false;
 					return latest;
@@ -378,8 +376,14 @@ export class SessionStateOwner {
 		if (this.saveTimer) clearTimeout(this.saveTimer);
 		this.saveTimer = setTimeout(() => {
 			this.saveTimer = null;
-			void this.flush().catch(() => this.scheduleFlush());
-		}, 150);
+			void this.flush().catch(() => {
+				this.saveRetryDelayMs = Math.min(
+					this.saveRetryDelayMs * 2,
+					MAX_SAVE_RETRY_DELAY_MS,
+				);
+				this.scheduleFlush();
+			});
+		}, this.saveRetryDelayMs);
 	}
 
 	async flush(): Promise<void> {
@@ -397,6 +401,7 @@ export class SessionStateOwner {
 		const operation = this.saveTail.then(() => this.storage.save(data));
 		this.saveTail = operation.catch(() => undefined);
 		await operation;
+		this.saveRetryDelayMs = SAVE_DEBOUNCE_MS;
 		for (const [id, revision] of revisions)
 			this.persistedRevisions.set(id, revision);
 		for (const id of data.deletedSessionIds ?? []) this.deleted.delete(id);
