@@ -17,6 +17,7 @@ import {
 	AutoCandidate,
 	AutoState,
 	detectAutocomplete,
+	hasReferenceDecoration,
 	ReferenceTextOverlay,
 } from "./ChatInputDecorations";
 
@@ -199,6 +200,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
 	const maxComposerHeight = 160;
 	const [value, setValue] = useState(draft ?? "");
+	const hasReferenceDecorations = hasReferenceDecoration(value, contextItems);
 	const [auto, setAuto] = useState<AutoState | null>(null);
 	const [isDragOver, setIsDragOver] = useState(false);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -541,7 +543,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 						/>
 						<textarea
 							ref={textareaRef}
-							className="chat-textarea chat-textarea-with-overlay"
+							className={`chat-textarea${hasReferenceDecorations ? " chat-textarea-with-overlay" : ""}`}
 							rows={1}
 							placeholder={placeholder}
 							value={value}

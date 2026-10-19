@@ -67,12 +67,7 @@ interface ReferenceTextOverlayProps {
 	contentRef: React.RefObject<HTMLDivElement>;
 }
 
-/** Draws reference pills without participating in text layout or input. */
-export const ReferenceTextOverlay: React.FC<ReferenceTextOverlayProps> = ({
-	text,
-	contextItems,
-	contentRef,
-}) => {
+function getReferenceMatches(text: string, contextItems: ContextItem[]) {
 	const contextNames = contextItems
 		.map((item) => {
 			switch (item.type) {
@@ -125,7 +120,24 @@ export const ReferenceTextOverlay: React.FC<ReferenceTextOverlayProps> = ({
 		}
 	}
 
-	matches.sort((a, b) => a.start - b.start || b.end - a.end);
+	return matches.sort((a, b) => a.start - b.start || b.end - a.end);
+}
+
+export function hasReferenceDecoration(
+	text: string,
+	contextItems: ContextItem[],
+) {
+	return getReferenceMatches(text, contextItems).length > 0;
+}
+
+/** Draws reference pills without participating in text layout or input. */
+export const ReferenceTextOverlay: React.FC<ReferenceTextOverlayProps> = ({
+	text,
+	contextItems,
+	contentRef,
+}) => {
+	const matches = getReferenceMatches(text, contextItems);
+	if (matches.length === 0) return null;
 	const parts: React.ReactNode[] = [];
 	let lastIndex = 0;
 	for (const match of matches) {
