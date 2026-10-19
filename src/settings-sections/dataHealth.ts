@@ -16,6 +16,10 @@ export function renderDataHealth(
 	const details = container.createEl("details");
 	details.createEl("summary", { text: "Data health findings" });
 	const output = details.createDiv();
+	output.classList.add("chat-lab-health-findings");
+	output.tabIndex = 0;
+	output.setAttribute("role", "region");
+	output.setAttribute("aria-label", "Data health findings");
 	let exportButton: import("obsidian").ButtonComponent;
 	new Setting(container)
 		.setName("Check data health")
