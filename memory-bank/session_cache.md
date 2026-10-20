@@ -1,6 +1,21 @@
 # Session Cache
 
-*Last Updated: 2026-10-19 23:29:06 IST*
+*Last Updated: 2026-10-20 16:21:35 IST*
+
+## 2026-10-20 — PR #12 review follow-up
+
+- PR #12 merged from `ui-chat-fixes` at `a79eca2` as
+  `ef90e27f6bd7258924fe9a547740fdbf9f7b353d`. Commits `1c63118` and
+  `a79eca2` address successive Codex findings on session hydration/save retry,
+  composer acceptance, empty transcript cleanup, and duplicate-only hydration.
+- The latest review left one P1 and two P2 suggestions; the user decided not
+  to pursue these specific findings. No related source changes remain.
+- TypeScript, Prettier on changed files, and `git diff --check` passed. Tests
+  were not run for this review follow-up.
+- Switched to `main` and pulled; local and remote heads match at merge commit
+  `ef90e27`. Compared 45 commits since v1.7.1 bump `6db4933`; current version
+  remains 1.7.1. The user deferred version bump work to a new session.
+- Session: `sessions/2026-10-20-pr-review-follow-up.md`.
 
 ## 2026-10-19 — T24c shared session state complete
 

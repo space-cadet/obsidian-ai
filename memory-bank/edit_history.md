@@ -1,6 +1,23 @@
 # Edit History
 
-*Last Updated: 2026-10-19 23:29:06 IST*
+*Last Updated: 2026-10-20 16:21:35 IST*
+
+### 2026-10-20
+#### 16:21:35 IST - T8: Record main checkout and version baseline review
+- Updated `memory-bank/sessions/2026-10-20-pr-review-follow-up.md` - Recorded main at `ef90e27`, the v1.7.1 baseline at `6db4933`, and the app-change review; no version bump was performed.
+- Updated `memory-bank/activeContext.md` and `memory-bank/session_cache.md` - Recorded the synchronized main head and deferred version-bump handoff.
+- Updated `memory-bank/edits/2026-10-20/003726-T00-T24b-T24c-pr-review-session.md` - Added this version-range review to the canonical edit chunk.
+
+#### 00:40:59 IST - T24c: Record PR #12 merge
+- Updated `memory-bank/tasks/T24c.md` - Recorded PR #12 merge commit `ef90e27f6bd7258924fe9a547740fdbf9f7b353d` and the user's disposition of the latest review suggestions.
+- Updated `memory-bank/sessions/2026-10-20-pr-review-follow-up.md`, `memory-bank/activeContext.md`, and `memory-bank/session_cache.md` - Recorded the merged PR state and review outcome.
+- Updated `memory-bank/edits/2026-10-20/003726-T00-T24b-T24c-pr-review-session.md` - Added the merge result to the canonical edit chunk.
+
+#### 00:37:26 IST - T00/T24b/T24c: Record PR review follow-up
+- Modified `CLAUDE.md` and created `docs/agents/issue-tracker.md` and `docs/agents/domain.md` - Added GitHub Issues and domain-documentation guidance.
+- Modified `src/state/SessionStateOwner.ts`, `src/components/ChatInput.tsx`, `src/components/ChatApp.tsx`, `src/components/ChatMainArea.tsx`, `src/hooks/useMessageActions.ts`, `src/lifecycle/storage.ts`, `src/storage/ChatStorage.ts`, and `src/types.ts` - Applied the two Codex review follow-up commits for hydration coordination, retry backoff, composer acceptance, empty-transcript cleanup, and duplicate-aware hydration.
+- Updated `memory-bank/tasks/T24b.md` and `memory-bank/tasks/T24c.md`, created `memory-bank/sessions/2026-10-20-pr-review-follow-up.md`, and updated `memory-bank/activeContext.md` and `memory-bank/session_cache.md` - Recorded review fixes and the user's decision to leave latest specific findings alone.
+- Created `memory-bank/edits/2026-10-20/003726-T00-T24b-T24c-pr-review-session.md` - Added the canonical edit chunk.
 
 ### 2026-10-19
 #### 23:28:30 IST - T24c: Complete task records and project guidance

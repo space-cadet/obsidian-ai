@@ -22,3 +22,13 @@ follow-ups.
 
 Use the project package scripts for builds and tests. Redirect verbose output to
 a temporary log and inspect concise diagnostics when a command fails.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live in GitHub Issues for `space-cadet/obsidian-ai`; use the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context layout: root `GLOSSARY.md` and `docs/adr/`. See `docs/agents/domain.md`.

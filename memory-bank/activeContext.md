@@ -1,5 +1,24 @@
 # Active Context
 
+### 2026-10-20 — PR #12 Codex review follow-up
+
+- PR #12 was merged from `ui-chat-fixes` head `a79eca2` into `main` as merge
+  commit `ef90e27f6bd7258924fe9a547740fdbf9f7b353d`. Two Codex review cycles added follow-up fixes in
+  `1c63118` and `a79eca2` for per-session hydration/retry behavior, composer
+  acceptance, empty transcript cleanup, and verified duplicate-only hydration.
+- The latest Codex review reported one P1 and two P2 suggestions concerning
+  send configuration across tab switches, the pre-append acceptance boundary,
+  and persistence of transient empty sessions. The user chose not to pursue
+  these specific findings; they remain review comments, with no corresponding
+  source changes; the user chose to proceed with the merge.
+- TypeScript, Prettier on the review files, and `git diff --check` passed;
+  tests were not run for the review follow-up. Local setup edits in `CLAUDE.md`
+  and `docs/agents/` remain uncommitted and outside the PR.
+- The checkout is now `main` at `ef90e27`, matching `origin/main`. The latest
+  version bump is `6db4933` (v1.7.1); 45 commits since then were reviewed for
+  app changes. The version remains 1.7.1, and the next bump is deferred to a
+  new session.
+
 ### 2026-10-19 — Shared session-state coordination plan
 
 - T24c is complete. A plugin-scoped `SessionStateOwner` backs Chat Lab views, owns transcript
