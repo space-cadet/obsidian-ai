@@ -27,13 +27,17 @@ export function estimateStructuredTokens(value: unknown): number {
 
 		const record = current as Record<string, unknown>;
 		const type = typeof record.type === "string" ? record.type : "";
-		const mimeType =
-			typeof record.mimeType === "string" ? record.mimeType : "";
+		const mediaType =
+			typeof record.mediaType === "string"
+				? record.mediaType
+				: typeof record.mimeType === "string"
+					? record.mimeType
+					: "";
 		if (
 			type === "image" ||
 			type === "image_url" ||
 			type === "input_image" ||
-			mimeType.startsWith("image/")
+			mediaType.startsWith("image/")
 		) {
 			return IMAGE_TOKEN_ESTIMATE;
 		}
@@ -44,7 +48,7 @@ export function estimateStructuredTokens(value: unknown): number {
 			return estimateContentPartTokens({
 				type: "file",
 				data: record.data,
-				mimeType,
+				mediaType,
 			});
 		}
 
@@ -122,6 +126,7 @@ export function estimateContentPartTokens(
 	part:
 		| { type: "text"; text: string }
 		| { type: "image"; image: string }
+		| { type: "file"; data: string; mediaType: string }
 		| { type: "file"; data: string; mimeType: string }
 		| { type: "text"; content: string }, // for ContentPart compatibility
 ): number {
@@ -146,6 +151,7 @@ export function estimateContentPartsTokens(
 	parts: Array<
 		| { type: "text"; text: string }
 		| { type: "image"; image: string }
+		| { type: "file"; data: string; mediaType: string }
 		| { type: "file"; data: string; mimeType: string }
 	>,
 ): number {

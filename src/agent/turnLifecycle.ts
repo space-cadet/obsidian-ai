@@ -613,7 +613,7 @@ export class TurnLifecycle {
 				resolvedAttachmentParts as Array<
 					| { type: "text"; text: string }
 					| { type: "image"; image: string }
-					| { type: "file"; data: string; mimeType: string }
+					| { type: "file"; data: string; mediaType: string }
 				>,
 			);
 		}

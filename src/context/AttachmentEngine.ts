@@ -166,7 +166,7 @@ export async function resolveAttachment(
 	Array<
 		| { type: "text"; text: string }
 		| { type: "image"; image: string }
-		| { type: "file"; data: string; mimeType: string }
+		| { type: "file"; data: string; mediaType: string }
 	>
 > {
 	const { path, name, type, data } = attachment;
@@ -186,7 +186,7 @@ export async function resolveAttachment(
 				provider === "anthropic" ||
 				provider === "openrouter"
 			) {
-				return [{ type: "file", data, mimeType: "application/pdf" }];
+				return [{ type: "file", data, mediaType: "application/pdf" }];
 			}
 			return [
 				{
@@ -262,7 +262,7 @@ export async function resolveAttachment(
 				{
 					type: "file",
 					data: base64,
-					mimeType: "application/pdf",
+					mediaType: "application/pdf",
 				},
 			];
 		}
@@ -296,13 +296,13 @@ export async function resolveAttachments(
 	Array<
 		| { type: "text"; text: string }
 		| { type: "image"; image: string }
-		| { type: "file"; data: string; mimeType: string }
+		| { type: "file"; data: string; mediaType: string }
 	>
 > {
 	const parts: Array<
 		| { type: "text"; text: string }
 		| { type: "image"; image: string }
-		| { type: "file"; data: string; mimeType: string }
+		| { type: "file"; data: string; mediaType: string }
 	> = [];
 
 	for (const att of attachments) {

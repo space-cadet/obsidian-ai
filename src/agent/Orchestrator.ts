@@ -13,6 +13,7 @@ import { AgentLoop } from "./AgentLoop";
 import { ToolExecutor } from "./ToolExecutor";
 import { estimateTokens } from "../context/tokenEstimator";
 import { buildBudgetedHistory } from "../context/contextBudget";
+import { normalizeModelContentPart } from "../lib/modelContent";
 import { describeToolsForPrompt } from "./toolRegistry";
 import { DEFAULT_AGENT_PROMPT } from "../defaultAgentPrompt";
 
@@ -300,13 +301,16 @@ export class Orchestrator {
 		}> = [{ role: "system", content: systemPrompt }];
 
 		for (const msg of thread) {
+			const modelParts = msg.resolvedParts?.map(
+				normalizeModelContentPart,
+			);
 			if (this.contextStrategy === "isolated") {
 				// Isolated: agent only sees user messages + its own responses
 				if (msg.role === "user" || msg.agentId === agentId) {
-					const content = msg.resolvedParts?.length
+					const content = modelParts?.length
 						? [
 								{ type: "text" as const, text: msg.content },
-								...msg.resolvedParts,
+								...modelParts,
 							]
 						: msg.content;
 					context.push({
@@ -329,11 +333,8 @@ export class Orchestrator {
 				) {
 					content = `[Remote User ${msg.fromUserId}]: ${msg.content}`;
 				}
-				const multimodalContent = msg.resolvedParts?.length
-					? [
-							{ type: "text" as const, text: content },
-							...msg.resolvedParts,
-						]
+				const multimodalContent = modelParts?.length
+					? [{ type: "text" as const, text: content }, ...modelParts]
 					: content;
 				context.push({
 					role: msg.role === "user" ? "user" : "assistant",
@@ -342,12 +343,13 @@ export class Orchestrator {
 			}
 		}
 
+		const currentModelParts = resolvedParts.map(normalizeModelContentPart);
 		context.push({
 			role: "user",
-			content: resolvedParts.length
+			content: currentModelParts.length
 				? ([
 						{ type: "text" as const, text: cleanText },
-						...resolvedParts,
+						...currentModelParts,
 					] as MessageContentPart[])
 				: cleanText,
 		});

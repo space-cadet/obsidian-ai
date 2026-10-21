@@ -2,6 +2,7 @@ import type { ChatMessage } from "../types";
 import type { ToolCall, ToolResult } from "../agent/types";
 import { projectToolResultForModel } from "../context/toolResultProjection";
 import { serializeToolResult } from "../context/toolResultReference";
+import { normalizeModelContentPart } from "./modelContent";
 
 export interface HistoryEntry {
 	role: "user" | "assistant" | "tool";
@@ -228,11 +229,8 @@ function buildReplayContent(
 	).map((part) =>
 		part?.type === "image"
 			? { type: "text" as const, text: "[image attached]" }
-			: part,
+			: normalizeModelContentPart(part),
 	);
 
-	return [
-		{ type: "text", text: replayText },
-		...replayParts,
-	];
+	return [{ type: "text", text: replayText }, ...replayParts];
 }
