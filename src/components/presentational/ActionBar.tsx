@@ -77,13 +77,9 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	const showMoreMenu = (event: React.MouseEvent) => {
 		const menu = new Menu();
 		menu.addItem((item) =>
-			item.setTitle("Session").setIsLabel(true).setSection("session"),
-		);
-		menu.addItem((item) =>
 			item
 				.setTitle("Rename session…")
 				.setIcon("pencil")
-				.setSection("session")
 				.onClick(() => onManualRename()),
 		);
 		menu.addItem((item) =>
@@ -91,35 +87,31 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				.setTitle("Auto-name new chats")
 				.setIcon("text-cursor-input")
 				.setChecked(autoNameSessions)
-				.setSection("session")
 				.onClick(() => onToggleAutoName()),
 		);
 
-		menu.addItem((item) =>
-			item.setTitle("Safety").setIsLabel(true).setSection("safety"),
-		);
+		menu.addSeparator();
 		menu.addItem((item) =>
 			item
 				.setTitle("Auto-approve tool calls")
 				.setIcon("bot")
 				.setChecked(autoApprove)
-				.setSection("safety")
 				.onClick(() => onToggleAutoApprove()),
 		);
 
-		menu.addItem((item) =>
-			item
-				.setTitle("Collaboration")
-				.setIsLabel(true)
-				.setSection("collaboration"),
-		);
+		const hasCollaborationActions =
+			(onToggleDebateMode && (participantCount ?? 0) >= 2) ||
+			Boolean(onToggleRemoteUserDropdown) ||
+			Boolean(onToggleRelay);
+		if (hasCollaborationActions) {
+			menu.addSeparator();
+		}
 		if (onToggleDebateMode && (participantCount ?? 0) >= 2) {
 			menu.addItem((item) =>
 				item
 					.setTitle("Debate mode")
 					.setIcon("message-circle")
 					.setChecked(debateMode ?? false)
-					.setSection("collaboration")
 					.onClick(() => onToggleDebateMode()),
 			);
 		}
@@ -128,7 +120,6 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				item
 					.setTitle(`Room members (${remoteUserCount ?? 0})`)
 					.setIcon("users")
-					.setSection("collaboration")
 					.onClick(() => onToggleRemoteUserDropdown()),
 			);
 		}
@@ -140,30 +131,23 @@ const ActionBar: React.FC<ActionBarProps> = ({
 					)
 					.setIcon("plug-zap")
 					.setChecked(relayEnabled ?? false)
-					.setSection("collaboration")
 					.onClick(() => onToggleRelay()),
 			);
 		}
 
-		menu.addItem((item) =>
-			item.setTitle("Data").setIsLabel(true).setSection("data"),
-		);
+		menu.addSeparator();
 		menu.addItem((item) =>
 			item
 				.setTitle("Export sessions…")
 				.setIcon("download")
-				.setSection("data")
 				.onClick(() => onExportChat()),
 		);
 		if (onCheckForUpdates) {
-			menu.addItem((item) =>
-				item.setTitle("Plugin").setIsLabel(true).setSection("plugin"),
-			);
+			menu.addSeparator();
 			menu.addItem((item) =>
 				item
 					.setTitle("Check for Updates")
 					.setIcon("refresh-cw")
-					.setSection("plugin")
 					.onClick(onCheckForUpdates),
 			);
 		}
