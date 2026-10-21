@@ -1251,15 +1251,26 @@
 }
 
 .chat-bubble-content-segment {
-	/* Keep long rendered expressions reachable in the current content-parts path. */
 	min-width: 0;
+	max-width: 100%;
+	user-select: text;
+}
+
+/* Let only long math expressions scroll, leaving their surrounding text fixed. */
+.chat-bubble-content-segment mjx-container,
+.chat-bubble-content mjx-container {
+	box-sizing: border-box;
 	max-width: 100%;
 	overflow-x: auto;
 	overscroll-behavior-x: contain;
 	-webkit-overflow-scrolling: touch;
 	touch-action: pan-x pan-y;
 	scrollbar-width: thin;
-	user-select: text;
+}
+
+.chat-bubble-content-segment mjx-container:not([display="true"]),
+.chat-bubble-content mjx-container:not([display="true"]) {
+	display: inline-block;
 }
 
 .chat-bubble-content-segment p:last-child {
@@ -1285,9 +1296,6 @@
 	box-sizing: border-box;
 	min-width: 0;
 	max-width: 100%;
-	overflow-x: auto;
-	overscroll-behavior-x: contain;
-	-webkit-overflow-scrolling: touch;
 }
 
 .chat-markdown-table-scroll {
