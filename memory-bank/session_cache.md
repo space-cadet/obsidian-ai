@@ -1,8 +1,8 @@
 # Session Cache
 
-*Last Updated: 2026-10-21 18:45:14 IST*
+*Last Updated: 2026-10-21 19:51:24 IST*
 
-## 2026-10-21 — T76 Latest Effective System Prompt Preview
+## 2026-10-21 — T75a Latest Effective System Prompt Preview
 
 - Added a read-only, copyable view of the latest effective system message to
   the existing Agent prompt modal, alongside the editable shared base prompt.
@@ -12,9 +12,12 @@
 - The latest prompt snapshot is transient in-memory state and clears on reload.
   Note and attachment bodies are sent separately as message context.
 - Switching between prompt views preserves an unsaved base-prompt draft.
+- `get_agent_prompt` returns the base prompt and the latest captured effective
+  system prompt with its content, label, and capture time. The user confirmed
+  agent-tool access works.
 - Production build, changed-file Prettier checks, and `git diff --check`
-  passed. Tests and live Obsidian acceptance were not run.
-- See `tasks/T76.md` and
+  passed for the implementation commits. Automated tests were not run.
+- See `tasks/T75a.md` and
   `sessions/2026-10-21-effective-system-prompt-preview.md`.
 
 ## 2026-10-21 — T75 Agent Prompt Management and Legacy Editor Removal

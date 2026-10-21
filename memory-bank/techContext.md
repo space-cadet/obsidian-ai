@@ -1,6 +1,6 @@
 # Technical Context: Obsidian AI Plugin
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-10-21 18:45:14 IST*
+*Last Updated: 2026-10-21 19:51:24 IST*
 
 ## Current Technical Snapshot (2026-10-21)
 
@@ -16,12 +16,13 @@
 - The same modal can show and copy the latest effective system message used by
   single-agent or group-agent chat. It is captured at request time, labeled by
   profile/participant and model, and held in memory until reload. Note and
-  attachment bodies remain separate message context.
+  attachment bodies remain separate message context. `get_agent_prompt` also
+  returns the latest captured prompt with its content, label, and capture time.
 - CodeMirror is registered for chat-originated note diff review through
   `generatedResponseState`, `editContextState`, and `diffExtension`. The former
   selection/cursor tooltip editor, its prompt history, and custom editor
   prompt commands were removed under T75.
-- See `systemPatterns.md`, `tasks/T75.md`, `tasks/T76.md`, and
+- See `systemPatterns.md`, `tasks/T75.md`, `tasks/T75a.md`, and
   `implementation-details/settings-provider-design.md` for current details.
 
 The sections below preserve an older v1.2.4/v2.0 design snapshot. References to

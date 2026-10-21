@@ -1,6 +1,6 @@
 # Session 2026-10-21 — Latest Effective System Prompt Preview
 
-- **Task:** T76
+- **Task:** T75a, subtask of T75 (originally recorded as T76)
 - **Source branch:** `codex/t75-agent-prompt-editor`
 - **Base commit:** `59c26b114602ecf6e229f54e8c100ef3b8ae1c64`
 
@@ -25,3 +25,16 @@ prompt editor.
 
 - Production build, changed-file Prettier checks, and `git diff --check` passed.
 - Tests and live Obsidian UI acceptance were not run.
+
+## Agent-Tool Access Follow-up — 2026-10-21
+
+- Commit `7ebb999` extended `get_agent_prompt` to return both the shared base
+  prompt and the latest captured effective system prompt, including its
+  content, label, and capture time. The tool wiring covers single-agent,
+  group-agent, and approval fallback paths.
+- The user confirmed the Settings preview and agent-tool access work. The
+  production build, Prettier checks, and `git diff --check` passed; automated
+  tests were not run.
+- The preview and tool-access work is consolidated as subtask T75a under T75.
+  The original T76 edit chunk is retained as historical provenance. No safe
+  Markdown edit-history generator is available for the text-primary bank.
