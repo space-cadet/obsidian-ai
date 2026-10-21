@@ -2,7 +2,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { waitFor } from "@testing-library/dom";
 import { renderDataHealth } from "../dataHealth";
 import { checkDataHealth } from "../../diagnostics/dataHealth";
+const { repairModalMock } = vi.hoisted(() => ({
+	repairModalMock: { open: vi.fn(), args: [] as unknown[] },
+}));
 vi.mock("../../diagnostics/dataHealth", () => ({ checkDataHealth: vi.fn() }));
+vi.mock("../../modals/DataRepairModal", () => ({
+	DataRepairModal: class {
+		constructor(...args: unknown[]) {
+			repairModalMock.args = args;
+		}
+		open() {
+			repairModalMock.open();
+		}
+	},
+}));
 vi.mock("obsidian", () => ({
 	Notice: class {},
 	Setting: class {
@@ -93,6 +106,14 @@ function setup() {
 	return { container, app, run, save };
 }
 describe("data health controls", () => {
+	it("opens the repair review modal on request", () => {
+		const { app, container } = setup();
+		repairModalMock.open.mockClear();
+		container.querySelectorAll("button")[2].click();
+		expect(repairModalMock.args).toEqual([app, "chat-lab", undefined]);
+		expect(repairModalMock.open).toHaveBeenCalledOnce();
+	});
+
 	it("scans only on request and exports only on an explicit export click", async () => {
 		vi.mocked(checkDataHealth).mockResolvedValue(report);
 		const { container, app, run, save } = setup();

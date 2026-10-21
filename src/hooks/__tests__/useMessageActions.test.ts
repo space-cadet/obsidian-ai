@@ -94,7 +94,7 @@ vi.mock("../lib/sessionUtils", () => ({
 vi.mock("../../agent/ToolExecutor", () => ({
 	ToolExecutor: vi.fn().mockImplementation(function (...args) {
 		mockToolExecutorConstructor(...args);
-		const instance = {
+		const instance: any = {
 			execute: vi.fn().mockResolvedValue({ success: true }),
 			getResolvedToolRegistry: vi.fn(() => ({
 				definitions: [],
@@ -102,6 +102,9 @@ vi.mock("../../agent/ToolExecutor", () => ({
 				byId: new Map(),
 			})),
 		};
+		instance.setLatestSystemPromptReader = vi.fn((reader) => {
+			instance.latestSystemPromptReader = reader;
+		});
 		mockToolExecutorInstances.push(instance);
 		return instance;
 	}),
@@ -769,9 +772,15 @@ describe("useMessageActions", () => {
 				createdAt: 1,
 				contextItems: [],
 			} as any;
+			const latestSystemPrompt = {
+				content: "Current system prompt",
+				label: "Single-agent · Test (gpt-4)",
+				capturedAt: 123,
+			};
 			const deps = makeDeps({
 				plugin: {
 					...mockPlugin,
+					latestSystemPrompt,
 					settings: {
 						...mockPlugin.settings,
 						enableAgentTools: true,
@@ -799,6 +808,12 @@ describe("useMessageActions", () => {
 			});
 
 			expect(mockToolExecutorInstances).toHaveLength(1);
+			expect(
+				mockToolExecutorInstances[0].setLatestSystemPromptReader,
+			).toHaveBeenCalled();
+			expect(
+				mockToolExecutorInstances[0].latestSystemPromptReader(),
+			).toEqual(latestSystemPrompt);
 			expect(mockToolExecutorInstances[0].execute).toHaveBeenCalledWith(
 				toolCall,
 				expect.any(AbortSignal),

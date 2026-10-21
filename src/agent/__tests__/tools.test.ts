@@ -34,6 +34,9 @@ const EXPECTED_TOOLS = [
 	"search_past_sessions",
 	"read_tool_result",
 	"read_settings",
+	"get_agent_prompt",
+	"update_agent_prompt",
+	"reset_agent_prompt",
 	"update_setting",
 	"get_plugin_info",
 ];
@@ -87,7 +90,11 @@ describe("read_note schema", () => {
 
 	it("accepts valid input", () => {
 		const result = schema.parse({ path: "My Note" });
-		expect(result).toEqual({ path: "My Note" });
+		expect(result).toEqual({
+			path: "My Note",
+			start_line: 1,
+			line_count: 200,
+		});
 	});
 
 	it("rejects missing path", () => {

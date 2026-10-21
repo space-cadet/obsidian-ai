@@ -8,7 +8,7 @@ describe("buildBudgetedHistory", () => {
 			currentMessage: "current",
 			history: ["old-1", "old-2", "recent-1", "recent-2"],
 			options: {
-				maxRequestTokens: 11,
+				maxRequestTokens: 9,
 				maxMessages: 10,
 				preserveRecentMessages: 2,
 				responseReserveTokens: 0,

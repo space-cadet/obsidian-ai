@@ -87,7 +87,7 @@ describe("canonical tool registry", () => {
 			await validateToolArguments(definition, { path: "Ideas" }),
 		).toEqual({
 			ok: true,
-			args: { path: "Ideas" },
+			args: { path: "Ideas", start_line: 1, line_count: 200 },
 		});
 		expect(await validateToolArguments(definition, {})).toMatchObject({
 			ok: false,
@@ -273,8 +273,9 @@ describe("provider tool model-schema normalization", () => {
 		expect(
 			await validateToolArguments(definition, { depth: 5 }),
 		).toMatchObject({ ok: true, args: { depth: 5 } });
-		expect(await validateToolArguments(definition, { depth: "x" }))
-			.toMatchObject({ ok: false });
+		expect(
+			await validateToolArguments(definition, { depth: "x" }),
+		).toMatchObject({ ok: false });
 	});
 
 	it("passes Zod provider schemas through untouched", async () => {

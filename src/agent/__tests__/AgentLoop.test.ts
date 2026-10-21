@@ -293,7 +293,8 @@ describe("AgentLoop", () => {
 			maxSteps: 3,
 			autoApprove: true,
 			maxToolResultTokens: 20,
-			maxRequestTokens: 80,
+			// The initial request fits; the truncated tool continuation exceeds it.
+			maxRequestTokens: 30,
 			maxContextMessages: 10,
 			preserveRecentMessages: 1,
 			requestResponseReserveTokens: 0,
