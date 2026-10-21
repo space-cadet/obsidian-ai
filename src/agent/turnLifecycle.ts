@@ -926,6 +926,15 @@ export class TurnLifecycle {
 				"The request exceeds the configured model context budget. Reduce the prompt or increase the request budget.",
 			);
 		}
+		const effectiveSystemPrompt = modelHistoryResult.messages.find(
+			(message) => message.role === "system",
+		)?.content;
+		if (typeof effectiveSystemPrompt === "string") {
+			deps.plugin.recordSystemPrompt?.(
+				`Single-agent · ${activeProfile.name} (${activeProfile.model})`,
+				effectiveSystemPrompt,
+			);
+		}
 
 		const chatMessages = modelHistoryResult.messages;
 

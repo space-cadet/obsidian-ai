@@ -61,6 +61,8 @@ export interface OrchestratorOptions {
 	agentPrompt?: string;
 	/** Read the latest persisted prompt if settings change while this orchestrator stays mounted. */
 	getAgentPrompt?: () => string;
+	/** Capture the exact per-agent system prompt immediately before a request. */
+	onSystemPromptUsed?: (label: string, prompt: string) => void;
 	/** Tool executor for running Obsidian note tools. If provided with enableTools=true, agents will use tool calling. */
 	toolExecutor?: ToolExecutor;
 	/** IDs of remote users participating in this chat (relay user IDs) */
@@ -89,6 +91,7 @@ export class Orchestrator {
 	maxToolResultTokens: number;
 	agentPrompt: string;
 	getAgentPrompt?: () => string;
+	onSystemPromptUsed?: (label: string, prompt: string) => void;
 	toolExecutor?: ToolExecutor;
 
 	constructor(options: OrchestratorOptions) {
@@ -112,6 +115,7 @@ export class Orchestrator {
 		this.maxToolResultTokens = options.maxToolResultTokens ?? 4000;
 		this.agentPrompt = options.agentPrompt?.trim() || DEFAULT_AGENT_PROMPT;
 		this.getAgentPrompt = options.getAgentPrompt;
+		this.onSystemPromptUsed = options.onSystemPromptUsed;
 		this.toolExecutor = options.toolExecutor;
 		this.remoteUsers = options.remoteUsers ?? [];
 	}
@@ -457,6 +461,12 @@ export class Orchestrator {
 				...budgetedHistory.history,
 				currentMessage,
 			];
+			if (typeof systemMessage?.content === "string") {
+				this.onSystemPromptUsed?.(
+					`${engine.name} (${engine.profile.model})`,
+					systemMessage.content,
+				);
+			}
 
 			// Tool-enabled path: use AgentLoop (same as single-user chat)
 			if (this.enableTools && this.toolExecutor) {

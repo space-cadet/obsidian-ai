@@ -1,7 +1,7 @@
 # Memory Bank - Obsidian AI
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-10-21 17:52:24 IST*
+*Last Updated: 2026-10-21 18:45:14 IST*
 
 ## Overview
 
@@ -120,6 +120,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T61 | Self-Settings Agent Tools | ✅ | HIGH | 2026-08-26 | 2026-08-29 | — | [Details](tasks/T61.md) |
 | T64b | Preserve Mode Content Retention | ✅ | HIGH | 2026-08-27 | 2026-08-29 | T64 | [Details](tasks/T64b.md) |
 | T75 | Editable Agent Prompt and Legacy Editor Removal | ✅ | HIGH | 2026-10-21 | 2026-10-21 | T43, T61, T5 | [Details](tasks/T75.md) |
+| T76 | Latest Effective System Prompt Preview | ✅ | HIGH | 2026-10-21 | 2026-10-21 | T75 | [Details](tasks/T76.md) |
 
 ## Disabled / Removed Tasks
 
@@ -328,12 +329,14 @@ T75: Editable Agent Prompt and Legacy Editor Removal
   └── T43
   └── T61
   └── T5
+T76: Latest Effective System Prompt Preview
+  └── T75
 
 ## Status Summary
 
 - **Active**: 39
-- **Completed**: 57
+- **Completed**: 58
 - **Paused**: 4
 - **Cancelled**: 1
 - **Disabled**: 1
-- **Total**: 102
+- **Total**: 103

@@ -20,6 +20,12 @@ export interface ChatPluginLike {
 	chatapi: ChatApiManager;
 	manifest: { id: string };
 	settings: ObsidianAISettings;
+	latestSystemPrompt?: {
+		label: string;
+		content: string;
+		capturedAt: number;
+	} | null;
+	recordSystemPrompt?(label: string, content: string): void;
 	sessionState?:
 		| import("../state/SessionStateOwner").SessionStateOwner
 		| null;

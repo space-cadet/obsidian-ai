@@ -1,5 +1,23 @@
 # Active Context
 
+*Last Updated: 2026-10-21 18:45:14 IST*
+
+### 2026-10-21 — Latest effective system prompt preview (T76)
+
+- The Agent prompt modal now switches between the editable shared base prompt
+  and a read-only preview of the latest system message actually sent to a model.
+- Single-agent capture uses the final model history after runtime tool-catalog
+  guidance is added. Group chat captures each participant's composed prompt and
+  labels it with that agent and model.
+- The preview can be copied and is kept in memory only until Chat Lab reloads.
+  Note and attachment bodies remain separate message context and are not part
+  of the system prompt.
+- Production build, changed-file Prettier checks, and `git diff --check` passed.
+  Tests and live Obsidian acceptance were not run.
+- Switching between prompt views preserves any unsaved base-prompt draft.
+- See `tasks/T76.md`, `sessions/2026-10-21-effective-system-prompt-preview.md`,
+  and the T76 edit chunk.
+
 ### 2026-10-21 — Agent prompt management and legacy editor removal (T75)
 
 - The shared base prompt now lives in `settings.agentPrompt`, includes
@@ -12,7 +30,8 @@
   custom editor commands, and current references in user-facing docs. Chat
   Apply-to-Note diff review remains available.
 - `pnpm run build`, changed-file formatting checks, and `git diff --check`
-  passed. Tests and live Obsidian acceptance were not run. No commit or push.
+  passed. T75 was committed as `59c26b1` and pushed to
+  `codex/t75-agent-prompt-editor`.
 - Historical entries below are retained; T43 and T61 have dated follow-ups.
 
 ### 2026-10-21 — Obsidian math delimiters in agent prompts

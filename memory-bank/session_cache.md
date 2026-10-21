@@ -1,6 +1,21 @@
 # Session Cache
 
-*Last Updated: 2026-10-21 17:52:24 IST*
+*Last Updated: 2026-10-21 18:45:14 IST*
+
+## 2026-10-21 — T76 Latest Effective System Prompt Preview
+
+- Added a read-only, copyable view of the latest effective system message to
+  the existing Agent prompt modal, alongside the editable shared base prompt.
+- Captures the final single-agent system message after runtime tool guidance
+  and each composed group-agent system message, with the relevant profile or
+  participant and model label.
+- The latest prompt snapshot is transient in-memory state and clears on reload.
+  Note and attachment bodies are sent separately as message context.
+- Switching between prompt views preserves an unsaved base-prompt draft.
+- Production build, changed-file Prettier checks, and `git diff --check`
+  passed. Tests and live Obsidian acceptance were not run.
+- See `tasks/T76.md` and
+  `sessions/2026-10-21-effective-system-prompt-preview.md`.
 
 ## 2026-10-21 — T75 Agent Prompt Management and Legacy Editor Removal
 
@@ -14,7 +29,8 @@
   chat-originated diff review remains.
 - Production build, changed-file formatting checks, and `git diff --check`
   passed. Tests and live Obsidian acceptance were not run.
-- No commit or push. See `tasks/T75.md` and
+- T75 was committed as `59c26b1` and pushed to
+  `codex/t75-agent-prompt-editor`. See `tasks/T75.md` and
   `sessions/2026-10-21-agent-prompt-and-editor-removal.md`.
 
 ## 2026-10-21 — Obsidian math delimiters in agent prompts

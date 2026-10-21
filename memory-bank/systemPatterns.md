@@ -1,6 +1,6 @@
 # System Patterns: Obsidian AI Plugin
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-10-21 17:52:24 IST*
+*Last Updated: 2026-10-21 18:45:14 IST*
 
 ## Core Principles
 
@@ -86,6 +86,13 @@ native `AgentPromptModal` to view, edit, save, or restore it. `get_agent_prompt`
 reads the prompt; `update_agent_prompt` and `reset_agent_prompt` require
 Developer mode. Runtime context such as tools, notes, persona/memory, and
 participants is assembled separately for each request.
+
+The modal also shows the latest effective system message captured at the
+provider boundary. Single-agent chat records the final system message after
+runtime tool-catalog guidance is added; group chat records each participant's
+composed system message. This preview is read-only, copyable, and transient in
+memory until reload. Note and attachment bodies are sent separately as message
+context and are not included in this system-message snapshot.
 
 - **Single-agent chat**: `turnLifecycle` builds the prompt, then sends it through
   the configured provider.

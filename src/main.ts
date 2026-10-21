@@ -62,6 +62,11 @@ export default class ObsidianAIPlugin extends Plugin {
 	static readonly LEGACY_PLUGIN_ID = "obsidian-ai";
 	static readonly LS_WEBDAV_PASSWORD = "obsidian-ai:webdav-password";
 	settings: ObsidianAISettings = DEFAULT_SETTINGS;
+	latestSystemPrompt: {
+		label: string;
+		content: string;
+		capturedAt: number;
+	} | null = null;
 	chatapi!: ChatApiManager;
 	agentapi: AgentApiManager | null = null;
 	logger!: FileLogger;
@@ -76,6 +81,14 @@ export default class ObsidianAIPlugin extends Plugin {
 		| import("./sync/SyncRetryStore").DurableSyncRetryStore
 		| null = null;
 	syncHub = new SyncStatusHub();
+
+	recordSystemPrompt(label: string, content: string): void {
+		this.latestSystemPrompt = {
+			label,
+			content,
+			capturedAt: Date.now(),
+		};
+	}
 
 	// Data integrity guards
 	_backupCreated = false;

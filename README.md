@@ -33,12 +33,12 @@
 
 ### Additional features
 
-| Feature                   | What It Does                                                           |
-| ------------------------- | ---------------------------------------------------------------------- |
-| **Chat Note Editing**     | Review AI-generated note changes in a visual diff before applying them |
-| **Editable Agent Prompt** | View, edit, or restore the shared prompt in Settings → Chat Defaults   |
-| **Mobile Layout**         | Responsive chat controls for phone and tablet screens                  |
-| **Auto-Updater**          | Check and install stable or development releases                       |
+| Feature               | What It Does                                                                       |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| **Chat Note Editing** | Review AI-generated note changes in a visual diff before applying them             |
+| **Agent Prompt**      | Edit the shared base prompt or inspect and copy the latest generated system prompt |
+| **Mobile Layout**     | Responsive chat controls for phone and tablet screens                              |
+| **Auto-Updater**      | Check and install stable or development releases                                   |
 
 ## ✨ What It Does
 

@@ -1,6 +1,6 @@
 # Settings & Provider Profile Design
 *Created: 2026-05-02 11:46:39 IST*
-*Last Updated: 2026-10-21 17:52:24 IST*
+*Last Updated: 2026-10-21 18:45:14 IST*
 
 ## Overview
 
@@ -22,6 +22,13 @@ into provider keys during settings load and import/sync merges.
 T75 follow-up: the shared base agent prompt is persisted as `agentPrompt` and
 edited in a modal launched from Chat Defaults. The former selection/cursor
 prompt, custom editor-command, and prompt-history settings have been removed.
+
+T76 adds a read-only, copyable latest-system-prompt view to that modal. It
+captures the final single-agent system message after dynamic tool guidance is
+added, or each participant's composed message in group chat. The snapshot is
+transient and cleared on plugin reload; note and attachment bodies remain
+separate message context. Switching views preserves an unsaved base-prompt
+draft.
 
 ## Generated UI Reference
 

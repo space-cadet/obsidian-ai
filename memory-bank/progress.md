@@ -1,3 +1,12 @@
+### 2026-10-21 — Latest effective system prompt preview (T76) ✅
+
+- Added a read-only, copyable preview of the latest system prompt actually
+  sent to single-agent or group-agent models, beside the editable base prompt.
+- Kept the snapshot in memory only and labeled group prompts by participant
+  and model. Note and attachment bodies remain separate message context.
+- Production build, changed-file Prettier checks, and `git diff --check` passed.
+  Tests and live Obsidian acceptance were not run.
+
 ### 2026-10-18 — Chat UI, thinking controls, settings context, and cleanup ✅
 
 - On `ui-chat-fixes`, fixed three-plus-line composer layout and inflated

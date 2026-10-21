@@ -136,7 +136,7 @@ export function renderChatDefaultsSection(
 	new Setting(sectionEl)
 		.setName("Agent prompt")
 		.setDesc(
-			"View or edit the complete base prompt shared by single-agent and group-agent chats. Reset to restore the built-in prompt.",
+			"Edit the shared base prompt or view and copy the latest generated system prompt.",
 		)
 		.addButton((button) =>
 			button.setButtonText("View and edit").onClick(() => {

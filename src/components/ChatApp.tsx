@@ -440,6 +440,8 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			maxToolResultTokens: plugin.settings.maxToolResultTokens ?? 4000,
 			agentPrompt: plugin.settings.agentPrompt,
 			getAgentPrompt: () => plugin.settings.agentPrompt,
+			onSystemPromptUsed: (label, prompt) =>
+				plugin.recordSystemPrompt?.(`Group agent · ${label}`, prompt),
 			toolExecutor: new ToolExecutor(
 				plugin.app,
 				plugin.settings,

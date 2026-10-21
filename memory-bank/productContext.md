@@ -1,13 +1,14 @@
 # Product Context: Obsidian AI Plugin
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-10-21 17:52:24 IST*
+*Last Updated: 2026-10-21 18:45:14 IST*
 
 ## Current Product Snapshot (2026-10-21)
 
 Chat Lab AI is chat-first. Agents can use vault tools, and responses can be
 applied to notes through diff review. The former selection/cursor tooltip
 editor was removed under T75. The shared base prompt is editable in Settings
-→ Chat Defaults, with read/update/reset agent tools.
+→ Chat Defaults, with read/update/reset agent tools. The same modal shows and
+copies the latest effective system prompt used for a request.
 
 ## Problem Statement
 
