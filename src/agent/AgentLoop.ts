@@ -152,6 +152,21 @@ function formatToolResult(toolName: string, result: ToolResult): string {
 
 		case "read_note": {
 			let output = result.content ?? "(empty note)";
+			if (result.start_char !== undefined) {
+				output =
+					`[Read range: characters ${result.start_char}-${result.end_char ?? result.start_char} (end exclusive) of ${result.total_chars ?? "unknown"}.` +
+					(result.has_more && result.next_offset !== undefined
+						? ` More remains; continue with start_char=${result.next_offset} and the same char_count.]\n\n`
+						: " End of file.]\n\n") +
+					output;
+			} else if (result.start_line !== undefined) {
+				output =
+					`[Read range: lines ${result.start_line}-${result.end_line ?? result.start_line} of ${result.total_lines ?? "unknown"}.` +
+					(result.has_more
+						? ` More remains; continue with start_line=${(result.end_line ?? result.start_line) + 1} and the same line_count.]\n\n`
+						: " End of file.]\n\n") +
+					output;
+			}
 			if (result.content_fingerprint) {
 				output =
 					`[Note metadata — do not include in note content]\n` +

@@ -19,25 +19,92 @@ export class NoteHandlers extends ToolHandlerBase {
 		super(context);
 	}
 
-	async readNote(args: { path: string }): Promise<ToolResult> {
+	async readNote(args: {
+		path: string;
+		start_line?: number;
+		line_count?: number;
+		start_char?: number;
+		char_count?: number;
+	}): Promise<ToolResult> {
 		if (!isPathAllowed(args.path)) return denyPath(args.path);
 		const file = this.resolver.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
 		const content = await this.app.vault.read(file);
 		const fingerprint = await contentFingerprint(content);
+		const usesCharacterRange =
+			args.start_char !== undefined || args.char_count !== undefined;
+		if (usesCharacterRange) {
+			const requestedStart = args.start_char ?? 0;
+			const requestedCount = args.char_count ?? 6000;
+			if (
+				!Number.isFinite(requestedStart) ||
+				requestedStart < 0 ||
+				!Number.isFinite(requestedCount) ||
+				requestedCount < 1
+			) {
+				return {
+					error: "start_char must be non-negative and char_count must be positive.",
+				};
+			}
+			const startChar = Math.min(
+				Math.floor(requestedStart),
+				content.length,
+			);
+			const charCount = Math.min(8000, Math.floor(requestedCount));
+			const endChar = Math.min(content.length, startChar + charCount);
+			const ambiguous = (file as any).__ambiguous as string[] | undefined;
+			const sectionMetadata = {
+				content: content.slice(startChar, endChar),
+				content_fingerprint: fingerprint,
+				path: file.path,
+				start_char: startChar,
+				end_char: endChar,
+				total_chars: content.length,
+				next_offset: endChar < content.length ? endChar : undefined,
+				has_more: endChar < content.length,
+			};
+			if (ambiguous && ambiguous.length > 1) {
+				return {
+					...sectionMetadata,
+					warning:
+						`⚠️ Ambiguous name: ${ambiguous.length} notes share the basename "${file.basename}". ` +
+						`Reading "${file.path}". Other matches: ${ambiguous.filter((path) => path !== file.path).join(", ")}. ` +
+						`Use the full path (e.g. "Folder/${file.basename}") to target a specific note.`,
+				};
+			}
+			return sectionMetadata;
+		}
+
+		const lines = content.split("\n");
+		const startLine = Math.max(1, Math.floor(args.start_line ?? 1));
+		const lineCount = Math.min(
+			300,
+			Math.max(1, Math.floor(args.line_count ?? 200)),
+		);
+		const section = lines.slice(startLine - 1, startLine - 1 + lineCount);
+		const endLine = section.length
+			? startLine + section.length - 1
+			: startLine - 1;
+		const sectionMetadata = {
+			content: section.join("\n"),
+			content_fingerprint: fingerprint,
+			path: file.path,
+			start_line: startLine,
+			end_line: endLine,
+			total_lines: lines.length,
+			has_more: endLine < lines.length,
+		};
 		const ambiguous = (file as any).__ambiguous as string[] | undefined;
 		if (ambiguous && ambiguous.length > 1) {
 			return {
-				content,
-				content_fingerprint: fingerprint,
-				path: file.path,
+				...sectionMetadata,
 				warning:
 					`⚠️ Ambiguous name: ${ambiguous.length} notes share the basename "${file.basename}". ` +
 					`Reading "${file.path}". Other matches: ${ambiguous.filter((path) => path !== file.path).join(", ")}. ` +
 					`Use the full path (e.g. "Folder/${file.basename}") to target a specific note.`,
 			};
 		}
-		return { content, content_fingerprint: fingerprint, path: file.path };
+		return sectionMetadata;
 	}
 
 	async editNote(args: {

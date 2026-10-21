@@ -8,13 +8,50 @@ const t = tool as any;
 
 export const readNoteTool = t({
 	description:
-		"Read the full content of an Obsidian note by its name or path. " +
-		"Use this before editing to understand the current content.",
+		"Read a bounded section of an Obsidian note by its name or path. " +
+		"Use start_line and line_count for line-based files. For long or " +
+		"minified files, use start_char and char_count to read bounded " +
+		"character ranges; continue at next_offset until has_more is false. " +
+		"When inspecting a whole file, continue through every range before " +
+		"drawing conclusions. Read every section before replacing a note so " +
+		"no content is lost.",
 	inputSchema: z.object({
 		path: z
 			.string()
 			.describe(
 				'Note name or path, e.g. "Project Notes" or "Folder/Project Notes"',
+			),
+		start_line: z
+			.number()
+			.int()
+			.min(1)
+			.optional()
+			.default(1)
+			.describe("1-based line number to start reading from (default 1)."),
+		line_count: z
+			.number()
+			.int()
+			.min(1)
+			.max(300)
+			.optional()
+			.default(200)
+			.describe("Number of lines to return (default 200, maximum 300)."),
+		start_char: z
+			.number()
+			.int()
+			.min(0)
+			.optional()
+			.describe(
+				"For character-range reads, the 0-based string offset to start at (default 0).",
+			),
+		char_count: z
+			.number()
+			.int()
+			.min(1)
+			.max(8000)
+			.optional()
+			.describe(
+				"For character-range reads, the number of characters to return (default 6000, maximum 8000). end_char is exclusive.",
 			),
 	}),
 });
@@ -632,12 +669,20 @@ export const searchPastSessionsTool = t({
 	description:
 		"Search past chat sessions by topic, keyword, or content. " +
 		"Use when the user references something from a previous conversation, " +
-		"asks 'what did we discuss about X', or when you need historical context.",
+		"asks 'what did we discuss about X', or when you need historical context. " +
+		"When the user asks for sessions with a word in the title, set scope='title'.",
 	inputSchema: z.object({
 		query: z
 			.string()
 			.describe(
 				"Search query — keywords or topic to find in past sessions",
+			),
+		scope: z
+			.enum(["all", "title", "content"])
+			.optional()
+			.default("all")
+			.describe(
+				"Where to search: all session titles and messages (default), titles only, or message content only.",
 			),
 		limit: z
 			.number()

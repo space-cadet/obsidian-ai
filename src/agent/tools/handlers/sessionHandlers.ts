@@ -18,6 +18,7 @@ export class SessionHandlers extends ToolHandlerBase {
 
 	async searchPastSessions(args: {
 		query: string;
+		scope?: "all" | "title" | "content";
 		limit?: number;
 		cursor?: string;
 	}): Promise<ToolResult> {
@@ -29,15 +30,21 @@ export class SessionHandlers extends ToolHandlerBase {
 
 		try {
 			const activeSessionId = this.getActiveSessionId?.();
+			const scope = args.scope ?? "all";
 			const results = args.cursor
 				? []
-				: (await this.searchIndex.search(args.query)).filter(
-						(result) => result.sessionId !== activeSessionId,
-					);
+				: (
+						await this.searchIndex.search(
+							args.query,
+							undefined,
+							scope,
+						)
+					).filter((result) => result.sessionId !== activeSessionId);
 			const page = this.continuations.page({
 				toolName: "search_past_sessions",
 				fingerprint: requestFingerprint("search_past_sessions", {
 					query: args.query,
+					scope,
 					active_session_id: activeSessionId ?? null,
 				}),
 				items: results,
@@ -49,14 +56,25 @@ export class SessionHandlers extends ToolHandlerBase {
 			if (page.items.length === 0) {
 				return {
 					success: true,
-					content: "No past sessions found matching your query.",
+					content:
+						scope === "title"
+							? "No past sessions found with a matching title."
+							: scope === "content"
+								? "No past sessions found with matching message content."
+								: "No past sessions found matching your query.",
 				};
 			}
 
 			const formatted = page.items
 				.map((r, i) => {
 					const date = new Date(r.timestamp).toLocaleDateString();
-					return `${i + 1}. **Session ${r.sessionId}** (${date}): ${r.snippet.slice(0, 150)}...`;
+					const title = r.sessionTitle
+						? `**${r.sessionTitle}**`
+						: `Session ${r.sessionId}`;
+					const matchType = r.isTitleMatch
+						? "title match"
+						: "message match";
+					return `${i + 1}. ${title} (${date}, ${matchType}): ${r.snippet.slice(0, 150)}...`;
 				})
 				.join("\n");
 

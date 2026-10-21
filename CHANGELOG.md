@@ -3,6 +3,31 @@
 Notable user-facing changes are recorded here. Dates reflect the project release
 records; unreleased development notes remain in the Memory Bank.
 
+## [1.8.0] - 2026-10-20
+
+### Added
+
+- Chat data health checks and a review-first repair flow with verified backups.
+- Provider- and model-aware reasoning controls, plus clearer token estimates
+  for external images.
+- Bounded line-range reading for large notes and broader past-session search
+  across titles and message content.
+- A toolbar overflow action to check for plugin updates.
+- A first-install robot assembly-line splash in the empty chat view.
+
+### Changed
+
+- Improved session coordination across chat tabs and restored conversations.
+- Added compact shortcuts for navigating Settings sections.
+- Assistant messages now use the full chat width.
+
+### Fixed
+
+- Strengthened transcript saves, deletion handling, duplicate-message cleanup,
+  and retry behavior to protect chat history.
+- Improved Codex note-edit safety and model selection, composer acceptance,
+  and visibility of completed tool calls while responses stream.
+
 ## [1.7.1] - 2026-10-17
 
 ### Fixed

@@ -101,7 +101,15 @@ export class ToolExecutor {
 		// Built-in and provider execution both pass through this map.
 		const builtInDefinitions = createBuiltInToolDefinitionsWithExecutors({
 			read_note: (call) =>
-				this.noteHandlers.readNote(call.args as { path: string }),
+				this.noteHandlers.readNote(
+					call.args as {
+						path: string;
+						start_line?: number;
+						line_count?: number;
+						start_char?: number;
+						char_count?: number;
+					},
+				),
 			edit_note: (call) =>
 				this.noteHandlers.editNote(
 					call.args as {
@@ -258,6 +266,7 @@ export class ToolExecutor {
 				this.sessionHandlers.searchPastSessions(
 					call.args as {
 						query: string;
+						scope?: "all" | "title" | "content";
 						limit?: number;
 						cursor?: string;
 					},

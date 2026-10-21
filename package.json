@@ -1,6 +1,6 @@
 {
 	"name": "chat-lab",
-	"version": "1.7.1",
+	"version": "1.8.0",
 	"description": "AI-powered assistant for Obsidian with inline editing and persistent chat",
 	"main": "main.js",
 	"scripts": {
@@ -14,7 +14,7 @@
 		"benchmarks": "npx tsx benchmarks/context-benchmark.ts",
 		"benchmarks:generate": "npx tsx benchmarks/context-benchmark.ts --generate-fixtures",
 		"preview:build": "node scripts/build-preview.mjs",
-		"package": "pnpm run build && mkdir -p dist/chat-lab && cp main.js manifest.json styles.css dist/chat-lab/",
+		"package": "pnpm run build && mkdir -p dist/chat-lab && cp main.js manifest.json styles.css dist/chat-lab/ && cp -rf assets dist/chat-lab/",
 		"version:generate": "node scripts/generate-version-info.js",
 		"version:bump": "node version-bump.mjs && git add manifest.json versions.json",
 		"version": "pnpm run version:bump",

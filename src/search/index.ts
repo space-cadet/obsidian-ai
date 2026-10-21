@@ -6,6 +6,8 @@ export interface SearchResult {
 	messageId: string;
 	timestamp: number;
 	snippet: string;
+	sessionTitle?: string;
+	isTitleMatch?: boolean;
 }
 
 interface IndexEntry {
@@ -13,6 +15,8 @@ interface IndexEntry {
 	messageId: string;
 	timestamp: number;
 	snippet: string;
+	sessionTitle?: string;
+	isTitleMatch?: boolean;
 }
 
 const STOP_WORDS = new Set([
@@ -109,10 +113,31 @@ export class SearchIndex {
 		const pluginDir = `${this.app.vault.configDir}/plugins/${this.manifestId}`;
 		const sessionsDir = `${pluginDir}/sessions`;
 		const newIndex = new Map<string, IndexEntry[]>();
+		const sessionTitles = new Map<string, string>();
 		let foundAny = false;
 
 		// ── JSONL format ──
 		if (await adapter.exists(sessionsDir)) {
+			try {
+				const rawIndex = await adapter.read(
+					`${sessionsDir}/index.json`,
+				);
+				const storedIndex = JSON.parse(rawIndex);
+				for (const session of storedIndex.sessions ?? []) {
+					if (session.id && typeof session.title === "string") {
+						sessionTitles.set(session.id, session.title);
+						this._indexTitle(
+							newIndex,
+							session.id,
+							session.title,
+							session.updatedAt ?? session.createdAt ?? 0,
+						);
+					}
+				}
+			} catch {
+				// Older storage and partial indexes may not have session metadata.
+			}
+
 			const entries = await adapter.list(sessionsDir);
 			const jsonlFiles = entries.files.filter((f) =>
 				f.endsWith(".jsonl"),
@@ -147,7 +172,12 @@ export class SearchIndex {
 					} catch {
 						continue;
 					}
-					this._indexMessage(newIndex, sessionId, message);
+					this._indexMessage(
+						newIndex,
+						sessionId,
+						message,
+						sessionTitles.get(sessionId),
+					);
 					foundAny = true;
 				}
 			}
@@ -162,12 +192,21 @@ export class SearchIndex {
 					const data = JSON.parse(raw);
 					const sessions = data.chatData?.sessions ?? [];
 					for (const session of sessions) {
+						if (typeof session.title === "string") {
+							this._indexTitle(
+								newIndex,
+								session.id,
+								session.title,
+								session.updatedAt ?? session.createdAt ?? 0,
+							);
+						}
 						if (!Array.isArray(session.messages)) continue;
 						for (const message of session.messages) {
 							this._indexMessage(
 								newIndex,
 								session.id,
 								message as ChatMessage,
+								session.title,
 							);
 						}
 					}
@@ -185,6 +224,7 @@ export class SearchIndex {
 	async search(
 		query: string,
 		maxAgeMs = 5 * 60 * 1000,
+		scope: "all" | "title" | "content" = "all",
 	): Promise<SearchResult[]> {
 		if (
 			!this.index ||
@@ -201,8 +241,14 @@ export class SearchIndex {
 		let results: Map<string, IndexEntry> | null = null;
 
 		for (const word of words) {
-			const entries = index.get(word);
-			if (!entries) return [];
+			const matchingWords = Array.from(index.keys()).filter(
+				(indexedWord) => this.matchesQueryWord(indexedWord, word),
+			);
+			if (matchingWords.length === 0) return [];
+
+			const entries = matchingWords.flatMap(
+				(matchingWord) => index.get(matchingWord) ?? [],
+			);
 
 			const map = new Map<string, IndexEntry>();
 			for (const entry of entries) {
@@ -226,14 +272,26 @@ export class SearchIndex {
 
 		if (!results || results.size === 0) return [];
 
-		const sorted = Array.from(results.values()).sort(
-			(a, b) => b.timestamp - a.timestamp,
-		);
+		const sorted = Array.from(results.values())
+			.filter((entry) => {
+				if (scope === "title") return entry.isTitleMatch === true;
+				if (scope === "content") return entry.isTitleMatch !== true;
+				return true;
+			})
+			.sort((a, b) => {
+				// A title hit directly answers title-specific requests. Keep it
+				// ahead of newer message matches so pagination cannot hide it.
+				if (a.isTitleMatch !== b.isTitleMatch)
+					return a.isTitleMatch ? -1 : 1;
+				return b.timestamp - a.timestamp;
+			});
 		return sorted.map((e) => ({
 			sessionId: e.sessionId,
 			messageId: e.messageId,
 			timestamp: e.timestamp,
 			snippet: e.snippet,
+			sessionTitle: e.sessionTitle,
+			isTitleMatch: e.isTitleMatch,
 		}));
 	}
 
@@ -256,10 +314,63 @@ export class SearchIndex {
 		return words.filter((w) => w.length > 1 && !STOP_WORDS.has(w));
 	}
 
+	private matchesQueryWord(indexedWord: string, queryWord: string): boolean {
+		if (indexedWord === queryWord) return true;
+		if (indexedWord.startsWith(queryWord)) return true;
+		if (queryWord.length < 5) return false;
+		if (Math.abs(indexedWord.length - queryWord.length) > 1) return false;
+
+		let edits = 0;
+		let i = 0;
+		let j = 0;
+		while (i < indexedWord.length && j < queryWord.length) {
+			if (indexedWord[i] === queryWord[j]) {
+				i++;
+				j++;
+				continue;
+			}
+			edits++;
+			if (edits > 1) return false;
+			if (indexedWord.length > queryWord.length) i++;
+			else if (queryWord.length > indexedWord.length) j++;
+			else {
+				i++;
+				j++;
+			}
+		}
+		if (i < indexedWord.length || j < queryWord.length) edits++;
+		return edits <= 1;
+	}
+
+	private _indexTitle(
+		newIndex: Map<string, IndexEntry[]>,
+		sessionId: string,
+		title: string,
+		timestamp: number,
+	): void {
+		const seen = new Set<string>();
+		for (const word of this.tokenize(title)) {
+			if (seen.has(word)) continue;
+			seen.add(word);
+			const entry: IndexEntry = {
+				sessionId,
+				messageId: "",
+				timestamp,
+				snippet: title.slice(0, 200),
+				sessionTitle: title,
+				isTitleMatch: true,
+			};
+			const list = newIndex.get(word);
+			if (list) list.push(entry);
+			else newIndex.set(word, [entry]);
+		}
+	}
+
 	private _indexMessage(
 		newIndex: Map<string, IndexEntry[]>,
 		sessionId: string,
 		message: ChatMessage,
+		sessionTitle?: string,
 	): void {
 		const content = message.content ?? "";
 		const snippet = content.slice(0, 200);
@@ -275,6 +386,8 @@ export class SearchIndex {
 				messageId: message.id,
 				timestamp: message.timestamp ?? 0,
 				snippet,
+				sessionTitle,
+				isTitleMatch: false,
 			};
 
 			const list = newIndex.get(word);

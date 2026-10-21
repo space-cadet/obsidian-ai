@@ -187,10 +187,13 @@ export function setupLinkInterception(container: HTMLElement, app: App): void {
 				const url = new URL(href);
 				const sessionId = url.searchParams.get("sessionId");
 				const messageId = url.searchParams.get("messageId");
-				if (sessionId && messageId) {
+				if (sessionId) {
 					window.dispatchEvent(
 						new CustomEvent("obsidian-ai:open-session", {
-							detail: { sessionId, messageId },
+							detail: {
+								sessionId,
+								messageId: messageId ?? undefined,
+							},
 						}),
 					);
 				}

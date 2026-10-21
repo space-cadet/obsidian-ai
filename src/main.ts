@@ -171,6 +171,20 @@ export default class ObsidianAIPlugin extends Plugin {
 		return saveSettings(this);
 	}
 
+	async markWelcomeSplashSeen(): Promise<void> {
+		if (this.settings.welcomeSplashSeen) return;
+		const wasLoadedFromFile = this._settingsLoadedFromFile;
+		this.settings.welcomeSplashSeen = true;
+		this._settingsLoadedFromFile = true;
+		try {
+			await this.saveSettings();
+		} catch (error) {
+			this.settings.welcomeSplashSeen = false;
+			this._settingsLoadedFromFile = wasLoadedFromFile;
+			throw error;
+		}
+	}
+
 	async loadChatData(
 		opts?: import("./storage/ChatStorage").LoadChatDataOptions,
 	): Promise<StoredChatData> {

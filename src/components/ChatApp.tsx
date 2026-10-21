@@ -112,6 +112,9 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		autoNameSessions,
 		setAutoNameSessions,
 	} = useChatSession({ plugin, profileId });
+	const [showFirstRunSplash, setShowFirstRunSplash] = useState(
+		!plugin.settings.welcomeSplashSeen,
+	);
 
 	const [wasTruncated, setWasTruncated] = useState(false);
 	const [contextTokenCount, setContextTokenCount] = useState(0);
@@ -491,6 +494,27 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		return s?.messages ?? [];
 	}, [sessions, activeSessionId]);
 	messagesRef.current = messages;
+
+	useEffect(() => {
+		if (!chatDataLoaded || !showFirstRunSplash || messages.length > 0)
+			return;
+
+		void plugin
+			.markWelcomeSplashSeen?.()
+			.catch((error) =>
+				plugin.logger?.log(
+					"warn",
+					"Could not persist first-run splash state",
+					error,
+				),
+			);
+	}, [chatDataLoaded, showFirstRunSplash, messages.length, plugin]);
+
+	useEffect(() => {
+		if (showFirstRunSplash && messages.length > 0) {
+			setShowFirstRunSplash(false);
+		}
+	}, [showFirstRunSplash, messages.length]);
 
 	// Sync remoteUsers from active session to ParticipantRouter
 	useEffect(() => {
@@ -1067,6 +1091,11 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					onOpenSync={() => {
 						void plugin.triggerSync?.(false, { useModal: true });
 					}}
+					onCheckForUpdates={() =>
+						(plugin.app as any).commands.executeCommandById(
+							`${plugin.manifest.id}:check-for-updates`,
+						)
+					}
 					onToggleAutoApprove={handleToggleAutoApprove}
 					onToggleAutoName={handleToggleAutoName}
 					onManualRename={handleManualRename}
@@ -1122,6 +1151,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				app={plugin.app}
 				renderMarkdown={renderMarkdown}
 				plugin={plugin}
+				showFirstRunSplash={showFirstRunSplash}
 				sessionId={activeSessionId}
 				contextItems={contextItems}
 				messages={messages}

@@ -32,6 +32,13 @@ export interface ToolResult {
 	total_chars?: number;
 	returned_start?: number;
 	returned_end?: number;
+	/** Character range metadata returned by read_note. */
+	start_char?: number;
+	end_char?: number;
+	/** Line range metadata returned by read_note. */
+	start_line?: number;
+	end_line?: number;
+	total_lines?: number;
 	query_match_offset?: number;
 	next_offset?: number;
 	/** Fingerprint returned with note reads for safe follow-up edits. */

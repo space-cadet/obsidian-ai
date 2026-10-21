@@ -67,8 +67,10 @@ export async function buildSystemPrompt(
 			" When the user asks for a Dataview/DQL query, use query_dataview when it is available; it accepts DQL, not DataviewJS." +
 			" For several search terms, prefer one search_note_content call with match_mode=and or any instead of separate searches." +
 			" When the user asks whether you can search past sessions, chats, conversations, or what you discussed previously, say that you can search saved chat history and call search_past_sessions with the relevant keywords." +
+			" If they specifically ask for sessions whose title contains a term, call search_past_sessions with scope='title' and search only for that term; do not infer title matches from message content." +
+			" When asked to inspect or convert a large file, use read_note to inspect it in bounded ranges instead of relying on possibly truncated context. For long or minified files, read with start_char/char_count and continue at next_offset while has_more is true; only claim a full-file review after reaching the end." +
 			" Do not say you cannot search — you have the search_notes, list_notes, and search_note_content tools." +
-			" When a bounded tool returns has_more=true, call the same tool again with its next_cursor only if the user needs more results; keep the original filters unchanged. For PDFs, request the returned next_page with start_page." +
+			" When a paginated search tool returns has_more=true, call it again with next_cursor only if the user needs more results; keep the original filters unchanged. For read_note, continue at next_offset for character ranges or end_line+1 for line ranges when the whole file must be inspected. For PDFs, request the returned next_page with start_page." +
 			" Before editing a note you are unfamiliar with, use read_note to see its current content." +
 			"\n\nImportant: When using edit_note, provide the COMPLETE new note content. Do not use diff syntax or markdown code blocks." +
 			"\n\nFor moving notes: use move_note(path, new_path). Parent folders are created automatically if needed." +

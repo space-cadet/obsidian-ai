@@ -8,6 +8,16 @@ The LLM acts as an agent that can read, edit, create, move, delete, and organize
 
 **Status**: ✅ Tool layer implemented. AgentLoop extracted. PendingToolCard created. Tool result formatting active.
 
+### Bounded Large-File Reads (2026-10-21)
+
+`read_note` supports both line ranges and character ranges. Use
+`start_char`/`char_count` for long or minified files; the default is 6,000
+characters and the maximum is 8,000. Results expose `start_char`, `end_char`,
+`total_chars`, `next_offset`, and `has_more`. Continue at `next_offset` until
+`has_more` is false when the task requires a complete inspection. The model
+facing formatter includes these range fields. The tool loop still has a
+bounded number of steps, so very large files may require multiple turns.
+
 ### Optional Dataview DQL Queries (T17a, 2026-09-27)
 
 The read-only `query_dataview` tool is exposed only when the loaded Dataview
@@ -147,6 +157,17 @@ the shared `noteTools` registry.
 
 `search_past_sessions` is a read-only tool for saved chat history. It is explicitly described in system prompts so agents distinguish it from vault-note search. `ToolExecutor` removes the active session from results before limiting them, preventing an agent from citing the conversation it is currently answering in. The response renderer appends de-duplicated titled links and excerpts to the assistant reply. Full behavior: [Past-Session Search and Shared Tabs](past-session-search-and-tabs.md).
 
+The search index also includes saved session titles from `sessions/index.json`,
+and matches title or message-content terms by exact token, token prefix, or a
+single-character typo for terms of at least five characters. Results identify
+whether the match came from the title or a message. Title-only results open the
+session without attempting to scroll to a message.
+
+`search_past_sessions` accepts `scope: "all" | "title" | "content"`. Use
+`title` when the user specifically asks for a word in a session title; query
+only for that word. The default `all` scope puts title matches before message
+matches so an older title hit is not hidden by newer body matches on page one.
+
 ### Tool Definitions (`src/agent/tools.ts`)
 
 Tools are pure Zod schemas **without `execute` functions**. The LLM sees them; execution happens in `ToolExecutor` after user approval.
@@ -157,8 +178,14 @@ import { z } from 'zod';
 export const noteTools = {
   // --- Content Tools (6) ---
   read_note: {
-    description: 'Read the full content of a note. Use before editing to understand current content.',
-    parameters: z.object({ path: z.string().describe('Note name or path') }),
+    description: 'Read a bounded line or character range from a note. Continue with next_offset or start_line when has_more is true.',
+    parameters: z.object({
+      path: z.string(),
+      start_line: z.number().optional(),
+      line_count: z.number().optional(),
+      start_char: z.number().optional(),
+      char_count: z.number().optional(),
+    }),
   },
   edit_note: {
     description: 'Overwrite the entire content of a note. Provide COMPLETE new content.',

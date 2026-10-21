@@ -175,6 +175,8 @@ export interface ObsidianAISettings {
 	showFullRequestTokens: boolean;
 	/** Reveal advanced controls in the Settings panel. */
 	showAdvancedSettings: boolean;
+	/** Whether the first-install splash has already been shown. */
+	welcomeSplashSeen: boolean;
 	/** Enable enhanced telemetry capture and export details. */
 	debugMode: boolean;
 	/** Select which telemetry fields are included when debug mode is exported. */
@@ -426,6 +428,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	restoreChatTabs: true,
 	showFullRequestTokens: true,
 	showAdvancedSettings: false,
+	welcomeSplashSeen: false,
 	debugMode: false,
 	debugTelemetry: {
 		includeProviderUsage: true,
@@ -609,6 +612,10 @@ export const normalizeSettings = (
 		restoreChatTabs: Boolean(merged.restoreChatTabs ?? true),
 		showFullRequestTokens: Boolean(merged.showFullRequestTokens ?? true),
 		showAdvancedSettings: Boolean(merged.showAdvancedSettings ?? false),
+		welcomeSplashSeen:
+			typeof loadedSettings?.welcomeSplashSeen === "boolean"
+				? loadedSettings.welcomeSplashSeen
+				: Boolean(loadedSettings && typeof loadedSettings === "object"),
 		debugMode: Boolean(merged.debugMode ?? false),
 		debugTelemetry,
 		developerMode: Boolean(merged.developerMode ?? false),

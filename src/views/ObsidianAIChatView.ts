@@ -36,6 +36,7 @@ export interface ChatPluginLike {
 	isSessionHydrated?(sessionId: string): boolean;
 	saveChatData(data: StoredChatData): Promise<void>;
 	saveSettings(): Promise<void>;
+	markWelcomeSplashSeen?(): Promise<void>;
 	openRemoteStorageSettings?(): void;
 	syncHub?: import("../sync/SyncStatusHub").SyncStatusHub;
 	triggerSync?(

@@ -23,6 +23,7 @@ interface ChatMainAreaProps {
 		sourcePath?: string,
 	) => Promise<void>;
 	plugin: ChatPluginLike;
+	showFirstRunSplash: boolean;
 	sessionId: string | null;
 	contextItems: ContextItem[];
 	messages: ChatMessage[];
@@ -78,6 +79,7 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 	app,
 	renderMarkdown,
 	plugin,
+	showFirstRunSplash,
 	sessionId,
 	contextItems,
 	messages,
@@ -125,6 +127,10 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 	onLongPress,
 	onToggleSelection,
 }) => {
+	const splashImageSrc = app.vault.adapter.getResourcePath(
+		`${app.vault.configDir}/plugins/${plugin.manifest.id}/assets/chat-lab-splash-v1.8.0.png`,
+	);
+
 	return (
 		<>
 			{debugMode && (
@@ -147,6 +153,8 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 				isStreaming={isStreaming}
 				isEditing={isEditing}
 				app={app}
+				splashImageSrc={splashImageSrc}
+				showFirstRunSplash={showFirstRunSplash}
 				renderMarkdown={renderMarkdown}
 				showThinking={showThinking}
 				onAppend={onAppend}

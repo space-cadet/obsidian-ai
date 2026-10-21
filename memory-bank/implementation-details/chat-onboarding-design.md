@@ -8,21 +8,15 @@ The chat panel should teach users what it can do at the moment they need it. Gui
 
 ## Empty Chat State
 
-```text
-+--------------------------------------------------+
-|                    Obsidian AI                   |
-|                                                  |
-| Ask about your notes, draft new text, or refine  |
-| a selection before applying it back to a note.   |
-|                                                  |
-| Try                                              |
-| [Summarize the active note]                      |
-| [Rewrite this selection more clearly]            |
-| [Create action items from @Meeting Notes]        |
-|                                                  |
-| Tip: type @ to attach a note as context.         |
-+--------------------------------------------------+
-```
+On a fresh installation, the empty chat view shows the bundled light-themed
+Chat Lab AI assembly-line artwork once. The seen flag is persisted in plugin
+data; existing installations without the flag are treated as having already
+seen it. Showing the splash sets the flag immediately. There is no dismiss
+button: it remains in the current empty chat until the first message, and later
+loads use the standard empty-chat prompt. The v1.8.0 image is stored at
+`assets/chat-lab-splash-v1.8.0.png` and is resolved from the installed plugin
+directory. The earlier example-prompt cards and contextual tips described
+below remain future work.
 
 ## Setup Warning State
 

@@ -1,5 +1,78 @@
 # Active Context
 
+### 2026-10-21 — Empty-chat splash image
+
+- Added the user's selected robot assembly-line image to the empty chat view.
+  The supplied image already includes `v1.8.0`; the plugin resolves it from
+  its installed `assets` folder and the package script copies it into releases.
+- Showing the splash immediately persists a first-run flag, so existing
+  installations without the flag are treated as having seen it. It has no
+  dismiss button and remains in the current empty chat until the first message;
+  later loads use the standard prompt.
+- Production build, release packaging, and `git diff --check` passed. The
+  bundle, stylesheet, and image are installed in the active `typora-notes`
+  vault with matching SHA-256 hashes. Reload Chat Lab for live visual review.
+
+### 2026-10-21 — `read_note` character-range support
+
+- Added 0-based character-range reads for long and minified files. Default
+  range is 6,000 characters; maximum is 8,000. The result reports the range,
+  total characters, `next_offset`, and `has_more` while retaining full-file
+  fingerprinting.
+- The agent-facing result formatter now exposes line/character continuation
+  metadata, and both system prompts tell the agent to read through the file
+  before claiming a complete inspection.
+- Formatting, TypeScript/production build, and diff checks passed. Tests were
+  not run. The default agent turn remains limited to five tool steps, so a
+  605 KB file cannot be fully traversed in one turn with these chunks alone.
+- The built `main.js` is installed in the active `typora-notes` vault and its
+  SHA-256 matches source. Reload is needed to activate it; live acceptance is
+  pending.
+
+### 2026-10-21 — Past-session title search correction
+
+- Added a `scope` option to `search_past_sessions`, including title-only and
+  message-only search. Prompt guidance directs title-specific requests to use
+  the title scope and the searched term alone.
+- Default mixed searches prioritize title matches so recent message results
+  cannot push older title matches off the first page. This explains the
+  reported Duolingo mismatch: title matching existed, but was mixed with and
+  ranked behind message hits.
+- Formatting, TypeScript/production build, and diff checks passed. Installed
+  `main.js` in the active `typora-notes` vault and verified it matches the
+  source build. Tests and live Obsidian acceptance have not been run; reload
+  the plugin to activate the updated bundle.
+
+### 2026-10-21 — Toolbar updates, bounded reads, session search, and chat width
+
+- Added **Check for Updates** to the Chat Lab toolbar overflow and connected it
+  to the existing updater command.
+- `read_note` now returns a bounded line range with start/end/total line
+  metadata and `has_more`, while keeping the full-note fingerprint for safe
+  edits.
+- `search_past_sessions` now searches stored titles and message content with
+  prefix and limited one-character typo matching. Title-only results open the
+  chat without a message scroll target.
+- Assistant message cards now fill the available chat width. Updated the
+  generated stylesheet and the relevant tool/UI implementation notes.
+- Production build and `git diff --check` passed. Tests and live Obsidian
+  acceptance were not run. T24a's unopened-session search gap is unconfirmed;
+  the user reports finding message content from a May 14 session in toolbar
+  search. See T24a's validation note.
+- See `sessions/2026-10-21-toolbar-and-chat-tool-fixes.md`.
+
+### 2026-10-20 — v1.8.0 version bump preparation
+
+- Prepared a minor bump from `1.7.1` to `1.8.0` in `package.json`,
+  `manifest.json`, `versions.json`, and `CHANGELOG.md`. `minAppVersion` remains
+  `1.11.4`.
+- `pnpm version` updated the version files, then its configured hook stopped
+  at `git add` because `.git` is read-only in this environment. A production
+  build subsequently passed on 2026-10-21; no commit, tag, push, or publication
+  was performed.
+- Release gates and publication remain open; see T8 and the current session
+  record.
+
 ### 2026-10-20 — PR #12 Codex review follow-up
 
 - PR #12 was merged from `ui-chat-fixes` head `a79eca2` into `main` as merge

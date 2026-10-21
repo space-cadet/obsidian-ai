@@ -23,6 +23,11 @@ Implementation: `ChatToolbar.tsx`, `presentational/ActionBar.tsx`,
 `styles/_model-switcher.css` (with generated `styles.css`). Merged in PR #9 at
 `62b2db5`.
 
+The overflow menu also includes **Check for Updates**, which invokes the
+existing `check-for-updates` command and updater flow. Assistant message cards
+fill the available chat width; user message cards retain their narrower,
+right-aligned layout.
+
 ---
 
 ## Profile Selection

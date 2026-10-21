@@ -1,6 +1,58 @@
 # Session Cache
 
-*Last Updated: 2026-10-20 16:21:35 IST*
+*Last Updated: 2026-10-21 13:04:15 IST*
+
+## 2026-10-21 — Empty-chat splash image
+
+- Copied the user-provided v1.8.0 artwork into `assets/`, rendered it in the
+  empty chat view using the plugin resource URL, and added image copying to the
+  release package script. Showing it immediately persists a seen flag; older
+  installations without the flag are treated as already having seen it. There
+  is no dismiss button: it remains in the current empty chat until the first
+  message, and later loads use the standard prompt.
+- Production build, release packaging, and diff checks passed. The bundle,
+  stylesheet, and image are installed in the active `typora-notes` vault with
+  matching hashes. Reload Chat Lab for live UI review.
+
+## 2026-10-21 — `read_note` character-range support
+
+- Added `start_char`/`char_count` reads with a 6,000-character default and
+  8,000-character maximum, returning offsets, total size, and continuation
+  metadata. Existing line-range reads remain supported.
+- Updated AgentLoop formatting and agent prompts so continuation metadata is
+  visible and whole-file inspection continues until EOF.
+- Formatting and TypeScript/production build passed; tests were not run.
+  Default `maxAgentSteps` is five, so very large files can require multiple
+  turns. The built bundle is installed in `typora-notes`, and its SHA-256
+  matches the source build. Reload and live acceptance are pending.
+
+## 2026-10-21 — Past-session title search correction
+
+- The reported Duolingo title miss was consistent with source behavior: title
+  entries existed, but mixed results were sorted by recency, allowing newer
+  message hits to hide older title hits on the first page. The tool did not
+  provide a title-only scope.
+- Added `scope=title|content|all`, title-first ordering for mixed results, and
+  prompt guidance to use title-only search when requested.
+- Formatting, TypeScript/production build, and `git diff --check` passed. The
+  active `typora-notes` plugin's `main.js` matches the new source build. Tests
+  and live acceptance were not performed; a plugin reload is needed to load it.
+- Follow-up under T13.
+
+## 2026-10-21 — Toolbar and chat tool fixes
+
+- Added the toolbar overflow update action using the registered manual update
+  command, and expanded `read_note` to bounded line-range reads.
+- Extended past-session search to use saved session titles and tolerant token
+  matching for titles and message content. Title-only links now open the
+  session without a specific message target.
+- Assistant message cards now fill the pane width, removing the visible right
+  gutter shown in the supplied screenshot.
+- Production build and `git diff --check` passed. Tests and live Obsidian
+  acceptance were not run. T24a's possible unopened-session toolbar-search
+  gap is unconfirmed; the user reports finding message content from a May 14
+  session. Check hydration state before claiming a current failure.
+- Session: `sessions/2026-10-21-toolbar-and-chat-tool-fixes.md`.
 
 ## 2026-10-20 — PR #12 review follow-up
 
@@ -16,6 +68,18 @@
   `ef90e27`. Compared 45 commits since v1.7.1 bump `6db4933`; current version
   remains 1.7.1. The user deferred version bump work to a new session.
 - Session: `sessions/2026-10-20-pr-review-follow-up.md`.
+
+## 2026-10-20 — v1.8.0 version bump preparation
+
+- Updated `package.json`, `manifest.json`, and `versions.json` from `1.7.1` to
+  `1.8.0`; minimum Obsidian version remains `1.11.4`.
+- Added release notes to `CHANGELOG.md` for the user-visible work since
+  `1.7.1`, and recorded preparation under T8.
+- `pnpm version minor` updated the version files, then failed only at its
+  automatic staging step because `.git` is read-only. No files were staged and
+  no commit, tag, push, build, or publication was made.
+- Release checks and publication are still pending. See
+  `sessions/2026-10-20-v1.8.0-version-bump.md`.
 
 ## 2026-10-19 — T24c shared session state complete
 

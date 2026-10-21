@@ -2,7 +2,7 @@
 
 **Purpose:** a language- and framework-independent specification of the Chat Lab AI chat experience. It describes observable behavior and the services a replacement needs, rather than prescribing an implementation.
 
-**Current-state reference:** 2026-10-06. This map covers the capabilities present in the current chat experience. Optional or host-dependent behavior is labeled as such; planned ideas are not presented as shipped features.
+**Current-state reference:** 2026-10-21. This map covers the capabilities present in the current chat experience. Optional or host-dependent behavior is labeled as such; planned ideas are not presented as shipped features.
 
 **How to read it:** user-visible chat behavior is the portable layer. Repository operations are capability-based and may be absent or restricted. Named Obsidian APIs and syntax describe this product's adapter; other repository examples are illustrative, not claims of existing Chat Lab integrations.
 
@@ -43,6 +43,13 @@ The chat can be rebuilt in any stack if the implementation supplies equivalent a
 Persisted conversation content and temporary view state are distinct. A reload restores the active saved conversation and, when enabled, its open tabs and per-tab scroll position. Unsent drafts can be restored. A never-submitted empty draft is not a history item.
 
 ## 3. Chat workspace map
+
+When a fresh installation opens an empty chat for the first time, the workspace
+shows the bundled Chat Lab AI assembly-line splash image. Showing it records a
+persistent seen flag; existing installations without that flag are treated as
+having already seen it. The image stays in that initial empty chat until the
+first message, with no dismiss control; later loads show the standard empty
+chat prompt. Example prompts and contextual tips remain planned.
 
 ### 3.1 Toolbar and workspace controls
 

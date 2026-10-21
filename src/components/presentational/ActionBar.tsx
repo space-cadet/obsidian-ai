@@ -10,6 +10,7 @@ interface ActionBarProps {
 	onLoadChat: () => void;
 	onExportChat: () => void;
 	onOpenSync: () => void;
+	onCheckForUpdates?: () => void;
 	canLoad: boolean;
 	plugin: ChatPluginLike;
 	autoApprove: boolean;
@@ -42,6 +43,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	onLoadChat,
 	onExportChat,
 	onOpenSync,
+	onCheckForUpdates,
 	canLoad,
 	plugin,
 	autoApprove,
@@ -153,6 +155,18 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				.setSection("data")
 				.onClick(() => onExportChat()),
 		);
+		if (onCheckForUpdates) {
+			menu.addItem((item) =>
+				item.setTitle("Plugin").setIsLabel(true).setSection("plugin"),
+			);
+			menu.addItem((item) =>
+				item
+					.setTitle("Check for Updates")
+					.setIcon("refresh-cw")
+					.setSection("plugin")
+					.onClick(onCheckForUpdates),
+			);
+		}
 		menu.showAtMouseEvent(event.nativeEvent as MouseEvent);
 	};
 

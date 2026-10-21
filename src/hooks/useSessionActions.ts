@@ -182,7 +182,10 @@ export function useSessionActions({
 	useEffect(() => {
 		const openSession = (event: Event) => {
 			const { sessionId, messageId } = (
-				event as CustomEvent<{ sessionId: string; messageId: string }>
+				event as CustomEvent<{
+					sessionId: string;
+					messageId?: string;
+				}>
 			).detail;
 			openSessionInTab(sessionId, messageId);
 		};

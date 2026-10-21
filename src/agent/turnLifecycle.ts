@@ -120,10 +120,8 @@ function formatPastSessionLinks(
 			sessions.find((candidate) => candidate.id === session.sessionId)
 				?.title ||
 			`Session from ${new Date(session.timestamp).toLocaleDateString()}`;
-		const params = new URLSearchParams({
-			sessionId: session.sessionId,
-			messageId: session.messageId,
-		});
+		const params = new URLSearchParams({ sessionId: session.sessionId });
+		if (session.messageId) params.set("messageId", session.messageId);
 		const safeTitle = title.replace(/[\\[\]]/g, "\\$&");
 		const snippet = session.snippet
 			.replace(/\s+/g, " ")

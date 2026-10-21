@@ -268,6 +268,8 @@ interface ChatMessagesProps {
 	isStreaming: boolean;
 	isEditing: boolean;
 	app: App;
+	splashImageSrc?: string;
+	showFirstRunSplash?: boolean;
 	renderMarkdown: (
 		markdown: string,
 		target: HTMLElement,
@@ -347,6 +349,8 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	isStreaming,
 	isEditing,
 	app,
+	splashImageSrc,
+	showFirstRunSplash,
 	renderMarkdown,
 	onAppend,
 	onInsertAtCursor,
@@ -554,7 +558,14 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 			<div className="chat-messages" ref={scrollRef}>
 				{messages.length === 0 && (
 					<div className="chat-empty-state">
-						Ask anything about your vault...
+						{showFirstRunSplash && splashImageSrc ? (
+							<img
+								src={splashImageSrc}
+								alt="Chat Lab AI v1.8.0: a cheerful robot-run transcript assembly line refining text and delivering sparkling finished chats."
+							/>
+						) : (
+							"Ask anything about your vault..."
+						)}
 					</div>
 				)}
 				{messages.map((msg) => (

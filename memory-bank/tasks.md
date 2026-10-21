@@ -1,7 +1,7 @@
 # Memory Bank - Obsidian AI
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-10-19 23:29:06 IST*
+*Last Updated: 2026-10-21 13:04:15 IST*
 
 ## Overview
 
@@ -14,6 +14,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | META-1 | Memory Bank Setup and Maintenance | 🔄 | HIGH | 2026-05-02 | — | [Details](tasks/META-1.md) |
 | T11 | Debug Logging & Diagnostics | ✅ | MEDIUM | 2026-05-08 | T9 | [Details](tasks/T11.md) |
 | T11a | Chat Lab Data Health Check and Recovery | 🔄 | HIGH | 2026-10-19 | T11, T24 | [Details](tasks/T11a.md) |
+| T12 | Chat Onboarding, Tips & Empty States | ⏸️ | MEDIUM | 2026-05-02 | T1, T9 | [Details](tasks/T12.md) |
 | T24b | Idempotent Transcript Writes and Index Reconciliation | 🔄 | HIGH | 2026-10-19 | T24 | [Details](tasks/T24b.md) |
 | T24c | Shared Session State and Operation Coordination | ✅ | HIGH | 2026-10-19 | T24 | [Details](tasks/T24c.md) |
 | T14 | Remote Agent Connectivity (OpenResponses and OpenClaw Gateway) | 🔄 | HIGH | 2026-05-07 | T1, T13, T5, T9 | [Details](tasks/T14.md) |
