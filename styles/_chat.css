@@ -424,11 +424,20 @@
 	padding: 12px 8px;
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
 	/* Permit sideways swipes to reach nested table scrollers. */
 	touch-action: pan-x pan-y;
 	overscroll-behavior-y: contain;
 	-webkit-overflow-scrolling: touch;
+}
+
+.chat-messages-content {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 100%;
+	display: flex;
+	flex: 0 0 auto;
+	flex-direction: column;
+	gap: 10px;
 }
 
 /* Scroll wrapper for positioning scroll buttons */
@@ -520,6 +529,9 @@
 
 	.chat-messages {
 		padding: 8px 4px;
+	}
+
+	.chat-messages-content {
 		gap: 6px;
 	}
 }
@@ -573,9 +585,14 @@
 }
 
 .chat-bubble-content-segment {
-	/* Inherits from .chat-bubble-content */
+	/* Keep long rendered expressions reachable in the current content-parts path. */
 	min-width: 0;
 	max-width: 100%;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	-webkit-overflow-scrolling: touch;
+	touch-action: pan-x pan-y;
+	scrollbar-width: thin;
 	user-select: text;
 }
 

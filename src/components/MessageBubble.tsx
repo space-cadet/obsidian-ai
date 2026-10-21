@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { App, Notice, TFile } from "obsidian";
+import { App, TFile } from "obsidian";
 import { ChatMessage, ContextItem, ContentPart, Attachment } from "../types";
 import MessageActions from "./presentational/MessageActions";
 import ToolCallNotification from "./presentational/ToolCallNotification";
@@ -641,7 +641,6 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
 								<PdfAttachmentCard
 									key={att.id}
 									attachment={att}
-									app={app}
 								/>
 							) : (
 								<div
@@ -826,75 +825,17 @@ function LegacyContent({
 	return <div ref={contentRef} className="chat-bubble-content" />;
 }
 
-/** PDF attachment card with actions */
+/** Show the attached PDF's filename in the message. */
 function PdfAttachmentCard({
 	attachment,
-	app,
 }: {
 	attachment: Attachment;
-	app: App;
 }): React.ReactElement {
-	const [isSaving, setIsSaving] = useState(false);
-
-	const handleSaveToVault = async () => {
-		if (!attachment.data) {
-			new Notice("No PDF data available to save");
-			return;
-		}
-		setIsSaving(true);
-		try {
-			const folder = app.vault.getRoot();
-			const filename = attachment.name || "downloaded.pdf";
-			// Check if file already exists
-			const existing = app.vault.getAbstractFileByPath(filename);
-			const finalName = existing
-				? `${filename.replace(/\.pdf$/i, "")}-${Date.now()}.pdf`
-				: filename;
-			const binaryString = atob(attachment.data);
-			const bytes = new Uint8Array(binaryString.length);
-			for (let i = 0; i < binaryString.length; i++) {
-				bytes[i] = binaryString.charCodeAt(i);
-			}
-			await app.vault.createBinary(finalName, bytes.buffer);
-			new Notice(`Saved PDF to ${finalName}`);
-		} catch (err: any) {
-			new Notice(`Failed to save PDF: ${err.message}`);
-		} finally {
-			setIsSaving(false);
-		}
-	};
-
-	const handleOpenExternal = () => {
-		if (attachment.path?.startsWith("http")) {
-			window.open(attachment.path, "_blank");
-		} else {
-			new Notice("No external URL available");
-		}
-	};
-
 	return (
 		<div className="chat-attachment-card chat-attachment-card-pdf">
 			<div className="chat-attachment-card-header">
 				<span className="chat-attachment-icon">📑</span>
 				<span className="chat-attachment-name">{attachment.name}</span>
-			</div>
-			<div className="chat-attachment-card-actions">
-				<button
-					className="chat-attachment-btn"
-					onClick={handleSaveToVault}
-					disabled={isSaving || !attachment.data}
-					title="Save to vault"
-				>
-					{isSaving ? "Saving..." : "💾 Save"}
-				</button>
-				<button
-					className="chat-attachment-btn"
-					onClick={handleOpenExternal}
-					disabled={!attachment.path?.startsWith("http")}
-					title="Open in browser"
-				>
-					🔗 Open
-				</button>
 			</div>
 		</div>
 	);

@@ -128,12 +128,22 @@ const ChatApp: React.FC<ChatAppProps> = ({
 	);
 
 	const {
+		runtimeBySession,
 		activeRuntime,
 		getRuntime,
 		patchRuntime,
 		clearRuntime,
 		abortRuntime,
 	} = useChatRuntimeState(activeSessionId);
+	const generatingSessionIds = useMemo(
+		() =>
+			new Set(
+				Object.entries(runtimeBySession)
+					.filter(([, runtime]) => runtime.isStreaming)
+					.map(([sessionId]) => sessionId),
+			),
+		[runtimeBySession],
+	);
 	const messagesRef = useRef<ChatMessage[]>([]);
 
 	useEffect(() => {
@@ -1122,6 +1132,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					sessions={sessions}
 					openSessionIds={openSessionIds}
 					activeSessionId={activeSessionId}
+					generatingSessionIds={generatingSessionIds}
 					tabTitleWidth={plugin.settings.chatTabTitleWidth}
 					onSelect={(sessionId) => openSessionInTab(sessionId)}
 					onClose={handleCloseTab}

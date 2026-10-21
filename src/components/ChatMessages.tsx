@@ -370,6 +370,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	onToggleSelection,
 }) => {
 	const scrollRef = useRef<HTMLDivElement>(null);
+	const contentRef = useRef<HTMLDivElement>(null);
 	const bottomRef = useRef<HTMLDivElement>(null);
 	const [showScrollTop, setShowScrollTop] = useState(false);
 	const [showScrollBottom, setShowScrollBottom] = useState(false);
@@ -433,6 +434,49 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		checkScrollPosition();
 		return () => container.removeEventListener("scroll", onScroll);
 	}, [checkScrollPosition, onScrollPositionChange, sessionId]);
+
+	/** Follow late Markdown layout changes that happen after a streaming update. */
+	useEffect(() => {
+		const content = contentRef.current;
+		if (!content || typeof ResizeObserver === "undefined") return;
+
+		let previousHeight: number | null = null;
+		let frame: number | null = null;
+		const observer = new ResizeObserver(([entry]) => {
+			const height = entry.contentRect.height;
+			if (previousHeight === null) {
+				previousHeight = height;
+				return;
+			}
+			if (height === previousHeight) return;
+			previousHeight = height;
+
+			if (
+				pendingHydrationRestoreRef.current != null ||
+				!followRef.current
+			) {
+				return;
+			}
+
+			if (frame !== null) cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(() => {
+				frame = null;
+				if (
+					pendingHydrationRestoreRef.current == null &&
+					followRef.current
+				) {
+					scrollToBottomInstant();
+					checkScrollPositionRef.current();
+				}
+			});
+		});
+		observer.observe(content);
+
+		return () => {
+			observer.disconnect();
+			if (frame !== null) cancelAnimationFrame(frame);
+		};
+	}, [sessionId, scrollToBottomInstant]);
 
 	/** Restore the active tab's saved position after its message DOM has
 		rendered. Runs on session switch / restore-value change, and once more
@@ -556,68 +600,71 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 			data-testid="chat-transcript"
 		>
 			<div className="chat-messages" ref={scrollRef}>
-				{messages.length === 0 && (
-					<div className="chat-empty-state">
-						{showFirstRunSplash && splashImageSrc ? (
-							<img
-								src={splashImageSrc}
-								alt="Chat Lab AI v1.8.0: a cheerful robot-run transcript assembly line refining text and delivering sparkling finished chats."
-							/>
-						) : (
-							"Ask anything about your vault..."
-						)}
-					</div>
-				)}
-				{messages.map((msg) => (
-					<MessageRow
-						key={msg.id}
-						msg={msg}
-						app={app}
-						renderMarkdown={renderMarkdown}
-						showThinking={showThinking}
-						onOpenPastSession={onOpenPastSession}
-						onAppend={onAppend}
-						onInsertAtCursor={onInsertAtCursor}
-						onApply={onApply}
-						onRetry={onRetry}
-						onEdit={onEdit}
-						onApplyToTarget={onApplyToTarget}
-						onCreateNote={onCreateNote}
-						onAppendToTarget={onAppendToTarget}
-						selectionMode={selectionMode}
-						selected={selectedMessageIds?.has(msg.id)}
-						onLongPress={onLongPress}
-						onToggleSelection={onToggleSelection}
-					/>
-				))}
-				{isStreaming && currentAiMessage && (
-					<StreamingBubble
-						content={currentAiMessage}
-						contentParts={currentContentParts}
-						app={app}
-						renderMarkdown={renderMarkdown}
-						onOpenPastSession={onOpenPastSession}
-					/>
-				)}
-				{isStreaming && !currentAiMessage && (
-					<div className="chat-typing-indicator">
-						<span />
-						<span />
-						<span />
-					</div>
-				)}
-				{typingUsers && typingUsers.length > 0 && (
-					<div className="chat-typing-indicator-remote">
-						<span className="chat-typing-indicator-remote-label">
-							{typingUsers.join(", ")}{" "}
-							{typingUsers.length === 1 ? "is" : "are"} typing…
-						</span>
-						<span className="chat-typing-dot" />
-						<span className="chat-typing-dot" />
-						<span className="chat-typing-dot" />
-					</div>
-				)}
-				<div ref={bottomRef} />
+				<div className="chat-messages-content" ref={contentRef}>
+					{messages.length === 0 && (
+						<div className="chat-empty-state">
+							{showFirstRunSplash && splashImageSrc ? (
+								<img
+									src={splashImageSrc}
+									alt="Chat Lab AI v1.8.0: a cheerful robot-run transcript assembly line refining text and delivering sparkling finished chats."
+								/>
+							) : (
+								"Ask anything about your vault..."
+							)}
+						</div>
+					)}
+					{messages.map((msg) => (
+						<MessageRow
+							key={msg.id}
+							msg={msg}
+							app={app}
+							renderMarkdown={renderMarkdown}
+							showThinking={showThinking}
+							onOpenPastSession={onOpenPastSession}
+							onAppend={onAppend}
+							onInsertAtCursor={onInsertAtCursor}
+							onApply={onApply}
+							onRetry={onRetry}
+							onEdit={onEdit}
+							onApplyToTarget={onApplyToTarget}
+							onCreateNote={onCreateNote}
+							onAppendToTarget={onAppendToTarget}
+							selectionMode={selectionMode}
+							selected={selectedMessageIds?.has(msg.id)}
+							onLongPress={onLongPress}
+							onToggleSelection={onToggleSelection}
+						/>
+					))}
+					{isStreaming && currentAiMessage && (
+						<StreamingBubble
+							content={currentAiMessage}
+							contentParts={currentContentParts}
+							app={app}
+							renderMarkdown={renderMarkdown}
+							onOpenPastSession={onOpenPastSession}
+						/>
+					)}
+					{isStreaming && !currentAiMessage && (
+						<div className="chat-typing-indicator">
+							<span />
+							<span />
+							<span />
+						</div>
+					)}
+					{typingUsers && typingUsers.length > 0 && (
+						<div className="chat-typing-indicator-remote">
+							<span className="chat-typing-indicator-remote-label">
+								{typingUsers.join(", ")}{" "}
+								{typingUsers.length === 1 ? "is" : "are"}{" "}
+								typing…
+							</span>
+							<span className="chat-typing-dot" />
+							<span className="chat-typing-dot" />
+							<span className="chat-typing-dot" />
+						</div>
+					)}
+					<div ref={bottomRef} />
+				</div>
 			</div>
 			{showScrollTop && (
 				<button

@@ -7,6 +7,7 @@ interface ChatTabBarProps {
 	sessions: ChatSession[];
 	openSessionIds: string[];
 	activeSessionId: string | null;
+	generatingSessionIds?: ReadonlySet<string>;
 	onSelect: (sessionId: string) => void;
 	onClose: (sessionId: string) => void;
 	onCloseOthers: (sessionId: string) => void;
@@ -17,6 +18,7 @@ interface ChatTabBarProps {
 
 /** Special tab IDs that don't correspond to sessions */
 const SPECIAL_TABS = new Set<string>();
+const NO_GENERATING_SESSIONS: ReadonlySet<string> = new Set();
 
 function isSpecialTab(id: string): boolean {
 	return SPECIAL_TABS.has(id);
@@ -34,6 +36,7 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 	sessions,
 	openSessionIds,
 	activeSessionId,
+	generatingSessionIds = NO_GENERATING_SESSIONS,
 	onSelect,
 	onClose,
 	onCloseOthers,
@@ -90,6 +93,11 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 			{tabs.map((tab) => {
 				const active = tab.id === activeSessionId;
 				const isSpecial = tab.type === "special";
+				const isGenerating =
+					!isSpecial && generatingSessionIds.has(tab.id);
+				const accessibleLabel = isGenerating
+					? `${tab.label} — generating`
+					: tab.label;
 				return (
 					<div
 						key={tab.id}
@@ -100,9 +108,10 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 							className="chat-session-tab-select"
 							role="tab"
 							aria-selected={active}
-							aria-label={tab.label}
+							aria-label={accessibleLabel}
+							aria-busy={isGenerating}
 							onClick={() => onSelect(tab.id)}
-							title={tab.label}
+							title={accessibleLabel}
 							onContextMenu={(event) => {
 								if (isSpecial) return;
 								event.preventDefault();
@@ -143,6 +152,12 @@ const ChatTabBar: React.FC<ChatTabBarProps> = ({
 								menu.showAtMouseEvent(event.nativeEvent);
 							}}
 						>
+							{isGenerating && (
+								<span
+									className="chat-session-tab-spinner"
+									aria-hidden="true"
+								/>
+							)}
 							<span className="chat-session-tab-label" dir="ltr">
 								{tab.label}
 							</span>
