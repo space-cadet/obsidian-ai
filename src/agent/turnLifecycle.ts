@@ -869,6 +869,9 @@ export class TurnLifecycle {
 				thinkingMode: deps.thinkingMode,
 			},
 		);
+		toolExecutor.setLatestSystemPromptReader(
+			() => deps.plugin.latestSystemPrompt ?? null,
+		);
 		this.currentToolExecutor = toolExecutor;
 		const resolvedToolRegistry = toolExecutor.getResolvedToolRegistry();
 		const toolRegistry = resolvedToolRegistry.tools;

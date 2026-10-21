@@ -418,6 +418,18 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				profile: profile ? resolveSessionProfile(profile) : undefined,
 			};
 		});
+		const toolExecutor = new ToolExecutor(
+			plugin.app,
+			plugin.settings,
+			plugin.personaLoader ?? undefined,
+			plugin.searchIndex ?? undefined,
+			() => activeSessionIdRef.current,
+			plugin.integrationRegistry,
+			plugin.saveSettings.bind(plugin),
+		);
+		toolExecutor.setLatestSystemPromptReader(
+			() => plugin.latestSystemPrompt ?? null,
+		);
 		const orch = new Orchestrator({
 			api: plugin.chatapi,
 			participants: resolved.map((e) => ({
@@ -442,15 +454,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			getAgentPrompt: () => plugin.settings.agentPrompt,
 			onSystemPromptUsed: (label, prompt) =>
 				plugin.recordSystemPrompt?.(`Group agent · ${label}`, prompt),
-			toolExecutor: new ToolExecutor(
-				plugin.app,
-				plugin.settings,
-				plugin.personaLoader ?? undefined,
-				plugin.searchIndex ?? undefined,
-				() => activeSessionIdRef.current,
-				plugin.integrationRegistry,
-				plugin.saveSettings.bind(plugin),
-			),
+			toolExecutor,
 		});
 		orch.engines = resolved.map((e) => ({
 			id: e.id,

@@ -26,6 +26,7 @@ import {
 } from "./tools/handlers/DataviewHandlers";
 import {
 	type CurrentTurnModelContext,
+	type LatestSystemPromptSnapshot,
 	type ToolHandlerContext,
 } from "./tools/ToolHandlerContext";
 import {
@@ -51,6 +52,7 @@ export class ToolExecutor {
 	private readonly webHandlers: WebHandlers;
 	private readonly dataviewHandlers: DataviewHandlers;
 	private readonly targetLocks: TargetLockManager;
+	private latestSystemPromptReader?: () => LatestSystemPromptSnapshot | null;
 
 	constructor(
 		app: App,
@@ -297,7 +299,10 @@ export class ToolExecutor {
 			delete_note: (call) =>
 				this.vaultHandlers.deleteNote(call.args as { path: string }),
 			read_settings: (call) => this.settingsHandlers.readSettings(),
-			get_agent_prompt: () => this.settingsHandlers.getAgentPrompt(),
+			get_agent_prompt: () =>
+				this.settingsHandlers.getAgentPrompt(
+					this.latestSystemPromptReader?.() ?? null,
+				),
 			update_agent_prompt: (call) =>
 				this.settingsHandlers.updateAgentPrompt(
 					call.args as { prompt: string },
@@ -339,6 +344,12 @@ export class ToolExecutor {
 				dataviewAvailable: hasDataviewQueryApi(app),
 			},
 		);
+	}
+
+	setLatestSystemPromptReader(
+		reader: () => LatestSystemPromptSnapshot | null,
+	): void {
+		this.latestSystemPromptReader = reader;
 	}
 
 	getModelTools(): Record<string, Record<string, unknown>> {

@@ -160,6 +160,9 @@ export class TurnActionController {
 				undefined,
 				deps.plugin.logger,
 			);
+		toolExecutor.setLatestSystemPromptReader(
+			() => deps.plugin.latestSystemPrompt ?? null,
+		);
 		const result = await toolExecutor.execute(
 			pendingToolCall,
 			runtime.controller?.signal,

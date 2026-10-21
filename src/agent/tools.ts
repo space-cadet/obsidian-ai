@@ -723,14 +723,17 @@ export const readSettingsTool = t({
 		"Read the current plugin settings and the resolved profile/model/thinking selection for this chat turn when available. " +
 		"The global active profile in settings is only the default and can differ from the profile used by this chat. " +
 		"This reports configured request values, not proof of the provider's effective model or whether it honored a thinking setting. " +
-		"Use this to self-diagnose configuration issues or understand current behavior. The main agent prompt is available through get_agent_prompt. " +
+		"Use this to self-diagnose configuration issues or understand current behavior. The base and latest effective system prompts are available through get_agent_prompt. " +
 		"Sensitive fields like API keys and credentials are automatically redacted.",
 	inputSchema: z.object({}),
 });
 
 export const getAgentPromptTool = t({
 	description:
-		"Read the editable main agent prompt shared by single-agent and group-agent chats. Runtime context such as current notes, tools, persona/memory, and participants is added separately.",
+		"Read the editable shared base prompt and, when available, the latest complete system prompt actually sent to a model. " +
+		"The generated text is in latest_system_prompt.content; its label and capture time are included. " +
+		"It includes request-specific instructions such as tools, persona/memory, task guidance, and group participants. " +
+		"Note and attachment bodies are separate message context and are not included.",
 	inputSchema: z.object({}),
 });
 

@@ -121,6 +121,14 @@ export interface ToolResult {
 	settings?: Record<string, unknown>;
 	/** Editable main agent prompt returned by get_agent_prompt. */
 	prompt?: string;
+	/** Most recent complete system message used for a model request. */
+	latest_system_prompt?: {
+		label: string;
+		content: string;
+		captured_at: number;
+	} | null;
+	/** Explains the scope of latest_system_prompt. */
+	latest_system_prompt_note?: string;
 	/** Whether the configured prompt equals the built-in default. */
 	prompt_is_default?: boolean;
 	/** Character count for an updated prompt. */

@@ -17,6 +17,13 @@ export interface CurrentTurnModelContext {
 	thinkingMode: ThinkingMode;
 }
 
+/** Latest effective system prompt captured immediately before a provider call. */
+export interface LatestSystemPromptSnapshot {
+	label: string;
+	content: string;
+	capturedAt: number;
+}
+
 /** Services shared by the capability-specific handlers. */
 export interface ToolHandlerContext {
 	app: App;

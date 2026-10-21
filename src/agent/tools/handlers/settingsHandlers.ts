@@ -7,6 +7,7 @@ import {
 import { DEFAULT_AGENT_PROMPT } from "../../../defaultAgentPrompt";
 import {
 	ToolHandlerBase,
+	type LatestSystemPromptSnapshot,
 	type ToolHandlerContext,
 } from "../ToolHandlerContext";
 
@@ -46,7 +47,9 @@ export class SettingsHandlers extends ToolHandlerBase {
 		};
 	}
 
-	async getAgentPrompt(): Promise<ToolResult> {
+	async getAgentPrompt(
+		latestSystemPrompt: LatestSystemPromptSnapshot | null = null,
+	): Promise<ToolResult> {
 		if (!this.settings) {
 			return { error: "Settings are not available." };
 		}
@@ -55,6 +58,16 @@ export class SettingsHandlers extends ToolHandlerBase {
 			success: true,
 			prompt,
 			prompt_is_default: prompt === DEFAULT_AGENT_PROMPT,
+			latest_system_prompt: latestSystemPrompt
+				? {
+						label: latestSystemPrompt.label,
+						content: latestSystemPrompt.content,
+						captured_at: latestSystemPrompt.capturedAt,
+					}
+				: null,
+			latest_system_prompt_note: latestSystemPrompt
+				? "This is the most recent complete system message sent to a model. Note and attachment bodies are sent separately as message context and are not included."
+				: "No system prompt has been captured yet. Send a chat message first.",
 		};
 	}
 
