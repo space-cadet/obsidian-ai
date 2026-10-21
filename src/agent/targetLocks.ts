@@ -133,6 +133,12 @@ export function mutationTargets(
 		return [`setting:${args.key}`];
 	}
 	if (
+		toolName === "update_agent_prompt" ||
+		toolName === "reset_agent_prompt"
+	) {
+		return ["setting:agentPrompt"];
+	}
+	if (
 		(toolName === "update_memory" || toolName === "delete_memory") &&
 		typeof args.id === "string"
 	) {

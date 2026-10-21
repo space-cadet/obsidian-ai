@@ -1,98 +1,3 @@
-.cm-cursor-overlay {
-	left: -1%;
-	top: -2.2rem;
-	width: 102%;
-	position: absolute;
-	align-items: center;
-	background: var(--background-secondary) !important;
-	color: var(--text-normal);
-	font-size: var(--font-ui-medium);
-	border: 1px solid var(--background-modifier-border) !important;
-	user-select: none;
-	padding: 4px 8px;
-	border-radius: 4px;
-	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-	z-index: 1000;
-	visibility: visible;
-}
-
-.cm-cursor-overlay-inner {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-
-	overflow: visible;
-}
-
-.cm-tooltip-editor {
-	display: flex;
-	padding: 1px 0 1px 10px;
-	height: auto;
-	width: auto;
-	max-height: 100%;
-	align-items: center;
-	background-color: var(--background-primary);
-	border: 1px solid var(--background-modifier-border-focus);
-	border-radius: 4px;
-	overflow: visible;
-	margin-left: 8px;
-	flex: 1 0 0;
-	transition: flex-basis 0.3s ease;
-}
-
-.cm-cursor-overlay .cm-editor {
-	user-select: text;
-}
-
-/* Button Styles */
-.submit-button {
-	height: auto;
-}
-
-.tooltip-button {
-	height: auto;
-	margin-left: 8px;
-	border: 1px solid var(--background-modifier-border-focus);
-	box-shadow: none !important;
-}
-
-/* Loader Animation */
-.loader {
-	width: 5px;
-	aspect-ratio: 1;
-	border-radius: 50%;
-	color: var(--text-normal);
-	background: var(--background-primary);
-	animation: l5 1s infinite linear alternate;
-	margin: 0 20px 0 26px;
-	display: flex;
-}
-.loader.hidden {
-	visibility: hidden;
-	opacity: 0;
-}
-
-.hidden {
-	display: none;
-}
-
-@keyframes l5 {
-	0%,
-	33% {
-		box-shadow:
-			10px 0 var(--text-accent),
-			-10px 0 var(--text-faint);
-		background: var(--text-accent);
-	}
-	66%,
-	100% {
-		box-shadow:
-			10px 0 var(--text-faint),
-			-10px 0 var(--text-accent);
-		background: var(--text-faint);
-	}
-}
-
 .cm-change-widget {
 	padding: 0px 4px;
 	color: var(--text-normal);
@@ -105,19 +10,6 @@
 
 .cm-change-removed {
 	background-color: rgba(var(--color-red-rgb), 0.2);
-}
-
-.primary-action {
-	background-color: #0d9488 !important;
-	color: #ffffff !important;
-}
-
-.primary-action:hover {
-	background-color: #0f766e !important;
-}
-
-.tooltip-button:hover {
-	opacity: 0.8;
 }
 
 /* Style for the advanced text areas */
@@ -287,20 +179,47 @@
 }
 
 .obsidian-ai-settings-section .setting-item.is-advanced-hidden,
-.obsidian-ai-settings-section .obsidian-ai-advanced-settings-block.is-advanced-hidden,
-.obsidian-ai-settings-section .obsidian-ai-settings-advanced-group.is-advanced-hidden {
+.obsidian-ai-settings-section
+	.obsidian-ai-advanced-settings-block.is-advanced-hidden,
+.obsidian-ai-settings-section
+	.obsidian-ai-settings-advanced-group.is-advanced-hidden {
 	display: none;
 }
 
 .obsidian-ai-settings-search-dropdown {
-	display: none; position: absolute; left: 0; right: 0; top: 100%; max-height: 320px;
-	overflow-y: auto; padding: 4px; border: 1px solid var(--background-modifier-border);
-	border-radius: 0 0 10px 10px; background: var(--background-primary); box-shadow: 0 8px 24px rgba(0,0,0,.18);
+	display: none;
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 100%;
+	max-height: 320px;
+	overflow-y: auto;
+	padding: 4px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 0 0 10px 10px;
+	background: var(--background-primary);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
-.obsidian-ai-settings-search-dropdown.is-visible { display: block; }
-.obsidian-ai-settings-search-option { display: flex; justify-content: space-between; gap: 12px; padding: 8px 10px; border-radius: 6px; cursor: pointer; }
-.obsidian-ai-settings-search-option:hover, .obsidian-ai-settings-search-option:focus-visible, .obsidian-ai-settings-search-option.is-active { background: var(--background-modifier-hover); }
-.obsidian-ai-settings-search-option-section { color: var(--text-muted); font-size: var(--font-ui-smaller); }
+.obsidian-ai-settings-search-dropdown.is-visible {
+	display: block;
+}
+.obsidian-ai-settings-search-option {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 8px 10px;
+	border-radius: 6px;
+	cursor: pointer;
+}
+.obsidian-ai-settings-search-option:hover,
+.obsidian-ai-settings-search-option:focus-visible,
+.obsidian-ai-settings-search-option.is-active {
+	background: var(--background-modifier-hover);
+}
+.obsidian-ai-settings-search-option-section {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
 
 .obsidian-ai-settings-section.is-search-hidden,
 .obsidian-ai-settings-toc button.is-search-hidden {
@@ -457,7 +376,9 @@
 	color: var(--text-normal);
 }
 .obsidian-ai-settings-section > h2,
-.obsidian-ai-settings-section > h3 { font-family: var(--font-interface); }
+.obsidian-ai-settings-section > h3 {
+	font-family: var(--font-interface);
+}
 
 /* Keep the description and control columns usable at every panel width. */
 .obsidian-ai-settings-section .setting-item {
@@ -495,18 +416,26 @@
 }
 
 /* Keep Debug Mode compact and make its export controls read as one group. */
-#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item {
+#obsidian-ai-settings-debug-mode
+	> .obsidian-ai-settings-section-body
+	> .setting-item {
 	grid-template-columns: minmax(0, 1fr) auto;
 	align-items: center;
 	min-height: 0;
 	padding: 14px 0;
 }
 
-#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item .setting-item-info {
+#obsidian-ai-settings-debug-mode
+	> .obsidian-ai-settings-section-body
+	> .setting-item
+	.setting-item-info {
 	padding-right: 24px;
 }
 
-#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item .setting-item-control {
+#obsidian-ai-settings-debug-mode
+	> .obsidian-ai-settings-section-body
+	> .setting-item
+	.setting-item-control {
 	width: auto;
 	justify-content: flex-end;
 }
@@ -549,23 +478,54 @@
 }
 
 @media (max-width: 760px) {
-	#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item,
+	#obsidian-ai-settings-debug-mode
+		> .obsidian-ai-settings-section-body
+		> .setting-item,
 	.obsidian-ai-debug-telemetry-group .setting-item {
 		display: flex;
 		align-items: center;
 	}
 
-	#obsidian-ai-settings-debug-mode > .obsidian-ai-settings-section-body > .setting-item .setting-item-control,
+	#obsidian-ai-settings-debug-mode
+		> .obsidian-ai-settings-section-body
+		> .setting-item
+		.setting-item-control,
 	.obsidian-ai-debug-telemetry-group .setting-item .setting-item-control {
 		margin-top: 0;
 	}
 }
 
-.obsidian-ai-slider-value { min-width: 3em; margin-left: 8px; text-align: right; font-variant-numeric: tabular-nums; color: var(--text-muted); }
-.obsidian-ai-password-input-wrapper, .obsidian-ai-api-key-control { display: flex; align-items: center; gap: 4px; }
-.obsidian-ai-password-input-wrapper input, .obsidian-ai-api-key-control input { min-width: 0; flex: 1; }
-.obsidian-ai-password-input-wrapper button, .obsidian-ai-api-key-control button { padding: 4px 6px; border: 0; background: transparent; color: var(--text-muted); cursor: pointer; }
-.obsidian-ai-password-input-wrapper button:hover, .obsidian-ai-api-key-control button:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+.obsidian-ai-slider-value {
+	min-width: 3em;
+	margin-left: 8px;
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	color: var(--text-muted);
+}
+.obsidian-ai-password-input-wrapper,
+.obsidian-ai-api-key-control {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+.obsidian-ai-password-input-wrapper input,
+.obsidian-ai-api-key-control input {
+	min-width: 0;
+	flex: 1;
+}
+.obsidian-ai-password-input-wrapper button,
+.obsidian-ai-api-key-control button {
+	padding: 4px 6px;
+	border: 0;
+	background: transparent;
+	color: var(--text-muted);
+	cursor: pointer;
+}
+.obsidian-ai-password-input-wrapper button:hover,
+.obsidian-ai-api-key-control button:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
 
 .obsidian-ai-settings-section-desc {
 	margin: 0 0 12px;
@@ -696,39 +656,10 @@
 	}
 }
 
-.tooltip-autocomplete {
-	background-color: var(--background-primary-alt) !important;
-	color: var(--text-normal) !important;
-	width: 101.9% !important;
-	margin-left: -1.1rem !important;
-	overflow: hidden;
-	border: 1px solid var(--background-modifier-border-focus);
-	border-radius: 4px;
-	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-.tooltip-autocomplete li[aria-selected] {
-	background-color: var(--text-selection) !important;
-	color: var(--text-accent) !important;
-}
-
-.completion-label {
-	font-size: var(--font-ui-small);
-	font-weight: var(--font-normal);
-	font-family: Arial, Helvetica, sans-serif !important;
-	border-radius: 4px;
-	white-space: nowrap;
-}
-
 .cm-tooltip.cm-tooltip-below {
 	top: 100%;
 	margin-top: 0.8em;
 	bottom: auto;
-}
-
-/* Slash command highlighting */
-.cm-slash-command {
-	color: var(--text-accent);
 }
 
 /* ── Chat Panel ─────────────────────────────────────────────────────────── */

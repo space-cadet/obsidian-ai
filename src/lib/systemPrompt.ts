@@ -2,6 +2,7 @@ import { Platform } from "obsidian";
 import { ContextItem } from "../types";
 import { SlashCommand } from "./slashCommand";
 import { PersonaLoader } from "../intelligence/PersonaLoader";
+import { DEFAULT_AGENT_PROMPT } from "../defaultAgentPrompt";
 import {
 	createBuiltInToolDefinitions,
 	describeToolsForPrompt,
@@ -21,6 +22,7 @@ export async function buildSystemPrompt(
 	participants?: SystemPromptParticipant[],
 	toolDefinitions?: ReadonlyArray<Pick<ToolDefinition, "id" | "description">>,
 	identityContextBudget?: number,
+	agentPrompt = DEFAULT_AGENT_PROMPT,
 ): Promise<string> {
 	let identityContext = "";
 	if (personaLoader) {
@@ -43,8 +45,7 @@ export async function buildSystemPrompt(
 		prompt +=
 			"\n\nMemory is organized into three tiers: core memories are high-value and loaded into this prompt; staged memories are newly created and awaiting evaluation; archived memories are retained for search but are not loaded by default. Use evaluate_staged to curate new memories and cull_core to move low-value core memories to the archive.";
 	}
-	prompt +=
-		"You are a helpful assistant integrated into an Obsidian note-taking app.";
+	prompt += agentPrompt.trim() ? agentPrompt : DEFAULT_AGENT_PROMPT;
 
 	// ── System Context (date, time, platform) ──
 	const now = new Date();

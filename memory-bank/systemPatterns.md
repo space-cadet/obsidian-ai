@@ -1,6 +1,6 @@
 # System Patterns: Obsidian AI Plugin
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 11:46:39 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
 
 ## Core Principles
 
@@ -13,105 +13,92 @@
 
 ---
 
-## Pattern 1: CodeMirror 6 Extension Pipeline
+## Pattern 1: CodeMirror 6 Note-Edit Review Pipeline
 
-All inline editor integrations use the CM6 extension system:
+The editor extension supports note changes initiated from Chat Lab. It does not
+provide a selection/cursor prompt widget.
 
-- **StateField**: per-editor state (e.g. `generatedResponseState`, `currentSelectionState`)
-- **StateEffect**: typed events that mutate state (e.g. `commandEffect`, `acceptTooltipEffect`)
-- **ViewPlugin**: react to view changes (e.g. `focusGuardPlugin`, `applyDiffPlugin`)
-- **Decoration / WidgetType**: visual markers (e.g. diff spans, floating tooltip)
+- **StateField**: `generatedResponseState` and `editContextState`
+- **StateEffect**: `setGeneratedResponseEffect`, `setEditContextEffect`,
+  `acceptAIEditEffect`, and `clearAIEditEffect`
+- **ViewPlugin**: `applyDiffPlugin` applies an accepted change
+- **Decoration / WidgetType**: show additions and removals during review
 
-Extensions registered once via `plugin.registerEditorExtension([...])` in `onload()`.
+Extensions are registered through `plugin.registerEditorExtension([...])` in
+`onload()`.
 
 ```
-commandEffect → FloatingTooltipState → FloatingWidget
-                                            │
-                                     submitAction()
-                                            │
-                                   setGeneratedResponseEffect
-                                            │
-                                    diffDecorationState → ChangeContentWidget
-                                            │
-                              acceptTooltipEffect / dismissTooltipEffect
-                                            │
-                                    applyDiffPlugin / clear
+NoteEditingBridge.applyToNote / applyToTargetNote
+                         │
+            setEditContextEffect + setGeneratedResponseEffect
+                         │
+                         ▼
+       diffDecorationState → ChangeContentWidget
+                         │
+     command palette: Accept AI note edit / Discard AI note edit
+                         │
+        acceptAIEditEffect / clearAIEditEffect
+                         │
+                         ▼
+                  applyDiffPlugin
 ```
 
 ---
 
-## Pattern 2: Two-Surface Architecture (v2.0)
+## Pattern 2: Chat-First Note Editing
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  Surface 1: Inline Tooltip          Surface 2: Chat     │
-│  (CodeMirror WidgetType)            (Obsidian ItemView) │
-│                                                         │
-│  Ctrl+K → FloatingWidget            Ribbon → ChatPanel  │
-│  Single-turn transform              Multi-turn chat     │
-│  Inline diff in editor              Sidebar conversation│
-│                                     + Apply to Note     │
-│                ▼                              ▼         │
-│           ChatApiManager.callSelection()  .streamChat() │
-│                                                         │
-│                     ▼       ▼                           │
-│             diffExtension  NoteEditingBridge            │
-│                    (shared CM6 effects)                 │
-└─────────────────────────────────────────────────────────┘
+Chat Lab panel ──> turnLifecycle / Orchestrator ──> provider request
+       │                    │
+       │                    ├── shared agent prompt + runtime context
+       │                    └── agent tools for vault operations
+       │
+       └── Apply → Note ──> NoteEditingBridge ──> editor diff review
+                                                  └── accept / discard commands
 ```
 
-Both surfaces share `ChatApiManager` and all CM6 state effects. Neither modifies the other.
+Vault changes can be made by agent tools or applied from chat. The editor
+review uses the shared CodeMirror diff extension; the former floating
+selection/cursor editor has been removed.
 
 ---
 
 ## Pattern 3: NoteEditingBridge — Effect Dispatch Only
 
-`NoteEditingBridge` is a pure connector. It never reimplements diff logic. Its entire job:
+`NoteEditingBridge` is a pure connector. It never reimplements diff logic. Its
+job is to:
 
 1. Ensure the target note is open in a leaf
 2. Get the `EditorView` for that leaf
-3. Dispatch `setSelectionInfoEffect` (what range to replace)
-4. Dispatch `setGeneratedResponseEffect` (what AI text to show)
+3. Dispatch `setEditContextEffect` with the target range and current text
+4. Dispatch `setGeneratedResponseEffect` with the AI text
 
-Then `diffDecorationState`, `ChangeContentWidget`, `applyDiffPlugin` do the rest — unchanged.
-
-```
-NoteEditingBridge
-  .applyToTargetNote(notePath, aiText, range)
-        │
-        ├── openNoteInWorkspace(app, notePath)
-        ├── getEditorViewForNote(app, notePath)
-        ├── dispatch(setSelectionInfoEffect({ from, to, text }))
-        └── dispatch(setGeneratedResponseEffect({ airesponse, prompt }))
-                        │
-                        ▼
-              [existing diffExtension handles everything else]
-```
+Then `diffDecorationState`, `ChangeContentWidget`, and `applyDiffPlugin` render
+and apply the reviewed changes.
 
 ---
 
-## Pattern 4: AI Provider Pattern
+## Pattern 4: Shared Agent Prompt and Provider Routing
 
-`ChatApiManager` is the single point of contact for AI calls:
+The shared base prompt is stored in `settings.agentPrompt` with
+`DEFAULT_AGENT_PROMPT` as its fallback. Settings → Chat Defaults opens the
+native `AgentPromptModal` to view, edit, save, or restore it. `get_agent_prompt`
+reads the prompt; `update_agent_prompt` and `reset_agent_prompt` require
+Developer mode. Runtime context such as tools, notes, persona/memory, and
+participants is assembled separately for each request.
 
-- **v1 (inline)**: `callSelection()` → `callApi()` → `.invoke()` (blocking)
-- **v2 (chat)**: `streamChat()` → `.stream()` (async iterable chunks)
-
-Provider selected from the active provider profile; same `chatClient` used by both methods.
+- **Single-agent chat**: `turnLifecycle` builds the prompt, then sends it through
+  the configured provider.
+- **Group-agent chat**: `Orchestrator` uses the same editable prompt and appends
+  group-chat instructions.
+- **Provider selection**: `activeProviderProfileId` resolves the configured
+  profile for Chat Lab requests.
 
 ```text
-ObsidianAISettings
-  providerProfiles[]
-  activeProviderProfileId
-        |
-        v
-ProviderProfileService.getActiveProfile()
-        |
-        v
-ChatApiManager.initializeChatClient(profile)
-        |
-        +--> inline tooltip calls
-        +--> chat panel calls
+ObsidianAISettings.agentPrompt
+        │
+        ├── buildSystemPrompt() ──> single-agent chat
+        └── Orchestrator ─────────> group-agent chat
 ```
 
 ---
@@ -162,7 +149,7 @@ React is bundled into `main.js` by esbuild — no separate chunk. State lives in
 - `DEFAULT_SETTINGS` provides fallbacks
 - Settings tab (`ObsidianAISettingsTab`) mutates `plugin.settings` and calls `saveSettings()`
 - Provider credentials live in `providerProfiles[]`
-- `activeProviderProfileId` determines the provider/model used by inline and chat calls
+- `activeProviderProfileId` determines the provider/model used by Chat Lab requests
 - Legacy flat settings migrate into the first provider profile
 - v2.0 settings additions: `includeActiveNote`, `maxContextTokens`, `maxSavedConversations`, `debugLogLevel`, `debugLogRetention`
 

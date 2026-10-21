@@ -1,6 +1,10 @@
 # Proposed Architecture: Obsidian AI with Chat + Note Editing
 *Created: 2026-05-02 08:13:57 IST*
-*Last Updated: 2026-05-02 11:46:39 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
+
+> Historical proposal snapshot. It describes the earlier hybrid design with a
+> selection/cursor tooltip editor. That editor was removed under T75; current
+> behavior is documented in `note-editing-design.md` and `systemPatterns.md`.
 
 ## Vision
 

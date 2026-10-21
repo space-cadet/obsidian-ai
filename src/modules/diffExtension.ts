@@ -10,12 +10,13 @@ import {
 } from "@codemirror/view";
 import DiffMatchPatch from "diff-match-patch";
 
-import { acceptTooltipEffect, dismissTooltipEffect } from "./WidgetExtension";
 import {
+	acceptAIEditEffect,
+	clearAIEditEffect,
 	generatedResponseState,
 	setGeneratedResponseEffect,
 } from "./AIExtension";
-import { currentSelectionState } from "./SelectionState";
+import { editContextState } from "./EditContextState";
 
 /**
  * Widget to display added or removed content.
@@ -71,7 +72,7 @@ function generateDiffView(state: EditorState): DecorationSet {
 	try {
 		// Retrieve the AI response and the current context text from the state
 		const response = state.field(generatedResponseState);
-		const context = state.field(currentSelectionState);
+		const context = state.field(editContextState);
 
 		const aiText: string = response?.airesponse ?? "";
 		const contextText: string = context?.text ?? "";
@@ -131,7 +132,7 @@ function dispatchAIChanges(state: EditorState, view: EditorView): void {
 	try {
 		// Grab the AI text and selection info (original context)
 		const response = state.field(generatedResponseState);
-		const context = state.field(currentSelectionState);
+		const context = state.field(editContextState);
 
 		const aiText: string = response?.airesponse ?? "";
 		const selectionFrom = context?.from ?? 0;
@@ -163,11 +164,7 @@ export const diffDecorationState = StateField.define<DecorationSet>({
 			return generateDiffView(tr.state);
 		}
 
-		// Check if the dismiss tooltip effect is present
-		const hasDismissEffect = tr.effects.some((e) =>
-			e.is(dismissTooltipEffect),
-		);
-		if (hasDismissEffect) {
+		if (tr.effects.some((e) => e.is(clearAIEditEffect))) {
 			return Decoration.none;
 		}
 
@@ -178,7 +175,7 @@ export const diffDecorationState = StateField.define<DecorationSet>({
 });
 
 /**
- * Plugin to handle applying diff changes when the accept tooltip effect is triggered.
+ * Plugin to apply reviewed note changes when the user accepts them.
  */
 const applyDiffPlugin = ViewPlugin.fromClass(
 	class {
@@ -186,9 +183,9 @@ const applyDiffPlugin = ViewPlugin.fromClass(
 			// Iterate through all transactions in the update
 			for (const transaction of update.transactions) {
 				for (const effect of transaction.effects) {
-					if (effect.is(acceptTooltipEffect)) {
+					if (effect.is(acceptAIEditEffect)) {
 						console.log(
-							"[diffExtension] applyDiffPlugin — acceptTooltipEffect detected, scheduling dispatchAIChanges",
+							"[diffExtension] applyDiffPlugin — acceptAIEditEffect detected, scheduling dispatchAIChanges",
 						);
 						// Apply the diff changes by dispatching the transaction
 						setTimeout(() => {
@@ -204,80 +201,4 @@ const applyDiffPlugin = ViewPlugin.fromClass(
 	},
 );
 
-/**
- * Exported extension to be included in the EditorView.
- * Declared after focusGuardPlugin so it is initialized in order.
- */
-
-/**
- * Focus guard to suppress editor-level blur/focusout side effects while the
- * Obsidian AI widget is open. This mirrors the behavior in WidgetExtension but
- * ensures that moving focus between the diff overlay and the widget does not
- * trigger Obsidian re-renders (e.g., code block previews).
- */
-const focusGuardPlugin = ViewPlugin.fromClass(
-	class {
-		private onFocusOut: ((e: FocusEvent) => void) | null = null;
-		private onBlur: ((e: FocusEvent) => void) | null = null;
-
-		constructor(private view: EditorView) {
-			const handler = (evt: FocusEvent) => {
-				// Only guard when the Obsidian AI widget is open
-				if (
-					document.body.classList.contains("obsidian-ai-widget-open")
-				) {
-					// Stop Obsidian/global listeners from reacting to focus loss
-					evt.stopImmediatePropagation?.();
-					evt.stopPropagation();
-					// Do not preventDefault so the focus can move as intended
-				}
-			};
-
-			this.onFocusOut = handler;
-			this.onBlur = handler;
-
-			// Attach on the editor root in capture phase to intercept early
-			this.view.dom.addEventListener("focusout", this.onFocusOut, true);
-			this.view.dom.addEventListener("blur", this.onBlur, true);
-
-			// Also attach at the document level to guard cases where focus moves
-			// between editor and non-editor nodes within the document
-			document.addEventListener("focusout", this.onFocusOut, true);
-			document.addEventListener("blur", this.onBlur, true);
-		}
-
-		destroy() {
-			try {
-				if (this.onFocusOut) {
-					this.view.dom.removeEventListener(
-						"focusout",
-						this.onFocusOut,
-						true,
-					);
-					document.removeEventListener(
-						"focusout",
-						this.onFocusOut,
-						true,
-					);
-				}
-				if (this.onBlur) {
-					this.view.dom.removeEventListener(
-						"blur",
-						this.onBlur,
-						true,
-					);
-					document.removeEventListener("blur", this.onBlur, true);
-				}
-			} catch (e) {
-				// ignore cleanup issues
-			}
-		}
-	},
-);
-
-// Export a single extension that includes the focus guard
-export const diffExtension = [
-	diffDecorationState,
-	applyDiffPlugin,
-	focusGuardPlugin,
-];
+export const diffExtension = [diffDecorationState, applyDiffPlugin];

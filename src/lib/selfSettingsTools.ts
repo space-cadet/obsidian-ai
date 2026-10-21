@@ -19,7 +19,6 @@ export const MUTABLE_SETTING_KEYS = [
 	"showFullRequestTokens",
 	"pressEnterToSend",
 	"autoNameSessions",
-	"messageHistory",
 	"includeActiveNote",
 	"developerMode",
 	// Debug and diagnostics settings
@@ -323,7 +322,6 @@ export function validateSettingUpdate(
 		case "debugTelemetry.includeToolDetails":
 		case "debugTelemetry.includeContextMetadata":
 		case "debugTelemetry.includeModelTiming":
-		case "messageHistory":
 			validation = assertBoolean(key, value);
 			break;
 

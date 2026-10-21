@@ -1,8 +1,51 @@
 # Edit History
 
-*Last Updated: 2026-10-21 13:04:15 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
 
 ### 2026-10-21
+#### 17:46:06 IST - T75: Add prompt management and remove the legacy editor
+- Created `src/defaultAgentPrompt.ts` - Add the editable shared prompt default.
+- Created `src/modals/AgentPromptModal.ts` - Add prompt viewing, editing, and reset controls.
+- Modified `src/settings.ts` - Persist the editable prompt and remove old settings.
+- Modified `src/lib/systemPrompt.ts` - Use the saved prompt for single-agent requests.
+- Modified `src/agent/Orchestrator.ts` - Use the saved prompt for group-agent requests.
+- Modified `src/components/ChatApp.tsx` - Supply the latest prompt to the group-agent orchestrator.
+- Modified `src/agent/tools.ts` - Define prompt tools.
+- Modified `src/agent/toolRegistry.ts` - Register prompt tools and their availability.
+- Modified `src/agent/ToolExecutor.ts` - Route prompt tools to handlers.
+- Modified `src/agent/targetLocks.ts` - Lock prompt mutations by setting key.
+- Modified `src/agent/tools/handlers/settingsHandlers.ts` - Persist and audit prompt mutations.
+- Deleted `src/modules/WidgetExtension.ts` - Remove the legacy floating editor.
+- Deleted `src/modules/SelectionState.ts` - Remove selection/cursor editor state.
+- Deleted `src/modules/commands/parser.ts` - Remove legacy editor prompt parsing.
+- Deleted `src/modules/commands/source.ts` - Remove legacy editor command completion.
+- Deleted `src/modules/messageHistory/queue.ts` - Remove selection/cursor prompt history.
+- Modified `src/modules/diffExtension.ts` - Keep shared diff review for chat note changes.
+- Modified `src/noteEditing/NoteEditingBridge.ts` - Keep chat note changes connected to diff review.
+- Modified `src/ui/registration.ts` - Register chat note accept/discard commands.
+- Modified `README.md` - Remove the old editor guide and document prompt controls.
+- Modified `CONTRIBUTING.md` - Remove guidance for the legacy editor.
+- Modified `package.json` - Update the product description.
+- Modified `settings-mockup-improved.html` - Show the prompt setting in Chat Defaults.
+- Deleted `docs/demo.gif` - Remove the old editor demo asset.
+- Modified `memory-bank/tasks/T43.md` - Append the prompt management follow-up.
+- Modified `memory-bank/tasks/T61.md` - Append prompt-specific tools and setting status.
+- Modified `memory-bank/implementation-details/note-editing-design.md` - Update current note diff review and command behavior.
+- Modified `memory-bank/implementation-details/chat-panel-design.md` - Label old tooltip design references as historical.
+- Modified `memory-bank/implementation-details/proposed-architecture.md` - Label the old hybrid editor proposal as historical.
+- Modified `memory-bank/implementation-details/context-system-design.md` - Label the removed selection bridge as historical.
+- Modified `memory-bank/implementation-details/chatapp-settings-decomposition.md` - Clarify the dated WidgetExtension measurement.
+- Modified `memory-bank/implementation-details/refactored-architecture.md` - Update current prompt and note edit architecture.
+- Modified `memory-bank/implementation-details/ai-sdk-migration.md` - Clarify old selection-editor migration references are historical.
+- Modified `memory-bank/techContext.md` - Add the current technical snapshot and label older architecture content.
+- Created `memory-bank/tasks/T75.md` - Record the new completed task.
+- Modified `memory-bank/tasks.md` - Register the completed task.
+- Modified `memory-bank/activeContext.md` - Record current status.
+- Modified `memory-bank/session_cache.md` - Record current status.
+- Created `memory-bank/sessions/2026-10-21-agent-prompt-and-editor-removal.md` - Record the session closeout.
+- Created `memory-bank/edits/2026-10-21/174606-T75-agent-prompt-and-editor-removal.md` - Record this canonical edit chunk.
+- Modified `memory-bank/edit_history.md` - Refresh this generated-view entry manually because no Markdown history generator is available.
+
 #### 13:04:15 IST - T8/T12/T13/T73: Record v1.8.0 chat changes and Memory Bank closeout
 - Modified `CHANGELOG.md` - Added v1.8.0 release notes for current chat improvements.
 - Modified `manifest.json` - Set plugin version to 1.8.0.

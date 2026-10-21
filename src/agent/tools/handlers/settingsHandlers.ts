@@ -4,6 +4,7 @@ import {
 	validateSettingUpdate,
 	resolveSettingPath,
 } from "../../../lib/selfSettingsTools";
+import { DEFAULT_AGENT_PROMPT } from "../../../defaultAgentPrompt";
 import {
 	ToolHandlerBase,
 	type ToolHandlerContext,
@@ -19,9 +20,11 @@ export class SettingsHandlers extends ToolHandlerBase {
 		if (!this.settings) {
 			return { error: "Settings are not available." };
 		}
+		const settings = sanitizeSettings(this.settings);
+		delete settings.agentPrompt;
 		return {
 			success: true,
-			settings: sanitizeSettings(this.settings),
+			settings,
 			currentTurn: this.currentTurnModelContext
 				? {
 						profileId: this.currentTurnModelContext.profileId,
@@ -40,6 +43,89 @@ export class SettingsHandlers extends ToolHandlerBase {
 				: null,
 			currentTurnNote:
 				"currentTurn describes this chat turn's configured request. The global active profile in settings is only the default and may differ. Provider or remote-agent routing can still change the effective model or thinking behavior.",
+		};
+	}
+
+	async getAgentPrompt(): Promise<ToolResult> {
+		if (!this.settings) {
+			return { error: "Settings are not available." };
+		}
+		const prompt = this.settings.agentPrompt || DEFAULT_AGENT_PROMPT;
+		return {
+			success: true,
+			prompt,
+			prompt_is_default: prompt === DEFAULT_AGENT_PROMPT,
+		};
+	}
+
+	async updateAgentPrompt(args: { prompt: unknown }): Promise<ToolResult> {
+		if (!this.settings) {
+			return { error: "Settings are not available." };
+		}
+		if (!this.settings.developerMode) {
+			return {
+				error: "Developer mode is disabled. Enable it in Settings → Agent Tools to allow the AI to modify settings.",
+			};
+		}
+		if (
+			typeof args.prompt !== "string" ||
+			!args.prompt.trim() ||
+			args.prompt.length > 50000
+		) {
+			return {
+				error: "The agent prompt must be non-empty and no longer than 50,000 characters.",
+			};
+		}
+
+		const previous = this.settings.agentPrompt;
+		this.settings.agentPrompt = args.prompt;
+		try {
+			await this.saveSettings?.();
+		} catch (error: any) {
+			this.settings.agentPrompt = previous;
+			return {
+				error: `Failed to save settings: ${error.message || String(error)}`,
+			};
+		}
+		await this._auditAgentPromptChange(
+			"update_agent_prompt",
+			args.prompt.length,
+		);
+		return {
+			success: true,
+			prompt_length: args.prompt.length,
+			prompt_is_default: args.prompt === DEFAULT_AGENT_PROMPT,
+		};
+	}
+
+	async resetAgentPrompt(): Promise<ToolResult> {
+		if (!this.settings) {
+			return { error: "Settings are not available." };
+		}
+		if (!this.settings.developerMode) {
+			return {
+				error: "Developer mode is disabled. Enable it in Settings → Agent Tools to allow the AI to modify settings.",
+			};
+		}
+
+		const previous = this.settings.agentPrompt;
+		this.settings.agentPrompt = DEFAULT_AGENT_PROMPT;
+		try {
+			await this.saveSettings?.();
+		} catch (error: any) {
+			this.settings.agentPrompt = previous;
+			return {
+				error: `Failed to save settings: ${error.message || String(error)}`,
+			};
+		}
+		await this._auditAgentPromptChange(
+			"reset_agent_prompt",
+			DEFAULT_AGENT_PROMPT.length,
+		);
+		return {
+			success: true,
+			prompt: DEFAULT_AGENT_PROMPT,
+			prompt_is_default: true,
 		};
 	}
 
@@ -177,6 +263,32 @@ export class SettingsHandlers extends ToolHandlerBase {
 			}
 		} catch {
 			// Silently fail audit logging — it's non-critical
+		}
+	}
+
+	private async _auditAgentPromptChange(
+		operation: "update_agent_prompt" | "reset_agent_prompt",
+		promptLength: number,
+	): Promise<void> {
+		const adapter = this.app.vault.adapter;
+		const pluginId = this.pluginId ?? "obsidian-ai";
+		const auditPath = `${this.app.vault.configDir}/plugins/${pluginId}/settings-audit.jsonl`;
+		const line =
+			JSON.stringify({
+				timestamp: new Date().toISOString(),
+				operation,
+				key: "agentPrompt",
+				promptLength,
+			}) + "\n";
+		try {
+			if (await adapter.exists(auditPath)) {
+				const existing = await adapter.read(auditPath);
+				await adapter.write(auditPath, existing + line);
+			} else {
+				await adapter.write(auditPath, line);
+			}
+		} catch {
+			// Silently fail audit logging — it is non-critical.
 		}
 	}
 }

@@ -438,6 +438,8 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			requestResponseReserveTokens:
 				plugin.settings.requestResponseReserveTokens ?? 4096,
 			maxToolResultTokens: plugin.settings.maxToolResultTokens ?? 4000,
+			agentPrompt: plugin.settings.agentPrompt,
+			getAgentPrompt: () => plugin.settings.agentPrompt,
 			toolExecutor: new ToolExecutor(
 				plugin.app,
 				plugin.settings,

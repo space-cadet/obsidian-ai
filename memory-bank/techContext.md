@@ -1,6 +1,27 @@
 # Technical Context: Obsidian AI Plugin
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-25 23:03 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
+
+## Current Technical Snapshot (2026-10-21)
+
+- Obsidian plugin target: minimum version 1.11.4; TypeScript, React, the AI
+  SDK, CodeMirror 6, and esbuild form the current stack.
+- Chat Lab requests use `turnLifecycle` for single-agent chats and
+  `Orchestrator` for group-agent chats. Both use the persisted `agentPrompt`
+  base prompt; runtime context is assembled separately.
+- Settings → Chat Defaults opens `AgentPromptModal` to view, edit, save, cancel,
+  or restore the shared base prompt. The `get_agent_prompt`,
+  `update_agent_prompt`, and `reset_agent_prompt` tools expose the same setting;
+  mutations require Developer mode.
+- CodeMirror is registered for chat-originated note diff review through
+  `generatedResponseState`, `editContextState`, and `diffExtension`. The former
+  selection/cursor tooltip editor, its prompt history, and custom editor
+  prompt commands were removed under T75.
+- See `systemPatterns.md`, `tasks/T75.md`, and
+  `implementation-details/settings-provider-design.md` for current details.
+
+The sections below preserve an older v1.2.4/v2.0 design snapshot. References to
+the floating editor describe historical behavior removed under T75.
 
 ## Runtime Environment
 
@@ -11,7 +32,7 @@
 
 ---
 
-## Current Stack (v1.2.4)
+## Historical Stack Snapshot (v1.2.4)
 
 ### Language & Tooling
 
@@ -79,7 +100,7 @@ No vector store library — vault semantic search is deferred.
 
 ---
 
-## Architecture: Current (v1.2.4)
+## Historical Architecture Snapshot (v1.2.4)
 
 ```
 Obsidian Plugin Host
@@ -109,7 +130,7 @@ ChatApiManager
 
 ---
 
-## Architecture: Proposed (v2.0)
+## Historical Proposed Architecture (v2.0 design)
 
 ```
 Obsidian Plugin Host
@@ -274,7 +295,7 @@ User selects file in ChatInput:
 
 ---
 
-## Settings Schema (v2.0 additions)
+## Historical Settings Schema (v2.0 design)
 
 ```typescript
 interface ObsidianAISettings {

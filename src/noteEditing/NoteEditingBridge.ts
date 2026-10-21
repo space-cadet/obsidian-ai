@@ -1,7 +1,7 @@
 import { App, MarkdownView, Notice, TFile } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import { setGeneratedResponseEffect } from "../modules/AIExtension";
-import { setSelectionInfoEffect } from "../modules/SelectionState";
+import { setEditContextEffect } from "../modules/EditContextState";
 
 /**
  * Connects the chat panel to the existing CodeMirror diff machinery.
@@ -11,7 +11,7 @@ import { setSelectionInfoEffect } from "../modules/SelectionState";
 export class NoteEditingBridge {
 	/**
 	 * Applies an AI response as a diff against the full content of the given note.
-	 * Dispatches both the selection-range effect (full doc) and the response effect
+	 * Dispatches both the edit-context effect (full doc) and the response effect
 	 * in a single transaction so diffDecorationState sees both in tr.state.
 	 */
 	static applyToNote(
@@ -36,7 +36,7 @@ export class NoteEditingBridge {
 		try {
 			editorView.dispatch({
 				effects: [
-					setSelectionInfoEffect.of({
+					setEditContextEffect.of({
 						from: 0,
 						to: doc.length,
 						text: fullText,

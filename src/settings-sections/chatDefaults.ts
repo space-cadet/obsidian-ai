@@ -1,6 +1,7 @@
 import { Setting } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection, createSliderWithValue } from "./helpers";
+import { AgentPromptModal } from "../modals/AgentPromptModal";
 
 export function renderChatDefaultsSection(
 	containerEl: HTMLElement,
@@ -129,54 +130,19 @@ export function renderChatDefaultsSection(
 				.onChange(async (value) => {
 					plugin.settings.restoreChatTabs = value;
 					await saveSettings();
-			});
+				});
 		});
 
 	new Setting(sectionEl)
-		.setName("Selection prompt")
+		.setName("Agent prompt")
 		.setDesc(
-			"System prompt used when the tooltip is triggered with selected text.",
+			"View or edit the complete base prompt shared by single-agent and group-agent chats. Reset to restore the built-in prompt.",
 		)
-		.addTextArea((textarea) => {
-			textarea
-				.setPlaceholder("e.g., Summarize the selected text.")
-				.setValue(plugin.settings.selectionPrompt)
-				.inputEl.addEventListener("blur", async () => {
-					plugin.settings.selectionPrompt = textarea.getValue();
-					await saveSettings();
-				});
-			textarea.inputEl.classList.add("wide-text-settings");
-		});
-
-	new Setting(sectionEl)
-		.setName("Cursor prompt")
-		.setDesc(
-			"System prompt used when the tooltip is triggered without selected text.",
-		)
-		.addTextArea((textarea) => {
-			textarea
-				.setPlaceholder("e.g., Generate text based on cursor position.")
-				.setValue(plugin.settings.cursorPrompt)
-				.inputEl.addEventListener("blur", async () => {
-					plugin.settings.cursorPrompt = textarea.getValue();
-					await saveSettings();
-				});
-			textarea.inputEl.classList.add("wide-text-settings");
-		});
-
-	new Setting(sectionEl)
-		.setName("Message history")
-		.setDesc(
-			"Enable prompt history navigation in the inline tooltip using the up/down arrow keys.",
-		)
-		.addToggle((toggle) => {
-			toggle
-				.setValue(plugin.settings.messageHistory)
-				.onChange(async (value) => {
-					plugin.settings.messageHistory = value;
-					await saveSettings();
-				});
-		});
+		.addButton((button) =>
+			button.setButtonText("View and edit").onClick(() => {
+				new AgentPromptModal(plugin.app, plugin, saveSettings).open();
+			}),
+		);
 
 	const maxSessionsSetting = new Setting(sectionEl)
 		.setName("Max sessions in sidebar")

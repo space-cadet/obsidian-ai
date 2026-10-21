@@ -1,10 +1,12 @@
 # Settings & Provider Profile Design
 *Created: 2026-05-02 11:46:39 IST*
-*Last Updated: 2026-09-02 18:06:05 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
 
 ## Overview
 
-The current settings screen is a single global configuration: one provider, one model, and one API key. The provider-profile design lets users keep multiple inference configurations and switch between them without rewriting credentials.
+Settings provides multiple provider profiles so users can keep inference
+configurations and switch between them without rewriting credentials. Chat
+defaults, including the shared agent prompt, are configured separately.
 
 T70 clarification: `ProviderProfile.model` is the profile default. The
 effective model shown and used by an active chat may be session-specific, with
@@ -17,6 +19,10 @@ model caches remain profile-scoped because different credentials may expose
 different catalogues. Legacy profile-keyed recent histories are normalized
 into provider keys during settings load and import/sync merges.
 
+T75 follow-up: the shared base agent prompt is persisted as `agentPrompt` and
+edited in a modal launched from Chat Defaults. The former selection/cursor
+prompt, custom editor-command, and prompt-history settings have been removed.
+
 ## Generated UI Reference
 
 The generated UI/UX reference has been saved in the memory bank:
@@ -25,7 +31,7 @@ The generated UI/UX reference has been saved in the memory bank:
 
 Use this as the visual direction for the fuller settings experience: compact Obsidian-style settings navigation, profile controls, model refresh controls, chat defaults, and a diagnostics-oriented layout. The first implementation slice uses native Obsidian `Setting` rows rather than a custom React settings view.
 
-## Current Limitation
+## Historical Limitation Before Provider Profiles
 
 ```text
 ObsidianAISettings
@@ -45,7 +51,7 @@ Problems:
 - There is no connection validation before chat requests
 - Chat, inline editing, and future features all depend on the same fragile tuple
 
-## Target Settings Schema
+## Provider Profile Schema
 
 ```typescript
 type ProviderType = "openai" | "ollama" | "custom" | "gemini" | "azure";
@@ -67,13 +73,8 @@ interface ProviderProfile {
 interface ObsidianAISettings {
   providerProfiles: ProviderProfile[];
   activeProviderProfileId: string;
-
-  selectionPrompt: string;
-  cursorPrompt: string;
-  customCommands: SlashCommand[];
-  commandPrefix: string;
-  messageHistory: boolean;
-
+  selectedProfileIds: string[];
+  agentPrompt: string;
   includeActiveNote: boolean;
   maxContextTokens: number;
   maxSavedConversations: number;
@@ -151,10 +152,10 @@ The first T9 implementation keeps provider-profile helpers in `settings.ts` to a
 ## Provider Resolution
 
 ```text
-ChatApp / FloatingWidget
+ChatApp / turnLifecycle / Orchestrator
         |
         v
-ChatApiManager.callApi() / callSelection() / streamChat()
+ChatApiManager.callApiWithTelemetry() / streamChat()
         |
         v
 getActiveProfile(settings)
@@ -188,7 +189,7 @@ The "Test connection" button should:
 
 ## Open Questions
 
-- Whether to support per-feature active profiles later, such as separate inline/chat profiles
+- Whether to support separate profiles for chat and future background tasks
 - Whether to move API keys to a different storage strategy if Obsidian exposes a better secure-storage option
 
 ## Implementation Status
@@ -309,3 +310,15 @@ display(): void {
     }
 }
 ```
+
+## Current Prompt Settings (2026-10-21)
+
+- `agentPrompt` is the shared editable base prompt for single-agent and
+  group-agent chats.
+- Settings → Chat Defaults opens a native Obsidian modal with the full base
+  prompt, Save, Cancel, and Reset to default.
+- `get_agent_prompt` reads it. `update_agent_prompt` and
+  `reset_agent_prompt` require Developer mode and persist through settings.
+- Runtime context is appended when the request is built. The old
+  selection/cursor tooltip prompts and custom editor prompt commands are gone;
+  chat-based note editing still uses the existing diff review.

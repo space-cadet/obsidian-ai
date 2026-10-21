@@ -5,11 +5,7 @@ import {
 	ObsidianAISettings,
 	ProviderProfile,
 } from "./settings";
-import { App, MarkdownView, Notice } from "obsidian";
-import { EditorView } from "@codemirror/view";
-import { setGeneratedResponseEffect } from "./modules/AIExtension";
-import { parseCommand } from "./modules/commands/parser";
-import { MessageQueue, HistoryMessage } from "./api/history";
+import { App, Notice } from "obsidian";
 import type { ProviderTokenUsage } from "./types";
 import type { ThinkingMode } from "./types";
 import { estimateTokens } from "./context/tokenEstimator";
@@ -59,7 +55,6 @@ export { validateProfile };
 export class ChatApiManager {
 	private app: App;
 	private settings: ObsidianAISettings;
-	private messageHistory: MessageQueue<HistoryMessage>;
 	private logger?: { log: (level: string, ...args: any[]) => void };
 
 	/**
@@ -70,9 +65,6 @@ export class ChatApiManager {
 	constructor(settings: ObsidianAISettings, app: App) {
 		this.app = app;
 		this.settings = settings;
-		this.messageHistory = new MessageQueue<HistoryMessage>(
-			settings.messageHistory ? settings.maxContextMessages || 50 : 0,
-		);
 	}
 
 	/** Attach the file logger (wired by storage lifecycle after creation). */
@@ -82,7 +74,7 @@ export class ChatApiManager {
 
 	/**
 	 * Calls the chat API with the provided content and context.
-	 * Blocking call for the inline tooltip.
+	 * Blocking chat API call.
 	 * @param systemMessage - The system message to send to the chat API.
 	 * @param message - The user's message to send to the chat API.
 	 * @returns A promise that resolves with the generated content or an error message.
@@ -305,97 +297,11 @@ export class ChatApiManager {
 	}
 
 	/**
-	 * Handles user input and updates the editor with the response.
-	 * @param systemPrompt - The system prompt to send to the chat API.
-	 * @param userRequest - The user's request to process.
-	 * @returns The AI-generated response or an error message.
-	 */
-	private async handleEditorUpdate(
-		systemPrompt: string,
-		userRequest: string,
-	): Promise<string> {
-		try {
-			const response = await this.callApi(systemPrompt, userRequest);
-			if (!response) return "⚠️ No response generated.";
-
-			const markdownView =
-				this.app.workspace.getActiveViewOfType(MarkdownView);
-			if (!markdownView) {
-				new Notice("⚠️ No active Markdown editor found.");
-				return "";
-			}
-
-			const mainEditorView = (markdownView.editor as any)
-				.cm as EditorView;
-			mainEditorView?.dispatch({
-				effects: setGeneratedResponseEffect.of({
-					airesponse: response,
-					prompt: userRequest,
-				}),
-			});
-
-			return response;
-		} catch (error: any) {
-			console.error("Error processing request:", error);
-			new Notice(`❌ Error processing request: ${error.message}`);
-			return "⚠️ Failed to process request.";
-		}
-	}
-
-	/**
-	 * Processes selected text using the specified prompt and transformation.
-	 * @param userPrompt - The transformation prompt (e.g., "Add Emojis").
-	 * @param selectedText - The selected text to transform.
-	 * @returns The transformed text or an error message.
-	 */
-	public async callSelection(
-		userPrompt: string,
-		selectedText: string,
-	): Promise<string> {
-		userPrompt = parseCommand(
-			userPrompt,
-			this.settings.commandPrefix,
-			this.settings.customCommands,
-		);
-
-		let isCursor = false;
-		if (selectedText.trim().length === 0) {
-			isCursor = true;
-		}
-
-		const systemPrompt = isCursor
-			? this.settings.cursorPrompt
-			: this.settings.selectionPrompt;
-		let finalUserPrompt = ``;
-		const mode = isCursor ? "cursor" : "selection";
-		if (this.settings.messageHistory) {
-			this.messageHistory.enqueue({ mode, userPrompt });
-		}
-
-		if (isCursor) {
-			finalUserPrompt = `
-      **Task:** ${userPrompt}  
-      **Output:**`;
-		} else {
-			finalUserPrompt = `
-      **Task:** ${userPrompt}  
-      **Input:**  
-      ${selectedText}
-
-      **Output:**`;
-		}
-		return this.handleEditorUpdate(systemPrompt, finalUserPrompt);
-	}
-
-	/**
 	 * Updates the manager's settings.
 	 * @param settings - New configuration settings for the chat API.
 	 */
 	public updateSettings(settings: ObsidianAISettings): void {
 		this.settings = settings;
-		this.messageHistory = new MessageQueue<HistoryMessage>(
-			settings.messageHistory ? settings.maxContextMessages || 50 : 0,
-		);
 	}
 
 	/**
@@ -476,9 +382,5 @@ export class ChatApiManager {
 			}
 			return { ok: false, message: `Connection failed: ${msg}` };
 		}
-	}
-
-	public getMessageHistory(): HistoryMessage[] {
-		return this.messageHistory.getItems();
 	}
 }

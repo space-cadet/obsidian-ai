@@ -33,11 +33,12 @@
 
 ### Additional features
 
-| Feature               | What It Does                                                          |
-| --------------------- | --------------------------------------------------------------------- |
-| **Inline AI Editing** | Review context-aware note edits in a visual diff before applying them |
-| **Mobile Layout**     | Responsive chat controls for phone and tablet screens                 |
-| **Auto-Updater**      | Check and install stable or development releases                      |
+| Feature                   | What It Does                                                           |
+| ------------------------- | ---------------------------------------------------------------------- |
+| **Chat Note Editing**     | Review AI-generated note changes in a visual diff before applying them |
+| **Editable Agent Prompt** | View, edit, or restore the shared prompt in Settings → Chat Defaults   |
+| **Mobile Layout**         | Responsive chat controls for phone and tablet screens                  |
+| **Auto-Updater**          | Check and install stable or development releases                       |
 
 ## ✨ What It Does
 
@@ -124,16 +125,9 @@ The optional WebSocket relay lets Chat Lab users on different devices join share
 
 See [Multi-User Chat Design](memory-bank/implementation-details/multi-user-chat-design.md) for architecture details.
 
-### Inline AI Editing
+### Review Note Changes from Chat
 
-<p align="center">
-  <img src="docs/demo.gif" alt="Inline AI Editing Demo" width="600">
-</p>
-
-- **Context-Aware Suggestions** — Highlight text or place your cursor, press `Ctrl/Cmd + K`, and get AI-powered transformations.
-- **Visual Diff Preview** — See exactly what changed with inline markers for additions and deletions before you commit.
-- **One-Click Apply / Discard** — Accept changes instantly or dismiss them without touching your note.
-- **Custom Slash Commands** — Define your own system prompts and trigger them with `/` shortcuts.
+Use **Apply → Note** to preview AI-generated changes in the active note. Review the additions and removals, then run **Accept AI note edit** or **Discard AI note edit** from Obsidian's command palette.
 
 For the complete, implementation-independent capability and behavior map of
 the chat component, see the
@@ -226,15 +220,7 @@ The AI will:
 2. Generate a summary
 3. Create the draft via `create_note` — pending your approval (unless Auto-Apply is on)
 
-### 6. Inline Editing (Optional)
-
-1. Select text in any note (or place your cursor)
-2. Press `Ctrl/Cmd + K` (customizable in Hotkeys)
-3. Type your instruction — e.g. _"make this more concise"_ or _"translate to Spanish"_
-4. Review the diff preview
-5. Click **✓ Accept** to apply, or **✗ Discard** to cancel
-
-### 7. Web Search (Optional)
+### 6. Web Search (Optional)
 
 Open **Settings** → **Web Search**. Choose a provider (DuckDuckGo works without setup). Now you can ask:
 

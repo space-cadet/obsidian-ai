@@ -1,6 +1,10 @@
 # AI SDK Migration: LangChain → Vercel AI SDK
 *Created: 2026-05-02 12:23:54 IST*
-*Last Updated: 2026-05-02 16:55:00 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
+
+> Historical migration record. References below to the selection editor and
+> `callSelection()` describe the pre-T75 implementation, not current product
+> behavior.
 
 ## Decision Record
 

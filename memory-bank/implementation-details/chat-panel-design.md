@@ -1,6 +1,11 @@
 # Chat Panel Design: ObsidianAIChatView
 *Created: 2026-05-02 08:13:57 IST*
-*Last Updated: 2026-05-03 00:18:43 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
+
+> Historical design snapshot. Its tooltip, keyboard shortcut, and selection
+> bridge references describe the pre-T75 editor and are no longer current.
+> See `note-editing-design.md` and `systemPatterns.md` for current chat-to-note
+> diff review.
 
 ## Overview
 

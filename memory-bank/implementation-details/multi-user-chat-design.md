@@ -1,6 +1,7 @@
 # Multi-User Chat Design Principles & Decisions
 
 *Date: 2026-08-08*
+*Updated: 2026-10-21 17:46:06 IST*
 *Status: IN PROGRESS — PoP Phase*
 *Decision Owner: Deepak Vaid*
 
@@ -68,11 +69,21 @@ interface SyncAdapter {
 ---
 
 ### 2. LaTeX is Free
-**Principle:** Don't build a LaTeX renderer. Obsidian already has MathJax/KaTeX.
+**Principle:** Don't build a LaTeX renderer. Obsidian already has MathJax/KaTeX;
+agent prompts must use Obsidian's dollar-sign delimiters.
 
-**Evidence:** `MessageBubble.tsx` uses Obsidian's `MarkdownRenderer` which renders `$...$` and `$$...$$` natively.
+**Evidence:** `MessageBubble.tsx` uses Obsidian's `MarkdownRenderer` which renders
+`$...$` and `$$...$$` natively.
 
-**Decision:** Multi-user chat inherits LaTeX for free. No code needed.
+**Decision:** Multi-user chat inherits the renderer. The built-in chat and
+multi-agent system prompts specify `$...$` for inline math and `$$...$$` for
+display math so model output uses delimiters Obsidian renders.
+
+**Prompt management (2026-10-21):** These math rules are in the built-in shared
+base prompt. Users can view, edit, save, or restore that prompt in the Chat
+Defaults modal; `get_agent_prompt`, `update_agent_prompt`, and
+`reset_agent_prompt` expose corresponding agent tools. Group-agent prompts use
+the same base prompt and append their participant-specific instructions.
 
 ---
 

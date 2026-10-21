@@ -14,6 +14,7 @@ import { ToolExecutor } from "./ToolExecutor";
 import { estimateTokens } from "../context/tokenEstimator";
 import { buildBudgetedHistory } from "../context/contextBudget";
 import { describeToolsForPrompt } from "./toolRegistry";
+import { DEFAULT_AGENT_PROMPT } from "../defaultAgentPrompt";
 
 export type DispatchMode = "sequential" | "parallel";
 export type ContextStrategy = "full" | "isolated";
@@ -56,6 +57,10 @@ export interface OrchestratorOptions {
 	requestResponseReserveTokens?: number;
 	/** Maximum estimated tokens for a model-facing tool result. */
 	maxToolResultTokens?: number;
+	/** Shared editable system prompt for single-agent and group-agent chats. */
+	agentPrompt?: string;
+	/** Read the latest persisted prompt if settings change while this orchestrator stays mounted. */
+	getAgentPrompt?: () => string;
 	/** Tool executor for running Obsidian note tools. If provided with enableTools=true, agents will use tool calling. */
 	toolExecutor?: ToolExecutor;
 	/** IDs of remote users participating in this chat (relay user IDs) */
@@ -82,6 +87,8 @@ export class Orchestrator {
 	maxContextMessages: number;
 	requestResponseReserveTokens: number;
 	maxToolResultTokens: number;
+	agentPrompt: string;
+	getAgentPrompt?: () => string;
 	toolExecutor?: ToolExecutor;
 
 	constructor(options: OrchestratorOptions) {
@@ -103,6 +110,8 @@ export class Orchestrator {
 		this.requestResponseReserveTokens =
 			options.requestResponseReserveTokens ?? 4096;
 		this.maxToolResultTokens = options.maxToolResultTokens ?? 4000;
+		this.agentPrompt = options.agentPrompt?.trim() || DEFAULT_AGENT_PROMPT;
+		this.getAgentPrompt = options.getAgentPrompt;
 		this.toolExecutor = options.toolExecutor;
 		this.remoteUsers = options.remoteUsers ?? [];
 	}
@@ -584,7 +593,9 @@ export class Orchestrator {
 	private buildSystemPrompt(agentId: string): string {
 		const engine = this.engines.find((e) => e.id === agentId);
 		const name = engine?.name ?? "Assistant";
+		const agentPrompt = this.getAgentPrompt?.().trim() || this.agentPrompt;
 		let prompt =
+			`${agentPrompt}\n\n` +
 			`You are ${name}, participating in a collaborative discussion with other AI assistants. ` +
 			`You each bring different strengths and knowledge. ` +
 			`You MUST offer your own independent view. Do not simply agree with or repeat what other assistants have said. ` +

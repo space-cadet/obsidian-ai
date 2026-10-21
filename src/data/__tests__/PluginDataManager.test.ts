@@ -72,7 +72,9 @@ describe("PluginDataManager", () => {
 			const manager = new PluginDataManager(plugin);
 			const bundle = manager.createExportBundle(true);
 
-			expect(bundle.settings.selectionPrompt).toBe("");
+			expect(bundle.settings.agentPrompt).toBe(
+				DEFAULT_SETTINGS.agentPrompt,
+			);
 			expect(bundle.settings.providerProfiles).toEqual([]);
 		});
 	});
@@ -231,7 +233,7 @@ describe("PluginDataManager", () => {
 	describe("extractSettings", () => {
 		it("zeros out plugin settings when disabled", () => {
 			const plugin = createMockPlugin({
-				selectionPrompt: "custom prompt",
+				agentPrompt: "custom prompt",
 			});
 			const components: SyncComponentConfig = {
 				...DEFAULT_SETTINGS.syncComponents,
@@ -239,7 +241,7 @@ describe("PluginDataManager", () => {
 			};
 
 			const result = extractSettings(plugin, components, true, "export");
-			expect(result.selectionPrompt).toBe("");
+			expect(result.agentPrompt).toBe(DEFAULT_SETTINGS.agentPrompt);
 		});
 
 		it("strips API keys when apiKeys disabled in sync mode", () => {

@@ -297,6 +297,12 @@ export class ToolExecutor {
 			delete_note: (call) =>
 				this.vaultHandlers.deleteNote(call.args as { path: string }),
 			read_settings: (call) => this.settingsHandlers.readSettings(),
+			get_agent_prompt: () => this.settingsHandlers.getAgentPrompt(),
+			update_agent_prompt: (call) =>
+				this.settingsHandlers.updateAgentPrompt(
+					call.args as { prompt: string },
+				),
+			reset_agent_prompt: () => this.settingsHandlers.resetAgentPrompt(),
 			update_setting: (call) =>
 				this.settingsHandlers.updateSetting(
 					call.args as { key: string; value: unknown },

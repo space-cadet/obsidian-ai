@@ -28,14 +28,14 @@ Do not include API keys, vault-private note content, or other secrets in issues.
 
 ## Suggesting Features
 
-Describe the workflow you want to support, why it matters, and any alternatives you considered. For chat or note-editing features, mention whether the behavior should affect the persistent chat panel, the inline editor tooltip, or both.
+Describe the workflow you want to support, why it matters, and any alternatives you considered. For chat or note-editing features, mention whether the behavior should affect chat responses, edits applied to notes from chat, or both.
 
 ## Pull Requests
 
 - Keep changes focused on one feature or fix.
 - Run `pnpm run build` before opening a PR.
 - Update docs or memory-bank notes when behavior, architecture, or release process changes.
-- Preserve the existing inline tooltip behavior unless the PR intentionally changes it.
+- Preserve existing chat and note-editing behavior unless the PR intentionally changes it.
 - Add manual test notes for Obsidian UI changes.
 
 ## Code Style

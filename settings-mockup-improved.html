@@ -720,16 +720,10 @@
 					>
 						Intelligence
 					</button>
-					<button class="nav-item" onclick="showSection('commands')">
-						Custom Commands
-					</button>
 				</div>
 
 				<div class="nav-group">
 					<div class="nav-group-label">System</div>
-					<button class="nav-item" onclick="showSection('advanced')">
-						Advanced
-					</button>
 					<button
 						class="nav-item"
 						onclick="showSection('diagnostics')"
@@ -1238,124 +1232,26 @@
 					</div>
 				</div>
 
-				<!-- Advanced (Larger Textareas) -->
-				<div class="section-card" id="advanced">
-					<h3>Advanced</h3>
+				<!-- Chat Defaults -->
+				<div class="section-card" id="chatdefaults">
+					<h3>Chat Defaults</h3>
 					<p class="section-desc">
-						Adjust inline prompt behavior and low-level interaction
-						details.
+						Set the main instructions shared by single-agent and
+						group-agent chats.
 					</p>
-
-					<div
-						class="setting-row"
-						style="
-							flex-direction: column;
-							align-items: stretch;
-							gap: 8px;
-						"
-					>
-						<div class="setting-info">
-							<div class="setting-name">Selection prompt</div>
-							<div class="setting-desc">
-								System prompt used when the tooltip is triggered
-								with selected text.
-							</div>
-						</div>
-						<textarea
-							placeholder="e.g., Summarize the selected text."
-						>
-You are a helpful assistant. Summarize the user's selected text concisely while preserving key technical details.</textarea
-						>
-					</div>
-
-					<div
-						class="setting-row"
-						style="
-							flex-direction: column;
-							align-items: stretch;
-							gap: 8px;
-						"
-					>
-						<div class="setting-info">
-							<div class="setting-name">Cursor prompt</div>
-							<div class="setting-desc">
-								System prompt used when the tooltip is triggered
-								without selected text.
-							</div>
-						</div>
-						<textarea
-							placeholder="e.g., Generate text based on cursor position."
-						>
-You are a helpful writing assistant. Continue the text naturally from the cursor position, matching the tone and style of the existing content.</textarea
-						>
-					</div>
-				</div>
-
-				<!-- Custom Commands (Card Layout) -->
-				<div class="section-card" id="commands">
-					<h3>Custom Commands</h3>
-					<p class="section-desc">
-						Add reusable inline-edit commands triggered by a shared
-						prefix.
-					</p>
-
 					<div class="setting-row">
 						<div class="setting-info">
-							<div class="setting-name">Command prefix</div>
+							<div class="setting-name">Agent prompt</div>
 							<div class="setting-desc">
-								The prefix used to trigger custom commands.
+								View, edit, or restore the default main prompt.
 							</div>
 						</div>
 						<div class="setting-control">
-							<input
-								type="text"
-								value="/"
-								style="
-									width: 40px;
-									text-align: center;
-									font-family: var(--font-monospace);
-								"
-							/>
-						</div>
-					</div>
-
-					<div class="command-card">
-						<div class="command-card-header">
-							<span class="command-trigger">/chat-summary</span>
-							<button class="icon-btn is-danger" title="Delete">
-								🗑️
+							<button class="btn btn-primary">
+								View and edit
 							</button>
 						</div>
-						<textarea
-							style="
-								min-height: 60px;
-								font-size: var(--font-ui-smaller);
-							"
-						>
-Summarize this chat conversation into 3-5 bullet points highlighting key decisions and action items.</textarea
-						>
 					</div>
-
-					<div class="command-card">
-						<div class="command-card-header">
-							<span class="command-trigger">/explain-code</span>
-							<button class="icon-btn is-danger" title="Delete">
-								🗑️
-							</button>
-						</div>
-						<textarea
-							style="
-								min-height: 60px;
-								font-size: var(--font-ui-smaller);
-							"
-						>
-Explain the selected code in simple terms. Identify the algorithm or pattern used, and note any potential edge cases or bugs.</textarea
-						>
-					</div>
-
-					<button class="btn btn-primary" style="margin-top: 8px">
-						+ Add Command
-					</button>
 				</div>
 			</main>
 		</div>

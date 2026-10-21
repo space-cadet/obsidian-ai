@@ -1,228 +1,54 @@
-# Note Editing Design: In-Place Edit & Create from Chat
+# Note Editing Design: Chat to Note Diff Review
 *Created: 2026-05-02 08:13:57 IST*
-*Last Updated: 2026-05-02 23:56:30 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
 
-## Overview
+## Current Behavior (T75)
 
-This is the key differentiator from the Obsidian Copilot plugin. While Copilot keeps AI responses inside the chat panel, Obsidian AI can push AI-generated content directly into notes as an inline diff — the same accept/discard UX already present in the inline tooltip, but triggered from the sidebar chat.
+Chat Lab can apply an assistant response to a note through CodeMirror diff
+review. The user chooses an Apply action in chat, inspects the proposed
+changes in the note, then accepts or discards them from the command palette.
+This is the supported note-editing flow.
 
----
+The former selection/cursor tooltip editor and its custom prompt commands were
+removed under T75. Older architecture notes that describe that editor are
+historical snapshots.
 
-## Three Editing Intents
+## Apply a Response to a Note
 
+`ChatApp` resolves the target Markdown view and calls
+`NoteEditingBridge.applyToNote`. The bridge reads the current document and
+dispatches `setEditContextEffect` and `setGeneratedResponseEffect` together.
+`diffExtension` compares the current text with the proposed response and shows
+the additions and removals. `Accept AI note edit` applies the response;
+`Discard AI note edit` clears the preview without changing the note.
+
+```text
+Any chat response → choose an Apply-to-note action → inspect the diff in the
+target note → run Accept or Discard from Obsidian's command palette.
 ```
-┌─────────────────────────────────────────────────────────┐
-│ Intent      │ Trigger               │ Effect             │
-├─────────────┼───────────────────────┼────────────────────┤
-│ edit-note   │ /edit [[Note]]        │ diff overlay on    │
-│             │ "Apply to Note" btn   │ specified range    │
-├─────────────┼───────────────────────┼────────────────────┤
-│ create-note │ /create [[New Note]]  │ creates file, diff │
-│             │                       │ shows full content │
-├─────────────┼───────────────────────┼────────────────────┤
-│ append-note │ /append [[Note]]      │ appends to end,    │
-│             │                       │ no diff (direct)   │
-└─────────────┴───────────────────────┴────────────────────┘
-```
-
----
-
-## Edit Note Flow
-
-```
-Chat panel: "Rewrite the intro of @[[Project Notes]]"
-        │
-        ▼
-[Apply to Note] button appears on AI response bubble
-        │
-User clicks [Apply to Note]
-        │
-        ▼
-NoteEditingBridge.applyToTargetNote(
-  notePath: "Project Notes.md",
-  aiText: "...",
-  range: { from: 0, to: 120 }  ← derived from @mention context
-)
-        │
-        ├── Open note if not already open:
-        │   app.workspace.openLinkText("Project Notes.md", "", false)
-        │
-        ├── Get EditorView for that leaf:
-        │   (markdownView.editor as any).cm as EditorView
-        │
-        ├── Set selection state:
-        │   dispatch setSelectionInfoEffect({ from, to, text: originalText })
-        │
-        └── Dispatch diff:
-            dispatch setGeneratedResponseEffect({
-              airesponse: aiText,
-              prompt: userPrompt
-            })
-            → diffExtension renders inline diff in the note
-            → User sees [Accept] [Discard] in editor
-```
-
----
-
-## "Apply to Note" — Simplified Flow
-
-```
-Any chat response
-        │
-        ▼
-[✓ Apply → NoteBasename]  button on message bubble
-        │
-        ▼
-onApply(content) callback in ChatApp
-  │
-  ├── read lastMarkdownLeafRef.current (tracked via active-leaf-change)
-  └── call NoteEditingBridge.applyToNote(app, view, aiText, prompt)
-        │
-        ├── get EditorView from view.editor.cm
-        ├── dispatch setSelectionInfoEffect (full doc range)
-        └── dispatch setGeneratedResponseEffect (aiText)
-            → diffExtension renders diff → Accept / Discard
-```
-
-Note: NoteEditingBridge no longer discovers the target leaf internally.
-The caller (ChatApp) always provides the resolved MarkdownView. This
-ensures the correct note is targeted when multiple tabs are open.
-
----
 
 ## Create Note Flow
 
-```
-User: "/create [[Meeting Summary]] summarise our action items"
-        │
-        ▼
-parseCommand() detects /create intent
-extracts target: "Meeting Summary"
-        │
-        ▼
-ChatApiManager.streamChat() → AI generates full note markdown
-        │
-        ▼
-NoteEditingBridge.createNote("Meeting Summary", aiContent)
-  │
-  ├── check if file exists:
-  │   app.vault.getAbstractFileByPath("Meeting Summary.md")
-  │   if exists: prompt user "Overwrite?" (modal)
-  │
-  ├── create empty file:
-  │   app.vault.create("Meeting Summary.md", "")
-  │
-  ├── open in new tab:
-  │   app.workspace.openLinkText("Meeting Summary.md", "", true)
-  │
-  ├── set selection to entire note (from:0, to:0):
-  │   dispatch setSelectionInfoEffect({ from: 0, to: 0, text: "" })
-  │
-  └── dispatch diff (entire content as "added"):
-      dispatch setGeneratedResponseEffect({
-        airesponse: aiContent,
-        prompt: "/create Meeting Summary"
-      })
-      → diffExtension shows all content as green additions
-      → [Accept] saves the content
-      → [Discard] deletes the file
-```
-
----
+`NoteEditingBridge.createNote` creates an empty Markdown file, opens it, and
+shows the proposed content as a diff. Accept applies the content. Discard
+clears the preview and leaves the newly created file empty.
 
 ## Append Note Flow
 
-```
-User: "/append [[Daily Notes/2026-05-02]] add a summary section"
-        │
-        ▼
-NoteEditingBridge.appendToNote("Daily Notes/2026-05-02.md", aiContent)
-  │
-  ├── read current file content
-  ├── append "\n\n" + aiContent
-  └── app.vault.modify(file, newContent)
-      (no diff — direct write, no accept/discard needed)
-      Notifies user via Obsidian Notice: "Appended to Daily Notes/2026-05-02"
-```
+`NoteEditingBridge.appendToNote` reads the current file and writes the appended
+content directly, then confirms the action with an Obsidian Notice.
 
----
+## CodeMirror State and Commands
 
-## NoteEditingBridge Module
+```text
+NoteEditingBridge
+  ├── setEditContextEffect + setGeneratedResponseEffect
+  └── diffExtension renders and applies the proposed replacement
 
-```
-src/
-└── noteEditing/
-    └── NoteEditingBridge.ts
-        ├── applyToNote(app, view: MarkdownView, aiText, prompt)
-        │     Caller provides resolved MarkdownView — no leaf discovery here
-        ├── appendToNote(app, file: TFile, aiText)
-        │     Caller provides resolved TFile — no leaf discovery here
-        ├── applyToTargetNote(notePath, aiText, range, prompt)  ← TODO (T3)
-        └── createNote(noteName, aiContent)                     ← TODO
+Obsidian command palette
+  ├── Accept AI note edit → acceptAIEditEffect, then clearAIEditEffect
+  └── Discard AI note edit → clearAIEditEffect
 ```
 
-Leaf/file resolution lives in `ChatApp.handleApply` and `handleAppend`,
-which read `lastMarkdownLeafRef.current` (updated by active-leaf-change).
-
----
-
-## UI: Message Bubble with Edit Actions
-
-```
-┌──────────────────────────────────────────────────────┐
-│ Obsidian AI                                       10:14 │
-│ ──────────────────────────────────────────────────── │
-│ Here's a rewritten introduction for Project Notes:   │
-│                                                      │
-│ # Project Notes                                      │
-│ This document captures key architectural decisions   │
-│ for the Obsidian AI plugin...                           │
-│                                                      │
-│ ┌────────────────────────────────────────────────┐   │
-│ │ [✓ Apply to Project Notes]  [✓ Apply to Active]│   │
-│ │ [⎘ Copy]  [↺ Retry]                           │   │
-│ └────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────┘
-
-After clicking [✓ Apply to Project Notes]:
-
-Editor (Project Notes.md):
-┌──────────────────────────────────────────────────────┐
-│ ~~Old introduction text~~  [removed widget]          │
-│ [added widget] New introduction text                 │
-│                                                      │
-│             [✓ Accept]  [✗ Discard]                  │
-└──────────────────────────────────────────────────────┘
-```
-
----
-
-## Reuse of Existing Machinery
-
-The diff visualisation and accept/discard flow are **completely unchanged** from the current codebase:
-
-| Existing Component | Reused How |
-|---|---|
-| `setGeneratedResponseEffect` | Dispatched by NoteEditingBridge |
-| `setSelectionInfoEffect` | Dispatched by NoteEditingBridge |
-| `diffDecorationState` | Automatically reacts, renders diff |
-| `ChangeContentWidget` | Renders added/removed spans |
-| `applyDiffPlugin` | Handles acceptTooltipEffect as before |
-| `focusGuardPlugin` | Still guards focus during diff review |
-| `acceptTooltipEffect` | Triggered by [Accept] in editor |
-| `dismissTooltipEffect` | Triggered by [Discard] in editor |
-
-NoteEditingBridge only needs to **open the target note** and **dispatch two effects** — the rest is free.
-
----
-
-## Edge Cases
-
-| Scenario | Handling |
-|---|---|
-| Target note not open | Open in background leaf, then dispatch |
-| Target note does not exist | Prompt to create (reuses createNote flow) |
-| Active note is read-only | Show error Notice |
-| Note changes between chat and apply | Re-read and re-diff at apply time |
-| Multiple pending diffs on same note | Not supported in v1; second apply closes first |
-| /create with existing file name | Modal: Overwrite / Rename / Cancel |
+The proposal remains in CodeMirror state until accepted. Discard clears the
+proposal without writing the proposed text into the note.

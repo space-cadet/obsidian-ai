@@ -1,6 +1,13 @@
 # Product Context: Obsidian AI Plugin
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-05-02 11:46:39 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
+
+## Current Product Snapshot (2026-10-21)
+
+Chat Lab AI is chat-first. Agents can use vault tools, and responses can be
+applied to notes through diff review. The former selection/cursor tooltip
+editor was removed under T75. The shared base prompt is editable in Settings
+→ Chat Defaults, with read/update/reset agent tools.
 
 ## Problem Statement
 
@@ -8,7 +15,10 @@ Obsidian users who want AI-assisted writing must either:
 1. Leave their editor entirely to use external AI tools (ChatGPT, Claude.ai), or
 2. Use a plugin like Copilot that keeps AI responses locked inside a chat panel — separate from the notes being worked on.
 
-Obsidian AI v1.2.4 solved problem 1 for quick single-shot transforms but has no chat interface. The v2.0 roadmap solves both: a persistent chat panel *plus* the ability to push AI responses directly into notes, with the same familiar diff + accept/discard UX.
+Earlier versions supported quick single-shot editor transforms. Chat Lab later
+added persistent conversations and note editing from chat. The separate
+selection/cursor editor flow is historical and was removed on 2026-10-21;
+chat-based note changes remain reviewable before they are applied.
 
 ---
 
@@ -17,7 +27,7 @@ Obsidian AI v1.2.4 solved problem 1 for quick single-shot transforms but has no 
 - **Knowledge workers** using Obsidian for notes, writing, and research
 - **Writers** who want to discuss and refine content with AI without leaving their vault
 - **Developers** using Obsidian for documentation who want local/private model support
-- **Power users** who want `@mention` context injection and in-place editing, not just chat replies
+- **Power users** who want `@mention` context injection and note edits from chat
 
 ---
 
@@ -26,7 +36,7 @@ Obsidian AI v1.2.4 solved problem 1 for quick single-shot transforms but has no 
 1. **Conversation first**: discuss changes with AI before applying them
 2. **Apply anywhere**: push AI responses into any note, not just the chat
 3. **Minimal friction**: `@note` to add context; one button to apply to note
-4. **Familiar diff UX**: the same accept/discard flow already in v1.2.4
+4. **Reviewable edits**: inspect note changes from chat before accepting them
 5. **Privacy**: local models via Ollama remain first-class
 6. **Non-destructive**: nothing changes in a note until the user accepts the diff
 7. **Setup confidence**: users can store multiple provider profiles, test connections, and choose fetched models without guessing IDs
@@ -35,7 +45,7 @@ Obsidian AI v1.2.4 solved problem 1 for quick single-shot transforms but has no 
 
 ---
 
-## Current User Flows (v1.2.4)
+## Historical User Flows (v1.2.4; legacy editor removed 2026-10-21)
 
 ### Flow 1: Quick Inline Transform
 1. Select text in editor
@@ -54,7 +64,7 @@ Obsidian AI v1.2.4 solved problem 1 for quick single-shot transforms but has no 
 
 ---
 
-## Proposed User Flows (v2.0)
+## Chat User Flows (v2.0)
 
 ### Flow 3: Chat + Apply to Note
 ```
@@ -78,7 +88,7 @@ Obsidian AI v1.2.4 solved problem 1 for quick single-shot transforms but has no 
 │ ~~Old intro text~~ [removed] │
 │ [added] New intro text       │
 │                              │
-│    [✓ Accept]  [✗ Discard]   │
+│ Command Palette: Accept AI note edit / Discard AI note edit              │
 └──────────────────────────────┘
 ```
 
@@ -130,7 +140,7 @@ Obsidian Notice: "Appended to Daily Notes/2026-05-02"
 | Streaming responses | ✅ | ❌ | ✅ |
 | Apply response to note | ❌ (chat only) | inline only | ✅ from chat |
 | Create note from chat | ❌ | ❌ | ✅ |
-| Inline diff + accept/discard | ❌ | ✅ | ✅ (both) |
+| Note diff review | ❌ | ✅ legacy editor | ✅ from chat |
 | Vault semantic search | ✅ | ❌ | ❌ (deferred) |
 | Local model support | ✅ | ✅ | ✅ |
 | Multiple provider profiles/API keys | ✅ | ❌ | ✅ |

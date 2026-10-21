@@ -1,7 +1,7 @@
 {
 	"name": "chat-lab",
 	"version": "1.8.0",
-	"description": "AI-powered assistant for Obsidian with inline editing and persistent chat",
+	"description": "AI-powered assistant for Obsidian with persistent chat and vault editing tools",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",

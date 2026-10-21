@@ -723,8 +723,31 @@ export const readSettingsTool = t({
 		"Read the current plugin settings and the resolved profile/model/thinking selection for this chat turn when available. " +
 		"The global active profile in settings is only the default and can differ from the profile used by this chat. " +
 		"This reports configured request values, not proof of the provider's effective model or whether it honored a thinking setting. " +
-		"Use this to self-diagnose configuration issues or understand current behavior. " +
+		"Use this to self-diagnose configuration issues or understand current behavior. The main agent prompt is available through get_agent_prompt. " +
 		"Sensitive fields like API keys and credentials are automatically redacted.",
+	inputSchema: z.object({}),
+});
+
+export const getAgentPromptTool = t({
+	description:
+		"Read the editable main agent prompt shared by single-agent and group-agent chats. Runtime context such as current notes, tools, persona/memory, and participants is added separately.",
+	inputSchema: z.object({}),
+});
+
+export const updateAgentPromptTool = t({
+	description:
+		"Replace the editable main agent prompt. Only available when Developer mode is enabled. This changes subsequent model requests; use get_agent_prompt first if the current prompt is not already known.",
+	inputSchema: z.object({
+		prompt: z
+			.string()
+			.max(50000)
+			.describe("The complete new main agent prompt."),
+	}),
+});
+
+export const resetAgentPromptTool = t({
+	description:
+		"Restore the built-in main agent prompt. Only available when Developer mode is enabled.",
 	inputSchema: z.object({}),
 });
 
@@ -786,6 +809,9 @@ export const noteTools = {
 	search_past_sessions: searchPastSessionsTool,
 	read_tool_result: readToolResultTool,
 	read_settings: readSettingsTool,
+	get_agent_prompt: getAgentPromptTool,
+	update_agent_prompt: updateAgentPromptTool,
+	reset_agent_prompt: resetAgentPromptTool,
 	update_setting: updateSettingTool,
 	get_plugin_info: getPluginInfoTool,
 };

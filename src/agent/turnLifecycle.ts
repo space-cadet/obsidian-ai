@@ -892,6 +892,7 @@ export class TurnLifecycle {
 			undefined,
 			resolvedToolRegistry.definitions,
 			deps.plugin.settings.intelligence?.identityContextBudget,
+			deps.plugin.settings.agentPrompt,
 		);
 		if (compactionSummary) {
 			systemPrompt += `\n\n${compactionSummary}`;

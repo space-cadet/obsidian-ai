@@ -1,6 +1,6 @@
 # Model Discovery & Picker Design
 *Created: 2026-05-02 11:46:39 IST*
-*Last Updated: 2026-05-04 22:46:16 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
 
 ## Overview
 
@@ -153,7 +153,7 @@ Network error:
 
 - Manual model entry must always remain available
 - The selected manual model should be stored even if it is not in cache
-- Discovery failures should not break existing chat or inline editing
+- Discovery failures should not break chat or note editing from chat
 - Cached model lists are per provider profile, not global
 - Long model lists must be searchable and scrollable
 

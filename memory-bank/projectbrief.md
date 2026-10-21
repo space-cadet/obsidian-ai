@@ -1,19 +1,20 @@
 # Project Brief
 
-*Last Updated: 2026-05-02 17:08:57 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
 
 ## Project Overview
-Obsidian AI is an Obsidian plugin that brings AI-assisted writing and editing into the editor. The current product combines an established inline transformation flow with an in-progress sidebar chat experience that will eventually support streaming, context injection, and note-editing actions.
+Chat Lab AI is an Obsidian plugin centered on persistent, multi-agent chat and vault tools. Users can provide note context, ask agents to edit vault content, and review note changes in the editor. The main agent prompt is configurable in Settings → Chat Defaults.
 
 ## Goals
-- Preserve and improve the existing inline editor workflow without regressions.
-- Add a persistent chat panel that can share provider settings and eventually apply results back into notes.
-- Keep provider setup, diagnostics, and model selection practical for real multi-provider use.
+- Keep multi-agent chat, provider selection, and vault tools reliable.
+- Make note edits from chat reviewable before they are applied.
+- Keep the shared agent prompt visible, editable, and resettable from Settings and available through guarded agent tools.
 
 ## Core Features
-- Inline prompt-driven transformations with diff, accept, and discard controls.
-- Sidebar chat panel scaffold built with React and plain CSS.
-- Provider-profile based settings that support multiple endpoints and accounts.
+- Persistent chat panel and collaborative multi-agent conversations.
+- Vault tools for reading, searching, creating, and editing notes.
+- Chat-to-note diff review with explicit accept and discard commands.
+- Provider-profile settings and a configurable shared agent prompt.
 
 ## Project Structure
 ```text
@@ -41,9 +42,8 @@ obsidian-ai/
 - **`src/settings.ts`**: Settings schema, provider profiles, model defaults, and settings-tab UI.
 
 ## Current Status
-- Overall Progress: Core chat/settings foundation complete; streaming UI and model discovery remain open.
-- Active Tasks: 2
-- Current Focus: T4 streaming completion and memory-bank normalization.
+- Current work and acceptance status are tracked in `tasks.md`.
+- Recent completed work: T75 added prompt management and removed the legacy editor feature.
 
 ## Task Tracking
 Tasks are tracked in `tasks.md` with the following priority structure:
@@ -57,7 +57,7 @@ Tasks are tracked in `tasks.md` with the following priority structure:
 - `/memory-bank/archive/`: Reserved for archived task or session material.
 
 ## Implementation Guidelines
-Keep the existing inline editor path stable while new chat features land incrementally. Prefer one canonical provider abstraction layer, one canonical memory-bank format, and design docs that stay close to the actual implementation state.
+Build on the existing chat and note-editing paths. Reuse native Obsidian UI patterns, keep note changes reviewable, and keep design documents aligned with the current implementation.
 
 ## External Dependencies
 - `ai` and `@ai-sdk/*`: Unified provider abstraction and streaming support.
@@ -65,4 +65,4 @@ Keep the existing inline editor path stable while new chat features land increme
 - `obsidian`: Plugin API and UI surface integration.
 
 ## Notes
-The current roadmap assumes T4 streaming completion first, followed by T10 model discovery, then the broader conversation/context/diagnostics/onboarding tasks built on top of the T9 provider-profile foundation.
+Historical task and product decisions remain in their dated task and session records. Use `tasks.md` for current work and status.

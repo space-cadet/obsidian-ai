@@ -1,7 +1,5 @@
 import { StateEffect, StateField } from "@codemirror/state";
 
-import { dismissTooltipEffect } from "./WidgetExtension";
-
 // Custom structure that has a airesponse and context fields
 export interface AIResponse {
 	airesponse: string;
@@ -13,6 +11,8 @@ export interface AIResponse {
  */
 export const setGeneratedResponseEffect =
 	StateEffect.define<AIResponse | null>();
+export const clearAIEditEffect = StateEffect.define<null>();
+export const acceptAIEditEffect = StateEffect.define<null>();
 
 // State field of type text to store the response from the API
 export const generatedResponseState = StateField.define<AIResponse | null>({
@@ -27,8 +27,7 @@ export const generatedResponseState = StateField.define<AIResponse | null>({
 			);
 			return effect ? effect.value : value;
 		}
-		// if we geta dismmisTooltipEffect we should clear the response
-		if (tr.effects.some((e) => e.is(dismissTooltipEffect))) {
+		if (tr.effects.some((e) => e.is(clearAIEditEffect))) {
 			return null;
 		}
 		return value;

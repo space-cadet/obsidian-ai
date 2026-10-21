@@ -1,6 +1,37 @@
 # Session Cache
 
-*Last Updated: 2026-10-21 13:04:15 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
+
+## 2026-10-21 — T75 Agent Prompt Management and Legacy Editor Removal
+
+- Added `agentPrompt` as the shared editable base prompt for single-agent and
+  group-agent requests. The default includes Obsidian dollar-sign LaTeX math.
+- Added a native modal in Chat Defaults with Save, Cancel, and Reset to
+  default. Added `get_agent_prompt`, `update_agent_prompt`, and
+  `reset_agent_prompt`; mutations require Developer mode.
+- Removed the legacy selection/cursor tooltip, prompt-history setting,
+  custom editor prompt commands, and obsolete user-facing descriptions. The
+  chat-originated diff review remains.
+- Production build, changed-file formatting checks, and `git diff --check`
+  passed. Tests and live Obsidian acceptance were not run.
+- No commit or push. See `tasks/T75.md` and
+  `sessions/2026-10-21-agent-prompt-and-editor-removal.md`.
+
+## 2026-10-21 — Obsidian math delimiters in agent prompts
+
+This entry records the state before the later T75 prompt-management follow-up
+above.
+
+- The built-in and multi-agent system prompts now require `$...$` for inline
+  math and `$$...$$` for display math, avoiding backslash-parenthesis/bracket
+  delimiters.
+- The app has no editor or full prompt viewer for the main system prompt.
+  `!debug history` only previews history built with an empty system prompt.
+  Selection/cursor prompts, custom command prompts, and persona context are
+  editable through Settings or the configured persona file.
+- Prettier and production build passed. Tests and live Obsidian acceptance
+  were not run; no commit or push was made. See T43 follow-up and the session
+  record.
 
 ## 2026-10-21 — Empty-chat splash image
 

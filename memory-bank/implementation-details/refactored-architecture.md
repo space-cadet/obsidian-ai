@@ -1,7 +1,7 @@
 # Refactored Architecture Guide
 
 *Created: 2026-05-29*
-*Last Updated: 2026-08-29 17:08:29 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
 *Applies to: obsidian-ai plugin codebase*
 
 ## Overview
@@ -12,6 +12,12 @@ Current measurements and follow-up boundaries are maintained here after later
 T15, T34, T40, T43, T44, T60, and T64 work. **T22, T46a, and the main T46
 file reorganization are complete; T46 now has only provider-switching and
 real-provider runtime acceptance open.**
+
+T75 follow-up: Chat Defaults now owns the shared editable agent prompt, with
+`AgentPromptModal` and prompt read/update/reset agent tools. The former editor
+tooltip modules and their custom prompt-command settings have been removed.
+Note edits from chat use `EditContextState.ts`, `AIExtension.ts`, and
+`diffExtension.ts`, with accept/discard exposed through the command palette.
 
 ## Guiding Principles
 
@@ -31,11 +37,10 @@ src/
 │   ├── helpers.ts                 # Shared: createSection, getProviderLabel
 │   ├── hero.ts                    # Hero banner with active profile
 │   ├── providerProfiles.ts        # React ProfileList mount
-│   ├── chatDefaults.ts            # Context, auto-name, limits
+│   ├── chatDefaults.ts            # Agent prompt, context, auto-name, limits
 │   ├── agentTools.ts              # Tools toggle, auto-apply, max steps
 │   ├── webSearch.ts               # Provider dropdown, API keys
-│   ├── advanced.ts                # Prompts, message history
-│   ├── customCommands.ts          # Slash command CRUD
+│   ├── chatCommands.ts            # Built-in chat command settings
 │   └── diagnostics.ts             # Metrics, debug level, clear history
 │
 ├── components/                    # React UI components
@@ -104,9 +109,9 @@ src/
 │   └── PdfExtractor.ts            # PDF text extraction
 │
 ├── modules/                       # Obsidian integrations
-│   ├── WidgetExtension.ts         # Inline tooltip (577 lines)
-│   └── commands/                  # Slash commands
-│       └── source.ts
+│   ├── AIExtension.ts             # Proposed response state/effects
+│   ├── EditContextState.ts        # Note diff target state
+│   └── diffExtension.ts           # Diff preview and apply behavior
 │
 ├── types.ts                       # Shared TypeScript types
 ├── main.ts                        # Plugin lifecycle coordinator (234 lines; T46)
@@ -118,7 +123,8 @@ src/
     └── pluginDataSync.ts          # Selected plugin-data sync
 ```
 
-`default_prompts.ts` remains at the root of `src/`.
+`defaultAgentPrompt.ts` stores the shared base prompt at the root of `src/`.
+`AgentPromptModal.ts` provides its settings editor.
 
 T44 planned host boundary:
 

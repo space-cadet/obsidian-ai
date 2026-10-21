@@ -4,7 +4,7 @@ import { ProviderProfile } from "../settings";
 import { getActiveProviderProfile } from "../settings";
 import { renderAgentToolsSection } from "./agentTools";
 import { renderChatDefaultsSection } from "./chatDefaults";
-import { renderCustomCommandsSection } from "./customCommands";
+import { renderChatCommandsSection } from "./chatCommands";
 import { renderDiagnosticsSection } from "./diagnostics";
 import { renderHeroSection } from "./hero";
 import { renderProviderProfilesSection } from "./providerProfiles";
@@ -56,9 +56,6 @@ const ADVANCED_SECTION_TITLES = new Set(["Debug Mode", "Diagnostics"]);
 
 const ADVANCED_SETTING_NAMES: Record<string, Set<string>> = {
 	"Chat Defaults": new Set([
-		"Selection prompt",
-		"Cursor prompt",
-		"Message history",
 		"Show full request token count",
 		"Max sessions in sidebar",
 		"Max saved conversations",
@@ -424,7 +421,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				["Remote Storage", "Remote Storage"],
 				["Updates", "Updates"],
 				["PDF Extraction", "PDF Extraction"],
-				["Custom Commands", "Custom Commands"],
+				["Chat Commands", "Chat Commands"],
 				["Backup & Restore", "Backup & Restore"],
 				["Debug Mode", "Debug Mode"],
 				["Diagnostics", "Diagnostics"],
@@ -898,12 +895,8 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 			);
 			addSection(s11, "Updates");
 
-			const s13 = renderCustomCommandsSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
-			);
-			addSection(s13, "Custom Commands");
+			renderChatCommandsSection(containerEl);
+			addSection(undefined, "Chat Commands");
 
 			const s14 = renderExportImportSection(
 				containerEl,

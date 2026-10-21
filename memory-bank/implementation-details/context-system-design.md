@@ -1,6 +1,6 @@
 # Context System Design: @ Mentions & Vault Integration
 *Created: 2026-05-02 08:13:57 IST*
-*Last Updated: 2026-05-02 23:21:14 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
 
 ## Overview
 
@@ -112,6 +112,10 @@ Output: "See [Architecture Decisions — Patterns]
 ---
 
 ## Selection Bridge
+
+> Historical design section: it describes selection sharing from the removed
+> editor tooltip, including its “Send to Chat” action. The current chat context
+> flow is documented separately in `systemPatterns.md`.
 
 The inline tooltip already captures `SelectionInfo {from, to, text}` in `currentSelectionState`. The chat panel taps into this:
 

@@ -27,11 +27,7 @@ function makeTestSettings(
 		],
 		activeProviderProfileId: "default",
 		selectedProfileIds: [],
-		selectionPrompt: "",
-		cursorPrompt: "",
-		customCommands: [],
-		commandPrefix: "/",
-		messageHistory: false,
+		agentPrompt: "Test prompt",
 		includeActiveNote: false,
 		maxContextTokens: 8000,
 		maxContextMessages: 10,
@@ -166,7 +162,6 @@ describe("sanitizeSettings", () => {
 		expect(sanitized.showFullRequestTokens).toBe(true);
 		expect(sanitized.pressEnterToSend).toBe(true);
 		expect(sanitized.autoNameSessions).toBe(false);
-		expect(sanitized.messageHistory).toBe(false);
 		expect(sanitized.includeActiveNote).toBe(false);
 		expect(sanitized.toolHistoryMode).toBe("elide");
 		expect(sanitized.developerMode).toBe(false);
@@ -307,22 +302,6 @@ describe("validateSettingUpdate", () => {
 			expect(result.error).toContain("positive number");
 		}
 	});
-
-	it("accepts messageHistory as a boolean", () => {
-		const result = validateSettingUpdate("messageHistory", true);
-		expect(result.ok).toBe(true);
-		if (result.ok) {
-			expect(result.value).toBe(true);
-		}
-	});
-
-	it("rejects messageHistory as a number", () => {
-		const result = validateSettingUpdate("messageHistory", 5);
-		expect(result.ok).toBe(false);
-		if (!result.ok) {
-			expect(result.error).toContain("must be a boolean");
-		}
-	});
 });
 
 describe("MUTABLE_SETTING_KEYS", () => {
@@ -342,7 +321,6 @@ describe("MUTABLE_SETTING_KEYS", () => {
 			"showFullRequestTokens",
 			"pressEnterToSend",
 			"autoNameSessions",
-			"messageHistory",
 			"includeActiveNote",
 			"developerMode",
 			"debugLogLevel",

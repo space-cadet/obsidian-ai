@@ -1,7 +1,11 @@
 # Implementation Detail: ChatApp + Settings Decomposition
 *Created: 2026-05-28 23:10 IST*
-*Last Updated: 2026-08-27 13:21 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
 *Related Tasks: T22, T23, T46, T46a*
+
+> The size reports below are dated snapshots. In particular, the pre-refactor
+> `WidgetExtension.ts` row describes the former editor tooltip, removed under
+> T75 on 2026-10-21; it is not part of the current codebase.
 
 ## Context
 Deepak identified that `ChatApp.tsx` (1,948 lines) and `settings.ts` (1,187 lines) are unmaintainably large. This doc records the full analysis and refactoring strategy.

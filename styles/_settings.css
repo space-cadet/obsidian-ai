@@ -348,6 +348,41 @@
 	line-height: 1.5;
 }
 
+.modal.obsidian-ai-agent-prompt-modal {
+	width: min(900px, calc(100vw - 40px));
+}
+
+.obsidian-ai-agent-prompt-modal .setting-item {
+	display: block;
+}
+
+.obsidian-ai-agent-prompt-modal .setting-item-control {
+	width: 100%;
+	max-width: none;
+	margin-top: 8px;
+}
+
+.agent-prompt-modal-textarea {
+	width: 100%;
+	min-height: min(58vh, 720px);
+	max-height: 70vh;
+	resize: vertical;
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+	.modal.obsidian-ai-agent-prompt-modal {
+		width: calc(100vw - 24px);
+	}
+
+	.agent-prompt-modal-textarea {
+		min-height: 45vh;
+		max-height: 60vh;
+	}
+}
+
 /* Profile actions hover reveal */
 .obsidian-ai-profile-col-actions {
 	display: flex;

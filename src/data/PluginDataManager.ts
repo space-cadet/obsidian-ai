@@ -84,10 +84,7 @@ function extractSettings(
 
 	// If pluginSettings disabled, zero out non-essential fields
 	if (!components.pluginSettings) {
-		settings.selectionPrompt = "";
-		settings.cursorPrompt = "";
-		settings.customCommands = [];
-		settings.messageHistory = false;
+		settings.agentPrompt = DEFAULT_SETTINGS.agentPrompt;
 		settings.includeActiveNote = false;
 		settings.maxContextTokens = DEFAULT_SETTINGS.maxContextTokens;
 		settings.maxContextMessages = DEFAULT_SETTINGS.maxContextMessages;

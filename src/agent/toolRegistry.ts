@@ -126,6 +126,9 @@ const BUILTIN_RISKS: Record<string, HostToolRisk> = {
 	search_past_sessions: "read",
 	read_tool_result: "read",
 	query_dataview: "read",
+	get_agent_prompt: "read",
+	update_agent_prompt: "local-write",
+	reset_agent_prompt: "local-write",
 	update_setting: "local-write",
 };
 
@@ -401,7 +404,9 @@ export function createBuiltInToolDefinitions(
 			availability:
 				id === "read_memory_audit"
 					? memoryAuditAvailability
-					: id === "update_setting"
+					: id === "update_setting" ||
+						  id === "update_agent_prompt" ||
+						  id === "reset_agent_prompt"
 						? updateSettingAvailability
 						: id === "query_dataview"
 							? dataviewAvailability

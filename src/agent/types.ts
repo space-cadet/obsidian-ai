@@ -119,6 +119,12 @@ export interface ToolResult {
 	risk?: "read" | "write" | "remote-write" | "destructive";
 	/** Sanitized plugin settings returned by read_settings. */
 	settings?: Record<string, unknown>;
+	/** Editable main agent prompt returned by get_agent_prompt. */
+	prompt?: string;
+	/** Whether the configured prompt equals the built-in default. */
+	prompt_is_default?: boolean;
+	/** Character count for an updated prompt. */
+	prompt_length?: number;
 	/** Resolved profile and thinking selection for the current chat turn. */
 	currentTurn?: {
 		profileId: string;

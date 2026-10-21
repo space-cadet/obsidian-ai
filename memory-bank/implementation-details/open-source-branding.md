@@ -1,6 +1,6 @@
 # Open Source Release & Branding Guide
 *Created: 2026-05-02 11:00:39 IST*
-*Last Updated: 2026-08-28 16:24 IST*
+*Last Updated: 2026-10-21 17:52:24 IST*
 
 ## Overview
 
@@ -49,6 +49,10 @@ obsidian-ai/
 ## Required File Templates
 
 ### manifest.json
+
+The following v1.4.0 manifest is a historical example; its description no
+longer matches the current product.
+
 ```json
 {
     "id": "chat-lab",
@@ -61,6 +65,9 @@ obsidian-ai/
     "isDesktopOnly": false
 }
 ```
+
+Current package description (v1.8.0): “AI-powered assistant for Obsidian with
+persistent chat and vault editing tools.”
 
 **Critical:** `id` must be `chat-lab`. The Community Directory rejects names containing "Obsidian" or colons.
 
@@ -87,7 +94,7 @@ Required sections:
 2. **Features** — Key capabilities with screenshots/GIFs
 3. **Installation** — Community plugin store + manual install
 4. **Setup** — Configuration instructions
-5. **Usage** — Inline AI and chat panel
+5. **Usage** — Chat panel and vault editing tools
 6. **Configuration** — Settings explanation
 7. **Development** — Build from source
 8. **Contributing** — Link to CONTRIBUTING.md

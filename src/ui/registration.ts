@@ -2,17 +2,11 @@
 import { MarkdownView, Notice, WorkspaceLeaf } from "obsidian";
 import { EditorView } from "@codemirror/view";
 import {
-	acceptTooltipEffect,
-	commandEffect,
-	dismissTooltipEffect,
-	FloatingTooltipExtension,
-} from "../modules/WidgetExtension";
-import { generatedResponseState } from "../modules/AIExtension";
-import {
-	buildSelectionHiglightState,
-	currentSelectionState,
-	setSelectionInfoEffect,
-} from "../modules/SelectionState";
+	acceptAIEditEffect,
+	clearAIEditEffect,
+	generatedResponseState,
+} from "../modules/AIExtension";
+import { editContextState } from "../modules/EditContextState";
 import { diffExtension } from "../modules/diffExtension";
 import { ObsidianAIChatView, CHAT_VIEWTYPE } from "../views/ObsidianAIChatView";
 import {
@@ -65,76 +59,9 @@ export function registerCommands(plugin: ObsidianAIPlugin): void {
 		callback: () => activateChatView(plugin),
 	});
 
-	// Add command to show tooltip
 	plugin.addCommand({
-		id: "show-cursor-tooltip",
-		name: "Show cursor tooltip",
-		callback: () => {
-			const markdownView =
-				plugin.app.workspace.getActiveViewOfType(MarkdownView);
-			if (markdownView) {
-				const cmEditor = (markdownView.editor as any).cm as EditorView;
-
-				// Grab the main selection range
-				const { from, to } = cmEditor.state.selection.main;
-				const effects = [];
-
-				if (from !== to) {
-					// If there is a real selection, store it
-					const selectedText = cmEditor.state.doc.sliceString(
-						from,
-						to,
-					);
-					effects.push(
-						setSelectionInfoEffect.of({
-							from,
-							to,
-							text: selectedText,
-						}),
-					);
-				} else {
-					// If no selection, store cursor position instead of null
-					effects.push(
-						setSelectionInfoEffect.of({ from, to, text: "" }),
-					);
-				}
-
-				// Also trigger the overlay
-				effects.push(commandEffect.of(null));
-
-				// Dispatch all effects in one go
-				cmEditor.dispatch({ effects });
-			}
-		},
-		hotkeys: [],
-	});
-	plugin.addCommand({
-		id: "accept-tooltip",
-		name: "Accept tooltip suggestion",
-		callback: () => {
-			const markdownView =
-				plugin.app.workspace.getActiveViewOfType(MarkdownView);
-			if (markdownView) {
-				const cmEditor = (markdownView.editor as any).cm as EditorView;
-
-				const response = cmEditor.state.field(
-					generatedResponseState,
-					false,
-				);
-				if (response) {
-					cmEditor.dispatch({
-						effects: acceptTooltipEffect.of(null),
-					});
-					cmEditor.dispatch({
-						effects: dismissTooltipEffect.of(null),
-					});
-				}
-			}
-		},
-	});
-	plugin.addCommand({
-		id: "discard-tooltip",
-		name: "Discard tooltip suggestion",
+		id: "accept-ai-note-edit",
+		name: "Accept AI note edit",
 		callback: () => {
 			const markdownView =
 				plugin.app.workspace.getActiveViewOfType(MarkdownView);
@@ -144,9 +71,40 @@ export function registerCommands(plugin: ObsidianAIPlugin): void {
 					generatedResponseState,
 					false,
 				);
-				if (response) {
+				const editContext = cmEditor.state.field(
+					editContextState,
+					false,
+				);
+				if (response && editContext) {
 					cmEditor.dispatch({
-						effects: dismissTooltipEffect.of(null),
+						effects: acceptAIEditEffect.of(null),
+					});
+					cmEditor.dispatch({
+						effects: clearAIEditEffect.of(null),
+					});
+				}
+			}
+		},
+	});
+	plugin.addCommand({
+		id: "discard-ai-note-edit",
+		name: "Discard AI note edit",
+		callback: () => {
+			const markdownView =
+				plugin.app.workspace.getActiveViewOfType(MarkdownView);
+			if (markdownView) {
+				const cmEditor = (markdownView.editor as any).cm as EditorView;
+				const response = cmEditor.state.field(
+					generatedResponseState,
+					false,
+				);
+				const editContext = cmEditor.state.field(
+					editContextState,
+					false,
+				);
+				if (response && editContext) {
+					cmEditor.dispatch({
+						effects: clearAIEditEffect.of(null),
 					});
 				}
 			}
@@ -191,10 +149,8 @@ export function registerCommands(plugin: ObsidianAIPlugin): void {
 
 export function registerEditorExtensions(plugin: ObsidianAIPlugin): void {
 	plugin.registerEditorExtension([
-		FloatingTooltipExtension(plugin.chatapi, plugin),
 		generatedResponseState,
-		currentSelectionState,
-		buildSelectionHiglightState,
+		editContextState,
 		diffExtension,
 	]);
 }

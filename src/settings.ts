@@ -1,5 +1,4 @@
-import { cursorPrompt, selectionPrompt } from "./default_prompts";
-import { SlashCommand } from "./modules/commands/source";
+import { DEFAULT_AGENT_PROMPT } from "./defaultAgentPrompt";
 import { migrateRecentModelsToProviders } from "./lib/recentModels";
 
 /** Automatic remote sync stays disabled until its behavior is fully verified. */
@@ -134,11 +133,7 @@ export interface ObsidianAISettings {
 	activeProviderProfileId: string;
 	/** IDs of profiles selected in the multi-select toolbar (global default) */
 	selectedProfileIds: string[];
-	selectionPrompt: string;
-	cursorPrompt: string;
-	customCommands: SlashCommand[];
-	commandPrefix: string;
-	messageHistory: boolean;
+	agentPrompt: string;
 	includeActiveNote: boolean;
 	maxContextTokens: number;
 	maxContextMessages: number;
@@ -395,11 +390,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	providerProfiles: DEFAULT_PROFILES,
 	activeProviderProfileId: DEFAULT_PROFILE_ID,
 	selectedProfileIds: [],
-	selectionPrompt: selectionPrompt,
-	cursorPrompt: cursorPrompt,
-	customCommands: [],
-	commandPrefix: "/",
-	messageHistory: false,
+	agentPrompt: DEFAULT_AGENT_PROMPT,
 	includeActiveNote: false,
 	maxContextTokens: 8000,
 	maxContextMessages: 10,
@@ -555,11 +546,11 @@ export const normalizeSettings = (
 		providerProfiles,
 		activeProviderProfileId,
 		selectedProfileIds,
-		selectionPrompt: merged.selectionPrompt,
-		cursorPrompt: merged.cursorPrompt,
-		customCommands: merged.customCommands ?? [],
-		commandPrefix: merged.commandPrefix || "/",
-		messageHistory: Boolean(merged.messageHistory),
+		agentPrompt:
+			typeof merged.agentPrompt === "string" &&
+			merged.agentPrompt.trim().length > 0
+				? merged.agentPrompt
+				: DEFAULT_AGENT_PROMPT,
 		includeActiveNote: Boolean(merged.includeActiveNote),
 		maxContextTokens: merged.maxContextTokens ?? 8000,
 		maxContextMessages: merged.maxContextMessages ?? 10,

@@ -1,5 +1,34 @@
 # Active Context
 
+### 2026-10-21 — Agent prompt management and legacy editor removal (T75)
+
+- The shared base prompt now lives in `settings.agentPrompt`, includes
+  Obsidian-compatible LaTeX delimiters, and is used by single-agent and
+  group-agent requests.
+- Settings → Chat Defaults opens a native modal for viewing, editing, saving,
+  cancelling, and restoring the prompt. Agent tools can read, update, and
+  reset it; update/reset require Developer mode.
+- Removed the legacy selection/cursor tooltip editor, its prompt history and
+  custom editor commands, and current references in user-facing docs. Chat
+  Apply-to-Note diff review remains available.
+- `pnpm run build`, changed-file formatting checks, and `git diff --check`
+  passed. Tests and live Obsidian acceptance were not run. No commit or push.
+- Historical entries below are retained; T43 and T61 have dated follow-ups.
+
+### 2026-10-21 — Obsidian math delimiters in agent prompts
+
+This entry records the state at the end of the math-prompt session, before the
+later T75 prompt-management follow-up below.
+
+- Added an explicit rule to the normal chat and multi-agent system prompts:
+  use `$...$` inline and `$$...$$` for display math, and avoid the
+  backslash-parenthesis/bracket delimiters Obsidian does not render.
+- The main system prompt has no Settings editor. `!debug history` does not show
+  it; it builds a model-history preview with an empty system prompt. Settings
+  expose selection/cursor prompts, custom command prompts, and persona context.
+- Prettier and the production build passed; tests and live Obsidian acceptance
+  were not run. Changes remain local and uncommitted.
+
 ### 2026-10-21 — Empty-chat splash image
 
 - Added the user's selected robot assembly-line image to the empty chat view.
