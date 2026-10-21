@@ -28,6 +28,23 @@ existing `check-for-updates` command and updater flow. Assistant message cards
 fill the available chat width; user message cards retain their narrower,
 right-aligned layout.
 
+### Chat UI follow-ups (2026-10-21)
+
+- PDF message attachments show an icon and filename without the former large
+  Save and Open buttons.
+- Long MathJax expressions scroll horizontally within the equation container;
+  surrounding text stays in place, and vertical overflow is hidden.
+- Every tab whose session is generating shows a spinner and exposes its
+  generating state accessibly.
+- The transcript follows late content layout changes while follow mode is
+  active; a manual scroll away from the latest reply is preserved.
+- The More menu uses separators between action groups without section titles.
+  Its collaboration separator is conditional on collaboration actions being
+  available.
+
+The implementation and verification record is in
+`sessions/2026-10-21-chat-attachments-equations-tabs-scroll.md`.
+
 ---
 
 ## Profile Selection

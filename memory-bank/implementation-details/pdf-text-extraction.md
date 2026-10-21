@@ -131,14 +131,10 @@ private async readPdf(args: { source: string; max_pages?: number }) {
 
 ### UI: PDF Attachment Cards
 
-In `MessageBubble.tsx`, PDF attachments render as interactive cards:
-
-```typescript
-function PdfAttachmentCard({ attachment, app }) {
-    // 💾 Save — decodes base64, writes to vault via app.vault.createBinary()
-    // 🔗 Open — window.open(attachment.path, "_blank")
-}
-```
+In `MessageBubble.tsx`, PDF attachments render as a compact card containing an
+icon and filename. The former oversized Save and Open actions were removed in
+the 2026-10-21 UI follow-up; the card does not add separate file-management
+buttons. See T45 and commit `3ee82a4`.
 
 ## Data Flow
 

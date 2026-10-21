@@ -1,6 +1,24 @@
 # Session Cache
 
-*Last Updated: 2026-10-21 19:51:24 IST*
+*Last Updated: 2026-10-21 22:46:08 IST*
+
+## 2026-10-21 — T19/T45/T43/T15/T71 Chat Follow-Ups
+
+- Fixed PDF file parts to use AI SDK `mediaType`, with legacy `mimeType`
+  conversion during single-agent and group replay. Removed the oversized
+  Save/Open actions from PDF attachment cards.
+- Restricted horizontal overflow to MathJax expressions and hid vertical
+  overflow. Added per-tab generation spinners, followed late transcript layout
+  changes while follow mode is active, and replaced More-menu headings with
+  separators.
+- Source commits `c97cf29`, `3ee82a4`, `3d83f82`, `024117f`, `6412040`, and
+  `320638e` are pushed to `codex/t75-agent-prompt-editor`. `pnpm run build`
+  passed; `pnpm test` passed with 633 tests in 78 files. Live Obsidian UI
+  acceptance remains unverified.
+- Memory Bank task and implementation records, this cache, active context,
+  changelog, session record, and edit history were updated; no task statuses
+  changed. See
+  `sessions/2026-10-21-chat-attachments-equations-tabs-scroll.md`.
 
 ## 2026-10-21 — T75a Latest Effective System Prompt Preview
 

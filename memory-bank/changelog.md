@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased — 2026-10-21
+
+### Fixed
+
+- PDF file parts now match the AI SDK schema, and older saved attachment parts
+  are normalized for replay (`c97cf29`, T19).
+- Long chat equations scroll horizontally within MathJax containers without
+  moving surrounding text or showing vertical scrollbars (`024117f`,
+  `6412040`, T43).
+- Chat follows late transcript layout changes when the user is already
+  following the latest reply, while preserving manual scroll-away (T71).
+
+### Changed
+
+- PDF attachment cards no longer show oversized Save/Open actions; each
+  generating session now has a spinner in its tab; the More menu uses
+  separators in place of section headings (`3ee82a4`, `320638e`, T45/T15).
+- Updated provider, agent, budget, and repair UI regression tests to match
+  current runtime contracts; full suite passes with 633 tests in 78 files
+  (`3d83f82`).
+
+See `sessions/2026-10-21-chat-attachments-equations-tabs-scroll.md` for the
+session scope and verification details.
+
 ## Released — 2026-10-17
 
 - `1.7.0` added Codex account sign-in, optional read-only Dataview DQL, and

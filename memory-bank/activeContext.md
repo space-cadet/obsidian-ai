@@ -1,6 +1,25 @@
 # Active Context
 
-*Last Updated: 2026-10-21 19:51:24 IST*
+*Last Updated: 2026-10-21 22:46:08 IST*
+
+### 2026-10-21 — Chat attachments, equations, tabs, and reply visibility (T19/T45/T43/T15/T71)
+
+- Fixed the AI SDK PDF file-part schema and normalized old saved `mimeType`
+  parts for single-agent and group replay. PDF cards now show only an icon and
+  filename, without the oversized Save/Open buttons.
+- Long MathJax expressions scroll horizontally inside their own containers;
+  surrounding text stays fixed and vertical overflow is hidden.
+- Added a per-tab generation spinner with accessible busy state. The More menu
+  now uses separators instead of section headings.
+- Follow mode now handles late transcript layout changes while preserving a
+  user's manual scroll away from the latest reply.
+- Source commits `c97cf29`, `3ee82a4`, `3d83f82`, `024117f`, `6412040`, and
+  `320638e` are pushed to `origin/codex/t75-agent-prompt-editor`. Production
+  build and full suite passed (78 files, 633 tests). Live Obsidian acceptance
+  remains unverified.
+- Memory Bank follow-ups recorded in the task and implementation docs, the
+  session record, and the canonical edit chunk. See
+  `sessions/2026-10-21-chat-attachments-equations-tabs-scroll.md`.
 
 ### 2026-10-21 — Latest effective system prompt preview (T75a under T75)
 
