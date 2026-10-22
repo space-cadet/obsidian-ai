@@ -1,12 +1,26 @@
 # Agentic Tool Calling Implementation
 *Created: 2026-05-03 02:40:00 IST*
-*Last Updated: 2026-09-28 12:35:16 IST*
+*Last Updated: 2026-10-22 11:58:08 IST*
 
 ## Overview
 
 The LLM acts as an agent that can read, edit, create, move, delete, and organize Obsidian notes via native function calling. The Vercel AI SDK provides the tool calling primitives. This document describes the complete implementation.
 
 **Status**: ✅ Tool layer implemented. AgentLoop extracted. PendingToolCard created. Tool result formatting active.
+
+### Saved Chat Session Tools (T13/T24c/T60, 2026-10-22)
+
+The agent can list, read, search, open, rename, and delete saved chat sessions
+through `list_chat_sessions`, `read_chat_session`, `search_past_sessions`,
+`open_chat_session`, `rename_chat_session`, and `delete_chat_session`.
+Listing and search are paginated; transcript reads are bounded and return
+continuation metadata. Search can target titles, message content, or both.
+Opening can navigate to a specified message. Rename is performed only on user
+request. Deletion always requires explicit user approval and excludes the
+active or currently generating session.
+
+The user reports that the approve/reject dialog for session deletion does not
+work. The issue has not been independently reproduced or diagnosed.
 
 ### Bounded Large-File Reads (2026-10-21)
 

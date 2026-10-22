@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased — 2026-10-22
+
+### Added
+
+- Agent tools can list, read, search, open, rename, and delete saved chat
+  sessions. Search covers titles and message content; deletion requires
+  explicit approval (`70474e3`, T13/T24c/T60).
+- Added a Settings option for parallel session generations, defaulting to five
+  with a supported range of one to ten (T15, `16f7034`).
+
+### Fixed
+
+- Creating a new chat no longer stops a reply generating in another tab; new
+  sends and retries now respect the configured parallel-session limit (T15,
+  `16f7034`).
+
+### Verification
+
+- The full suite passed with 645 tests in 80 files, and the production build,
+  formatting, and diff checks passed. Live Obsidian acceptance remains open.
+- Follow-up: the user reports that the approve/reject dialog for deleting
+  sessions does not work; diagnosis and independent reproduction remain open.
+
 ## Unreleased — 2026-10-21
 
 ### Fixed

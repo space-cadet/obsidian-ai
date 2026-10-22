@@ -1,6 +1,21 @@
 # Session Cache
 
-*Last Updated: 2026-10-21 22:46:08 IST*
+*Last Updated: 2026-10-22 11:58:08 IST*
+
+## 2026-10-22 — T13/T24c/T60/T15 Session Tools and Parallel Replies
+
+- Added agent tools to list, read, search, open, rename, and delete saved
+  sessions. Search covers titles and content with explicit scopes; reads and
+  result lists are bounded or paginated. Delete requires explicit approval.
+- Creating a new tab no longer stops a reply in another session. Settings now
+  has `maxParallelChatSessions` (default five); new sends and retries honor it.
+- Source commits `70474e3` and `16f7034` are pushed to
+  `origin/codex/t75-agent-prompt-editor`. Full suite: 645 tests in 80 files;
+  production build, formatting, and diff checks passed.
+- Live acceptance remains open. The user reports the session-delete
+  approve/reject dialog does not work; diagnosis and independent reproduction
+  remain open. T13/T24c are complete; T60/T15 remain active. See
+  `sessions/2026-10-22-session-tools-and-parallel-generation.md`.
 
 ## 2026-10-21 — T19/T45/T43/T15/T71 Chat Follow-Ups
 

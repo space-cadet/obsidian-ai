@@ -1,6 +1,6 @@
 # Per-Tab Chat Process Isolation
 *Created: 2026-08-05 10:55:22 IST*
-*Last Updated: 2026-08-05 11:27:43 IST*
+*Last Updated: 2026-10-22 11:58:08 IST*
 
 ## Purpose
 
@@ -154,6 +154,19 @@ Verification:
 Manual validation:
 
 - The user confirmed the repaired tabbed-chat workflow behaves correctly: a reply in one tab no longer appears in another tab.
+
+## 2026-10-22 — Keep background generations running with a configurable limit
+
+- Creating a new chat session no longer aborts a generation owned by another
+  session. The response continues in the originating session while the new tab
+  is active.
+- `maxParallelChatSessions` is a persisted Settings value with a default of
+  five and a supported range of one to ten. Shared admission reservations
+  enforce the cap across sessions, including retries. A blocked retry restores
+  its transcript and context before reporting that the limit was reached.
+- Regression tests cover generation survival, limit admission, and retry
+  handling. Full tests (645 tests in 80 files), production build, formatting,
+  and diff checks passed. Live Obsidian acceptance remains unverified.
 
 ## Related Work
 
