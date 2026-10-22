@@ -8,9 +8,13 @@ import type { TurnLifecycleDeps } from "./turnLifecycle";
  * stop, retry, edit, and tool-approval interactions.
  */
 export class TurnActionController {
+	private readonly approvingToolCalls = new Set<string>();
+
 	constructor(
 		private readonly getDeps: () => TurnLifecycleDeps,
-		private readonly getCurrentToolExecutor: () => ToolExecutor | null,
+		private readonly getToolExecutor: (
+			sessionId: string,
+		) => ToolExecutor | null,
 		private readonly send: (
 			text: string,
 			attachments?: Attachment[],
@@ -26,9 +30,10 @@ export class TurnActionController {
 		deps.updateMessages(sessionId, messages);
 	}
 
-	stop = (): void => {
+	stop = (sessionId?: string | null): void => {
 		const deps = this.getDeps();
-		const currentActiveId = deps.activeSessionIdRef.current;
+		const currentActiveId = sessionId ?? deps.activeSessionIdRef.current;
+		if (!currentActiveId) return;
 		deps.plugin.logger?.log(
 			"info",
 			`[Chat] stopped — session ${currentActiveId?.slice(0, 8)}`,
@@ -150,51 +155,90 @@ export class TurnActionController {
 		deps.setContextItems([]);
 	};
 
-	approveTool = async (): Promise<void> => {
+	approveTool = async (sessionId?: string | null): Promise<void> => {
 		const deps = this.getDeps();
-		const currentActiveId = deps.activeSessionIdRef.current;
+		const currentActiveId = sessionId ?? deps.activeSessionIdRef.current;
 		if (!currentActiveId) return;
 		const runtime = deps.getRuntime(currentActiveId);
 		const pendingToolCall = runtime.pendingToolCall;
 		if (!pendingToolCall) return;
-		const toolExecutor =
-			this.getCurrentToolExecutor() ??
-			new ToolExecutor(
-				deps.plugin.app,
-				deps.plugin.settings,
-				deps.plugin.personaLoader ?? undefined,
-				deps.plugin.searchIndex ?? undefined,
-				() => currentActiveId,
-				deps.plugin.integrationRegistry,
-				deps.plugin.saveSettings.bind(deps.plugin),
-				deps.plugin.manifest?.id,
-				undefined,
-				undefined,
-				deps.plugin.logger,
-				undefined,
-				{
-					state: deps.plugin.sessionState,
-					openSession: (sessionId, messageId) =>
-						deps.plugin.openSessionInNewTab(sessionId, messageId),
-					getActiveSessionId: () => deps.activeSessionIdRef.current,
-					isSessionBusy: (sessionId) =>
-						Boolean(deps.getRuntime(sessionId).controller),
-				},
+		const resolveTool = runtime.resolveTool;
+		if (!resolveTool) return;
+		const approvalKey = `${currentActiveId}:${pendingToolCall.toolCallId}`;
+		if (this.approvingToolCalls.has(approvalKey)) return;
+		this.approvingToolCalls.add(approvalKey);
+		try {
+			const toolExecutor =
+				this.getToolExecutor(currentActiveId) ??
+				new ToolExecutor(
+					deps.plugin.app,
+					deps.plugin.settings,
+					deps.plugin.personaLoader ?? undefined,
+					deps.plugin.searchIndex ?? undefined,
+					() => currentActiveId,
+					deps.plugin.integrationRegistry,
+					deps.plugin.saveSettings?.bind(deps.plugin),
+					deps.plugin.manifest?.id,
+					undefined,
+					() => deps.sessionsRef.current,
+					deps.plugin.logger,
+					undefined,
+					{
+						state: deps.plugin.sessionState,
+						openSession: (sessionId, messageId) =>
+							deps.plugin.openSessionInNewTab(
+								sessionId,
+								messageId,
+							),
+						getActiveSessionId: () =>
+							deps.activeSessionIdRef.current,
+						isSessionBusy: (sessionId) =>
+							Boolean(deps.getRuntime(sessionId).controller),
+					},
+				);
+			toolExecutor.setLatestSystemPromptReader(
+				() => deps.plugin.latestSystemPrompt ?? null,
 			);
-		toolExecutor.setLatestSystemPromptReader(
-			() => deps.plugin.latestSystemPrompt ?? null,
-		);
-		const result = await toolExecutor.execute(
-			pendingToolCall,
-			runtime.controller?.signal,
-		);
-		runtime.resolveTool?.(result);
+			const result = await toolExecutor.execute(
+				pendingToolCall,
+				runtime.controller?.signal,
+			);
+			resolveTool(result);
+		} catch (error) {
+			resolveTool({
+				error: error instanceof Error ? error.message : String(error),
+			});
+		} finally {
+			deps.patchRuntime(currentActiveId, { resolveTool: null });
+			this.approvingToolCalls.delete(approvalKey);
+		}
+	};
+
+	skipTool = (sessionId?: string | null): void => {
+		const deps = this.getDeps();
+		const currentActiveId = sessionId ?? deps.activeSessionIdRef.current;
+		if (!currentActiveId) return;
+		const runtime = deps.getRuntime(currentActiveId);
+		if (!runtime.pendingToolCall || !runtime.resolveTool) return;
+		const approvalKey = `${currentActiveId}:${runtime.pendingToolCall.toolCallId}`;
+		if (this.approvingToolCalls.has(approvalKey)) return;
+		if (runtime.pendingToolCall.toolName !== "delete_chat_session") {
+			runtime.resolveTool(null);
+			deps.patchRuntime(currentActiveId, { resolveTool: null });
+			return;
+		}
+		runtime.resolveTool({
+			success: true,
+			content:
+				`Skipped deletion of saved chat session ${String(runtime.pendingToolCall.args.session_id ?? "")}; ` +
+				"it was not deleted. Do not retry this deletion.",
+		});
 		deps.patchRuntime(currentActiveId, { resolveTool: null });
 	};
 
-	rejectTool = (): void => {
+	rejectTool = (sessionId?: string | null): void => {
 		const deps = this.getDeps();
-		const currentActiveId = deps.activeSessionIdRef.current;
+		const currentActiveId = sessionId ?? deps.activeSessionIdRef.current;
 		if (!currentActiveId) return;
 		const runtime = deps.getRuntime(currentActiveId);
 		runtime.resolveTool?.(null);

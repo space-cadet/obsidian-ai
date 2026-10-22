@@ -2576,6 +2576,8 @@
 
 .pending-tool-actions {
 	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
 	gap: 8px;
 	justify-content: flex-end;
 	flex-shrink: 0;
@@ -2585,9 +2587,18 @@
 	padding-top: 8px;
 }
 
-.pending-tool-actions button {
-	padding: 4px 12px;
+.pending-tool-actions > button {
+	box-sizing: border-box;
+	flex: 0 0 auto;
+	width: auto;
+	min-width: 0;
+	min-height: 0;
+	height: auto;
+	margin: 0;
+	padding: 4px 9px;
 	font-size: var(--font-ui-small);
+	line-height: 1.2;
+	white-space: nowrap;
 }
 
 .pending-tool-summary {

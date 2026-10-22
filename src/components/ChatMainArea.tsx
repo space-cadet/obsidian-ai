@@ -45,7 +45,7 @@ interface ChatMainAreaProps {
 		text: string,
 		attachments?: Attachment[],
 	) => void | boolean | Promise<void | boolean>;
-	onStop: () => void;
+	onStop: (sessionId: string | null) => void;
 	onTyping: () => void;
 	onAddMention: (item: ContextItem) => void;
 	onCancelEdit: () => void;
@@ -60,8 +60,12 @@ interface ChatMainAreaProps {
 	onAppendToTarget: (content: string, target: string) => void;
 	onOpenPastSession: (sessionId: string, messageId?: string) => void;
 	onScrollPositionChange: (sessionId: string, scrollTop: number) => void;
-	onApproveTool: () => void;
-	onRejectTool: () => void;
+	onApproveTool: (
+		sessionId: string | null,
+		approveAllPendingSessionDeletions?: boolean,
+	) => void | Promise<void>;
+	onRejectTool: (sessionId: string | null) => void;
+	onSkipTool: (sessionId: string | null) => void;
 	attachments: Attachment[];
 	onAttachmentsChange: (attachments: Attachment[]) => void;
 	pressEnterToSend: boolean;
@@ -115,6 +119,7 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 	onScrollPositionChange,
 	onApproveTool,
 	onRejectTool,
+	onSkipTool,
 	attachments,
 	onAttachmentsChange,
 	pressEnterToSend,
@@ -176,8 +181,11 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 			{pendingToolCall && (
 				<PendingToolCard
 					toolCall={pendingToolCall}
-					onApprove={onApproveTool}
-					onReject={onRejectTool}
+					onApprove={() => onApproveTool(sessionId)}
+					onApproveAll={() => onApproveTool(sessionId, true)}
+					onSkip={() => onSkipTool(sessionId)}
+					onCancel={() => onStop(sessionId)}
+					onReject={() => onRejectTool(sessionId)}
 					toolDisplay={pendingToolDisplay}
 				/>
 			)}
@@ -187,7 +195,7 @@ const ChatMainArea: React.FC<ChatMainAreaProps> = ({
 				plugin={plugin}
 				contextItems={contextItems}
 				onSend={onSend}
-				onStop={onStop}
+				onStop={() => onStop(sessionId)}
 				onTyping={onTyping}
 				onAddMention={onAddMention}
 				isStreaming={isStreaming}

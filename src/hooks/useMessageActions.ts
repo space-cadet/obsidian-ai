@@ -131,8 +131,8 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 		[],
 	);
 
-	const handleStop = useCallback(() => {
-		lifecycleRef.current!.stop();
+	const handleStop = useCallback((sessionId?: string | null) => {
+		lifecycleRef.current!.stop(sessionId);
 	}, []);
 
 	const handleRetry = useCallback((messageId: string) => {
@@ -147,12 +147,25 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 		lifecycleRef.current!.cancelEdit();
 	}, []);
 
-	const handleApproveTool = useCallback(async () => {
-		await lifecycleRef.current!.approveTool();
+	const handleApproveTool = useCallback(
+		async (
+			sessionId?: string | null,
+			approveAllPendingSessionDeletions = false,
+		) => {
+			await lifecycleRef.current!.approveTool(
+				sessionId,
+				approveAllPendingSessionDeletions,
+			);
+		},
+		[],
+	);
+
+	const handleSkipTool = useCallback((sessionId?: string | null) => {
+		lifecycleRef.current!.skipTool(sessionId);
 	}, []);
 
-	const handleRejectTool = useCallback(() => {
-		lifecycleRef.current!.rejectTool();
+	const handleRejectTool = useCallback((sessionId?: string | null) => {
+		lifecycleRef.current!.rejectTool(sessionId);
 	}, []);
 
 	// ═══════════════════════════════════════════════════════
@@ -275,6 +288,7 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 		handleCreateNote,
 		handleAppendToTarget,
 		handleApproveTool,
+		handleSkipTool,
 		handleRejectTool,
 	};
 }

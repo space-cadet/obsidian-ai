@@ -4,8 +4,11 @@ import type { ToolDisplayDescriptor } from "../../agent/toolRegistry";
 
 interface PendingToolCardProps {
 	toolCall: ToolCall;
-	onApprove: () => void;
+	onApprove: () => void | Promise<void>;
 	onReject: () => void;
+	onApproveAll?: () => void | Promise<void>;
+	onSkip?: () => void;
+	onCancel?: () => void;
 	toolDisplay?: ToolDisplayDescriptor | null;
 }
 
@@ -252,8 +255,56 @@ const PendingToolCard: React.FC<PendingToolCardProps> = ({
 	toolCall,
 	onApprove,
 	onReject,
+	onApproveAll,
+	onSkip,
+	onCancel,
 	toolDisplay,
 }) => {
+	if (
+		toolCall.toolName === "delete_chat_session" ||
+		toolDisplay?.presentation === "session-delete"
+	) {
+		return (
+			<div className="pending-tool-call">
+				<PendingToolCallPreview
+					toolCall={toolCall}
+					toolDisplay={toolDisplay}
+				/>
+				<div className="pending-tool-actions">
+					<button
+						type="button"
+						className="mod-cta"
+						onClick={onApproveAll ?? onApprove}
+						title="Approve this and all later session deletions in this reply"
+					>
+						Approve all
+					</button>
+					<button
+						type="button"
+						onClick={onApprove}
+						title="Approve this session deletion and review the next one"
+					>
+						Approve
+					</button>
+					<button
+						type="button"
+						onClick={onSkip ?? onReject}
+						title="Skip this deletion and continue"
+					>
+						Skip
+					</button>
+					<button
+						type="button"
+						onClick={onCancel ?? onReject}
+						title="Stop this reply and cancel the remaining actions"
+					>
+						Cancel
+					</button>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="pending-tool-call">
 			<PendingToolCallPreview
@@ -261,10 +312,12 @@ const PendingToolCard: React.FC<PendingToolCardProps> = ({
 				toolDisplay={toolDisplay}
 			/>
 			<div className="pending-tool-actions">
-				<button className="mod-cta" onClick={onApprove}>
+				<button type="button" className="mod-cta" onClick={onApprove}>
 					Approve
 				</button>
-				<button onClick={onReject}>Reject</button>
+				<button type="button" onClick={onReject}>
+					Reject
+				</button>
 			</div>
 		</div>
 	);

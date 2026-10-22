@@ -799,7 +799,7 @@ export const openChatSessionTool = t({
 
 export const deleteChatSessionTool = t({
 	description:
-		"Permanently delete one saved chat session. This always requires explicit user approval, even when auto-apply is enabled. Do not delete the active or currently generating session.",
+		"Permanently delete one saved chat session. This always requires explicit user approval, even when auto-apply is enabled. Do not delete the active or currently generating session. If the user skips a deletion, do not retry it; continue with the remaining requested actions.",
 	inputSchema: z.object({
 		session_id: z.string().describe("The saved chat session to delete."),
 	}),

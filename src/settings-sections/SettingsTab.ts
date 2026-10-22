@@ -822,104 +822,142 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 				registerSearchItems(el, title);
 			};
 
-			const s1 = renderProviderProfilesSection(containerEl, this.plugin);
-			addSection(s1, "Provider Profiles");
+			const renderSection = (title: string, render: () => void) => {
+				const id = `obsidian-ai-settings-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+				try {
+					render();
+				} catch (error) {
+					console.error(
+						`[ObsidianAI] Failed to render settings section "${title}":`,
+						error,
+					);
+					containerEl.querySelector<HTMLElement>(`#${id}`)?.remove();
+					const sectionEl = containerEl.createDiv({
+						cls: "obsidian-ai-settings-section",
+					});
+					sectionEl.id = id;
+					sectionEl.createEl("h3", { text: title });
+					sectionEl.createEl("p", {
+						cls: "setting-item-warning",
+						text: "This section could not be loaded. Check the developer console for details.",
+					});
+				}
+				addSection(undefined, title);
+			};
 
-			const s2 = renderChatDefaultsSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
+			renderSection("Provider Profiles", () =>
+				renderProviderProfilesSection(containerEl, this.plugin),
 			);
-			addSection(s2, "Chat Defaults");
 
-			const s3 = renderAgentToolsSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
+			renderSection("Chat Defaults", () =>
+				renderChatDefaultsSection(
+					containerEl,
+					this.plugin,
+					this.saveSettings.bind(this),
+				),
 			);
-			addSection(s3, "Agent Tools");
 
-			const s4 = renderIntegrationsSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
+			renderSection("Agent Tools", () =>
+				renderAgentToolsSection(
+					containerEl,
+					this.plugin,
+					this.saveSettings.bind(this),
+				),
 			);
-			addSection(s4, "Integrations");
 
-			const s5 = renderIntelligenceSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
+			renderSection("Integrations", () =>
+				renderIntegrationsSection(
+					containerEl,
+					this.plugin,
+					this.saveSettings.bind(this),
+				),
 			);
-			addSection(s5, "AI Intelligence Layer");
 
-			const s6 = renderWebSearchSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
+			renderSection("AI Intelligence Layer", () =>
+				renderIntelligenceSection(
+					containerEl,
+					this.plugin,
+					this.saveSettings.bind(this),
+				),
 			);
-			addSection(s6, "Web Search");
 
-			const s7 = renderPdfExtractionSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
+			renderSection("Web Search", () =>
+				renderWebSearchSection(
+					containerEl,
+					this.plugin,
+					this.saveSettings.bind(this),
+				),
 			);
-			addSection(s7, "PDF Extraction");
 
-			const s8 = renderSyncSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
+			renderSection("PDF Extraction", () =>
+				renderPdfExtractionSection(
+					containerEl,
+					this.plugin,
+					this.saveSettings.bind(this),
+				),
 			);
-			addSection(s8, "Multi-User Chat Relay");
 
-			const s9 = renderSyncComponentsSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
+			renderSection("Multi-User Chat Relay", () =>
+				renderSyncSection(
+					containerEl,
+					this.plugin,
+					this.saveSettings.bind(this),
+				),
 			);
-			addSection(s9, "Sync Components");
 
-			const s10 = renderRemoteStorageSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
+			renderSection("Sync Components", () =>
+				renderSyncComponentsSection(
+					containerEl,
+					this.plugin,
+					this.saveSettings.bind(this),
+				),
 			);
-			addSection(s10, "Remote Storage");
 
-			const s11 = renderUpdaterSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
+			renderSection("Remote Storage", () =>
+				renderRemoteStorageSection(
+					containerEl,
+					this.plugin,
+					this.saveSettings.bind(this),
+				),
 			);
-			addSection(s11, "Updates");
 
-			renderChatCommandsSection(containerEl);
-			addSection(undefined, "Chat Commands");
-
-			const s14 = renderExportImportSection(
-				containerEl,
-				this.plugin,
-				this.saveSettings.bind(this),
+			renderSection("Updates", () =>
+				renderUpdaterSection(
+					containerEl,
+					this.plugin,
+					this.saveSettings.bind(this),
+				),
 			);
-			addSection(s14, "Backup & Restore");
+
+			renderSection("Chat Commands", () =>
+				renderChatCommandsSection(containerEl),
+			);
+
+			renderSection("Backup & Restore", () =>
+				renderExportImportSection(
+					containerEl,
+					this.plugin,
+					this.saveSettings.bind(this),
+				),
+			);
 
 			if (this.plugin.settings.showAdvancedSettings) {
-				const s15 = renderDebugModeSection(
-					containerEl,
-					this.plugin,
-					this.saveSettings.bind(this),
+				renderSection("Debug Mode", () =>
+					renderDebugModeSection(
+						containerEl,
+						this.plugin,
+						this.saveSettings.bind(this),
+					),
 				);
-				addSection(s15, "Debug Mode");
 
-				const s16 = renderDiagnosticsSection(
-					containerEl,
-					this.plugin,
-					this.app,
-					this.saveSettings.bind(this),
+				renderSection("Diagnostics", () =>
+					renderDiagnosticsSection(
+						containerEl,
+						this.plugin,
+						this.app,
+						this.saveSettings.bind(this),
+					),
 				);
-				addSection(s16, "Diagnostics");
 			}
 		} finally {
 			this.isDisplaying = false;

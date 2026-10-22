@@ -147,7 +147,8 @@ function formatPastSessionLinks(
 export class TurnLifecycle {
 	private compactionBySession: Record<string, CompactionMetadata> = {};
 	private compactionInFlight: Record<string, boolean> = {};
-	private currentToolExecutor: ToolExecutor | null = null;
+	private readonly toolExecutorsBySession = new Map<string, ToolExecutor>();
+	private readonly approveAllDeletionSessions = new Set<string>();
 	private readonly actions: TurnActionController;
 	private readonly getDeps: () => TurnLifecycleDeps;
 
@@ -155,7 +156,7 @@ export class TurnLifecycle {
 		this.getDeps = getDeps;
 		this.actions = new TurnActionController(
 			getDeps,
-			() => this.currentToolExecutor,
+			(sessionId) => this.toolExecutorsBySession.get(sessionId) ?? null,
 			(text, attachments, sessionId) =>
 				this.startSend(text, attachments, sessionId),
 		);
@@ -184,6 +185,7 @@ export class TurnLifecycle {
 			return false;
 		}
 		if (reservation !== "reserved") return false;
+		this.approveAllDeletionSessions.delete(sessionId);
 
 		void this.send(text, attachments, sessionId)
 			.catch((error: unknown) => {
@@ -192,7 +194,11 @@ export class TurnLifecycle {
 					`[Session] send failed: ${String(error)}`,
 				);
 			})
-			.finally(() => deps.releaseSessionRun(sessionId));
+			.finally(() => {
+				deps.releaseSessionRun(sessionId);
+				this.toolExecutorsBySession.delete(sessionId);
+				this.approveAllDeletionSessions.delete(sessionId);
+			});
 		return true;
 	}
 
@@ -923,7 +929,7 @@ export class TurnLifecycle {
 		toolExecutor.setLatestSystemPromptReader(
 			() => deps.plugin.latestSystemPrompt ?? null,
 		);
-		this.currentToolExecutor = toolExecutor;
+		this.toolExecutorsBySession.set(currentActiveId, toolExecutor);
 		const resolvedToolRegistry = toolExecutor.getResolvedToolRegistry();
 		const toolRegistry = resolvedToolRegistry.tools;
 		const autoApprove = deps.plugin.settings.autoApply;
@@ -1055,6 +1061,15 @@ export class TurnLifecycle {
 						});
 					},
 					requestApproval: async (call) => {
+						if (
+							call.toolName === "delete_chat_session" &&
+							this.approveAllDeletionSessions.has(currentActiveId)
+						) {
+							return toolExecutor.execute(
+								call,
+								controller.signal,
+							);
+						}
 						const resolved = await new Promise<ToolResult | null>(
 							(resolve) => {
 								deps.patchRuntime(currentActiveId, {
@@ -1331,8 +1346,13 @@ export class TurnLifecycle {
 	// ─────────────────────────────────────────────────────
 	// STOP
 	// ─────────────────────────────────────────────────────
-	stop = (): void => {
-		this.actions.stop();
+	stop = (sessionId?: string | null): void => {
+		const deps = this.getDeps();
+		const targetSessionId = sessionId ?? deps.activeSessionIdRef.current;
+		if (targetSessionId) {
+			this.approveAllDeletionSessions.delete(targetSessionId);
+		}
+		this.actions.stop(sessionId);
 	};
 
 	// ─────────────────────────────────────────────────────
@@ -1359,11 +1379,29 @@ export class TurnLifecycle {
 	// ─────────────────────────────────────────────────────
 	// TOOL APPROVAL
 	// ─────────────────────────────────────────────────────
-	approveTool = async (): Promise<void> => {
-		await this.actions.approveTool();
+	approveTool = async (
+		sessionId?: string | null,
+		approveAllPendingSessionDeletions = false,
+	): Promise<void> => {
+		const deps = this.getDeps();
+		const targetSessionId = sessionId ?? deps.activeSessionIdRef.current;
+		const pendingToolCall =
+			deps.getRuntime(targetSessionId).pendingToolCall;
+		if (
+			targetSessionId &&
+			approveAllPendingSessionDeletions &&
+			pendingToolCall?.toolName === "delete_chat_session"
+		) {
+			this.approveAllDeletionSessions.add(targetSessionId);
+		}
+		await this.actions.approveTool(targetSessionId);
 	};
 
-	rejectTool = (): void => {
-		this.actions.rejectTool();
+	skipTool = (sessionId?: string | null): void => {
+		this.actions.skipTool(sessionId);
+	};
+
+	rejectTool = (sessionId?: string | null): void => {
+		this.actions.rejectTool(sessionId);
 	};
 }

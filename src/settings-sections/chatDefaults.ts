@@ -2,6 +2,7 @@ import { Setting } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection, createSliderWithValue } from "./helpers";
 import { AgentPromptModal } from "../modals/AgentPromptModal";
+import { normalizeMaxParallelChatSessions } from "../settings";
 
 export function renderChatDefaultsSection(
 	containerEl: HTMLElement,
@@ -139,12 +140,15 @@ export function renderChatDefaultsSection(
 			"Maximum number of chat sessions that can generate replies at once. Additional sends are blocked until a reply finishes or is stopped. Default: 5.",
 		);
 	createSliderWithValue(maxParallelChatSessionsSetting, {
-		value: plugin.settings.maxParallelChatSessions,
+		value: normalizeMaxParallelChatSessions(
+			plugin.settings.maxParallelChatSessions,
+		),
 		min: 1,
 		max: 10,
 		step: 1,
 		onChange: async (value) => {
-			plugin.settings.maxParallelChatSessions = value;
+			plugin.settings.maxParallelChatSessions =
+				normalizeMaxParallelChatSessions(value);
 			await saveSettings();
 		},
 	});

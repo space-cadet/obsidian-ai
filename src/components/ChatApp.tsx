@@ -1231,6 +1231,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				onScrollPositionChange={handleScrollPositionChange}
 				onApproveTool={actions.handleApproveTool}
 				onRejectTool={actions.handleRejectTool}
+				onSkipTool={actions.handleSkipTool}
 				attachments={ui.messageAttachments}
 				onAttachmentsChange={handleAttachmentsChange}
 				pressEnterToSend={plugin.settings.pressEnterToSend}
