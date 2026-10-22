@@ -1,6 +1,22 @@
 # Active Context
 
-*Last Updated: 2026-10-22 20:28:33 IST*
+*Last Updated: 2026-10-22 21:21:41 IST*
+
+### 2026-10-22 — v1.9.0 version bump preparation
+
+- Prepared a minor version bump from `1.8.0` to `1.9.0` in `package.json`,
+  `manifest.json`, and `versions.json`; `minAppVersion` remains `1.11.4`.
+- Added release notes for editable/effective agent prompts, saved-session
+  tools, parallel replies, chat UI improvements, and session reliability fixes.
+- Updated the GitHub release announcement. Replaced static password-button SVG
+  markup with Obsidian `setIcon` calls to meet the release static-code policy.
+- Pinned Node 22.22.3/pnpm 10 install, production build, 676 tests, production
+  dependency audit, static policy scan, targeted Prettier, and diff checks
+  passed. Two local builds produced identical release artifact hashes.
+- Whole-repository Prettier reports 18 files outside this release change; the
+  changed files pass. Obsidian desktop/mobile smoke checks were not run per the
+  user's instruction not to use Obsidian. GitHub tag/release is pending.
+- See `sessions/2026-10-22-v1.9.0-version-bump.md`.
 
 ### 2026-10-22 — Whole PR #13 session status (T75/T75a/T13/T15/T24c/T60)
 

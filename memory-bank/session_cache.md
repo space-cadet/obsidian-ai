@@ -1,6 +1,20 @@
 # Session Cache
 
-*Last Updated: 2026-10-22 20:28:33 IST*
+*Last Updated: 2026-10-22 21:21:41 IST*
+
+## 2026-10-22 — v1.9.0 version bump preparation
+
+- Prepared `1.9.0` as a minor bump from `1.8.0` in package and Obsidian
+  metadata; `minAppVersion` remains `1.11.4`.
+- Added release notes for prompt controls, saved-session tools, parallel
+  replies, chat display changes, and session reliability work; updated the
+  GitHub release announcement and removed static SVG `innerHTML` from the
+  password-setting helper.
+- Pinned install/build, 676 tests, production dependency audit, static scan,
+  targeted Prettier, diff checks, and reproducible build hashes passed. The
+  whole-repository Prettier check reports 18 files outside this release change.
+- No Obsidian smoke checks were run per the user's instruction. See
+  `sessions/2026-10-22-v1.9.0-version-bump.md`.
 
 ## 2026-10-22 — Full PR #13 branch closeout
 

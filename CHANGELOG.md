@@ -3,6 +3,30 @@
 Notable user-facing changes are recorded here. Dates reflect the project release
 records; unreleased development notes remain in the Memory Bank.
 
+## [1.9.0] - 2026-10-22
+
+### Added
+
+- Editable shared agent-prompt controls, including agent tools to read, update,
+  and reset the prompt, plus a copyable preview of the latest system prompt.
+- Agent tools for listing, reading, searching, opening, renaming, and deleting
+  saved chat sessions. Deletion requires explicit approval.
+- A configurable limit for simultaneous session replies, defaulting to five.
+
+### Changed
+
+- Removed the legacy selection and cursor prompt editor while keeping
+  Chat Lab's Apply-to-Note review flow.
+- Simplified PDF attachment cards, added per-tab generation indicators, and
+  improved equation scrolling and reply-follow behavior.
+
+### Fixed
+
+- Improved session deletion approvals, cancellation, retries, draft restoration,
+  and cross-tab cleanup.
+- Protected active sessions across panes and prevented delayed sync from
+  overwriting newer local edits or deletions.
+
 ## [1.8.0] - 2026-10-20
 
 ### Added
