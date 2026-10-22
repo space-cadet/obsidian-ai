@@ -705,6 +705,14 @@ describe("ToolExecutor registry integration", () => {
 		const deleted = await deletableExecutor.execute(deleteCall);
 		expect(deleted.success).toBe(true);
 		expect(deletableOwner.getSnapshot().sessions).toHaveLength(0);
+
+		const repeatedDelete = await deletableExecutor.execute({
+			...deleteCall,
+			toolCallId: "delete-session-again",
+		});
+		expect(repeatedDelete.success).toBe(true);
+		expect(repeatedDelete.error).toBeUndefined();
+		expect(repeatedDelete.content).toContain("already deleted");
 	});
 
 	it("every built-in tool has a defined risk class", () => {

@@ -327,7 +327,13 @@ export class SessionHandlers extends ToolHandlerBase {
 		const session = owner
 			.getSnapshot()
 			.sessions.find((item) => item.id === args.session_id);
-		if (!session || sessionMessageCount(session) === 0) {
+		if (!session) {
+			return {
+				success: true,
+				content: `Chat session ${args.session_id} was already deleted.`,
+			};
+		}
+		if (sessionMessageCount(session) === 0) {
 			return {
 				error: `Saved chat session not found: ${args.session_id}`,
 			};

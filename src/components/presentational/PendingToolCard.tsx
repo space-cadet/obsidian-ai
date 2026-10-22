@@ -218,9 +218,11 @@ function PendingToolCallPreview({
 		return (
 			<div className="pending-tool-summary">
 				<div className="pending-tool-title">🗑️ {providerTitle}</div>
+				<div className="pending-tool-meta pending-tool-session-meta">
+					<span>Session ID</span>
+					<code className="pending-tool-session-id">{sessionId}</code>
+				</div>
 				<div className="pending-tool-meta">
-					Chat session ID: <code>{sessionId}</code>
-					<br />
 					This permanently deletes the saved session.
 				</div>
 			</div>
@@ -270,7 +272,7 @@ const PendingToolCard: React.FC<PendingToolCardProps> = ({
 					toolCall={toolCall}
 					toolDisplay={toolDisplay}
 				/>
-				<div className="pending-tool-actions">
+				<div className="pending-tool-actions pending-tool-actions-session-delete">
 					<button
 						type="button"
 						className="mod-cta"
