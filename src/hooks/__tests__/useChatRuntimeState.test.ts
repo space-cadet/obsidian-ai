@@ -27,6 +27,44 @@ describe("useChatRuntimeState session run limits", () => {
 			"already-running",
 		);
 	});
+
+	it("settles a pending approval before a closed tab runtime is cleared", async () => {
+		const owner = {};
+		const { result } = renderHook(() => useChatRuntimeState("a", owner));
+		const controller = new AbortController();
+		let resolveApproval!: (value: unknown) => void;
+		const approval = new Promise<unknown>((resolve) => {
+			resolveApproval = resolve;
+		});
+		act(() => {
+			expect(result.current.reserveSessionRun("session-a", 1)).toBe(
+				"reserved",
+			);
+			result.current.patchRuntime("session-a", {
+				controller,
+				isStreaming: true,
+				resolveTool: resolveApproval,
+			});
+		});
+		const sendCompletion = approval.then(() => {
+			result.current.releaseSessionRun("session-a");
+		});
+
+		act(() => {
+			result.current.abortRuntime("session-a");
+			result.current.clearRuntime("session-a");
+		});
+		await expect(approval).resolves.toBe(null);
+		await sendCompletion;
+
+		expect(controller.signal.aborted).toBe(true);
+		act(() => {
+			expect(result.current.reserveSessionRun("session-b", 1)).toBe(
+				"reserved",
+			);
+		});
+	});
+
 	it("reserves up to the configured limit and frees capacity after release", () => {
 		const owner = {};
 		const { result } = renderHook(() => useChatRuntimeState(null, owner));

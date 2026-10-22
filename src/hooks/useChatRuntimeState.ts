@@ -159,6 +159,7 @@ export function useChatRuntimeState(
 			? runtimeBySessionRef.current[sessionId]
 			: null;
 		runtime?.controller?.abort();
+		runtime?.resolveTool?.(null);
 	}, []);
 
 	const reserveSessionRun = useCallback(

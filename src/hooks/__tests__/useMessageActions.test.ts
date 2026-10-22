@@ -334,6 +334,79 @@ describe("useMessageActions", () => {
 		send.mockRestore();
 	});
 
+	it("preserves the active tab composer when a background send finishes", async () => {
+		let finishTurn!: (value: {
+			text: string;
+			tokenEstimate: number;
+		}) => void;
+		mockRunChatTurn.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					finishTurn = resolve;
+				}),
+		);
+		const activeSessionIdRef = { current: "session-A" as string | null };
+		const composer = {
+			isEditing: true,
+			originalMessages: [{ id: "recovery-snapshot" }],
+			editMessageText: "edited text",
+			messageAttachments: [{ id: "attachment-B" }],
+			contextItems: [{ id: "context-B" }],
+		};
+		const ui = {
+			...makeDeps().ui,
+			selectedProfileIds: new Set(["p1"]),
+			setIsEditing: vi.fn((value) => (composer.isEditing = value)),
+			setOriginalMessages: vi.fn(
+				(value) => (composer.originalMessages = value),
+			),
+			setEditMessageText: vi.fn(
+				(value) => (composer.editMessageText = value),
+			),
+			setMessageAttachments: vi.fn(
+				(value) => (composer.messageAttachments = value),
+			),
+		};
+		const deps = makeDeps({
+			plugin: {
+				...mockPlugin,
+				settings: { ...mockPlugin.settings, enableAgentTools: true },
+			} as any,
+			activeSessionIdRef,
+			sessionsRef: {
+				current: [
+					{ id: "session-A", messages: [], contextItems: [] },
+					{ id: "session-B", messages: [], contextItems: [] },
+				] as any[],
+			},
+			ui: ui as any,
+			setContextItems: vi.fn((value) => (composer.contextItems = value)),
+		});
+		const { result } = renderHook(() => useMessageActions(deps));
+
+		await act(async () => {
+			await result.current.handleSend("hello");
+		});
+		await vi.waitFor(() => expect(mockRunChatTurn).toHaveBeenCalledOnce());
+		activeSessionIdRef.current = "session-B";
+		finishTurn({ text: "reply", tokenEstimate: 1 });
+		await vi.waitFor(() =>
+			expect(deps.releaseSessionRun).toHaveBeenCalledWith("session-A"),
+		);
+
+		expect(composer).toEqual({
+			isEditing: true,
+			originalMessages: [{ id: "recovery-snapshot" }],
+			editMessageText: "edited text",
+			messageAttachments: [{ id: "attachment-B" }],
+			contextItems: [{ id: "context-B" }],
+		});
+		expect(deps.patchRuntime).toHaveBeenCalledWith(
+			"session-A",
+			expect.objectContaining({ isStreaming: false }),
+		);
+	});
+
 	it("blocks a send when the parallel session limit is full", async () => {
 		const send = vi
 			.spyOn(TurnLifecycle.prototype, "send")

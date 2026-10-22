@@ -1366,11 +1366,13 @@ export class TurnLifecycle {
 				resolveTool: null,
 				runningTokenTotal: 0,
 			});
-			deps.ui.setIsEditing(false);
-			deps.ui.setOriginalMessages([]);
-			deps.ui.setEditMessageText("");
-			deps.ui.setMessageAttachments([]);
-			deps.setContextItems([]);
+			if (deps.activeSessionIdRef.current === currentActiveId) {
+				deps.ui.setIsEditing(false);
+				deps.ui.setOriginalMessages([]);
+				deps.ui.setEditMessageText("");
+				deps.ui.setMessageAttachments([]);
+				deps.setContextItems([]);
+			}
 		}
 	}
 
