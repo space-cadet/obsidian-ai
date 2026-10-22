@@ -1,6 +1,6 @@
 # Session 2026-10-22 — Saved Session Tools and Parallel Replies
 *Created: 2026-10-22 11:43:35 IST*
-*Last Updated: 2026-10-22 16:34:14 IST*
+*Last Updated: 2026-10-22 16:50:03 IST*
 
 ## Focus Tasks
 T13, T24c, T60, and T15: saved-session tools, session search, and parallel chat generation
@@ -188,3 +188,20 @@ Remaining live checks will be performed during normal use.
   production build, formatting, and diff checks passed. Full suite was not rerun;
   the preceding full run passed 672 tests. Live acceptance remains pending.
 - Delivery uses existing PR #13; its page records subsequent review status.
+
+## 2026-10-22 — PR #13 approval and background composer fixes
+
+- Confirmed both new P1 findings: closing a tab during tool approval could
+  leave the send waiting and hold its parallel reservation; completion from
+  session A could clear session B's edit recovery, attachments, or context.
+- `9ee80e6` resolves pending approval when aborting a tab runtime and scopes
+  composer cleanup to the active originating session. Session-keyed runtime
+  cleanup remains unconditional.
+- Added regressions for both paths. 34 focused tests in two files and the
+  production build passed; Prettier and `git diff --check` passed. The full
+  suite was not rerun. Live Obsidian acceptance remains pending.
+- Both findings share the existing ownership seam: sessions and reservations
+  are shared, while approval controls and composer state are pane-local. The
+  narrow call-site fixes address these cases; no wider redesign was indicated.
+- Source commit `9ee80e6758cf693c084d552e77ea604add4d5797` is on the existing
+  PR #13 branch. The PR remains a draft pending a fresh Codex review.

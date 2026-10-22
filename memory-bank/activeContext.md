@@ -1,6 +1,18 @@
 # Active Context
 
-*Last Updated: 2026-10-22 16:34:14 IST*
+*Last Updated: 2026-10-22 16:50:03 IST*
+
+### 2026-10-22 — PR #13 lifecycle review corrections (T13/T15/T24c)
+
+- `9ee80e6` settles pending tool approval before a closed-tab runtime is
+  cleared. Background completion resets composer/edit/context state only if its
+  originating session remains active; its session runtime is always cleared.
+- Both P1 findings reproduced in focused regressions. 34 tests in two files,
+  production build, formatting, and diff checks passed. Live Obsidian acceptance
+  remains pending.
+- Shared session data and reservations coexist with pane-local approval and
+  composer state. These findings came from that boundary; fixes stay at the
+  affected lifecycle call sites, with no broader ownership change.
 
 ### 2026-10-22 — PR #13 review corrections (T13/T15/T24c)
 

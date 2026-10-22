@@ -1,6 +1,6 @@
 # Per-Tab Chat Process Isolation
 *Created: 2026-08-05 10:55:22 IST*
-*Last Updated: 2026-10-22 14:18:34 IST*
+*Last Updated: 2026-10-22 16:50:03 IST*
 
 ## Purpose
 
@@ -186,3 +186,13 @@ Runtime reservation tokens belong to each view; disposal aborts and settles its
 work, and old callbacks cannot release replacement reservations. History still
 filters unsent drafts out of its saved-session picker; retention does not prove
 that closed drafts are reopenable there. Final source: `1bd51c3`.
+
+## 2026-10-22 — PR #13 lifecycle review corrections
+
+Closing a tab aborts its controller and resolves a pending approval before
+runtime removal. Turn completion always clears its originating session runtime,
+but resets the shared composer and context only if that session is still active.
+The underlying boundary remains: session data and run reservations are shared
+across views, while live approval controls and composer state are view-scoped.
+These call-site fixes required no owner or runtime redesign. Focused regression
+tests and the production build passed; live Obsidian acceptance is pending.

@@ -1,6 +1,17 @@
 # Session Cache
 
-*Last Updated: 2026-10-22 16:34:14 IST*
+*Last Updated: 2026-10-22 16:50:03 IST*
+
+## 2026-10-22 — T13/T15/T24c PR #13 lifecycle review fixes
+
+- `9ee80e6` settles pending tool approvals when tab close aborts and clears a
+  runtime, so the turn can finish and release its parallel reservation.
+- Background completion clears composer/edit/context state only when its
+  originating tab is active. 34 focused tests, production build, formatting,
+  and diff checks passed; live acceptance is pending.
+- Shared session/reservation state and pane-local runtime/composer state remain
+  the relevant ownership boundary. No broader owner rewrite was indicated.
+- See the October 22 session record and PR #13.
 
 ## 2026-10-22 — T13/T15/T24c PR #13 review follow-up
 

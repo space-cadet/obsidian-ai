@@ -17,6 +17,14 @@ All notable changes to this project will be documented in this file.
 - Retry reads the current shared transcript before React refs refresh, excluding
   the replaced response and duplicate prompt (`25932cd`, T15/T24c).
 
+- Closing a tab during approval now settles the pending approval before runtime
+  removal; background completion preserves another active tab's composer and
+  edit recovery state (`9ee80e6`, T13/T15/T24c).
+
+- The two focused regressions passed (34 tests in two files), as did the
+  production build, formatting, and diff checks. Live Obsidian acceptance is
+  pending.
+
 - Pin send history and compaction to the originating session after tab switches;
   check shared generation reservations before cross-pane deletion, retry, and
   edit (`ad731d7`, T13/T15/T24c).
