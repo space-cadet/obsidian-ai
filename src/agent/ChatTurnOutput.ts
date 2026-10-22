@@ -58,6 +58,17 @@ export class ChatTurnOutput {
 		return [...this.contentParts];
 	}
 
+	completeUnresolvedToolCalls(
+		resultForCall: (call: ToolCall) => ToolResult,
+	): ContentPart[] {
+		for (const { call, result } of [...this.toolCalls]) {
+			if (result === undefined) {
+				this.recordToolResult(call, resultForCall(call));
+			}
+		}
+		return [...this.contentParts];
+	}
+
 	appendTextPart(content: string): void {
 		if (content) {
 			this.contentParts.push({ type: "text", content });

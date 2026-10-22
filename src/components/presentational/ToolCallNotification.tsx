@@ -24,6 +24,7 @@ function ToolCallSummary({
 	const getStatusIcon = () => {
 		if (!result) return "⏳";
 		if (result.error) return "❌";
+		if (result.success === false) return "⏹";
 		return "✓";
 	};
 

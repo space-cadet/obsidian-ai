@@ -1016,6 +1016,12 @@ export class TurnLifecycle {
 		let assistantTokenEstimate = 0;
 		let providerUsage: import("../types").ProviderTokenUsage | undefined;
 		let agentStepTelemetry: AgentStepTelemetry[] | undefined;
+		const completeUnresolvedToolCalls = (message: string) => {
+			turnOutput.completeUnresolvedToolCalls(() => ({
+				success: false,
+				content: message,
+			}));
+		};
 
 		try {
 			if (isAgentProvider || (useTools && !slashCmd)) {
@@ -1206,6 +1212,11 @@ export class TurnLifecycle {
 
 			// Finalize output collected by the tool-enabled turn coordinator.
 			if (useTools && !slashCmd) {
+				if (controller.signal.aborted) {
+					completeUnresolvedToolCalls(
+						"Cancelled by user. This action was not run.",
+					);
+				}
 				turnOutput.setText(fullText);
 				turnOutput.finishToolText();
 				contentParts = turnOutput.snapshot().contentParts;
@@ -1252,9 +1263,15 @@ export class TurnLifecycle {
 				contextItems: sendContextItems,
 			});
 		} catch (e: any) {
+			completeUnresolvedToolCalls(
+				controller.signal.aborted
+					? "Cancelled by user. This action was not run."
+					: "The reply stopped before this action was run.",
+			);
+			const interruptedToolCalls = turnOutput.snapshot().toolCalls;
 			// Preserve partial content for ALL interruptions (AbortError, TypeError, network errors, etc.)
 			// The user should see what was received, not lose it.
-			if (fullText) {
+			if (fullText || interruptedToolCalls.length > 0) {
 				let interruptedParts: ContentPart[] = [];
 				if (useTools && !slashCmd) {
 					turnOutput.setText(fullText);
@@ -1288,6 +1305,10 @@ export class TurnLifecycle {
 					modelName: activeProfile.model,
 					responseTimeMs: Date.now() - streamStartTime,
 					contentParts: interruptedParts,
+					toolCalls:
+						interruptedToolCalls.length > 0
+							? interruptedToolCalls
+							: undefined,
 					isError: e.name !== "AbortError",
 				};
 				deps.plugin.logger?.log(
