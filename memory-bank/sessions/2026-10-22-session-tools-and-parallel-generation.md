@@ -1,6 +1,6 @@
 # Session 2026-10-22 — Saved Session Tools and Parallel Replies
 *Created: 2026-10-22 11:43:35 IST*
-*Last Updated: 2026-10-22 16:17:49 IST*
+*Last Updated: 2026-10-22 16:34:14 IST*
 
 ## Focus Tasks
 T13, T24c, T60, and T15: saved-session tools, session search, and parallel chat generation
@@ -177,3 +177,14 @@ Remaining live checks will be performed during normal use.
   broadcast is documented behavior, not a confirmed recipient-isolation defect.
 - Delivery target is existing PR #13; its page records subsequent Codex review
   requests and live review status.
+
+## 2026-10-22 — PR #13 retry regression correction
+
+- Confirmed the new P1 against head `331c616`: Retry published a truncated owner
+  transcript but the send snapshot preferred the stale React session ref.
+- Source `25932cd162c764b23c1a5d3b6ab226c24ab9f380` changes only the lookup to prefer the shared owner.
+- Regression failed before the fix and passes after: prior history retained,
+  obsolete response excluded, retried prompt appears once. All 30 focused tests,
+  production build, formatting, and diff checks passed. Full suite was not rerun;
+  the preceding full run passed 672 tests. Live acceptance remains pending.
+- Delivery uses existing PR #13; its page records subsequent review status.

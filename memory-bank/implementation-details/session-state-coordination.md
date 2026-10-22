@@ -2,7 +2,7 @@
 
 *Created: 2026-10-19 20:54 IST*
 *Status: COMPLETE — shared session ownership and session-opening paths implemented and user-confirmed.*
-*Last Updated: 2026-10-22 16:17:49 IST*
+*Last Updated: 2026-10-22 16:34:14 IST*
 *Memory Bank task: [T24c](../tasks/T24c.md)*
 
 ## Purpose
@@ -278,3 +278,9 @@ compaction validates against the target's current canonical transcript.
 reservation map as well as local controllers. Group/single tool deletion, UI
 deletion, retry, and edit reuse this check. Live runtime controls remain per-pane.
 Source `ad731d7`; 672 tests/81 files and production build passed.
+
+PR #13 retry correction (`25932cd`): prefer the current shared-owner session
+before the send snapshot. Owner mutations are synchronous; React refs may still
+contain the pre-retry transcript in the same event. The regression preserves
+earlier history, excludes the obsolete response, and includes the retried prompt
+once. 30 focused tests and production build passed.

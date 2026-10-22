@@ -1,8 +1,22 @@
 # Edit History
 
-*Last Updated: 2026-10-22 16:17:49 IST*
+*Last Updated: 2026-10-22 16:34:14 IST*
 
 ### 2026-10-22
+#### 16:34:14 IST - T15/T24c: Preserve retry transcript truncation
+- Modified `src/agent/turnLifecycle.ts` - Fix or verify retry snapshots before React refs refresh.
+- Modified `src/hooks/__tests__/useMessageActions.test.ts` - Fix or verify retry snapshots before React refs refresh.
+- Updated `memory-bank/activeContext.md` - Record retry correction and focused verification.
+- Updated `memory-bank/changelog.md` - Record retry correction and focused verification.
+- Updated `memory-bank/implementation-details/session-state-coordination.md` - Record retry correction and focused verification.
+- Updated `memory-bank/session_cache.md` - Record retry correction and focused verification.
+- Updated `memory-bank/sessions/2026-10-22-session-tools-and-parallel-generation.md` - Record retry correction and focused verification.
+- Updated `memory-bank/tasks.md` - Record retry correction and focused verification.
+- Updated `memory-bank/tasks/T15.md` - Record retry correction and focused verification.
+- Updated `memory-bank/tasks/T24c.md` - Record retry correction and focused verification.
+- Created `memory-bank/edits/2026-10-22/163414-T15-T24c-pr13-retry.md` - Record the retry review correction.
+- Updated `memory-bank/edit_history.md` - Refresh the generated view from this chunk.
+
 #### 16:17:49 IST - T13/T15/T24c: Fix PR 13 history and busy checks
 - Modified `src/agent/turnActions.ts` - Fix or verify session history isolation and shared busy checks.
 - Modified `src/agent/turnLifecycle.ts` - Fix or verify session history isolation and shared busy checks.

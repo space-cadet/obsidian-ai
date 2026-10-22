@@ -1,8 +1,11 @@
 # Active Context
 
-*Last Updated: 2026-10-22 16:17:49 IST*
+*Last Updated: 2026-10-22 16:34:14 IST*
 
 ### 2026-10-22 — PR #13 review corrections (T13/T15/T24c)
+
+- Retry correction `25932cd`: prefer the shared-owner transcript over a stale
+  React ref. Regression reproduced before the fix; 30 focused tests and build pass.
 
 - `ad731d7` pins send history and compaction to the target session and
   checks shared run reservations before deletion, retry, or edit in another pane.

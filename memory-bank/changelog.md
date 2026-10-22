@@ -14,6 +14,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Retry reads the current shared transcript before React refs refresh, excluding
+  the replaced response and duplicate prompt (`25932cd`, T15/T24c).
+
 - Pin send history and compaction to the originating session after tab switches;
   check shared generation reservations before cross-pane deletion, retry, and
   edit (`ad731d7`, T13/T15/T24c).

@@ -1,8 +1,11 @@
 # Session Cache
 
-*Last Updated: 2026-10-22 16:17:49 IST*
+*Last Updated: 2026-10-22 16:34:14 IST*
 
 ## 2026-10-22 — T13/T15/T24c PR #13 review follow-up
+
+- Retry correction `25932cd` preserves same-event truncation via the shared
+  owner; 30 focused tests and production build passed.
 
 - Source `ad731d7` fixes the target-history race and cross-pane busy checks.
 - Verification: 672 tests/81 files and production build passed; live checks pending.
