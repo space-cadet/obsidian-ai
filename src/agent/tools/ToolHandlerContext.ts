@@ -7,6 +7,7 @@ import { ContinuationStore } from "../pagination";
 import { ToolResolver } from "./ToolResolver";
 import type { ChatMessage, ThinkingMode } from "../../types";
 import type { ProviderType } from "../../settings";
+import type { SessionStateOwner } from "../../state/SessionStateOwner";
 
 /** Model/profile context resolved for the turn that invoked a tool. */
 export interface CurrentTurnModelContext {
@@ -24,6 +25,13 @@ export interface LatestSystemPromptSnapshot {
 	capturedAt: number;
 }
 
+export interface SessionToolServices {
+	state?: SessionStateOwner | null;
+	openSession?: (sessionId: string, messageId?: string) => Promise<void>;
+	getActiveSessionId?: () => string | null;
+	isSessionBusy?: (sessionId: string) => boolean;
+}
+
 /** Services shared by the capability-specific handlers. */
 export interface ToolHandlerContext {
 	app: App;
@@ -36,6 +44,7 @@ export interface ToolHandlerContext {
 	getSessions?: () =>
 		| ReadonlyArray<{ id: string; messages: ChatMessage[] }>
 		| undefined;
+	sessionTools?: SessionToolServices;
 	integrationRegistry?: ProviderRegistry;
 	saveSettings?: () => Promise<void>;
 	currentTurnModelContext?: CurrentTurnModelContext;
@@ -54,6 +63,7 @@ export abstract class ToolHandlerBase {
 	protected readonly getSessions?: () =>
 		| ReadonlyArray<{ id: string; messages: ChatMessage[] }>
 		| undefined;
+	protected readonly sessionTools?: SessionToolServices;
 	protected readonly integrationRegistry?: ProviderRegistry;
 	protected readonly saveSettings?: () => Promise<void>;
 	protected readonly currentTurnModelContext?: CurrentTurnModelContext;
@@ -68,6 +78,7 @@ export abstract class ToolHandlerBase {
 		this.searchIndex = context.searchIndex;
 		this.getActiveSessionId = context.getActiveSessionId;
 		this.getSessions = context.getSessions;
+		this.sessionTools = context.sessionTools;
 		this.integrationRegistry = context.integrationRegistry;
 		this.saveSettings = context.saveSettings;
 		this.currentTurnModelContext = context.currentTurnModelContext;

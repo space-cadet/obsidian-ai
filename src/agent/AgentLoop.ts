@@ -150,6 +150,21 @@ function formatToolResult(toolName: string, result: ToolResult): string {
 			);
 		}
 
+		case "search_past_sessions":
+		case "list_chat_sessions":
+			return (
+				(result.content ?? "No matching chat sessions found.") +
+				continuationHint()
+			);
+
+		case "read_chat_session":
+		case "rename_chat_session":
+		case "open_chat_session":
+		case "delete_chat_session":
+			return (
+				result.content ?? `${toolName.replace(/_/g, " ")} completed.`
+			);
+
 		case "read_note": {
 			let output = result.content ?? "(empty note)";
 			if (result.start_char !== undefined) {
@@ -456,7 +471,10 @@ export class AgentLoop {
 				this.opts.onTokenUpdate?.(runningTotal);
 
 				let result: ToolResult;
-				if (autoApprove) {
+				const requiresExplicitApproval =
+					toolExecutor.requiresExplicitApproval?.(pendingCall) ??
+					false;
+				if (autoApprove && !requiresExplicitApproval) {
 					result = await toolExecutor.execute(pendingCall, signal);
 				} else {
 					result = (await this.opts.requestApproval(pendingCall)) ?? {

@@ -210,6 +210,20 @@ function PendingToolCallPreview({
 		);
 	}
 
+	if (presentation === "session-delete") {
+		const sessionId = String(args.session_id ?? "");
+		return (
+			<div className="pending-tool-summary">
+				<div className="pending-tool-title">🗑️ {providerTitle}</div>
+				<div className="pending-tool-meta">
+					Chat session ID: <code>{sessionId}</code>
+					<br />
+					This permanently deletes the saved session.
+				</div>
+			</div>
+		);
+	}
+
 	if (presentation === "folders") {
 		const parent = String(args.path ?? "(root)");
 		return (

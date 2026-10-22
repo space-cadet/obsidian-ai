@@ -84,6 +84,12 @@ export interface ToolResult {
 	next_page?: number;
 	/** Array of paths for count-only search results. */
 	paths?: string[];
+	session_id?: string;
+	session_title?: string;
+	total_messages?: number;
+	start_message_index?: number;
+	next_message_index?: number;
+	next_char_offset?: number;
 	/** Results array for batch operations like check_paths. */
 	results?: Array<Record<string, unknown>>;
 	/** Summary string for batch operations. */

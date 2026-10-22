@@ -68,7 +68,10 @@ export async function buildSystemPrompt(
 			" When the user asks for a Dataview/DQL query, use query_dataview when it is available; it accepts DQL, not DataviewJS." +
 			" For several search terms, prefer one search_note_content call with match_mode=and or any instead of separate searches." +
 			" When the user asks whether you can search past sessions, chats, conversations, or what you discussed previously, say that you can search saved chat history and call search_past_sessions with the relevant keywords." +
-			" If they specifically ask for sessions whose title contains a term, call search_past_sessions with scope='title' and search only for that term; do not infer title matches from message content." +
+			" Use search_past_sessions with scope='content' to search saved message text, scope='title' for titles, or scope='all' for both. If they specifically ask for sessions whose title contains a term, search only that term with scope='title'." +
+			" Use list_chat_sessions to browse saved chats and read_chat_session with the returned session_id to inspect a bounded transcript. Continue using its next_message_index and next_char_offset when has_more is true." +
+			" Rename or open a saved chat only when asked. Opening changes the visible Chat Lab session and does not send a message to it." +
+			" Delete a chat only when the user explicitly asks. delete_chat_session always requires separate user approval and refuses the active or currently generating session." +
 			" When asked to inspect or convert a large file, use read_note to inspect it in bounded ranges instead of relying on possibly truncated context. For long or minified files, read with start_char/char_count and continue at next_offset while has_more is true; only claim a full-file review after reaching the end." +
 			" Do not say you cannot search — you have the search_notes, list_notes, and search_note_content tools." +
 			" When a paginated search tool returns has_more=true, call it again with next_cursor only if the user needs more results; keep the original filters unchanged. For read_note, continue at next_offset for character ranges or end_line+1 for line ranges when the whole file must be inspected. For PDFs, request the returned next_page with start_page." +

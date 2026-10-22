@@ -436,6 +436,19 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			() => activeSessionIdRef.current,
 			plugin.integrationRegistry,
 			plugin.saveSettings.bind(plugin),
+			plugin.manifest?.id,
+			undefined,
+			() => plugin.sessionState?.getSnapshot().sessions,
+			plugin.logger,
+			undefined,
+			{
+				state: plugin.sessionState,
+				openSession: (sessionId, messageId) =>
+					plugin.openSessionInNewTab(sessionId, messageId),
+				getActiveSessionId: () => activeSessionIdRef.current,
+				isSessionBusy: (sessionId) =>
+					Boolean(getRuntime(sessionId).controller),
+			},
 		);
 		toolExecutor.setLatestSystemPromptReader(
 			() => plugin.latestSystemPrompt ?? null,
@@ -488,6 +501,10 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		plugin.chatapi,
 		plugin.settings,
 		plugin.app,
+		plugin.sessionState,
+		plugin.openSessionInNewTab,
+		plugin.logger,
+		getRuntime,
 		resolveSessionProfile,
 	]);
 

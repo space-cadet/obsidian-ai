@@ -159,7 +159,7 @@ export default class ObsidianAIPlugin extends Plugin {
 
 	async openSessionInNewTab(
 		sessionId: string,
-		messageId: string,
+		messageId?: string,
 	): Promise<void> {
 		return openSessionInNewTab(this, sessionId, messageId);
 	}

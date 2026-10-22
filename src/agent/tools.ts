@@ -670,6 +670,8 @@ export const searchPastSessionsTool = t({
 		"Search past chat sessions by topic, keyword, or content. " +
 		"Use when the user references something from a previous conversation, " +
 		"asks 'what did we discuss about X', or when you need historical context. " +
+		"Searches saved message content as well as titles. Use scope='content' " +
+		"for message text, scope='title' for titles, or 'all' for both. " +
 		"When the user asks for sessions with a word in the title, set scope='title'.",
 	inputSchema: z.object({
 		query: z
@@ -697,6 +699,109 @@ export const searchPastSessionsTool = t({
 			.describe(
 				"Opaque cursor returned when another result page is available.",
 			),
+	}),
+});
+
+export const listChatSessionsTool = t({
+	description:
+		"List saved chat sessions with their IDs, titles, dates, message counts, and group-chat status. " +
+		"Use the returned session_id with read_chat_session, rename_chat_session, open_chat_session, or delete_chat_session. " +
+		"Results are paginated; continue with next_cursor when needed.",
+	inputSchema: z.object({
+		limit: z
+			.number()
+			.int()
+			.min(1)
+			.max(50)
+			.optional()
+			.default(10)
+			.describe(
+				"Maximum number of sessions to return (default 10, max 50).",
+			),
+		cursor: z
+			.string()
+			.optional()
+			.describe("Opaque cursor returned when another page is available."),
+	}),
+});
+
+export const readChatSessionTool = t({
+	description:
+		"Read a bounded range of messages from a saved chat session. " +
+		"Use start_message_index and start_char from the previous result to continue when has_more is true. " +
+		"Attachment payloads are not returned; only attachment names and types are included.",
+	inputSchema: z.object({
+		session_id: z.string().describe("The saved chat session to read."),
+		start_message_index: z
+			.number()
+			.int()
+			.min(0)
+			.optional()
+			.default(0)
+			.describe("Zero-based message index to start reading from."),
+		start_char: z
+			.number()
+			.int()
+			.min(0)
+			.optional()
+			.default(0)
+			.describe("Character offset within the first returned message."),
+		message_limit: z
+			.number()
+			.int()
+			.min(1)
+			.max(20)
+			.optional()
+			.default(10)
+			.describe(
+				"Maximum number of messages to return (default 10, max 20).",
+			),
+		char_limit: z
+			.number()
+			.int()
+			.min(1)
+			.max(12000)
+			.optional()
+			.default(6000)
+			.describe(
+				"Maximum transcript characters to return (default 6000, max 12000).",
+			),
+	}),
+});
+
+export const renameChatSessionTool = t({
+	description:
+		"Rename a saved chat session. Only rename a session when the user asks for it.",
+	inputSchema: z.object({
+		session_id: z.string().describe("The saved chat session to rename."),
+		title: z
+			.string()
+			.trim()
+			.min(1)
+			.max(120)
+			.describe("The new title (1 to 120 characters)."),
+	}),
+});
+
+export const openChatSessionTool = t({
+	description:
+		"Open a saved chat session in the Chat Lab tab strip. This changes the visible session; it does not send a message to that session.",
+	inputSchema: z.object({
+		session_id: z.string().describe("The saved chat session to open."),
+		message_id: z
+			.string()
+			.optional()
+			.describe(
+				"Optional message ID to scroll to after opening the session.",
+			),
+	}),
+});
+
+export const deleteChatSessionTool = t({
+	description:
+		"Permanently delete one saved chat session. This always requires explicit user approval, even when auto-apply is enabled. Do not delete the active or currently generating session.",
+	inputSchema: z.object({
+		session_id: z.string().describe("The saved chat session to delete."),
 	}),
 });
 
@@ -810,6 +915,11 @@ export const noteTools = {
 	cull_core: cullCoreMemoryTool,
 	search_note_content: searchNoteContentTool,
 	search_past_sessions: searchPastSessionsTool,
+	list_chat_sessions: listChatSessionsTool,
+	read_chat_session: readChatSessionTool,
+	rename_chat_session: renameChatSessionTool,
+	open_chat_session: openChatSessionTool,
+	delete_chat_session: deleteChatSessionTool,
 	read_tool_result: readToolResultTool,
 	read_settings: readSettingsTool,
 	get_agent_prompt: getAgentPromptTool,

@@ -32,6 +32,7 @@ export type ToolPresentation =
 	| "folder-create"
 	| "move"
 	| "delete"
+	| "session-delete"
 	| "folders"
 	| "generic";
 
@@ -124,6 +125,11 @@ const BUILTIN_RISKS: Record<string, HostToolRisk> = {
 	evaluate_staged: "local-write",
 	cull_core: "local-write",
 	search_past_sessions: "read",
+	list_chat_sessions: "read",
+	read_chat_session: "read",
+	rename_chat_session: "local-write",
+	open_chat_session: "read",
+	delete_chat_session: "destructive",
 	read_tool_result: "read",
 	query_dataview: "read",
 	get_agent_prompt: "read",
@@ -153,6 +159,7 @@ function presentationForTool(id: string): ToolPresentation {
 		create_folder: "folder-create",
 		move_note: "move",
 		delete_note: "delete",
+		delete_chat_session: "session-delete",
 		list_folders: "folders",
 	};
 	return presentations[id] ?? "generic";

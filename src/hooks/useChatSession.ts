@@ -161,7 +161,13 @@ export function useChatSession({
 			const sessionId = (event as CustomEvent<{ sessionId?: string }>)
 				.detail?.sessionId;
 			if (!sessionId) return;
-			owner.markDeleted(sessionId);
+			if (
+				owner
+					.getSnapshot()
+					.sessions.some((session) => session.id === sessionId)
+			) {
+				owner.markDeleted(sessionId);
+			}
 			setOpenSessionIds((current) =>
 				current.filter((id) => id !== sessionId),
 			);

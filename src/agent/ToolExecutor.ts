@@ -27,6 +27,7 @@ import {
 import {
 	type CurrentTurnModelContext,
 	type LatestSystemPromptSnapshot,
+	type SessionToolServices,
 	type ToolHandlerContext,
 } from "./tools/ToolHandlerContext";
 import {
@@ -72,6 +73,7 @@ export class ToolExecutor {
 			| undefined,
 		logger?: { log: (level: string, ...args: any[]) => void },
 		currentTurnModelContext?: CurrentTurnModelContext,
+		sessionTools?: SessionToolServices,
 	) {
 		this.logger = logger;
 		this.targetLocks = targetLocks;
@@ -88,6 +90,7 @@ export class ToolExecutor {
 			integrationRegistry,
 			saveSettings,
 			currentTurnModelContext,
+			sessionTools,
 			continuations: this.continuations,
 		};
 		this.noteHandlers = new NoteHandlers(context);
@@ -273,6 +276,32 @@ export class ToolExecutor {
 						cursor?: string;
 					},
 				),
+			list_chat_sessions: (call) =>
+				this.sessionHandlers.listChatSessions(
+					call.args as { limit?: number; cursor?: string },
+				),
+			read_chat_session: (call) =>
+				this.sessionHandlers.readChatSession(
+					call.args as {
+						session_id: string;
+						start_message_index?: number;
+						start_char?: number;
+						message_limit?: number;
+						char_limit?: number;
+					},
+				),
+			rename_chat_session: (call) =>
+				this.sessionHandlers.renameChatSession(
+					call.args as { session_id: string; title: string },
+				),
+			open_chat_session: (call) =>
+				this.sessionHandlers.openChatSession(
+					call.args as { session_id: string; message_id?: string },
+				),
+			delete_chat_session: (call) =>
+				this.sessionHandlers.deleteChatSession(
+					call.args as { session_id: string },
+				),
 			read_tool_result: (call) =>
 				this.sessionHandlers.readToolResult(
 					call.args as {
@@ -362,6 +391,11 @@ export class ToolExecutor {
 	 */
 	getResolvedToolRegistry(): ResolvedToolRegistry {
 		return this.builtInRegistry;
+	}
+
+	/** Session deletion always requires a separate user approval. */
+	requiresExplicitApproval(call: ToolCall): boolean {
+		return call.toolName === "delete_chat_session";
 	}
 
 	async execute(call: ToolCall, signal?: AbortSignal): Promise<ToolResult> {

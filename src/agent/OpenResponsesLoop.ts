@@ -210,7 +210,14 @@ export class OpenResponsesLoop {
 
 				if (argumentError) {
 					result = { error: `Invalid arguments: ${argumentError}` };
-				} else if (this.autoApprove) {
+				} else if (
+					this.autoApprove &&
+					!(
+						this.toolExecutor.requiresExplicitApproval?.(
+							toolCall,
+						) ?? false
+					)
+				) {
 					result = await this.toolExecutor.execute(toolCall, signal);
 				} else {
 					const approved = await this.requestApproval?.(toolCall);

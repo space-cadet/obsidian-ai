@@ -246,7 +246,7 @@ export function removeDuplicateChatLeaves(
 export async function openSessionInNewTab(
 	plugin: ObsidianAIPlugin,
 	sessionId: string,
-	messageId: string,
+	messageId?: string,
 ): Promise<void> {
 	// Session tabs are managed inside the existing chat view so the toolbar and
 	// composer stay shared rather than creating stacked sidebar leaves.

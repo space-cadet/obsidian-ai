@@ -24,6 +24,8 @@ vi.mock("obsidian", async (importOriginal) => {
 });
 
 import { ToolExecutor } from "../ToolExecutor";
+import { SessionStateOwner } from "../../state/SessionStateOwner";
+import type { ChatMessage, ChatSession, StoredChatData } from "../../types";
 import {
 	createBuiltInToolDefinitions,
 	resolveToolRegistry,
@@ -91,6 +93,67 @@ function createMockApp(files: Record<string, string> = {}): any {
 			renameFile: vi.fn(),
 		},
 	};
+}
+
+function createSessionOwner(
+	sessions: ChatSession[],
+	transcripts: Record<string, ChatMessage[]>,
+) {
+	const data: StoredChatData = { sessions, activeSessionId: null };
+	const storage = {
+		load: vi.fn(async () => data),
+		hydrate: vi.fn(
+			async (sessionId: string) => transcripts[sessionId] ?? [],
+		),
+		save: vi.fn(async () => undefined),
+	};
+	return { owner: new SessionStateOwner(storage), storage };
+}
+
+function createSavedSession(id: string, updatedAt: number): ChatSession {
+	return {
+		id,
+		title: `Chat ${id}`,
+		createdAt: 1,
+		updatedAt,
+		messages: [],
+		messageCount: 2,
+		hydrated: false,
+		contextItems: [],
+	};
+}
+
+function createSessionToolExecutor(
+	owner: SessionStateOwner,
+	options: {
+		activeSessionId?: string | null;
+		busySessionIds?: string[];
+		openSession?: (sessionId: string, messageId?: string) => Promise<void>;
+		searchIndex?: unknown;
+	} = {},
+): ToolExecutor {
+	const activeSessionId = options.activeSessionId ?? null;
+	const busySessionIds = new Set(options.busySessionIds ?? []);
+	return new ToolExecutor(
+		createMockApp(),
+		undefined,
+		undefined,
+		options.searchIndex as any,
+		() => activeSessionId,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		{
+			state: owner,
+			openSession: options.openSession,
+			getActiveSessionId: () => activeSessionId,
+			isSessionBusy: (sessionId) => busySessionIds.has(sessionId),
+		},
+	);
 }
 
 describe("ToolExecutor registry integration", () => {
@@ -434,6 +497,214 @@ describe("ToolExecutor registry integration", () => {
 		});
 
 		expect(result.error).toContain("does not match");
+	});
+
+	it("lists saved sessions with opaque continuation cursors", async () => {
+		const { owner } = createSessionOwner(
+			[createSavedSession("s1", 2), createSavedSession("s2", 1)],
+			{},
+		);
+		const executor = createSessionToolExecutor(owner);
+
+		const first = await executor.execute({
+			toolCallId: "sessions-page-1",
+			toolName: "list_chat_sessions",
+			args: { limit: 1 },
+		});
+		const second = await executor.execute({
+			toolCallId: "sessions-page-2",
+			toolName: "list_chat_sessions",
+			args: { limit: 1, cursor: first.next_cursor },
+		});
+
+		expect(first.content).toContain("session_id: s1");
+		expect(first.has_more).toBe(true);
+		expect(second.content).toContain("session_id: s2");
+		expect(second.has_more).toBe(false);
+	});
+
+	it("reads bounded session content and continues from the returned offset", async () => {
+		const { owner } = createSessionOwner([createSavedSession("s1", 2)], {
+			s1: [
+				{
+					id: "m1",
+					role: "user",
+					content: "hello there",
+					timestamp: 1,
+				},
+				{
+					id: "m2",
+					role: "assistant",
+					content: "saved reply",
+					timestamp: 2,
+				},
+			],
+		});
+		const executor = createSessionToolExecutor(owner);
+
+		const first = await executor.execute({
+			toolCallId: "read-session-1",
+			toolName: "read_chat_session",
+			args: { session_id: "s1", char_limit: 5 },
+		});
+		const second = await executor.execute({
+			toolCallId: "read-session-2",
+			toolName: "read_chat_session",
+			args: {
+				session_id: "s1",
+				start_message_index: first.next_message_index,
+				start_char: first.next_char_offset,
+			},
+		});
+
+		expect(first.content).toContain("hello");
+		expect(first.has_more).toBe(true);
+		expect(first.next_message_index).toBe(0);
+		expect(first.next_char_offset).toBe(5);
+		expect(second.content).toContain("there");
+		expect(second.content).toContain("saved reply");
+		expect(second.has_more).toBe(false);
+	});
+
+	it("renames and opens a saved session at a requested message", async () => {
+		const { owner, storage } = createSessionOwner(
+			[createSavedSession("s1", 2)],
+			{
+				s1: [
+					{
+						id: "m1",
+						role: "user",
+						content: "hello",
+						timestamp: 1,
+					},
+					{
+						id: "m2",
+						role: "assistant",
+						content: "reply",
+						timestamp: 2,
+					},
+				],
+			},
+		);
+		const openSession = vi.fn(async () => undefined);
+		const executor = createSessionToolExecutor(owner, { openSession });
+
+		const renamed = await executor.execute({
+			toolCallId: "rename-session",
+			toolName: "rename_chat_session",
+			args: { session_id: "s1", title: "Project notes" },
+		});
+		const opened = await executor.execute({
+			toolCallId: "open-session",
+			toolName: "open_chat_session",
+			args: { session_id: "s1", message_id: "m2" },
+		});
+
+		expect(renamed.success).toBe(true);
+		expect(owner.getSnapshot().sessions[0].title).toBe("Project notes");
+		expect(storage.save).toHaveBeenCalled();
+		expect(opened.success).toBe(true);
+		expect(openSession).toHaveBeenCalledWith("s1", "m2");
+	});
+
+	it("searches saved message content and excludes the active session", async () => {
+		const { owner } = createSessionOwner([], {});
+		const search = vi.fn(async () => [
+			{
+				sessionId: "s1",
+				messageId: "m1",
+				timestamp: 1,
+				sessionTitle: "Older chat",
+				snippet: "unique phrase in a saved message",
+				isTitleMatch: false,
+			},
+			{
+				sessionId: "active",
+				messageId: "m2",
+				timestamp: 2,
+				sessionTitle: "Current chat",
+				snippet: "unique phrase in the active message",
+				isTitleMatch: false,
+			},
+		]);
+		const executor = createSessionToolExecutor(owner, {
+			activeSessionId: "active",
+			searchIndex: { search },
+		});
+
+		const result = await executor.execute({
+			toolCallId: "search-sessions",
+			toolName: "search_past_sessions",
+			args: { query: "unique phrase", scope: "content" },
+		});
+
+		expect(search).toHaveBeenCalledWith(
+			"unique phrase",
+			undefined,
+			"content",
+		);
+		expect(result.count).toBe(1);
+		expect(result.content).toContain("Older chat");
+		expect(result.content).not.toContain("Current chat");
+	});
+
+	it("requires approval before deleting and refuses active or busy sessions", async () => {
+		const transcript = {
+			s1: [
+				{
+					id: "m1",
+					role: "user" as const,
+					content: "hello",
+					timestamp: 1,
+				},
+				{
+					id: "m2",
+					role: "assistant" as const,
+					content: "reply",
+					timestamp: 2,
+				},
+			],
+		};
+		const { owner: activeOwner } = createSessionOwner(
+			[createSavedSession("s1", 2)],
+			transcript,
+		);
+		const activeExecutor = createSessionToolExecutor(activeOwner, {
+			activeSessionId: "s1",
+		});
+		const deleteCall = {
+			toolCallId: "delete-session",
+			toolName: "delete_chat_session",
+			args: { session_id: "s1" },
+		};
+
+		expect(activeExecutor.requiresExplicitApproval(deleteCall)).toBe(true);
+		const activeResult = await activeExecutor.execute(deleteCall);
+		expect(activeResult.error).toContain("active chat");
+		expect(activeOwner.getSnapshot().sessions).toHaveLength(1);
+
+		const { owner: busyOwner } = createSessionOwner(
+			[createSavedSession("s1", 2)],
+			transcript,
+		);
+		const busyExecutor = createSessionToolExecutor(busyOwner, {
+			activeSessionId: "other",
+			busySessionIds: ["s1"],
+		});
+		const busyResult = await busyExecutor.execute(deleteCall);
+		expect(busyResult.error).toContain("currently generating");
+		expect(busyOwner.getSnapshot().sessions).toHaveLength(1);
+
+		const { owner: deletableOwner } = createSessionOwner(
+			[createSavedSession("s1", 2)],
+			transcript,
+		);
+		const deletableExecutor = createSessionToolExecutor(deletableOwner, {
+			activeSessionId: "other",
+		});
+		const deleted = await deletableExecutor.execute(deleteCall);
+		expect(deleted.success).toBe(true);
+		expect(deletableOwner.getSnapshot().sessions).toHaveLength(0);
 	});
 
 	it("every built-in tool has a defined risk class", () => {

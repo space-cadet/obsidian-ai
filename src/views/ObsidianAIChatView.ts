@@ -33,7 +33,7 @@ export interface ChatPluginLike {
 	personaLoader: import("../intelligence/PersonaLoader").PersonaLoader | null;
 	searchIndex: import("../search/index").SearchIndex | null;
 	integrationRegistry?: import("../integrations/ProviderRegistry").ProviderRegistry;
-	openSessionInNewTab(sessionId: string, messageId: string): Promise<void>;
+	openSessionInNewTab(sessionId: string, messageId?: string): Promise<void>;
 	loadChatData(): Promise<StoredChatData>;
 	/** Read one session's message file into memory (index-only boot). */
 	hydrateSession?(sessionId: string): Promise<ChatMessage[]>;

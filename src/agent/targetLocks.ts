@@ -144,6 +144,13 @@ export function mutationTargets(
 	) {
 		return [`memory:${args.id}`];
 	}
+	if (
+		(toolName === "rename_chat_session" ||
+			toolName === "delete_chat_session") &&
+		typeof args.session_id === "string"
+	) {
+		return [`session:${args.session_id}`];
+	}
 	if (toolName === "create_memory" && typeof args.category === "string") {
 		return [`memory-category:${args.category}`];
 	}

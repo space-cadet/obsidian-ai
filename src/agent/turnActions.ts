@@ -159,6 +159,15 @@ export class TurnActionController {
 				undefined,
 				undefined,
 				deps.plugin.logger,
+				undefined,
+				{
+					state: deps.plugin.sessionState,
+					openSession: (sessionId, messageId) =>
+						deps.plugin.openSessionInNewTab(sessionId, messageId),
+					getActiveSessionId: () => deps.activeSessionIdRef.current,
+					isSessionBusy: (sessionId) =>
+						Boolean(deps.getRuntime(sessionId).controller),
+				},
 			);
 		toolExecutor.setLatestSystemPromptReader(
 			() => deps.plugin.latestSystemPrompt ?? null,
