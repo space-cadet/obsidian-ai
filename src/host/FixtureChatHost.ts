@@ -128,5 +128,6 @@ const fixtureSettings: ChatHostSettings = {
 	syncRoomId: "obsidian-ai-chat",
 	syncUserName: "FixtureUser",
 	autoNameSessions: false,
+	maxParallelChatSessions: 5,
 	debugLogLevel: "error",
 };

@@ -134,7 +134,9 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		patchRuntime,
 		clearRuntime,
 		abortRuntime,
-	} = useChatRuntimeState(activeSessionId);
+		reserveSessionRun,
+		releaseSessionRun,
+	} = useChatRuntimeState(activeSessionId, plugin);
 	const generatingSessionIds = useMemo(
 		() =>
 			new Set(
@@ -585,8 +587,6 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		getSelectedProfileIds,
 		setDebateMode: ui.setDebateMode,
 		setWasTruncated,
-		isStreaming: activeRuntime.isStreaming,
-		abortActiveRuntime: () => abortRuntime(activeSessionIdRef.current),
 		clearSessionRuntime: (sessionId) => {
 			abortRuntime(sessionId);
 			clearRuntime(sessionId);
@@ -720,6 +720,8 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		getRuntime,
 		patchRuntime,
 		clearRuntime,
+		reserveSessionRun,
+		releaseSessionRun,
 		ui,
 	});
 

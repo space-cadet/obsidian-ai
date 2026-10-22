@@ -73,6 +73,7 @@ export interface ChatHostSettings extends Pick<
 	| "syncRoomId"
 	| "syncUserName"
 	| "autoNameSessions"
+	| "maxParallelChatSessions"
 	| "debugLogLevel"
 > {}
 

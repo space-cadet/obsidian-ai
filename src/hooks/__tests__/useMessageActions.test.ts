@@ -36,6 +36,7 @@ const mockPlugin = {
 		autoApply: false,
 		maxAgentSteps: 5,
 		enableAgentTools: false,
+		maxParallelChatSessions: 5,
 	},
 	chatapi: {},
 	saveSettings: vi.fn(),
@@ -154,6 +155,7 @@ function makeDeps(
 	const setContextTokenCount = vi.fn();
 	const setContextItems = vi.fn();
 	const runtimeStore: Record<string, ChatRuntimeState> = {};
+	const reservedSessions = new Set<string>();
 	const getRuntime = vi.fn((sessionId: string | null | undefined) => {
 		if (!sessionId) return emptyChatRuntime;
 		return runtimeStore[sessionId] ?? emptyChatRuntime;
@@ -167,6 +169,19 @@ function makeDeps(
 	const clearRuntime = vi.fn((sessionId) => {
 		if (!sessionId) return;
 		delete runtimeStore[sessionId];
+	});
+	const reserveSessionRun = vi.fn((sessionId: string, limit: number) => {
+		const activeIds = new Set(reservedSessions);
+		for (const [id, runtime] of Object.entries(runtimeStore)) {
+			if (runtime.isStreaming || runtime.controller) activeIds.add(id);
+		}
+		if (activeIds.has(sessionId)) return "already-running" as const;
+		if (activeIds.size >= limit) return "limit-reached" as const;
+		reservedSessions.add(sessionId);
+		return "reserved" as const;
+	});
+	const releaseSessionRun = vi.fn((sessionId: string) => {
+		reservedSessions.delete(sessionId);
 	});
 	const ui = {
 		selectedProfileIds: new Set<string>(),
@@ -218,6 +233,8 @@ function makeDeps(
 		getRuntime,
 		patchRuntime,
 		clearRuntime,
+		reserveSessionRun,
+		releaseSessionRun,
 		setWasTruncated,
 		setContextTokenCount,
 		setContextItems,
@@ -259,6 +276,37 @@ describe("useMessageActions", () => {
 		await act(async () => result.current.handleSend("hello"));
 		expect(owner.ensureLoaded).toHaveBeenCalledWith("session-A");
 		expect(send).toHaveBeenCalledWith("hello", undefined, "session-A");
+		send.mockRestore();
+	});
+
+	it("blocks a send when the parallel session limit is full", async () => {
+		const send = vi
+			.spyOn(TurnLifecycle.prototype, "send")
+			.mockResolvedValue(undefined);
+		const reserveSessionRun = vi.fn(() => "limit-reached" as const);
+		const deps = makeDeps({
+			plugin: {
+				...mockPlugin,
+				settings: {
+					...mockPlugin.settings,
+					maxParallelChatSessions: 2,
+				},
+			} as any,
+			reserveSessionRun,
+		});
+		const { result } = renderHook(() => useMessageActions(deps));
+		let accepted: boolean | undefined;
+
+		await act(async () => {
+			accepted = await result.current.handleSend("hello");
+		});
+
+		expect(reserveSessionRun).toHaveBeenCalledWith("session-1", 2);
+		expect(accepted).toBe(false);
+		expect(send).not.toHaveBeenCalled();
+		expect(mockNotice).toHaveBeenCalledWith(
+			expect.stringContaining("Parallel chat limit reached (2 sessions)"),
+		);
 		send.mockRestore();
 	});
 
@@ -418,6 +466,55 @@ describe("useMessageActions", () => {
 	});
 
 	describe("handleRetry", () => {
+		it("restores the transcript when the parallel session limit is full", async () => {
+			const session = {
+				id: "session-1",
+				messages: [
+					{ id: "m1", role: "user", content: "hello", timestamp: 1 },
+					{
+						id: "m2",
+						role: "assistant",
+						content: "hi",
+						timestamp: 2,
+					},
+					{ id: "m3", role: "user", content: "again", timestamp: 3 },
+					{
+						id: "m4",
+						role: "assistant",
+						content: "done",
+						timestamp: 4,
+					},
+				],
+				title: "Test",
+				createdAt: 1,
+				updatedAt: 1,
+				contextItems: [],
+			} as any;
+			const updateMessages = vi.fn();
+			const messagesRef = { current: session.messages };
+			const deps = makeDeps({
+				sessionsRef: { current: [session] },
+				activeSessionIdRef: { current: "session-1" },
+				messagesRef,
+				updateMessages,
+				reserveSessionRun: vi.fn(() => "limit-reached" as const),
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+
+			act(() => result.current.handleRetry("m4"));
+
+			expect(messagesRef.current).toEqual(session.messages);
+			expect(updateMessages).toHaveBeenLastCalledWith(
+				"session-1",
+				session.messages,
+			);
+			expect(mockNotice).toHaveBeenCalledWith(
+				expect.stringContaining(
+					"Parallel chat limit reached (5 sessions)",
+				),
+			);
+		});
+
 		it("truncates to before the assistant message and re-sends user content", async () => {
 			const updateMessages = vi.fn();
 			const session = {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ContentPart } from "../types";
 import type { ToolCall, ToolResult } from "../agent/types";
 import type { ToolDisplayDescriptor } from "../agent/toolRegistry";
+import { normalizeMaxParallelChatSessions } from "../settings";
 
 export interface ChatRuntimeState {
 	isStreaming: boolean;
@@ -15,6 +16,23 @@ export interface ChatRuntimeState {
 }
 
 export type ChatRuntimePatch = Partial<ChatRuntimeState>;
+
+export type SessionRunReservationResult =
+	| "reserved"
+	| "already-running"
+	| "limit-reached";
+
+const defaultReservationOwner = {};
+const reservationsByOwner = new WeakMap<object, Set<string>>();
+
+function getSessionReservations(owner: object): Set<string> {
+	let reservations = reservationsByOwner.get(owner);
+	if (!reservations) {
+		reservations = new Set<string>();
+		reservationsByOwner.set(owner, reservations);
+	}
+	return reservations;
+}
 
 export const emptyChatRuntime: ChatRuntimeState = {
 	isStreaming: false,
@@ -39,11 +57,15 @@ function isRuntimeIdle(runtime: ChatRuntimeState): boolean {
 	);
 }
 
-export function useChatRuntimeState(activeSessionId: string | null) {
+export function useChatRuntimeState(
+	activeSessionId: string | null,
+	reservationOwner: object = defaultReservationOwner,
+) {
 	const [runtimeBySession, setRuntimeBySession] = useState<
 		Record<string, ChatRuntimeState>
 	>({});
 	const runtimeBySessionRef = useRef(runtimeBySession);
+	const sessionReservations = getSessionReservations(reservationOwner);
 
 	useEffect(() => {
 		runtimeBySessionRef.current = runtimeBySession;
@@ -105,6 +127,38 @@ export function useChatRuntimeState(activeSessionId: string | null) {
 		runtime?.controller?.abort();
 	}, []);
 
+	const reserveSessionRun = useCallback(
+		(
+			sessionId: string,
+			maxParallelSessions: number,
+		): SessionRunReservationResult => {
+			const activeSessionIds = new Set(sessionReservations);
+			for (const [runningSessionId, runtime] of Object.entries(
+				runtimeBySessionRef.current,
+			)) {
+				if (runtime.isStreaming || runtime.controller) {
+					activeSessionIds.add(runningSessionId);
+				}
+			}
+
+			if (activeSessionIds.has(sessionId)) return "already-running";
+
+			const limit = normalizeMaxParallelChatSessions(maxParallelSessions);
+			if (activeSessionIds.size >= limit) return "limit-reached";
+
+			sessionReservations.add(sessionId);
+			return "reserved";
+		},
+		[sessionReservations],
+	);
+
+	const releaseSessionRun = useCallback(
+		(sessionId: string) => {
+			sessionReservations.delete(sessionId);
+		},
+		[sessionReservations],
+	);
+
 	const activeRuntime = useMemo(
 		() => getRuntime(activeSessionId),
 		[getRuntime, activeSessionId, runtimeBySession],
@@ -117,5 +171,7 @@ export function useChatRuntimeState(activeSessionId: string | null) {
 		patchRuntime,
 		clearRuntime,
 		abortRuntime,
+		reserveSessionRun,
+		releaseSessionRun,
 	};
 }

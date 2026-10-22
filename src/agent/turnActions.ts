@@ -15,7 +15,7 @@ export class TurnActionController {
 			text: string,
 			attachments?: Attachment[],
 			sessionId?: string,
-		) => Promise<void>,
+		) => boolean,
 	) {}
 
 	private updateMessages(
@@ -71,6 +71,8 @@ export class TurnActionController {
 		if (userIndex === -1) return;
 
 		const userMsg = session.messages[userIndex];
+		const originalAttachments = deps.ui.messageAttachments;
+		const originalContextItems = deps.contextItemsRef.current;
 		const truncated = session.messages.slice(0, userIndex);
 		deps.messagesRef.current = truncated;
 
@@ -89,7 +91,17 @@ export class TurnActionController {
 				`${userMsg.contextItems?.length ?? 0} context item(s)`,
 		);
 
-		void this.send(userMsg.content, userMsg.attachments, currentActiveId);
+		const accepted = this.send(
+			userMsg.content,
+			userMsg.attachments,
+			currentActiveId,
+		);
+		if (!accepted) {
+			deps.messagesRef.current = session.messages;
+			this.updateMessages(currentActiveId, session.messages);
+			deps.ui.setMessageAttachments(originalAttachments);
+			deps.setContextItems(originalContextItems);
+		}
 	};
 
 	edit = (messageId: string): void => {

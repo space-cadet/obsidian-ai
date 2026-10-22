@@ -4,6 +4,15 @@ import { migrateRecentModelsToProviders } from "./lib/recentModels";
 /** Automatic remote sync stays disabled until its behavior is fully verified. */
 export const AUTO_SYNC_ENABLED = false;
 
+export const DEFAULT_MAX_PARALLEL_CHAT_SESSIONS = 5;
+export const MAX_PARALLEL_CHAT_SESSIONS = 10;
+
+export function normalizeMaxParallelChatSessions(value: unknown): number {
+	return typeof value === "number" && Number.isFinite(value)
+		? Math.min(MAX_PARALLEL_CHAT_SESSIONS, Math.max(1, Math.round(value)))
+		: DEFAULT_MAX_PARALLEL_CHAT_SESSIONS;
+}
+
 export interface IntelligenceSettings {
 	enableIntelligence: boolean;
 	personaPath: string;
@@ -152,6 +161,8 @@ export interface ObsidianAISettings {
 	/** How tool calls and results appear in history replay: "elide" = omit payloads (saves tokens), "preserve" = full detail (debug). */
 	toolHistoryMode: "elide" | "preserve";
 	maxSavedConversations: number;
+	/** Maximum number of chat sessions allowed to generate at the same time. */
+	maxParallelChatSessions: number;
 	autoNameSessions: boolean;
 	debugLogLevel: "off" | "error" | "info" | "debug";
 	debugLogRetention: number;
@@ -402,6 +413,7 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	maxToolResultTokens: 4000,
 	toolHistoryMode: "elide",
 	maxSavedConversations: 20,
+	maxParallelChatSessions: DEFAULT_MAX_PARALLEL_CHAT_SESSIONS,
 	autoNameSessions: false,
 	chatStorageFormat: "legacy",
 	maxSessionsInSidebar: 50,
@@ -564,6 +576,9 @@ export const normalizeSettings = (
 		toolHistoryMode:
 			merged.toolHistoryMode === "preserve" ? "preserve" : "elide",
 		maxSavedConversations: merged.maxSavedConversations ?? 20,
+		maxParallelChatSessions: normalizeMaxParallelChatSessions(
+			merged.maxParallelChatSessions,
+		),
 		autoNameSessions: Boolean(merged.autoNameSessions),
 		chatStorageFormat:
 			(merged.chatStorageFormat as "legacy" | "jsonl") ?? "legacy",

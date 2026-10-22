@@ -11,7 +11,11 @@ import type {
 } from "../types";
 import type { ProviderProfile } from "../settings";
 import { NoteEditingBridge } from "../noteEditing/NoteEditingBridge";
-import type { ChatRuntimeState, ChatRuntimePatch } from "./useChatRuntimeState";
+import type {
+	ChatRuntimeState,
+	ChatRuntimePatch,
+	SessionRunReservationResult,
+} from "./useChatRuntimeState";
 import type { UseChatUIResult } from "./useChatUI";
 import type { ParticipantRouter } from "../agent/ParticipantRouter";
 
@@ -45,6 +49,11 @@ export interface UseMessageActionsDeps {
 			| ((current: ChatRuntimeState) => ChatRuntimePatch),
 	) => void;
 	clearRuntime: (sessionId: string | null | undefined) => void;
+	reserveSessionRun: (
+		sessionId: string,
+		maxParallelSessions: number,
+	) => SessionRunReservationResult;
+	releaseSessionRun: (sessionId: string) => void;
 	setWasTruncated: React.Dispatch<React.SetStateAction<boolean>>;
 	setContextTokenCount: React.Dispatch<React.SetStateAction<number>>;
 	setContextItems: React.Dispatch<React.SetStateAction<ContextItem[]>>;
@@ -113,18 +122,11 @@ export function useMessageActions(deps: UseMessageActionsDeps) {
 					);
 				}
 			}
-			const send = lifecycleRef.current!.send(
+			return lifecycleRef.current!.startSend(
 				text,
 				attachments,
 				sessionId ?? undefined,
 			);
-			void send.catch((error: unknown) => {
-				d.plugin.logger?.log(
-					"error",
-					`[Session] send failed: ${String(error)}`,
-				);
-			});
-			return true;
 		},
 		[],
 	);

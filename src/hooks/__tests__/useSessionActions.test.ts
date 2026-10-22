@@ -36,8 +36,6 @@ describe("useSessionActions", () => {
 				getSelectedProfileIds: () => [],
 				setDebateMode: vi.fn(),
 				setWasTruncated: vi.fn(),
-				isStreaming: false,
-				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
 				markSessionDeleted,
 				openSessionIds,
@@ -70,6 +68,7 @@ describe("useSessionActions", () => {
 		} as any;
 		const sessionsRef = { current: [] as any[] };
 		const activeSessionIdRef = { current: null as string | null };
+		const abortActiveRuntime = vi.fn();
 
 		const { result } = renderHook(() => {
 			const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
@@ -86,13 +85,13 @@ describe("useSessionActions", () => {
 				getSelectedProfileIds: () => ["default"],
 				setDebateMode: vi.fn(),
 				setWasTruncated: vi.fn(),
-				isStreaming: false,
-				abortActiveRuntime: vi.fn(),
+				isStreaming: true,
+				abortActiveRuntime,
 				clearSessionRuntime: vi.fn(),
 				markSessionDeleted: vi.fn(),
 				openSessionIds,
 				setOpenSessionIds,
-			});
+			} as any);
 		});
 
 		act(() => result.current.handleNewChat());
@@ -100,6 +99,7 @@ describe("useSessionActions", () => {
 
 		expect(createNewSession).toHaveBeenCalledTimes(2);
 		expect(result.current.openSessionIds).toEqual(["draft-1", "draft-2"]);
+		expect(abortActiveRuntime).not.toHaveBeenCalled();
 	});
 
 	it("keeps an active tabless session open when creating a new tab", () => {
@@ -155,8 +155,6 @@ describe("useSessionActions", () => {
 				getSelectedProfileIds: () => ["default"],
 				setDebateMode: vi.fn(),
 				setWasTruncated: vi.fn(),
-				isStreaming: false,
-				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
 				markSessionDeleted: vi.fn(),
 				openSessionIds,
@@ -229,8 +227,6 @@ describe("useSessionActions", () => {
 				getSelectedProfileIds: () => [],
 				setDebateMode: vi.fn(),
 				setWasTruncated: vi.fn(),
-				isStreaming: false,
-				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
 				markSessionDeleted: vi.fn(),
 				openSessionIds,
@@ -281,8 +277,6 @@ describe("useSessionActions", () => {
 				getSelectedProfileIds: () => ["gemini-tab"],
 				setDebateMode: vi.fn(),
 				setWasTruncated: vi.fn(),
-				isStreaming: false,
-				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
 				markSessionDeleted: vi.fn(),
 				openSessionIds,
@@ -337,8 +331,6 @@ describe("useSessionActions", () => {
 				getSelectedProfileIds: () => ["default"],
 				setDebateMode: vi.fn(),
 				setWasTruncated: vi.fn(),
-				isStreaming: false,
-				abortActiveRuntime: vi.fn(),
 				clearSessionRuntime: vi.fn(),
 				markSessionDeleted: vi.fn(),
 				openSessionIds,

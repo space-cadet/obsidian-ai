@@ -35,8 +35,6 @@ interface UseSessionActionsOptions {
 	getSelectedProfileIds: () => string[];
 	setDebateMode: (v: boolean) => void;
 	setWasTruncated: (v: boolean) => void;
-	isStreaming: boolean;
-	abortActiveRuntime: () => void;
 	clearSessionRuntime: (sessionId: string) => void;
 	markSessionDeleted: (sessionId: string) => void;
 	openSessionIds: string[];
@@ -71,8 +69,6 @@ export function useSessionActions({
 	getSelectedProfileIds,
 	setDebateMode,
 	setWasTruncated,
-	isStreaming,
-	abortActiveRuntime,
 	clearSessionRuntime,
 	markSessionDeleted,
 	openSessionIds,
@@ -203,7 +199,6 @@ export function useSessionActions({
 	}, [sessionsRef]);
 
 	const handleNewChat = useCallback(() => {
-		if (isStreaming) abortActiveRuntime();
 		// A message can be sent from the fresh draft left behind after the last
 		// tab closes. If that active session now contains history but has no tab,
 		// keep it visible when the user creates another chat.
@@ -246,7 +241,6 @@ export function useSessionActions({
 		setDebateMode(false);
 		setWasTruncated(false);
 	}, [
-		isStreaming,
 		plugin,
 		createNewSession,
 		setSelectedProfileIds,
@@ -255,7 +249,6 @@ export function useSessionActions({
 		setDebateMode,
 		setWasTruncated,
 		openSessionInTab,
-		abortActiveRuntime,
 		activeSessionIdRef,
 		sessionsRef,
 		openSessionIds,

@@ -133,6 +133,22 @@ export function renderChatDefaultsSection(
 				});
 		});
 
+	const maxParallelChatSessionsSetting = new Setting(sectionEl)
+		.setName("Maximum parallel chat sessions")
+		.setDesc(
+			"Maximum number of chat sessions that can generate replies at once. Additional sends are blocked until a reply finishes or is stopped. Default: 5.",
+		);
+	createSliderWithValue(maxParallelChatSessionsSetting, {
+		value: plugin.settings.maxParallelChatSessions,
+		min: 1,
+		max: 10,
+		step: 1,
+		onChange: async (value) => {
+			plugin.settings.maxParallelChatSessions = value;
+			await saveSettings();
+		},
+	});
+
 	new Setting(sectionEl)
 		.setName("Agent prompt")
 		.setDesc(

@@ -1,6 +1,7 @@
 import type ObsidianAIPlugin from "../main";
 import {
 	DEFAULT_SETTINGS,
+	normalizeMaxParallelChatSessions,
 	type ObsidianAISettings,
 	type SyncComponentConfig,
 } from "../settings";
@@ -89,6 +90,8 @@ function extractSettings(
 		settings.maxContextTokens = DEFAULT_SETTINGS.maxContextTokens;
 		settings.maxContextMessages = DEFAULT_SETTINGS.maxContextMessages;
 		settings.maxSavedConversations = DEFAULT_SETTINGS.maxSavedConversations;
+		settings.maxParallelChatSessions =
+			DEFAULT_SETTINGS.maxParallelChatSessions;
 		settings.autoNameSessions = false;
 		settings.enableAgentTools = true;
 		settings.autoApply = false;
@@ -160,6 +163,9 @@ function mergeSettings(
 		...imported,
 		providerProfiles: mergedProfiles,
 	};
+	result.maxParallelChatSessions = normalizeMaxParallelChatSessions(
+		result.maxParallelChatSessions,
+	);
 	result.recentModels = migrateRecentModelsToProviders(
 		result.recentModels ?? {},
 		result.providerProfiles,

@@ -14,7 +14,10 @@ import type {
 	ThinkingMode,
 } from "../types";
 import type { ApiCallTelemetryResult } from "../api";
-import type { ProviderProfile } from "../settings";
+import {
+	normalizeMaxParallelChatSessions,
+	type ProviderProfile,
+} from "../settings";
 import type { ToolCall, ToolResult } from "../agent/types";
 import { toToolDisplayDescriptor } from "../agent/toolRegistry";
 import { ToolExecutor } from "../agent/ToolExecutor";
@@ -79,6 +82,11 @@ export interface TurnLifecycleDeps {
 		patch: Partial<Omit<ChatSession, "id" | "messages">>,
 	) => void;
 	getRuntime: (sessionId: string | null | undefined) => ChatRuntimeState;
+	reserveSessionRun: (
+		sessionId: string,
+		maxParallelSessions: number,
+	) => "reserved" | "already-running" | "limit-reached";
+	releaseSessionRun: (sessionId: string) => void;
 	patchRuntime: (
 		sessionId: string | null | undefined,
 		patch:
@@ -149,8 +157,43 @@ export class TurnLifecycle {
 			getDeps,
 			() => this.currentToolExecutor,
 			(text, attachments, sessionId) =>
-				this.send(text, attachments, sessionId),
+				this.startSend(text, attachments, sessionId),
 		);
+	}
+
+	startSend(
+		text: string,
+		attachments?: Attachment[],
+		targetSessionId?: string,
+	): boolean {
+		const deps = this.getDeps();
+		const sessionId = targetSessionId ?? deps.activeSessionIdRef.current;
+		if (!sessionId) return false;
+
+		const maxParallelSessions = normalizeMaxParallelChatSessions(
+			deps.plugin.settings.maxParallelChatSessions,
+		);
+		const reservation = deps.reserveSessionRun(
+			sessionId,
+			maxParallelSessions,
+		);
+		if (reservation === "limit-reached") {
+			new Notice(
+				`Parallel chat limit reached (${maxParallelSessions} sessions). Wait for a reply to finish or stop one before sending another.`,
+			);
+			return false;
+		}
+		if (reservation !== "reserved") return false;
+
+		void this.send(text, attachments, sessionId)
+			.catch((error: unknown) => {
+				deps.plugin.logger?.log(
+					"error",
+					`[Session] send failed: ${String(error)}`,
+				);
+			})
+			.finally(() => deps.releaseSessionRun(sessionId));
+		return true;
 	}
 
 	private updateMessages(
