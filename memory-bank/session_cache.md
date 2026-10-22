@@ -1,6 +1,6 @@
 # Session Cache
 
-*Last Updated: 2026-10-22 21:21:41 IST*
+*Last Updated: 2026-10-22 21:24:15 IST*
 
 ## 2026-10-22 — v1.9.0 version bump preparation
 
@@ -13,7 +13,11 @@
 - Pinned install/build, 676 tests, production dependency audit, static scan,
   targeted Prettier, diff checks, and reproducible build hashes passed. The
   whole-repository Prettier check reports 18 files outside this release change.
-- No Obsidian smoke checks were run per the user's instruction. See
+- Published commit `c2ad898` as tag `1.9.0`; GitHub Release workflow
+  `39808944364` passed and uploaded `main.js`, `manifest.json`, `styles.css`,
+  and the checksum file. Local `main` matches `origin/main`.
+- No Obsidian smoke checks were run per the user's instruction. Whole-repo
+  Prettier reports 18 unrelated files; changed files pass. See
   `sessions/2026-10-22-v1.9.0-version-bump.md`.
 
 ## 2026-10-22 — Full PR #13 branch closeout

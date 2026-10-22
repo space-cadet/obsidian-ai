@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-10-22 21:21:41 IST*
+*Last Updated: 2026-10-22 21:24:15 IST*
 
 ### 2026-10-22 — v1.9.0 version bump preparation
 
@@ -15,7 +15,10 @@
   passed. Two local builds produced identical release artifact hashes.
 - Whole-repository Prettier reports 18 files outside this release change; the
   changed files pass. Obsidian desktop/mobile smoke checks were not run per the
-  user's instruction not to use Obsidian. GitHub tag/release is pending.
+  user's instruction not to use Obsidian.
+- Published commit `c2ad898` as tag `1.9.0` and GitHub Release
+  https://github.com/space-cadet/obsidian-ai/releases/tag/1.9.0. Release
+  workflow `39808944364` passed and uploaded the plugin assets and checksums.
 - See `sessions/2026-10-22-v1.9.0-version-bump.md`.
 
 ### 2026-10-22 — Whole PR #13 session status (T75/T75a/T13/T15/T24c/T60)
