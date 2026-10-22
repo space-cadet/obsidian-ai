@@ -33,6 +33,7 @@ export class SessionStateOwner {
 		ready: false,
 	};
 	private listeners = new Set<() => void>();
+	private activeSessionIdsByView = new Map<object, string>();
 	private revisions = new Map<string, number>();
 	private persistedRevisions = new Map<string, number>();
 	private pendingLoads = new Map<string, Promise<ChatSession | null>>();
@@ -206,6 +207,19 @@ export class SessionStateOwner {
 	setActiveSessionId(sessionId: string | null): void {
 		this.publish({ ...this.snapshot, activeSessionId: sessionId });
 		this.scheduleFlush();
+	}
+
+	setViewActiveSessionId(viewId: object, sessionId: string | null): void {
+		if (sessionId) this.activeSessionIdsByView.set(viewId, sessionId);
+		else this.activeSessionIdsByView.delete(viewId);
+	}
+
+	removeActiveSessionView(viewId: object): void {
+		this.activeSessionIdsByView.delete(viewId);
+	}
+
+	isSessionActive(sessionId: string): boolean {
+		return [...this.activeSessionIdsByView.values()].includes(sessionId);
 	}
 
 	setOpenSessionIds(sessionIds: string[]): void {

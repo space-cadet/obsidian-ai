@@ -148,6 +148,9 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		[runtimeBySession],
 	);
 	const messagesRef = useRef<ChatMessage[]>([]);
+	const openSessionInTabRef = useRef<
+		(sessionId: string, messageId?: string) => void
+	>(() => undefined);
 
 	useEffect(() => {
 		const refreshFromSettings = () =>
@@ -446,8 +449,8 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			undefined,
 			{
 				state: plugin.sessionState,
-				openSession: (sessionId, messageId) =>
-					plugin.openSessionInNewTab(sessionId, messageId),
+				openSession: async (sessionId, messageId) =>
+					openSessionInTabRef.current(sessionId, messageId),
 				getActiveSessionId: () => activeSessionIdRef.current,
 				isSessionBusy,
 			},
@@ -504,7 +507,6 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		plugin.settings,
 		plugin.app,
 		plugin.sessionState,
-		plugin.openSessionInNewTab,
 		plugin.logger,
 		isSessionBusy,
 		resolveSessionProfile,
@@ -597,6 +599,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		setOpenSessionIds: setPersistedOpenSessionIds,
 		getModelOverrides,
 	});
+	openSessionInTabRef.current = openSessionInTab;
 
 	// The toolbar is shared visually, but profile selection belongs to the
 	// newly active session. This is deliberately one-way: writing picker changes
@@ -710,6 +713,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		thinkingMode,
 		sessionsRef,
 		activeSessionIdRef,
+		openSessionInTab,
 		updateMessages: updateSessionMessages,
 		updateMetadata: updateSessionMetadata,
 		setWasTruncated,

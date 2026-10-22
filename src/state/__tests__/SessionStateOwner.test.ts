@@ -30,6 +30,25 @@ function makeStorage(
 }
 
 describe("SessionStateOwner", () => {
+	it("tracks active sessions for each mounted view", () => {
+		const owner = new SessionStateOwner(
+			makeStorage({ sessions: [], activeSessionId: null }),
+		);
+		const firstView = {};
+		const secondView = {};
+
+		owner.setViewActiveSessionId(firstView, "s1");
+		owner.setViewActiveSessionId(secondView, "s2");
+
+		expect(owner.isSessionActive("s1")).toBe(true);
+		expect(owner.isSessionActive("s2")).toBe(true);
+		expect(owner.isSessionActive("s3")).toBe(false);
+
+		owner.removeActiveSessionView(firstView);
+		expect(owner.isSessionActive("s1")).toBe(false);
+		expect(owner.isSessionActive("s2")).toBe(true);
+	});
+
 	it("publishes transcript readiness with the installed payload", async () => {
 		const storage = makeStorage({
 			sessions: [session()],

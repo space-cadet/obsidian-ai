@@ -100,6 +100,7 @@ export function useChatSession({
 	const [chatDataLoaded, setChatDataLoaded] = useState(false);
 	const [openSessionIds, setOpenSessionIdsState] = useState<string[]>([]);
 	const activeSessionIdRef = useRef<string | null>(null);
+	const activeSessionViewKey = useRef<object>({});
 	const openSessionIdsRef = useRef<string[]>([]);
 	const setActiveSessionId = useCallback<
 		React.Dispatch<React.SetStateAction<string | null>>
@@ -112,7 +113,12 @@ export function useChatSession({
 			activeSessionIdRef.current = next;
 			setActiveSessionIdState(next);
 			owner.setActiveSessionId(next);
+			owner.setViewActiveSessionId(activeSessionViewKey.current, next);
 		},
+		[owner],
+	);
+	useEffect(
+		() => () => owner.removeActiveSessionView(activeSessionViewKey.current),
 		[owner],
 	);
 	const setOpenSessionIds = useCallback<

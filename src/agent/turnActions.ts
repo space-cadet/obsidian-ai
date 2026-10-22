@@ -193,11 +193,15 @@ export class TurnActionController {
 					undefined,
 					{
 						state: deps.plugin.sessionState,
-						openSession: (sessionId, messageId) =>
-							deps.plugin.openSessionInNewTab(
-								sessionId,
-								messageId,
-							),
+						openSession: async (sessionId, messageId) => {
+							if (deps.openSessionInTab)
+								deps.openSessionInTab(sessionId, messageId);
+							else
+								await deps.plugin.openSessionInNewTab(
+									sessionId,
+									messageId,
+								);
+						},
 						getActiveSessionId: () =>
 							deps.activeSessionIdRef.current,
 						isSessionBusy: (sessionId) =>

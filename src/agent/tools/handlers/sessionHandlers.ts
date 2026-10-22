@@ -339,6 +339,7 @@ export class SessionHandlers extends ToolHandlerBase {
 			};
 		}
 		if (
+			owner.isSessionActive(args.session_id) ||
 			this.sessionTools?.getActiveSessionId?.() === args.session_id ||
 			this.getActiveSessionId?.() === args.session_id
 		) {

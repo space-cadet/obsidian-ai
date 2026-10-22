@@ -683,6 +683,18 @@ describe("ToolExecutor registry integration", () => {
 		expect(activeResult.error).toContain("active chat");
 		expect(activeOwner.getSnapshot().sessions).toHaveLength(1);
 
+		const { owner: otherPaneOwner } = createSessionOwner(
+			[createSavedSession("s1", 2)],
+			transcript,
+		);
+		otherPaneOwner.setViewActiveSessionId({}, "s1");
+		const otherPaneExecutor = createSessionToolExecutor(otherPaneOwner, {
+			activeSessionId: "other",
+		});
+		const otherPaneResult = await otherPaneExecutor.execute(deleteCall);
+		expect(otherPaneResult.error).toContain("active chat");
+		expect(otherPaneOwner.getSnapshot().sessions).toHaveLength(1);
+
 		const { owner: busyOwner } = createSessionOwner(
 			[createSavedSession("s1", 2)],
 			transcript,

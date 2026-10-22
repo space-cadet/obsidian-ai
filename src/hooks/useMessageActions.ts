@@ -31,6 +31,7 @@ export interface UseMessageActionsDeps {
 	// Session
 	sessionsRef: React.MutableRefObject<ChatSession[]>;
 	activeSessionIdRef: React.MutableRefObject<string | null>;
+	openSessionInTab?: (sessionId: string, messageId?: string) => void;
 	updateMessages: (
 		sessionId: string,
 		messages: ChatMessage[] | ((messages: ChatMessage[]) => ChatMessage[]),
