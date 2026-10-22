@@ -38,6 +38,8 @@ export class SessionStateOwner {
 	private pendingLoads = new Map<string, Promise<ChatSession | null>>();
 	private pendingInitialization: Promise<SessionStateSnapshot> | null = null;
 	private deleted = new Set<string>();
+	// A durable local delete must also reject downloads that finish later.
+	private removedSessionIds = new Set<string>();
 	private saveTail: Promise<void> = Promise.resolve();
 	private generation = 0;
 	private saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -183,6 +185,7 @@ export class SessionStateOwner {
 	}
 
 	addSession(session: ChatSession): void {
+		this.removedSessionIds.delete(session.id);
 		if (this.deleted.has(session.id)) this.deleted.delete(session.id);
 		this.revisions.set(
 			session.id,
@@ -273,8 +276,10 @@ export class SessionStateOwner {
 	}
 
 	async deleteAllSessions(): Promise<void> {
-		for (const session of this.snapshot.sessions)
+		for (const session of this.snapshot.sessions) {
 			this.deleted.add(session.id);
+			this.removedSessionIds.add(session.id);
+		}
 		this.generation++;
 		for (const session of this.snapshot.sessions) {
 			this.revisions.set(
@@ -298,6 +303,7 @@ export class SessionStateOwner {
 	}
 
 	markDeleted(sessionId: string): void {
+		this.removedSessionIds.add(sessionId);
 		this.deleted.add(sessionId);
 		this.generation++;
 		this.revisions.set(sessionId, (this.revisions.get(sessionId) ?? 0) + 1);
@@ -339,7 +345,15 @@ export class SessionStateOwner {
 		this.scheduleFlush();
 	}
 
-	applySyncSnapshot(data: StoredChatData): void {
+	captureSyncRevisions(): ReadonlyMap<string, number> {
+		return new Map(this.revisions);
+	}
+
+	applySyncSnapshot(
+		data: StoredChatData,
+		baseline?: ReadonlyMap<string, number>,
+	): string[] {
+		const skipped: string[] = [];
 		for (const id of data.deletedSessionIds ?? []) this.deleted.add(id);
 		const currentById = new Map(
 			this.snapshot.sessions.map((session) => [session.id, session]),
@@ -351,8 +365,30 @@ export class SessionStateOwner {
 			(session) => !this.deleted.has(session.id),
 		);
 		for (const incoming of incomingById.values()) {
-			if (this.deleted.has(incoming.id)) continue;
+			if (
+				this.deleted.has(incoming.id) ||
+				this.removedSessionIds.has(incoming.id)
+			) {
+				skipped.push(incoming.id);
+				continue;
+			}
+			if (
+				baseline &&
+				(this.revisions.get(incoming.id) ?? 0) !==
+					(baseline.get(incoming.id) ?? 0)
+			) {
+				skipped.push(incoming.id);
+				continue;
+			}
 			const current = currentById.get(incoming.id);
+			if (
+				!baseline &&
+				current &&
+				incoming.updatedAt < current.updatedAt
+			) {
+				skipped.push(incoming.id);
+				continue;
+			}
 			if (!current) merged.push(incoming);
 			else if (
 				(this.revisions.get(incoming.id) ?? 0) ===
@@ -392,7 +428,7 @@ export class SessionStateOwner {
 						(this.revisions.get(incoming.id) ?? 0) + 1,
 					);
 				}
-			}
+			} else skipped.push(incoming.id);
 		}
 		this.publish({
 			...this.snapshot,
@@ -402,6 +438,7 @@ export class SessionStateOwner {
 			deletedSessionIds: [...this.deleted],
 		});
 		this.scheduleFlush();
+		return skipped;
 	}
 
 	private scheduleFlush(): void {
@@ -419,6 +456,11 @@ export class SessionStateOwner {
 	}
 
 	async flush(): Promise<void> {
+		if (!this.snapshot.ready) {
+			await this.initialize();
+			if (!this.snapshot.ready)
+				throw new Error("Session archive is not ready for saving");
+		}
 		if (this.saveTimer) {
 			clearTimeout(this.saveTimer);
 			this.saveTimer = null;

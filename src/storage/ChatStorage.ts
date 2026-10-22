@@ -257,6 +257,7 @@ class JsonlStorage implements ChatStorage {
 	private unhydratedSessions = new Map<string, SessionIndexEntry>();
 	/** Avoid rewriting potentially large inline file data on each text autosave. */
 	private savedDraftAttachmentRefs = new Map<string, Attachment[]>();
+	private indexLoadError: Error | null = null;
 	private activeSessionWriteStages = new Set<string>();
 	private transcriptFingerprints = new Map<string, string>();
 	/** In-flight hydrateSession calls — concurrent callers share one read. */
@@ -323,8 +324,14 @@ class JsonlStorage implements ChatStorage {
 		try {
 			const raw = await adapter.read(indexPath);
 			index = JSON.parse(raw) as SessionIndex;
-		} catch {
-			return { sessions: [], activeSessionId: null };
+			if (!index || !Array.isArray(index.sessions))
+				throw new Error("Invalid session index");
+			this.indexLoadError = null;
+		} catch (error) {
+			this.indexLoadError = new Error(
+				`Saved chat index could not be read: ${String(error)}`,
+			);
+			throw this.indexLoadError;
 		}
 		this.indexEntriesById = new Map(
 			index.sessions.map((entry) => [entry.id, entry]),
@@ -653,6 +660,7 @@ class JsonlStorage implements ChatStorage {
 	}
 
 	private async _saveChatData(data: StoredChatData): Promise<void> {
+		if (this.indexLoadError) throw this.indexLoadError;
 		const adapter = this.deps.app.vault.adapter;
 		const pluginDir = `${this.deps.app.vault.configDir}/plugins/${this.deps.manifest.id}`;
 		const sessionsDir = `${pluginDir}/${SESSIONS_DIR}`;

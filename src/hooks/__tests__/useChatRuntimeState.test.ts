@@ -1,8 +1,32 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { useChatRuntimeState } from "../useChatRuntimeState";
 
 describe("useChatRuntimeState session run limits", () => {
+	it("settles approvals on disposal without letting an old completion release a new run", () => {
+		const owner = {};
+		const first = renderHook(() => useChatRuntimeState("a", owner));
+		const controller = new AbortController();
+		const resolveTool = vi.fn();
+		const oldRelease = first.result.current.releaseSessionRun;
+		act(() => {
+			first.result.current.reserveSessionRun("a", 1);
+			first.result.current.patchRuntime("a", {
+				controller,
+				isStreaming: true,
+				resolveTool,
+			});
+		});
+		first.unmount();
+		expect(controller.signal.aborted).toBe(true);
+		expect(resolveTool).toHaveBeenCalledWith(null);
+		const next = renderHook(() => useChatRuntimeState("a", owner));
+		expect(next.result.current.reserveSessionRun("a", 1)).toBe("reserved");
+		oldRelease("a");
+		expect(next.result.current.reserveSessionRun("a", 1)).toBe(
+			"already-running",
+		);
+	});
 	it("reserves up to the configured limit and frees capacity after release", () => {
 		const owner = {};
 		const { result } = renderHook(() => useChatRuntimeState(null, owner));

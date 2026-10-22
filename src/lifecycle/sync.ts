@@ -87,17 +87,25 @@ export async function initSyncEngine(plugin: ObsidianAIPlugin): Promise<void> {
 		);
 		const persistDownloadedSessions = async (
 			downloadedSessions: ChatSession[],
+			baseline?: ReadonlyMap<string, number>,
 		): Promise<void> => {
 			const owner = plugin.sessionState;
 			if (!owner) throw new Error("Session state owner is unavailable");
 			await owner.initialize();
 			const state = owner.getSnapshot();
-			owner.applySyncSnapshot({
-				sessions: downloadedSessions,
-				activeSessionId: state.activeSessionId,
-				openSessionIds: state.openSessionIds,
-			});
+			const skipped = owner.applySyncSnapshot(
+				{
+					sessions: downloadedSessions,
+					activeSessionId: state.activeSessionId,
+					openSessionIds: state.openSessionIds,
+				},
+				baseline,
+			);
 			await owner.flush();
+			if (skipped.length > 0)
+				throw new Error(
+					`Local chats changed during sync; retry to reconcile: ${skipped.join(", ")}`,
+				);
 			for (const session of downloadedSessions) {
 				plugin.logger?.log(
 					"info",
@@ -113,6 +121,8 @@ export async function initSyncEngine(plugin: ObsidianAIPlugin): Promise<void> {
 		const indexManager = new SyncIndexManager(indexStorage);
 
 		plugin.syncEngine = new SyncEngine({
+			captureLocalSessionRevisions: () =>
+				plugin.sessionState!.captureSyncRevisions(),
 			adapter,
 			cache,
 			crypto,
@@ -128,8 +138,8 @@ export async function initSyncEngine(plugin: ObsidianAIPlugin): Promise<void> {
 					plugin.logger?.log(level as any, `[SyncEngine] ${msg}`);
 				},
 			},
-			onSessionDownloaded: (session) =>
-				persistDownloadedSessions([session]),
+			onSessionDownloaded: (session, baseline) =>
+				persistDownloadedSessions([session], baseline),
 			onSessionsDownloaded: persistDownloadedSessions,
 			onSessionDeleted: async (sessionId) => {
 				const owner = plugin.sessionState;
@@ -185,6 +195,9 @@ export async function rebuildSyncIndex(
 }> {
 	if (!plugin.syncEngine) await initSyncEngine(plugin);
 	if (!plugin.syncEngine) throw new Error("Sync is not configured");
+	await plugin.sessionState?.initialize();
+	await plugin.sessionState?.flush();
+	await _populateSyncCache(plugin);
 
 	// Build title map from local sessions for better title resolution (T43a)
 	const chatData = await plugin.loadChatData();
@@ -513,6 +526,8 @@ export async function triggerSync(
 			indeterminate: true,
 		});
 		modal?.addLog("system", "Reading local sessions...");
+		await plugin.sessionState?.initialize();
+		await plugin.sessionState?.flush();
 		await _populateSyncCache(plugin);
 		emitProgress({
 			phase: "planning",
@@ -937,5 +952,6 @@ async function _populateSyncCache(plugin: ObsidianAIPlugin): Promise<void> {
 			"warn",
 			`SyncEngine: failed to populate cache: ${err.message}`,
 		);
+		throw err;
 	}
 }

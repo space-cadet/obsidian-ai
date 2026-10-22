@@ -17,7 +17,14 @@ function makeEngine(
 	localSessions: any[],
 	remoteMetas: any[],
 	events: ProgressEvent[] = [],
-	options: { onSessionsDownloaded?: (sessions: any[]) => Promise<void> } = {},
+	options: {
+		onSessionsDownloaded?: (
+			sessions: any[],
+			baseline?: ReadonlyMap<string, number>,
+		) => Promise<void>;
+		captureLocalSessionRevisions?: () => ReadonlyMap<string, number>;
+		onList?: () => void;
+	} = {},
 ) {
 	const cache = {
 		getAllSessions: async () => localSessions,
@@ -30,7 +37,10 @@ function makeEngine(
 		name: "fake",
 		initialize: async () => {},
 		disconnect: async () => {},
-		listSessions: async () => remoteMetas,
+		listSessions: async () => {
+			options.onList?.();
+			return remoteMetas;
+		},
 		getSession: async (id: string) => {
 			if (!remoteMetas.some((remote) => remote.id === id)) return null;
 			const plaintext = JSON.stringify({
@@ -71,11 +81,33 @@ function makeEngine(
 		passphrase: "",
 		progress: (e) => events.push(e),
 		onSessionsDownloaded: options.onSessionsDownloaded,
+		captureLocalSessionRevisions: options.captureLocalSessionRevisions,
 	});
 	return engine;
 }
 
 describe("SyncEngine plan bytes (T42g)", () => {
+	it("carries the pre-transfer local revisions through batch persistence", async () => {
+		let revision = 1;
+		let observed: number | undefined;
+		const engine = makeEngine(
+			[],
+			[{ id: "c", modifiedAt: 2, size: 256 }],
+			[],
+			{
+				captureLocalSessionRevisions: () => new Map([["c", revision]]),
+				onList: () => {
+					revision = 2;
+				},
+				onSessionsDownloaded: async (_sessions, baseline) => {
+					observed = baseline?.get("c");
+				},
+			},
+		);
+		await engine.sync("download");
+		expect(observed).toBe(1);
+		expect(revision).toBe(2);
+	});
 	it("computeSyncPlan sums upload payload bytes and remote sizes", async () => {
 		const local: any[] = [
 			{

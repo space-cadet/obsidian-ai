@@ -1,5 +1,18 @@
 import { ChatSession } from "../types";
 
+/** User state worth retaining even before the first message is sent. */
+export function hasSessionContent(session: ChatSession): boolean {
+	return (
+		sessionMessageCount(session) > 0 ||
+		Boolean(
+			session.draft?.trim() ||
+			session.draftAttachments?.length ||
+			(session.thinkingMode &&
+				session.thinkingMode !== "provider-default"),
+		)
+	);
+}
+
 /** Authoritative message count — valid even before a session's messages are
 	hydrated into memory (index-only boot), unlike messages.length. */
 export function sessionMessageCount(session: ChatSession): number {

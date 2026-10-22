@@ -23,12 +23,12 @@ export type SessionRunReservationResult =
 	| "limit-reached";
 
 const defaultReservationOwner = {};
-const reservationsByOwner = new WeakMap<object, Set<string>>();
+const reservationsByOwner = new WeakMap<object, Map<string, symbol>>();
 
-function getSessionReservations(owner: object): Set<string> {
+function getSessionReservations(owner: object): Map<string, symbol> {
 	let reservations = reservationsByOwner.get(owner);
 	if (!reservations) {
-		reservations = new Set<string>();
+		reservations = new Map<string, symbol>();
 		reservationsByOwner.set(owner, reservations);
 	}
 	return reservations;
@@ -66,6 +66,23 @@ export function useChatRuntimeState(
 	>({});
 	const runtimeBySessionRef = useRef(runtimeBySession);
 	const sessionReservations = getSessionReservations(reservationOwner);
+	const ownedReservations = useRef(new Map<string, symbol>());
+	const disposedRef = useRef(false);
+	useEffect(() => {
+		disposedRef.current = false;
+		return () => {
+			disposedRef.current = true;
+			for (const runtime of Object.values(runtimeBySessionRef.current)) {
+				runtime.controller?.abort();
+				runtime.resolveTool?.(null);
+			}
+			for (const [id, token] of ownedReservations.current) {
+				if (sessionReservations.get(id) === token)
+					sessionReservations.delete(id);
+			}
+			ownedReservations.current.clear();
+		};
+	}, [sessionReservations]);
 
 	useEffect(() => {
 		runtimeBySessionRef.current = runtimeBySession;
@@ -87,6 +104,18 @@ export function useChatRuntimeState(
 				| ((current: ChatRuntimeState) => ChatRuntimePatch),
 		) => {
 			if (!sessionId) return;
+			if (disposedRef.current) {
+				const nextPatch =
+					typeof patch === "function"
+						? patch(
+								runtimeBySessionRef.current[sessionId] ??
+									emptyChatRuntime,
+							)
+						: patch;
+				nextPatch.controller?.abort();
+				nextPatch.resolveTool?.(null);
+				return;
+			}
 			const applyPatch = (
 				current: Record<string, ChatRuntimeState>,
 			): Record<string, ChatRuntimeState> => {
@@ -100,11 +129,9 @@ export function useChatRuntimeState(
 				}
 				return { ...current, [sessionId]: next };
 			};
-			setRuntimeBySession((current) => {
-				const next = applyPatch(current);
-				runtimeBySessionRef.current = next;
-				return next;
-			});
+			const next = applyPatch(runtimeBySessionRef.current);
+			runtimeBySessionRef.current = next;
+			setRuntimeBySession(next);
 		},
 		[],
 	);
@@ -132,7 +159,7 @@ export function useChatRuntimeState(
 			sessionId: string,
 			maxParallelSessions: number,
 		): SessionRunReservationResult => {
-			const activeSessionIds = new Set(sessionReservations);
+			const activeSessionIds = new Set(sessionReservations.keys());
 			for (const [runningSessionId, runtime] of Object.entries(
 				runtimeBySessionRef.current,
 			)) {
@@ -146,7 +173,9 @@ export function useChatRuntimeState(
 			const limit = normalizeMaxParallelChatSessions(maxParallelSessions);
 			if (activeSessionIds.size >= limit) return "limit-reached";
 
-			sessionReservations.add(sessionId);
+			const token = Symbol(sessionId);
+			sessionReservations.set(sessionId, token);
+			ownedReservations.current.set(sessionId, token);
 			return "reserved";
 		},
 		[sessionReservations],
@@ -154,7 +183,10 @@ export function useChatRuntimeState(
 
 	const releaseSessionRun = useCallback(
 		(sessionId: string) => {
-			sessionReservations.delete(sessionId);
+			const token = ownedReservations.current.get(sessionId);
+			if (token && sessionReservations.get(sessionId) === token)
+				sessionReservations.delete(sessionId);
+			ownedReservations.current.delete(sessionId);
 		},
 		[sessionReservations],
 	);

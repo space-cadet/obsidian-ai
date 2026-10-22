@@ -949,29 +949,14 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		[],
 	);
 
-	// ─── Draft auto-save (debounced) ───
-	const draftTimerRef = useRef<number | null>(null);
+	// Retain draft text immediately; SessionStateOwner debounces disk writes.
 	const handleDraftChange = useCallback(
 		(text: string) => {
-			const currentActiveId = activeSessionIdRef.current;
-			if (!currentActiveId) return;
-			if (draftTimerRef.current) {
-				window.clearTimeout(draftTimerRef.current);
-			}
-			draftTimerRef.current = window.setTimeout(() => {
-				updateSessionMetadata(currentActiveId, { draft: text });
-				draftTimerRef.current = null;
-			}, 500);
+			const sessionId = activeSessionIdRef.current;
+			if (sessionId) updateSessionMetadata(sessionId, { draft: text });
 		},
 		[updateSessionMetadata],
 	);
-	useEffect(() => {
-		return () => {
-			if (draftTimerRef.current) {
-				window.clearTimeout(draftTimerRef.current);
-			}
-		};
-	}, []);
 
 	// Initialise leaf tracking and register workspace listener
 	useEffect(() => {

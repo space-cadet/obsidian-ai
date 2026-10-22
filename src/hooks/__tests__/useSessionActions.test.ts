@@ -50,14 +50,18 @@ describe("useSessionActions", () => {
 
 	it("opens a distinct draft tab for every new-chat action", () => {
 		let draftNumber = 0;
-		const createNewSession = vi.fn(() => ({
-			id: `draft-${++draftNumber}`,
-			title: "",
-			createdAt: 0,
-			updatedAt: 0,
-			messages: [],
-			contextItems: [],
-		}));
+		const createNewSession = vi.fn(() => {
+			const draft = {
+				id: `draft-${++draftNumber}`,
+				title: "",
+				createdAt: 0,
+				updatedAt: 0,
+				messages: [],
+				contextItems: [],
+			};
+			sessionsRef.current = [...sessionsRef.current, draft];
+			return draft;
+		});
 		const plugin = {
 			settings: {
 				includeActiveNote: false,
@@ -102,224 +106,287 @@ describe("useSessionActions", () => {
 		expect(abortActiveRuntime).not.toHaveBeenCalled();
 	});
 
-	it("keeps an active tabless session open when creating a new tab", () => {
-		const sentSession = {
-			id: "tabless-session",
-			title: "Sent chat",
-			createdAt: 0,
-			updatedAt: 1,
-			messages: [{ id: "message-1", role: "user", content: "Hello" }],
-			contextItems: [],
-		};
-		const sessionsRef = { current: [sentSession] as any[] };
-		const activeSessionIdRef = { current: sentSession.id as string | null };
-		const createNewSession = vi.fn(() => {
-			const freshSession = {
-				id: "fresh-session",
-				title: "",
-				createdAt: 2,
-				updatedAt: 2,
-				messages: [],
+	it.each(["messages", "index-only", "unsent draft"])(
+		"keeps an active tabless session with %s open when creating a new tab",
+		(contentKind) => {
+			const sentSession = {
+				id: "tabless-session",
+				title: "Sent chat",
+				createdAt: 0,
+				updatedAt: 1,
+				messages: [{ id: "message-1", role: "user", content: "Hello" }],
 				contextItems: [],
 			};
-			sessionsRef.current = [...sessionsRef.current, freshSession];
-			activeSessionIdRef.current = freshSession.id;
-			return freshSession;
-		});
-		const plugin = {
-			settings: {
-				includeActiveNote: false,
-				selectedProfileIds: [],
-				providerProfiles: [{ id: "default", provider: "ollama" }],
-				activeProviderProfileId: "default",
-			},
-		} as any;
-
-		const { result } = renderHook(() => {
-			const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
-			return useSessionActions({
-				plugin,
-				sessionsRef,
-				activeSessionIdRef,
-				updateSessionMetadata: vi.fn(),
-				updateSessionMessages: vi.fn(),
-				setActiveSessionId: (value) => {
-					activeSessionIdRef.current =
-						typeof value === "function"
-							? value(activeSessionIdRef.current)
-							: value;
-				},
-				setScrollToMessageId: vi.fn(),
-				createNewSession,
-				setSelectedProfileIds: vi.fn(),
-				getSelectedProfileIds: () => ["default"],
-				setDebateMode: vi.fn(),
-				setWasTruncated: vi.fn(),
-				clearSessionRuntime: vi.fn(),
-				markSessionDeleted: vi.fn(),
-				openSessionIds,
-				setOpenSessionIds,
-			});
-		});
-
-		act(() => result.current.handleNewChat());
-
-		expect(result.current.openSessionIds).toEqual([
-			"tabless-session",
-			"fresh-session",
-		]);
-	});
-
-	it("reuses the blank draft when opening a tab after closing the last tab", () => {
-		const savedSession = {
-			id: "saved-session",
-			title: "Saved chat",
-			createdAt: 0,
-			updatedAt: 1,
-			messages: [{ id: "message-1", role: "user", content: "Hello" }],
-			contextItems: [],
-		};
-		const sessionsRef = { current: [savedSession] as any[] };
-		const activeSessionIdRef = {
-			current: savedSession.id as string | null,
-		};
-		const plugin = {
-			settings: {
-				includeActiveNote: false,
-				selectedProfileIds: [],
-				providerProfiles: [{ id: "default", provider: "ollama" }],
-				activeProviderProfileId: "default",
-				autoNameSessions: true,
-			},
-			onSessionEnd: vi.fn(),
-		} as any;
-		let draftNumber = 0;
-		const createNewSession = vi.fn(() => {
-			const draft = {
-				id: `draft-${++draftNumber}`,
-				title: "",
-				createdAt: 2,
-				updatedAt: 2,
-				messages: [],
-				contextItems: [],
+			const sessionsRef = { current: [sentSession] as any[] };
+			if (contentKind === "index-only") {
+				Object.assign(sentSession, {
+					messages: [],
+					hydrated: false,
+					messageCount: 1,
+				});
+			} else if (contentKind === "unsent draft") {
+				Object.assign(sentSession, {
+					messages: [],
+					draft: "An unfinished question",
+				});
+			}
+			const activeSessionIdRef = {
+				current: sentSession.id as string | null,
 			};
-			sessionsRef.current = [...sessionsRef.current, draft];
-			activeSessionIdRef.current = draft.id;
-			return draft;
-		});
-
-		const { result } = renderHook(() => {
-			const [openSessionIds, setOpenSessionIds] = useState([
-				savedSession.id,
-			]);
-			return useSessionActions({
-				plugin,
-				sessionsRef,
-				activeSessionIdRef,
-				updateSessionMetadata: vi.fn(),
-				updateSessionMessages: vi.fn(),
-				setActiveSessionId: (value) => {
-					activeSessionIdRef.current =
-						typeof value === "function"
-							? value(activeSessionIdRef.current)
-							: value;
-				},
-				setScrollToMessageId: vi.fn(),
-				createNewSession,
-				setSelectedProfileIds: vi.fn(),
-				getSelectedProfileIds: () => ["default"],
-				setDebateMode: vi.fn(),
-				setWasTruncated: vi.fn(),
-				clearSessionRuntime: vi.fn(),
-				markSessionDeleted: vi.fn(),
-				openSessionIds,
-				setOpenSessionIds,
-			});
-		});
-
-		act(() => result.current.handleCloseTab(savedSession.id));
-		expect(result.current.openSessionIds).toEqual([]);
-		expect(createNewSession).toHaveBeenCalledTimes(1);
-
-		act(() => result.current.handleNewChat());
-
-		expect(result.current.openSessionIds).toEqual(["draft-1"]);
-		expect(createNewSession).toHaveBeenCalledTimes(1);
-		expect(plugin.onSessionEnd).not.toHaveBeenCalled();
-	});
-
-	it("keeps an active tabless session open when restoring an older session", () => {
-		const sessionsRef = {
-			current: [
-				{
-					id: "tabless-session",
-					title: "Sent chat",
-					createdAt: 0,
+			const createNewSession = vi.fn(() => {
+				const freshSession = {
+					id: "fresh-session",
+					title: "",
+					createdAt: 2,
 					updatedAt: 2,
-					messages: [
-						{ id: "message-1", role: "user", content: "Hello" },
-					],
+					messages: [],
 					contextItems: [],
-				},
-				{
-					id: "older-session",
-					title: "Older chat",
-					createdAt: 0,
-					updatedAt: 1,
-					messages: [
-						{ id: "message-2", role: "user", content: "Earlier" },
-					],
-					contextItems: [],
-				},
-			] as any[],
-		};
-		const activeSessionIdRef = {
-			current: "tabless-session" as string | null,
-		};
-		const plugin = {
-			settings: {
-				includeActiveNote: false,
-				selectedProfileIds: [],
-				providerProfiles: [{ id: "default", provider: "ollama" }],
-				activeProviderProfileId: "default",
-			},
-		} as any;
-
-		const { result } = renderHook(() => {
-			const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
-			return useSessionActions({
-				plugin,
-				sessionsRef,
-				activeSessionIdRef,
-				updateSessionMetadata: vi.fn(),
-				updateSessionMessages: vi.fn(),
-				setActiveSessionId: (value) => {
-					activeSessionIdRef.current =
-						typeof value === "function"
-							? value(activeSessionIdRef.current)
-							: value;
-				},
-				setScrollToMessageId: vi.fn(),
-				createNewSession: vi.fn(),
-				setSelectedProfileIds: vi.fn(),
-				getSelectedProfileIds: () => [],
-				setDebateMode: vi.fn(),
-				setWasTruncated: vi.fn(),
-				clearSessionRuntime: vi.fn(),
-				markSessionDeleted: vi.fn(),
-				openSessionIds,
-				setOpenSessionIds,
+				};
+				sessionsRef.current = [...sessionsRef.current, freshSession];
+				activeSessionIdRef.current = freshSession.id;
+				return freshSession;
 			});
-		});
+			const plugin = {
+				settings: {
+					includeActiveNote: false,
+					selectedProfileIds: [],
+					providerProfiles: [{ id: "default", provider: "ollama" }],
+					activeProviderProfileId: "default",
+				},
+			} as any;
 
-		act(() => result.current.handleLoadSession("older-session"));
+			const { result } = renderHook(() => {
+				const [openSessionIds, setOpenSessionIds] = useState<string[]>(
+					[],
+				);
+				return useSessionActions({
+					plugin,
+					sessionsRef,
+					activeSessionIdRef,
+					updateSessionMetadata: vi.fn(),
+					updateSessionMessages: vi.fn(),
+					setActiveSessionId: (value) => {
+						activeSessionIdRef.current =
+							typeof value === "function"
+								? value(activeSessionIdRef.current)
+								: value;
+					},
+					setScrollToMessageId: vi.fn(),
+					createNewSession,
+					setSelectedProfileIds: vi.fn(),
+					getSelectedProfileIds: () => ["default"],
+					setDebateMode: vi.fn(),
+					setWasTruncated: vi.fn(),
+					clearSessionRuntime: vi.fn(),
+					markSessionDeleted: vi.fn(),
+					openSessionIds,
+					setOpenSessionIds,
+				});
+			});
 
-		expect(result.current.openSessionIds).toEqual([
-			"tabless-session",
-			"older-session",
-		]);
-		expect(activeSessionIdRef.current).toBe("older-session");
-	});
+			act(() => result.current.handleNewChat());
+
+			expect(result.current.openSessionIds).toEqual([
+				"tabless-session",
+				"fresh-session",
+			]);
+		},
+	);
+
+	it.each(["new", "restore", "direct", "event"])(
+		"opens only the requested tab after closing the last tab via %s",
+		(entryPoint) => {
+			const savedSession = {
+				id: "saved-session",
+				title: "Saved chat",
+				createdAt: 0,
+				updatedAt: 1,
+				messages: [{ id: "message-1", role: "user", content: "Hello" }],
+				contextItems: [],
+			};
+			const sessionsRef = { current: [savedSession] as any[] };
+			const activeSessionIdRef = {
+				current: savedSession.id as string | null,
+			};
+			const plugin = {
+				settings: {
+					includeActiveNote: false,
+					selectedProfileIds: [],
+					providerProfiles: [{ id: "default", provider: "ollama" }],
+					activeProviderProfileId: "default",
+					autoNameSessions: true,
+				},
+				onSessionEnd: vi.fn(),
+			} as any;
+			let draftNumber = 0;
+			const createNewSession = vi.fn(() => {
+				const draft = {
+					id: `draft-${++draftNumber}`,
+					title: "",
+					createdAt: 2,
+					updatedAt: 2,
+					messages: [],
+					contextItems: [],
+				};
+				sessionsRef.current = [...sessionsRef.current, draft];
+				activeSessionIdRef.current = draft.id;
+				return draft;
+			});
+
+			const { result } = renderHook(() => {
+				const [openSessionIds, setOpenSessionIds] = useState([
+					savedSession.id,
+				]);
+				return useSessionActions({
+					plugin,
+					sessionsRef,
+					activeSessionIdRef,
+					updateSessionMetadata: vi.fn(),
+					updateSessionMessages: vi.fn(),
+					setActiveSessionId: (value) => {
+						activeSessionIdRef.current =
+							typeof value === "function"
+								? value(activeSessionIdRef.current)
+								: value;
+					},
+					setScrollToMessageId: vi.fn(),
+					createNewSession,
+					setSelectedProfileIds: vi.fn(),
+					getSelectedProfileIds: () => ["default"],
+					setDebateMode: vi.fn(),
+					setWasTruncated: vi.fn(),
+					clearSessionRuntime: vi.fn(),
+					markSessionDeleted: vi.fn(),
+					openSessionIds,
+					setOpenSessionIds,
+				});
+			});
+
+			act(() => result.current.handleCloseTab(savedSession.id));
+			expect(result.current.openSessionIds).toEqual([]);
+			expect(createNewSession).toHaveBeenCalledTimes(1);
+
+			act(() => {
+				if (entryPoint === "new") result.current.handleNewChat();
+				else if (entryPoint === "restore")
+					result.current.handleLoadSession(savedSession.id);
+				else if (entryPoint === "direct")
+					result.current.openSessionInTab(
+						savedSession.id,
+						"message-1",
+					);
+				else
+					window.dispatchEvent(
+						new CustomEvent("obsidian-ai:open-session", {
+							detail: {
+								sessionId: savedSession.id,
+								messageId: "message-1",
+							},
+						}),
+					);
+			});
+
+			expect(result.current.openSessionIds).toEqual([
+				entryPoint === "new" ? "draft-1" : savedSession.id,
+			]);
+			expect(createNewSession).toHaveBeenCalledTimes(1);
+			expect(plugin.onSessionEnd).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each(["messages", "index-only", "unsent draft"])(
+		"keeps an active tabless session with %s open when restoring an older session",
+		(contentKind) => {
+			const sessionsRef = {
+				current: [
+					{
+						id: "tabless-session",
+						title: "Sent chat",
+						createdAt: 0,
+						updatedAt: 2,
+						messages: [
+							{ id: "message-1", role: "user", content: "Hello" },
+						],
+						contextItems: [],
+					},
+					{
+						id: "older-session",
+						title: "Older chat",
+						createdAt: 0,
+						updatedAt: 1,
+						messages: [
+							{
+								id: "message-2",
+								role: "user",
+								content: "Earlier",
+							},
+						],
+						contextItems: [],
+					},
+				] as any[],
+			};
+			const activeSessionIdRef = {
+				current: "tabless-session" as string | null,
+			};
+			if (contentKind === "index-only") {
+				Object.assign(sessionsRef.current[0], {
+					messages: [],
+					hydrated: false,
+					messageCount: 1,
+				});
+			} else if (contentKind === "unsent draft") {
+				Object.assign(sessionsRef.current[0], {
+					messages: [],
+					draft: "An unfinished question",
+				});
+			}
+			const plugin = {
+				settings: {
+					includeActiveNote: false,
+					selectedProfileIds: [],
+					providerProfiles: [{ id: "default", provider: "ollama" }],
+					activeProviderProfileId: "default",
+				},
+			} as any;
+
+			const { result } = renderHook(() => {
+				const [openSessionIds, setOpenSessionIds] = useState<string[]>(
+					[],
+				);
+				return useSessionActions({
+					plugin,
+					sessionsRef,
+					activeSessionIdRef,
+					updateSessionMetadata: vi.fn(),
+					updateSessionMessages: vi.fn(),
+					setActiveSessionId: (value) => {
+						activeSessionIdRef.current =
+							typeof value === "function"
+								? value(activeSessionIdRef.current)
+								: value;
+					},
+					setScrollToMessageId: vi.fn(),
+					createNewSession: vi.fn(),
+					setSelectedProfileIds: vi.fn(),
+					getSelectedProfileIds: () => [],
+					setDebateMode: vi.fn(),
+					setWasTruncated: vi.fn(),
+					clearSessionRuntime: vi.fn(),
+					markSessionDeleted: vi.fn(),
+					openSessionIds,
+					setOpenSessionIds,
+				});
+			});
+
+			act(() => result.current.handleLoadSession("older-session"));
+
+			expect(result.current.openSessionIds).toEqual([
+				"tabless-session",
+				"older-session",
+			]);
+			expect(activeSessionIdRef.current).toBe("older-session");
+		},
+	);
 
 	it("inherits the active tab model when opening a new tab", () => {
 		const createNewSession = vi.fn(() => ({

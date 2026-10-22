@@ -48,6 +48,7 @@ export interface SyncExamination {
 }
 
 export interface SyncEngineConfig {
+	captureLocalSessionRevisions?: () => ReadonlyMap<string, number>;
 	adapter: StorageAdapter;
 	cache: LocalCache;
 	crypto: EncryptionLayer;
@@ -56,9 +57,15 @@ export interface SyncEngineConfig {
 	logger?: { log(level: string, msg: string): void };
 	progress?: (event: SyncEngineProgressEvent) => void;
 	/** Called when a session is downloaded from remote. Implementor should save to app storage. */
-	onSessionDownloaded?: (session: ChatSession) => Promise<void>;
+	onSessionDownloaded?: (
+		session: ChatSession,
+		baseline?: ReadonlyMap<string, number>,
+	) => Promise<void>;
 	/** Batch callback used by normal sync to persist downloads in one write. */
-	onSessionsDownloaded?: (sessions: ChatSession[]) => Promise<void>;
+	onSessionsDownloaded?: (
+		sessions: ChatSession[],
+		baseline?: ReadonlyMap<string, number>,
+	) => Promise<void>;
 	/** Called when a deletion tombstone arrives from another device. */
 	onSessionDeleted?: (sessionId: string) => Promise<void>;
 	/** Optional sync index manager for skipping unchanged sessions (T42a). */
@@ -81,6 +88,7 @@ export interface SyncEngineConfig {
  */
 export class SyncEngine {
 	private adapter: StorageAdapter;
+	private captureLocalSessionRevisions?: () => ReadonlyMap<string, number>;
 	private cache: LocalCache;
 	private crypto: EncryptionLayer;
 	private state: SyncState = "idle";
@@ -89,8 +97,14 @@ export class SyncEngine {
 	private logger?: { log(level: string, msg: string): void };
 	private progress?: (event: SyncEngineProgressEvent) => void;
 	private logHandler?: (level: string, msg: string) => void;
-	private onSessionDownloaded?: (session: ChatSession) => Promise<void>;
-	private onSessionsDownloaded?: (sessions: ChatSession[]) => Promise<void>;
+	private onSessionDownloaded?: (
+		session: ChatSession,
+		baseline?: ReadonlyMap<string, number>,
+	) => Promise<void>;
+	private onSessionsDownloaded?: (
+		sessions: ChatSession[],
+		baseline?: ReadonlyMap<string, number>,
+	) => Promise<void>;
 	private onSessionDeleted?: (sessionId: string) => Promise<void>;
 	private _cancelled = false;
 	private indexManager?: SyncIndexManager;
@@ -108,6 +122,7 @@ export class SyncEngine {
 
 	constructor(config: SyncEngineConfig) {
 		this.adapter = config.adapter;
+		this.captureLocalSessionRevisions = config.captureLocalSessionRevisions;
 		this.cache = config.cache;
 		this.crypto = config.crypto;
 		this.passphrase = config.passphrase;
@@ -203,6 +218,7 @@ export class SyncEngine {
 			};
 		}
 
+		const baseline = this.captureLocalSessionRevisions?.();
 		this.state = "syncing";
 		this._cancelled = false;
 		this.log("info", "SyncEngine: starting sync...");
@@ -519,6 +535,7 @@ export class SyncEngine {
 							const localSession = await this.downloadSession(
 								meta,
 								false,
+								baseline,
 							);
 							downloaded++;
 							if (localSession) {
@@ -554,10 +571,13 @@ export class SyncEngine {
 				});
 				try {
 					if (this.onSessionsDownloaded) {
-						await this.onSessionsDownloaded(downloadedSessions);
+						await this.onSessionsDownloaded(
+							downloadedSessions,
+							baseline,
+						);
 					} else if (this.onSessionDownloaded) {
 						for (const session of downloadedSessions) {
-							await this.onSessionDownloaded(session);
+							await this.onSessionDownloaded(session, baseline);
 						}
 					}
 					this.progress?.({
@@ -597,6 +617,7 @@ export class SyncEngine {
 							const resolved = await this.resolveConflict(
 								conflict.local,
 								conflict.remote,
+								baseline,
 							);
 							conflicts++;
 							if (resolved) {
@@ -1068,6 +1089,7 @@ export class SyncEngine {
 
 		if (this.state === "syncing")
 			throw new Error("A sync is already running");
+		const baseline = this.captureLocalSessionRevisions?.();
 		this.state = "syncing";
 		this._cancelled = false;
 		try {
@@ -1129,7 +1151,8 @@ export class SyncEngine {
 				async (remote) => {
 					if (this._cancelled) return;
 					try {
-						if (await this.downloadSession(remote)) downloaded++;
+						if (await this.downloadSession(remote, true, baseline))
+							downloaded++;
 						else errors.push(`Download failed for ${remote.id}`);
 					} catch (error: any) {
 						errors.push(
@@ -1275,6 +1298,7 @@ export class SyncEngine {
 	private async downloadSession(
 		meta: RemoteSessionMeta,
 		persist = true,
+		baseline = this.captureLocalSessionRevisions?.(),
 	): Promise<ChatSession | undefined> {
 		this.progress?.({
 			type: "session",
@@ -1336,7 +1360,7 @@ export class SyncEngine {
 		// Persist immediately only for callers that did not opt into batch mode.
 		// Normal sync marks the cache here and persists the completed batch below.
 		if (persist && this.onSessionDownloaded) {
-			await this.onSessionDownloaded(cached);
+			await this.onSessionDownloaded(cached, baseline);
 		}
 
 		await this.cache.markSynced(meta.id, meta.modifiedAt, meta.etag);
@@ -1358,6 +1382,7 @@ export class SyncEngine {
 	private async resolveConflict(
 		local: ChatSession,
 		remote: RemoteSessionMeta,
+		baseline = this.captureLocalSessionRevisions?.(),
 	): Promise<{ local: ChatSession; remote: RemoteSessionMeta } | undefined> {
 		switch (this.conflictStrategy) {
 			case "last-write-wins": {
@@ -1367,7 +1392,11 @@ export class SyncEngine {
 					if (result) return { local, remote: result };
 				} else {
 					this.log("info", `Conflict: remote wins for ${local.id}`);
-					const downloaded = await this.downloadSession(remote);
+					const downloaded = await this.downloadSession(
+						remote,
+						true,
+						baseline,
+					);
 					if (downloaded) return { local: downloaded, remote };
 				}
 				break;
@@ -1400,7 +1429,7 @@ export class SyncEngine {
 
 					// Persist conflict copy to app storage
 					if (this.onSessionDownloaded) {
-						await this.onSessionDownloaded(newSession);
+						await this.onSessionDownloaded(newSession, baseline);
 					}
 
 					await this.cache.markSynced(

@@ -1,9 +1,9 @@
-import { useRef, useCallback, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Notice } from "obsidian";
 import type { ChatPluginLike } from "../views/ObsidianAIChatView";
 import type { ChatSession, ContextItem } from "../types";
 import { getActiveProviderProfile } from "../settings";
-import { makeId, sessionMessageCount } from "../lib/sessionUtils";
+import { makeId, hasSessionContent } from "../lib/sessionUtils";
 
 interface UseSessionActionsOptions {
 	plugin: ChatPluginLike;
@@ -77,12 +77,23 @@ export function useSessionActions({
 }: UseSessionActionsOptions): UseSessionActionsResult {
 	const openSessionInTab = useCallback(
 		(sessionId: string, messageId?: string) => {
+			const currentSessions =
+				plugin.sessionState?.getSnapshot().sessions ??
+				sessionsRef.current;
+			if (!currentSessions.some((session) => session.id === sessionId)) {
+				new Notice("This chat session is no longer available.");
+				return;
+			}
 			const activeId = activeSessionIdRef.current;
+			const activeSession = currentSessions.find(
+				(session) => session.id === activeId,
+			);
 			if (
 				activeId &&
 				activeId !== sessionId &&
 				!openSessionIds.includes(activeId) &&
-				sessionsRef.current.some((session) => session.id === activeId)
+				activeSession &&
+				hasSessionContent(activeSession)
 			) {
 				setOpenSessionIds((current) =>
 					current.includes(activeId)
@@ -93,7 +104,7 @@ export function useSessionActions({
 			// Index-only boot: if this session's messages haven't been read yet,
 			// start loading them now and fill state when they arrive. The send
 			// gate awaits hydration, so a fast type-and-enter can't clobber.
-			const target = sessionsRef.current.find((s) => s.id === sessionId);
+			const target = currentSessions.find((s) => s.id === sessionId);
 			plugin.logger?.log(
 				"debug",
 				`[Session] open ${sessionId}: hydration=${target?.hydrated === false ? "pending" : target?.hydrated === true ? "ready" : target ? "unknown" : "missing"}`,
@@ -206,7 +217,7 @@ export function useSessionActions({
 		const activeSessionIsTabless =
 			!!activeSession && !openSessionIds.includes(activeSession.id);
 		const shouldReuseDraft =
-			activeSessionIsTabless && sessionMessageCount(activeSession) === 0;
+			activeSessionIsTabless && !hasSessionContent(activeSession);
 
 		// Closing the last tab leaves a blank draft available for sending. The
 		// first New chat action should open that draft instead of creating a
@@ -214,17 +225,6 @@ export function useSessionActions({
 		// a separate new chat as usual.
 		if (activeSessionIsTabless && !shouldReuseDraft) {
 			openSessionInTab(activeSession.id);
-		}
-
-		// T26 Phase 2: Auto-summarize the ending session before starting a new one
-		const endingSessionId = activeId;
-		if (endingSessionId && !shouldReuseDraft) {
-			const endingSession = sessionsRef.current.find(
-				(s) => s.id === endingSessionId,
-			);
-			if (endingSession) {
-				void plugin.onSessionEnd?.(endingSession);
-			}
 		}
 
 		const newSession =
@@ -296,8 +296,7 @@ export function useSessionActions({
 			// Unhydrated saved sessions hold messages on disk (messageCount > 0)
 			// even though their in-memory list is still empty — never treat them
 			// as drafts, or closing a tab orphans their file.
-			const isDraft =
-				!!closeTarget && sessionMessageCount(closeTarget) === 0;
+			const isDraft = !!closeTarget && !hasSessionContent(closeTarget);
 			if (isDraft) {
 				if (plugin.sessionState)
 					plugin.sessionState.discardDraft(sessionId);
@@ -383,6 +382,9 @@ export function useSessionActions({
 			);
 			markSessionDeleted(sessionId);
 			clearSessionRuntime(sessionId);
+			setOpenSessionIds((current) =>
+				current.filter((id) => id !== sessionId),
+			);
 			if (activeSessionIdRef.current !== sessionId) return;
 			const mostRecent = filtered.sort(
 				(a, b) => b.updatedAt - a.updatedAt,
@@ -397,6 +399,11 @@ export function useSessionActions({
 				);
 				setDebateMode(false);
 				setActiveSessionId(mostRecent.id);
+				setOpenSessionIds((current) =>
+					current.includes(mostRecent.id)
+						? current
+						: [...current, mostRecent.id],
+				);
 				return;
 			}
 			const empty: ChatSession = {
@@ -424,6 +431,7 @@ export function useSessionActions({
 			profileId,
 			clearSessionRuntime,
 			markSessionDeleted,
+			setOpenSessionIds,
 		],
 	);
 

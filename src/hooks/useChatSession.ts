@@ -1,3 +1,4 @@
+import { Notice } from "obsidian";
 import {
 	useState,
 	useRef,
@@ -20,18 +21,6 @@ import {
 interface UseChatSessionOptions {
 	plugin: ChatPluginLike;
 	profileId?: string;
-}
-
-function hasDraftState(session: ChatSession): boolean {
-	return Boolean(
-		session.draft?.trim() ||
-		session.draftAttachments?.length ||
-		(session.thinkingMode && session.thinkingMode !== "provider-default"),
-	);
-}
-
-function shouldPersistSession(session: ChatSession): boolean {
-	return sessionMessageCount(session) > 0 || hasDraftState(session);
 }
 
 export interface UseChatSessionResult {
@@ -195,39 +184,20 @@ export function useChatSession({
 	useEffect(() => {
 		let cancelled = false;
 		const handleSessionsUpdated = () => {
+			const baseline = owner.captureSyncRevisions();
 			void plugin
 				.loadChatData()
 				.then((data) => {
 					if (cancelled) return;
-					const savedSessions =
-						data.sessions.filter(shouldPersistSession);
-					const currentActiveId = activeSessionIdRef.current;
-					const nextActiveId = savedSessions.some(
-						(session) => session.id === currentActiveId,
-					)
-						? currentActiveId
-						: (savedSessions[0]?.id ?? null);
-					// The sync refresh is metadata-only. Preserve messages already
-					// present in React so the active chat and open tabs do not go
-					// blank while the index is being refreshed.
-					owner.applySyncSnapshot({
-						...data,
-						sessions: savedSessions,
-					});
-					setActiveSessionId(nextActiveId);
-					setOpenSessionIds((current) => {
-						const knownIds = new Set(
-							savedSessions.map((s) => s.id),
-						);
-						const retained = current.filter((id) =>
-							knownIds.has(id),
-						);
-						return retained.length > 0
-							? retained
-							: nextActiveId
-								? [nextActiveId]
-								: [];
-					});
+					const current = owner.getSnapshot();
+					owner.applySyncSnapshot(
+						{
+							...data,
+							activeSessionId: current.activeSessionId,
+							openSessionIds: current.openSessionIds,
+						},
+						baseline,
+					);
 				})
 				.catch((err: any) => {
 					plugin.logger?.log(
@@ -257,88 +227,90 @@ export function useChatSession({
 			"info",
 			"[Startup] ChatApp mount — loading chat data…",
 		);
-		owner.initialize().then((state) => {
-			if (cancelled) return;
-			plugin.logger?.log(
-				"info",
-				`[Startup] loadChatData resolved in ${Date.now() - loadStart}ms`,
-			);
-			const data = state;
-			const savedSessions = data.sessions.filter(
-				// messageCount comes from the index, so this stays correct even
-				// when messages haven't been hydrated yet (index-only boot). Draft
-				// sessions are restored when they contain composer content.
-				shouldPersistSession,
-			);
-			if (savedSessions.length > 0) {
-				// Preserve the loaded storage untouched unless this also removes legacy
-				// zero-message entries; those should be cleaned up on the next autosave.
-				const totalMessages = savedSessions.reduce(
-					(sum, s) => sum + sessionMessageCount(s),
-					0,
-				);
+		owner
+			.initialize()
+			.then((state) => {
+				if (cancelled) return;
 				plugin.logger?.log(
 					"info",
-					`[Chat] restored ${savedSessions.length} session(s), ${totalMessages} message(s)`,
+					`[Startup] loadChatData resolved in ${Date.now() - loadStart}ms`,
 				);
-				if (savedSessions.length !== data.sessions.length) {
-					const keep = new Set(
+				const data = state;
+				const savedSessions = data.sessions;
+				if (savedSessions.length > 0) {
+					// Preserve the loaded storage untouched unless this also removes legacy
+					// zero-message entries; those should be cleaned up on the next autosave.
+					const totalMessages = savedSessions.reduce(
+						(sum, s) => sum + sessionMessageCount(s),
+						0,
+					);
+					plugin.logger?.log(
+						"info",
+						`[Chat] restored ${savedSessions.length} session(s), ${totalMessages} message(s)`,
+					);
+
+					const restoredActiveId = savedSessions.some(
+						(session) => session.id === data.activeSessionId,
+					)
+						? data.activeSessionId
+						: savedSessions[0].id;
+					setActiveSessionId(restoredActiveId);
+					const knownIds = new Set(
 						savedSessions.map((session) => session.id),
 					);
-					for (const session of data.sessions) {
-						if (!keep.has(session.id))
-							owner.discardDraft(session.id);
-					}
-				}
-				const restoredActiveId = savedSessions.some(
-					(session) => session.id === data.activeSessionId,
-				)
-					? data.activeSessionId
-					: savedSessions[0].id;
-				setActiveSessionId(restoredActiveId);
-				const knownIds = new Set(
-					savedSessions.map((session) => session.id),
-				);
-				const restoredOpenIds = plugin.settings.restoreChatTabs
-					? (data.openSessionIds ?? []).filter((id) =>
-							knownIds.has(id),
-						)
-					: [];
-				setOpenSessionIds(
-					restoredOpenIds.length > 0
-						? restoredOpenIds
-						: restoredActiveId
-							? [restoredActiveId]
-							: [],
-				);
-			} else {
-				// No saved data — create an empty session
-				const activeProfile = getActiveProviderProfile(plugin.settings);
-				const defaultSelectedIds =
-					plugin.settings.selectedProfileIds?.length > 0
-						? plugin.settings.selectedProfileIds
-						: [activeProfile.id];
+					const restoredOpenIds = plugin.settings.restoreChatTabs
+						? (data.openSessionIds ?? []).filter((id) =>
+								knownIds.has(id),
+							)
+						: [];
+					setOpenSessionIds(
+						plugin.settings.restoreChatTabs &&
+							data.openSessionIds !== undefined
+							? restoredOpenIds
+							: restoredActiveId
+								? [restoredActiveId]
+								: [],
+					);
+				} else {
+					// No saved data — create an empty session
+					const activeProfile = getActiveProviderProfile(
+						plugin.settings,
+					);
+					const defaultSelectedIds =
+						plugin.settings.selectedProfileIds?.length > 0
+							? plugin.settings.selectedProfileIds
+							: [activeProfile.id];
 
-				const newSession: ChatSession = {
-					id: makeId(),
-					title: "",
-					createdAt: Date.now(),
-					updatedAt: Date.now(),
-					messages: [],
-					contextItems: plugin.settings.includeActiveNote
-						? [{ type: "active-note", id: makeId() }]
-						: [],
-					profileId: profileId || activeProfile.id,
-					selectedProfileIds: defaultSelectedIds,
-					remoteUsers: [],
-					selectedRemoteUserIds: [],
-				};
-				owner.addSession(newSession);
-				setActiveSessionId(newSession.id);
-				setOpenSessionIds([newSession.id]);
-			}
-			setChatDataLoaded(true);
-		});
+					const newSession: ChatSession = {
+						id: makeId(),
+						title: "",
+						createdAt: Date.now(),
+						updatedAt: Date.now(),
+						messages: [],
+						contextItems: plugin.settings.includeActiveNote
+							? [{ type: "active-note", id: makeId() }]
+							: [],
+						profileId: profileId || activeProfile.id,
+						selectedProfileIds: defaultSelectedIds,
+						remoteUsers: [],
+						selectedRemoteUserIds: [],
+					};
+					owner.addSession(newSession);
+					setActiveSessionId(newSession.id);
+					setOpenSessionIds([newSession.id]);
+				}
+				setChatDataLoaded(true);
+			})
+			.catch((error: unknown) => {
+				if (cancelled) return;
+				plugin.logger?.log(
+					"error",
+					`[Session] archive could not be loaded: ${String(error)}`,
+				);
+				new Notice(
+					"Saved chats could not be loaded. Check Chat Lab data diagnostics before saving.",
+				);
+			});
 		return () => {
 			cancelled = true;
 		};
@@ -483,6 +455,33 @@ export function useChatSession({
 		},
 		[plugin, profileId, owner, sessionsRef],
 	);
+
+	// Reconcile each view against shared removals without replacing its own
+	// navigation when another view selects a different existing chat.
+	useEffect(() => {
+		if (!chatDataLoaded) return;
+		const known = new Set(sessions.map((session) => session.id));
+		const remaining = openSessionIdsRef.current.filter((id) =>
+			known.has(id),
+		);
+		if (remaining.length !== openSessionIdsRef.current.length)
+			setOpenSessionIds(remaining);
+		if (activeSessionIdRef.current && known.has(activeSessionIdRef.current))
+			return;
+		if (sessions.length === 0) {
+			createNewSession();
+			return;
+		}
+		const next = remaining[0] ?? sessions[0].id;
+		setActiveSessionId(next);
+		if (!remaining.includes(next)) setOpenSessionIds([...remaining, next]);
+	}, [
+		sessions,
+		chatDataLoaded,
+		createNewSession,
+		setActiveSessionId,
+		setOpenSessionIds,
+	]);
 
 	// ─── Delete a session ───
 	const deleteSession = useCallback(
