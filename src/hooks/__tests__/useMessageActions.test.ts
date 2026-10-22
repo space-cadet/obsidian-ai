@@ -521,6 +521,84 @@ describe("useMessageActions", () => {
 	});
 
 	describe("handleRetry", () => {
+		it("retries from the owner's truncated history before React refreshes session refs", async () => {
+			mockRunChatTurn.mockResolvedValue({
+				text: "replacement",
+				tokenEstimate: 1,
+			});
+			const session = {
+				id: "session-1",
+				contextItems: [],
+				messages: [
+					{
+						id: "m1",
+						role: "user",
+						content: "earlier question",
+						timestamp: 1,
+					},
+					{
+						id: "m2",
+						role: "assistant",
+						content: "earlier answer",
+						timestamp: 2,
+					},
+					{
+						id: "m3",
+						role: "user",
+						content: "retry this",
+						timestamp: 3,
+					},
+					{
+						id: "m4",
+						role: "assistant",
+						content: "obsolete response",
+						timestamp: 4,
+					},
+				],
+			} as any;
+			let ownedSession = session;
+			const deps = makeDeps({
+				plugin: {
+					...mockPlugin,
+					settings: {
+						...mockPlugin.settings,
+						enableAgentTools: true,
+					},
+					sessionState: {
+						getSnapshot: () => ({ sessions: [ownedSession] }),
+					},
+				} as any,
+				sessionsRef: { current: [session] },
+				messagesRef: { current: session.messages },
+				ui: { ...makeDeps().ui, selectedProfileIds: new Set(["p1"]) },
+				updateMessages: (id, change) => {
+					ownedSession = {
+						...ownedSession,
+						messages:
+							typeof change === "function"
+								? change(ownedSession.messages)
+								: change,
+					};
+				},
+			});
+			const { result } = renderHook(() => useMessageActions(deps));
+			await act(async () => {
+				result.current.handleRetry("m4");
+			});
+			await vi.waitFor(() =>
+				expect(mockRunChatTurn).toHaveBeenCalledOnce(),
+			);
+			// The React ref deliberately still contains the unrevised transcript.
+			expect(deps.sessionsRef.current[0]).toBe(session);
+			const messages = mockRunChatTurn.mock.calls[0][0].messages;
+			expect(JSON.stringify(messages)).toContain("earlier answer");
+			expect(JSON.stringify(messages)).not.toContain("obsolete response");
+			expect(
+				messages.filter(
+					(message: any) => message.content === "retry this",
+				),
+			).toHaveLength(1);
+		});
 		it("restores the transcript when the parallel session limit is full", async () => {
 			const session = {
 				id: "session-1",

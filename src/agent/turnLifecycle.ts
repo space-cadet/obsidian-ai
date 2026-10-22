@@ -403,9 +403,13 @@ export class TurnLifecycle {
 
 		// Check for local debug commands before selecting the single- or group-chat
 		// execution path. Built-in ! commands must never reach a model.
-		const currentSession = deps.sessionsRef.current.find(
-			(s) => s.id === sessionId,
-		);
+		const currentSession =
+			deps.plugin.sessionState
+				?.getSnapshot()
+				.sessions.find((session) => session.id === sessionId) ??
+			deps.sessionsRef.current.find(
+				(session) => session.id === sessionId,
+			);
 		// Keep history tied to this send even if the visible tab changes below.
 		const sessionMessagesAtStart = [
 			...(currentSession?.messages ??
