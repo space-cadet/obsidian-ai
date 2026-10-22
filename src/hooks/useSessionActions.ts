@@ -36,6 +36,7 @@ interface UseSessionActionsOptions {
 	setDebateMode: (v: boolean) => void;
 	setWasTruncated: (v: boolean) => void;
 	clearSessionRuntime: (sessionId: string) => void;
+	isSessionBusy?: (sessionId: string) => boolean;
 	markSessionDeleted: (sessionId: string) => void;
 	openSessionIds: string[];
 	setOpenSessionIds: React.Dispatch<React.SetStateAction<string[]>>;
@@ -70,6 +71,7 @@ export function useSessionActions({
 	setDebateMode,
 	setWasTruncated,
 	clearSessionRuntime,
+	isSessionBusy,
 	markSessionDeleted,
 	openSessionIds,
 	setOpenSessionIds,
@@ -377,6 +379,12 @@ export function useSessionActions({
 
 	const handleDeleteSession = useCallback(
 		(sessionId: string) => {
+			if (isSessionBusy?.(sessionId)) {
+				new Notice(
+					"This chat cannot be deleted while a reply is running.",
+				);
+				return;
+			}
 			const filtered = sessionsRef.current.filter(
 				(session) => session.id !== sessionId,
 			);
@@ -430,6 +438,7 @@ export function useSessionActions({
 			plugin.settings.includeActiveNote,
 			profileId,
 			clearSessionRuntime,
+			isSessionBusy,
 			markSessionDeleted,
 			setOpenSessionIds,
 		],

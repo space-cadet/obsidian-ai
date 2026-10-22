@@ -14,39 +14,46 @@ vi.mock("../../settings", () => ({
 }));
 
 describe("useSessionActions", () => {
-	it("marks UI deletions so the storage autosave can persist them", () => {
-		const markSessionDeleted = vi.fn();
-		const plugin = {
-			settings: { includeActiveNote: false },
-		} as any;
-		const sessionsRef = { current: [] as any[] };
-		const activeSessionIdRef = { current: null as string | null };
-		const { result } = renderHook(() => {
-			const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
-			return useSessionActions({
-				plugin,
-				sessionsRef,
-				activeSessionIdRef,
-				updateSessionMetadata: vi.fn(),
-				updateSessionMessages: vi.fn(),
-				setActiveSessionId: vi.fn(),
-				setScrollToMessageId: vi.fn(),
-				createNewSession: vi.fn(),
-				setSelectedProfileIds: vi.fn(),
-				getSelectedProfileIds: () => [],
-				setDebateMode: vi.fn(),
-				setWasTruncated: vi.fn(),
-				clearSessionRuntime: vi.fn(),
-				markSessionDeleted,
-				openSessionIds,
-				setOpenSessionIds,
+	it.each([false, true])(
+		"allows UI deletion only when the shared busy check is false (busy=%s)",
+		(busy) => {
+			const markSessionDeleted = vi.fn();
+			const plugin = {
+				settings: { includeActiveNote: false },
+			} as any;
+			const sessionsRef = { current: [] as any[] };
+			const activeSessionIdRef = { current: null as string | null };
+			const { result } = renderHook(() => {
+				const [openSessionIds, setOpenSessionIds] = useState<string[]>(
+					[],
+				);
+				return useSessionActions({
+					plugin,
+					sessionsRef,
+					activeSessionIdRef,
+					updateSessionMetadata: vi.fn(),
+					updateSessionMessages: vi.fn(),
+					setActiveSessionId: vi.fn(),
+					setScrollToMessageId: vi.fn(),
+					createNewSession: vi.fn(),
+					setSelectedProfileIds: vi.fn(),
+					getSelectedProfileIds: () => [],
+					setDebateMode: vi.fn(),
+					setWasTruncated: vi.fn(),
+					clearSessionRuntime: vi.fn(),
+					markSessionDeleted,
+					isSessionBusy: () => busy,
+					openSessionIds,
+					setOpenSessionIds,
+				});
 			});
-		});
 
-		act(() => result.current.handleDeleteSession("deleted-id"));
+			act(() => result.current.handleDeleteSession("deleted-id"));
 
-		expect(markSessionDeleted).toHaveBeenCalledWith("deleted-id");
-	});
+			if (busy) expect(markSessionDeleted).not.toHaveBeenCalled();
+			else expect(markSessionDeleted).toHaveBeenCalledWith("deleted-id");
+		},
+	);
 
 	it("opens a distinct draft tab for every new-chat action", () => {
 		let draftNumber = 0;

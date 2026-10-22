@@ -3,6 +3,7 @@ import { renderHook, act } from "@testing-library/react";
 import { useMessageActions, UseMessageActionsDeps } from "../useMessageActions";
 import { emptyChatRuntime, ChatRuntimeState } from "../useChatRuntimeState";
 import { TurnLifecycle } from "../../agent/turnLifecycle";
+import { resolveContextItems } from "../../context/ContextEngine";
 
 // ── Mocks ─────────────────────────────────────────────────────────
 const mockToolExecutorConstructor = vi.hoisted(() => vi.fn());
@@ -64,7 +65,7 @@ vi.mock("../noteEditing/NoteEditingBridge", () => ({
 	},
 }));
 
-vi.mock("../context/ContextEngine", () => ({
+vi.mock("../../context/ContextEngine", () => ({
 	resolveContextItems: vi.fn().mockResolvedValue({
 		contextString: "",
 		wasTruncated: false,
@@ -248,6 +249,60 @@ function makeDeps(
 
 // ── Tests ─────────────────────────────────────────────────────────
 describe("useMessageActions", () => {
+	it("keeps history and busy checks bound to the sending session after a tab switch", async () => {
+		let finishContext!: (value: any) => void;
+		vi.mocked(resolveContextItems).mockReturnValueOnce(
+			new Promise((resolve) => {
+				finishContext = resolve;
+			}),
+		);
+		mockRunChatTurn.mockResolvedValue({ text: "reply", tokenEstimate: 1 });
+		const message = (id: string) => ({
+			id,
+			role: "user" as const,
+			content: `History for ${id}`,
+			timestamp: 1,
+		});
+		const a = { id: "A", messages: [message("A")], contextItems: [] };
+		const b = { id: "B", messages: [message("B")], contextItems: [] };
+		const deps = makeDeps({
+			plugin: {
+				...mockPlugin,
+				manifest: { id: "chat-lab" },
+				settings: { ...mockPlugin.settings, enableAgentTools: true },
+			} as any,
+			activeSessionIdRef: { current: "A" },
+			sessionsRef: { current: [a, b] as any[] },
+			messagesRef: { current: a.messages },
+			isSessionBusy: (id) => id === "busy-in-another-pane",
+			ui: { ...makeDeps().ui, selectedProfileIds: new Set(["p1"]) },
+		});
+		const { result } = renderHook(() => useMessageActions(deps));
+		await act(async () => {
+			await result.current.handleSend("Continue A");
+		});
+		deps.activeSessionIdRef.current = "B";
+		deps.messagesRef.current = b.messages;
+		await act(async () => {
+			finishContext({
+				contextString: "",
+				wasTruncated: false,
+				stats: { estimatedTokens: 0 },
+			});
+		});
+		await vi.waitFor(() => expect(mockRunChatTurn).toHaveBeenCalledOnce());
+		const request = JSON.stringify(
+			mockRunChatTurn.mock.calls[0][0].messages,
+		);
+		expect(request).toContain("History for A");
+		expect(request).not.toContain("History for B");
+		const executorArgs = mockToolExecutorConstructor.mock.calls[0];
+		expect(executorArgs[7]).toBe("chat-lab");
+		expect(executorArgs[12].isSessionBusy("busy-in-another-pane")).toBe(
+			true,
+		);
+		expect(executorArgs[12].isSessionBusy("idle")).toBe(false);
+	});
 	it("keeps a send pinned to its captured session through hydration", async () => {
 		const activeSessionIdRef = { current: "session-A" as string | null };
 		const session = {

@@ -54,7 +54,11 @@ export class TurnActionController {
 		const deps = this.getDeps();
 		const currentActiveId = deps.activeSessionIdRef.current;
 		if (!currentActiveId) return;
-		if (deps.getRuntime(currentActiveId).controller) return;
+		if (
+			deps.isSessionBusy?.(currentActiveId) ||
+			deps.getRuntime(currentActiveId).controller
+		)
+			return;
 
 		const session = deps.sessionsRef.current.find(
 			(s) => s.id === currentActiveId,
@@ -113,7 +117,11 @@ export class TurnActionController {
 		const deps = this.getDeps();
 		const currentActiveId = deps.activeSessionIdRef.current;
 		if (!currentActiveId) return;
-		if (deps.getRuntime(currentActiveId).controller) return;
+		if (
+			deps.isSessionBusy?.(currentActiveId) ||
+			deps.getRuntime(currentActiveId).controller
+		)
+			return;
 
 		const session = deps.sessionsRef.current.find(
 			(s) => s.id === currentActiveId,
@@ -193,6 +201,7 @@ export class TurnActionController {
 						getActiveSessionId: () =>
 							deps.activeSessionIdRef.current,
 						isSessionBusy: (sessionId) =>
+							deps.isSessionBusy?.(sessionId) ??
 							Boolean(deps.getRuntime(sessionId).controller),
 					},
 				);

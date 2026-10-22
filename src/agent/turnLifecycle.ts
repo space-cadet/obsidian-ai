@@ -82,6 +82,7 @@ export interface TurnLifecycleDeps {
 		patch: Partial<Omit<ChatSession, "id" | "messages">>,
 	) => void;
 	getRuntime: (sessionId: string | null | undefined) => ChatRuntimeState;
+	isSessionBusy?: (sessionId: string) => boolean;
 	reserveSessionRun: (
 		sessionId: string,
 		maxParallelSessions: number,
@@ -289,9 +290,9 @@ export class TurnLifecycle {
 		const session = deps.sessionsRef.current.find(
 			(candidate) => candidate.id === sessionId,
 		);
-		const transcript = (
-			session?.messages ?? deps.messagesRef.current
-		).filter((message) => !message.isDebug);
+		const transcript = (session?.messages ?? []).filter(
+			(message) => !message.isDebug,
+		);
 		const keepRecentMessages = Math.max(
 			3,
 			deps.plugin.settings.preserveRecentMessages ?? 4,
@@ -330,7 +331,7 @@ export class TurnLifecycle {
 			const currentTranscript = (
 				deps.sessionsRef.current.find(
 					(candidate) => candidate.id === sessionId,
-				)?.messages ?? deps.messagesRef.current
+				)?.messages ?? []
 			).filter((message) => !message.isDebug);
 			if (!transcriptStartsWith(currentTranscript, transcript)) {
 				throw new Error(
@@ -405,6 +406,13 @@ export class TurnLifecycle {
 		const currentSession = deps.sessionsRef.current.find(
 			(s) => s.id === sessionId,
 		);
+		// Keep history tied to this send even if the visible tab changes below.
+		const sessionMessagesAtStart = [
+			...(currentSession?.messages ??
+				(deps.activeSessionIdRef.current === sessionId
+					? deps.messagesRef.current
+					: [])),
+		];
 		const debugResult = handleDebugCommand(
 			text,
 			currentSession,
@@ -489,9 +497,7 @@ export class TurnLifecycle {
 				const stream = deps.ui.debateMode
 					? deps.orchestrator!.debate(
 							text,
-							deps.sessionsRef.current.find(
-								(s) => s.id === currentActiveId,
-							)?.messages ?? [],
+							sessionMessagesAtStart,
 							controller.signal,
 							groupResolvedParts,
 							2,
@@ -499,17 +505,13 @@ export class TurnLifecycle {
 					: deps.participantRouter
 						? deps.participantRouter.dispatch(
 								text,
-								deps.sessionsRef.current.find(
-									(s) => s.id === currentActiveId,
-								)?.messages ?? [],
+								sessionMessagesAtStart,
 								controller.signal,
 								groupResolvedParts,
 							)
 						: deps.orchestrator!.dispatch(
 								text,
-								deps.sessionsRef.current.find(
-									(s) => s.id === currentActiveId,
-								)?.messages ?? [],
+								sessionMessagesAtStart,
 								controller.signal,
 								groupResolvedParts,
 							);
@@ -717,7 +719,7 @@ export class TurnLifecycle {
 					(session) => session.id === sessionIdForCompaction,
 				)
 			: undefined;
-		const currentModelMessages = deps.messagesRef.current.filter(
+		const currentModelMessages = sessionMessagesAtStart.filter(
 			(message) => !message.isDebug,
 		);
 		const parsedPersistedCompaction =
@@ -786,7 +788,7 @@ export class TurnLifecycle {
 			},
 			Boolean(existingSummary),
 		);
-		let modelHistory = deps.messagesRef.current;
+		let modelHistory = sessionMessagesAtStart;
 		let compactionSummary = existingSummary
 			? formatCompactionSummary(existingSummary.summary)
 			: "";
@@ -807,9 +809,12 @@ export class TurnLifecycle {
 				.then(({ text: rawSummary, telemetry }) => {
 					if (
 						!transcriptStartsWith(
-							deps.messagesRef.current.filter(
-								(message) => !message.isDebug,
-							),
+							(
+								deps.sessionsRef.current.find(
+									(session) =>
+										session.id === sessionIdForCompaction,
+								)?.messages ?? []
+							).filter((message) => !message.isDebug),
 							compactionSourceMessages,
 						)
 					) {
@@ -923,6 +928,7 @@ export class TurnLifecycle {
 					deps.plugin.openSessionInNewTab(sessionId, messageId),
 				getActiveSessionId: () => deps.activeSessionIdRef.current,
 				isSessionBusy: (sessionId) =>
+					deps.isSessionBusy?.(sessionId) ??
 					Boolean(deps.getRuntime(sessionId).controller),
 			},
 		);

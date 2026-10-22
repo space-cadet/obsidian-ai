@@ -78,7 +78,13 @@ describe("useChatRuntimeState session run limits", () => {
 			expect(
 				secondView.result.current.reserveSessionRun("session-b", 1),
 			).toBe("limit-reached");
+			expect(secondView.result.current.isSessionBusy("session-a")).toBe(
+				true,
+			);
 			firstView.result.current.releaseSessionRun("session-a");
+			expect(secondView.result.current.isSessionBusy("session-a")).toBe(
+				false,
+			);
 			expect(
 				secondView.result.current.reserveSessionRun("session-b", 1),
 			).toBe("reserved");

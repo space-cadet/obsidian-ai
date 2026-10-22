@@ -131,6 +131,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		runtimeBySession,
 		activeRuntime,
 		getRuntime,
+		isSessionBusy,
 		patchRuntime,
 		clearRuntime,
 		abortRuntime,
@@ -448,8 +449,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				openSession: (sessionId, messageId) =>
 					plugin.openSessionInNewTab(sessionId, messageId),
 				getActiveSessionId: () => activeSessionIdRef.current,
-				isSessionBusy: (sessionId) =>
-					Boolean(getRuntime(sessionId).controller),
+				isSessionBusy,
 			},
 		);
 		toolExecutor.setLatestSystemPromptReader(
@@ -506,7 +506,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		plugin.sessionState,
 		plugin.openSessionInNewTab,
 		plugin.logger,
-		getRuntime,
+		isSessionBusy,
 		resolveSessionProfile,
 	]);
 
@@ -591,6 +591,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 			abortRuntime(sessionId);
 			clearRuntime(sessionId);
 		},
+		isSessionBusy,
 		markSessionDeleted,
 		openSessionIds: persistedOpenSessionIds,
 		setOpenSessionIds: setPersistedOpenSessionIds,
@@ -718,6 +719,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 		contextItemsRef,
 		lastMarkdownLeafRef: useRef<WorkspaceLeaf | null>(null),
 		getRuntime,
+		isSessionBusy,
 		patchRuntime,
 		clearRuntime,
 		reserveSessionRun,

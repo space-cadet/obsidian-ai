@@ -42,6 +42,7 @@ export interface UseMessageActionsDeps {
 
 	// Session-keyed streaming display state
 	getRuntime: (sessionId: string | null | undefined) => ChatRuntimeState;
+	isSessionBusy?: (sessionId: string) => boolean;
 	patchRuntime: (
 		sessionId: string | null | undefined,
 		patch:

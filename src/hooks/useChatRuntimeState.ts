@@ -96,6 +96,13 @@ export function useChatRuntimeState(
 		[],
 	);
 
+	const isSessionBusy = useCallback(
+		(sessionId: string): boolean =>
+			sessionReservations.has(sessionId) ||
+			Boolean(runtimeBySessionRef.current[sessionId]?.controller),
+		[sessionReservations],
+	);
+
 	const patchRuntime = useCallback(
 		(
 			sessionId: string | null | undefined,
@@ -200,6 +207,7 @@ export function useChatRuntimeState(
 		runtimeBySession,
 		activeRuntime,
 		getRuntime,
+		isSessionBusy,
 		patchRuntime,
 		clearRuntime,
 		abortRuntime,
