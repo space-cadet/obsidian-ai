@@ -2,7 +2,7 @@
 
 *Created: 2026-10-19 20:54 IST*
 *Status: COMPLETE — shared session ownership and session-opening paths implemented and user-confirmed.*
-*Last Updated: 2026-10-22 14:18:34 IST*
+*Last Updated: 2026-10-22 16:17:49 IST*
 *Memory Bank task: [T24c](../tasks/T24c.md)*
 
 ## Purpose
@@ -268,3 +268,13 @@ not a new cross-device tombstone format. Cache-read errors propagate and sync
 flushes local owner state before preparing transfer data. Final commit:
 `1bd51c3`; 670 tests/81 files and build passed. Relay metadata round-trip and
 the unused initialSessionId view option remain deferred source-level questions.
+
+## 2026-10-22 — PR #13 review corrections
+
+`TurnLifecycle.send()` captures the target transcript before awaiting context
+or attachment reads. Model history and compaction use this snapshot; delayed
+compaction validates against the target's current canonical transcript.
+`useChatRuntimeState.isSessionBusy()` consults the existing plugin-scoped
+reservation map as well as local controllers. Group/single tool deletion, UI
+deletion, retry, and edit reuse this check. Live runtime controls remain per-pane.
+Source `ad731d7`; 672 tests/81 files and production build passed.

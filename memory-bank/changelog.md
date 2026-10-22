@@ -14,6 +14,10 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Pin send history and compaction to the originating session after tab switches;
+  check shared generation reservations before cross-pane deletion, retry, and
+  edit (`ad731d7`, T13/T15/T24c).
+
 - Creating a new chat no longer stops a reply generating in another tab; new
   sends and retries now respect the configured parallel-session limit (T15,
   `16f7034`).

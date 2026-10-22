@@ -1,6 +1,14 @@
 # Session Cache
 
-*Last Updated: 2026-10-22 14:18:34 IST*
+*Last Updated: 2026-10-22 16:17:49 IST*
+
+## 2026-10-22 — T13/T15/T24c PR #13 review follow-up
+
+- Source `ad731d7` fixes the target-history race and cross-pane busy checks.
+- Verification: 672 tests/81 files and production build passed; live checks pending.
+- Broader limitation: persistent session state is shared, but live generation
+  controls remain pane-local. Room-wide relay broadcast is documented behavior.
+- See `sessions/2026-10-22-session-tools-and-parallel-generation.md` and PR #13.
 
 ## 2026-10-22 — T13/T24c/T60/T15 Session Tools and Parallel Replies
 

@@ -1,6 +1,15 @@
 # Active Context
 
-*Last Updated: 2026-10-22 14:18:34 IST*
+*Last Updated: 2026-10-22 16:17:49 IST*
+
+### 2026-10-22 — PR #13 review corrections (T13/T15/T24c)
+
+- `ad731d7` pins send history and compaction to the target session and
+  checks shared run reservations before deletion, retry, or edit in another pane.
+- Plugin-ID audit fix was already present. Expanded experimental changes were
+  discarded; runtime ownership and the relay protocol were retained.
+- 672 tests/81 files, production build, formatting, and diff checks passed.
+  Live Obsidian acceptance remains pending. See today's session record.
 
 ### 2026-10-22 — Deletion approvals, Settings, and session lifecycle repair (T13/T15/T24c)
 

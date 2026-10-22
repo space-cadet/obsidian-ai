@@ -1,8 +1,30 @@
 # Edit History
 
-*Last Updated: 2026-10-22 14:18:34 IST*
+*Last Updated: 2026-10-22 16:17:49 IST*
 
 ### 2026-10-22
+#### 16:17:49 IST - T13/T15/T24c: Fix PR 13 history and busy checks
+- Modified `src/agent/turnActions.ts` - Fix or verify session history isolation and shared busy checks.
+- Modified `src/agent/turnLifecycle.ts` - Fix or verify session history isolation and shared busy checks.
+- Modified `src/components/ChatApp.tsx` - Fix or verify session history isolation and shared busy checks.
+- Modified `src/hooks/__tests__/useChatRuntimeState.test.ts` - Fix or verify session history isolation and shared busy checks.
+- Modified `src/hooks/__tests__/useMessageActions.test.ts` - Fix or verify session history isolation and shared busy checks.
+- Modified `src/hooks/__tests__/useSessionActions.test.ts` - Fix or verify session history isolation and shared busy checks.
+- Modified `src/hooks/useChatRuntimeState.ts` - Fix or verify session history isolation and shared busy checks.
+- Modified `src/hooks/useMessageActions.ts` - Fix or verify session history isolation and shared busy checks.
+- Modified `src/hooks/useSessionActions.ts` - Fix or verify session history isolation and shared busy checks.
+- Updated `memory-bank/activeContext.md` - Record scoped review fixes, verification, and remaining acceptance.
+- Updated `memory-bank/changelog.md` - Record scoped review fixes, verification, and remaining acceptance.
+- Updated `memory-bank/implementation-details/session-state-coordination.md` - Record scoped review fixes, verification, and remaining acceptance.
+- Updated `memory-bank/session_cache.md` - Record scoped review fixes, verification, and remaining acceptance.
+- Updated `memory-bank/sessions/2026-10-22-session-tools-and-parallel-generation.md` - Record scoped review fixes, verification, and remaining acceptance.
+- Updated `memory-bank/tasks.md` - Record scoped review fixes, verification, and remaining acceptance.
+- Updated `memory-bank/tasks/T13.md` - Record scoped review fixes, verification, and remaining acceptance.
+- Updated `memory-bank/tasks/T15.md` - Record scoped review fixes, verification, and remaining acceptance.
+- Updated `memory-bank/tasks/T24c.md` - Record scoped review fixes, verification, and remaining acceptance.
+- Created `memory-bank/edits/2026-10-22/161749-T13-T15-T24c-pr13-review.md` - Record the review closeout.
+- Updated `memory-bank/edit_history.md` - Refresh the generated view from this chunk.
+
 #### 14:18:34 IST - T13/T15/T24c: Repair deletion, Settings, tabs, storage and sync
 - Modified `src/agent/ChatTurnOutput.ts` - Implement or cover session deletion, Settings, lifecycle and synchronization repairs across the five session commits.
 - Modified `src/agent/__tests__/ChatTurnOutput.test.ts` - Implement or cover session deletion, Settings, lifecycle and synchronization repairs across the five session commits.

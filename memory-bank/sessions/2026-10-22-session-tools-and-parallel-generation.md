@@ -1,6 +1,6 @@
 # Session 2026-10-22 — Saved Session Tools and Parallel Replies
 *Created: 2026-10-22 11:43:35 IST*
-*Last Updated: 2026-10-22 14:18:34 IST*
+*Last Updated: 2026-10-22 16:17:49 IST*
 
 ## Focus Tasks
 T13, T24c, T60, and T15: saved-session tools, session search, and parallel chat generation
@@ -162,3 +162,18 @@ History excludes unsent drafts despite their retained storage state. Relay
 metadata round-trip and unused initialSessionId behavior were deferred.
 T15 remains active; T13/T24c original implementation status is unchanged.
 Remaining live checks will be performed during normal use.
+
+## 2026-10-22 — PR #13 review closeout
+
+- P1 transcript race: confirmed and fixed with a target-session history snapshot.
+- P2 cross-pane deletion: confirmed and fixed using shared run reservations;
+  retry/edit use the same guard. Earlier P2 plugin-ID audit fix was verified.
+- Source `ad731d72f44eaed543594340088ad822d570d39d` on `codex/t75-agent-prompt-editor`.
+- 672 tests/81 files, production build, formatting, and diff checks passed.
+  Live tab-switch and two-pane Obsidian acceptance remains pending.
+- The expanded experimental patch was saved outside the repository and removed.
+  Final production diff is 58 additions/23 deletions; no relay/runtime redesign.
+- Broader cause: saved sessions are shared but live runs are pane-local. Room
+  broadcast is documented behavior, not a confirmed recipient-isolation defect.
+- Delivery target is existing PR #13; its page records subsequent Codex review
+  requests and live review status.
