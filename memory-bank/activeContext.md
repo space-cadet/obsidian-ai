@@ -1,6 +1,20 @@
 # Active Context
 
-*Last Updated: 2026-10-22 17:09:16 IST*
+*Last Updated: 2026-10-22 20:28:33 IST*
+
+### 2026-10-22 — Whole PR #13 session status (T75/T75a/T13/T15/T24c/T60)
+
+- The branch also includes T19/T45/T43/T71 chat UI work. The full session
+  record summarizes prompt editing and preview, chat UI fixes, saved-session
+  tools, parallel replies, and the review-driven lifecycle fixes.
+- Existing PR #13 is updated through pushed head
+  d0260385804179597789b468ecf277c72dbe3dde. Codex review was requested; no
+  new response was visible at the last check. The user asked not to wait, so
+  do not poll unless asked.
+- The full suite passed at 672 tests/81 files before the final review fixes;
+  the three follow-ups passed 30, 34, and 32 focused tests plus build and
+  formatting checks. Full suite was not rerun on final head; live acceptance
+  remains pending. See the October 22 session record.
 
 ### 2026-10-22 — PR #13 cross-pane session tools (T13/T15/T24c)
 
@@ -9,7 +23,8 @@
 - Agent open-session calls now use the invoking pane's local action in single
   and group chat; global open events remain for other entry points.
 - 32 focused tests, production build, formatting, and diff checks passed. Full
-  suite and live pane acceptance remain pending; PR #13 awaits fresh review.
+  suite and live pane acceptance remain pending. Review was requested; no new
+  response was visible at last check. Do not poll unless asked.
 - Same shared-data/pane-local selection seam; no storage redesign was needed.
 
 ### 2026-10-22 — PR #13 lifecycle review corrections (T13/T15/T24c)

@@ -1,6 +1,6 @@
 # Session 2026-10-22 — Saved Session Tools and Parallel Replies
 *Created: 2026-10-22 11:43:35 IST*
-*Last Updated: 2026-10-22 17:09:16 IST*
+*Last Updated: 2026-10-22 20:28:33 IST*
 
 ## Focus Tasks
 T13, T24c, T60, and T15: saved-session tools, session search, and parallel chat generation
@@ -218,4 +218,42 @@ Remaining live checks will be performed during normal use.
   owner and session hook; no storage or relay rewrite was indicated.
 - 32 focused tests in two files, production build, Prettier, and whitespace
   checks passed. Full suite and live multi-pane Obsidian acceptance remain
-  pending. Existing PR #13 is awaiting a fresh Codex review.
+  pending. A Codex review was requested; no new response was visible at the
+  last check. The user asked not to wait, so do not poll unless asked.
+
+## 2026-10-22 — Full PR #13 Session Closeout
+
+**Scope**: This closeout covers the complete branch contribution, from prompt
+management and chat UI changes through saved-session tools and the PR review
+fixes. At the scan, origin/main...HEAD contained 143 changed paths (6,596
+insertions and 2,991 deletions).
+
+**Work covered**:
+
+- T75/T75a: Added shared base-prompt editing and a read-only latest effective
+  system-prompt preview/tool result; removed the legacy selection/cursor
+  editor while preserving Chat Lab note-diff review.
+- T19/T45/T43/T15/T71: Fixed PDF message-part normalization and attachment
+  cards, equation overflow, follow scrolling, tab generation status, and menu
+  layout.
+- T13/T15/T24c/T60: Added bounded saved-session browse/search/read/open/
+  rename/delete tools, explicit deletion approval, and a configurable
+  parallel-generation limit while keeping background replies attached to
+  their sessions.
+- PR #13 review fixes addressed shared-session history and busy checks, retry
+  transcript snapshots, approval settlement and composer ownership on tab
+  close, and pane-scoped active-session deletion/open routing.
+
+**Verification and limits**:
+
+- Full-suite runs passed at up to 672 tests in 81 files before the final review
+  fixes. The retry, lifecycle, and cross-pane follow-ups then passed 30, 34,
+  and 32 focused tests respectively; each also passed the production build,
+  formatting, and diff checks. The full suite was not rerun on the final head.
+- Existing PR #13 was updated on codex/t75-agent-prompt-editor; the latest
+  pushed head is d0260385804179597789b468ecf277c72dbe3dde.
+- A GitHub Codex review was requested. No new review was visible at the last
+  check; the user instructed not to wait for one, so polling stopped.
+- Live Obsidian acceptance remains pending, including multi-pane session
+  routing, deletion approval, restore/search/link, draft/reload, and WebDAV
+  sync checks. Existing task statuses remain unchanged.
