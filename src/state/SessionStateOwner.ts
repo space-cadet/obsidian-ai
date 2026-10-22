@@ -43,7 +43,7 @@ export class SessionStateOwner {
 	private removedSessionIds = new Set<string>();
 	private saveTail: Promise<void> = Promise.resolve();
 	private generation = 0;
-	private saveTimer: ReturnType<typeof setTimeout> | null = null;
+	private saveTimer: number | null = null;
 	private saveRetryDelayMs = SAVE_DEBOUNCE_MS;
 
 	constructor(private readonly storage: SessionStateStorage) {}
@@ -280,7 +280,7 @@ export class SessionStateOwner {
 
 	async deleteSession(sessionId: string): Promise<void> {
 		this.markDeleted(sessionId);
-		if (this.saveTimer) clearTimeout(this.saveTimer);
+		if (this.saveTimer) window.clearTimeout(this.saveTimer);
 		await this.flush();
 		this.deleted.delete(sessionId);
 		this.publish({
@@ -308,7 +308,7 @@ export class SessionStateOwner {
 			openSessionIds: [],
 			deletedSessionIds: [...this.deleted],
 		});
-		if (this.saveTimer) clearTimeout(this.saveTimer);
+		if (this.saveTimer) window.clearTimeout(this.saveTimer);
 		await this.flush();
 		this.publish({
 			...this.snapshot,
@@ -456,8 +456,8 @@ export class SessionStateOwner {
 	}
 
 	private scheduleFlush(): void {
-		if (this.saveTimer) clearTimeout(this.saveTimer);
-		this.saveTimer = setTimeout(() => {
+		if (this.saveTimer) window.clearTimeout(this.saveTimer);
+		this.saveTimer = window.setTimeout(() => {
 			this.saveTimer = null;
 			void this.flush().catch(() => {
 				this.saveRetryDelayMs = Math.min(
@@ -476,7 +476,7 @@ export class SessionStateOwner {
 				throw new Error("Session archive is not ready for saving");
 		}
 		if (this.saveTimer) {
-			clearTimeout(this.saveTimer);
+			window.clearTimeout(this.saveTimer);
 			this.saveTimer = null;
 		}
 		const revisions = new Map(this.revisions);

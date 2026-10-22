@@ -11,14 +11,14 @@ const SearchInput: React.FC<SearchInputProps> = ({
 	placeholder = "Search chats…",
 }) => {
 	const [query, setQuery] = useState("");
-	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const debounceRef = useRef<number | null>(null);
 
 	const emitSearch = useCallback(
 		(newQuery: string) => {
 			if (debounceRef.current) {
-				clearTimeout(debounceRef.current);
+				window.clearTimeout(debounceRef.current);
 			}
-			debounceRef.current = setTimeout(() => {
+			debounceRef.current = window.setTimeout(() => {
 				onSearch(newQuery.trim());
 			}, 300);
 		},
@@ -37,7 +37,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
 	const handleClear = useCallback(() => {
 		setQuery("");
 		if (debounceRef.current) {
-			clearTimeout(debounceRef.current);
+			window.clearTimeout(debounceRef.current);
 		}
 		onSearch("");
 	}, [onSearch]);

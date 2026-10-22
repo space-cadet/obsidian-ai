@@ -214,7 +214,9 @@ export class CodexMobileCompatibilityProbe {
 		this.wait =
 			options.wait ??
 			((milliseconds) =>
-				new Promise((resolve) => setTimeout(resolve, milliseconds)));
+				new Promise((resolve) =>
+					window.setTimeout(resolve, milliseconds),
+				));
 		this.pluginVersion = options.pluginVersion ?? "unknown";
 	}
 

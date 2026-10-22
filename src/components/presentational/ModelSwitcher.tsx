@@ -175,7 +175,7 @@ export const ModelSwitcher: React.FC<ModelSwitcherProps> = ({
 	// Focus search when opening
 	useEffect(() => {
 		if (isOpen && searchRef.current) {
-			setTimeout(() => searchRef.current?.focus(), 10);
+			window.setTimeout(() => searchRef.current?.focus(), 10);
 		}
 	}, [isOpen]);
 

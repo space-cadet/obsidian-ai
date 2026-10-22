@@ -1,6 +1,27 @@
 # Active Context
 
-*Last Updated: 2026-10-22 21:24:15 IST*
+*Last Updated: 2026-10-22 22:04:24 IST*
+
+### 2026-10-22 — v1.9.1 patch release preparation
+
+- Prepared 1.9.1 as a patch release for the Settings heading error and
+  straightforward Obsidian compatibility warning fixes. Minimum Obsidian
+  version remains 1.11.4.
+- The full suite passes (676 tests in 81 files); TypeScript, production build,
+  targeted Prettier, and diff checks pass. GitHub publication is pending.
+- The remote `main` matches local `main`, and remote tag `1.9.1` is unused.
+  See `sessions/2026-10-22-v1.9.1-release.md`.
+
+### 2026-10-22 — v1.9.0 Obsidian review follow-up
+
+- Fixed the review scan's only Error: Settings fallback heading now uses
+  Obsidian's `Setting#setHeading()` API.
+- Also fixed low-risk timer/animation, `window.crypto`, regex, redundant-await,
+  interface-alias, cross-window element, and trash-aware deletion warnings.
+  Broader type, async, DOM/network, prompt, and dependency warnings remain for
+  scoped review.
+- TypeScript and bundle build, targeted formatting, and diff checks passed.
+  Review resubmission remains pending; published tag `1.9.0` is unchanged.
 
 ### 2026-10-22 — v1.9.0 version bump preparation
 

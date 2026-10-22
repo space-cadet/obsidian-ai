@@ -458,8 +458,8 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 				return;
 			}
 
-			if (frame !== null) cancelAnimationFrame(frame);
-			frame = requestAnimationFrame(() => {
+			if (frame !== null) window.cancelAnimationFrame(frame);
+			frame = window.requestAnimationFrame(() => {
 				frame = null;
 				if (
 					pendingHydrationRestoreRef.current == null &&
@@ -486,7 +486,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 	useEffect(() => {
 		const container = scrollRef.current;
 		if (!container || !sessionId) return;
-		const frame = requestAnimationFrame(() => {
+		const frame = window.requestAnimationFrame(() => {
 			const top = Math.max(0, restoreScrollTop ?? 0);
 			if (!hasMessages && top > 0) {
 				// Index-only session mid-hydration: the DOM has no content yet
@@ -516,7 +516,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		if (grew && pendingHydrationRestoreRef.current != null) {
 			pendingHydrationRestoreRef.current = null;
 			prevMessagesLength.current = messages.length;
-			requestAnimationFrame(checkScrollPosition);
+			window.requestAnimationFrame(checkScrollPosition);
 			return;
 		}
 		const lastIsUser =
@@ -542,7 +542,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
 		}
 		prevMessagesLength.current = messages.length;
 		// Update button visibility after render
-		requestAnimationFrame(checkScrollPosition);
+		window.requestAnimationFrame(checkScrollPosition);
 	}, [
 		messages,
 		isStreaming,

@@ -72,7 +72,10 @@ export function createPasswordInput(
 		try {
 			await navigator.clipboard.writeText(input.value);
 			copyBtn.classList.add("is-copied");
-			setTimeout(() => copyBtn.classList.remove("is-copied"), 1200);
+			window.setTimeout(
+				() => copyBtn.classList.remove("is-copied"),
+				1200,
+			);
 		} catch {
 			// ignore
 		}

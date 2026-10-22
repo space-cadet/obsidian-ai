@@ -453,7 +453,7 @@ export class SyncProgressModal extends Modal {
 			this.elapsedEl.setText(`${elapsed}s`);
 		}
 
-		setTimeout(() => this.updateElapsed(), 1000);
+		window.setTimeout(() => this.updateElapsed(), 1000);
 	}
 
 	private updateSessionCount(): void {

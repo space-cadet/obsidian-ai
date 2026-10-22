@@ -4,7 +4,7 @@
  * tests and older hosts deterministic without making this a security feature.
  */
 export async function contentFingerprint(content: string): Promise<string> {
-	const cryptoApi = globalThis.crypto;
+	const cryptoApi = window.crypto;
 	if (cryptoApi?.subtle && typeof TextEncoder !== "undefined") {
 		const bytes = await cryptoApi.subtle.digest(
 			"SHA-256",

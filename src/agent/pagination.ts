@@ -85,7 +85,7 @@ export class ContinuationStore {
 			if (oldest) this.states.delete(oldest);
 		}
 		const token =
-			globalThis.crypto?.randomUUID?.() ??
+			window.crypto?.randomUUID?.() ??
 			`${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 		this.states.set(token, {
 			...state,

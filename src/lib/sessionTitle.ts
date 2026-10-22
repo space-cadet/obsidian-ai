@@ -80,7 +80,7 @@ export function generateSessionTitle(messages: ChatMessage[]): string {
 
 		// Check if remaining title is just generic words (strip punctuation for check)
 		const cleanForCheck = title
-			.replace(/[.!?,;:"'\-]+$/, "")
+			.replace(/[.!?,;:"'-]+$/, "")
 			.trim()
 			.toLowerCase();
 		if (genericWords.has(cleanForCheck)) continue;

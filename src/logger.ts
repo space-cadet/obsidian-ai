@@ -67,7 +67,7 @@ export class FileLogger {
 
 		// Defer size enforcement so it does not block plugin startup.
 		// If the file is already huge, reading it all could hang the UI.
-		setTimeout(() => {
+		window.setTimeout(() => {
 			this.truncateIfNeeded().catch(() => {});
 		}, 5000);
 
@@ -120,7 +120,7 @@ export class FileLogger {
 	 */
 	flushNow() {
 		if (this.flushTimer) {
-			clearTimeout(this.flushTimer);
+			window.clearTimeout(this.flushTimer);
 			this.flushTimer = null;
 		}
 		// Fire-and-forget; don't block or throw.
@@ -144,7 +144,7 @@ export class FileLogger {
 	 */
 	stopMemoryLogging() {
 		if (this.memoryTimer) {
-			clearInterval(this.memoryTimer);
+			window.clearInterval(this.memoryTimer);
 			this.memoryTimer = null;
 		}
 	}
@@ -169,7 +169,7 @@ export class FileLogger {
 	}
 
 	private startMemoryLogging() {
-		if (this.memoryTimer) clearInterval(this.memoryTimer);
+		if (this.memoryTimer) window.clearInterval(this.memoryTimer);
 		this.memoryTimer = window.setInterval(() => {
 			this.logMemorySnapshot();
 		}, this.memoryLogIntervalSeconds * 1000);
@@ -296,7 +296,7 @@ export class FileLogger {
 			await Promise.race([
 				this._truncateIfNeededCore(),
 				new Promise((_, reject) =>
-					setTimeout(
+					window.setTimeout(
 						() => reject(new Error("truncate timeout")),
 						2000,
 					),

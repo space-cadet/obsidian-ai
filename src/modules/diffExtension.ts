@@ -188,7 +188,7 @@ const applyDiffPlugin = ViewPlugin.fromClass(
 							"[diffExtension] applyDiffPlugin — acceptAIEditEffect detected, scheduling dispatchAIChanges",
 						);
 						// Apply the diff changes by dispatching the transaction
-						setTimeout(() => {
+						window.setTimeout(() => {
 							console.log(
 								"[diffExtension] applyDiffPlugin — setTimeout fired, calling dispatchAIChanges",
 							);

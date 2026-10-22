@@ -122,7 +122,7 @@ export async function checkDataHealth(
 			report.filesChecked++;
 			progress?.(report.filesChecked);
 			// Yield between files so the mobile UI can update.
-			await new Promise((resolve) => setTimeout(resolve, 0));
+			await new Promise((resolve) => window.setTimeout(resolve, 0));
 			return raw;
 		} catch {
 			report.filesSkipped++;

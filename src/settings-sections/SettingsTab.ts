@@ -20,12 +20,12 @@ import { renderExportImportSection } from "./exportImport";
 import { renderDebugModeSection } from "./debugMode";
 
 function debounce(fn: () => void, ms: number): () => void {
-	let timeout: ReturnType<typeof setTimeout> | null = null;
+	let timeout: number | null = null;
 	return () => {
 		if (timeout) {
-			clearTimeout(timeout);
+			window.clearTimeout(timeout);
 		}
-		timeout = setTimeout(() => fn(), ms);
+		timeout = window.setTimeout(() => fn(), ms);
 	};
 }
 
@@ -134,7 +134,7 @@ function classifySettings(
 
 	const advancedElements = Array.from(sectionBody.children).filter(
 		(child): child is HTMLElement =>
-			child instanceof HTMLElement &&
+			child.instanceOf(HTMLElement) &&
 			(advancedItems.has(child) || advancedBlocks.has(child)),
 	);
 	if (advancedElements.length === 0) return;
@@ -599,7 +599,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						}
 						// Brief highlight
 						item.settingEl.addClass("is-search-highlight");
-						setTimeout(
+						window.setTimeout(
 							() =>
 								item.settingEl.removeClass(
 									"is-search-highlight",
@@ -836,7 +836,7 @@ export class ObsidianAISettingsTab extends PluginSettingTab {
 						cls: "obsidian-ai-settings-section",
 					});
 					sectionEl.id = id;
-					sectionEl.createEl("h3", { text: title });
+					new Setting(sectionEl).setName(title).setHeading();
 					sectionEl.createEl("p", {
 						cls: "setting-item-warning",
 						text: "This section could not be loaded. Check the developer console for details.",

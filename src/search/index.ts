@@ -310,7 +310,7 @@ export class SearchIndex {
 		const normalized = text.toLowerCase();
 		// Include underscore and hyphen as separators so "self-improvement" → ["self","improvement"]
 		const words =
-			normalized.match(/\b[a-z0-9]+(?:[\-_][a-z0-9]+)*\b/g) ?? [];
+			normalized.match(/\b[a-z0-9]+(?:[-_][a-z0-9]+)*\b/g) ?? [];
 		return words.filter((w) => w.length > 1 && !STOP_WORDS.has(w));
 	}
 

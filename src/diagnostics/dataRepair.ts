@@ -100,7 +100,7 @@ async function prepare(
 	) => {
 		onProgress?.({ phase, completed, total });
 		// Give Obsidian a chance to paint the progress update before reading the next file.
-		await new Promise((resolve) => setTimeout(resolve, 0));
+		await new Promise((resolve) => window.setTimeout(resolve, 0));
 	};
 	const read = async (path: string) => {
 		try {
@@ -144,7 +144,7 @@ async function prepare(
 			}
 			files++;
 			const raw = await adapter.read(path);
-			await new Promise((resolve) => setTimeout(resolve, 0));
+			await new Promise((resolve) => window.setTimeout(resolve, 0));
 			return raw;
 		} catch (error) {
 			const detail =

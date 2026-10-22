@@ -553,7 +553,7 @@ export class UpdateAvailableModal extends Modal {
 				if (this.result !== null) {
 					resolve(this.result);
 				} else {
-					setTimeout(check, 50);
+					window.setTimeout(check, 50);
 				}
 			};
 			check();

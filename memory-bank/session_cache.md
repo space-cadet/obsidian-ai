@@ -1,6 +1,26 @@
 # Session Cache
 
-*Last Updated: 2026-10-22 21:24:15 IST*
+*Last Updated: 2026-10-22 22:04:24 IST*
+
+## 2026-10-22 — v1.9.1 patch release preparation
+
+- Prepared the 1.9.1 patch version and release notes for Obsidian compatibility
+  fixes; `minAppVersion` remains 1.11.4.
+- 676 tests in 81 files, TypeScript, production build, targeted Prettier, and
+  diff checks pass. Publication is pending; remote main is in sync and tag
+  `1.9.1` is unused. See `sessions/2026-10-22-v1.9.1-release.md`.
+
+## 2026-10-22 — v1.9.0 Obsidian review follow-up
+
+- Replaced the direct `h3` in the Settings error fallback with Obsidian's
+  `Setting#setHeading()` API, addressing the attached scan's sole Error.
+- Also fixed low-risk warnings for window timers/animation, `window.crypto`,
+  redundant regex escapes and `await`, the empty interface alias, cross-window
+  element checks, and trash-aware deletion. Broad type, async, DOM/network,
+  prompt, and dependency warnings remain out of scope for this batch.
+- TypeScript and bundle build, targeted formatting, and diff checks pass.
+  Resubmission remains pending and the published tag is unchanged. See
+  `sessions/2026-10-22-v1.9.0-version-bump.md`.
 
 ## 2026-10-22 — v1.9.0 version bump preparation
 

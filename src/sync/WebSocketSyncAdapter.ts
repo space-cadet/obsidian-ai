@@ -166,7 +166,7 @@ export class WebSocketSyncAdapter implements SyncAdapter {
 	disconnect(): void {
 		this.explicitlyDisconnected = true;
 		if (this.reconnectTimer) {
-			clearTimeout(this.reconnectTimer);
+			window.clearTimeout(this.reconnectTimer);
 			this.reconnectTimer = null;
 		}
 		if (this.ws) {

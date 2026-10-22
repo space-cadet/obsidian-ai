@@ -149,7 +149,7 @@ export class ChatApiManager {
 			return {
 				text: result.text,
 				requestTokenEstimate,
-				providerUsage: normalizeProviderUsage(await result.usage),
+				providerUsage: normalizeProviderUsage(result.usage),
 				responseTimeMs: Date.now() - startedAt,
 			};
 		} catch (error: any) {

@@ -28,7 +28,7 @@ export function detectAutocomplete(
 	cursorPos: number,
 ): Omit<AutoState, "index"> | null {
 	const beforeCursor = text.slice(0, cursorPos);
-	const wikiMatch = beforeCursor.match(/\[\[([^\[\]]*)$/);
+	const wikiMatch = beforeCursor.match(/\[\[([^[\]]*)$/);
 	if (wikiMatch) {
 		return {
 			type: "wikilink",

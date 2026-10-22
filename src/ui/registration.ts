@@ -211,7 +211,7 @@ export async function activateChatViewOnce(
 		// so the restored leaf might not yet appear in getLeavesOfType.
 		// Wait one animation frame before falling back to creating a new leaf.
 		await new Promise<void>((resolve) =>
-			requestAnimationFrame(() => resolve()),
+			window.requestAnimationFrame(() => resolve()),
 		);
 		leaf = removeDuplicateChatLeaves(plugin);
 	}

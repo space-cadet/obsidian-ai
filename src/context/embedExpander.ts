@@ -1,6 +1,6 @@
 import { App, TFile } from "obsidian";
 
-const EMBED_PATTERN = /!?\[\[([^\[\]]+)\]\]/g;
+const EMBED_PATTERN = /!?\[\[([^[\]]+)\]\]/g;
 
 /**
  * Expands `![[Note]]` and `![[Note#Heading]]` inline embeds recursively.

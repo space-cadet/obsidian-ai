@@ -18,7 +18,7 @@ function detectLocalIP(): Promise<string | null> {
 				);
 				resolve(ipMatch ? ipMatch[0] : null);
 			};
-			setTimeout(() => resolve(null), 3000);
+			window.setTimeout(() => resolve(null), 3000);
 		} catch {
 			resolve(null);
 		}

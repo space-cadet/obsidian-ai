@@ -75,7 +75,7 @@ export class VaultHandlers extends ToolHandlerBase {
 		const file = this.resolver.resolveNote(args.path);
 		if (!file) return { error: `Note not found: ${args.path}` };
 
-		await this.app.vault.trash(file, false); // system trash
+		await this.app.fileManager.trashFile(file);
 		new Notice(`✓ Deleted ${file.basename}`);
 		return { success: true, path: file.path };
 	}

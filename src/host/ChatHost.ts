@@ -60,7 +60,7 @@ export interface ChatHost {
 }
 
 /** Settings subset needed by the UI layer. */
-export interface ChatHostSettings extends Pick<
+export type ChatHostSettings = Pick<
 	ObsidianAISettings,
 	| "providerProfiles"
 	| "enableAgentTools"
@@ -75,6 +75,6 @@ export interface ChatHostSettings extends Pick<
 	| "autoNameSessions"
 	| "maxParallelChatSessions"
 	| "debugLogLevel"
-> {}
+>;
 
 export type { StoredChatData } from "../types";
