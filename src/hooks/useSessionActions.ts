@@ -199,21 +199,26 @@ export function useSessionActions({
 	}, [sessionsRef]);
 
 	const handleNewChat = useCallback(() => {
-		// A message can be sent from the fresh draft left behind after the last
-		// tab closes. If that active session now contains history but has no tab,
-		// keep it visible when the user creates another chat.
 		const activeId = activeSessionIdRef.current;
-		if (
-			activeId &&
-			!openSessionIds.includes(activeId) &&
-			sessionsRef.current.some((session) => session.id === activeId)
-		) {
-			openSessionInTab(activeId);
+		const activeSession = activeId
+			? sessionsRef.current.find((session) => session.id === activeId)
+			: undefined;
+		const activeSessionIsTabless =
+			!!activeSession && !openSessionIds.includes(activeSession.id);
+		const shouldReuseDraft =
+			activeSessionIsTabless && sessionMessageCount(activeSession) === 0;
+
+		// Closing the last tab leaves a blank draft available for sending. The
+		// first New chat action should open that draft instead of creating a
+		// second one. If it has since gained history, keep it visible and create
+		// a separate new chat as usual.
+		if (activeSessionIsTabless && !shouldReuseDraft) {
+			openSessionInTab(activeSession.id);
 		}
 
 		// T26 Phase 2: Auto-summarize the ending session before starting a new one
 		const endingSessionId = activeId;
-		if (endingSessionId) {
+		if (endingSessionId && !shouldReuseDraft) {
 			const endingSession = sessionsRef.current.find(
 				(s) => s.id === endingSessionId,
 			);
@@ -222,14 +227,17 @@ export function useSessionActions({
 			}
 		}
 
-		const newSession = createNewSession({
-			includeActiveNote: plugin.settings.includeActiveNote,
-			// A new tab inherits the currently visible tab's model, not the global
-			// default. This preserves the user's model choice across tab workflows.
-			selectedProfileIds: getSelectedProfileIds(),
-			modelOverrides: getModelOverrides?.(),
-			autoNameSessions: plugin.settings.autoNameSessions,
-		});
+		const newSession =
+			shouldReuseDraft && activeSession
+				? activeSession
+				: createNewSession({
+						includeActiveNote: plugin.settings.includeActiveNote,
+						// A new tab inherits the currently visible tab's model, not the global
+						// default. This preserves the user's model choice across tab workflows.
+						selectedProfileIds: getSelectedProfileIds(),
+						modelOverrides: getModelOverrides?.(),
+						autoNameSessions: plugin.settings.autoNameSessions,
+					});
 		openSessionInTab(newSession.id);
 		const selectedProfileIds = getSelectedProfileIds();
 		if (selectedProfileIds.length > 0) {
