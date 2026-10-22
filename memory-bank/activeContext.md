@@ -1,6 +1,16 @@
 # Active Context
 
-*Last Updated: 2026-10-22 16:50:03 IST*
+*Last Updated: 2026-10-22 17:09:16 IST*
+
+### 2026-10-22 — PR #13 cross-pane session tools (T13/T15/T24c)
+
+- `8b2a854` tracks active sessions per mounted view in the shared owner and
+  blocks tool deletion when any pane has that session open.
+- Agent open-session calls now use the invoking pane's local action in single
+  and group chat; global open events remain for other entry points.
+- 32 focused tests, production build, formatting, and diff checks passed. Full
+  suite and live pane acceptance remain pending; PR #13 awaits fresh review.
+- Same shared-data/pane-local selection seam; no storage redesign was needed.
 
 ### 2026-10-22 — PR #13 lifecycle review corrections (T13/T15/T24c)
 

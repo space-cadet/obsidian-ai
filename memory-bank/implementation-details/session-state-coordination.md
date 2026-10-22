@@ -2,7 +2,7 @@
 
 *Created: 2026-10-19 20:54 IST*
 *Status: COMPLETE — shared session ownership and session-opening paths implemented and user-confirmed.*
-*Last Updated: 2026-10-22 16:34:14 IST*
+*Last Updated: 2026-10-22 17:09:16 IST*
 *Memory Bank task: [T24c](../tasks/T24c.md)*
 
 ## Purpose
@@ -91,6 +91,11 @@ because a disk read completed.
 Do not add a second permanent session cache beside the existing React arrays.
 Views should read the shared snapshot and submit changes through the owner. The
 active tab selection and purely visual state can remain view-scoped.
+
+For cross-pane safety checks, the owner keeps a transient mapping from mounted
+view keys to their active session IDs; this view state is not persisted. Agent
+open-session tools call the invoking pane's local opener. Existing global open
+events remain available to non-agent entry points.
 
 ### Session readiness and revisions
 

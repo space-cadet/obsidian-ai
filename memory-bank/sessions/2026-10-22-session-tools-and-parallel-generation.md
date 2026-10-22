@@ -1,6 +1,6 @@
 # Session 2026-10-22 — Saved Session Tools and Parallel Replies
 *Created: 2026-10-22 11:43:35 IST*
-*Last Updated: 2026-10-22 16:50:03 IST*
+*Last Updated: 2026-10-22 17:09:16 IST*
 
 ## Focus Tasks
 T13, T24c, T60, and T15: saved-session tools, session search, and parallel chat generation
@@ -205,3 +205,17 @@ Remaining live checks will be performed during normal use.
   narrow call-site fixes address these cases; no wider redesign was indicated.
 - Source commit `9ee80e6758cf693c084d552e77ea604add4d5797` is on the existing
   PR #13 branch. The PR remains a draft pending a fresh Codex review.
+
+## 2026-10-22 — PR #13 cross-pane session tool fixes
+
+- Confirmed both newest P2 findings: agent deletion could remove a session
+  visible in another pane, and agent open-session broadcast to every pane.
+- Source commit `8b2a854` tracks each mounted view's active session in the
+  transient shared owner and rejects cross-pane active deletion. Single and
+  group agent tools now call the invoking pane's local session opener.
+- This confirms the broader ownership seam: durable sessions are shared, but
+  pane selection and actions need per-view routing. The fixes reuse the existing
+  owner and session hook; no storage or relay rewrite was indicated.
+- 32 focused tests in two files, production build, Prettier, and whitespace
+  checks passed. Full suite and live multi-pane Obsidian acceptance remain
+  pending. Existing PR #13 is awaiting a fresh Codex review.

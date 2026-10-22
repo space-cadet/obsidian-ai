@@ -1,6 +1,16 @@
 # Session Cache
 
-*Last Updated: 2026-10-22 16:50:03 IST*
+*Last Updated: 2026-10-22 17:09:16 IST*
+
+## 2026-10-22 — T13/T15/T24c PR #13 cross-pane session tools
+
+- `8b2a854` adds live per-view active-session tracking for safe agent deletion
+  and routes agent session opening through the invoking pane.
+- Focused tests: 32 passed in 2 files. Production build, Prettier, and diff
+  checks passed. Full suite and live Obsidian pane acceptance remain pending.
+- Broader cause: shared session data was paired with global open events and a
+  single persisted active-session ID. The correction keeps view selection local
+  and uses the owner only for live cross-pane checks.
 
 ## 2026-10-22 — T13/T15/T24c PR #13 lifecycle review fixes
 

@@ -1,6 +1,6 @@
 # Agentic Tool Calling Implementation
 *Created: 2026-05-03 02:40:00 IST*
-*Last Updated: 2026-10-22 14:18:34 IST*
+*Last Updated: 2026-10-22 17:09:16 IST*
 
 ## Overview
 
@@ -17,10 +17,11 @@ Listing and search are paginated; transcript reads are bounded and return
 continuation metadata. Search can target titles, message content, or both.
 Opening can navigate to a specified message. Rename is performed only on user
 request. Deletion always requires explicit user approval and excludes the
-active or currently generating session.
+active session in any mounted pane and any currently generating session. Open
+actions use the invoking pane's local opener rather than the global event.
 
-The user reports that the approve/reject dialog for session deletion does not
-work. The issue has not been independently reproduced or diagnosed.
+The approval/cancellation flow was repaired in the October 22 follow-up. Live
+multi-pane and full approval-flow acceptance remains pending.
 
 ### Bounded Large-File Reads (2026-10-21)
 

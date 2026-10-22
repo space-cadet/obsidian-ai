@@ -29,6 +29,9 @@ All notable changes to this project will be documented in this file.
   check shared generation reservations before cross-pane deletion, retry, and
   edit (`ad731d7`, T13/T15/T24c).
 
+- Prevent deletion of a session active in another pane and open saved sessions
+  only in the pane invoking the agent tool (`8b2a854`, T13/T15/T24c).
+
 - Creating a new chat no longer stops a reply generating in another tab; new
   sends and retries now respect the configured parallel-session limit (T15,
   `16f7034`).
@@ -37,8 +40,10 @@ All notable changes to this project will be documented in this file.
 
 - The full suite passed with 645 tests in 80 files, and the production build,
   formatting, and diff checks passed. Live Obsidian acceptance remains open.
-- Follow-up: the user reports that the approve/reject dialog for deleting
-  sessions does not work; diagnosis and independent reproduction remain open.
+- The pane-scope follow-up passed 32 focused tests in two files, the production
+  build, Prettier, and `git diff --check`; live multi-pane acceptance is pending.
+- The earlier delete approval/cancellation report was addressed in the October
+  22 follow-up. Full live acceptance remains pending.
 
 ## Unreleased — 2026-10-21
 
