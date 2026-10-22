@@ -1,6 +1,6 @@
 # Error Log
 *Created: 2026-05-02 08:00:01 IST*
-*Last Updated: 2026-09-29 20:10 IST*
+*Last Updated: 2026-10-22 14:18:34 IST*
 
 *Newest entries first. Each entry documents a development error, its cause, and resolution.*
 
@@ -113,3 +113,16 @@
 - **Cause:** `node_modules` contained older AI SDK packages than the versions declared in `pnpm-lock.yaml`.
 - **Resolution:** Reinstalled with `CI=true pnpm install --frozen-lockfile`, then enabled `skipLibCheck` in the base `tsconfig.json` to match the existing production build policy for third-party declarations.
 - **Verification:** `pnpm exec tsc --noEmit` and `pnpm run build` pass.
+
+### 2026-10-22 — Deletion approval, missing tool results, Settings and duplicate tabs
+
+- Symptoms: inert approval/Stop actions, unfinished calls after Cancel causing
+  MissingToolResultsError, false deletion failures, Settings sections absent,
+  and extra blank tabs on +/restore after all tabs close.
+- Repairs: session-scoped synchronous approval state; paired cancellation
+  results; idempotent missing-target deletion; slider normalization/isolated
+  section rendering; shared content rules and lifecycle reconciliation.
+- Further audit repaired draft timing, disposal reservations, index-load write
+  safety, and stale sync application. Commits `5112122` through `1bd51c3`.
+- Build and 670 tests/81 files passed. User checked + after closing all tabs;
+  other live checks pending. No Android crash root-cause claim is made.

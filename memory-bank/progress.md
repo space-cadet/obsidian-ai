@@ -1,3 +1,11 @@
+### 2026-10-22 — T13/T15/T24c deletion and lifecycle repairs
+
+Five repair commits through `1bd51c3` pushed: approval/cancellation results,
+idempotent deletion, Settings rendering, single-tab creation/restoration,
+draft retention, view cleanup, archive protection, and sync revision guards.
+670 tests/81 files and production build passed. User completed close-all -> +;
+remaining live acceptance is pending. Existing shared-owner design retained.
+
 ### 2026-10-21 — Latest effective system prompt preview (T75a under T75) ✅
 
 - Added a read-only, copyable preview of the latest system prompt actually

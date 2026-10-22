@@ -562,3 +562,15 @@ Last release before 1.4.0 development cycle.
 - Migrated legacy profile-keyed Recents during settings load and import/sync
   normalization while keeping available-model caches profile-specific.
 - T70 completed in `72bf9f1`; the user verified the final build in Obsidian.
+
+## 2026-10-22 — Session deletion and lifecycle repair follow-up
+
+- Fixed four-action deletion approvals, Stop/Cancel completion, missing tool
+  results after cancellation, and false failure for already-deleted sessions.
+- Improved approval layout and recovered Settings sections after slider changes.
+- Fixed duplicate blank tabs on creation/restoration, draft persistence timing,
+  active-tab reconciliation, and generation cleanup on view disposal.
+- Protected corrupt indexes and rejected stale sync snapshots after local edits
+  or deletion. Preserved the shared-owner/JSONL architecture.
+- Final build and 670 tests/81 files passed; user completed close-all -> +.
+  Other live checks remain pending. Commits `5112122` through `1bd51c3`.

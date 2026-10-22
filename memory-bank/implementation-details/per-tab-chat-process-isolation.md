@@ -1,6 +1,6 @@
 # Per-Tab Chat Process Isolation
 *Created: 2026-08-05 10:55:22 IST*
-*Last Updated: 2026-10-22 11:58:08 IST*
+*Last Updated: 2026-10-22 14:18:34 IST*
 
 ## Purpose
 
@@ -174,3 +174,15 @@ Manual validation:
 - T15: Tabbed Chat Interface with Multi-Profile
 - T4: Streaming
 - T13: Agentic Tool Calling for Note Editing
+
+## 2026-10-22 — Empty-tab and runtime integration repair
+
+`hasSessionContent` in `src/lib/sessionUtils.ts` includes authoritative indexed
+message counts, draft text/attachments, and nondefault thinking mode. + reuses
+an empty tabless placeholder; restoration does not open that placeholder beside
+the target. Actions consult the owner snapshot to cover React-ref update lag.
+Draft metadata reaches the owner synchronously, with disk debounce retained.
+Runtime reservation tokens belong to each view; disposal aborts and settles its
+work, and old callbacks cannot release replacement reservations. History still
+filters unsent drafts out of its saved-session picker; retention does not prove
+that closed drafts are reopenable there. Final source: `1bd51c3`.

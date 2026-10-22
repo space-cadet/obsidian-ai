@@ -2,7 +2,7 @@
 
 *Created: 2026-10-19 20:54 IST*
 *Status: COMPLETE — shared session ownership and session-opening paths implemented and user-confirmed.*
-*Last Updated: 2026-10-19 23:29:06 IST*
+*Last Updated: 2026-10-22 14:18:34 IST*
 *Memory Bank task: [T24c](../tasks/T24c.md)*
 
 ## Purpose
@@ -255,3 +255,16 @@ preservation). The hydration finding and related coordination work are
 implemented under T24c; focused tests and production build passed. The user
 confirmed the tabless-session behavior for both new-chat and restored-session
 flows in the plugin. Source is at `57fa849` on `ui-chat-fixes`.
+
+## 2026-10-22 — Follow-up integration safeguards
+
+The shared owner remains the persistence authority. View initialization retains
+live blank sessions, honors explicit empty tab lists, and reconciles selection
+after removals. Corrupt index reads block writes rather than replacing the
+archive with empty data. Sync captures owner revisions before network transfer;
+application rejects locally superseded or removed IDs and reports skipped IDs.
+Removal protection lasts for the owner lifetime after durable flush; this is
+not a new cross-device tombstone format. Cache-read errors propagate and sync
+flushes local owner state before preparing transfer data. Final commit:
+`1bd51c3`; 670 tests/81 files and build passed. Relay metadata round-trip and
+the unused initialSessionId view option remain deferred source-level questions.

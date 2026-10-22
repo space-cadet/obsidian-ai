@@ -1,6 +1,31 @@
 # Active Context
 
-*Last Updated: 2026-10-22 11:58:08 IST*
+*Last Updated: 2026-10-22 14:18:34 IST*
+
+### 2026-10-22 — Deletion approvals, Settings, and session lifecycle repair (T13/T15/T24c)
+
+- Repaired session-scoped deletion approval actions: Approve all, Approve,
+  Skip, and Cancel; tightened the approval card layout. Cancel supplies results
+  for pending calls, preventing subsequent MissingToolResultsError failures.
+  Already-absent deletion targets now report successful deletion.
+- Restored Settings section rendering after the parallel-session option change
+  by normalizing slider values and isolating section renderer failures.
+- Fixed duplicate blank tabs after closing all tabs and choosing + or restoring
+  a saved session. Preserved meaningful drafts and valid active selections;
+  draft edits reach the shared owner immediately.
+- Retained the existing shared-owner/JSONL design. Added view-disposal cleanup,
+  corrupt-index write protection, and revision-baseline sync reconciliation
+  that protects newer local edits and local deletions from delayed downloads.
+- Source commits: `5112122`, `d71ebdf`, `2437044`, `a67044d`, and `1bd51c3`,
+  pushed to `origin/codex/t75-agent-prompt-editor`; final worktree was clean.
+  Production build and 670 tests in 81 files passed; formatting/diff checks passed.
+- User completed the close-all-tabs then + check without reporting a further
+  problem. Restore/search/link, draft/reload, deletion, cancellation, pane-close,
+  and live WebDAV checks remain pending. Earlier user feedback said fixes seemed
+  to work, but does not establish full Settings or device acceptance.
+- See `sessions/2026-10-22-session-tools-and-parallel-generation.md` for the
+  full-session continuation and acceptance checklist. This entry supersedes
+  the earlier undiagnosed-delete-dialog checkpoint below.
 
 ### 2026-10-22 — Session tools and parallel reply handling (T13/T24c/T60/T15)
 

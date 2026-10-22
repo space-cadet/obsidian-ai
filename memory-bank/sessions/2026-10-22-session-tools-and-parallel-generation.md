@@ -1,6 +1,6 @@
 # Session 2026-10-22 — Saved Session Tools and Parallel Replies
 *Created: 2026-10-22 11:43:35 IST*
-*Last Updated: 2026-10-22 11:58:08 IST*
+*Last Updated: 2026-10-22 14:18:34 IST*
 
 ## Focus Tasks
 T13, T24c, T60, and T15: saved-session tools, session search, and parallel chat generation
@@ -93,3 +93,72 @@ chunk, and edit history are updated.
 ## Session Outcome
 
 **Status**: ✅ Source changes and Memory Bank closeout complete; live acceptance and the reported dialog issue remain open.
+
+## 14:18:34 IST — Full-session repair continuation and closeout
+
+This continuation supersedes the earlier open-dialog diagnosis checkpoint;
+all earlier session content is retained as history.
+
+### 2026-10-22 — Deletion approvals, Settings, and session lifecycle repair (T13/T15/T24c)
+
+- Repaired session-scoped deletion approval actions: Approve all, Approve,
+  Skip, and Cancel; tightened the approval card layout. Cancel supplies results
+  for pending calls, preventing subsequent MissingToolResultsError failures.
+  Already-absent deletion targets now report successful deletion.
+- Restored Settings section rendering after the parallel-session option change
+  by normalizing slider values and isolating section renderer failures.
+- Fixed duplicate blank tabs after closing all tabs and choosing + or restoring
+  a saved session. Preserved meaningful drafts and valid active selections;
+  draft edits reach the shared owner immediately.
+- Retained the existing shared-owner/JSONL design. Added view-disposal cleanup,
+  corrupt-index write protection, and revision-baseline sync reconciliation
+  that protects newer local edits and local deletions from delayed downloads.
+- Source commits: `5112122`, `d71ebdf`, `2437044`, `a67044d`, and `1bd51c3`,
+  pushed to `origin/codex/t75-agent-prompt-editor`; final worktree was clean.
+  Production build and 670 tests in 81 files passed; formatting/diff checks passed.
+- User completed the close-all-tabs then + check without reporting a further
+  problem. Restore/search/link, draft/reload, deletion, cancellation, pane-close,
+  and live WebDAV checks remain pending. Earlier user feedback said fixes seemed
+  to work, but does not establish full Settings or device acceptance.
+- See `sessions/2026-10-22-session-tools-and-parallel-generation.md` for the
+  full-session continuation and acceptance checklist. This entry supersedes
+  the earlier undiagnosed-delete-dialog checkpoint below.
+
+### Examination and decisions
+
+The user requested a comprehensive examination after both + and saved-session
+restore produced extra tabs. The recent shared-owner rewrite was reviewed and
+retained: defects concerned integration, stale state, cleanup, and sync timing.
+No new storage architecture or rewrite was introduced. Fourteen permanent
+integration scenarios reproduce repaired lifecycle cases, including corrupt
+index protection, drafts, revision races, deletion, multi-view initialization,
+reservation release, missing links, empty tab lists, and React-ref lag.
+Additional runtime/action/sync tests cover cleanup ownership and baseline flow.
+The full-session source scope is `2e8a25d..1bd51c3` (five repair commits).
+
+### Verification and delivery
+
+- `pnpm test`: 670 passed in 81 files; `pnpm run build`: passed.
+- Formatting and `git diff --check`: passed.
+- HEAD: `1bd51c3e1b15782e01ac18d403fe4378a9f9c59a`, matching remote branch.
+- No actual vault data modified by synthetic checks; no live provider/WebDAV
+  or desktop/mobile acceptance was independently performed.
+- User had withheld Memory Bank updates during implementation, then explicitly
+  authorized this mem-scan/mem-update and whole-session commit-message closeout.
+
+### Live acceptance checklist
+
+- [x] User completed close all tabs, then +; no further issue reported.
+- [ ] Close all tabs, restore one session; repeat through search and session link.
+- [ ] Text and attachment draft survives immediate tab switch and reload while open.
+- [ ] Delete an open saved session via History; valid selection and reload absence.
+- [ ] Approve some deletions then Cancel; next message has no missing-tool error.
+- [ ] Close entire Chat Lab pane during generation/approval; reopen and send.
+- [ ] If using WebDAV, edit during sync; preserve local changes and deletions.
+
+### Remaining limits
+
+History excludes unsent drafts despite their retained storage state. Relay
+metadata round-trip and unused initialSessionId behavior were deferred.
+T15 remains active; T13/T24c original implementation status is unchanged.
+Remaining live checks will be performed during normal use.

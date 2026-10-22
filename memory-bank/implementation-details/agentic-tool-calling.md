@@ -1,6 +1,6 @@
 # Agentic Tool Calling Implementation
 *Created: 2026-05-03 02:40:00 IST*
-*Last Updated: 2026-10-22 11:58:08 IST*
+*Last Updated: 2026-10-22 14:18:34 IST*
 
 ## Overview
 
@@ -1209,3 +1209,14 @@ bounded namespaced tools such as `git.status`, not as arbitrary shell commands.
 See [Integration Provider API](integration-provider-api.md).
 
 *Last Updated: 2026-08-05 17:28 IST*
+
+## 2026-10-22 — Approval cancellation and idempotent session deletion
+
+Deletion approval is routed to its owning session. Approve all covers pending
+session deletions including the current call; Approve handles one; Skip omits
+one; Cancel stops the process. Scope is updated synchronously. Stop and Cancel
+settle pending tool-call results in the saved transcript before a later turn.
+An already-absent target is a successful idempotent deletion. Relevant paths:
+`src/agent/turnActions.ts`, `turnLifecycle.ts`, `ChatTurnOutput.ts`,
+`tools/handlers/sessionHandlers.ts`, and the pending/tool-result cards.
+Commits: `5112122`, `d71ebdf`, `2437044`. Live checks remain partial.
