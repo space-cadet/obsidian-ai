@@ -1,11 +1,11 @@
 # Session Cache
 
-*Last Updated: 2026-10-23 15:25:06 IST*
+*Last Updated: 2026-10-23 15:42:13 IST*
 
 ## 2026-10-23 — T78 Chat History redesign
 
-- Implemented compact searchable History entries, tag filtering and expandable counts, the searchable session Manage tags modal, and inline Obsidian icon actions for load, copy, export, rename, and delete.
-- Prettier, production build, and diff checks passed. Commit `8f3c23f` is pushed to `origin/feat/session-tags`. Tests and live Obsidian acceptance were not run.
+- Implemented compact searchable History entries, a keyboard-accessible in-app tag filter with session counts, expandable tag counts, the searchable session Manage tags modal, and inline Obsidian icon actions for load, copy, export, rename, and delete. Manager suggestions appear only while the add-tag field is focused and stay within the modal body.
+- Prettier, production build, and diff checks passed. The work is on `feat/session-tags`; automated tests and live Obsidian acceptance were not run.
 - The ignored SQLite Memory Bank is stale through 2026-09-18, so its database-backed edit-history generator was not run. See the new canonical edit chunk and T78 session record.
 
 ## 2026-10-23 — T78 chat session tags prototype

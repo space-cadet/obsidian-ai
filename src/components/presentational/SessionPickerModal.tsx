@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ChatSession } from "../../types";
 import {
 	getSessionTotalTokens,
@@ -66,8 +66,8 @@ function SessionTagManagerModal({
 	onClose,
 }: SessionTagManagerProps) {
 	const [query, setQuery] = useState("");
-	const [isOpen, setIsOpen] = useState(true);
-	const [activeOptionIndex, setActiveOptionIndex] = useState(0);
+	const [isOpen, setIsOpen] = useState(false);
+	const [activeOptionIndex, setActiveOptionIndex] = useState(-1);
 	const currentTags = normalizeSessionTags(session.tags ?? []);
 	const currentTagKeys = new Set(
 		currentTags.map((tag) => tag.toLocaleLowerCase()),
@@ -103,7 +103,7 @@ function SessionTagManagerModal({
 			onUpdateTags(session.id, nextTags);
 		}
 		setQuery("");
-		setActiveOptionIndex(0);
+		setActiveOptionIndex(-1);
 		setIsOpen(true);
 	};
 
@@ -113,12 +113,16 @@ function SessionTagManagerModal({
 		if (event.key === "ArrowDown" && options.length > 0) {
 			event.preventDefault();
 			setIsOpen(true);
-			setActiveOptionIndex((index) => (index + 1) % options.length);
+			setActiveOptionIndex((index) =>
+				index < 0 ? 0 : (index + 1) % options.length,
+			);
 		} else if (event.key === "ArrowUp" && options.length > 0) {
 			event.preventDefault();
 			setIsOpen(true);
-			setActiveOptionIndex(
-				(index) => (index - 1 + options.length) % options.length,
+			setActiveOptionIndex((index) =>
+				index < 0
+					? options.length - 1
+					: (index - 1 + options.length) % options.length,
 			);
 		} else if (event.key === "Enter" && isOpen && options.length > 0) {
 			event.preventDefault();
@@ -214,7 +218,9 @@ function SessionTagManagerModal({
 										: undefined
 								}
 								aria-activedescendant={
-									isOpen && options.length > 0
+									isOpen &&
+									options.length > 0 &&
+									activeOptionIndex >= 0
 										? "chat-session-tag-option-" +
 											activeOptionIndex
 										: undefined
@@ -223,9 +229,10 @@ function SessionTagManagerModal({
 								placeholder="Search or add a tag…"
 								value={query}
 								onFocus={() => setIsOpen(true)}
+								onBlur={() => setIsOpen(false)}
 								onChange={(event) => {
 									setQuery(event.target.value);
-									setActiveOptionIndex(0);
+									setActiveOptionIndex(-1);
 									setIsOpen(true);
 								}}
 								onKeyDown={handleInputKeyDown}
@@ -242,6 +249,7 @@ function SessionTagManagerModal({
 									<button
 										type="button"
 										role="option"
+										tabIndex={-1}
 										aria-selected={
 											index === activeOptionIndex
 										}
@@ -253,7 +261,7 @@ function SessionTagManagerModal({
 												: "")
 										}
 										key={option.kind + "-" + option.value}
-										onMouseDown={(event) =>
+										onPointerDown={(event) =>
 											event.preventDefault()
 										}
 										onMouseEnter={() =>
@@ -328,6 +336,9 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 	);
 	const [selectedTag, setSelectedTag] = useState("");
 	const [searchQuery, setSearchQuery] = useState("");
+	const [tagFilterOpen, setTagFilterOpen] = useState(false);
+	const [activeTagFilterIndex, setActiveTagFilterIndex] = useState(0);
+	const tagFilterRef = useRef<HTMLDivElement>(null);
 	const [tagManagerSession, setTagManagerSession] =
 		useState<ChatSession | null>(null);
 	const [expandedTagsId, setExpandedTagsId] = useState<string | null>(null);
@@ -343,6 +354,74 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 	)
 		? selectedTag
 		: "";
+	const tagSessionCounts = new Map<string, number>();
+	for (const session of allSorted) {
+		const uniqueSessionTags = new Set(
+			(session.tags ?? []).map((tag) => tag.toLocaleLowerCase()),
+		);
+		for (const tag of uniqueSessionTags) {
+			tagSessionCounts.set(tag, (tagSessionCounts.get(tag) ?? 0) + 1);
+		}
+	}
+	const tagFilterOptions = [
+		{ value: "", label: "All tags", count: allSorted.length },
+		...tags.map((tag) => ({
+			value: tag,
+			label: tag,
+			count: tagSessionCounts.get(tag.toLocaleLowerCase()) ?? 0,
+		})),
+	];
+	const selectedTagFilterIndex = Math.max(
+		0,
+		tagFilterOptions.findIndex(
+			(option) =>
+				option.value.toLocaleLowerCase() ===
+				effectiveSelectedTag.toLocaleLowerCase(),
+		),
+	);
+	useEffect(() => {
+		if (!tagFilterOpen) return;
+		const handlePointerDown = (event: PointerEvent) => {
+			if (!tagFilterRef.current?.contains(event.target as Node)) {
+				setTagFilterOpen(false);
+			}
+		};
+		document.addEventListener("pointerdown", handlePointerDown);
+		return () =>
+			document.removeEventListener("pointerdown", handlePointerDown);
+	}, [tagFilterOpen]);
+	const openTagFilter = () => {
+		setActiveTagFilterIndex(selectedTagFilterIndex);
+		setTagFilterOpen(true);
+	};
+	const handleTagFilterKeyDown = (
+		event: React.KeyboardEvent<HTMLButtonElement>,
+	) => {
+		if (event.key === "Escape" && tagFilterOpen) {
+			event.preventDefault();
+			setTagFilterOpen(false);
+		} else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+			event.preventDefault();
+			if (!tagFilterOpen) {
+				openTagFilter();
+				return;
+			}
+			const direction = event.key === "ArrowDown" ? 1 : -1;
+			setActiveTagFilterIndex(
+				(index) =>
+					(index + direction + tagFilterOptions.length) %
+					tagFilterOptions.length,
+			);
+		} else if (
+			tagFilterOpen &&
+			(event.key === "Enter" || event.key === " ")
+		) {
+			event.preventDefault();
+			const option = tagFilterOptions[activeTagFilterIndex];
+			if (option) setSelectedTag(option.value);
+			setTagFilterOpen(false);
+		}
+	};
 	const selectedTagSessions = effectiveSelectedTag
 		? allSorted.filter((session) =>
 				session.tags?.some(
@@ -473,25 +552,126 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 									}
 								/>
 							</label>
-							<label className="chat-session-tag-filter">
-								<span className="sr-only">
-									Filter sessions by tag
-								</span>
-								<select
-									aria-label="Filter sessions by tag"
-									value={effectiveSelectedTag}
-									onChange={(event) =>
-										setSelectedTag(event.target.value)
+							<div
+								className="chat-session-tag-filter"
+								ref={tagFilterRef}
+							>
+								<button
+									type="button"
+									className="chat-session-tag-filter-trigger"
+									aria-label={
+										"Filter sessions by tag: " +
+										(tagFilterOptions[
+											selectedTagFilterIndex
+										]?.label ?? "All tags")
 									}
+									aria-haspopup="listbox"
+									aria-expanded={tagFilterOpen}
+									aria-controls={
+										tagFilterOpen
+											? "chat-session-tag-filter-options"
+											: undefined
+									}
+									aria-activedescendant={
+										tagFilterOpen
+											? "chat-session-tag-filter-option-" +
+												activeTagFilterIndex
+											: undefined
+									}
+									onClick={() =>
+										tagFilterOpen
+											? setTagFilterOpen(false)
+											: openTagFilter()
+									}
+									onKeyDown={handleTagFilterKeyDown}
 								>
-									<option value="">All tags</option>
-									{tags.map((tag) => (
-										<option key={tag} value={tag}>
-											{tag}
-										</option>
-									))}
-								</select>
-							</label>
+									<ObsidianIcon icon="tag" size={15} />
+									<span className="chat-session-tag-filter-label">
+										{tagFilterOptions[
+											selectedTagFilterIndex
+										]?.label ?? "All tags"}
+									</span>
+									<ObsidianIcon
+										icon="chevron-down"
+										size={13}
+									/>
+								</button>
+								{tagFilterOpen && (
+									<div
+										className="chat-session-tag-filter-options"
+										id="chat-session-tag-filter-options"
+										role="listbox"
+										aria-label="Filter sessions by tag"
+									>
+										{tagFilterOptions.map(
+											(option, index) => (
+												<button
+													type="button"
+													role="option"
+													tabIndex={-1}
+													aria-selected={
+														option.value.toLocaleLowerCase() ===
+														effectiveSelectedTag.toLocaleLowerCase()
+													}
+													id={
+														"chat-session-tag-filter-option-" +
+														index
+													}
+													className={
+														"chat-session-tag-filter-option" +
+														(index ===
+														activeTagFilterIndex
+															? " is-active"
+															: "")
+													}
+													key={
+														option.value ||
+														"all-tags"
+													}
+													onPointerDown={(event) =>
+														event.preventDefault()
+													}
+													onMouseEnter={() =>
+														setActiveTagFilterIndex(
+															index,
+														)
+													}
+													onClick={() => {
+														setSelectedTag(
+															option.value,
+														);
+														setTagFilterOpen(false);
+													}}
+												>
+													<ObsidianIcon
+														icon="tag"
+														size={14}
+													/>
+													<span className="chat-session-tag-filter-option-label">
+														{option.label}
+													</span>
+													<span
+														className="chat-session-tag-filter-option-count"
+														aria-label={
+															option.count +
+															" sessions"
+														}
+													>
+														{option.count}
+													</span>
+													{option.value.toLocaleLowerCase() ===
+														effectiveSelectedTag.toLocaleLowerCase() && (
+														<ObsidianIcon
+															icon="check"
+															size={14}
+														/>
+													)}
+												</button>
+											),
+										)}
+									</div>
+								)}
+							</div>
 						</div>
 					)}
 					{allSorted.length === 0 ? (
