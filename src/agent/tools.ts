@@ -725,6 +725,39 @@ export const listChatSessionsTool = t({
 	}),
 });
 
+export const listSessionTagsTool = t({
+	description: "List the tags on a saved chat session.",
+	inputSchema: z.object({
+		session_id: z.string().describe("The saved chat session."),
+	}),
+});
+
+export const addSessionTagsTool = t({
+	description:
+		"Add one or more tags to a saved chat session. Existing tags are preserved.",
+	inputSchema: z.object({
+		session_id: z.string().describe("The saved chat session."),
+		tags: z.array(z.string().min(1).max(32)).min(1).max(8),
+	}),
+});
+
+export const renameSessionTagTool = t({
+	description: "Rename one tag on a saved chat session.",
+	inputSchema: z.object({
+		session_id: z.string().describe("The saved chat session."),
+		old_tag: z.string().min(1).max(32),
+		new_tag: z.string().min(1).max(32),
+	}),
+});
+
+export const removeSessionTagsTool = t({
+	description: "Remove one or more tags from a saved chat session.",
+	inputSchema: z.object({
+		session_id: z.string().describe("The saved chat session."),
+		tags: z.array(z.string().min(1).max(32)).min(1).max(8),
+	}),
+});
+
 export const readChatSessionTool = t({
 	description:
 		"Read a bounded range of messages from a saved chat session. " +
@@ -916,6 +949,10 @@ export const noteTools = {
 	search_note_content: searchNoteContentTool,
 	search_past_sessions: searchPastSessionsTool,
 	list_chat_sessions: listChatSessionsTool,
+	list_session_tags: listSessionTagsTool,
+	add_session_tags: addSessionTagsTool,
+	rename_session_tag: renameSessionTagTool,
+	remove_session_tags: removeSessionTagsTool,
 	read_chat_session: readChatSessionTool,
 	rename_chat_session: renameChatSessionTool,
 	open_chat_session: openChatSessionTool,

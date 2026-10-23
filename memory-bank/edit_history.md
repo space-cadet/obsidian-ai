@@ -1,8 +1,39 @@
 # Edit History
 
-*Last Updated: 2026-10-23 14:19:19 IST*
+*Last Updated: 2026-10-23 14:41:59 IST*
 
 ### 2026-10-23
+
+#### 14:41:59 IST - T78: Add bulk tag generation for existing sessions
+- Modified `src/settings-sections/chatDefaults.ts` - Add inline Settings action to sequentially tag untagged saved sessions using the selected profile and bounded excerpts; show progress and summarize tagged, skipped, and failed sessions.
+- Modified `memory-bank/tasks/T78.md` - Mark bulk generation complete and record its processing and merge behavior.
+- Modified `memory-bank/tasks/T73.md` - Update the capability map progress note.
+- Modified `memory-bank/implementation-details/chat-component-capability-map.md` - Document authorized bulk generation and its data flow.
+- Modified `memory-bank/activeContext.md` - Record completed implementation and verification status.
+- Modified `memory-bank/session_cache.md` - Record explicit authorization and verification limits.
+- Modified `memory-bank/sessions/2026-10-23-session-tags-prototype.md` - Record bulk generation progress and remaining live acceptance.
+- Modified `memory-bank/tasks.md` - Refresh the Memory Bank timestamp.
+- Created `memory-bank/edits/2026-10-23/144159-T78-bulk-session-tag-generation.md` - Record source and Memory Bank changes.
+- Updated `memory-bank/edit_history.md` - Add this canonical edit-chunk summary.
+
+#### 14:37:10 IST - T78: Add session tag tools and active-session generation
+- Modified `src/settings-sections/chatDefaults.ts` - Use compact provider profile labels and show the selected provider/model in the setting description.
+- Modified `src/agent/tools.ts` - Define tools to list, add, rename, and remove tags on a saved session.
+- Modified `src/agent/toolRegistry.ts` - Classify the new session-tag tools by read/write risk.
+- Modified `src/agent/ToolExecutor.ts` - Route session-tag tool calls to their handlers.
+- Modified `src/agent/tools/handlers/sessionHandlers.ts` - Persist tag CRUD through the shared session state owner.
+- Modified `src/components/presentational/ActionBar.tsx` - Add the active-session tag generation action to the existing overflow menu.
+- Modified `src/components/ChatToolbar.tsx` - Pass the optional generation callback through the existing toolbar.
+- Modified `src/components/ChatApp.tsx` - Generate and merge active-session tags with the selected provider/model.
+- Modified `memory-bank/tasks/T78.md` - Track implemented controls and the pending bulk-generation authorization.
+- Modified `memory-bank/tasks/T73.md` - Record the updated session-tag capability map.
+- Modified `memory-bank/implementation-details/chat-component-capability-map.md` - Document agent tools, active-session generation, and the Settings bulk-generation hold.
+- Modified `memory-bank/activeContext.md` - Record current branch and implementation state.
+- Modified `memory-bank/session_cache.md` - Record verification and the review block.
+- Modified `memory-bank/sessions/2026-10-23-session-tags-prototype.md` - Append follow-up progress and outstanding scope.
+- Modified `memory-bank/tasks.md` - Refresh the Memory Bank timestamp.
+- Created `memory-bank/edits/2026-10-23/143710-T78-session-tag-tools-and-overflow.md` - Record source and Memory Bank changes.
+- Updated `memory-bank/edit_history.md` - Add this canonical edit-chunk summary.
 
 #### 14:16:08 IST - T78: Implement chat session tags prototype
 - Created `src/lib/sessionTags.ts` - Normalize session tags and request bounded model-generated suggestions.

@@ -1,16 +1,18 @@
 # Active Context
 
-*Last Updated: 2026-10-23 14:19:19 IST*
+*Last Updated: 2026-10-23 14:41:59 IST*
 
 ### 2026-10-23 — T78 chat session tags prototype
 
 - Implemented session tag persistence, manual tag editing/filtering in Chat
-  History, and opt-in tag suggestions using a configured provider profile and
-  model. Suggestions run after the first exchange for sessions created while
-  enabled; existing sessions are excluded.
-- Branch: `feat/session-tags`, based on `3114cb5`. Production build and
-  `git diff --check` pass. Live Obsidian acceptance remains open; no commit or
-  push was requested. See `tasks/T78.md` and the October 23 session record.
+  History, plus opt-in tag suggestions for new sessions. Follow-up adds agent
+  tools to list/add/rename/remove session tags, a compact provider selector,
+  active-session generation in the chat overflow menu, and sequential bulk
+  generation for untagged existing sessions in Settings.
+- Branch: `feat/session-tags`; prototype commit `08e36de` is pushed. The T78
+  follow-up is committed and pushed. Production build and `git diff --check`
+  pass. Live Obsidian acceptance remains open. See `tasks/T78.md` and the
+  October 23 session record.
 
 ### 2026-10-22 — v1.9.1 patch release preparation
 

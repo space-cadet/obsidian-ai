@@ -44,6 +44,7 @@ interface ChatToolbarProps {
 	onToggleAutoApprove: () => void;
 	onToggleAutoName: () => void;
 	onManualRename: () => void;
+	onGenerateTags?: () => void | Promise<void>;
 	onToggleZenMode: () => void;
 	onToggleDebateMode: () => void;
 	onToggleSearch: () => void;
@@ -86,6 +87,7 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 	onToggleAutoApprove,
 	onToggleAutoName,
 	onManualRename,
+	onGenerateTags,
 	onToggleZenMode,
 	onToggleDebateMode,
 	onToggleSearch,
@@ -115,6 +117,7 @@ const ChatToolbar: React.FC<ChatToolbarProps> = ({
 					autoNameSessions={autoNameSessions}
 					onToggleAutoName={onToggleAutoName}
 					onManualRename={onManualRename}
+					onGenerateTags={onGenerateTags}
 					profile={resolvedProfile}
 					selectedProfileIds={selectedProfileIds}
 					resolvedSelectedProfiles={resolvedSelectedProfiles}

@@ -303,7 +303,7 @@ History is sorted by most recently updated. Each item can show title, message co
 
 Session titles can be generated from conversation content and can be renamed manually. Automatic naming is optional; when model-based naming is unavailable or fails, a local title fallback is used.
 
-**Session tags prototype (`feat/session-tags`):** Sessions can have user-added or model-suggested tags. Chat History displays tags, supports adding/removing them, and can filter sessions by tag. The optional auto-tag setting applies only to sessions created while enabled; after the first user/assistant exchange, it sends a bounded excerpt to the selected configured provider profile and model. This prototype is not yet live-accepted; tag suggestions depend on provider availability and response parsing.
+**Session tags prototype (`feat/session-tags`):** Sessions can have user-added or model-suggested tags. Chat History displays tags, supports adding/removing them, and can filter sessions by tag. The optional auto-tag setting applies only to sessions created while enabled; after the first user/assistant exchange, it sends a bounded excerpt to the selected configured provider profile and model. The provider selector uses compact profile names and shows provider/model details in its description. The main chat overflow menu can generate and merge tags for the active session. Agent tools list, add, rename, and remove tags on a specified saved session. Settings can sequentially generate tags for untagged saved sessions, showing progress and skipped/failed results; it sends a bounded excerpt from each eligible session to the selected provider. The user authorized this data transfer on 2026-10-23. This prototype is not yet live-accepted; tag suggestions depend on provider availability and response parsing.
 
 ### 4.3 Search and deep links
 
@@ -431,6 +431,7 @@ The current Obsidian AI built-in chat registry contains 33 capabilities. These n
 | Memory | `evaluate_staged` | Evaluate staged memory changes. |
 | Memory | `cull_core` | Curate/remove core memory entries under the memory policy. |
 | Conversation | `search_past_sessions` | Search saved chat history, excluding the current session, and return navigable references. |
+| Conversation | `list_session_tags`, `add_session_tags`, `rename_session_tag`, `remove_session_tags` | Read and manage tags on a specified saved chat session. |
 | Conversation | `read_tool_result` | Retrieve a previously stored full tool result by its session/call reference when available. |
 | Chat settings | `read_settings` | Read sanitized plugin settings plus the current turn's resolved profile/model/thinking selection when available; global defaults may differ, and this does not confirm effective provider routing. |
 | Chat settings | `update_setting` | Change an allow-listed setting when Developer mode permits it. |

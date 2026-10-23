@@ -18,6 +18,7 @@ interface ActionBarProps {
 	autoNameSessions: boolean;
 	onToggleAutoName: () => void;
 	onManualRename: () => void;
+	onGenerateTags?: () => void | Promise<void>;
 	profile: ProviderProfile;
 	selectedProfileIds: Set<string>;
 	resolvedSelectedProfiles?: ProviderProfile[];
@@ -51,6 +52,7 @@ const ActionBar: React.FC<ActionBarProps> = ({
 	autoNameSessions,
 	onToggleAutoName,
 	onManualRename,
+	onGenerateTags,
 	profile,
 	selectedProfileIds,
 	resolvedSelectedProfiles,
@@ -89,6 +91,14 @@ const ActionBar: React.FC<ActionBarProps> = ({
 				.setChecked(autoNameSessions)
 				.onClick(() => onToggleAutoName()),
 		);
+		if (onGenerateTags) {
+			menu.addItem((item) =>
+				item
+					.setTitle("Generate tags for this session")
+					.setIcon("tags")
+					.onClick(() => void onGenerateTags()),
+			);
+		}
 
 		menu.addSeparator();
 		menu.addItem((item) =>

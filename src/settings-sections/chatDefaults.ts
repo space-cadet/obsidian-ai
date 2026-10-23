@@ -1,7 +1,9 @@
-import { Setting } from "obsidian";
+import { Notice, Setting } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection, createSliderWithValue } from "./helpers";
 import { AgentPromptModal } from "../modals/AgentPromptModal";
+import { generateSessionTags, normalizeSessionTags } from "../lib/sessionTags";
+import { SessionStateOwner } from "../state/SessionStateOwner";
 import {
 	normalizeMaxParallelChatSessions,
 	type ProviderProfile,
@@ -142,23 +144,159 @@ export function renderChatDefaultsSection(
 			? plugin.settings.sessionTaggingProfileId
 			: tagProfiles[0].id;
 		plugin.settings.sessionTaggingProfileId = selectedProfile;
-		new Setting(sectionEl)
+		const tagProfileSetting = new Setting(sectionEl)
 			.setName("Session tag provider and model")
-			.setDesc(
-				"Choose a configured provider profile and its current model for tag suggestions.",
-			)
-			.addDropdown((dropdown) => {
-				for (const profile of tagProfiles) {
-					dropdown.addOption(
-						profile.id,
-						`${profile.name} — ${profile.provider} / ${profile.model}`,
-					);
-				}
-				dropdown.setValue(selectedProfile).onChange(async (value) => {
-					plugin.settings.sessionTaggingProfileId = value;
-					await saveSettings();
-				});
+			.setDesc("");
+		tagProfileSetting.addDropdown((dropdown) => {
+			for (const profile of tagProfiles) {
+				const label = profile.name.trim();
+				dropdown.addOption(
+					profile.id,
+					label.length > 36 ? `${label.slice(0, 33)}…` : label,
+				);
+			}
+			const updateDescription = (profileId: string) => {
+				const profile = tagProfiles.find(
+					(item) => item.id === profileId,
+				);
+				tagProfileSetting.descEl.setText(
+					profile
+						? `${profile.provider} / ${profile.model} · Choose a configured profile for tag suggestions.`
+						: "Choose a configured profile for tag suggestions.",
+				);
+			};
+			dropdown.setValue(selectedProfile);
+			updateDescription(selectedProfile);
+			dropdown.onChange(async (value) => {
+				plugin.settings.sessionTaggingProfileId = value;
+				updateDescription(value);
+				await saveSettings();
 			});
+		});
+
+		const bulkDescription =
+			"Generate tags for saved sessions that do not have tags yet. Existing tags are preserved. A bounded excerpt of each eligible session is sent to the selected provider.";
+		const bulkTagSetting = new Setting(sectionEl)
+			.setName("Generate tags for existing sessions")
+			.setDesc(bulkDescription);
+		bulkTagSetting.addButton((button) =>
+			button.setButtonText("Generate").onClick(async () => {
+				const profile = plugin.settings.providerProfiles.find(
+					(item) =>
+						item.id === plugin.settings.sessionTaggingProfileId,
+				);
+				if (!profile) {
+					new Notice("Choose a session tag provider first.");
+					return;
+				}
+
+				button.setDisabled(true).setButtonText("Generating…");
+				try {
+					const owner = (plugin.sessionState ??=
+						new SessionStateOwner({
+							load: () => plugin.loadChatData(),
+							hydrate: (id) =>
+								plugin.hydrateSession?.(id) ??
+								Promise.resolve([]),
+							peek: (id) =>
+								plugin.peekSessionMessages?.(id) ??
+								Promise.resolve([]),
+							save: (data) => plugin.saveChatData(data),
+						}));
+					const snapshot = await owner.initialize();
+					const candidates = snapshot.sessions.filter(
+						(session) =>
+							(session.messageCount ?? session.messages.length) >
+								0 &&
+							normalizeSessionTags(session.tags).length === 0 &&
+							!session.autoTagPending,
+					);
+					if (candidates.length === 0) {
+						bulkTagSetting.setDesc(
+							`${bulkDescription} No untagged saved sessions were found.`,
+						);
+						new Notice("No untagged saved sessions found.");
+						return;
+					}
+
+					let generated = 0;
+					let failed = 0;
+					let skipped = 0;
+					for (let index = 0; index < candidates.length; index++) {
+						const indexed = candidates[index];
+						bulkTagSetting.setDesc(
+							`${bulkDescription} Processing ${index + 1} of ${candidates.length}…`,
+						);
+						try {
+							const session = await owner.ensureLoaded(
+								indexed.id,
+							);
+							if (!session?.messages.length) {
+								skipped++;
+								continue;
+							}
+							const latest = owner
+								.getSnapshot()
+								.sessions.find(
+									(item) => item.id === session.id,
+								);
+							if (
+								!latest ||
+								normalizeSessionTags(latest.tags).length > 0
+							) {
+								skipped++;
+								continue;
+							}
+							const tags = await generateSessionTags(
+								session.messages,
+								profile,
+								plugin.chatapi,
+							);
+							if (!tags.length) {
+								skipped++;
+								continue;
+							}
+							const current = owner
+								.getSnapshot()
+								.sessions.find(
+									(item) => item.id === session.id,
+								);
+							if (!current) {
+								skipped++;
+								continue;
+							}
+							owner.updateMetadata(session.id, {
+								tags: normalizeSessionTags([
+									...(current.tags ?? []),
+									...tags,
+								]),
+								updatedAt: Date.now(),
+							});
+							generated++;
+						} catch (error) {
+							failed++;
+							plugin.logger?.log(
+								"warn",
+								`[SessionTags] bulk generation failed for ${indexed.id}: ${String(error)}`,
+							);
+						}
+					}
+					await owner.flush();
+					const summary = `${generated} tagged · ${skipped} skipped · ${failed} failed`;
+					bulkTagSetting.setDesc(`${bulkDescription} ${summary}.`);
+					new Notice(`Session tag generation complete: ${summary}.`);
+				} catch (error) {
+					bulkTagSetting.setDesc(
+						`${bulkDescription} Could not complete generation: ${String(error)}`,
+					);
+					new Notice(
+						`Could not generate session tags: ${String(error)}`,
+					);
+				} finally {
+					button.setDisabled(false).setButtonText("Generate");
+				}
+			}),
+		);
 	} else {
 		new Setting(sectionEl)
 			.setName("Session tag provider and model")
