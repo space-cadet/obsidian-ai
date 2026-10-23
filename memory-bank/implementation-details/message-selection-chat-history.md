@@ -1,7 +1,7 @@
 # Message Selection and Chat History Export Design
 
 *Created: 2026-08-14*
-*Last Updated: 2026-08-14 16:42:00 IST*
+*Last Updated: 2026-10-23 15:18:41 IST*
 *Task: T20*
 
 ## Scope
@@ -16,9 +16,11 @@ Selected messages are serialized through the shared `src/utils/exportChat.ts` Ma
 
 ## Chat History actions
 
-`SessionPickerModal` is titled `Chat History`. Each session card retains independent icon actions for loading, copying, renaming, and deleting. Copy Markdown, Copy JSON, and Copy JSONL are grouped under the Copy dropdown. Export Markdown, Export JSON, and Export JSONL are grouped under the Export dropdown. Row action events are isolated from the card load handler.
+`SessionPickerModal` is titled Chat History. Entries use a compact layout with title, metadata, preview, a searchable history input, and the existing tag filter. Tag counts expand to show the labels; Manage tags opens a session-scoped modal with a searchable dropdown of available labels, create-new support, removal, and Remove all tags. Load, copy, export, rename, and delete remain as compact icon actions on each entry. Copy and export retain Markdown, JSON, and JSONL choices. The actions use Obsidian icons and existing modal/button surfaces; action events remain separate from session selection.
 
-The existing export serializers and vault filename collision behavior are reused rather than duplicated. CSS keeps the card metadata and actions in separate responsive regions so narrow windows wrap without garbling labels.
+## Chat History redesign follow-up — 2026-10-23
+
+The selected Option C mockup was implemented after user review. The History list now has search and tag filtering, tag counts that expand inline, a per-session Manage tags modal with a searchable existing-tag dropdown, and inline icon actions for all session operations. Production build and diff checks passed. Automated tests and live Obsidian UI acceptance remain pending.
 
 ## Verification
 
