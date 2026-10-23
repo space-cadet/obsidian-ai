@@ -1,7 +1,7 @@
 # Memory Bank - Obsidian AI
 
 *Created: 2026-08-07 23:23:17 IST*
-*Last Updated: 2026-10-22 16:50:03 IST*
+*Last Updated: 2026-10-23 14:19:19 IST*
 
 ## Overview
 
@@ -66,6 +66,7 @@ This is the Memory Bank for the Sage (灵剑) OpenClaw workspace.
 | T24a | Global Search Scope over Index-Only Sessions | ⏸️ | MEDIUM | 2026-09-19 | T24 | [Details](tasks/T24a.md) |
 | T18a | Bounded Web Page Retrieval Tool | ⏸️ | MEDIUM | 2026-08-25 | T18, T60a, T60c | [Details](tasks/T18a.md) |
 | T50 | OpenAI Responses API / Threads Support | 🔄 | MEDIUM | — | T14 | [Details](tasks/T50.md) |
+| T78 | Chat Session Tags and Automatic Suggestions | 🔄 | HIGH | 2026-10-23 | T24, T9, T15 | [Details](tasks/T78.md) |
 
 ## Completed Tasks
 

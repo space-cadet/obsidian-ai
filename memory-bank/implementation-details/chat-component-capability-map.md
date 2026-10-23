@@ -2,7 +2,7 @@
 
 **Purpose:** a language- and framework-independent specification of the Chat Lab AI chat experience. It describes observable behavior and the services a replacement needs, rather than prescribing an implementation.
 
-**Current-state reference:** 2026-10-21. This map covers the capabilities present in the current chat experience. Optional or host-dependent behavior is labeled as such; planned ideas are not presented as shipped features.
+**Current-state reference:** 2026-10-23. This map covers the capabilities present in the current chat experience. Optional or host-dependent behavior is labeled as such; branch prototypes and unverified ideas are not presented as shipped features.
 
 **How to read it:** user-visible chat behavior is the portable layer. Repository operations are capability-based and may be absent or restricted. Named Obsidian APIs and syntax describe this product's adapter; other repository examples are illustrative, not claims of existing Chat Lab integrations.
 
@@ -302,6 +302,8 @@ These generated mobile mockups expand the primary references with more explicit 
 History is sorted by most recently updated. Each item can show title, message count, updated time, preview, and available usage information. It supports loading, renaming, deleting with confirmation, per-session copy, and per-session export. Supported copy/export formats are Markdown, JSON, and JSONL. Bulk session export is also available. Empty unsent drafts are excluded, and sessions older than the configured retention limit can be pruned.
 
 Session titles can be generated from conversation content and can be renamed manually. Automatic naming is optional; when model-based naming is unavailable or fails, a local title fallback is used.
+
+**Session tags prototype (`feat/session-tags`):** Sessions can have user-added or model-suggested tags. Chat History displays tags, supports adding/removing them, and can filter sessions by tag. The optional auto-tag setting applies only to sessions created while enabled; after the first user/assistant exchange, it sends a bounded excerpt to the selected configured provider profile and model. This prototype is not yet live-accepted; tag suggestions depend on provider availability and response parsing.
 
 ### 4.3 Search and deep links
 

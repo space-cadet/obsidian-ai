@@ -4,6 +4,7 @@ import {
 	getSessionTotalTokens,
 	sessionMessageCount,
 } from "../../lib/sessionUtils";
+import { normalizeSessionTags } from "../../lib/sessionTags";
 import type { ExportFormat } from "./ExportModal";
 
 interface SessionPickerModalProps {
@@ -15,6 +16,7 @@ interface SessionPickerModalProps {
 	onClose: () => void;
 	onCopy?: (session: ChatSession, format: ExportFormat) => void;
 	onExport?: (session: ChatSession, format: ExportFormat) => void;
+	onUpdateTags?: (sessionId: string, tags: string[]) => void;
 }
 
 function formatRelativeTime(timestamp: number): string {
@@ -40,18 +42,47 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 	onClose,
 	onCopy,
 	onExport,
+	onUpdateTags,
 }) => {
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editValue, setEditValue] = useState("");
 	const [deleteCandidate, setDeleteCandidate] = useState<ChatSession | null>(
 		null,
 	);
+	const [selectedTag, setSelectedTag] = useState("");
+	const [editingTagsId, setEditingTagsId] = useState<string | null>(null);
+	const [tagInput, setTagInput] = useState("");
 
 	// Sort by updatedAt descending (newest first)
-	const sorted = sessions
+	const allSorted = sessions
 		// messageCount keeps index-only (unhydrated) sessions visible.
 		.filter((session) => sessionMessageCount(session) > 0)
 		.sort((a, b) => b.updatedAt - a.updatedAt);
+	const tags = [
+		...new Set(allSorted.flatMap((session) => session.tags ?? [])),
+	].sort((a, b) => a.localeCompare(b));
+	const effectiveSelectedTag = tags.some(
+		(tag) => tag.toLocaleLowerCase() === selectedTag.toLocaleLowerCase(),
+	)
+		? selectedTag
+		: "";
+	const sorted = effectiveSelectedTag
+		? allSorted.filter((session) =>
+				session.tags?.some(
+					(tag) =>
+						tag.toLocaleLowerCase() ===
+						effectiveSelectedTag.toLocaleLowerCase(),
+				),
+			)
+		: allSorted;
+
+	const addTag = (session: ChatSession) => {
+		const next = normalizeSessionTags([...(session.tags ?? []), tagInput]);
+		if (next.length !== (session.tags ?? []).length)
+			onUpdateTags?.(session.id, next);
+		setTagInput("");
+		setEditingTagsId(null);
+	};
 
 	const startRename = (session: ChatSession) => {
 		setEditingId(session.id);
@@ -94,12 +125,35 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 					</button>
 				</div>
 				<div className="chat-modal-body">
-					{sorted.length === 0 ? (
+					{allSorted.length > 0 && (
+						<label className="chat-session-tag-filter">
+							<span>Filter by tag</span>
+							<select
+								aria-label="Filter sessions by tag"
+								value={effectiveSelectedTag}
+								onChange={(event) =>
+									setSelectedTag(event.target.value)
+								}
+							>
+								<option value="">All tags</option>
+								{tags.map((tag) => (
+									<option key={tag} value={tag}>
+										{tag}
+									</option>
+								))}
+							</select>
+						</label>
+					)}
+					{allSorted.length === 0 ? (
 						<div className="chat-modal-empty">
 							<p>No saved sessions.</p>
 							<p className="chat-modal-empty-hint">
 								Start a new chat and it will appear here.
 							</p>
+						</div>
+					) : sorted.length === 0 ? (
+						<div className="chat-modal-empty">
+							<p>No sessions use this tag yet.</p>
 						</div>
 					) : (
 						<div className="chat-session-list">
@@ -188,6 +242,90 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 											</div>
 											<div className="chat-session-preview">
 												{preview}
+											</div>
+											<div
+												className="chat-session-tags"
+												aria-label={`Tags for ${displayTitle}`}
+											>
+												{(session.tags ?? []).map(
+													(tag) => (
+														<span
+															className="chat-session-tag"
+															key={tag}
+														>
+															{tag}
+															{onUpdateTags && (
+																<button
+																	type="button"
+																	aria-label={`Remove tag ${tag} from ${displayTitle}`}
+																	onClick={() =>
+																		onUpdateTags(
+																			session.id,
+																			session.tags?.filter(
+																				(
+																					value,
+																				) =>
+																					value !==
+																					tag,
+																			) ??
+																				[],
+																		)
+																	}
+																>
+																	×
+																</button>
+															)}
+														</span>
+													),
+												)}
+												{onUpdateTags &&
+												editingTagsId === session.id ? (
+													<form
+														className="chat-session-tag-editor"
+														onSubmit={(event) => {
+															event.preventDefault();
+															addTag(session);
+														}}
+													>
+														<input
+															aria-label={`Add tag to ${displayTitle}`}
+															value={tagInput}
+															onChange={(event) =>
+																setTagInput(
+																	event.target
+																		.value,
+																)
+															}
+															maxLength={32}
+														/>
+														<button type="submit">
+															Add
+														</button>
+														<button
+															type="button"
+															onClick={() => {
+																setEditingTagsId(
+																	null,
+																);
+																setTagInput("");
+															}}
+														>
+															Cancel
+														</button>
+													</form>
+												) : onUpdateTags ? (
+													<button
+														className="chat-session-add-tag"
+														type="button"
+														onClick={() =>
+															setEditingTagsId(
+																session.id,
+															)
+														}
+													>
+														+ Add tag
+													</button>
+												) : null}
 											</div>
 										</div>
 										<div

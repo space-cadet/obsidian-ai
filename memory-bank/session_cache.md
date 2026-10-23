@@ -1,6 +1,18 @@
 # Session Cache
 
-*Last Updated: 2026-10-22 22:04:24 IST*
+*Last Updated: 2026-10-23 14:19:19 IST*
+
+## 2026-10-23 — T78 chat session tags prototype
+
+- Branch `feat/session-tags` adds durable session tags, tag editing/filtering,
+  and opt-in automatic suggestions through a configured provider/model profile.
+- Automatic requests are guarded per shared session owner to avoid duplicate
+  calls from multiple open chat panes; tag changes update session timestamps
+  for sync detection.
+- Production build and `git diff --check` passed. No tests or live Obsidian
+  checks were run. Live Settings and Chat History acceptance remains pending.
+- Work is uncommitted and local. See `tasks/T78.md` and
+  `sessions/2026-10-23-session-tags-prototype.md`.
 
 ## 2026-10-22 — v1.9.1 patch release preparation
 

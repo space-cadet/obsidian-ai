@@ -16,6 +16,7 @@ interface ChatOverlaysProps {
 	onLoadSession: (sessionId: string) => void;
 	onDeleteSession: (sessionId: string) => void;
 	onRenameSession: (sessionId: string, title: string) => void;
+	onUpdateSessionTags: (sessionId: string, tags: string[]) => void;
 	onCloseSessionPicker: () => void;
 	onCloseExportModal: () => void;
 	onCloseContextPicker: () => void;
@@ -34,6 +35,7 @@ const ChatOverlays: React.FC<ChatOverlaysProps> = ({
 	onLoadSession,
 	onDeleteSession,
 	onRenameSession,
+	onUpdateSessionTags,
 	onCloseSessionPicker,
 	onCloseExportModal,
 	onCloseContextPicker,
@@ -50,6 +52,7 @@ const ChatOverlays: React.FC<ChatOverlaysProps> = ({
 					onLoad={onLoadSession}
 					onDelete={onDeleteSession}
 					onRename={onRenameSession}
+					onUpdateTags={onUpdateSessionTags}
 					onClose={onCloseSessionPicker}
 					onCopy={onCopySession}
 					onExport={onExportSession}

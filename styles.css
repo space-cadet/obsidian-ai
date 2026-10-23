@@ -1686,6 +1686,66 @@
 	gap: 6px;
 }
 
+.chat-session-tag-filter {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0 0 12px;
+	color: var(--text-muted);
+	font-size: 0.9em;
+}
+
+.chat-session-tag-filter select,
+.chat-session-tag-editor input,
+.chat-session-tag-editor button,
+.chat-session-add-tag {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background: var(--background-primary);
+	color: var(--text-normal);
+	padding: 4px 8px;
+}
+
+.chat-session-tags {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 7px;
+}
+
+.chat-session-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	max-width: 100%;
+	border-radius: 999px;
+	padding: 2px 8px;
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	font-size: 0.78em;
+}
+
+.chat-session-tag button {
+	border: 0;
+	padding: 0 2px;
+	background: transparent;
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.chat-session-tag-editor {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+.chat-session-add-tag {
+	border-style: dashed;
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
 .chat-session-item {
 	display: flex;
 	flex-direction: column;

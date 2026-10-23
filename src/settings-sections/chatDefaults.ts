@@ -2,7 +2,29 @@ import { Setting } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection, createSliderWithValue } from "./helpers";
 import { AgentPromptModal } from "../modals/AgentPromptModal";
-import { normalizeMaxParallelChatSessions } from "../settings";
+import {
+	normalizeMaxParallelChatSessions,
+	type ProviderProfile,
+} from "../settings";
+
+function canUseProfileForTagging(profile: ProviderProfile): boolean {
+	switch (profile.provider) {
+		case "ollama":
+			return true;
+		case "codex":
+			return true;
+		case "agent":
+			return Boolean(profile.endpointUrl?.trim());
+		case "custom":
+			return Boolean(profile.customURL?.trim());
+		case "azure":
+			return Boolean(
+				profile.apiKey?.trim() && profile.azureEndpoint?.trim(),
+			);
+		default:
+			return Boolean(profile.apiKey?.trim());
+	}
+}
 
 export function renderChatDefaultsSection(
 	containerEl: HTMLElement,
@@ -93,6 +115,57 @@ export function renderChatDefaultsSection(
 					await saveSettings();
 				});
 		});
+
+	const tagProfiles = plugin.settings.providerProfiles.filter(
+		canUseProfileForTagging,
+	);
+	new Setting(sectionEl)
+		.setName("Auto-generate session tags")
+		.setDesc(
+			"Suggest up to 5 tags after the first exchange in each new session. A short excerpt of that chat is sent to the selected provider. Existing sessions are not tagged automatically.",
+		)
+		.addToggle((toggle) => {
+			toggle
+				.setValue(plugin.settings.autoTagSessions)
+				.onChange(async (value) => {
+					plugin.settings.autoTagSessions = value;
+					await saveSettings();
+				});
+			(toggle.toggleEl as HTMLInputElement).disabled =
+				tagProfiles.length === 0;
+		});
+
+	if (tagProfiles.length > 0) {
+		const selectedProfile = tagProfiles.some(
+			(profile) => profile.id === plugin.settings.sessionTaggingProfileId,
+		)
+			? plugin.settings.sessionTaggingProfileId
+			: tagProfiles[0].id;
+		plugin.settings.sessionTaggingProfileId = selectedProfile;
+		new Setting(sectionEl)
+			.setName("Session tag provider and model")
+			.setDesc(
+				"Choose a configured provider profile and its current model for tag suggestions.",
+			)
+			.addDropdown((dropdown) => {
+				for (const profile of tagProfiles) {
+					dropdown.addOption(
+						profile.id,
+						`${profile.name} — ${profile.provider} / ${profile.model}`,
+					);
+				}
+				dropdown.setValue(selectedProfile).onChange(async (value) => {
+					plugin.settings.sessionTaggingProfileId = value;
+					await saveSettings();
+				});
+			});
+	} else {
+		new Setting(sectionEl)
+			.setName("Session tag provider and model")
+			.setDesc(
+				"Configure a provider profile in Provider Profiles to enable automatic tag suggestions.",
+			);
+	}
 
 	new Setting(sectionEl)
 		.setName("Chat tab title width")

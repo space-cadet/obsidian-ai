@@ -1282,6 +1282,12 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				onLoadSession={handleLoadSession}
 				onDeleteSession={handleDeleteSession}
 				onRenameSession={handleRenameSession}
+				onUpdateSessionTags={(sessionId, tags) =>
+					updateSessionMetadata(sessionId, {
+						tags,
+						updatedAt: Date.now(),
+					})
+				}
 				onCloseSessionPicker={() => ui.setShowSessionPicker(false)}
 				onCloseExportModal={() => ui.setShowExportModal(false)}
 				onCloseContextPicker={() => ui.setShowContextPicker(false)}

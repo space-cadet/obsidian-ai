@@ -164,6 +164,10 @@ export interface ObsidianAISettings {
 	/** Maximum number of chat sessions allowed to generate at the same time. */
 	maxParallelChatSessions: number;
 	autoNameSessions: boolean;
+	/** Automatically suggest tags for sessions created while this is enabled. */
+	autoTagSessions: boolean;
+	/** Provider profile used for automatic session tagging. */
+	sessionTaggingProfileId: string;
 	debugLogLevel: "off" | "error" | "info" | "debug";
 	debugLogRetention: number;
 	debugLogMaxSizeMB: number;
@@ -415,6 +419,8 @@ export const DEFAULT_SETTINGS: ObsidianAISettings = {
 	maxSavedConversations: 20,
 	maxParallelChatSessions: DEFAULT_MAX_PARALLEL_CHAT_SESSIONS,
 	autoNameSessions: false,
+	autoTagSessions: false,
+	sessionTaggingProfileId: DEFAULT_PROFILE_ID,
 	chatStorageFormat: "legacy",
 	maxSessionsInSidebar: 50,
 	sessionBackupCount: 3,
@@ -580,6 +586,12 @@ export const normalizeSettings = (
 			merged.maxParallelChatSessions,
 		),
 		autoNameSessions: Boolean(merged.autoNameSessions),
+		autoTagSessions: Boolean(merged.autoTagSessions ?? false),
+		sessionTaggingProfileId: providerProfiles.some(
+			(profile) => profile.id === merged.sessionTaggingProfileId,
+		)
+			? (merged.sessionTaggingProfileId as string)
+			: activeProviderProfileId,
 		chatStorageFormat:
 			(merged.chatStorageFormat as "legacy" | "jsonl") ?? "legacy",
 		maxSessionsInSidebar: merged.maxSessionsInSidebar ?? 50,
