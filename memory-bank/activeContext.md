@@ -1,11 +1,12 @@
 # Active Context
 
-*Last Updated: 2026-10-23 15:42:13 IST*
+*Last Updated: 2026-10-23 16:23:43 IST*
 
 ### 2026-10-23 — T78 Chat History redesign
 
-- Implemented the approved compact History layout with session search, an in-app tag filter with per-tag session counts, expandable tag counts, and a per-session tag manager. Its suggestions appear only while the add-tag field is focused, support keyboard selection, and stay in the modal flow. Load, copy, export, rename, and delete use inline Obsidian icons; copy/export retain format choices.
+- Implemented the approved compact History layout with session search, an in-app tag filter with per-tag session counts, expandable tag counts, and a per-session tag manager. The tag picker opens while its Add tag or available-tag search input is focused, supports keyboard selection, and stays in the modal flow. Load, copy, export, rename, and delete use inline Obsidian icons; copy/export retain format choices.
 - Prettier, production build, and diff checks pass. The implementation is on `feat/session-tags`; automated tests and live Obsidian review were not run.
+- Follow-up: the Manage tags picker now has a separate available-tag search, a scrollable full list, and History-style rows with session counts. Formatting and production build pass; live Obsidian acceptance remains open.
 - See tasks/T78.md, implementation-details/message-selection-chat-history.md, and sessions/2026-10-23-session-tags-prototype.md.
 
 ### 2026-10-23 — T78 chat session tags prototype

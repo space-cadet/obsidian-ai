@@ -1,6 +1,6 @@
 # Session 2026-10-23 - Chat Session Tags Prototype
 *Created: 2026-10-23 14:16:08 IST*
-*Last Updated: 2026-10-23 15:42:13 IST*
+*Last Updated: 2026-10-23 16:23:43 IST*
 
 ## Focus Task
 T78: Chat Session Tags and Automatic Suggestions
@@ -12,7 +12,7 @@ T78: Chat Session Tags and Automatic Suggestions
 **Status**: 🔄 ACTIVE
 **Priority**: HIGH
 **Started**: 2026-10-23 14:16:08 IST
-**Last**: 2026-10-23 14:41:59 IST
+**Last**: 2026-10-23 16:23:43 IST
 
 **Progress**:
 1. ✅ Created branch `feat/session-tags` in an isolated worktree.
@@ -31,10 +31,12 @@ T78: Chat Session Tags and Automatic Suggestions
     tag filtering.
 12. ✅ Added the searchable session tag manager and inline Obsidian icon
     actions for load, copy, export, rename, and delete.
-13. ✅ Refined the manager with focus-only suggestions, keyboard selection, a
+13. ✅ Refined the manager with a focus-only picker, keyboard selection, a
     denser tag layout, and an in-flow options list that leaves the footer clear.
 14. ✅ Replaced the native All tags picker with a compact in-app menu showing
     per-tag session counts and supporting keyboard selection.
+15. ✅ Added available-tag search, a scrollable full result list, and
+    History-style tag rows with session counts to Manage tags.
 
 ## Session Summary
 
@@ -111,7 +113,9 @@ map, session record, and canonical edit chunk were updated.
 
 **Design approval**: The user selected Option C, approved the tag manager modal with a searchable available-tag dropdown, and requested compact, improved icons for the per-entry session actions.
 
-**Implementation**: History entries support title/preview/tag search, tag filtering, expandable tag counts, and a session-scoped Manage tags modal. The All tags filter is now a compact in-app list with per-tag session counts and keyboard selection. The manager dropdown opens only while the add-tag input is focused, supports keyboard selection, and remains in the modal's scrollable content so it does not cover the footer. Existing labels can be reused, new labels can be created, and current labels can be removed individually or all at once. Load, copy, export, rename, and delete appear inline as compact Obsidian icon buttons; copy/export retain their Markdown, JSON, and JSONL choices.
+**Implementation**: History entries support title/preview/tag search, tag filtering, expandable tag counts, and a session-scoped Manage tags modal. The All tags filter is now a compact in-app list with per-tag session counts and keyboard selection. The manager picker opens while either its Add tag or available-tag search input is focused, supports keyboard selection, and remains in the modal's scrollable content so it does not cover the footer. Existing labels can be reused, new labels can be created, and current labels can be removed individually or all at once. Load, copy, export, rename, and delete appear inline as compact Obsidian icon buttons; copy/export retain their Markdown, JSON, and JSONL choices.
+
+**Manage tags picker follow-up**: The Add tag field now creates a new label, while a separate search field filters available labels. The full available list scrolls inside the modal and uses History-style tag rows with per-label session counts. The picker appears while either input is focused. Formatting, production build, and `git diff --check` passed; automated tests and live Obsidian review were not run.
 
 **Source state**: The Chat History polish is implemented on `feat/session-tags`. Prettier, production build, and git diff checks passed. No automated tests or live Obsidian review were run.
 

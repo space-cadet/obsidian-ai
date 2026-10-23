@@ -23,6 +23,7 @@ interface SessionPickerModalProps {
 interface SessionTagManagerProps {
 	session: ChatSession;
 	availableTags: string[];
+	availableTagCounts: Map<string, number>;
 	onUpdateTags: (sessionId: string, tags: string[]) => void;
 	onClose: () => void;
 }
@@ -62,12 +63,17 @@ function getSessionTitle(session: ChatSession): string {
 function SessionTagManagerModal({
 	session,
 	availableTags,
+	availableTagCounts,
 	onUpdateTags,
 	onClose,
 }: SessionTagManagerProps) {
-	const [query, setQuery] = useState("");
+	const [newTagQuery, setNewTagQuery] = useState("");
+	const [availableTagQuery, setAvailableTagQuery] = useState("");
 	const [isOpen, setIsOpen] = useState(false);
 	const [activeOptionIndex, setActiveOptionIndex] = useState(-1);
+	const newTagInputRef = useRef<HTMLInputElement>(null);
+	const availableTagSearchRef = useRef<HTMLInputElement>(null);
+	const activeOptionRef = useRef<HTMLButtonElement>(null);
 	const currentTags = normalizeSessionTags(session.tags ?? []);
 	const currentTagKeys = new Set(
 		currentTags.map((tag) => tag.toLocaleLowerCase()),
@@ -75,61 +81,88 @@ function SessionTagManagerModal({
 	const allTagKeys = new Set(
 		availableTags.map((tag) => tag.toLocaleLowerCase()),
 	);
-	const normalizedQuery = query.trim();
+	const normalizedNewTag = newTagQuery.trim();
+	const normalizedAvailableTagQuery = availableTagQuery
+		.trim()
+		.toLocaleLowerCase();
 	const matchingTags = availableTags
 		.filter((tag) => !currentTagKeys.has(tag.toLocaleLowerCase()))
 		.filter(
 			(tag) =>
-				!normalizedQuery ||
-				tag
-					.toLocaleLowerCase()
-					.includes(normalizedQuery.toLocaleLowerCase()),
-		)
-		.slice(0, 20);
+				!normalizedAvailableTagQuery ||
+				tag.toLocaleLowerCase().includes(normalizedAvailableTagQuery),
+		);
 	const canCreateTag =
-		normalizedQuery.length > 0 &&
-		!allTagKeys.has(normalizedQuery.toLocaleLowerCase());
+		normalizedNewTag.length > 0 &&
+		!allTagKeys.has(normalizedNewTag.toLocaleLowerCase());
 	const options: TagOption[] = [
 		...matchingTags.map((value) => ({ kind: "existing" as const, value })),
 		...(canCreateTag
-			? [{ kind: "create" as const, value: normalizedQuery }]
+			? [{ kind: "create" as const, value: normalizedNewTag }]
 			: []),
 	];
 	const title = getSessionTitle(session);
+	useEffect(() => {
+		if (isOpen)
+			activeOptionRef.current?.scrollIntoView({ block: "nearest" });
+	}, [activeOptionIndex, isOpen]);
 
 	const chooseTag = (tag: string) => {
 		const nextTags = normalizeSessionTags([...currentTags, tag]);
 		if (nextTags.length !== currentTags.length) {
 			onUpdateTags(session.id, nextTags);
 		}
-		setQuery("");
+		setNewTagQuery("");
+		setAvailableTagQuery("");
 		setActiveOptionIndex(-1);
 		setIsOpen(true);
 	};
 
-	const handleInputKeyDown = (
+	const handleNewTagKeyDown = (
+		event: React.KeyboardEvent<HTMLInputElement>,
+	) => {
+		if (event.key === "ArrowDown") {
+			event.preventDefault();
+			setIsOpen(true);
+			availableTagSearchRef.current?.focus();
+		} else if (event.key === "Enter" && normalizedNewTag.length > 0) {
+			event.preventDefault();
+			chooseTag(normalizedNewTag);
+		} else if (event.key === "Escape" && isOpen) {
+			event.preventDefault();
+			event.currentTarget.blur();
+		}
+	};
+
+	const handleAvailableTagSearchKeyDown = (
 		event: React.KeyboardEvent<HTMLInputElement>,
 	) => {
 		if (event.key === "ArrowDown" && options.length > 0) {
 			event.preventDefault();
-			setIsOpen(true);
 			setActiveOptionIndex((index) =>
 				index < 0 ? 0 : (index + 1) % options.length,
 			);
 		} else if (event.key === "ArrowUp" && options.length > 0) {
 			event.preventDefault();
-			setIsOpen(true);
-			setActiveOptionIndex((index) =>
-				index < 0
-					? options.length - 1
-					: (index - 1 + options.length) % options.length,
+			if (activeOptionIndex <= 0) {
+				setActiveOptionIndex(-1);
+				newTagInputRef.current?.focus();
+				return;
+			}
+			setActiveOptionIndex(
+				(index) => (index - 1 + options.length) % options.length,
 			);
 		} else if (event.key === "Enter" && isOpen && options.length > 0) {
 			event.preventDefault();
 			chooseTag(options[activeOptionIndex]?.value ?? options[0].value);
 		} else if (event.key === "Escape" && isOpen) {
 			event.preventDefault();
-			setIsOpen(false);
+			if (availableTagQuery) {
+				setAvailableTagQuery("");
+				setActiveOptionIndex(-1);
+			} else {
+				event.currentTarget.blur();
+			}
 		}
 	};
 
@@ -198,99 +231,152 @@ function SessionTagManagerModal({
 							</p>
 						)}
 					</section>
-					<section className="chat-session-tag-manager-section">
+					<section
+						className="chat-session-tag-manager-section"
+						onFocusCapture={() => setIsOpen(true)}
+						onBlur={(event) => {
+							if (
+								!event.currentTarget.contains(
+									event.relatedTarget as Node | null,
+								)
+							) {
+								setIsOpen(false);
+							}
+						}}
+					>
 						<label
 							className="chat-session-tag-manager-label"
-							htmlFor="chat-session-tag-search"
+							htmlFor="chat-session-tag-new-input"
 						>
 							Add tag
 						</label>
 						<div className="chat-session-tag-search">
-							<ObsidianIcon icon="search" size={16} />
+							<ObsidianIcon icon="plus" size={16} />
 							<input
-								id="chat-session-tag-search"
-								role="combobox"
-								aria-autocomplete="list"
-								aria-expanded={isOpen}
-								aria-controls={
-									isOpen
-										? "chat-session-tag-options"
-										: undefined
-								}
-								aria-activedescendant={
-									isOpen &&
-									options.length > 0 &&
-									activeOptionIndex >= 0
-										? "chat-session-tag-option-" +
-											activeOptionIndex
-										: undefined
-								}
+								ref={newTagInputRef}
+								id="chat-session-tag-new-input"
 								autoComplete="off"
-								placeholder="Search or add a tag…"
-								value={query}
-								onFocus={() => setIsOpen(true)}
-								onBlur={() => setIsOpen(false)}
+								placeholder="Enter a new tag…"
+								value={newTagQuery}
 								onChange={(event) => {
-									setQuery(event.target.value);
+									setNewTagQuery(event.target.value);
 									setActiveOptionIndex(-1);
 									setIsOpen(true);
 								}}
-								onKeyDown={handleInputKeyDown}
+								onKeyDown={handleNewTagKeyDown}
 							/>
 						</div>
 						{isOpen && (
-							<div
-								className="chat-session-tag-options"
-								id="chat-session-tag-options"
-								role="listbox"
-								aria-label="Available tags"
-							>
-								{options.map((option, index) => (
-									<button
-										type="button"
-										role="option"
-										tabIndex={-1}
-										aria-selected={
-											index === activeOptionIndex
+							<div className="chat-session-tag-picker">
+								<div className="chat-session-tag-search chat-session-tag-picker-search">
+									<ObsidianIcon icon="search" size={15} />
+									<input
+										ref={availableTagSearchRef}
+										id="chat-session-tag-available-search"
+										role="combobox"
+										aria-label="Search available tags"
+										aria-autocomplete="list"
+										aria-expanded={isOpen}
+										aria-controls="chat-session-tag-options"
+										aria-activedescendant={
+											options.length > 0 &&
+											activeOptionIndex >= 0
+												? "chat-session-tag-option-" +
+													activeOptionIndex
+												: undefined
 										}
-										id={"chat-session-tag-option-" + index}
-										className={
-											"chat-session-tag-option" +
-											(index === activeOptionIndex
-												? " is-active"
-												: "")
+										autoComplete="off"
+										placeholder="Search available tags…"
+										value={availableTagQuery}
+										onChange={(event) => {
+											setAvailableTagQuery(
+												event.target.value,
+											);
+											setActiveOptionIndex(-1);
+										}}
+										onKeyDown={
+											handleAvailableTagSearchKeyDown
 										}
-										key={option.kind + "-" + option.value}
-										onPointerDown={(event) =>
-											event.preventDefault()
-										}
-										onMouseEnter={() =>
-											setActiveOptionIndex(index)
-										}
-										onClick={() => chooseTag(option.value)}
-									>
-										<ObsidianIcon
-											icon={
-												option.kind === "create"
-													? "plus"
-													: "tag"
+									/>
+								</div>
+								<div
+									className="chat-session-tag-options"
+									id="chat-session-tag-options"
+									role="listbox"
+									aria-label="Available tags"
+								>
+									{options.map((option, index) => (
+										<button
+											ref={
+												index === activeOptionIndex
+													? activeOptionRef
+													: undefined
 											}
-											size={15}
-										/>
-										<span>
-											{option.kind === "create"
-												? "Create “" +
-													option.value +
-													"”"
-												: option.value}
-										</span>
-									</button>
-								))}
-								{options.length === 0 && (
-									<div className="chat-session-tag-no-options">
-										No matching tags
-									</div>
-								)}
+											type="button"
+											role="option"
+											tabIndex={-1}
+											aria-selected={
+												index === activeOptionIndex
+											}
+											id={
+												"chat-session-tag-option-" +
+												index
+											}
+											className={
+												"chat-session-tag-option" +
+												(index === activeOptionIndex
+													? " is-active"
+													: "")
+											}
+											key={
+												option.kind + "-" + option.value
+											}
+											onPointerDown={(event) =>
+												event.preventDefault()
+											}
+											onMouseEnter={() =>
+												setActiveOptionIndex(index)
+											}
+											onClick={() =>
+												chooseTag(option.value)
+											}
+										>
+											<ObsidianIcon
+												icon={
+													option.kind === "create"
+														? "plus"
+														: "tag"
+												}
+												size={15}
+											/>
+											<span className="chat-session-tag-option-label">
+												{option.kind === "create"
+													? "Create “" +
+														option.value +
+														"”"
+													: option.value}
+											</span>
+											{option.kind === "existing" && (
+												<span className="chat-session-tag-option-count">
+													{availableTagCounts.get(
+														option.value.toLocaleLowerCase(),
+													) ?? 0}
+												</span>
+											)}
+											{option.kind === "existing" && (
+												<ObsidianIcon
+													icon="plus"
+													size={14}
+												/>
+											)}
+										</button>
+									))}
+									{options.length === 0 && (
+										<div className="chat-session-tag-no-options">
+											No matching tags
+										</div>
+									)}
+								</div>
 							</div>
 						)}
 					</section>
@@ -997,6 +1083,7 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 				<SessionTagManagerModal
 					session={currentTagManagerSession}
 					availableTags={tags}
+					availableTagCounts={tagSessionCounts}
 					onUpdateTags={onUpdateTags}
 					onClose={() => setTagManagerSession(null)}
 				/>
