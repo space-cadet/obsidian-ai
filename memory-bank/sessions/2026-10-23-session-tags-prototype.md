@@ -109,7 +109,7 @@ map, session record, and canonical edit chunk were updated.
 
 **Implementation**: History entries now support title/preview/tag search, tag filtering, expandable tag counts, and a session-scoped Manage tags modal. The tag dropdown supports existing labels and creating a new label. Load, copy, export, rename, and delete appear inline as compact Obsidian icon buttons; copy/export retain their Markdown, JSON, and JSONL choices.
 
-**Source state**: Changes are on feat/session-tags after source commit 9db6d1bc7625209c1e674ce8f10b0d39e8a9f9dd. Prettier, production build, and git diff checks passed. No automated tests or live Obsidian review were run. The changes are uncommitted and unpushed.
+**Source state**: Chat History redesign commit `8f3c23f84bb5d1ed0157b330b33dbb171cc211b6` is pushed to `origin/feat/session-tags`. Prettier, production build, and git diff checks passed. No automated tests or live Obsidian review were run.
 
 ## Session Outcome
 
