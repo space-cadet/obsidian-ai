@@ -1,6 +1,6 @@
 # Session Cache
 
-*Last Updated: 2026-10-23 16:23:43 IST*
+*Last Updated: 2026-10-23 16:57:59 IST*
 
 ## 2026-10-23 — T78 Chat History redesign
 
@@ -8,6 +8,9 @@
 - Prettier, production build, and diff checks passed. The work is on `feat/session-tags`; automated tests and live Obsidian acceptance were not run.
 - The ignored SQLite Memory Bank is stale through 2026-09-18, so its database-backed edit-history generator was not run. See the new canonical edit chunk and T78 session record.
 - The Manage tags picker now separates new-tag entry from existing-tag search, shows the full scrollable list in History-style rows with session counts, and opens from input focus. Formatting and production build pass; automated tests and live Obsidian acceptance remain unrun.
+- Added `implementation-details/session-tags.md` as the detailed T78 reference for storage, normalization, provider request bounds, generation flows, agent tools, and History UI. Session tags do not currently map to Obsidian note tags or frontmatter.
+- The user reports unspecified remaining issues; concrete symptoms and reproduction steps are still needed. Live Obsidian acceptance remains open. This documentation closeout did not refresh the generated edit-history view because no safe generator is available for the text-authoritative Memory Bank.
+- Cross-referenced T20's completed History/export task and T73's active capability-map task to the T78 work and detailed implementation reference. Neither task status changed.
 
 ## 2026-10-23 — T78 chat session tags prototype
 

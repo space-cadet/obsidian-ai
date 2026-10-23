@@ -1,6 +1,6 @@
 # Session 2026-10-23 - Chat Session Tags Prototype
 *Created: 2026-10-23 14:16:08 IST*
-*Last Updated: 2026-10-23 16:23:43 IST*
+*Last Updated: 2026-10-23 16:57:59 IST*
 
 ## Focus Task
 T78: Chat Session Tags and Automatic Suggestions
@@ -68,8 +68,11 @@ overflow menu, and sequential Settings bulk generation for untagged sessions.
 `origin/feat/session-tags`. T78 follow-up is committed and pushed. Production
 build passes.
 
-**Documentation Status**: T78, active context, session cache, T73 capability
-map, session record, and canonical edit chunk were updated.
+**Documentation Status**: Added the durable implementation reference at
+`implementation-details/session-tags.md`. T78 owns the feature; T73 links the
+capability map to the detailed record, and T20 points to the later History
+redesign while retaining its completed status. Active context, session cache,
+and canonical edit chunks record acceptance status.
 
 **Key Decisions Made**:
 - Tag suggestions are opt-in and disclose that a short chat excerpt is sent to
@@ -92,11 +95,13 @@ map, session record, and canonical edit chunk were updated.
 
 **Task Files Updated** (session):
 - `memory-bank/tasks.md`
+- `memory-bank/tasks/T20.md`
 - `memory-bank/tasks/T73.md`
 - `memory-bank/tasks/T78.md`
 
 **Implementation Docs Updated** (session):
 - `memory-bank/implementation-details/chat-component-capability-map.md`
+- `memory-bank/implementation-details/session-tags.md` (detailed implementation reference)
 
 ## Session Notes
 - Production bundle and TypeScript compilation passed through `pnpm run build`.
@@ -119,6 +124,12 @@ map, session record, and canonical edit chunk were updated.
 
 **Source state**: The Chat History polish is implemented on `feat/session-tags`. Prettier, production build, and git diff checks passed. No automated tests or live Obsidian review were run.
 
+**Follow-up status**: The user said issues remain but did not provide symptoms
+or reproduction steps. Keep the report open until concrete failures are
+available. The current prototype's labels remain chat-session metadata and do
+not integrate with Obsidian note tags or frontmatter.
+
 ## Session Outcome
 
-**Status**: 🔄 IMPLEMENTATION COMPLETE; LIVE ACCEPTANCE PENDING
+**Status**: 🔄 IMPLEMENTATION AND DOCUMENTATION COMPLETE; LIVE ACCEPTANCE AND
+UNSPECIFIED ISSUE FOLLOW-UP PENDING
