@@ -406,12 +406,34 @@
 }
 
 @media (max-width: 760px) {
+	.obsidian-ai-settings {
+		padding-inline: 6px;
+	}
+
+	.modal.mod-settings .vertical-tab-content.obsidian-ai-settings,
+	.modal.mod-settings .setting-tab-content.obsidian-ai-settings {
+		padding-inline: 6px !important;
+	}
+
+	.obsidian-ai-settings-section {
+		margin-bottom: 12px;
+		padding: 14px 12px;
+		border-left-width: 3px;
+		box-shadow: none;
+	}
+
 	.obsidian-ai-settings-section .setting-item {
 		display: block;
+		margin: 0;
+		padding: 12px 0;
+		border-top: 1px solid var(--background-modifier-border);
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
 	}
 
 	.obsidian-ai-settings-section .setting-item-control {
-		margin-top: 10px;
+		margin-top: 8px;
 	}
 }
 
@@ -643,12 +665,12 @@
 
 @media (max-width: 420px) {
 	.obsidian-ai-settings {
-		padding-inline: 8px;
+		padding-inline: 4px;
 	}
 
 	.modal.mod-settings .vertical-tab-content.obsidian-ai-settings,
 	.modal.mod-settings .setting-tab-content.obsidian-ai-settings {
-		padding-inline: 8px !important;
+		padding-inline: 4px !important;
 	}
 
 	.obsidian-ai-settings-metrics {
@@ -2214,22 +2236,22 @@
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.chat-session-tag-picker-search {
-	min-height: 36px;
-	margin-bottom: 4px;
-	padding: 0 8px;
-	border-color: transparent;
-	background: var(--background-secondary);
-}
-
-.chat-session-tag-picker-search:focus-within {
-	border-color: var(--interactive-accent);
-	outline-offset: 0;
+.chat-session-tag-picker-result-count {
+	flex: 0 0 auto;
+	min-width: 1.5em;
+	padding: 1px 6px;
+	border-radius: 999px;
+	background: var(--background-primary);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	text-align: center;
 }
 
 .chat-session-tag-options {
-	max-height: min(220px, 32vh);
+	max-height: min(360px, 45vh);
 	overflow-y: auto;
+	overscroll-behavior-y: contain;
+	-webkit-overflow-scrolling: touch;
 	display: flex;
 	flex-direction: column;
 	gap: 4px;

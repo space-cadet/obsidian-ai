@@ -41,6 +41,7 @@ export async function generateSessionTags(
 	messages: ChatMessage[],
 	profile: ProviderProfile,
 	chatApi: ChatApiManager,
+	signal?: AbortSignal,
 ): Promise<string[]> {
 	const context = messages
 		.filter(
@@ -61,6 +62,7 @@ export async function generateSessionTags(
 		"Suggest up to 5 short, useful tags for this chat session. Use specific topics, projects, or task types. Return only a JSON array of strings, with no markdown or explanation.",
 		`Chat excerpt:\n${context}\n\nTags:`,
 		profile,
+		signal,
 	);
 	return parseSuggestedTags(response);
 }

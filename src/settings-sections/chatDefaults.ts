@@ -2,6 +2,7 @@ import { Notice, Setting } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection, createSliderWithValue } from "./helpers";
 import { AgentPromptModal } from "../modals/AgentPromptModal";
+import { SyncProgressModal } from "../modals/SyncProgressModal";
 import { generateSessionTags, normalizeSessionTags } from "../lib/sessionTags";
 import { SessionStateOwner } from "../state/SessionStateOwner";
 import {
@@ -190,7 +191,25 @@ export function renderChatDefaultsSection(
 					return;
 				}
 
+				const abortController = new AbortController();
+				const progressModal = new SyncProgressModal(plugin.app, 0, {
+					title: "Generating session tags",
+					initialStatus: "Preparing saved sessions…",
+					initialCurrentFile: "Loading the session index…",
+					initialSummary: "0 tagged · 0 skipped · 0 failed",
+					showBackgroundButton: false,
+					closeCancelsOnProgress: true,
+					onCancel: () => abortController.abort(),
+				});
+				progressModal.open();
 				button.setDisabled(true).setButtonText("Generating…");
+				let generated = 0;
+				let failed = 0;
+				let skipped = 0;
+				let completed = 0;
+				let total = 0;
+				const formatSummary = () =>
+					`${generated} tagged · ${skipped} skipped · ${failed} failed`;
 				try {
 					const owner = (plugin.sessionState ??=
 						new SessionStateOwner({
@@ -204,6 +223,14 @@ export function renderChatDefaultsSection(
 							save: (data) => plugin.saveChatData(data),
 						}));
 					const snapshot = await owner.initialize();
+					if (abortController.signal.aborted) {
+						progressModal.finishWithSummary(
+							"Tag generation cancelled",
+							"Cancelled before any sessions were processed.",
+							formatSummary(),
+						);
+						return;
+					}
 					const candidates = snapshot.sessions.filter(
 						(session) =>
 							(session.messageCount ?? session.messages.length) >
@@ -211,81 +238,162 @@ export function renderChatDefaultsSection(
 							normalizeSessionTags(session.tags).length === 0 &&
 							!session.autoTagPending,
 					);
+					total = candidates.length;
+					progressModal.setTotal(total);
 					if (candidates.length === 0) {
 						bulkTagSetting.setDesc(
 							`${bulkDescription} No untagged saved sessions were found.`,
+						);
+						progressModal.finishWithSummary(
+							"No sessions to tag",
+							"No untagged saved sessions were found.",
+							formatSummary(),
 						);
 						new Notice("No untagged saved sessions found.");
 						return;
 					}
 
-					let generated = 0;
-					let failed = 0;
-					let skipped = 0;
+					progressModal.updateStatus(
+						`Found ${total} session${total === 1 ? "" : "s"} to tag.`,
+					);
+					progressModal.addLog(
+						"system",
+						`Found ${total} eligible session${total === 1 ? "" : "s"}.`,
+					);
 					for (let index = 0; index < candidates.length; index++) {
+						if (abortController.signal.aborted) break;
 						const indexed = candidates[index];
-						bulkTagSetting.setDesc(
-							`${bulkDescription} Processing ${index + 1} of ${candidates.length}…`,
+						const sessionTitle =
+							indexed.title.trim() || "Untitled session";
+						progressModal.updateStatus(
+							`Processing session ${index + 1} of ${total}…`,
 						);
+						progressModal.updateCurrentFile(sessionTitle);
+						let logIcon = "system";
+						let logText = "";
+						let isError = false;
 						try {
 							const session = await owner.ensureLoaded(
 								indexed.id,
 							);
+							if (abortController.signal.aborted) break;
 							if (!session?.messages.length) {
 								skipped++;
-								continue;
+								logIcon = "skip";
+								logText = `${sessionTitle}: no messages available`;
+							} else {
+								const latest = owner
+									.getSnapshot()
+									.sessions.find(
+										(item) => item.id === session.id,
+									);
+								if (
+									!latest ||
+									normalizeSessionTags(latest.tags).length > 0
+								) {
+									skipped++;
+									logIcon = "skip";
+									logText = `${sessionTitle}: already tagged or unavailable`;
+								} else {
+									const tags = await generateSessionTags(
+										session.messages,
+										profile,
+										plugin.chatapi,
+										abortController.signal,
+									);
+									if (abortController.signal.aborted) break;
+									if (!tags.length) {
+										skipped++;
+										logIcon = "skip";
+										logText = `${sessionTitle}: no tags suggested`;
+									} else {
+										const current = owner
+											.getSnapshot()
+											.sessions.find(
+												(item) =>
+													item.id === session.id,
+											);
+										if (!current) {
+											skipped++;
+											logIcon = "skip";
+											logText = `${sessionTitle}: session removed`;
+										} else {
+											owner.updateMetadata(session.id, {
+												tags: normalizeSessionTags([
+													...(current.tags ?? []),
+													...tags,
+												]),
+												updatedAt: Date.now(),
+											});
+											generated++;
+											logText = `${sessionTitle}: ${tags.join(", ")}`;
+										}
+									}
+								}
 							}
-							const latest = owner
-								.getSnapshot()
-								.sessions.find(
-									(item) => item.id === session.id,
-								);
-							if (
-								!latest ||
-								normalizeSessionTags(latest.tags).length > 0
-							) {
-								skipped++;
-								continue;
-							}
-							const tags = await generateSessionTags(
-								session.messages,
-								profile,
-								plugin.chatapi,
-							);
-							if (!tags.length) {
-								skipped++;
-								continue;
-							}
-							const current = owner
-								.getSnapshot()
-								.sessions.find(
-									(item) => item.id === session.id,
-								);
-							if (!current) {
-								skipped++;
-								continue;
-							}
-							owner.updateMetadata(session.id, {
-								tags: normalizeSessionTags([
-									...(current.tags ?? []),
-									...tags,
-								]),
-								updatedAt: Date.now(),
-							});
-							generated++;
 						} catch (error) {
+							if (
+								abortController.signal.aborted ||
+								(error instanceof Error &&
+									error.name === "AbortError")
+							) {
+								abortController.abort();
+								break;
+							}
 							failed++;
 							plugin.logger?.log(
 								"warn",
 								`[SessionTags] bulk generation failed for ${indexed.id}: ${String(error)}`,
 							);
+							logIcon = "error";
+							logText = `${sessionTitle}: ${String(error)}`;
+							isError = true;
 						}
+						progressModal.addLog(logIcon, logText, {
+							id: indexed.id,
+							done: true,
+							error: isError,
+						});
+						completed++;
+						progressModal.updateProgress(completed);
+						progressModal.updateSummary(formatSummary());
 					}
 					await owner.flush();
-					const summary = `${generated} tagged · ${skipped} skipped · ${failed} failed`;
+					const summary = formatSummary();
+					const wasCancelled =
+						abortController.signal.aborted && completed < total;
+					progressModal.finishWithSummary(
+						wasCancelled
+							? "Tag generation cancelled"
+							: "Tag generation complete",
+						wasCancelled
+							? `Cancelled after ${completed} of ${total} sessions. Completed tags have been saved.`
+							: `Processed ${completed} of ${total} sessions.`,
+						summary,
+					);
 					bulkTagSetting.setDesc(`${bulkDescription} ${summary}.`);
-					new Notice(`Session tag generation complete: ${summary}.`);
+					new Notice(
+						wasCancelled
+							? `Session tag generation cancelled: ${summary}.`
+							: `Session tag generation complete: ${summary}.`,
+					);
 				} catch (error) {
+					if (abortController.signal.aborted && completed < total) {
+						progressModal.finishWithSummary(
+							"Tag generation cancelled",
+							`Cancelled after ${completed} of ${total} sessions.`,
+							formatSummary(),
+						);
+						new Notice(
+							`Session tag generation cancelled: ${formatSummary()}.`,
+						);
+						return;
+					}
+					progressModal.finishWithSummary(
+						"Tag generation failed",
+						String(error),
+						formatSummary(),
+					);
 					bulkTagSetting.setDesc(
 						`${bulkDescription} Could not complete generation: ${String(error)}`,
 					);

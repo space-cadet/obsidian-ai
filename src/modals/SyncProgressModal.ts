@@ -16,6 +16,13 @@ interface LogEntry {
 
 export interface SyncProgressModalOptions {
 	onCancel?: () => void;
+	title?: string;
+	initialStatus?: string;
+	initialCurrentFile?: string;
+	initialSummary?: string;
+	backgroundButtonLabel?: string;
+	showBackgroundButton?: boolean;
+	closeCancelsOnProgress?: boolean;
 	onExamine?: (direction: SyncDirection) => Promise<SyncExamination | null>;
 	onRebuildIndex?: (
 		direction: SyncDirection,
@@ -65,6 +72,15 @@ export class SyncProgressModal extends Modal {
 	private backgroundBtn!: HTMLElement;
 	private doneBtn!: HTMLElement;
 	private onCancel?: () => void;
+	private title: string;
+	private initialStatus: string;
+	private initialCurrentFile: string;
+	private initialSummary: string;
+	private backgroundButtonLabel: string;
+	private showBackgroundButton: boolean;
+	private closeCancelsOnProgress: boolean;
+	private cancellationRequested: boolean = false;
+	private leavingInBackground: boolean = false;
 	private onExamine?: (
 		direction: SyncDirection,
 	) => Promise<SyncExamination | null>;
@@ -98,6 +114,16 @@ export class SyncProgressModal extends Modal {
 		this.startTime = Date.now();
 		this.totalSessions = totalSessions;
 		this.onCancel = options?.onCancel;
+		this.title = options?.title ?? "🔄 Syncing";
+		this.initialStatus = options?.initialStatus ?? "Preparing sync…";
+		this.initialCurrentFile =
+			options?.initialCurrentFile ?? "Initializing…";
+		this.initialSummary =
+			options?.initialSummary ?? "⏱ 0.0s · ↑0 ↓0 ⚡0 ⊘0";
+		this.backgroundButtonLabel =
+			options?.backgroundButtonLabel ?? "Background";
+		this.showBackgroundButton = options?.showBackgroundButton ?? true;
+		this.closeCancelsOnProgress = options?.closeCancelsOnProgress ?? false;
 		this.onExamine = options?.onExamine;
 		this.onRebuildIndex = options?.onRebuildIndex;
 		this.onConfirm = options?.onConfirm;
@@ -122,6 +148,16 @@ export class SyncProgressModal extends Modal {
 	onClose() {
 		if (this.phase === "examine" && !this.confirmed) {
 			this.onEarlyClose?.();
+		}
+		if (
+			this.phase === "progress" &&
+			!this.isComplete &&
+			this.closeCancelsOnProgress &&
+			!this.leavingInBackground &&
+			!this.cancellationRequested
+		) {
+			this.cancellationRequested = true;
+			this.onCancel?.();
 		}
 		this.contentEl.empty();
 		this.modalEl?.removeClass?.("sync-progress-modal-window");
@@ -389,14 +425,14 @@ export class SyncProgressModal extends Modal {
 		// Header
 		const header = contentEl.createDiv("sync-header");
 		const title = header.createEl("span", "sync-header-title");
-		title.setText("🔄 Syncing");
+		title.setText(this.title);
 		this.elapsedEl = header.createEl("span", "sync-header-elapsed");
 		this.elapsedEl.setText("0s");
 
 		// Status row
 		const statusRow = contentEl.createDiv("sync-status-row");
 		this.statusEl = statusRow.createEl("span", "sync-status");
-		this.statusEl.setText("Preparing sync…");
+		this.statusEl.setText(this.initialStatus);
 		this.sessionCountEl = statusRow.createEl("span", "sync-session-count");
 		this.updateSessionCount();
 
@@ -406,6 +442,18 @@ export class SyncProgressModal extends Modal {
 		);
 		this.progressTrackEl = progressContainer.createDiv(
 			"sync-progress-track",
+		);
+		this.progressTrackEl.setAttribute("role", "progressbar");
+		this.progressTrackEl.setAttribute("aria-label", this.title);
+		this.progressTrackEl.setAttribute("aria-valuemin", "0");
+		this.progressTrackEl.setAttribute(
+			"aria-valuemax",
+			String(Math.max(1, this.totalSessions)),
+		);
+		this.progressTrackEl.setAttribute("aria-valuenow", "0");
+		this.progressTrackEl.setAttribute(
+			"aria-valuetext",
+			`0 of ${this.totalSessions} sessions`,
 		);
 		this.progressFillEl =
 			this.progressTrackEl.createDiv("sync-progress-fill");
@@ -417,26 +465,36 @@ export class SyncProgressModal extends Modal {
 
 		// Current file indicator
 		this.currentFileEl = contentEl.createDiv("sync-current-file");
-		this.currentFileEl.setText("Initializing…");
+		this.currentFileEl.setText(this.initialCurrentFile);
 
 		// Log section
 		const logSection = contentEl.createDiv("sync-log-section");
 		logSection.createEl("h4", { text: "Activity Log" });
 		this.logContainer = logSection.createDiv("sync-log-container");
 		this.summaryEl = contentEl.createDiv("sync-summary");
-		this.summaryEl.setText("⏱ 0.0s · ↑0 ↓0 ⚡0 ⊘0");
+		this.summaryEl.setText(this.initialSummary);
 
 		// Buttons
 		const btnRow = contentEl.createDiv("sync-btn-row");
 		this.cancelBtn = btnRow.createEl("button", { text: "Cancel" });
 		this.cancelBtn.addEventListener("click", () => {
+			if (this.cancellationRequested) return;
+			this.cancellationRequested = true;
 			this.onCancel?.();
 			this.cancelBtn.setText("Cancelling…");
 			this.cancelBtn.setAttribute("disabled", "true");
 		});
 
-		this.backgroundBtn = btnRow.createEl("button", { text: "Background" });
-		this.backgroundBtn.addEventListener("click", () => this.close());
+		this.backgroundBtn = btnRow.createEl("button", {
+			text: this.backgroundButtonLabel,
+		});
+		if (!this.showBackgroundButton) {
+			this.backgroundBtn.addClass("sync-btn-hidden");
+		}
+		this.backgroundBtn.addEventListener("click", () => {
+			this.leavingInBackground = true;
+			this.close();
+		});
 
 		this.doneBtn = btnRow.createEl("button", { text: "Done" });
 		this.doneBtn.addClass("sync-btn-hidden");
@@ -537,6 +595,14 @@ export class SyncProgressModal extends Modal {
 		this.updateSessionCount();
 	}
 
+	updateStatus(status: string): void {
+		this.statusEl?.setText(status);
+	}
+
+	updateSummary(summary: string): void {
+		this.summaryEl?.setText(summary);
+	}
+
 	updateCurrentFile(filename: string): void {
 		if (this.currentFileEl) {
 			this.currentFileEl.setText(filename);
@@ -558,6 +624,15 @@ export class SyncProgressModal extends Modal {
 				width: `${percent}%`,
 			});
 		}
+		this.progressTrackEl?.setAttribute(
+			"aria-valuemax",
+			String(Math.max(1, this.totalSessions)),
+		);
+		this.progressTrackEl?.setAttribute("aria-valuenow", String(completed));
+		this.progressTrackEl?.setAttribute(
+			"aria-valuetext",
+			`${completed} of ${this.totalSessions} sessions`,
+		);
 
 		if (this.percentEl) {
 			this.percentEl.setText(`${percent}%`);
@@ -579,45 +654,27 @@ export class SyncProgressModal extends Modal {
 	}
 
 	onComplete(result: SyncResult): void {
-		this.isComplete = true;
-
-		// Hide cancel button, show done button
-		if (this.cancelBtn) {
-			this.cancelBtn.addClass("sync-btn-hidden");
-		}
-		if (this.backgroundBtn) {
-			this.backgroundBtn.addClass("sync-btn-hidden");
-		}
-		if (this.doneBtn) {
-			this.doneBtn.removeClass("sync-btn-hidden");
-		}
-
-		// Update title to show completion
-		const title = this.contentEl.querySelector(".sync-header-title");
-		if (title) {
-			title.setText(
-				result.status === "failed"
-					? "⚠️ Sync Finished with Errors"
-					: "✅ Sync Complete",
-			);
-		}
-
-		// Update status
-		if (this.statusEl) {
-			this.statusEl.setText(result.message ?? "");
-		}
-
-		if (this.currentFileEl) {
-			this.currentFileEl.setText("");
-		}
-		if (this.summaryEl) {
-			const elapsed = ((Date.now() - this.startTime) / 1000).toFixed(1);
-			this.summaryEl.setText(
-				`⏱ ${elapsed}s · ↑${result.uploaded} ↓${result.downloaded} ⚡${result.conflicts} ⌫${result.deleted ?? 0} ⊘${result.skipped}`,
-			);
-		}
-
+		this.finishWithSummary(
+			result.status === "failed"
+				? "⚠️ Sync Finished with Errors"
+				: "✅ Sync Complete",
+			result.message ?? "",
+			`⏱ ${((Date.now() - this.startTime) / 1000).toFixed(1)}s · ↑${result.uploaded} ↓${result.downloaded} ⚡${result.conflicts} ⌫${result.deleted ?? 0} ⊘${result.skipped}`,
+		);
 		this.updateProgress(this.totalSessions);
+	}
+
+	finishWithSummary(title: string, message: string, summary: string): void {
+		this.isComplete = true;
+		this.cancelBtn?.addClass("sync-btn-hidden");
+		this.backgroundBtn?.addClass("sync-btn-hidden");
+		this.doneBtn?.removeClass("sync-btn-hidden");
+		this.contentEl
+			.querySelector<HTMLElement>(".sync-header-title")
+			?.setText(title);
+		this.statusEl?.setText(message);
+		this.currentFileEl?.setText("");
+		this.summaryEl?.setText(summary);
 	}
 
 	finish(result: SyncResult): void {

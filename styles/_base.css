@@ -406,12 +406,34 @@
 }
 
 @media (max-width: 760px) {
+	.obsidian-ai-settings {
+		padding-inline: 6px;
+	}
+
+	.modal.mod-settings .vertical-tab-content.obsidian-ai-settings,
+	.modal.mod-settings .setting-tab-content.obsidian-ai-settings {
+		padding-inline: 6px !important;
+	}
+
+	.obsidian-ai-settings-section {
+		margin-bottom: 12px;
+		padding: 14px 12px;
+		border-left-width: 3px;
+		box-shadow: none;
+	}
+
 	.obsidian-ai-settings-section .setting-item {
 		display: block;
+		margin: 0;
+		padding: 12px 0;
+		border-top: 1px solid var(--background-modifier-border);
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
 	}
 
 	.obsidian-ai-settings-section .setting-item-control {
-		margin-top: 10px;
+		margin-top: 8px;
 	}
 }
 
@@ -643,12 +665,12 @@
 
 @media (max-width: 420px) {
 	.obsidian-ai-settings {
-		padding-inline: 8px;
+		padding-inline: 4px;
 	}
 
 	.modal.mod-settings .vertical-tab-content.obsidian-ai-settings,
 	.modal.mod-settings .setting-tab-content.obsidian-ai-settings {
-		padding-inline: 8px !important;
+		padding-inline: 4px !important;
 	}
 
 	.obsidian-ai-settings-metrics {
