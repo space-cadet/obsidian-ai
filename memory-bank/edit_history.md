@@ -1,6 +1,15 @@
 # Edit History
 
-*Last Updated: 2026-10-23 14:41:59 IST*
+*Last Updated: 2026-10-25 09:22:59 IST*
+
+### 2026-10-25
+
+#### 09:22:59 IST - T78: Add live generated-tag previews and compact History tags
+- Modified source UI, progress-modal logic, styles, and focused tests - Show recent generated tags during bulk generation and compact History tag chips; 22 focused tests and the production build pass.
+- Updated T78 implementation/task docs and T20/T73 references - Record first-four chips, +N overflow, accessible manager icon, and live generated-tag preview.
+- Updated active context, session cache, task registry, progress, and changelog - Record the current source commit and pending live acceptance.
+- Updated the October 23 session record and created the October 25 T78 session record - Replace the stale unspecified-issue note and document verification limits.
+- Created memory-bank/edits/2026-10-25/092259-T78-live-tag-previews.md - Record this canonical edit chunk.
 
 ### 2026-10-23
 

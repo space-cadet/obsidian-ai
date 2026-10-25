@@ -1,15 +1,25 @@
 # Session Cache
 
-*Last Updated: 2026-10-23 16:57:59 IST*
+*Last Updated: 2026-10-25 09:22:59 IST*
+
+## 2026-10-25 — T78 generated-tag preview and compact History tags
+
+- History cards show up to four tag chips with a +N marker and an accessible
+  icon to open the full manager. Bulk generation previews recent generated
+  tags in the existing progress modal with contextual live announcements.
+- 22 focused tests, production build, and diff check passed on source commit
+  417881d. Live Obsidian acceptance remains open; see the October 25 session.
+- A canonical edit chunk records this update. The ignored SQLite Memory Bank
+  remains stale, so no database-backed generator was run.
 
 ## 2026-10-23 — T78 Chat History redesign
 
-- Implemented compact searchable History entries, a keyboard-accessible in-app tag filter with session counts, expandable tag counts, the searchable session Manage tags modal, and inline Obsidian icon actions for load, copy, export, rename, and delete. The manager picker opens while either its Add tag or available-tag search input is focused and stays within the modal body.
+- Implemented compact searchable History entries, a keyboard-accessible in-app tag filter with session counts, the first four tag chips with a +N overflow marker and the searchable session Manage tags modal, and inline Obsidian icon actions for load, copy, export, rename, and delete. The manager picker opens while either its Add tag or available-tag search input is focused and stays within the modal body.
 - Prettier, production build, and diff checks passed. The work is on `feat/session-tags`; automated tests and live Obsidian acceptance were not run.
 - The ignored SQLite Memory Bank is stale through 2026-09-18, so its database-backed edit-history generator was not run. See the new canonical edit chunk and T78 session record.
 - The Manage tags picker now separates new-tag entry from existing-tag search, shows the full scrollable list in History-style rows with session counts, and opens from input focus. Formatting and production build pass; automated tests and live Obsidian acceptance remain unrun.
 - Added `implementation-details/session-tags.md` as the detailed T78 reference for storage, normalization, provider request bounds, generation flows, agent tools, and History UI. Session tags do not currently map to Obsidian note tags or frontmatter.
-- The user reports unspecified remaining issues; concrete symptoms and reproduction steps are still needed. Live Obsidian acceptance remains open. This documentation closeout did not refresh the generated edit-history view because no safe generator is available for the text-authoritative Memory Bank.
+- The user later specified the remaining UI requests: live generated-tag previews and a more compact History tag display. Both are implemented; live Obsidian acceptance remains open. This documentation closeout did not refresh the generated edit-history view because no safe generator is available for the text-authoritative Memory Bank.
 - Cross-referenced T20's completed History/export task and T73's active capability-map task to the T78 work and detailed implementation reference. Neither task status changed.
 
 ## 2026-10-23 — T78 chat session tags prototype

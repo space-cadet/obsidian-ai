@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased — 2026-10-22
+## Unreleased — 2026-10-25
 
 ### Added
 
@@ -11,6 +11,10 @@ All notable changes to this project will be documented in this file.
   explicit approval (`70474e3`, T13/T24c/T60).
 - Added a Settings option for parallel session generations, defaulting to five
   with a supported range of one to ten (T15, `16f7034`).
+
+- Chat History shows the first four session tags as chips, a +N overflow marker,
+  and an accessible icon to open the full tag manager. Bulk tag generation now
+  previews recent generated tags in its progress modal (T78, 417881d).
 
 ### Fixed
 
@@ -38,6 +42,8 @@ All notable changes to this project will be documented in this file.
 
 ### Verification
 
+- T78 follow-up passed 22 focused tests, the production build, and diff checks.
+  The full suite was not rerun; live Obsidian acceptance remains pending.
 - The full suite passed with 645 tests in 80 files, and the production build,
   formatting, and diff checks passed. Live Obsidian acceptance remains open.
 - The pane-scope follow-up passed 32 focused tests in two files, the production

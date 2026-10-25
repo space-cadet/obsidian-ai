@@ -1,13 +1,25 @@
 # Active Context
 
-*Last Updated: 2026-10-23 16:57:59 IST*
+*Last Updated: 2026-10-25 09:22:59 IST*
+
+### 2026-10-25 — T78 generated-tag preview and compact History tags
+
+- Chat History now shows up to four session tags as chips, a +N overflow marker,
+  and an accessible tag icon that opens the full Manage tags modal.
+- Settings bulk generation now previews tags from the four latest completed
+  sessions in the progress modal and announces each result contextually.
+- Source commit 417881d passes 22 focused tests, production build, and
+  git diff --check. The full suite was not rerun; its previous run on 62c8eb0
+  had six unrelated failures. Live Obsidian acceptance remains pending.
+- See tasks/T78.md, implementation-details/session-tags.md, and
+  sessions/2026-10-25-t78-live-tags-ui.md.
 
 ### 2026-10-23 — T78 Chat History redesign
 
-- Implemented the approved compact History layout with session search, an in-app tag filter with per-tag session counts, expandable tag counts, and a per-session tag manager. The tag picker opens while its Add tag or available-tag search input is focused, supports keyboard selection, and stays in the modal flow. Load, copy, export, rename, and delete use inline Obsidian icons; copy/export retain format choices.
+- Implemented the approved compact History layout with session search, an in-app tag filter with per-tag session counts, an initial expandable tag-count design, later replaced on October 25 by up to four chips, a +N marker, and an accessible manager icon. The tag picker opens while its Add tag or available-tag search input is focused, supports keyboard selection, and stays in the modal flow. Load, copy, export, rename, and delete use inline Obsidian icons; copy/export retain format choices.
 - Prettier, production build, and diff checks pass. The implementation is on `feat/session-tags`; automated tests and live Obsidian review were not run.
 - Follow-up: the Manage tags picker now has a separate available-tag search, a scrollable full list, and History-style rows with session counts. Formatting and production build pass; live Obsidian acceptance remains open.
-- Added `implementation-details/session-tags.md` as the end-to-end T78 reference. Session tags remain separate from Obsidian note tags. The user reports unspecified remaining issues; record concrete symptoms before further fixes.
+- Added `implementation-details/session-tags.md` as the end-to-end T78 reference. Session tags remain separate from Obsidian note tags. The remaining UI requests were specified and addressed in the October 25 follow-up; live acceptance remains open.
 - See tasks/T78.md, tasks/T20.md, tasks/T73.md, implementation-details/session-tags.md, implementation-details/message-selection-chat-history.md, and sessions/2026-10-23-session-tags-prototype.md.
 
 ### 2026-10-23 — T78 chat session tags prototype

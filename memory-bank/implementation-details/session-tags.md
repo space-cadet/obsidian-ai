@@ -1,6 +1,7 @@
 # Chat Session Tags — Implementation Details (T78)
 
-*Status: prototype on `feat/session-tags`, source commit `0ef8303d5c1e2e86dfbb3b4a766d1f7d3a1fe17c`.*
+*Last Updated: 2026-10-25 09:22:59 IST.*
+*Status: prototype on `feat/session-tags`, source commit `417881d024805264b516f1ae1279df77026de858`.*
 
 ## Scope and ownership
 
@@ -101,6 +102,10 @@ before generation; after the request, newly added labels are read again and
 preserved during merge. Sessions with unavailable messages or no suggestions
 are counted as skipped. Exceptions are logged per session and counted as
 failed. Progress and final tagged/skipped/failed counts are shown in Settings.
+The shared progress modal also shows tag chips from the four most recently
+completed sessions, updates cumulative counts, and uses a single contextual
+live-region announcement for each successful session. The activity log keeps
+the run history, and cancellation preserves and saves already completed tags.
 The user authorized sending these bounded excerpts to the configured provider
 for this bulk operation on 2026-10-23.
 
@@ -111,6 +116,9 @@ Chat History keeps tag controls inside the existing History surface:
 - Search and a custom in-app All tags filter narrow the compact session list.
   The filter shows session counts, supports keyboard selection, and does not
   use a native system picker.
+- Session rows show the first four normalized tags as chips and a `+N` marker
+  when more tags are assigned. An accessible tag icon opens the existing
+  Manage tags modal for the full list and editing controls.
 - Each session's existing Manage tags modal displays current labels, supports
   individual removal and clearing all labels, and lets users add a new label
   or choose an existing one.
@@ -142,19 +150,22 @@ other sessions.
 | JSONL index metadata | `src/storage/ChatStorage.ts` |
 | New-session lifecycle | `src/hooks/useChatSession.ts` |
 | Provider selector and bulk generation | `src/settings-sections/chatDefaults.ts` |
-| History filter, manager, and compact actions | `src/components/presentational/SessionPickerModal.tsx`, `styles/_chat.css`, `styles.css` |
+| History filter, manager, tag preview, and compact actions | `src/components/presentational/SessionPickerModal.tsx`, `styles/_chat.css`, `styles.css` |
+| Bulk generation progress and live tag preview | `src/modals/SyncProgressModal.ts`, `src/settings-sections/chatDefaults.ts`, `styles/_sync.css` |
 | Active-session generation action | `src/components/presentational/ActionBar.tsx`, `src/components/ChatApp.tsx` |
 | Agent tool definitions and execution | `src/agent/tools.ts`, `src/agent/toolRegistry.ts`, `src/agent/ToolExecutor.ts`, `src/agent/tools/handlers/sessionHandlers.ts` |
 | Shared metadata ownership | `src/state/SessionStateOwner.ts` |
 
 ## Verification and remaining acceptance
 
-The feature branch records a passing production build, changed-file formatting,
-and `git diff --check`. Automated tests and live Obsidian interaction checks
-were not run for this prototype. Settings generation, History filtering and
-tag editing, and agent-tool behavior still need live acceptance.
+Commit `417881d` passes the focused History, progress-modal, and tag-helper
+tests (22/22), the production build, and `git diff --check`. The full suite was
+not rerun for this follow-up. Its previous run on `62c8eb0` had 673/679 passing;
+the six failures were in the unchanged agent-tool expected-list test and five
+`SyncLogger` tests that require `localStorage`. Live Obsidian interaction
+checks for Settings generation, History filtering/tag editing, and agent tools
+remain open.
 
-The user subsequently said issues remain but did not provide specific symptoms
-or reproduction steps. Keep that report open without inferring fixes; capture
-the concrete failures before extending the implementation. Obsidian note-tag
-integration is also not part of the current implementation.
+The user requested a live view of generated tags and a more compact History
+tag preview; these changes are implemented, pending live Obsidian review.
+Obsidian note-tag integration is not part of the current implementation.
