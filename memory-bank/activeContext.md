@@ -1,6 +1,17 @@
 # Active Context
 
-*Last Updated: 2026-10-25 09:22:59 IST*
+*Last Updated: 2026-10-25 11:19:59 IST*
+
+### 2026-10-25 — T78 live acceptance and unified tag input
+
+- The user confirmed the bulk Generate Tags modal and its live generated-tag
+  preview work as expected in Obsidian. Live History filtering/editing, Settings
+  provider selection, and agent-tool checks remain open.
+- Manage tags uses one Search or create a tag field; it filters existing tags
+  and supports creating a new label. Additional chip/list visual polish is
+  deferred for now at the user's direction.
+- The branch source remains on feat/session-tags; this update records
+  acceptance only. See tasks/T78.md and the October 25 T78 session record.
 
 ### 2026-10-25 — T78 generated-tag preview and compact History tags
 
@@ -16,9 +27,9 @@
 
 ### 2026-10-23 — T78 Chat History redesign
 
-- Implemented the approved compact History layout with session search, an in-app tag filter with per-tag session counts, an initial expandable tag-count design, later replaced on October 25 by up to four chips, a +N marker, and an accessible manager icon. The tag picker opens while its Add tag or available-tag search input is focused, supports keyboard selection, and stays in the modal flow. Load, copy, export, rename, and delete use inline Obsidian icons; copy/export retain format choices.
+- Implemented the approved compact History layout with session search, an in-app tag filter with per-tag session counts, an initial expandable tag-count design, later replaced on October 25 by up to four chips, a +N marker, and an accessible manager icon. The tag picker uses one Search or create a tag input, opens on focus, supports keyboard selection, and stays in the modal flow. Load, copy, export, rename, and delete use inline Obsidian icons; copy/export retain format choices.
 - Prettier, production build, and diff checks pass. The implementation is on `feat/session-tags`; automated tests and live Obsidian review were not run.
-- Follow-up: the Manage tags picker now has a separate available-tag search, a scrollable full list, and History-style rows with session counts. Formatting and production build pass; live Obsidian acceptance remains open.
+- Follow-up: the Manage tags picker now uses one search/create input with a scrollable full list and History-style rows with session counts. Formatting and production build pass; live Obsidian acceptance remains open.
 - Added `implementation-details/session-tags.md` as the end-to-end T78 reference. Session tags remain separate from Obsidian note tags. The remaining UI requests were specified and addressed in the October 25 follow-up; live acceptance remains open.
 - See tasks/T78.md, tasks/T20.md, tasks/T73.md, implementation-details/session-tags.md, implementation-details/message-selection-chat-history.md, and sessions/2026-10-23-session-tags-prototype.md.
 

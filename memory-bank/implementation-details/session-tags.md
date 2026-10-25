@@ -1,6 +1,6 @@
 # Chat Session Tags — Implementation Details (T78)
 
-*Last Updated: 2026-10-25 09:22:59 IST.*
+*Last Updated: 2026-10-25 11:19:59 IST.*
 *Status: prototype on `feat/session-tags`, source commit `417881d024805264b516f1ae1279df77026de858`.*
 
 ## Scope and ownership
@@ -122,10 +122,10 @@ Chat History keeps tag controls inside the existing History surface:
 - Each session's existing Manage tags modal displays current labels, supports
   individual removal and clearing all labels, and lets users add a new label
   or choose an existing one.
-- Available-label search is separate from new-label entry. The suggestion
-  list opens while either relevant search/input control is focused, supports
-  keyboard selection, scrolls within the modal body, and uses the History
-  filter's row style and session counts.
+- One Search or create a tag combobox filters available labels and creates a
+  new label when the query is not an existing tag. Its suggestion list opens
+  on focus, supports keyboard selection, scrolls within the modal body, and
+  uses the History filter's row style and session counts.
 - Load, copy, export, rename, and delete remain compact inline Obsidian icon
   actions. Existing copy/export format choices remain available.
 
@@ -162,10 +162,11 @@ Commit `417881d` passes the focused History, progress-modal, and tag-helper
 tests (22/22), the production build, and `git diff --check`. The full suite was
 not rerun for this follow-up. Its previous run on `62c8eb0` had 673/679 passing;
 the six failures were in the unchanged agent-tool expected-list test and five
-`SyncLogger` tests that require `localStorage`. Live Obsidian interaction
-checks for Settings generation, History filtering/tag editing, and agent tools
-remain open.
+`SyncLogger` tests that require `localStorage`. The user confirmed the bulk
+tag-generation modal works as expected on 2026-10-25. Live History filtering/tag
+editing, Settings provider selection, and agent-tool checks remain open.
 
-The user requested a live view of generated tags and a more compact History
-tag preview; these changes are implemented, pending live Obsidian review.
-Obsidian note-tag integration is not part of the current implementation.
+The user confirmed the bulk-generation modal and generated-tag preview in
+Obsidian. The History tag display and manager remain pending live review. The
+user deferred additional chip/list visual refinements for now. Obsidian note-tag
+integration is not part of the current implementation.

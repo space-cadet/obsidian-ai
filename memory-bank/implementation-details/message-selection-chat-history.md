@@ -1,7 +1,7 @@
 # Message Selection and Chat History Export Design
 
 *Created: 2026-08-14*
-*Last Updated: 2026-10-25 09:22:59 IST*
+*Last Updated: 2026-10-25 11:19:59 IST*
 *Task: T20*
 
 ## Scope
@@ -16,13 +16,13 @@ Selected messages are serialized through the shared `src/utils/exportChat.ts` Ma
 
 ## Chat History actions
 
-`SessionPickerModal` is titled Chat History. Entries use a compact layout with title, metadata, preview, a searchable history input, and an in-app tag filter. The filter opens a compact list with session counts, selected state, and keyboard selection. Each card shows up to four tag chips plus a +N overflow marker; an accessible tag icon opens the full session-scoped Manage tags modal with separate fields to enter a new label and search available labels. The picker opens while either field is focused, supports keyboard selection, and keeps the full available-tag list in a bounded scroll region. Rows reuse the History filter's tag icon, session count, and compact styling. The picker stays in the modal's scrollable content so the footer remains visible. Users can create labels, remove individual labels, or remove all tags. Load, copy, export, rename, and delete remain as compact icon actions on each entry. Copy and export retain Markdown, JSON, and JSONL choices. The actions use Obsidian icons and existing modal/button surfaces; action events remain separate from session selection.
+`SessionPickerModal` is titled Chat History. Entries use a compact layout with title, metadata, preview, a searchable history input, and an in-app tag filter. The filter opens a compact list with session counts, selected state, and keyboard selection. Each card shows up to four tag chips plus a +N overflow marker; an accessible tag icon opens the full session-scoped Manage tags modal. One Search or create a tag field filters available labels and creates new labels from unmatched text. Its list opens on focus, supports keyboard selection, and keeps all available tags in a bounded scroll region. Rows reuse the History filter's tag icon, session count, and compact styling. The picker stays in the modal's scrollable content so the footer remains visible. Users can create labels, remove individual labels, or remove all tags. Load, copy, export, rename, and delete remain as compact icon actions on each entry. Copy and export retain Markdown, JSON, and JSONL choices. The actions use Obsidian icons and existing modal/button surfaces; action events remain separate from session selection.
 
 ## Chat History redesign follow-up — 2026-10-23
 
 The selected Option C mockup was implemented after user review. The History list has search and tag filtering, a per-session Manage tags modal with a searchable existing-tag dropdown, and inline icon actions for all session operations. The October 25 follow-up replaced expandable tag counts with the first four tag chips, a +N overflow marker, and an accessible icon to open the full manager. The T78 bulk-generation progress modal also previews recent generated tags. The October 25 follow-up passed 22 focused tests and the production build; live Obsidian UI acceptance remains pending.
 
-The manager picker follow-up adds an internal search field for existing labels, removes the item cap, and uses scrollable History-style rows with session counts. The outer Add tag field now clearly creates a label. Formatting, production build, and `git diff --check` pass; automated tests and live Obsidian UI acceptance were not run.
+The manager picker follow-up unifies search and creation in one field, shows the full available list in scrollable History-style rows with session counts, and offers label creation for unmatched text. Formatting, production build, and `git diff --check` pass; automated tests and live Obsidian UI acceptance were not run.
 
 ## Verification
 
