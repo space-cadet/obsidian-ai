@@ -1259,29 +1259,53 @@
 
 .chat-session-tag-controls {
 	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
-	gap: 8px;
-	margin-top: 9px;
+	align-items: flex-start;
+	flex-wrap: nowrap;
+	gap: 6px;
+	margin-top: 8px;
 }
 
-.chat-session-tag-count,
 .chat-session-manage-tags {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: 6px;
-	min-height: 32px;
-	padding: 4px 9px;
+	flex: 0 0 44px;
+	width: 44px;
+	height: 44px;
+	padding: 0;
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 6px;
 	background: var(--background-secondary);
 	color: var(--text-normal);
-	font-size: var(--font-ui-smaller);
 	cursor: pointer;
 }
 
-.chat-session-tag-count:hover,
+.chat-session-tags-preview {
+	flex: 1 1 auto;
+	flex-wrap: wrap;
+	min-width: 0;
+	gap: 5px;
+	margin-top: 0;
+}
+
+.chat-session-tags-preview .chat-session-tag {
+	min-width: 0;
+	max-width: min(170px, 38vw);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.chat-session-tag-overflow {
+	flex: 0 0 auto;
+}
+
+.chat-session-tag-empty {
+	padding: 3px 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
 .chat-session-manage-tags:hover {
 	background: var(--background-modifier-hover);
 }
@@ -1356,7 +1380,6 @@
 
 .chat-session-action-button:focus-visible,
 .chat-session-action-select:focus-within,
-.chat-session-tag-count:focus-visible,
 .chat-session-manage-tags:focus-visible {
 	outline: 2px solid var(--interactive-accent);
 	outline-offset: 1px;

@@ -199,6 +199,7 @@ export function renderChatDefaultsSection(
 					initialSummary: "0 tagged · 0 skipped · 0 failed",
 					showBackgroundButton: false,
 					closeCancelsOnProgress: true,
+					showGeneratedTags: true,
 					onCancel: () => abortController.abort(),
 				});
 				progressModal.open();
@@ -325,6 +326,10 @@ export function renderChatDefaultsSection(
 												]),
 												updatedAt: Date.now(),
 											});
+											progressModal.addGeneratedTags(
+												sessionTitle,
+												tags,
+											);
 											generated++;
 											logText = `${sessionTitle}: ${tags.join(", ")}`;
 										}

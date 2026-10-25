@@ -403,7 +403,6 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 	const tagFilterRef = useRef<HTMLDivElement>(null);
 	const [tagManagerSession, setTagManagerSession] =
 		useState<ChatSession | null>(null);
-	const [expandedTagsId, setExpandedTagsId] = useState<string | null>(null);
 
 	const allSorted = sessions
 		.filter((session) => sessionMessageCount(session) > 0)
@@ -777,7 +776,16 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 											" — open to view"
 										: "No messages";
 								const displayTitle = getSessionTitle(session);
-								const sessionTags = session.tags ?? [];
+								const sessionTags = normalizeSessionTags(
+									session.tags ?? [],
+								);
+								const visibleSessionTags = sessionTags.slice(
+									0,
+									4,
+								);
+								const hiddenSessionTagCount =
+									sessionTags.length -
+									visibleSessionTags.length;
 
 								return (
 									<article
@@ -846,93 +854,68 @@ const SessionPickerModal: React.FC<SessionPickerModalProps> = ({
 												{preview}
 											</div>
 											{onUpdateTags && (
-												<>
-													<div className="chat-session-tag-controls">
-														{sessionTags.length >
-															0 && (
-															<button
-																type="button"
-																className="chat-session-tag-count"
-																aria-expanded={
-																	expandedTagsId ===
-																	session.id
-																}
-																onClick={() =>
-																	setExpandedTagsId(
-																		expandedTagsId ===
-																			session.id
-																			? null
-																			: session.id,
-																	)
-																}
-															>
-																<ObsidianIcon
-																	icon="tag"
-																	size={15}
-																/>
-																<span>
-																	{
-																		sessionTags.length
-																	}{" "}
-																	{sessionTags.length ===
-																	1
-																		? "tag"
-																		: "tags"}
+												<div className="chat-session-tag-controls">
+													<div
+														className="chat-session-tags chat-session-tags-preview"
+														role="list"
+														aria-label={`Tags for ${displayTitle}`}
+													>
+														{visibleSessionTags.map(
+															(tag) => (
+																<span
+																	className="chat-session-tag"
+																	key={tag}
+																	role="listitem"
+																	title={tag}
+																>
+																	{tag}
 																</span>
-																<ObsidianIcon
-																	icon={
-																		expandedTagsId ===
-																		session.id
-																			? "chevron-up"
-																			: "chevron-down"
-																	}
-																	size={13}
-																/>
-															</button>
+															),
 														)}
-														<button
-															type="button"
-															className="chat-session-manage-tags"
-															onClick={() =>
-																setTagManagerSession(
-																	session,
-																)
-															}
-														>
-															{sessionTags.length >
+														{hiddenSessionTagCount >
+															0 && (
+															<span
+																className="chat-session-tag chat-session-tag-overflow"
+																role="listitem"
+																aria-label={`${hiddenSessionTagCount} more tags. Open Manage tags to view the full list.`}
+																title={`${hiddenSessionTagCount} more tags`}
+															>
+																+
+																{
+																	hiddenSessionTagCount
+																}
+															</span>
+														)}
+														{sessionTags.length ===
+															0 && (
+															<span className="chat-session-tag-empty">
+																No tags yet
+															</span>
+														)}
+													</div>
+													<button
+														type="button"
+														className="chat-session-manage-tags"
+														aria-label={`${sessionTags.length > 0 ? "Manage" : "Add"} tags for ${displayTitle}`}
+														aria-haspopup="dialog"
+														title={
+															sessionTags.length >
 															0
 																? "Manage tags"
-																: "Add tags"}
-														</button>
-													</div>
-													{expandedTagsId ===
-														session.id &&
-														sessionTags.length >
-															0 && (
-															<div
-																className="chat-session-tags"
-																aria-label={
-																	"Tags for " +
-																	displayTitle
-																}
-															>
-																{sessionTags.map(
-																	(tag) => (
-																		<span
-																			className="chat-session-tag"
-																			key={
-																				tag
-																			}
-																		>
-																			{
-																				tag
-																			}
-																		</span>
-																	),
-																)}
-															</div>
-														)}
-												</>
+																: "Add tags"
+														}
+														onClick={() =>
+															setTagManagerSession(
+																session,
+															)
+														}
+													>
+														<ObsidianIcon
+															icon="tag"
+															size={18}
+														/>
+													</button>
+												</div>
 											)}
 										</div>
 										<div

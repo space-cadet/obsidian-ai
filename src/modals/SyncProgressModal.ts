@@ -14,6 +14,11 @@ interface LogEntry {
 	error?: boolean;
 }
 
+interface GeneratedTagGroup {
+	sessionTitle: string;
+	tags: string[];
+}
+
 export interface SyncProgressModalOptions {
 	onCancel?: () => void;
 	title?: string;
@@ -23,6 +28,7 @@ export interface SyncProgressModalOptions {
 	backgroundButtonLabel?: string;
 	showBackgroundButton?: boolean;
 	closeCancelsOnProgress?: boolean;
+	showGeneratedTags?: boolean;
 	onExamine?: (direction: SyncDirection) => Promise<SyncExamination | null>;
 	onRebuildIndex?: (
 		direction: SyncDirection,
@@ -79,8 +85,16 @@ export class SyncProgressModal extends Modal {
 	private backgroundButtonLabel: string;
 	private showBackgroundButton: boolean;
 	private closeCancelsOnProgress: boolean;
+	private showGeneratedTags: boolean;
 	private cancellationRequested: boolean = false;
 	private leavingInBackground: boolean = false;
+	private generatedTagGroups: GeneratedTagGroup[] = [];
+	private generatedTagTotal: number = 0;
+	private generatedSessionTotal: number = 0;
+	private generatedTagsContainer?: HTMLElement;
+	private generatedTagsCountEl?: HTMLElement;
+	private generatedTagsEmptyEl?: HTMLElement;
+	private generatedTagsLiveRegionEl?: HTMLElement;
 	private onExamine?: (
 		direction: SyncDirection,
 	) => Promise<SyncExamination | null>;
@@ -124,6 +138,7 @@ export class SyncProgressModal extends Modal {
 			options?.backgroundButtonLabel ?? "Background";
 		this.showBackgroundButton = options?.showBackgroundButton ?? true;
 		this.closeCancelsOnProgress = options?.closeCancelsOnProgress ?? false;
+		this.showGeneratedTags = options?.showGeneratedTags ?? false;
 		this.onExamine = options?.onExamine;
 		this.onRebuildIndex = options?.onRebuildIndex;
 		this.onConfirm = options?.onConfirm;
@@ -467,6 +482,41 @@ export class SyncProgressModal extends Modal {
 		this.currentFileEl = contentEl.createDiv("sync-current-file");
 		this.currentFileEl.setText(this.initialCurrentFile);
 
+		if (this.showGeneratedTags) {
+			const generatedTagsSection = contentEl.createDiv(
+				"sync-generated-tags-section",
+			);
+			const generatedTagsHeading = generatedTagsSection.createDiv(
+				"sync-generated-tags-heading",
+			);
+			generatedTagsHeading.createEl("h4", { text: "Generated tags" });
+			this.generatedTagsCountEl = generatedTagsHeading.createSpan(
+				"sync-generated-tags-count",
+			);
+			this.generatedTagsCountEl.setText("0 tags");
+			this.generatedTagsContainer = generatedTagsSection.createDiv(
+				"sync-generated-tags-list",
+			);
+			this.generatedTagsContainer.setAttribute("role", "list");
+			this.generatedTagsContainer.setAttribute(
+				"aria-label",
+				"Recently generated tags by session",
+			);
+			this.generatedTagsEmptyEl = this.generatedTagsContainer.createDiv(
+				"sync-generated-tags-empty",
+			);
+			this.generatedTagsEmptyEl.setText(
+				"Tags will appear here as sessions finish.",
+			);
+			this.generatedTagsLiveRegionEl = generatedTagsSection.createEl(
+				"span",
+				{ cls: "sync-generated-tags-live" },
+			);
+			this.generatedTagsLiveRegionEl.setAttribute("role", "status");
+			this.generatedTagsLiveRegionEl.setAttribute("aria-live", "polite");
+			this.generatedTagsLiveRegionEl.setAttribute("aria-atomic", "true");
+		}
+
 		// Log section
 		const logSection = contentEl.createDiv("sync-log-section");
 		logSection.createEl("h4", { text: "Activity Log" });
@@ -601,6 +651,46 @@ export class SyncProgressModal extends Modal {
 
 	updateSummary(summary: string): void {
 		this.summaryEl?.setText(summary);
+	}
+
+	addGeneratedTags(sessionTitle: string, tags: string[]): void {
+		if (!this.generatedTagsContainer) return;
+		const visibleTags = tags.map((tag) => tag.trim()).filter(Boolean);
+		if (visibleTags.length === 0) return;
+
+		this.generatedTagTotal += visibleTags.length;
+		this.generatedSessionTotal++;
+		this.generatedTagGroups.push({ sessionTitle, tags: visibleTags });
+		if (this.generatedTagGroups.length > 4) {
+			this.generatedTagGroups.shift();
+		}
+		this.generatedTagsCountEl?.setText(
+			`${this.generatedTagTotal} tag${this.generatedTagTotal === 1 ? "" : "s"} · ${this.generatedSessionTotal} session${this.generatedSessionTotal === 1 ? "" : "s"}`,
+		);
+		this.generatedTagsEmptyEl?.remove();
+		this.generatedTagsEmptyEl = undefined;
+		this.generatedTagsContainer.empty();
+		for (const groupData of this.generatedTagGroups) {
+			const group = this.generatedTagsContainer.createDiv(
+				"sync-generated-tag-group",
+			);
+			group.setAttribute("role", "listitem");
+			group
+				.createDiv("sync-generated-tag-session")
+				.setText(groupData.sessionTitle);
+			const tagList = group.createDiv("sync-generated-tag-pills");
+			tagList.setAttribute("role", "list");
+			for (const tag of groupData.tags) {
+				const tagPill = tagList.createSpan("chat-session-tag");
+				tagPill.setAttribute("role", "listitem");
+				tagPill.setText(tag);
+			}
+		}
+		this.generatedTagsContainer.scrollTop =
+			this.generatedTagsContainer.scrollHeight;
+		this.generatedTagsLiveRegionEl?.setText(
+			`Generated tags for ${sessionTitle}: ${visibleTags.join(", ")}. ${this.generatedTagTotal} tags across ${this.generatedSessionTotal} sessions so far.`,
+		);
 	}
 
 	updateCurrentFile(filename: string): void {

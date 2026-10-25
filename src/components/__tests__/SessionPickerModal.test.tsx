@@ -75,8 +75,16 @@ describe("SessionPickerModal", () => {
 			/>,
 		);
 
+		const otherTagList = screen.getByRole("list", {
+			name: "Tags for Other chat",
+		});
+		for (const tag of ["alpha", "beta", "gamma", "delta"]) {
+			expect(within(otherTagList).getByText(tag)).toBeTruthy();
+		}
+		expect(within(otherTagList).queryByText("epsilon")).toBeNull();
+		expect(within(otherTagList).getByText("+1")).toBeTruthy();
 		fireEvent.click(
-			screen.getAllByRole("button", { name: "Manage tags" })[0],
+			screen.getByRole("button", { name: "Manage tags for Saved chat" }),
 		);
 		const tagDialog = screen.getByRole("dialog", { name: "Manage tags" });
 		const tagInput = within(tagDialog).getByRole("combobox", {
