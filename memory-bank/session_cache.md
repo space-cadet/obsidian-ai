@@ -1,9 +1,15 @@
 # Session Cache
 
-*Last Updated: 2026-10-30 16:41:07 IST*
+*Last Updated: 2026-10-30 16:46:27 IST*
 
 ## 2026-10-30 — T78 global vocabulary normalization
 
+- 2026-10-30: Added Select all and Deselect all beside the normalization
+  summary. Select all marks changed groups in the current view; Deselect all
+  clears all selections, including hidden groups. Canonical edits and individual
+  exceptions are preserved. Build and 18 focused tests pass; a 60-proposal
+  browser fixture passes selection, exception, clearing, and save at 320/390
+  pixels. Live Obsidian acceptance remains open.
 - 2026-10-30: Removed the 200-tag request cutoff and 200-group response
   truncation after the user encountered the limit with 429 tags. The complete
   vocabulary is sent in one explicit request so all labels can be compared.

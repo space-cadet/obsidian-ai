@@ -131,9 +131,7 @@ async function ready() {
 	await waitFor(() =>
 		expect(document.body.textContent).toContain("Suggestions ready"),
 	);
-	document
-		.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
-		.forEach((checkbox) => fireEvent.click(checkbox));
+	fireEvent.click(button("Select all"));
 	expect(button("Apply 2 merges").disabled).toBe(false);
 }
 describe("NormalizeSessionTagsModal", () => {
@@ -190,6 +188,29 @@ describe("NormalizeSessionTagsModal", () => {
 			"research-notes",
 		]);
 		expect(save).toHaveBeenCalled();
+	});
+	it("bulk selection preserves edited names, supports exceptions, and clears hidden selections", async () => {
+		const { save } = setup();
+		await ready();
+		const input =
+			document.querySelector<HTMLInputElement>('input[type="text"]')!;
+		fireEvent.input(input, { target: { value: "ai-research" } });
+		fireEvent.click(button("Deselect all"));
+		expect(button("No merges selected").disabled).toBe(true);
+		expect(input.value).toBe("ai-research");
+		fireEvent.click(button("Select all"));
+		expect(button("Apply 2 merges").disabled).toBe(false);
+		fireEvent.click(
+			document.querySelectorAll<HTMLInputElement>(
+				'input[type="checkbox"]',
+			)[1],
+		);
+		expect(button("Apply 1 merges").disabled).toBe(false);
+		fireEvent.click(button("All tags"));
+		fireEvent.click(button("Deselect all"));
+		fireEvent.click(button("Suggested merges"));
+		expect(button("No merges selected").disabled).toBe(true);
+		expect(save).not.toHaveBeenCalled();
 	});
 	it("labels an empty selection clearly and disables applying it", async () => {
 		setup();

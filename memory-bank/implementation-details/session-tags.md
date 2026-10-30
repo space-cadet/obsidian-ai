@@ -1,6 +1,6 @@
 # Chat Session Tags — Implementation Details (T78)
 
-*Last Updated: 2026-10-30 16:41:07 IST*
+*Last Updated: 2026-10-30 16:46:27 IST*
 *Status: prototype on `feat/session-tags`; global normalization was introduced in `0c3b620`, with a subsequent layout follow-up.*
 
 ## Scope and ownership
@@ -224,3 +224,7 @@ integration is not part of the current implementation.
 The former 200-name request cutoff and 200-group response truncation are removed.
 A 429-name regression checks complete transmission and retention of 214 groups.
 Provider errors are shown in a bounded scrollable panel to preserve review space.
+
+Select all selects changed groups in the current view. Deselect all clears the
+entire plan. These controls remain beside the summary while reviewing the list;
+individual checkboxes support exceptions and canonical edits are preserved.

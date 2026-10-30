@@ -673,3 +673,9 @@
 		font-size: var(--font-ui-small);
 	}
 }
+
+.tag-normalization-selection {
+	display: flex;
+	gap: 8px;
+	margin: 8px 0;
+}

@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Select all and Deselect all for normalization proposals, with individual
+  exceptions and preserved canonical edits (T78).
+
 - Global session-tag normalization review: local spelling groups, optional
   related-term suggestions, editable canonical names, selected merges, and
   affected-session counts. Apply updates saved-session metadata, rejects stale

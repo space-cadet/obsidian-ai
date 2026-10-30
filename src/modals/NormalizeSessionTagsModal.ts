@@ -159,10 +159,12 @@ export class NormalizeSessionTagsModal extends Modal {
 						: "Choose Find merge proposals to group equivalent tags with AI. Use All tags for individual spelling edits."
 					: "No saved session tags found.",
 			});
+		const checkboxes = new Map<TagMerge, HTMLInputElement>();
 		for (const row of rows) {
 			const el = table.createDiv({ cls: "tag-normalization-row" });
 			const use = el.createEl("label", { cls: "tag-normalization-use" });
 			const checkbox = use.createEl("input", { type: "checkbox" });
+			checkboxes.set(row, checkbox);
 			checkbox.checked = row.selected;
 			checkbox.disabled = this.busy || this.pendingSave;
 			checkbox.setAttribute(
@@ -223,6 +225,38 @@ export class NormalizeSessionTagsModal extends Modal {
 		const controls = this.contentEl.createDiv({
 			cls: "tag-normalization-controls",
 		});
+		const selection = controls.createDiv({
+			cls: "tag-normalization-selection",
+		});
+		new ButtonComponent(selection)
+			.setButtonText("Select all")
+			.setDisabled(this.busy || this.pendingSave || !rows.length)
+			.onClick(() => {
+				for (const row of rows) {
+					if (
+						inventory &&
+						affectedTagSessions(inventory, [
+							{ ...row, selected: true },
+						]) > 0
+					) {
+						row.selected = true;
+						checkboxes.get(row)!.checked = true;
+					}
+				}
+				this.updateSummary();
+			});
+		new ButtonComponent(selection)
+			.setButtonText("Deselect all")
+			.setDisabled(this.busy || this.pendingSave || !this.merges.length)
+			.onClick(() => {
+				this.merges.forEach((row) => {
+					row.selected = false;
+				});
+				checkboxes.forEach((checkbox) => {
+					checkbox.checked = false;
+				});
+				this.updateSummary();
+			});
 		this.summaryEl = controls.createDiv({
 			cls: "tag-normalization-summary",
 		});

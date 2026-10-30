@@ -1,6 +1,6 @@
 # Session 2026-10-30 - T78 Global Tag Normalization
 *Created: 2026-10-30 15:44:46 IST*
-*Last Updated: 2026-10-30 16:41:07 IST*
+*Last Updated: 2026-10-30 16:46:27 IST*
 
 ## Focus Task
 T78: Chat Session Tags and Automatic Suggestions
@@ -83,3 +83,11 @@ T78: Chat Session Tags and Automatic Suggestions
   320/390 pixels. Real-provider and Obsidian acceptance remain open.
 - The regression compares all 429 names together, including distant equivalent
   labels, and retains 214 disjoint valid groups. Tests use a fixture provider.
+
+## Bulk proposal selection
+- 2026-10-30: Added Select all and Deselect all beside the normalization
+  summary. Select all marks changed groups in the current view; Deselect all
+  clears all selections, including hidden groups. Canonical edits and individual
+  exceptions are preserved. Build and 18 focused tests pass; a 60-proposal
+  browser fixture passes selection, exception, clearing, and save at 320/390
+  pixels. Live Obsidian acceptance remains open.
