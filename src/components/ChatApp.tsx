@@ -1000,13 +1000,23 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				profile,
 				plugin.chatapi,
 			);
+			const latestSession = plugin.sessionState
+				?.getSnapshot()
+				.sessions.find((item) => item.id === session.id);
+			if (!latestSession) {
+				notice.hide();
+				new Notice("This session is no longer available.");
+				return;
+			}
 			const tags = normalizeSessionTags([
-				...(session.tags ?? []),
+				...(latestSession.tags ?? []),
 				...suggestions,
 			]);
 			updateSessionMetadata(session.id, {
 				tags,
-				updatedAt: suggestions.length ? Date.now() : session.updatedAt,
+				updatedAt: suggestions.length
+					? Date.now()
+					: latestSession.updatedAt,
 			});
 			await plugin.sessionState?.flush();
 			notice.hide();

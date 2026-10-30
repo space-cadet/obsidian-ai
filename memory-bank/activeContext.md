@@ -1,6 +1,17 @@
 # Active Context
 
-*Last Updated: 2026-10-30 17:27:24 IST*
+*Last Updated: 2026-10-30 17:57:29 IST*
+
+### 2026-10-30 — T78 Codex review fixes
+
+- Provider/client failures now remain explicit in tag generation and are
+  handled as failures by automatic and bulk flows. Manual generation merges
+  into the latest shared session metadata after awaiting the provider.
+- `git diff --check` passes. Tests and production build were not run for this
+  follow-up. PR #14 is on `feat/session-tags`; live History and Settings
+  acceptance remains open.
+- See `tasks/T78.md`, `implementation-details/session-tags.md`, and
+  `sessions/2026-10-30-t78-pr-review-follow-up.md`.
 
 ### 2026-10-30 — T78 sync and archive integration
 

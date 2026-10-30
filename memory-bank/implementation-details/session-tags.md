@@ -1,6 +1,6 @@
 # Chat Session Tags — Implementation Details (T78)
 
-*Last Updated: 2026-10-30 17:06:03 IST*
+*Last Updated: 2026-10-30 17:57:29 IST*
 *Status: prototype on `feat/session-tags`; global normalization was introduced in `0c3b620`, with a subsequent layout follow-up.*
 
 ## Scope and ownership
@@ -211,6 +211,23 @@ be cancelled; closing during an active save waits for that save.
 Implementation: src/lib/sessionTagNormalization.ts and
 src/modals/NormalizeSessionTagsModal.ts, wired in chatDefaults.ts and
 styles/_settings.css (compiled into styles.css).
+
+## Provider failure and manual merge review fixes — 2026-10-30
+
+`ChatApiManager.callApiWithTelemetry` now marks unavailable-client and provider
+failure results with `errorMessage`, while preserving the existing display text
+for normal chat callers. `generateSessionTags` checks this field and throws on
+failure instead of parsing the fallback response as a tag. Automatic and bulk
+generation therefore follow their existing failure paths.
+
+After manual generation returns, ChatApp rereads the session from the shared
+owner and merges suggestions with its current tags. It retains the latest
+`updatedAt` when there are no suggestions and skips the write if the session
+was removed during the request. This prevents the request's original snapshot
+from replacing tag edits or newer session metadata.
+
+PR #14 follow-up validation: `git diff --check` passes. Tests and the
+production build were not run for this review correction.
 
 Verification in this worktree: 49 focused tests pass, including actual modal
 interaction, selected-only application, duplicate cleanup, stale plans,

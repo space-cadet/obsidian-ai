@@ -1,6 +1,13 @@
 # Session Cache
 
-*Last Updated: 2026-10-30 17:27:24 IST*
+*Last Updated: 2026-10-30 17:57:29 IST*
+
+## 2026-10-30 — T78 PR review follow-up
+
+- PR #14 fixes provider failures being parsed as tags and manual suggestions
+  overwriting tag metadata changed while the provider request was in flight.
+- Diff whitespace check passes; tests and production build were not run for
+  this follow-up. See T78, the implementation reference, and the session note.
 
 ## 2026-10-30 — T78 sync and archive integration
 

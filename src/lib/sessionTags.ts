@@ -58,11 +58,13 @@ export async function generateSessionTags(
 		})
 		.join("\n");
 	if (!context.trim()) return [];
-	const response = await chatApi.callApi(
+	const response = await chatApi.callApiWithTelemetry(
 		"Suggest up to 5 short, useful tags for this chat session. Use specific topics, projects, or task types. Return only a JSON array of strings, with no markdown or explanation.",
 		`Chat excerpt:\n${context}\n\nTags:`,
 		profile,
 		signal,
 	);
-	return parseSuggestedTags(response);
+	if (response.errorMessage)
+		throw new Error(`Tag generation failed: ${response.errorMessage}`);
+	return parseSuggestedTags(response.text);
 }
