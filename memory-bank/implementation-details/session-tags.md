@@ -1,0 +1,297 @@
+# Chat Session Tags — Implementation Details (T78)
+
+*Last Updated: 2026-10-30 18:16:07 IST*
+*Status: prototype on `feat/session-tags`; global normalization was introduced in `0c3b620`, with a subsequent layout follow-up.*
+
+## Scope and ownership
+
+Tags belong to saved chat sessions. Each session stores a small ordered list of
+labels as metadata; there is no separate tag table or global tag object. The
+History view derives its available labels and per-label session counts from the
+session metadata it displays. The implementation does not change chat message
+content or the message transcript format.
+
+This prototype's tags are separate from Obsidian note tags. It does not add or
+remove `tags` in note frontmatter, create tag pages, or synchronize a chat
+session label to a vault note. Those behaviors would require a separate design
+and implementation decision.
+
+## Data model and persistence
+
+`ChatSession` has two optional fields:
+
+- `tags?: string[]` — the normalized labels assigned to the session.
+- `autoTagPending?: boolean` — marks a newly created session that was eligible
+  for automatic tag generation when it was created.
+
+Both fields are stored with the session's metadata in the JSONL session index.
+They are not written into the JSONL message records. The fields are optional,
+so old index entries load without a migration. `ChatStorage` restores them when
+building a `ChatSession` and writes them in both the normal metadata save path
+and the path that preserves an unhydrated session's existing message file.
+
+Metadata changes go through the existing `SessionStateOwner`. Tag edits update
+`updatedAt`, allowing existing session save/sync comparison behavior to observe
+the change; no tag-specific sync mechanism was added. The tag manager, History
+filter, agent tools, and generation flows all use this same session metadata.
+
+## Sync, export, and import integration — 2026-10-30
+
+The normal sync engine serializes the complete `ChatSession` for upload and
+restores that object on download. Because tags are session metadata, they travel
+with sync; tag editing and normalization update `updatedAt`, which marks the
+session as changed in the existing sync cache/index flow. This was checked in
+source and with a regression that verifies a normalized tag edit invalidates
+the prior sync timestamp. No live remote-sync run was performed. See T42 and
+T42a for the sync contract and its acceptance boundary.
+
+Legacy-to-JSONL migration now copies both `tags` and `autoTagPending` into the
+session index. The migration regression verifies both fields.
+
+Chat History Markdown exports show the tag list in the session header. JSON
+exports and multi-session JSONL records already contain the full session object.
+Single-session JSONL retains one message per line and stores the session
+metadata on its first message; an empty session uses a metadata record. The
+Settings Backup & Restore area has a separate Import saved chats action for
+JSON and JSONL archives. It preserves tags, adds colliding IDs as new copies,
+normalizes imported labels, and clears `autoTagPending` so import does not
+trigger a provider call. Older message-only JSONL files remain importable but
+cannot restore session metadata that was not present in those files. Markdown
+is for reading/sharing and is not an import format. Settings backup/import
+continues to handle settings only.
+
+Verification for this follow-up: five focused test files pass (48 tests), the
+production build/typecheck, Prettier check, and `git diff --check` pass. The
+broader test invocation reports 701 passed and the same six known failures in
+the agent-tool expected-list assertion and five `SyncLogger` localStorage tests.
+Actual Obsidian archive import and live remote sync remain unverified.
+
+## Tag normalization and model output
+
+`normalizeSessionTags` is the single normalization path for model output and
+user/tool edits. It:
+
+1. Accepts arrays and ignores non-string values.
+2. Trims each label, removes leading `#` characters, collapses internal
+   whitespace, and limits each label to 32 characters.
+3. Drops empty values and duplicates, comparing duplicates
+   case-insensitively while preserving the first label's casing and order.
+4. Keeps at most eight labels per session.
+
+The suggestion parser accepts a JSON array, an object containing a `tags`
+array, or a plain newline/comma-separated response. It also unwraps a fenced
+JSON block. The prompt asks for up to five short, useful labels and a JSON
+array.
+
+## Provider request and excerpt limits
+
+All three generation entry points use `generateSessionTags` and the existing
+`ChatApiManager.callApi` path with the configured provider profile. The helper
+builds the request from user and assistant messages only, keeps the latest
+eight, replaces fenced code blocks with `[code block]`, removes `<context>`
+blocks, and caps each message at 600 characters. If the resulting excerpt is
+empty, it returns no suggestions without making a request.
+
+The Settings description discloses that an excerpt is sent to the selected
+provider. Automatic tagging is opt-in and defaults off. The provider/model
+selector uses configured profiles eligible for tagging and displays the
+selected profile's provider and model in the setting description. The profile
+is resolved when generation starts, so changing the setting affects later
+requests.
+
+## Generation flows
+
+### New sessions
+
+When a session is created, `useChatSession` sets `autoTagPending` according to
+the current opt-in setting. A hook effect waits until the session is hydrated
+and contains at least one user and one assistant message. It uses an in-flight
+session-ID set associated with the shared session owner to avoid duplicate
+automatic requests from open chat panes.
+
+On success, suggestions are normalized and merged with any labels added while
+the request was running; the pending flag is cleared. On an empty result, the
+flag is cleared without changing the session timestamp. On failure, the error
+is logged and the pending flag is cleared. This asynchronous work does not
+hold up the chat turn. Sessions created before the setting was enabled are not
+picked up by this automatic path.
+
+### Active session
+
+The existing main-chat overflow menu exposes “Generate tags for this session.”
+It requires a non-empty active session and a selected tag profile, then merges
+normalized suggestions into its current labels and flushes through the session
+state owner. Notices report missing messages, missing configuration, success,
+an empty suggestion, or failure.
+
+### Existing sessions in Settings
+
+“Generate tags for existing sessions” selects saved sessions with messages,
+no current tags, and no pending automatic request. It processes them
+sequentially. Each session is loaded through the shared owner and rechecked
+before generation; after the request, newly added labels are read again and
+preserved during merge. Sessions with unavailable messages or no suggestions
+are counted as skipped. Exceptions are logged per session and counted as
+failed. Progress and final tagged/skipped/failed counts are shown in Settings.
+The shared progress modal also shows tag chips from the four most recently
+completed sessions, updates cumulative counts, and uses a single contextual
+live-region announcement for each successful session. The activity log keeps
+the run history, and cancellation preserves and saves already completed tags.
+The user authorized sending these bounded excerpts to the configured provider
+for this bulk operation on 2026-10-23.
+
+## Editing, browsing, and agent tools
+
+Chat History keeps tag controls inside the existing History surface:
+
+- Search and a custom in-app All tags filter narrow the compact session list.
+  The filter shows session counts, supports keyboard selection, and does not
+  use a native system picker.
+- Session rows show the first four normalized tags as chips and a `+N` marker
+  when more tags are assigned. An accessible tag icon opens the existing
+  Manage tags modal for the full list and editing controls.
+- Each session's existing Manage tags modal displays current labels, supports
+  individual removal and clearing all labels, and lets users add a new label
+  or choose an existing one.
+- One Search or create a tag combobox filters available labels and creates a
+  new label when the query is not an existing tag. Its suggestion list opens
+  on focus, supports keyboard selection, scrolls within the modal body, and
+  uses the History filter's row style and session counts.
+- Load, copy, export, rename, and delete remain compact inline Obsidian icon
+  actions. Existing copy/export format choices remain available.
+
+Agents can operate on a saved session by ID through four tools:
+
+- `list_session_tags` reads its current normalized labels.
+- `add_session_tags` creates labels or adds existing ones, deduplicating them.
+- `rename_session_tag` replaces one session label and normalizes the result.
+- `remove_session_tags` removes selected labels.
+
+The tools are registered and routed through the existing agent tool registry,
+executor, and `SessionHandlers`. Mutations update metadata and flush through
+the shared session state owner. They do not rename a label globally across
+other sessions.
+
+## Global vocabulary normalization — 2026-10-30
+
+Settings → Chat Defaults exposes Normalize tags beside Generate when a tag
+provider is available; local normalization remains available without a provider.
+The native review modal scans the shared session index metadata, showing unique
+tags and session counts. Suggested merges and All tags views provide source
+chips, editable canonical names, per-group affected counts, selection checkboxes,
+and the union of sessions actually changed by selected groups. The review area
+scrolls separately from the summary and action row on constrained screens. With
+no selected groups, the disabled action reads “No merges selected”.
+
+Local proposals use NFKC Unicode normalization, lowercase, leading-# removal,
+trimmed whitespace, and hyphens for spaces/underscores/dash variants. Proposals
+are reviewed before applying; canonical names must be nonempty and at most 32
+characters. Unchanged singleton labels can be renamed through All tags.
+
+The primary Find merge proposals action sends only the existing tag vocabulary in one request to the configured session-tag profile, never transcripts. The UI
+identifies the provider/model before the action. Returned groups are restricted
+to existing source labels, cannot overlap, and remain unselected until reviewed.
+This operation consolidates clearly equivalent terms; a persistent global alias
+dictionary is not introduced. Opening the modal shows this action first; provider
+requests begin only after it is clicked. Individual spelling changes stay in
+All tags, and every proposal starts unselected. Mobile groups replace table
+columns with compact source chips, a rectangular destination input and an inline
+affected-session count.
+
+Apply validates the current shared metadata fingerprint and all selected groups
+before mutation. Stale plans require a rescan. Ambiguous chains/duplicate source
+mappings are rejected. Selected replacements are applied simultaneously, and
+only duplicates of selected canonical targets are removed. Unselected labels,
+transcript messages, hydration state, and message counts are preserved. Session
+updatedAt changes through the shared owner; one flush persists metadata. The
+unopened-session JSONL guard now also preserves the new updatedAt in the index.
+Failed saves retain pending owner changes and offer Retry save. Suggestions can
+be cancelled; closing during an active save waits for that save.
+
+Implementation: src/lib/sessionTagNormalization.ts and
+src/modals/NormalizeSessionTagsModal.ts, wired in chatDefaults.ts and
+styles/_settings.css (compiled into styles.css).
+
+## Provider failure and manual merge review fixes — 2026-10-30
+
+`ChatApiManager.callApiWithTelemetry` now marks unavailable-client and provider
+failure results with `errorMessage`, while preserving the existing display text
+for normal chat callers. `generateSessionTags` checks this field and throws on
+failure instead of parsing the fallback response as a tag. Automatic and bulk
+generation therefore follow their existing failure paths.
+
+After manual generation returns, ChatApp rereads the session from the shared
+owner and merges suggestions with its current tags. It retains the latest
+`updatedAt` when there are no suggestions and skips the write if the session
+was removed during the request. This prevents the request's original snapshot
+from replacing tag edits or newer session metadata.
+
+PR #14 follow-up commit `f23c53f` is pushed and a fresh Codex review was
+requested; its result is pending. `git diff --check` passes. Tests and the
+production build were not run for this review correction.
+
+Verification in this worktree: 49 focused tests pass, including actual modal
+interaction, selected-only application, duplicate cleanup, stale plans,
+cancellation, failed-save retry, JSONL metadata reload, and unchanged unopened
+transcripts. Desktop (1280×1000) and mobile (390×844) browser harness checks pass
+with zero console errors/warnings and no horizontal overflow. The browser used
+the real modal/core with fixture provider/storage and an Obsidian DOM adapter;
+it does not establish live Obsidian or real-provider acceptance. Full suite:
+690 passed, six previously documented failures. Production build passes.
+
+## Main implementation files
+
+| Concern | Files |
+|---|---|
+| Session fields and settings defaults | `src/types.ts`, `src/settings.ts` |
+| Normalization and provider request | `src/lib/sessionTags.ts` |
+| JSONL index metadata and legacy migration | `src/storage/ChatStorage.ts`, `src/storage/Migration.ts` |
+| Chat archive import and export | `src/utils/importChat.ts`, `src/utils/exportChat.ts`, `src/settings-sections/exportImport.ts` |
+| New-session lifecycle | `src/hooks/useChatSession.ts` |
+| Provider selector and bulk generation | `src/settings-sections/chatDefaults.ts` |
+| History filter, manager, tag preview, and compact actions | `src/components/presentational/SessionPickerModal.tsx`, `styles/_chat.css`, `styles.css` |
+| Bulk generation progress and live tag preview | `src/modals/SyncProgressModal.ts`, `src/settings-sections/chatDefaults.ts`, `styles/_sync.css` |
+| Active-session generation action | `src/components/presentational/ActionBar.tsx`, `src/components/ChatApp.tsx` |
+| Agent tool definitions and execution | `src/agent/tools.ts`, `src/agent/toolRegistry.ts`, `src/agent/ToolExecutor.ts`, `src/agent/tools/handlers/sessionHandlers.ts` |
+| Shared metadata ownership | `src/state/SessionStateOwner.ts` |
+
+## Verification and remaining acceptance
+
+Commit `417881d` passes the focused History, progress-modal, and tag-helper
+tests (22/22), the production build, and `git diff --check`. The full suite was
+not rerun for this follow-up. Its previous run on `62c8eb0` had 673/679 passing;
+the six failures were in the unchanged agent-tool expected-list test and five
+`SyncLogger` tests that require `localStorage`. The user confirmed the bulk
+tag-generation modal works as expected on 2026-10-25. The user subsequently reported all four session-tag tools passed with the
+temporary test tag removed. History filtering/tag editing, Settings provider
+selection, and the new normalization flow remain open for live Obsidian review.
+
+The user confirmed the bulk-generation modal and generated-tag preview in
+Obsidian. The History tag display and manager remain pending live review. The
+user deferred additional chip/list visual refinements for now. Obsidian note-tag
+integration is not part of the current implementation.
+
+The former 200-name request cutoff and 200-group response truncation are removed.
+A 429-name regression checks complete transmission and retention of 214 groups.
+Provider errors are shown in a bounded scrollable panel to preserve review space.
+
+Select all selects changed groups in the current view. Deselect all clears the
+entire plan. These controls remain beside the summary while reviewing the list;
+individual checkboxes support exceptions and canonical edits are preserved.
+
+
+## Agent mutation serialization and review test corrections — 2026-10-30
+
+add_session_tags, rename_session_tag, and remove_session_tags now map to the
+shared session:<id> target used by saved-session rename and delete. The
+ToolExecutor holds this target lock for the complete mutation, including the
+session lookup and persistence flush, so concurrent tag tools cannot overwrite
+one another from stale snapshots.
+
+The abort-signal test for generateSessionTags now mocks
+callApiWithTelemetry. The agent-tool inventory test lists the four session-tag
+tools. SyncLogger tests install an isolated localStorage fixture.
+
+Verification for this review follow-up: four focused files pass 37 tests; the
+full suite passes 710 tests; the production build, targeted Prettier check, and
+git diff --check pass.

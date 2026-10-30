@@ -1,5 +1,7 @@
 import type { ToolResult } from "../../types";
 import type { ChatSession } from "../../../types";
+import { normalizeSessionTags } from "../../../lib/sessionTags";
+import type { SessionStateOwner } from "../../../state/SessionStateOwner";
 import {
 	ToolHandlerBase,
 	type ToolHandlerContext,
@@ -33,6 +35,111 @@ function displayTitle(session: ChatSession): string {
 export class SessionHandlers extends ToolHandlerBase {
 	constructor(context: ToolHandlerContext) {
 		super(context);
+	}
+
+	private async getTagSession(sessionId: string): Promise<{
+		owner: SessionStateOwner;
+		session: ChatSession;
+	} | null> {
+		const owner = this.sessionTools?.state;
+		if (!owner) return null;
+		await owner.initialize();
+		const session = owner
+			.getSnapshot()
+			.sessions.find((item) => item.id === sessionId);
+		return session ? { owner, session } : null;
+	}
+
+	async listSessionTags(args: { session_id: string }): Promise<ToolResult> {
+		const found = await this.getTagSession(args.session_id);
+		if (!found)
+			return { error: "Saved chat session not found or unavailable." };
+		return {
+			success: true,
+			content: JSON.stringify({
+				session_id: args.session_id,
+				tags: normalizeSessionTags(found.session.tags),
+			}),
+		};
+	}
+
+	async addSessionTags(args: {
+		session_id: string;
+		tags: string[];
+	}): Promise<ToolResult> {
+		const found = await this.getTagSession(args.session_id);
+		if (!found)
+			return { error: "Saved chat session not found or unavailable." };
+		const tags = normalizeSessionTags([
+			...(found.session.tags ?? []),
+			...args.tags,
+		]);
+		if (
+			tags.length === (found.session.tags ?? []).length &&
+			args.tags.every((tag) =>
+				found.session.tags?.some(
+					(old) =>
+						old.toLocaleLowerCase() ===
+						tag.trim().replace(/^#+/, "").toLocaleLowerCase(),
+				),
+			)
+		) {
+			return { success: true, content: JSON.stringify({ tags }) };
+		}
+		found.owner.updateMetadata(args.session_id, {
+			tags,
+			updatedAt: Date.now(),
+		});
+		await found.owner.flush();
+		return { success: true, content: JSON.stringify({ tags }) };
+	}
+
+	async renameSessionTag(args: {
+		session_id: string;
+		old_tag: string;
+		new_tag: string;
+	}): Promise<ToolResult> {
+		const found = await this.getTagSession(args.session_id);
+		if (!found)
+			return { error: "Saved chat session not found or unavailable." };
+		const current = normalizeSessionTags(found.session.tags);
+		const index = current.findIndex(
+			(tag) =>
+				tag.toLocaleLowerCase() ===
+				args.old_tag.trim().replace(/^#+/, "").toLocaleLowerCase(),
+		);
+		if (index < 0) return { error: `Tag not found: ${args.old_tag}` };
+		current[index] = args.new_tag;
+		const tags = normalizeSessionTags(current);
+		found.owner.updateMetadata(args.session_id, {
+			tags,
+			updatedAt: Date.now(),
+		});
+		await found.owner.flush();
+		return { success: true, content: JSON.stringify({ tags }) };
+	}
+
+	async removeSessionTags(args: {
+		session_id: string;
+		tags: string[];
+	}): Promise<ToolResult> {
+		const found = await this.getTagSession(args.session_id);
+		if (!found)
+			return { error: "Saved chat session not found or unavailable." };
+		const remove = new Set(
+			args.tags.map((tag) =>
+				tag.trim().replace(/^#+/, "").toLocaleLowerCase(),
+			),
+		);
+		const tags = normalizeSessionTags(found.session.tags).filter(
+			(tag) => !remove.has(tag.toLocaleLowerCase()),
+		);
+		found.owner.updateMetadata(args.session_id, {
+			tags,
+			updatedAt: Date.now(),
+		});
+		await found.owner.flush();
+		return { success: true, content: JSON.stringify({ tags }) };
 	}
 
 	async listChatSessions(args: {

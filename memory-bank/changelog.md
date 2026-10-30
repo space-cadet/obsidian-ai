@@ -2,9 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased — 2026-10-22
+## Unreleased — 2026-10-30
 
 ### Added
+
+- Import saved-chat JSON/JSONL archives and preserve session tags in chat
+  exports, legacy migration, and sync metadata (T78/T20).
+
+- Select all and Deselect all for normalization proposals, with individual
+  exceptions and preserved canonical edits (T78).
+
+- Global session-tag normalization review: local spelling groups, optional
+  related-term suggestions, editable canonical names, selected merges, and
+  affected-session counts. Apply updates saved-session metadata, rejects stale
+  review plans, and offers Retry save (T78).
 
 - Agent tools can list, read, search, open, rename, and delete saved chat
   sessions. Search covers titles and message content; deletion requires
@@ -12,7 +23,20 @@ All notable changes to this project will be documented in this file.
 - Added a Settings option for parallel session generations, defaulting to five
   with a supported range of one to ten (T15, `16f7034`).
 
+- Chat History shows the first four session tags as chips, a +N overflow marker,
+  and an accessible icon to open the full tag manager. Bulk tag generation now
+  previews recent generated tags in its progress modal (T78, 417881d).
+
 ### Fixed
+
+- Remove tag-normalization vocabulary and response cutoffs, and keep long
+  provider errors from crowding the review area (T78).
+
+- Make AI merge proposals the primary normalization action, require explicit
+  selection of every proposal, and use compact merge groups on mobile (T78).
+
+- Keep the tag-normalization summary and actions visible while reviewing tags
+  in a constrained modal, and clarify the disabled empty-selection action (T78).
 
 - Retry reads the current shared transcript before React refs refresh, excluding
   the replaced response and duplicate prompt (`25932cd`, T15/T24c).
@@ -38,6 +62,8 @@ All notable changes to this project will be documented in this file.
 
 ### Verification
 
+- T78 follow-up passed 22 focused tests, the production build, and diff checks.
+  The full suite was not rerun; live Obsidian acceptance remains pending.
 - The full suite passed with 645 tests in 80 files, and the production build,
   formatting, and diff checks passed. Live Obsidian acceptance remains open.
 - The pane-scope follow-up passed 32 focused tests in two files, the production

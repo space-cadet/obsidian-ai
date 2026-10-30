@@ -465,3 +465,217 @@
 }
 
 /* ── Chat Sync Panel v2 (syncit-inspired) ───────────────────────────────── */
+
+/* Saved-session tag vocabulary review. */
+.session-tag-normalization-modal {
+	width: min(960px, 94vw);
+	max-height: 88vh;
+}
+.session-tag-normalization-modal .modal-content {
+	display: flex;
+	flex-direction: column;
+	max-height: calc(88vh - 72px);
+	min-height: 0;
+	overflow: hidden;
+}
+.tag-normalization-review {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+.tag-normalization-controls {
+	flex: 0 0 auto;
+}
+.tag-normalization-muted {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+.tag-normalization-tabs,
+.tag-normalization-footer,
+.tag-normalization-related {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+	flex-wrap: wrap;
+	margin: 16px 0;
+}
+.tag-normalization-table {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+}
+.tag-normalization-row {
+	display: grid;
+	grid-template-columns: 44px minmax(0, 1.5fr) minmax(140px, 1fr) 65px;
+	align-items: center;
+	gap: 14px;
+	padding: 14px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+.tag-normalization-header {
+	position: sticky;
+	top: 0;
+	background: var(--background-secondary);
+	font-weight: var(--font-semibold);
+	z-index: 1;
+}
+.tag-normalization-row input[type="text"] {
+	width: 100%;
+	min-width: 0;
+}
+.tag-normalization-sources {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	min-width: 0;
+}
+.tag-normalization-chip {
+	background: var(--background-modifier-hover);
+	padding: 4px 8px;
+	border-radius: var(--radius-s);
+	overflow-wrap: anywhere;
+}
+.tag-normalization-summary {
+	padding: 14px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+}
+.tag-normalization-feedback {
+	max-height: 4.2em;
+	overflow-y: auto;
+	overflow-wrap: anywhere;
+	color: var(--text-muted);
+	margin-top: 10px;
+	min-height: 1.5em;
+}
+.tag-normalization-footer {
+	margin: 10px 0 0;
+}
+.tag-normalization-footer button:first-child {
+	margin-right: auto;
+}
+.tag-normalization-empty {
+	padding: 14px;
+}
+@media (max-width: 600px) {
+	.tag-normalization-footer {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 8px;
+	}
+	.tag-normalization-footer button {
+		min-width: 0;
+		white-space: normal;
+	}
+	.tag-normalization-footer button:first-child {
+		grid-column: 1 / -1;
+		justify-self: start;
+		margin-right: 0;
+	}
+}
+
+.tag-normalization-use {
+	min-height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+
+@media (max-width: 600px) {
+	.tag-normalization-header {
+		font-size: 12px;
+	}
+}
+
+.tag-normalization-target {
+	min-width: 0;
+}
+.tag-normalization-target-label {
+	display: none;
+}
+@media (max-width: 600px) {
+	.tag-normalization-target-label {
+		display: block;
+		color: var(--text-muted);
+		font-size: var(--font-ui-small);
+		margin-bottom: 4px;
+	}
+}
+
+/* Mobile merge cards keep the source labels and destination together. */
+.session-tag-normalization-modal .tag-normalization-feedback {
+	font-size: var(--font-ui-small);
+	line-height: 1.4;
+}
+.session-tag-normalization-modal .tag-normalization-review > p {
+	margin: 8px 0;
+}
+.session-tag-normalization-modal .tag-normalization-related,
+.session-tag-normalization-modal .tag-normalization-tabs {
+	margin: 10px 0;
+}
+@media (max-width: 600px) {
+	.session-tag-normalization-modal .tag-normalization-header {
+		display: none;
+	}
+	.session-tag-normalization-modal .tag-normalization-row {
+		grid-template-columns: 28px minmax(0, 1fr);
+		gap: 5px 8px;
+		padding: 10px;
+		align-items: start;
+	}
+	.session-tag-normalization-modal .tag-normalization-use {
+		grid-column: 1;
+		grid-row: 1 / span 2;
+		min-height: 44px;
+	}
+	.session-tag-normalization-modal .tag-normalization-sources {
+		grid-column: 2;
+		grid-row: 1;
+		gap: 4px;
+	}
+	.session-tag-normalization-modal .tag-normalization-chip {
+		font-size: var(--font-ui-small);
+		line-height: 1.35;
+		padding: 2px 6px;
+		max-width: 100%;
+	}
+	.session-tag-normalization-modal .tag-normalization-target {
+		grid-column: 2;
+		grid-row: 2;
+	}
+	.session-tag-normalization-modal .tag-normalization-target-label {
+		font-size: 12px;
+		margin-bottom: 3px;
+	}
+	.session-tag-normalization-modal
+		.tag-normalization-target
+		input[type="text"] {
+		box-sizing: border-box;
+		height: 34px;
+		border-radius: 4px;
+		padding: 4px 8px;
+		font-size: var(--font-ui-small);
+	}
+	.session-tag-normalization-modal .tag-normalization-session-count {
+		grid-column: 2;
+		grid-row: 3;
+		font-size: 12px;
+		color: var(--text-muted);
+	}
+	.session-tag-normalization-modal .tag-normalization-session-count::after {
+		content: " sessions affected";
+	}
+	.session-tag-normalization-modal .tag-normalization-summary {
+		padding: 8px 10px;
+		margin-top: 8px;
+		font-size: var(--font-ui-small);
+	}
+}
+
+.tag-normalization-selection {
+	display: flex;
+	gap: 8px;
+	margin: 8px 0;
+}

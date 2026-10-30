@@ -180,6 +180,10 @@ export interface ChatSession {
 	contextItems: ContextItem[];
 	/** Non-destructive model-history summary; the full messages remain intact. */
 	compactionMetadata?: CompactionMetadata;
+	/** User-assigned and AI-suggested labels for this conversation. */
+	tags?: string[];
+	/** Set only on sessions created while automatic tagging is enabled. */
+	autoTagPending?: boolean;
 	/** The profile used for this session. Defaults to active profile if not set. */
 	profileId?: string;
 	/** Group chat mode flag */

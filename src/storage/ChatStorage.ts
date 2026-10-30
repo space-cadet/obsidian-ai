@@ -143,6 +143,8 @@ interface SessionIndexEntry {
 	contextItems?: ContextItem[];
 	scrollPosition?: number;
 	compactionMetadata?: CompactionMetadata;
+	tags?: string[];
+	autoTagPending?: boolean;
 }
 
 interface SessionIndex {
@@ -442,6 +444,8 @@ class JsonlStorage implements ChatStorage {
 					draftAttachments,
 					scrollPosition: entry.scrollPosition,
 					compactionMetadata: entry.compactionMetadata,
+					tags: entry.tags,
+					autoTagPending: entry.autoTagPending,
 				};
 			}),
 		);
@@ -751,10 +755,13 @@ class JsonlStorage implements ChatStorage {
 				};
 				indexEntries.push({
 					...preservedEntry,
+					updatedAt: session.updatedAt,
 					title: session.title,
 					draft: session.draft,
 					draftAttachmentsFile,
 					scrollPosition: session.scrollPosition,
+					tags: session.tags,
+					autoTagPending: session.autoTagPending,
 				});
 				preservedUnhydratedSessions++;
 				preservedUnhydratedMessages += expectedMessageCount;
@@ -822,6 +829,8 @@ class JsonlStorage implements ChatStorage {
 				scrollPosition: session.scrollPosition,
 				contextItems: session.contextItems,
 				compactionMetadata: session.compactionMetadata,
+				tags: session.tags,
+				autoTagPending: session.autoTagPending,
 			});
 		}
 		if (preservedUnhydratedSessions > 0) {

@@ -2,7 +2,7 @@
 
 **Purpose:** a language- and framework-independent specification of the Chat Lab AI chat experience. It describes observable behavior and the services a replacement needs, rather than prescribing an implementation.
 
-**Current-state reference:** 2026-10-21. This map covers the capabilities present in the current chat experience. Optional or host-dependent behavior is labeled as such; planned ideas are not presented as shipped features.
+**Current-state reference:** 2026-10-23. This map covers the capabilities present in the current chat experience. Optional or host-dependent behavior is labeled as such; branch prototypes and unverified ideas are not presented as shipped features.
 
 **How to read it:** user-visible chat behavior is the portable layer. Repository operations are capability-based and may be absent or restricted. Named Obsidian APIs and syntax describe this product's adapter; other repository examples are illustrative, not claims of existing Chat Lab integrations.
 
@@ -299,9 +299,23 @@ These generated mobile mockups expand the primary references with more explicit 
 
 ### 4.2 Chat History
 
-History is sorted by most recently updated. Each item can show title, message count, updated time, preview, and available usage information. It supports loading, renaming, deleting with confirmation, per-session copy, and per-session export. Supported copy/export formats are Markdown, JSON, and JSONL. Bulk session export is also available. Empty unsent drafts are excluded, and sessions older than the configured retention limit can be pruned.
+History is sorted by most recently updated. Each item can show title, message count, updated time, preview, and available usage information. It supports loading, renaming, deleting with confirmation, per-session copy, and per-session export. Supported copy/export formats are Markdown, JSON, and JSONL; session tags appear in Markdown and remain structured in JSON/JSONL. Saved chat JSON/JSONL archives can be imported from Settings → Backup & Restore. Existing sessions are preserved and ID collisions create imported copies. Bulk session export is also available. Empty unsent drafts are excluded, and sessions older than the configured retention limit can be pruned.
 
 Session titles can be generated from conversation content and can be renamed manually. Automatic naming is optional; when model-based naming is unavailable or fails, a local title fallback is used.
+
+**Session tags prototype (feat/session-tags):** Sessions can have user-added or model-suggested tags. Chat History uses a compact searchable list, an in-app tag filter with session counts and keyboard selection, up to four tag chips per session plus a +N overflow marker, an accessible Manage tags icon, and inline icon actions for load, copy, export, rename, and delete. Manage tags opens a session-scoped modal with one Search or create a tag field. The picker filters existing labels, offers creation for unmatched text, opens on focus, supports keyboard selection, and displays the full available-tag list in a bounded scroll area with History-style tag icons and session counts. The picker stays in the modal's scrollable content so it does not cover the footer. Users can remove labels individually or clear all tags. The optional auto-tag setting applies only to sessions created while enabled; after the first user/assistant exchange, it sends a bounded excerpt to the selected configured provider profile and model. The provider selector uses compact profile names and shows provider/model details in its description. The main chat overflow menu can generate and merge tags for the active session. Agent tools list, add, rename, and remove tags on a specified saved session. Settings can sequentially generate tags for untagged saved sessions, previewing recent generated tags in the progress modal and showing progress and skipped/failed results; it sends a bounded excerpt from each eligible session to the selected provider. The user authorized this data transfer on 2026-10-23. Tags remain part of session metadata during full-session sync, legacy-to-JSONL migration, and JSON/JSONL archive export/import; Markdown displays them in the session header. Live UI and archive-import acceptance remain open.
+
+**Global tag normalization (T78, 2026-10-30, branch implementation):** Settings
+provides a review modal to consolidate the existing session-tag vocabulary.
+Users review local spelling groups, edit canonical names, select or skip groups,
+and apply them across affected sessions. Optional related-term suggestions send
+existing tag names only to the selected provider; semantic groups require
+explicit selection. The modal reports actual affected-session counts, rejects
+stale/ambiguous plans, preserves skipped labels and transcripts, and offers save
+retry. Automated and desktop/mobile browser-harness checks pass; live Obsidian
+normalization acceptance remains open. See session-tags.md for the full data
+and persistence boundary. The user separately reported all four session-tag
+agent tools passed with temporary-tag cleanup.
 
 ### 4.3 Search and deep links
 
@@ -429,6 +443,7 @@ The current Obsidian AI built-in chat registry contains 33 capabilities. These n
 | Memory | `evaluate_staged` | Evaluate staged memory changes. |
 | Memory | `cull_core` | Curate/remove core memory entries under the memory policy. |
 | Conversation | `search_past_sessions` | Search saved chat history, excluding the current session, and return navigable references. |
+| Conversation | `list_session_tags`, `add_session_tags`, `rename_session_tag`, `remove_session_tags` | Read and manage tags on a specified saved chat session. |
 | Conversation | `read_tool_result` | Retrieve a previously stored full tool result by its session/call reference when available. |
 | Chat settings | `read_settings` | Read sanitized plugin settings plus the current turn's resolved profile/model/thinking selection when available; global defaults may differ, and this does not confirm effective provider routing. |
 | Chat settings | `update_setting` | Change an allow-listed setting when Developer mode permits it. |

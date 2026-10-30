@@ -1,7 +1,7 @@
 # Message Selection and Chat History Export Design
 
 *Created: 2026-08-14*
-*Last Updated: 2026-08-14 16:42:00 IST*
+*Last Updated: 2026-10-25 11:19:59 IST*
 *Task: T20*
 
 ## Scope
@@ -16,10 +16,22 @@ Selected messages are serialized through the shared `src/utils/exportChat.ts` Ma
 
 ## Chat History actions
 
-`SessionPickerModal` is titled `Chat History`. Each session card retains independent icon actions for loading, copying, renaming, and deleting. Copy Markdown, Copy JSON, and Copy JSONL are grouped under the Copy dropdown. Export Markdown, Export JSON, and Export JSONL are grouped under the Export dropdown. Row action events are isolated from the card load handler.
+`SessionPickerModal` is titled Chat History. Entries use a compact layout with title, metadata, preview, a searchable history input, and an in-app tag filter. The filter opens a compact list with session counts, selected state, and keyboard selection. Each card shows up to four tag chips plus a +N overflow marker; an accessible tag icon opens the full session-scoped Manage tags modal. One Search or create a tag field filters available labels and creates new labels from unmatched text. Its list opens on focus, supports keyboard selection, and keeps all available tags in a bounded scroll region. Rows reuse the History filter's tag icon, session count, and compact styling. The picker stays in the modal's scrollable content so the footer remains visible. Users can create labels, remove individual labels, or remove all tags. Load, copy, export, rename, and delete remain as compact icon actions on each entry. Copy and export retain Markdown, JSON, and JSONL choices. The actions use Obsidian icons and existing modal/button surfaces; action events remain separate from session selection.
 
-The existing export serializers and vault filename collision behavior are reused rather than duplicated. CSS keeps the card metadata and actions in separate responsive regions so narrow windows wrap without garbling labels.
+## Chat History redesign follow-up — 2026-10-23
+
+The selected Option C mockup was implemented after user review. The History list has search and tag filtering, a per-session Manage tags modal with a searchable existing-tag dropdown, and inline icon actions for all session operations. The October 25 follow-up replaced expandable tag counts with the first four tag chips, a +N overflow marker, and an accessible icon to open the full manager. The T78 bulk-generation progress modal also previews recent generated tags. The October 25 follow-up passed 22 focused tests and the production build; live Obsidian UI acceptance remains pending.
+
+The manager picker follow-up unifies search and creation in one field, shows the full available list in scrollable History-style rows with session counts, and offers label creation for unmatched text. Formatting, production build, and `git diff --check` pass; automated tests and live Obsidian UI acceptance were not run.
 
 ## Verification
 
 The completed implementation was validated with 210 tests, TypeScript, the production build, and `git diff --check`. Commits: `b980d7a`, `e6fa1f7`, `7d02f17`, `eb844b0`, `ffa2e17`, and `a9cad79`.
+
+## Global tag normalization — 2026-10-30
+
+The T78 Settings normalization review consolidates labels across saved sessions;
+History displays the updated shared metadata. It offers editable canonical names,
+selected groups, affected counts, local proposals and optional related-term
+suggestions. See [session-tags.md](session-tags.md) for data flow, persistence,
+and remaining live acceptance. T20's completed Copy/Export behavior is unchanged.

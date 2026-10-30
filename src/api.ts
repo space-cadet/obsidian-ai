@@ -38,6 +38,7 @@ export type SdkMessage =
 
 export interface ApiCallTelemetryResult {
 	text: string;
+	errorMessage?: string;
 	requestTokenEstimate: number;
 	providerUsage?: ProviderTokenUsage;
 	responseTimeMs: number;
@@ -114,6 +115,7 @@ export class ChatApiManager {
 			);
 			return {
 				text: "⚠️ Chat client is not available.",
+				errorMessage: "Chat client is not available.",
 				requestTokenEstimate,
 				responseTimeMs: Date.now() - startedAt,
 			};
@@ -160,6 +162,7 @@ export class ChatApiManager {
 			new Notice(`❌ Error calling the chat model: ${error.message}`);
 			return {
 				text: "⚠️ Failed to generate a response. Please try again later.",
+				errorMessage: error?.message || "Failed to generate a response.",
 				requestTokenEstimate,
 				responseTimeMs: Date.now() - startedAt,
 			};

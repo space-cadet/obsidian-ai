@@ -17,6 +17,21 @@ import {
 	generateSessionTitle,
 	generateSessionTitleLLM,
 } from "../lib/sessionTitle";
+import { generateSessionTags, normalizeSessionTags } from "../lib/sessionTags";
+
+const autoTaggingSessionIdsByOwner = new WeakMap<
+	SessionStateOwner,
+	Set<string>
+>();
+
+function getAutoTaggingSessionIds(owner: SessionStateOwner): Set<string> {
+	let sessionIds = autoTaggingSessionIdsByOwner.get(owner);
+	if (!sessionIds) {
+		sessionIds = new Set<string>();
+		autoTaggingSessionIdsByOwner.set(owner, sessionIds);
+	}
+	return sessionIds;
+}
 
 interface UseChatSessionOptions {
 	plugin: ChatPluginLike;
@@ -88,6 +103,7 @@ export function useChatSession({
 		if (!plugin.sessionState) plugin.sessionState = ownerRef.current;
 	}
 	const owner = ownerRef.current;
+	const autoTaggingSessionIds = getAutoTaggingSessionIds(owner);
 	const sessionSnapshot = useSyncExternalStore(
 		owner.subscribe,
 		owner.getSnapshot,
@@ -405,6 +421,77 @@ export function useChatSession({
 		plugin.chatapi,
 	]);
 
+	// New sessions created with auto-tagging enabled are tagged after the first
+	// exchange. Older sessions are never picked up by this background task.
+	useEffect(() => {
+		if (!plugin.settings.autoTagSessions) return;
+		for (const session of sessions) {
+			if (
+				!session.autoTagPending ||
+				session.hydrated === false ||
+				autoTaggingSessionIds.has(session.id)
+			) {
+				continue;
+			}
+			const hasUserMessage = session.messages.some(
+				(message) => message.role === "user",
+			);
+			const hasAssistantMessage = session.messages.some(
+				(message) => message.role === "assistant",
+			);
+			if (!hasUserMessage || !hasAssistantMessage) continue;
+
+			autoTaggingSessionIds.add(session.id);
+			void (async () => {
+				try {
+					const profile = plugin.settings.providerProfiles.find(
+						(candidate) =>
+							candidate.id ===
+							plugin.settings.sessionTaggingProfileId,
+					);
+					if (!profile)
+						throw new Error("Tagging provider is unavailable");
+					const tags = await generateSessionTags(
+						session.messages,
+						profile,
+						plugin.chatapi,
+					);
+					const latest = owner
+						.getSnapshot()
+						.sessions.find(
+							(candidate) => candidate.id === session.id,
+						);
+					if (latest?.autoTagPending) {
+						owner.updateMetadata(session.id, {
+							tags: normalizeSessionTags([
+								...(latest.tags ?? []),
+								...tags,
+							]),
+							updatedAt: tags.length
+								? Date.now()
+								: latest.updatedAt,
+							autoTagPending: false,
+						});
+					}
+				} catch (error) {
+					plugin.logger?.log(
+						"warn",
+						`[SessionTags] automatic tag generation failed: ${String(error)}`,
+					);
+					const latest = owner
+						.getSnapshot()
+						.sessions.find(
+							(candidate) => candidate.id === session.id,
+						);
+					if (latest?.autoTagPending)
+						owner.updateMetadata(session.id, {
+							autoTagPending: false,
+						});
+				}
+			})();
+		}
+	}, [sessions, plugin, owner]);
+
 	// ─── Create a new session ───
 	const createNewSession = useCallback(
 		(opts?: {
@@ -435,6 +522,8 @@ export function useChatSession({
 					? opts.selectedProfileIds
 					: [getActiveProviderProfile(plugin.settings).id],
 				modelOverrides: opts?.modelOverrides,
+				tags: [],
+				autoTagPending: plugin.settings.autoTagSessions,
 				remoteUsers: [],
 				selectedRemoteUserIds: [],
 			};

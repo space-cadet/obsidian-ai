@@ -1,8 +1,34 @@
-import { Setting } from "obsidian";
+import { Notice, Setting } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection, createSliderWithValue } from "./helpers";
+import { NormalizeSessionTagsModal } from "../modals/NormalizeSessionTagsModal";
 import { AgentPromptModal } from "../modals/AgentPromptModal";
-import { normalizeMaxParallelChatSessions } from "../settings";
+import { SyncProgressModal } from "../modals/SyncProgressModal";
+import { generateSessionTags, normalizeSessionTags } from "../lib/sessionTags";
+import { SessionStateOwner } from "../state/SessionStateOwner";
+import {
+	normalizeMaxParallelChatSessions,
+	type ProviderProfile,
+} from "../settings";
+
+function canUseProfileForTagging(profile: ProviderProfile): boolean {
+	switch (profile.provider) {
+		case "ollama":
+			return true;
+		case "codex":
+			return true;
+		case "agent":
+			return Boolean(profile.endpointUrl?.trim());
+		case "custom":
+			return Boolean(profile.customURL?.trim());
+		case "azure":
+			return Boolean(
+				profile.apiKey?.trim() && profile.azureEndpoint?.trim(),
+			);
+		default:
+			return Boolean(profile.apiKey?.trim());
+	}
+}
 
 export function renderChatDefaultsSection(
 	containerEl: HTMLElement,
@@ -93,6 +119,328 @@ export function renderChatDefaultsSection(
 					await saveSettings();
 				});
 		});
+
+	const tagProfiles = plugin.settings.providerProfiles.filter(
+		canUseProfileForTagging,
+	);
+	new Setting(sectionEl)
+		.setName("Auto-generate session tags")
+		.setDesc(
+			"Suggest up to 5 tags after the first exchange in each new session. A short excerpt of that chat is sent to the selected provider. Existing sessions are not tagged automatically.",
+		)
+		.addToggle((toggle) => {
+			toggle
+				.setValue(plugin.settings.autoTagSessions)
+				.onChange(async (value) => {
+					plugin.settings.autoTagSessions = value;
+					await saveSettings();
+				});
+			(toggle.toggleEl as HTMLInputElement).disabled =
+				tagProfiles.length === 0;
+		});
+
+	if (tagProfiles.length > 0) {
+		const selectedProfile = tagProfiles.some(
+			(profile) => profile.id === plugin.settings.sessionTaggingProfileId,
+		)
+			? plugin.settings.sessionTaggingProfileId
+			: tagProfiles[0].id;
+		plugin.settings.sessionTaggingProfileId = selectedProfile;
+		const tagProfileSetting = new Setting(sectionEl)
+			.setName("Session tag provider and model")
+			.setDesc("");
+		tagProfileSetting.addDropdown((dropdown) => {
+			for (const profile of tagProfiles) {
+				const label = profile.name.trim();
+				dropdown.addOption(
+					profile.id,
+					label.length > 36 ? `${label.slice(0, 33)}…` : label,
+				);
+			}
+			const updateDescription = (profileId: string) => {
+				const profile = tagProfiles.find(
+					(item) => item.id === profileId,
+				);
+				tagProfileSetting.descEl.setText(
+					profile
+						? `${profile.provider} / ${profile.model} · Choose a configured profile for tag suggestions.`
+						: "Choose a configured profile for tag suggestions.",
+				);
+			};
+			dropdown.setValue(selectedProfile);
+			updateDescription(selectedProfile);
+			dropdown.onChange(async (value) => {
+				plugin.settings.sessionTaggingProfileId = value;
+				updateDescription(value);
+				await saveSettings();
+			});
+		});
+
+		const bulkDescription =
+			"Generate tags for saved sessions that do not have tags yet. Existing tags are preserved. A bounded excerpt of each eligible session is sent to the selected provider.";
+		const bulkTagSetting = new Setting(sectionEl)
+			.setName("Saved-session tags")
+			.setDesc(bulkDescription);
+		bulkTagSetting.addButton((button) =>
+			button.setButtonText("Generate").onClick(async () => {
+				const profile = plugin.settings.providerProfiles.find(
+					(item) =>
+						item.id === plugin.settings.sessionTaggingProfileId,
+				);
+				if (!profile) {
+					new Notice("Choose a session tag provider first.");
+					return;
+				}
+
+				const abortController = new AbortController();
+				const progressModal = new SyncProgressModal(plugin.app, 0, {
+					title: "Generating session tags",
+					initialStatus: "Preparing saved sessions…",
+					initialCurrentFile: "Loading the session index…",
+					initialSummary: "0 tagged · 0 skipped · 0 failed",
+					showBackgroundButton: false,
+					closeCancelsOnProgress: true,
+					showGeneratedTags: true,
+					onCancel: () => abortController.abort(),
+				});
+				progressModal.open();
+				button.setDisabled(true).setButtonText("Generating…");
+				let generated = 0;
+				let failed = 0;
+				let skipped = 0;
+				let completed = 0;
+				let total = 0;
+				const formatSummary = () =>
+					`${generated} tagged · ${skipped} skipped · ${failed} failed`;
+				try {
+					const owner = (plugin.sessionState ??=
+						new SessionStateOwner({
+							load: () => plugin.loadChatData(),
+							hydrate: (id) =>
+								plugin.hydrateSession?.(id) ??
+								Promise.resolve([]),
+							peek: (id) =>
+								plugin.peekSessionMessages?.(id) ??
+								Promise.resolve([]),
+							save: (data) => plugin.saveChatData(data),
+						}));
+					const snapshot = await owner.initialize();
+					if (abortController.signal.aborted) {
+						progressModal.finishWithSummary(
+							"Tag generation cancelled",
+							"Cancelled before any sessions were processed.",
+							formatSummary(),
+						);
+						return;
+					}
+					const candidates = snapshot.sessions.filter(
+						(session) =>
+							(session.messageCount ?? session.messages.length) >
+								0 &&
+							normalizeSessionTags(session.tags).length === 0 &&
+							!session.autoTagPending,
+					);
+					total = candidates.length;
+					progressModal.setTotal(total);
+					if (candidates.length === 0) {
+						bulkTagSetting.setDesc(
+							`${bulkDescription} No untagged saved sessions were found.`,
+						);
+						progressModal.finishWithSummary(
+							"No sessions to tag",
+							"No untagged saved sessions were found.",
+							formatSummary(),
+						);
+						new Notice("No untagged saved sessions found.");
+						return;
+					}
+
+					progressModal.updateStatus(
+						`Found ${total} session${total === 1 ? "" : "s"} to tag.`,
+					);
+					progressModal.addLog(
+						"system",
+						`Found ${total} eligible session${total === 1 ? "" : "s"}.`,
+					);
+					for (let index = 0; index < candidates.length; index++) {
+						if (abortController.signal.aborted) break;
+						const indexed = candidates[index];
+						const sessionTitle =
+							indexed.title.trim() || "Untitled session";
+						progressModal.updateStatus(
+							`Processing session ${index + 1} of ${total}…`,
+						);
+						progressModal.updateCurrentFile(sessionTitle);
+						let logIcon = "system";
+						let logText = "";
+						let isError = false;
+						try {
+							const session = await owner.ensureLoaded(
+								indexed.id,
+							);
+							if (abortController.signal.aborted) break;
+							if (!session?.messages.length) {
+								skipped++;
+								logIcon = "skip";
+								logText = `${sessionTitle}: no messages available`;
+							} else {
+								const latest = owner
+									.getSnapshot()
+									.sessions.find(
+										(item) => item.id === session.id,
+									);
+								if (
+									!latest ||
+									normalizeSessionTags(latest.tags).length > 0
+								) {
+									skipped++;
+									logIcon = "skip";
+									logText = `${sessionTitle}: already tagged or unavailable`;
+								} else {
+									const tags = await generateSessionTags(
+										session.messages,
+										profile,
+										plugin.chatapi,
+										abortController.signal,
+									);
+									if (abortController.signal.aborted) break;
+									if (!tags.length) {
+										skipped++;
+										logIcon = "skip";
+										logText = `${sessionTitle}: no tags suggested`;
+									} else {
+										const current = owner
+											.getSnapshot()
+											.sessions.find(
+												(item) =>
+													item.id === session.id,
+											);
+										if (!current) {
+											skipped++;
+											logIcon = "skip";
+											logText = `${sessionTitle}: session removed`;
+										} else {
+											owner.updateMetadata(session.id, {
+												tags: normalizeSessionTags([
+													...(current.tags ?? []),
+													...tags,
+												]),
+												updatedAt: Date.now(),
+											});
+											progressModal.addGeneratedTags(
+												sessionTitle,
+												tags,
+											);
+											generated++;
+											logText = `${sessionTitle}: ${tags.join(", ")}`;
+										}
+									}
+								}
+							}
+						} catch (error) {
+							if (
+								abortController.signal.aborted ||
+								(error instanceof Error &&
+									error.name === "AbortError")
+							) {
+								abortController.abort();
+								break;
+							}
+							failed++;
+							plugin.logger?.log(
+								"warn",
+								`[SessionTags] bulk generation failed for ${indexed.id}: ${String(error)}`,
+							);
+							logIcon = "error";
+							logText = `${sessionTitle}: ${String(error)}`;
+							isError = true;
+						}
+						progressModal.addLog(logIcon, logText, {
+							id: indexed.id,
+							done: true,
+							error: isError,
+						});
+						completed++;
+						progressModal.updateProgress(completed);
+						progressModal.updateSummary(formatSummary());
+					}
+					await owner.flush();
+					const summary = formatSummary();
+					const wasCancelled =
+						abortController.signal.aborted && completed < total;
+					progressModal.finishWithSummary(
+						wasCancelled
+							? "Tag generation cancelled"
+							: "Tag generation complete",
+						wasCancelled
+							? `Cancelled after ${completed} of ${total} sessions. Completed tags have been saved.`
+							: `Processed ${completed} of ${total} sessions.`,
+						summary,
+					);
+					bulkTagSetting.setDesc(`${bulkDescription} ${summary}.`);
+					new Notice(
+						wasCancelled
+							? `Session tag generation cancelled: ${summary}.`
+							: `Session tag generation complete: ${summary}.`,
+					);
+				} catch (error) {
+					if (abortController.signal.aborted && completed < total) {
+						progressModal.finishWithSummary(
+							"Tag generation cancelled",
+							`Cancelled after ${completed} of ${total} sessions.`,
+							formatSummary(),
+						);
+						new Notice(
+							`Session tag generation cancelled: ${formatSummary()}.`,
+						);
+						return;
+					}
+					progressModal.finishWithSummary(
+						"Tag generation failed",
+						String(error),
+						formatSummary(),
+					);
+					bulkTagSetting.setDesc(
+						`${bulkDescription} Could not complete generation: ${String(error)}`,
+					);
+					new Notice(
+						`Could not generate session tags: ${String(error)}`,
+					);
+				} finally {
+					button.setDisabled(false).setButtonText("Generate");
+				}
+			}),
+		);
+		bulkTagSetting.addButton((button) =>
+			button
+				.setButtonText("Normalize tags…")
+				.onClick(() =>
+					new NormalizeSessionTagsModal(plugin.app, plugin).open(),
+				),
+		);
+	} else {
+		new Setting(sectionEl)
+			.setName("Session tag provider and model")
+			.setDesc(
+				"Configure a provider profile in Provider Profiles to enable automatic tag suggestions.",
+			);
+
+		new Setting(sectionEl)
+			.setName("Normalize session tags")
+			.setDesc(
+				"Review and consolidate existing tag names across saved sessions. Edit canonical names and choose which merges to apply.",
+			)
+			.addButton((button) =>
+				button
+					.setButtonText("Normalize tags…")
+					.onClick(() =>
+						new NormalizeSessionTagsModal(
+							plugin.app,
+							plugin,
+						).open(),
+					),
+			);
+	}
 
 	new Setting(sectionEl)
 		.setName("Chat tab title width")

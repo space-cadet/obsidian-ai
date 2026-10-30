@@ -73,6 +73,7 @@ import { getActiveProviderProfile, ProviderProfile } from "../settings";
 import { getThinkingModeOptions } from "../api/thinkingModes";
 import { resolveSessionProfile as resolveProfileForSession } from "../lib/sessionProfile";
 import { rememberRecentModel } from "../lib/recentModels";
+import { generateSessionTags, normalizeSessionTags } from "../lib/sessionTags";
 import { stripThinkingTags } from "./MessageBubble";
 import { serializeChatExport, generateFilename } from "../utils/exportChat";
 import type { ExportFormat } from "./presentational/ExportModal";
@@ -977,6 +978,62 @@ const ChatApp: React.FC<ChatAppProps> = ({
 
 	const hasHistory = savedSessions.length > 0;
 
+	const handleGenerateSessionTags = useCallback(async () => {
+		const session = activeSessionId
+			? sessionsRef.current.find((item) => item.id === activeSessionId)
+			: undefined;
+		if (!session || session.messages.length === 0) {
+			new Notice("This session has no messages to tag yet.");
+			return;
+		}
+		const profile = plugin.settings.providerProfiles.find(
+			(item) => item.id === plugin.settings.sessionTaggingProfileId,
+		);
+		if (!profile) {
+			new Notice("Choose a session tag provider in Settings first.");
+			return;
+		}
+		const notice = new Notice("Generating tags…", 0);
+		try {
+			const suggestions = await generateSessionTags(
+				session.messages,
+				profile,
+				plugin.chatapi,
+			);
+			const latestSession = plugin.sessionState
+				?.getSnapshot()
+				.sessions.find((item) => item.id === session.id);
+			if (!latestSession) {
+				notice.hide();
+				new Notice("This session is no longer available.");
+				return;
+			}
+			const tags = normalizeSessionTags([
+				...(latestSession.tags ?? []),
+				...suggestions,
+			]);
+			updateSessionMetadata(session.id, {
+				tags,
+				updatedAt: suggestions.length
+					? Date.now()
+					: latestSession.updatedAt,
+			});
+			await plugin.sessionState?.flush();
+			notice.hide();
+			new Notice(
+				suggestions.length
+					? "Added " +
+							suggestions.length +
+							" suggested tag" +
+							(suggestions.length === 1 ? "." : "s.")
+					: "No tags were suggested.",
+			);
+		} catch (error) {
+			notice.hide();
+			new Notice("Could not generate tags: " + String(error));
+		}
+	}, [activeSessionId, plugin, sessionsRef, updateSessionMetadata]);
+
 	const handleCopySelectedMessages = useCallback(async () => {
 		const selected = messages.filter((message) =>
 			ui.selectedMessageIds.has(message.id),
@@ -1127,6 +1184,7 @@ const ChatApp: React.FC<ChatAppProps> = ({
 					onToggleAutoApprove={handleToggleAutoApprove}
 					onToggleAutoName={handleToggleAutoName}
 					onManualRename={handleManualRename}
+					onGenerateTags={handleGenerateSessionTags}
 					onToggleZenMode={ui.toggleZenMode}
 					onToggleDebateMode={ui.toggleDebateMode}
 					onToggleSearch={toggleSearch}
@@ -1282,6 +1340,12 @@ const ChatApp: React.FC<ChatAppProps> = ({
 				onLoadSession={handleLoadSession}
 				onDeleteSession={handleDeleteSession}
 				onRenameSession={handleRenameSession}
+				onUpdateSessionTags={(sessionId, tags) =>
+					updateSessionMetadata(sessionId, {
+						tags,
+						updatedAt: Date.now(),
+					})
+				}
 				onCloseSessionPicker={() => ui.setShowSessionPicker(false)}
 				onCloseExportModal={() => ui.setShowExportModal(false)}
 				onCloseContextPicker={() => ui.setShowContextPicker(false)}

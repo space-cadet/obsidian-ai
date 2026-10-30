@@ -1,6 +1,71 @@
 # Edit History
 
-*Last Updated: 2026-10-22 20:28:33 IST*
+*Last Updated: 2026-10-25 09:22:59 IST*
+
+### 2026-10-25
+
+#### 09:22:59 IST - T78: Add live generated-tag previews and compact History tags
+- Modified source UI, progress-modal logic, styles, and focused tests - Show recent generated tags during bulk generation and compact History tag chips; 22 focused tests and the production build pass.
+- Updated T78 implementation/task docs and T20/T73 references - Record first-four chips, +N overflow, accessible manager icon, and live generated-tag preview.
+- Updated active context, session cache, task registry, progress, and changelog - Record the current source commit and pending live acceptance.
+- Updated the October 23 session record and created the October 25 T78 session record - Replace the stale unspecified-issue note and document verification limits.
+- Created memory-bank/edits/2026-10-25/092259-T78-live-tag-previews.md - Record this canonical edit chunk.
+
+### 2026-10-23
+
+#### 14:41:59 IST - T78: Add bulk tag generation for existing sessions
+- Modified `src/settings-sections/chatDefaults.ts` - Add inline Settings action to sequentially tag untagged saved sessions using the selected profile and bounded excerpts; show progress and summarize tagged, skipped, and failed sessions.
+- Modified `memory-bank/tasks/T78.md` - Mark bulk generation complete and record its processing and merge behavior.
+- Modified `memory-bank/tasks/T73.md` - Update the capability map progress note.
+- Modified `memory-bank/implementation-details/chat-component-capability-map.md` - Document authorized bulk generation and its data flow.
+- Modified `memory-bank/activeContext.md` - Record completed implementation and verification status.
+- Modified `memory-bank/session_cache.md` - Record explicit authorization and verification limits.
+- Modified `memory-bank/sessions/2026-10-23-session-tags-prototype.md` - Record bulk generation progress and remaining live acceptance.
+- Modified `memory-bank/tasks.md` - Refresh the Memory Bank timestamp.
+- Created `memory-bank/edits/2026-10-23/144159-T78-bulk-session-tag-generation.md` - Record source and Memory Bank changes.
+- Updated `memory-bank/edit_history.md` - Add this canonical edit-chunk summary.
+
+#### 14:37:10 IST - T78: Add session tag tools and active-session generation
+- Modified `src/settings-sections/chatDefaults.ts` - Use compact provider profile labels and show the selected provider/model in the setting description.
+- Modified `src/agent/tools.ts` - Define tools to list, add, rename, and remove tags on a saved session.
+- Modified `src/agent/toolRegistry.ts` - Classify the new session-tag tools by read/write risk.
+- Modified `src/agent/ToolExecutor.ts` - Route session-tag tool calls to their handlers.
+- Modified `src/agent/tools/handlers/sessionHandlers.ts` - Persist tag CRUD through the shared session state owner.
+- Modified `src/components/presentational/ActionBar.tsx` - Add the active-session tag generation action to the existing overflow menu.
+- Modified `src/components/ChatToolbar.tsx` - Pass the optional generation callback through the existing toolbar.
+- Modified `src/components/ChatApp.tsx` - Generate and merge active-session tags with the selected provider/model.
+- Modified `memory-bank/tasks/T78.md` - Track implemented controls and the pending bulk-generation authorization.
+- Modified `memory-bank/tasks/T73.md` - Record the updated session-tag capability map.
+- Modified `memory-bank/implementation-details/chat-component-capability-map.md` - Document agent tools, active-session generation, and the Settings bulk-generation hold.
+- Modified `memory-bank/activeContext.md` - Record current branch and implementation state.
+- Modified `memory-bank/session_cache.md` - Record verification and the review block.
+- Modified `memory-bank/sessions/2026-10-23-session-tags-prototype.md` - Append follow-up progress and outstanding scope.
+- Modified `memory-bank/tasks.md` - Refresh the Memory Bank timestamp.
+- Created `memory-bank/edits/2026-10-23/143710-T78-session-tag-tools-and-overflow.md` - Record source and Memory Bank changes.
+- Updated `memory-bank/edit_history.md` - Add this canonical edit-chunk summary.
+
+#### 14:16:08 IST - T78: Implement chat session tags prototype
+- Created `src/lib/sessionTags.ts` - Normalize session tags and request bounded model-generated suggestions.
+- Modified `src/types.ts` - Add optional tags and automatic-tag pending metadata to chat sessions.
+- Modified `src/storage/ChatStorage.ts` - Persist and restore tag metadata in the JSONL session index.
+- Modified `src/hooks/useChatSession.ts` - Mark eligible new sessions, generate tags after the first exchange, and prevent duplicate requests across open panes.
+- Modified `src/settings.ts` - Add automatic-tag and provider-profile settings with defaults and normalization.
+- Modified `src/settings-sections/chatDefaults.ts` - Add the opt-in setting and configured profile/model selector.
+- Modified `src/components/presentational/SessionPickerModal.tsx` - Add tag display, editing, removal, and filtering.
+- Modified `src/components/ChatOverlays.tsx` - Pass the session tag update action to Chat History.
+- Modified `src/components/ChatApp.tsx` - Persist tag edits through shared session metadata.
+- Modified `src/preview/PreviewApp.tsx` - Supply the new tag update callback in the UI preview.
+- Modified `styles/_chat.css` - Style tag chips, editor, and filter controls.
+- Modified `styles.css` - Regenerate compiled styles from source styles.
+- Updated `memory-bank/tasks/T78.md` - Record feature scope, implementation, verification, and pending live acceptance.
+- Updated `memory-bank/tasks/T73.md` - Record the branch prototype in capability-map progress.
+- Modified `memory-bank/implementation-details/chat-component-capability-map.md` - Describe prototype behavior and label it branch-only.
+- Updated `memory-bank/tasks.md` - Register T78 as an active task.
+- Updated `memory-bank/activeContext.md` - Record branch state and acceptance status.
+- Updated `memory-bank/session_cache.md` - Record implementation and verification boundaries.
+- Created `memory-bank/sessions/2026-10-23-session-tags-prototype.md` - Record session scope and follow-up checks.
+- Created `memory-bank/edits/2026-10-23/141608-T78-session-tags-prototype.md` - Record source and Memory Bank changes.
+- Updated `memory-bank/edit_history.md` - Add the newest canonical edit-chunk entry.
 
 ### 2026-10-22
 

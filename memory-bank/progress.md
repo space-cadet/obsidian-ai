@@ -1,3 +1,12 @@
+### 2026-10-25 — T78 live generated-tag previews and compact History tags
+
+- Added recent generated-tag chips and contextual session announcements to the
+  existing bulk-generation progress modal. History cards now show four tags,
+  a +N marker, and an accessible icon for the full manager.
+- Source commit 417881d: 22 focused tests, production build, and diff check
+  passed. Full suite was not rerun; live Obsidian acceptance remains open.
+  See sessions/2026-10-25-t78-live-tags-ui.md.
+
 ### 2026-10-22 — T13/T15/T24c deletion and lifecycle repairs
 
 Five repair commits through `1bd51c3` pushed: approval/cancellation results,

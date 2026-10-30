@@ -252,6 +252,7 @@ const PreviewApp: React.FC = () => {
 						onLoadSession={noop}
 						onDeleteSession={noop}
 						onRenameSession={noop}
+						onUpdateSessionTags={noop}
 						onCloseSessionPicker={() => setSessionPickerOpen(false)}
 						onCloseExportModal={noop}
 						onCloseContextPicker={noop}

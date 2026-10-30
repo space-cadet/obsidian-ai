@@ -1,16 +1,118 @@
 # Active Context
 
-*Last Updated: 2026-10-22 22:04:24 IST*
+*Last Updated: 2026-10-30 18:16:07 IST*
 
-### 2026-10-22 — v1.9.1 patch release preparation
+### 2026-10-30 — T78 follow-up Codex review fixes
 
-- Prepared 1.9.1 as a patch release for the Settings heading error and
-  straightforward Obsidian compatibility warning fixes. Minimum Obsidian
-  version remains 1.11.4.
-- The full suite passes (676 tests in 81 files); TypeScript, production build,
-  targeted Prettier, and diff checks pass. GitHub publication is pending.
-- The remote `main` matches local `main`, and remote tag `1.9.1` is unused.
-  See `sessions/2026-10-22-v1.9.1-release.md`.
+- Tag CRUD agent tools now share the saved-session lock used by session rename
+  and delete. Updated the generation telemetry mock and added a lock-target
+  assertion; repaired the expected tool list and SyncLogger localStorage test
+  fixture.
+- Focused tests pass (37/37), the full suite passes (710/710), and production
+  build, targeted Prettier, and git diff --check pass. Live Obsidian checks
+  remain open.
+- See T78, implementation-details/session-tags.md, and
+  sessions/2026-10-30-t78-pr-review-follow-up.md.
+
+### 2026-10-30 — T78 Codex review fixes
+
+- Provider/client failures now remain explicit in tag generation and are
+  handled as failures by automatic and bulk flows. Manual generation merges
+  into the latest shared session metadata after awaiting the provider.
+- Commit `f23c53f` is pushed to PR #14; a fresh Codex review is requested and
+  its response is pending.
+- `git diff --check` passes. Tests and production build were not run for this
+  follow-up. PR #14 is on `feat/session-tags`; live History and Settings
+  acceptance remains open.
+- See `tasks/T78.md`, `implementation-details/session-tags.md`, and
+  `sessions/2026-10-30-t78-pr-review-follow-up.md`.
+
+### 2026-10-30 — T78 sync and archive integration
+
+- Fixed legacy-to-JSONL migration so it retains session tags and automatic-tag
+  state. Chat Markdown now shows tags; JSON and JSONL exports preserve them,
+  and Backup & Restore can import saved-chat JSON/JSONL archives as separate
+  sessions, assigning new IDs on collision. Import does not trigger AI tagging.
+- Tag metadata already travels in the existing whole-session sync payload;
+  tag edits update `updatedAt` so the sync cache/index treats them as changes.
+- Five focused files pass 48 tests; the production build/typecheck, Prettier,
+  and diff checks pass. The broader suite reports 701 passing and the same six
+  known failures. Live Obsidian archive import and remote sync remain open.
+- See T78, T20, T24b, T42/T42a, T73, and
+  `implementation-details/session-tags.md`.
+
+### 2026-10-30 — T78 global vocabulary normalization
+
+- Implemented the approved Normalize tags review/apply modal in Settings, local
+  spelling proposals and optional related-term suggestions from tag names only.
+- Selected merges preserve skipped tags and unopened transcripts, reject stale
+  plans, update metadata timestamps, and support persistence retry (T24b).
+- User-reported session-tag tools passed. Focused tests: 49 pass; production
+  build passes. Full suite: 690 pass and the same six documented failures.
+  Desktop/mobile browser harness passes; live Obsidian normalization is pending.
+- See tasks/T78.md, tasks/T73.md, tasks/T24b.md,
+  implementation-details/session-tags.md, and sessions/2026-10-30-t78-global-tag-normalization.md.
+
+### 2026-10-30 — T77 daily community download tracking
+
+- The official listing confirmed Chat Lab AI v1.9.1 at 498 downloads on
+  2026-10-30 08:58:13 IST, up 51 from the prior confirmed count. T77 remains
+  active with daily 09:00 IST checks; the full log is in `tasks/T77.md`.
+- See `sessions/2026-10-30-morning.md` and
+  `sessions/2026-10-30-t77-t8-record-transfer.md`.
+
+### 2026-10-25 — T78 live acceptance and unified tag input
+
+- The user confirmed the bulk Generate Tags modal and its live generated-tag
+  preview work as expected in Obsidian. Live History filtering/editing, Settings
+  provider selection, and agent-tool checks remain open.
+- Manage tags uses one Search or create a tag field; it filters existing tags
+  and supports creating a new label. Additional chip/list visual polish is
+  deferred for now at the user's direction.
+- The branch source remains on feat/session-tags; this update records
+  acceptance only. See tasks/T78.md and the October 25 T78 session record.
+
+### 2026-10-25 — T78 generated-tag preview and compact History tags
+
+- Chat History now shows up to four session tags as chips, a +N overflow marker,
+  and an accessible tag icon that opens the full Manage tags modal.
+- Settings bulk generation now previews tags from the four latest completed
+  sessions in the progress modal and announces each result contextually.
+- Source commit 417881d passes 22 focused tests, production build, and
+  git diff --check. The full suite was not rerun; its previous run on 62c8eb0
+  had six unrelated failures. Live Obsidian acceptance remains pending.
+- See tasks/T78.md, implementation-details/session-tags.md, and
+  sessions/2026-10-25-t78-live-tags-ui.md.
+
+### 2026-10-23 — T78 Chat History redesign
+
+- Implemented the approved compact History layout with session search, an in-app tag filter with per-tag session counts, an initial expandable tag-count design, later replaced on October 25 by up to four chips, a +N marker, and an accessible manager icon. The tag picker uses one Search or create a tag input, opens on focus, supports keyboard selection, and stays in the modal flow. Load, copy, export, rename, and delete use inline Obsidian icons; copy/export retain format choices.
+- Prettier, production build, and diff checks pass. The implementation is on `feat/session-tags`; automated tests and live Obsidian review were not run.
+- Follow-up: the Manage tags picker now uses one search/create input with a scrollable full list and History-style rows with session counts. Formatting and production build pass; live Obsidian acceptance remains open.
+- Added `implementation-details/session-tags.md` as the end-to-end T78 reference. Session tags remain separate from Obsidian note tags. The remaining UI requests were specified and addressed in the October 25 follow-up; live acceptance remains open.
+- See tasks/T78.md, tasks/T20.md, tasks/T73.md, implementation-details/session-tags.md, implementation-details/message-selection-chat-history.md, and sessions/2026-10-23-session-tags-prototype.md.
+
+### 2026-10-23 — T78 chat session tags prototype
+
+- Implemented session tag persistence, manual tag editing/filtering in Chat
+  History, plus opt-in tag suggestions for new sessions. Follow-up adds agent
+  tools to list/add/rename/remove session tags, a compact provider selector,
+  active-session generation in the chat overflow menu, and sequential bulk
+  generation for untagged existing sessions in Settings.
+- Branch: `feat/session-tags`; prototype commit `08e36de` is pushed. The T78
+  follow-up is committed and pushed. Production build and `git diff --check`
+  pass. Live Obsidian acceptance remains open. See `tasks/T78.md` and the
+  October 23 session record.
+
+### 2026-10-22 — v1.9.1 patch release and review acceptance
+
+- Published commit `3114cb5`; the public release includes all four plugin
+  assets and retains `minAppVersion` 1.11.4. The user confirmed the Obsidian
+  review passed.
+- 676 tests in 81 files, TypeScript, production build, targeted Prettier, and
+  diff checks passed. GitHub Actions run `39815213172` was queued at the last
+  check; its final status was not observed.
+- See `sessions/2026-10-22-v1.9.1-release.md`.
 
 ### 2026-10-22 — v1.9.0 Obsidian review follow-up
 

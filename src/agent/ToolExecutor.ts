@@ -280,6 +280,26 @@ export class ToolExecutor {
 				this.sessionHandlers.listChatSessions(
 					call.args as { limit?: number; cursor?: string },
 				),
+			list_session_tags: (call) =>
+				this.sessionHandlers.listSessionTags(
+					call.args as { session_id: string },
+				),
+			add_session_tags: (call) =>
+				this.sessionHandlers.addSessionTags(
+					call.args as { session_id: string; tags: string[] },
+				),
+			rename_session_tag: (call) =>
+				this.sessionHandlers.renameSessionTag(
+					call.args as {
+						session_id: string;
+						old_tag: string;
+						new_tag: string;
+					},
+				),
+			remove_session_tags: (call) =>
+				this.sessionHandlers.removeSessionTags(
+					call.args as { session_id: string; tags: string[] },
+				),
 			read_chat_session: (call) =>
 				this.sessionHandlers.readChatSession(
 					call.args as {

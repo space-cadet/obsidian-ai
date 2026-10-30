@@ -116,6 +116,77 @@ describe("SyncProgressModal examine phase", () => {
 		expect(text).toContain("Activity Log");
 	});
 
+	it("supports the cancellable progress variant used by bulk tag generation", () => {
+		const onCancel = vi.fn();
+		const modal = openModal({
+			title: "Generating session tags",
+			initialStatus: "Preparing saved sessions…",
+			initialCurrentFile: "Loading the session index…",
+			initialSummary: "0 tagged · 0 skipped · 0 failed",
+			showBackgroundButton: false,
+			closeCancelsOnProgress: true,
+			onCancel,
+		});
+		const content = (modal as any).contentEl as HTMLElement;
+		const cancel = Array.from(content.querySelectorAll("button")).find(
+			(button) => button.textContent === "Cancel",
+		) as HTMLButtonElement;
+		const background = Array.from(content.querySelectorAll("button")).find(
+			(button) => button.textContent === "Background",
+		);
+		const progress = content.querySelector(
+			"[role='progressbar']",
+		) as HTMLElement;
+
+		expect(content.textContent).toContain("Generating session tags");
+		expect(content.textContent).toContain("Loading the session index…");
+		expect(content.textContent).toContain(
+			"0 tagged · 0 skipped · 0 failed",
+		);
+		expect(background?.classList.contains("sync-btn-hidden")).toBe(true);
+		expect(progress.getAttribute("aria-valuemax")).toBe("1");
+
+		modal.setTotal(4);
+		modal.updateProgress(1);
+		expect(progress.getAttribute("aria-valuemax")).toBe("4");
+		expect(progress.getAttribute("aria-valuenow")).toBe("1");
+		expect((modal as any).sessionCountEl.textContent).toBe("1 / 4");
+
+		cancel.click();
+		modal.onClose();
+		expect(onCancel).toHaveBeenCalledOnce();
+		expect(cancel.textContent).toBe("Cancelling…");
+	});
+
+	it("shows recent generated tags as chips and announces each session result", () => {
+		const modal = openModal({ showGeneratedTags: true });
+		const content = (modal as any).contentEl as HTMLElement;
+		const tagSection = content.querySelector(
+			".sync-generated-tags-section",
+		) as HTMLElement;
+		const tagList = tagSection.querySelector(
+			".sync-generated-tags-list",
+		) as HTMLElement;
+
+		expect(tagSection.textContent).toContain("Tags will appear here");
+		for (let session = 1; session <= 5; session++) {
+			modal.addGeneratedTags(`Session ${session}`, [`tag-${session}`]);
+		}
+
+		expect(
+			tagSection.querySelector(".sync-generated-tags-count")?.textContent,
+		).toBe("5 tags · 5 sessions");
+		expect(
+			tagList.querySelectorAll(":scope > .sync-generated-tag-group"),
+		).toHaveLength(4);
+		expect(tagList.textContent).not.toContain("Session 1");
+		expect(tagList.textContent).toContain("Session 5");
+		expect(tagList.textContent).toContain("tag-5");
+		expect(
+			tagSection.querySelector("[role='status']")?.textContent,
+		).toContain("Generated tags for Session 5: tag-5");
+	});
+
 	it("caps the row list at 10 with a +N note", async () => {
 		const download = Array.from({ length: 15 }, (_, i) => ({
 			id: `s${i}`,
@@ -141,13 +212,11 @@ describe("SyncProgressModal examine phase", () => {
 	});
 
 	it("marks conflicts with the warn style", async () => {
-		const onExamine = vi
-			.fn()
-			.mockResolvedValue(
-				makeExam({
-					conflicts: [{ id: "c", title: "plugin-settings" }],
-				}),
-			);
+		const onExamine = vi.fn().mockResolvedValue(
+			makeExam({
+				conflicts: [{ id: "c", title: "plugin-settings" }],
+			}),
+		);
 		const modal = openModal({ onExamine });
 		await flush();
 		const warn = (modal as any).contentEl.querySelector(

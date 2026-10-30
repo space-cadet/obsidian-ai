@@ -3,6 +3,52 @@ import type { ChatSession, CompactionMetadata } from "../../types";
 import { createStorage } from "../ChatStorage";
 
 describe("ChatStorage", () => {
+	it("persists normalized tags and timestamps for unopened sessions without touching transcript files", async () => {
+		const files = new Map<string, string>();
+		const adapter = makeAdapter(files);
+		const plugin = {
+			app: { vault: { adapter, configDir: ".obsidian" } } as any,
+			manifest: { id: "obsidian-ai" },
+			settings: {} as any,
+			loadData: vi.fn(async () => ({})),
+			saveData: vi.fn(async () => undefined),
+		};
+		const storage = createStorage(plugin, "jsonl");
+		await storage.saveChatData({
+			sessions: [
+				{
+					id: "tagged",
+					title: "Tags",
+					createdAt: 1,
+					updatedAt: 2,
+					contextItems: [],
+					tags: ["AI", "ai"],
+					messages: [
+						{
+							id: "m",
+							role: "user",
+							content: "Preserve this message",
+							timestamp: 1,
+						},
+					],
+				},
+			],
+			activeSessionId: null,
+		});
+		const transcript = [...files].find(([name]) =>
+			name.endsWith(".jsonl"),
+		)!;
+		const data = await createStorage(plugin, "jsonl").loadChatData();
+		data.sessions[0].tags = ["ai"];
+		data.sessions[0].updatedAt = 999;
+		await createStorage(plugin, "jsonl").saveChatData(data);
+		expect(files.get(transcript[0])).toBe(transcript[1]);
+		const reloaded = await createStorage(plugin, "jsonl").loadChatData();
+		expect(reloaded.sessions[0].tags).toEqual(["ai"]);
+		expect(reloaded.sessions[0].updatedAt).toBe(999);
+		expect(reloaded.sessions[0].messageCount).toBe(1);
+	});
+
 	it("round-trips compaction metadata through the JSONL session index", async () => {
 		const files = new Map<string, string>();
 		const adapter = makeAdapter(files);
