@@ -67,16 +67,19 @@ export class NormalizeSessionTagsModal extends Modal {
 	}
 	private render(): void {
 		this.contentEl.empty();
-		this.contentEl.createEl("p", {
+		const review = this.contentEl.createDiv({
+			cls: "tag-normalization-review",
+		});
+		review.createEl("p", {
 			text: "Consolidate existing tags across saved chats. Review every change before applying.",
 		});
 		const inventory = this.inventory;
 		if (inventory)
-			this.contentEl.createEl("p", {
+			review.createEl("p", {
 				cls: "tag-normalization-muted",
 				text: `${inventory.tags.size} unique tags · ${inventory.sessionCount} saved sessions`,
 			});
-		const tabs = this.contentEl.createDiv({
+		const tabs = review.createDiv({
 			cls: "tag-normalization-tabs",
 		});
 		tabs.setAttribute("aria-label", "Tag view");
@@ -100,7 +103,7 @@ export class NormalizeSessionTagsModal extends Modal {
 			);
 			if (this.tab === value) button.setCta();
 		}
-		const table = this.contentEl.createDiv({
+		const table = review.createDiv({
 			cls: "tag-normalization-table",
 		});
 		const header = table.createDiv({
@@ -178,14 +181,14 @@ export class NormalizeSessionTagsModal extends Modal {
 				this.updateSummary();
 			});
 		}
-		this.contentEl.createEl("p", {
+		review.createEl("p", {
 			cls: "tag-normalization-muted",
 			text: "Edit canonical names and select the groups to apply. Merges replace labels across saved sessions and remove duplicates.",
 		});
 		const profile = this.plugin.settings.providerProfiles.find(
 			(item) => item.id === this.plugin.settings.sessionTaggingProfileId,
 		);
-		const related = this.contentEl.createDiv({
+		const related = review.createDiv({
 			cls: "tag-normalization-related",
 		});
 		new ButtonComponent(related)
@@ -205,15 +208,18 @@ export class NormalizeSessionTagsModal extends Modal {
 				? `Sends existing tag names only to ${profile.name || profile.provider} / ${profile.model}. Suggestions require your selection.`
 				: "Choose a session tag provider in Settings to suggest equivalent terms.",
 		});
-		this.summaryEl = this.contentEl.createDiv({
+		const controls = this.contentEl.createDiv({
+			cls: "tag-normalization-controls",
+		});
+		this.summaryEl = controls.createDiv({
 			cls: "tag-normalization-summary",
 		});
 		this.summaryEl.setAttribute("role", "status");
-		this.feedbackEl = this.contentEl.createDiv({
+		this.feedbackEl = controls.createDiv({
 			cls: "tag-normalization-feedback",
 		});
 		this.feedbackEl.setAttribute("role", "status");
-		const footer = this.contentEl.createDiv({
+		const footer = controls.createDiv({
 			cls: "tag-normalization-footer",
 		});
 		new ButtonComponent(footer)
@@ -245,9 +251,14 @@ export class NormalizeSessionTagsModal extends Modal {
 		} catch (error) {
 			validation = error instanceof Error ? error.message : String(error);
 		}
-		this.feedbackEl.setText(validation || this.status);
+		const feedback = validation || this.status;
+		this.feedbackEl.setText(feedback);
+		this.feedbackEl.toggleAttribute("hidden", !feedback);
+		const applyLabel = selected.length
+			? `Apply ${selected.length} merges`
+			: "No merges selected";
 		this.applyButton
-			.setButtonText(`Apply ${selected.length} merges`)
+			.setButtonText(applyLabel)
 			.setDisabled(
 				this.busy ||
 					this.pendingSave ||

@@ -23,6 +23,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Keep the tag-normalization summary and actions visible while reviewing tags
+  in a constrained modal, and clarify the disabled empty-selection action (T78).
+
 - Retry reads the current shared transcript before React refs refresh, excluding
   the replaced response and duplicate prompt (`25932cd`, T15/T24c).
 

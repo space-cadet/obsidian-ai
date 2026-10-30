@@ -1,9 +1,13 @@
 # Session Cache
 
-*Last Updated: 2026-10-30 15:44:46 IST*
+*Last Updated: 2026-10-30 16:18:17 IST*
 
 ## 2026-10-30 — T78 global vocabulary normalization
 
+- Narrow-screen follow-up keeps the review scroll separate from the summary and
+  actions, and labels an empty selection clearly. The screenshot showed a saved
+  result for 42 sessions; reload and the revised layout remain unverified in
+  Obsidian. Seven modal tests, build, and desktop/mobile browser previews pass.
 - Implemented the approved Normalize tags review/apply modal in Settings, local
   spelling proposals and optional related-term suggestions from tag names only.
 - Selected merges preserve skipped tags and unopened transcripts, reject stale

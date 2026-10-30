@@ -179,6 +179,16 @@ describe("NormalizeSessionTagsModal", () => {
 		]);
 		expect(save).toHaveBeenCalled();
 	});
+	it("labels an empty selection clearly and disables applying it", async () => {
+		setup();
+		await ready();
+		const checks = document.querySelectorAll<HTMLInputElement>(
+			'input[type="checkbox"]',
+		);
+		fireEvent.click(checks[0]);
+		fireEvent.click(checks[1]);
+		expect(button("No merges selected").disabled).toBe(true);
+	});
 	it("shows validation at the field review and disables applying invalid names", async () => {
 		setup();
 		await ready();

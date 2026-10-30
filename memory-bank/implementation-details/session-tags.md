@@ -1,7 +1,7 @@
 # Chat Session Tags — Implementation Details (T78)
 
-*Last Updated: 2026-10-30 15:44:46 IST*
-*Status: prototype on `feat/session-tags`; global normalization is implemented in the current uncommitted worktree.*
+*Last Updated: 2026-10-30 16:18:17 IST*
+*Status: prototype on `feat/session-tags`; global normalization was introduced in `0c3b620`, with a subsequent layout follow-up.*
 
 ## Scope and ownership
 
@@ -148,7 +148,9 @@ provider is available; local normalization remains available without a provider.
 The native review modal scans the shared session index metadata, showing unique
 tags and session counts. Suggested merges and All tags views provide source
 chips, editable canonical names, per-group affected counts, selection checkboxes,
-and the union of sessions actually changed by selected groups.
+and the union of sessions actually changed by selected groups. The review area
+scrolls separately from the summary and action row on constrained screens. With
+no selected groups, the disabled action reads “No merges selected”.
 
 Local proposals use NFKC Unicode normalization, lowercase, leading-# removal,
 trimmed whitespace, and hyphens for spaces/underscores/dash variants. Proposals

@@ -469,9 +469,23 @@
 /* Saved-session tag vocabulary review. */
 .session-tag-normalization-modal {
 	width: min(960px, 94vw);
+	max-height: 88vh;
 }
 .session-tag-normalization-modal .modal-content {
+	display: flex;
+	flex-direction: column;
+	max-height: calc(88vh - 72px);
+	min-height: 0;
+	overflow: hidden;
+}
+.tag-normalization-review {
+	flex: 1 1 auto;
+	min-height: 0;
 	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+.tag-normalization-controls {
+	flex: 0 0 auto;
 }
 .tag-normalization-muted {
 	color: var(--text-muted);
@@ -489,8 +503,6 @@
 .tag-normalization-table {
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-m);
-	max-height: 45vh;
-	overflow-y: auto;
 }
 .tag-normalization-row {
 	display: grid;
@@ -533,6 +545,9 @@
 	margin-top: 10px;
 	min-height: 1.5em;
 }
+.tag-normalization-footer {
+	margin: 10px 0 0;
+}
 .tag-normalization-footer button:first-child {
 	margin-right: auto;
 }
@@ -540,6 +555,20 @@
 	padding: 14px;
 }
 @media (max-width: 600px) {
+	.tag-normalization-footer {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 8px;
+	}
+	.tag-normalization-footer button {
+		min-width: 0;
+		white-space: normal;
+	}
+	.tag-normalization-footer button:first-child {
+		grid-column: 1 / -1;
+		justify-self: start;
+		margin-right: 0;
+	}
 	.tag-normalization-row {
 		grid-template-columns: 44px minmax(0, 1fr) 60px;
 		gap: 8px;
