@@ -23,6 +23,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Make AI merge proposals the primary normalization action, require explicit
+  selection of every proposal, and use compact merge groups on mobile (T78).
+
 - Keep the tag-normalization summary and actions visible while reviewing tags
   in a constrained modal, and clarify the disabled empty-selection action (T78).
 

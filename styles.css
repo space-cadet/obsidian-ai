@@ -5645,34 +5645,6 @@
 		justify-self: start;
 		margin-right: 0;
 	}
-	.tag-normalization-row {
-		grid-template-columns: 36px minmax(0, 1fr) 56px;
-		gap: 6px;
-		padding: 8px;
-	}
-	.tag-normalization-target {
-		grid-column: 2 / -1;
-		grid-row: 2;
-	}
-	.tag-normalization-chip {
-		font-size: var(--font-ui-small);
-		padding: 2px 6px;
-	}
-	.tag-normalization-target input[type="text"] {
-		font-size: var(--font-ui-small);
-	}
-	.tag-normalization-summary {
-		font-size: var(--font-ui-small);
-		line-height: 1.4;
-		padding: 10px 12px;
-	}
-	.tag-normalization-header span:nth-child(3) {
-		display: none;
-	}
-	.tag-normalization-session-count {
-		grid-column: 3;
-		grid-row: 1;
-	}
 }
 
 .tag-normalization-use {
@@ -5701,6 +5673,77 @@
 		color: var(--text-muted);
 		font-size: var(--font-ui-small);
 		margin-bottom: 4px;
+	}
+}
+
+/* Mobile merge cards keep the source labels and destination together. */
+.session-tag-normalization-modal .tag-normalization-feedback {
+	font-size: var(--font-ui-small);
+	line-height: 1.4;
+}
+.session-tag-normalization-modal .tag-normalization-review > p {
+	margin: 8px 0;
+}
+.session-tag-normalization-modal .tag-normalization-related,
+.session-tag-normalization-modal .tag-normalization-tabs {
+	margin: 10px 0;
+}
+@media (max-width: 600px) {
+	.session-tag-normalization-modal .tag-normalization-header {
+		display: none;
+	}
+	.session-tag-normalization-modal .tag-normalization-row {
+		grid-template-columns: 28px minmax(0, 1fr);
+		gap: 5px 8px;
+		padding: 10px;
+		align-items: start;
+	}
+	.session-tag-normalization-modal .tag-normalization-use {
+		grid-column: 1;
+		grid-row: 1 / span 2;
+		min-height: 44px;
+	}
+	.session-tag-normalization-modal .tag-normalization-sources {
+		grid-column: 2;
+		grid-row: 1;
+		gap: 4px;
+	}
+	.session-tag-normalization-modal .tag-normalization-chip {
+		font-size: var(--font-ui-small);
+		line-height: 1.35;
+		padding: 2px 6px;
+		max-width: 100%;
+	}
+	.session-tag-normalization-modal .tag-normalization-target {
+		grid-column: 2;
+		grid-row: 2;
+	}
+	.session-tag-normalization-modal .tag-normalization-target-label {
+		font-size: 12px;
+		margin-bottom: 3px;
+	}
+	.session-tag-normalization-modal
+		.tag-normalization-target
+		input[type="text"] {
+		box-sizing: border-box;
+		height: 34px;
+		border-radius: 4px;
+		padding: 4px 8px;
+		font-size: var(--font-ui-small);
+	}
+	.session-tag-normalization-modal .tag-normalization-session-count {
+		grid-column: 2;
+		grid-row: 3;
+		font-size: 12px;
+		color: var(--text-muted);
+	}
+	.session-tag-normalization-modal .tag-normalization-session-count::after {
+		content: " sessions affected";
+	}
+	.session-tag-normalization-modal .tag-normalization-summary {
+		padding: 8px 10px;
+		margin-top: 8px;
+		font-size: var(--font-ui-small);
 	}
 }
 

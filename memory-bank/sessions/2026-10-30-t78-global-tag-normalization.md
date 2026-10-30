@@ -1,6 +1,6 @@
 # Session 2026-10-30 - T78 Global Tag Normalization
 *Created: 2026-10-30 15:44:46 IST*
-*Last Updated: 2026-10-30 16:24:44 IST*
+*Last Updated: 2026-10-30 16:36:19 IST*
 
 ## Focus Task
 T78: Chat Session Tags and Automatic Suggestions
@@ -62,3 +62,14 @@ T78: Chat Session Tags and Automatic Suggestions
 - Production build and seven focused modal tests passed. Desktop and 390×844
   browser previews passed with fixture storage/provider; the summary and actions
   remained visible while scrolling. Real Obsidian verification is still pending.
+
+## Semantic workflow and compact merge groups
+- 2026-10-30: Made Find merge proposals the primary, explicitly invoked AI
+  action. Suggested merges shows equivalent groups, with every proposal initially
+  unselected; individual spelling edits remain in All tags. Mobile groups use
+  compact source chips, a full-width rectangular destination field, and an
+  inline affected-session count. Build and 16 focused tests pass. Browser
+  checks pass at 320/390 pixels; real Obsidian acceptance remains open.
+- Automatic review rejected provider transmission merely on opening the modal.
+  The implemented primary action explicitly starts the disclosed tag-name request.
+  Opening, scanning, and saving do not invoke the provider automatically.

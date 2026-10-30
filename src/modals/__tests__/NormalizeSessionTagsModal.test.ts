@@ -81,7 +81,7 @@ function setup(
 	api = vi
 		.fn()
 		.mockResolvedValue(
-			'[{"sources":["AI","ai"],"target":"artificial-intelligence"}]',
+			'[{"sources":["AI","ai"],"target":"artificial-intelligence"},{"sources":["Research Notes","research-notes"],"target":"research-notes"}]',
 		),
 ) {
 	const sessions = [
@@ -124,7 +124,17 @@ function button(prefix: string): HTMLButtonElement {
 	)!;
 }
 async function ready() {
-	await waitFor(() => expect(button("Apply 2 merges")?.disabled).toBe(false));
+	await waitFor(() =>
+		expect(button("Find merge proposals")?.disabled).toBe(false),
+	);
+	fireEvent.click(button("Find merge proposals"));
+	await waitFor(() =>
+		expect(document.body.textContent).toContain("Suggestions ready"),
+	);
+	document
+		.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
+		.forEach((checkbox) => fireEvent.click(checkbox));
+	expect(button("Apply 2 merges").disabled).toBe(false);
 }
 describe("NormalizeSessionTagsModal", () => {
 	it("aborts outstanding suggestions when cancelled and never saves them", async () => {
@@ -142,8 +152,10 @@ describe("NormalizeSessionTagsModal", () => {
 				}),
 		);
 		const { modal, save } = setup(undefined, api);
-		await ready();
-		fireEvent.click(button("Suggest related tags"));
+		await waitFor(() =>
+			expect(button("Find merge proposals")?.disabled).toBe(false),
+		);
+		fireEvent.click(button("Find merge proposals"));
 		await waitFor(() => expect(button("Cancel suggestions")).toBeTruthy());
 		fireEvent.click(button("Cancel suggestions"));
 		expect(api.mock.calls[0][3].aborted).toBe(true);
@@ -200,8 +212,12 @@ describe("NormalizeSessionTagsModal", () => {
 	});
 	it("never applies model suggestions until the user selects a group", async () => {
 		const { api } = setup();
-		await ready();
-		fireEvent.click(button("Suggest related tags"));
+		await waitFor(() =>
+			expect(button("Find merge proposals")?.disabled).toBe(false),
+		);
+		expect(api).not.toHaveBeenCalled();
+		expect(button("No merges selected").disabled).toBe(true);
+		fireEvent.click(button("Find merge proposals"));
 		await waitFor(() =>
 			expect(document.body.textContent).toContain("Suggestions ready"),
 		);

@@ -1,9 +1,15 @@
 # Session Cache
 
-*Last Updated: 2026-10-30 16:24:44 IST*
+*Last Updated: 2026-10-30 16:36:19 IST*
 
 ## 2026-10-30 — T78 global vocabulary normalization
 
+- 2026-10-30: Made Find merge proposals the primary, explicitly invoked AI
+  action. Suggested merges shows equivalent groups, with every proposal initially
+  unselected; individual spelling edits remain in All tags. Mobile groups use
+  compact source chips, a full-width rectangular destination field, and an
+  inline affected-session count. Build and 16 focused tests pass. Browser
+  checks pass at 320/390 pixels; real Obsidian acceptance remains open.
 - Tightened mobile tag rows and widened canonical-name fields after the user
   reported clipping. Build, formatting, and narrow browser previews pass; live
   Obsidian review remains open.

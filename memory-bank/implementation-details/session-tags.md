@@ -1,6 +1,6 @@
 # Chat Session Tags — Implementation Details (T78)
 
-*Last Updated: 2026-10-30 16:18:17 IST*
+*Last Updated: 2026-10-30 16:36:19 IST*
 *Status: prototype on `feat/session-tags`; global normalization was introduced in `0c3b620`, with a subsequent layout follow-up.*
 
 ## Scope and ownership
@@ -157,12 +157,16 @@ trimmed whitespace, and hyphens for spaces/underscores/dash variants. Proposals
 are reviewed before applying; canonical names must be nonempty and at most 32
 characters. Unchanged singleton labels can be renamed through All tags.
 
-Suggest related tags sends only the existing tag vocabulary (up to 200 unique
+The primary Find merge proposals action sends only the existing tag vocabulary (up to 200 unique
 labels) to the configured session-tag profile, never transcripts. The UI
 identifies the provider/model before the action. Returned groups are restricted
 to existing source labels, cannot overlap, and remain unselected until reviewed.
 This operation consolidates clearly equivalent terms; a persistent global alias
-dictionary is not introduced.
+dictionary is not introduced. Opening the modal shows this action first; provider
+requests begin only after it is clicked. Individual spelling changes stay in
+All tags, and every proposal starts unselected. Mobile groups replace table
+columns with compact source chips, a rectangular destination input and an inline
+affected-session count.
 
 Apply validates the current shared metadata fingerprint and all selected groups
 before mutation. Stale plans require a rescan. Ambiguous chains/duplicate source

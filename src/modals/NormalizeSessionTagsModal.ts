@@ -18,6 +18,7 @@ export class NormalizeSessionTagsModal extends Modal {
 	private owner: SessionStateOwner;
 	private inventory: TagInventory | null = null;
 	private merges: TagMerge[] = [];
+	private hasProposals = false;
 	private tab: "suggested" | "all" = "suggested";
 	private controller: AbortController | null = null;
 	private busy = false;
@@ -56,7 +57,11 @@ export class NormalizeSessionTagsModal extends Modal {
 			this.inventory = collectSessionTags(
 				this.owner.getSnapshot().sessions,
 			);
-			this.merges = suggestLocalTagMerges(this.inventory);
+			this.merges = suggestLocalTagMerges(this.inventory).map((row) => ({
+				...row,
+				selected: false,
+			}));
+			this.hasProposals = false;
 			this.status = "";
 		} catch (error) {
 			this.status = `Could not scan tags: ${String(error)}`;
@@ -79,13 +84,41 @@ export class NormalizeSessionTagsModal extends Modal {
 				cls: "tag-normalization-muted",
 				text: `${inventory.tags.size} unique tags · ${inventory.sessionCount} saved sessions`,
 			});
+		const profile = this.plugin.settings.providerProfiles.find(
+			(item) => item.id === this.plugin.settings.sessionTaggingProfileId,
+		);
+		const related = review.createDiv({
+			cls: "tag-normalization-related",
+		});
+		new ButtonComponent(related)
+			.setButtonText(
+				this.hasProposals
+					? "Regenerate proposals"
+					: "Find merge proposals",
+			)
+			.setCta()
+			.setDisabled(
+				this.busy ||
+					this.pendingSave ||
+					!profile ||
+					!inventory?.tags.size,
+			)
+			.onClick(() => {
+				void this.suggest();
+			});
+		related.createSpan({
+			cls: "tag-normalization-muted",
+			text: profile
+				? `Uses ${profile.name || profile.provider} / ${profile.model}. Clicking sends tag names only. Review and select the proposed merges.`
+				: "Choose a session tag provider in Settings to suggest equivalent terms.",
+		});
 		const tabs = review.createDiv({
 			cls: "tag-normalization-tabs",
 		});
 		tabs.setAttribute("aria-label", "Tag view");
-		const suggested = this.merges.filter(
-			(row) => row.sources.length > 1 || row.sources[0] !== row.target,
-		);
+		const suggested = this.hasProposals
+			? this.merges.filter((row) => row.sources.length > 1)
+			: [];
 		for (const [value, label] of [
 			["suggested", `Suggested merges (${suggested.length})`],
 			["all", `All tags (${inventory?.tags.size ?? 0})`],
@@ -121,7 +154,9 @@ export class NormalizeSessionTagsModal extends Modal {
 			table.createEl("p", {
 				cls: "tag-normalization-empty",
 				text: inventory?.tags.size
-					? "No local merges found. Use All tags to edit names, or suggest related tags below."
+					? this.hasProposals
+						? "No equivalent groups proposed. Review All tags or regenerate proposals."
+						: "Choose Find merge proposals to group equivalent tags with AI. Use All tags for individual spelling edits."
 					: "No saved session tags found.",
 			});
 		for (const row of rows) {
@@ -146,7 +181,7 @@ export class NormalizeSessionTagsModal extends Modal {
 			});
 			target.createSpan({
 				cls: "tag-normalization-target-label",
-				text: "Canonical tag",
+				text: "Merge into",
 			});
 			const input = target.createEl("input", {
 				type: "text",
@@ -185,29 +220,6 @@ export class NormalizeSessionTagsModal extends Modal {
 			cls: "tag-normalization-muted",
 			text: "Edit canonical names and select the groups to apply. Merges replace labels across saved sessions and remove duplicates.",
 		});
-		const profile = this.plugin.settings.providerProfiles.find(
-			(item) => item.id === this.plugin.settings.sessionTaggingProfileId,
-		);
-		const related = review.createDiv({
-			cls: "tag-normalization-related",
-		});
-		new ButtonComponent(related)
-			.setButtonText("Suggest related tags")
-			.setDisabled(
-				this.busy ||
-					this.pendingSave ||
-					!profile ||
-					!inventory?.tags.size,
-			)
-			.onClick(() => {
-				void this.suggest();
-			});
-		related.createSpan({
-			cls: "tag-normalization-muted",
-			text: profile
-				? `Sends existing tag names only to ${profile.name || profile.provider} / ${profile.model}. Suggestions require your selection.`
-				: "Choose a session tag provider in Settings to suggest equivalent terms.",
-		});
 		const controls = this.contentEl.createDiv({
 			cls: "tag-normalization-controls",
 		});
@@ -243,7 +255,7 @@ export class NormalizeSessionTagsModal extends Modal {
 			? affectedTagSessions(this.inventory, selected)
 			: 0;
 		this.summaryEl.setText(
-			`${selected.length} merges selected · ${count} sessions affected. Chat messages remain unchanged.`,
+			`${selected.length} selected · ${count} sessions affected`,
 		);
 		let validation = "";
 		try {
@@ -285,9 +297,10 @@ export class NormalizeSessionTagsModal extends Modal {
 				controller.signal,
 			);
 			if (this.closed || controller.signal.aborted) return;
-			this.merges = rows;
-			this.status =
-				"Suggestions ready. Select each proposed merge you want to apply.";
+			this.merges = rows.map((row) => ({ ...row, selected: false }));
+			this.hasProposals = true;
+			this.tab = "suggested";
+			this.status = "Suggestions ready. Select merges to apply.";
 		} catch (error) {
 			if (!controller.signal.aborted)
 				this.status = `Could not suggest merges: ${String(error)}`;
@@ -311,7 +324,11 @@ export class NormalizeSessionTagsModal extends Modal {
 			this.inventory = collectSessionTags(
 				this.owner.getSnapshot().sessions,
 			);
-			this.merges = suggestLocalTagMerges(this.inventory);
+			this.merges = suggestLocalTagMerges(this.inventory).map((row) => ({
+				...row,
+				selected: false,
+			}));
+			this.hasProposals = false;
 			this.status = `Normalization saved. Updated ${count} sessions.`;
 		} catch (error) {
 			this.pendingSave = error instanceof TagNormalizationSaveError;
@@ -333,7 +350,11 @@ export class NormalizeSessionTagsModal extends Modal {
 			this.inventory = collectSessionTags(
 				this.owner.getSnapshot().sessions,
 			);
-			this.merges = suggestLocalTagMerges(this.inventory);
+			this.merges = suggestLocalTagMerges(this.inventory).map((row) => ({
+				...row,
+				selected: false,
+			}));
+			this.hasProposals = false;
 			this.status = "Normalized tags saved.";
 		} catch (error) {
 			this.status = `Could not save tags: ${String(error)}. Choose Retry save.`;
