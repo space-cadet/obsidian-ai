@@ -1,6 +1,6 @@
 # Chat Session Tags — Implementation Details (T78)
 
-*Last Updated: 2026-10-30 17:57:29 IST*
+*Last Updated: 2026-10-30 17:59:42 IST*
 *Status: prototype on `feat/session-tags`; global normalization was introduced in `0c3b620`, with a subsequent layout follow-up.*
 
 ## Scope and ownership
@@ -226,7 +226,8 @@ owner and merges suggestions with its current tags. It retains the latest
 was removed during the request. This prevents the request's original snapshot
 from replacing tag edits or newer session metadata.
 
-PR #14 follow-up validation: `git diff --check` passes. Tests and the
+PR #14 follow-up commit `f23c53f` is pushed and a fresh Codex review was
+requested; its result is pending. `git diff --check` passes. Tests and the
 production build were not run for this review correction.
 
 Verification in this worktree: 49 focused tests pass, including actual modal
