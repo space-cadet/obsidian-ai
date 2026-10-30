@@ -1,6 +1,18 @@
 # Session Cache
 
-*Last Updated: 2026-10-25 11:19:59 IST*
+*Last Updated: 2026-10-30 15:44:46 IST*
+
+## 2026-10-30 — T78 global vocabulary normalization
+
+- Implemented the approved Normalize tags review/apply modal in Settings, local
+  spelling proposals and optional related-term suggestions from tag names only.
+- Selected merges preserve skipped tags and unopened transcripts, reject stale
+  plans, update metadata timestamps, and support persistence retry (T24b).
+- User-reported session-tag tools passed. Focused tests: 49 pass; production
+  build passes. Full suite: 690 pass and the same six documented failures.
+  Desktop/mobile browser harness passes; live Obsidian normalization is pending.
+- See tasks/T78.md, tasks/T73.md, tasks/T24b.md,
+  implementation-details/session-tags.md, and sessions/2026-10-30-t78-global-tag-normalization.md.
 
 ## 2026-10-25 — T78 live generation-modal acceptance and unified tag input
 

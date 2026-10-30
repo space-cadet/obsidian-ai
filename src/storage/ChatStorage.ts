@@ -755,6 +755,7 @@ class JsonlStorage implements ChatStorage {
 				};
 				indexEntries.push({
 					...preservedEntry,
+					updatedAt: session.updatedAt,
 					title: session.title,
 					draft: session.draft,
 					draftAttachmentsFile,

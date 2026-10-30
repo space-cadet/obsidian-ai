@@ -2,9 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased — 2026-10-25
+## Unreleased — 2026-10-30
 
 ### Added
+
+- Global session-tag normalization review: local spelling groups, optional
+  related-term suggestions, editable canonical names, selected merges, and
+  affected-session counts. Apply updates saved-session metadata, rejects stale
+  review plans, and offers Retry save (T78).
 
 - Agent tools can list, read, search, open, rename, and delete saved chat
   sessions. Search covers titles and message content; deletion requires

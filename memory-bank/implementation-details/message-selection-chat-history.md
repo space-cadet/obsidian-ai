@@ -27,3 +27,11 @@ The manager picker follow-up unifies search and creation in one field, shows the
 ## Verification
 
 The completed implementation was validated with 210 tests, TypeScript, the production build, and `git diff --check`. Commits: `b980d7a`, `e6fa1f7`, `7d02f17`, `eb844b0`, `ffa2e17`, and `a9cad79`.
+
+## Global tag normalization — 2026-10-30
+
+The T78 Settings normalization review consolidates labels across saved sessions;
+History displays the updated shared metadata. It offers editable canonical names,
+selected groups, affected counts, local proposals and optional related-term
+suggestions. See [session-tags.md](session-tags.md) for data flow, persistence,
+and remaining live acceptance. T20's completed Copy/Export behavior is unchanged.

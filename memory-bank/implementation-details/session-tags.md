@@ -1,7 +1,7 @@
 # Chat Session Tags — Implementation Details (T78)
 
-*Last Updated: 2026-10-25 11:19:59 IST.*
-*Status: prototype on `feat/session-tags`, source commit `417881d024805264b516f1ae1279df77026de858`.*
+*Last Updated: 2026-10-30 15:44:46 IST*
+*Status: prototype on `feat/session-tags`; global normalization is implemented in the current uncommitted worktree.*
 
 ## Scope and ownership
 
@@ -141,6 +141,50 @@ executor, and `SessionHandlers`. Mutations update metadata and flush through
 the shared session state owner. They do not rename a label globally across
 other sessions.
 
+## Global vocabulary normalization — 2026-10-30
+
+Settings → Chat Defaults exposes Normalize tags beside Generate when a tag
+provider is available; local normalization remains available without a provider.
+The native review modal scans the shared session index metadata, showing unique
+tags and session counts. Suggested merges and All tags views provide source
+chips, editable canonical names, per-group affected counts, selection checkboxes,
+and the union of sessions actually changed by selected groups.
+
+Local proposals use NFKC Unicode normalization, lowercase, leading-# removal,
+trimmed whitespace, and hyphens for spaces/underscores/dash variants. Proposals
+are reviewed before applying; canonical names must be nonempty and at most 32
+characters. Unchanged singleton labels can be renamed through All tags.
+
+Suggest related tags sends only the existing tag vocabulary (up to 200 unique
+labels) to the configured session-tag profile, never transcripts. The UI
+identifies the provider/model before the action. Returned groups are restricted
+to existing source labels, cannot overlap, and remain unselected until reviewed.
+This operation consolidates clearly equivalent terms; a persistent global alias
+dictionary is not introduced.
+
+Apply validates the current shared metadata fingerprint and all selected groups
+before mutation. Stale plans require a rescan. Ambiguous chains/duplicate source
+mappings are rejected. Selected replacements are applied simultaneously, and
+only duplicates of selected canonical targets are removed. Unselected labels,
+transcript messages, hydration state, and message counts are preserved. Session
+updatedAt changes through the shared owner; one flush persists metadata. The
+unopened-session JSONL guard now also preserves the new updatedAt in the index.
+Failed saves retain pending owner changes and offer Retry save. Suggestions can
+be cancelled; closing during an active save waits for that save.
+
+Implementation: src/lib/sessionTagNormalization.ts and
+src/modals/NormalizeSessionTagsModal.ts, wired in chatDefaults.ts and
+styles/_settings.css (compiled into styles.css).
+
+Verification in this worktree: 49 focused tests pass, including actual modal
+interaction, selected-only application, duplicate cleanup, stale plans,
+cancellation, failed-save retry, JSONL metadata reload, and unchanged unopened
+transcripts. Desktop (1280×1000) and mobile (390×844) browser harness checks pass
+with zero console errors/warnings and no horizontal overflow. The browser used
+the real modal/core with fixture provider/storage and an Obsidian DOM adapter;
+it does not establish live Obsidian or real-provider acceptance. Full suite:
+690 passed, six previously documented failures. Production build passes.
+
 ## Main implementation files
 
 | Concern | Files |
@@ -163,8 +207,9 @@ tests (22/22), the production build, and `git diff --check`. The full suite was
 not rerun for this follow-up. Its previous run on `62c8eb0` had 673/679 passing;
 the six failures were in the unchanged agent-tool expected-list test and five
 `SyncLogger` tests that require `localStorage`. The user confirmed the bulk
-tag-generation modal works as expected on 2026-10-25. Live History filtering/tag
-editing, Settings provider selection, and agent-tool checks remain open.
+tag-generation modal works as expected on 2026-10-25. The user subsequently reported all four session-tag tools passed with the
+temporary test tag removed. History filtering/tag editing, Settings provider
+selection, and the new normalization flow remain open for live Obsidian review.
 
 The user confirmed the bulk-generation modal and generated-tag preview in
 Obsidian. The History tag display and manager remain pending live review. The

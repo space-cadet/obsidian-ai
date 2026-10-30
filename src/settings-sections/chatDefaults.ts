@@ -1,6 +1,7 @@
 import { Notice, Setting } from "obsidian";
 import ObsidianAIPlugin from "../main";
 import { createSection, createSliderWithValue } from "./helpers";
+import { NormalizeSessionTagsModal } from "../modals/NormalizeSessionTagsModal";
 import { AgentPromptModal } from "../modals/AgentPromptModal";
 import { SyncProgressModal } from "../modals/SyncProgressModal";
 import { generateSessionTags, normalizeSessionTags } from "../lib/sessionTags";
@@ -178,7 +179,7 @@ export function renderChatDefaultsSection(
 		const bulkDescription =
 			"Generate tags for saved sessions that do not have tags yet. Existing tags are preserved. A bounded excerpt of each eligible session is sent to the selected provider.";
 		const bulkTagSetting = new Setting(sectionEl)
-			.setName("Generate tags for existing sessions")
+			.setName("Saved-session tags")
 			.setDesc(bulkDescription);
 		bulkTagSetting.addButton((button) =>
 			button.setButtonText("Generate").onClick(async () => {
@@ -410,11 +411,34 @@ export function renderChatDefaultsSection(
 				}
 			}),
 		);
+		bulkTagSetting.addButton((button) =>
+			button
+				.setButtonText("Normalize tags…")
+				.onClick(() =>
+					new NormalizeSessionTagsModal(plugin.app, plugin).open(),
+				),
+		);
 	} else {
 		new Setting(sectionEl)
 			.setName("Session tag provider and model")
 			.setDesc(
 				"Configure a provider profile in Provider Profiles to enable automatic tag suggestions.",
+			);
+
+		new Setting(sectionEl)
+			.setName("Normalize session tags")
+			.setDesc(
+				"Review and consolidate existing tag names across saved sessions. Edit canonical names and choose which merges to apply.",
+			)
+			.addButton((button) =>
+				button
+					.setButtonText("Normalize tags…")
+					.onClick(() =>
+						new NormalizeSessionTagsModal(
+							plugin.app,
+							plugin,
+						).open(),
+					),
 			);
 	}
 

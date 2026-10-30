@@ -305,6 +305,18 @@ Session titles can be generated from conversation content and can be renamed man
 
 **Session tags prototype (feat/session-tags):** Sessions can have user-added or model-suggested tags. Chat History uses a compact searchable list, an in-app tag filter with session counts and keyboard selection, up to four tag chips per session plus a +N overflow marker, an accessible Manage tags icon, and inline icon actions for load, copy, export, rename, and delete. Manage tags opens a session-scoped modal with one Search or create a tag field. The picker filters existing labels, offers creation for unmatched text, opens on focus, supports keyboard selection, and displays the full available-tag list in a bounded scroll area with History-style tag icons and session counts. The picker stays in the modal's scrollable content so it does not cover the footer. Users can remove labels individually or clear all tags. The optional auto-tag setting applies only to sessions created while enabled; after the first user/assistant exchange, it sends a bounded excerpt to the selected configured provider profile and model. The provider selector uses compact profile names and shows provider/model details in its description. The main chat overflow menu can generate and merge tags for the active session. Agent tools list, add, rename, and remove tags on a specified saved session. Settings can sequentially generate tags for untagged saved sessions, previewing recent generated tags in the progress modal and showing progress and skipped/failed results; it sends a bounded excerpt from each eligible session to the selected provider. The user authorized this data transfer on 2026-10-23. Live UI acceptance remains open.
 
+**Global tag normalization (T78, 2026-10-30, branch implementation):** Settings
+provides a review modal to consolidate the existing session-tag vocabulary.
+Users review local spelling groups, edit canonical names, select or skip groups,
+and apply them across affected sessions. Optional related-term suggestions send
+existing tag names only to the selected provider; semantic groups require
+explicit selection. The modal reports actual affected-session counts, rejects
+stale/ambiguous plans, preserves skipped labels and transcripts, and offers save
+retry. Automated and desktop/mobile browser-harness checks pass; live Obsidian
+normalization acceptance remains open. See session-tags.md for the full data
+and persistence boundary. The user separately reported all four session-tag
+agent tools passed with temporary-tag cleanup.
+
 ### 4.3 Search and deep links
 
 Search covers saved conversation messages and returns the matching session, message, and a bounded excerpt. A result can open the matching saved conversation and navigate to/highlight the relevant message. The current conversation is excluded from a “past sessions” tool search. Search results must distinguish chat history from connected-repository search.
