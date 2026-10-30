@@ -1,6 +1,6 @@
 # Session 2026-10-30 - T78 Global Tag Normalization
 *Created: 2026-10-30 15:44:46 IST*
-*Last Updated: 2026-10-30 16:18:17 IST*
+*Last Updated: 2026-10-30 16:24:44 IST*
 
 ## Focus Task
 T78: Chat Session Tags and Automatic Suggestions
@@ -49,6 +49,10 @@ T78: Chat Session Tags and Automatic Suggestions
 - [T78](../tasks/T78.md), [T73](../tasks/T73.md), [T24b](../tasks/T24b.md)
 
 ## Narrow-screen layout follow-up
+- A later user screenshot showed clipped canonical names and tall rows. The
+  shared mobile CSS now gives the field the available row width and reduces
+  chip, row, and summary spacing. Build and formatting passed; browser previews
+  at 320 and 390 pixels showed no horizontal overflow. Obsidian review is open.
 - A user-provided Obsidian screenshot showed a narrow, post-save view with zero
   selected merges and a message reporting 42 updated sessions. This is visual
   evidence of the reported save result, not a reload or persistence check.

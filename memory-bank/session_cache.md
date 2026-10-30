@@ -1,9 +1,12 @@
 # Session Cache
 
-*Last Updated: 2026-10-30 16:18:17 IST*
+*Last Updated: 2026-10-30 16:24:44 IST*
 
 ## 2026-10-30 — T78 global vocabulary normalization
 
+- Tightened mobile tag rows and widened canonical-name fields after the user
+  reported clipping. Build, formatting, and narrow browser previews pass; live
+  Obsidian review remains open.
 - Narrow-screen follow-up keeps the review scroll separate from the summary and
   actions, and labels an empty selection clearly. The screenshot showed a saved
   result for 42 sessions; reload and the revised layout remain unverified in

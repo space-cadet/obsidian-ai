@@ -5646,12 +5646,25 @@
 		margin-right: 0;
 	}
 	.tag-normalization-row {
-		grid-template-columns: 44px minmax(0, 1fr) 60px;
-		gap: 8px;
+		grid-template-columns: 36px minmax(0, 1fr) 56px;
+		gap: 6px;
+		padding: 8px;
 	}
 	.tag-normalization-target {
-		grid-column: 2;
+		grid-column: 2 / -1;
 		grid-row: 2;
+	}
+	.tag-normalization-chip {
+		font-size: var(--font-ui-small);
+		padding: 2px 6px;
+	}
+	.tag-normalization-target input[type="text"] {
+		font-size: var(--font-ui-small);
+	}
+	.tag-normalization-summary {
+		font-size: var(--font-ui-small);
+		line-height: 1.4;
+		padding: 10px 12px;
 	}
 	.tag-normalization-header span:nth-child(3) {
 		display: none;
