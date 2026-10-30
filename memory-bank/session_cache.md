@@ -1,6 +1,14 @@
 # Session Cache
 
-*Last Updated: 2026-10-30 17:59:42 IST*
+*Last Updated: 2026-10-30 18:16:07 IST*
+
+## 2026-10-30 — T78 follow-up review corrections
+
+- Serialized add/rename/remove session-tag tools with the shared per-session
+  lock. Updated the telemetry API mock, lock-target assertion, tool inventory
+  expectation, and SyncLogger localStorage fixture.
+- Focused tests: 37/37. Full suite: 710/710. Production build, targeted
+  Prettier, and git diff --check pass. See T78 and the session note.
 
 ## 2026-10-30 — T78 PR review follow-up
 

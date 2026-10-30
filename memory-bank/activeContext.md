@@ -1,6 +1,18 @@
 # Active Context
 
-*Last Updated: 2026-10-30 17:59:42 IST*
+*Last Updated: 2026-10-30 18:16:07 IST*
+
+### 2026-10-30 — T78 follow-up Codex review fixes
+
+- Tag CRUD agent tools now share the saved-session lock used by session rename
+  and delete. Updated the generation telemetry mock and added a lock-target
+  assertion; repaired the expected tool list and SyncLogger localStorage test
+  fixture.
+- Focused tests pass (37/37), the full suite passes (710/710), and production
+  build, targeted Prettier, and git diff --check pass. Live Obsidian checks
+  remain open.
+- See T78, implementation-details/session-tags.md, and
+  sessions/2026-10-30-t78-pr-review-follow-up.md.
 
 ### 2026-10-30 — T78 Codex review fixes
 

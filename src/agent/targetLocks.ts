@@ -146,7 +146,10 @@ export function mutationTargets(
 	}
 	if (
 		(toolName === "rename_chat_session" ||
-			toolName === "delete_chat_session") &&
+			toolName === "delete_chat_session" ||
+			toolName === "add_session_tags" ||
+			toolName === "rename_session_tag" ||
+			toolName === "remove_session_tags") &&
 		typeof args.session_id === "string"
 	) {
 		return [`session:${args.session_id}`];

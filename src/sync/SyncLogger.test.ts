@@ -1,5 +1,21 @@
-import { describe, it, expect } from "vitest";
+import { beforeEach, describe, it, expect } from "vitest";
 import { SyncLogger } from "./SyncLogger";
+
+const localStorageData = new Map<string, string>();
+
+beforeEach(() => {
+	localStorageData.clear();
+	Object.defineProperty(globalThis, "localStorage", {
+		configurable: true,
+		value: {
+			getItem: (key: string) => localStorageData.get(key) ?? null,
+			setItem: (key: string, value: string) =>
+				localStorageData.set(key, String(value)),
+			removeItem: (key: string) => localStorageData.delete(key),
+			clear: () => localStorageData.clear(),
+		},
+	});
+});
 
 function makeLogger(opts?: {
 	maxLines?: number;

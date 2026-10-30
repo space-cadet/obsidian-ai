@@ -1,7 +1,7 @@
 # Session 2026-10-30 — T78 PR review follow-up
 
 *Created: 2026-10-30 17:57:29 IST*
-*Last Updated: 2026-10-30 17:59:42 IST*
+*Last Updated: 2026-10-30 18:16:07 IST*
 
 ## Focus Task
 T78: Chat Session Tags and Automatic Suggestions
@@ -22,11 +22,21 @@ T78: Chat Session Tags and Automatic Suggestions
 - Committed as `f23c53f` and pushed to PR #14. Posted a fresh `@codex review`
   request; its result is pending.
 
+## Follow-up review corrections — 2026-10-30
+- The follow-up review reported a race between concurrent tag mutations and a
+  stale telemetry mock. Tag mutations now share a per-session target lock, and
+  the telemetry mock and abort-signal assertion use callApiWithTelemetry.
+- Updated the session-tag tool inventory expectation and gave SyncLogger tests
+  an isolated localStorage fixture.
+- These changes address all four review threads, including the earlier
+  provider-error and stale manual-session findings.
+
 ## Verification
-- `git diff --check` passes.
-- Tests and production build were not run for this follow-up.
+- Focused tests: 37/37 across four files.
+- Full suite: 710/710.
+- Production build, targeted Prettier, and git diff --check pass.
 - Live History and Settings acceptance remains open.
 
 ## Next Steps
-- Check the fresh Codex review result before closing the review thread. Live
-  History and Settings acceptance remains open.
+- Review any new Codex findings after the latest branch update.
+- Live History and Settings acceptance remains open.

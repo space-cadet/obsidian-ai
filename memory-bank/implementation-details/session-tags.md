@@ -1,6 +1,6 @@
 # Chat Session Tags — Implementation Details (T78)
 
-*Last Updated: 2026-10-30 17:59:42 IST*
+*Last Updated: 2026-10-30 18:16:07 IST*
 *Status: prototype on `feat/session-tags`; global normalization was introduced in `0c3b620`, with a subsequent layout follow-up.*
 
 ## Scope and ownership
@@ -278,3 +278,20 @@ Provider errors are shown in a bounded scrollable panel to preserve review space
 Select all selects changed groups in the current view. Deselect all clears the
 entire plan. These controls remain beside the summary while reviewing the list;
 individual checkboxes support exceptions and canonical edits are preserved.
+
+
+## Agent mutation serialization and review test corrections — 2026-10-30
+
+add_session_tags, rename_session_tag, and remove_session_tags now map to the
+shared session:<id> target used by saved-session rename and delete. The
+ToolExecutor holds this target lock for the complete mutation, including the
+session lookup and persistence flush, so concurrent tag tools cannot overwrite
+one another from stale snapshots.
+
+The abort-signal test for generateSessionTags now mocks
+callApiWithTelemetry. The agent-tool inventory test lists the four session-tag
+tools. SyncLogger tests install an isolated localStorage fixture.
+
+Verification for this review follow-up: four focused files pass 37 tests; the
+full suite passes 710 tests; the production build, targeted Prettier check, and
+git diff --check pass.

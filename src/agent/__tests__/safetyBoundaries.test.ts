@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { mapWithConcurrency } from "../boundedConcurrency";
-import { TargetLockManager, ToolLockCancelledError } from "../targetLocks";
+import {
+	mutationTargets,
+	TargetLockManager,
+	ToolLockCancelledError,
+} from "../targetLocks";
 
 describe("bounded tool safety helpers", () => {
 	it("keeps concurrent reads within the configured limit", async () => {
@@ -47,6 +51,21 @@ describe("bounded tool safety helpers", () => {
 		release();
 		await Promise.all([first, second]);
 		expect(events).toEqual(["one-start", "other", "one-end", "two-start"]);
+	});
+
+	it("shares one lock target across saved-session tag mutations", () => {
+		const toolNames = [
+			"rename_chat_session",
+			"delete_chat_session",
+			"add_session_tags",
+			"rename_session_tag",
+			"remove_session_tags",
+		];
+		const targets = toolNames.map((toolName) =>
+			mutationTargets(toolName, { session_id: "session-1" }),
+		);
+
+		expect(targets).toEqual(toolNames.map(() => ["session:session-1"]));
 	});
 
 	it("cancels a call waiting for a locked target", async () => {
