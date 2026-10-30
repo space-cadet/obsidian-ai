@@ -190,6 +190,46 @@ describe("saved-session tag normalization", () => {
 			tags: [...inventory.tags.keys()].sort(),
 		});
 	});
+	it("compares all 429 tags together and retains more than 200 valid groups", async () => {
+		const names = [
+			"AI",
+			...Array.from(
+				{ length: 427 },
+				(_, i) => `topic-${String(i).padStart(3, "0")}`,
+			),
+			"artificial-intelligence",
+		];
+		const large = collectSessionTags(
+			names.map((tag, i) => session(String(i), [tag])),
+		);
+		const proposals = [
+			{
+				sources: ["AI", "artificial-intelligence"],
+				target: "artificial-intelligence",
+			},
+			...Array.from({ length: 213 }, (_, i) => ({
+				sources: [names[1 + i], names[427 - i]],
+				target: `merged-${i}`,
+			})),
+		];
+		const callApi = vi.fn().mockResolvedValue(JSON.stringify(proposals));
+		const result = await suggestRelatedTagMerges(
+			large,
+			{} as ProviderProfile,
+			{ callApi } as unknown as ChatApiManager,
+			new AbortController().signal,
+		);
+		expect(callApi).toHaveBeenCalledTimes(1);
+		expect(JSON.parse(callApi.mock.calls[0][1]).tags).toEqual(
+			[...names].sort(),
+		);
+		expect(result.filter((row) => row.sources.length > 1)).toHaveLength(
+			214,
+		);
+		expect(result[0].sources).toEqual(["AI", "artificial-intelligence"]);
+		expect(result.slice(0, 214).every((row) => !row.selected)).toBe(true);
+		expect(new Set(result.flatMap((row) => row.sources)).size).toBe(429);
+	});
 	it("rejects malformed or cancelled provider responses", async () => {
 		const controller = new AbortController();
 		controller.abort();

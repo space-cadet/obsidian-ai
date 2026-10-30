@@ -1,6 +1,6 @@
 # Chat Session Tags — Implementation Details (T78)
 
-*Last Updated: 2026-10-30 16:36:19 IST*
+*Last Updated: 2026-10-30 16:41:07 IST*
 *Status: prototype on `feat/session-tags`; global normalization was introduced in `0c3b620`, with a subsequent layout follow-up.*
 
 ## Scope and ownership
@@ -157,8 +157,7 @@ trimmed whitespace, and hyphens for spaces/underscores/dash variants. Proposals
 are reviewed before applying; canonical names must be nonempty and at most 32
 characters. Unchanged singleton labels can be renamed through All tags.
 
-The primary Find merge proposals action sends only the existing tag vocabulary (up to 200 unique
-labels) to the configured session-tag profile, never transcripts. The UI
+The primary Find merge proposals action sends only the existing tag vocabulary in one request to the configured session-tag profile, never transcripts. The UI
 identifies the provider/model before the action. Returned groups are restricted
 to existing source labels, cannot overlap, and remain unselected until reviewed.
 This operation consolidates clearly equivalent terms; a persistent global alias
@@ -221,3 +220,7 @@ The user confirmed the bulk-generation modal and generated-tag preview in
 Obsidian. The History tag display and manager remain pending live review. The
 user deferred additional chip/list visual refinements for now. Obsidian note-tag
 integration is not part of the current implementation.
+
+The former 200-name request cutoff and 200-group response truncation are removed.
+A 429-name regression checks complete transmission and retention of 214 groups.
+Provider errors are shown in a bounded scrollable panel to preserve review space.

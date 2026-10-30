@@ -1,6 +1,6 @@
 # Session 2026-10-30 - T78 Global Tag Normalization
 *Created: 2026-10-30 15:44:46 IST*
-*Last Updated: 2026-10-30 16:36:19 IST*
+*Last Updated: 2026-10-30 16:41:07 IST*
 
 ## Focus Task
 T78: Chat Session Tags and Automatic Suggestions
@@ -12,7 +12,7 @@ T78: Chat Session Tags and Automatic Suggestions
 - Added local spelling proposals, optional provider-based equivalent-term groups,
   editable canonical names, Suggested merges/All tags, per-group selection,
   accurate changed-session counts, rescan, validation, cancellation, and save retry.
-- Optional provider requests contain tag names only (up to 200), with disclosure
+- Optional provider requests contain tag names only (the original 200-name cap was subsequently removed), with disclosure
   before invocation; semantic suggestions remain unchecked until selected.
 - Apply uses the shared owner without loading transcripts, preserves skipped
   labels and message state, and refuses stale or ambiguous plans.
@@ -73,3 +73,13 @@ T78: Chat Session Tags and Automatic Suggestions
 - Automatic review rejected provider transmission merely on opening the modal.
   The implemented primary action explicitly starts the disclosed tag-name request.
   Opening, scanning, and saving do not invoke the provider automatically.
+
+## Full vocabulary correction
+- 2026-10-30: Removed the 200-tag request cutoff and 200-group response
+  truncation after the user encountered the limit with 429 tags. The complete
+  vocabulary is sent in one explicit request so all labels can be compared.
+  Long provider errors use a bounded scrollable panel. Build and 17 focused
+  checks pass; 429 tags across 295 fixture sessions pass browser checks at
+  320/390 pixels. Real-provider and Obsidian acceptance remain open.
+- The regression compares all 429 names together, including distant equivalent
+  labels, and retains 214 disjoint valid groups. Tests use a fixture provider.

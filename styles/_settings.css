@@ -541,6 +541,9 @@
 	border-radius: var(--radius-m);
 }
 .tag-normalization-feedback {
+	max-height: 4.2em;
+	overflow-y: auto;
+	overflow-wrap: anywhere;
 	color: var(--text-muted);
 	margin-top: 10px;
 	min-height: 1.5em;

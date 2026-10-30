@@ -23,6 +23,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Remove tag-normalization vocabulary and response cutoffs, and keep long
+  provider errors from crowding the review area (T78).
+
 - Make AI merge proposals the primary normalization action, require explicit
   selection of every proposal, and use compact merge groups on mobile (T78).
 

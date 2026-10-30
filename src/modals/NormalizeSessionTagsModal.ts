@@ -265,6 +265,7 @@ export class NormalizeSessionTagsModal extends Modal {
 		}
 		const feedback = validation || this.status;
 		this.feedbackEl.setText(feedback);
+		this.feedbackEl.tabIndex = feedback ? 0 : -1;
 		this.feedbackEl.toggleAttribute("hidden", !feedback);
 		const applyLabel = selected.length
 			? `Apply ${selected.length} merges`
@@ -303,7 +304,7 @@ export class NormalizeSessionTagsModal extends Modal {
 			this.status = "Suggestions ready. Select merges to apply.";
 		} catch (error) {
 			if (!controller.signal.aborted)
-				this.status = `Could not suggest merges: ${String(error)}`;
+				this.status = `Could not find proposals: ${error instanceof Error ? error.message : String(error)}. Try Find merge proposals again.`;
 		} finally {
 			this.busy = false;
 			this.controller = null;

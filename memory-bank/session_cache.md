@@ -1,9 +1,15 @@
 # Session Cache
 
-*Last Updated: 2026-10-30 16:36:19 IST*
+*Last Updated: 2026-10-30 16:41:07 IST*
 
 ## 2026-10-30 — T78 global vocabulary normalization
 
+- 2026-10-30: Removed the 200-tag request cutoff and 200-group response
+  truncation after the user encountered the limit with 429 tags. The complete
+  vocabulary is sent in one explicit request so all labels can be compared.
+  Long provider errors use a bounded scrollable panel. Build and 17 focused
+  checks pass; 429 tags across 295 fixture sessions pass browser checks at
+  320/390 pixels. Real-provider and Obsidian acceptance remain open.
 - 2026-10-30: Made Find merge proposals the primary, explicitly invoked AI
   action. Suggested merges shows equivalent groups, with every proposal initially
   unselected; individual spelling edits remain in All tags. Mobile groups use
