@@ -1,6 +1,6 @@
 # Chat Session Tags — Implementation Details (T78)
 
-*Last Updated: 2026-10-30 16:46:27 IST*
+*Last Updated: 2026-10-30 17:06:03 IST*
 *Status: prototype on `feat/session-tags`; global normalization was introduced in `0c3b620`, with a subsequent layout follow-up.*
 
 ## Scope and ownership
@@ -34,6 +34,37 @@ Metadata changes go through the existing `SessionStateOwner`. Tag edits update
 `updatedAt`, allowing existing session save/sync comparison behavior to observe
 the change; no tag-specific sync mechanism was added. The tag manager, History
 filter, agent tools, and generation flows all use this same session metadata.
+
+## Sync, export, and import integration — 2026-10-30
+
+The normal sync engine serializes the complete `ChatSession` for upload and
+restores that object on download. Because tags are session metadata, they travel
+with sync; tag editing and normalization update `updatedAt`, which marks the
+session as changed in the existing sync cache/index flow. This was checked in
+source and with a regression that verifies a normalized tag edit invalidates
+the prior sync timestamp. No live remote-sync run was performed. See T42 and
+T42a for the sync contract and its acceptance boundary.
+
+Legacy-to-JSONL migration now copies both `tags` and `autoTagPending` into the
+session index. The migration regression verifies both fields.
+
+Chat History Markdown exports show the tag list in the session header. JSON
+exports and multi-session JSONL records already contain the full session object.
+Single-session JSONL retains one message per line and stores the session
+metadata on its first message; an empty session uses a metadata record. The
+Settings Backup & Restore area has a separate Import saved chats action for
+JSON and JSONL archives. It preserves tags, adds colliding IDs as new copies,
+normalizes imported labels, and clears `autoTagPending` so import does not
+trigger a provider call. Older message-only JSONL files remain importable but
+cannot restore session metadata that was not present in those files. Markdown
+is for reading/sharing and is not an import format. Settings backup/import
+continues to handle settings only.
+
+Verification for this follow-up: five focused test files pass (48 tests), the
+production build/typecheck, Prettier check, and `git diff --check` pass. The
+broader test invocation reports 701 passed and the same six known failures in
+the agent-tool expected-list assertion and five `SyncLogger` localStorage tests.
+Actual Obsidian archive import and live remote sync remain unverified.
 
 ## Tag normalization and model output
 
@@ -196,7 +227,8 @@ it does not establish live Obsidian or real-provider acceptance. Full suite:
 |---|---|
 | Session fields and settings defaults | `src/types.ts`, `src/settings.ts` |
 | Normalization and provider request | `src/lib/sessionTags.ts` |
-| JSONL index metadata | `src/storage/ChatStorage.ts` |
+| JSONL index metadata and legacy migration | `src/storage/ChatStorage.ts`, `src/storage/Migration.ts` |
+| Chat archive import and export | `src/utils/importChat.ts`, `src/utils/exportChat.ts`, `src/settings-sections/exportImport.ts` |
 | New-session lifecycle | `src/hooks/useChatSession.ts` |
 | Provider selector and bulk generation | `src/settings-sections/chatDefaults.ts` |
 | History filter, manager, tag preview, and compact actions | `src/components/presentational/SessionPickerModal.tsx`, `styles/_chat.css`, `styles.css` |

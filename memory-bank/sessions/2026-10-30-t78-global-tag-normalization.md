@@ -1,6 +1,6 @@
 # Session 2026-10-30 - T78 Global Tag Normalization
 *Created: 2026-10-30 15:44:46 IST*
-*Last Updated: 2026-10-30 16:46:27 IST*
+*Last Updated: 2026-10-30 17:06:03 IST*
 
 ## Focus Task
 T78: Chat Session Tags and Automatic Suggestions
@@ -91,3 +91,20 @@ T78: Chat Session Tags and Automatic Suggestions
   exceptions are preserved. Build and 18 focused tests pass; a 60-proposal
   browser fixture passes selection, exception, clearing, and save at 320/390
   pixels. Live Obsidian acceptance remains open.
+
+## Sync and chat archive integration
+- Fixed legacy-to-JSONL migration to keep `tags` and `autoTagPending` in the
+  session index. Tag metadata is retained by the complete `ChatSession` sync
+  payload; normalization's updated timestamp causes the existing sync flow to
+  treat the session as changed.
+- Markdown exports display tags; JSON and JSONL exports preserve structured
+  metadata. Added a separate saved-chat JSON/JSONL import action in Backup &
+  Restore. Colliding IDs are imported as copies, old message-only JSONL remains
+  readable, and imported sessions do not trigger automatic tag generation.
+- Focused tests: 48 pass across five files. Production build/typecheck,
+  Prettier, and diff checks pass. Full suite: 701 pass and six known failures
+  (the agent-tool expected-list assertion and five SyncLogger localStorage
+  tests). No live Obsidian import or remote-sync run was performed.
+- Follow-up remains: verify archive import and actual sync in Obsidian; the
+  existing History, provider-selection, and normalization acceptance checks
+  also remain open.

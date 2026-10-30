@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Import saved-chat JSON/JSONL archives and preserve session tags in chat
+  exports, legacy migration, and sync metadata (T78/T20).
+
 - Select all and Deselect all for normalization proposals, with individual
   exceptions and preserved canonical edits (T78).
 

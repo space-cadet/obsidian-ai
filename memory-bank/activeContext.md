@@ -1,6 +1,20 @@
 # Active Context
 
-*Last Updated: 2026-10-30 15:44:46 IST*
+*Last Updated: 2026-10-30 17:27:24 IST*
+
+### 2026-10-30 — T78 sync and archive integration
+
+- Fixed legacy-to-JSONL migration so it retains session tags and automatic-tag
+  state. Chat Markdown now shows tags; JSON and JSONL exports preserve them,
+  and Backup & Restore can import saved-chat JSON/JSONL archives as separate
+  sessions, assigning new IDs on collision. Import does not trigger AI tagging.
+- Tag metadata already travels in the existing whole-session sync payload;
+  tag edits update `updatedAt` so the sync cache/index treats them as changes.
+- Five focused files pass 48 tests; the production build/typecheck, Prettier,
+  and diff checks pass. The broader suite reports 701 passing and the same six
+  known failures. Live Obsidian archive import and remote sync remain open.
+- See T78, T20, T24b, T42/T42a, T73, and
+  `implementation-details/session-tags.md`.
 
 ### 2026-10-30 — T78 global vocabulary normalization
 
@@ -13,6 +27,14 @@
   Desktop/mobile browser harness passes; live Obsidian normalization is pending.
 - See tasks/T78.md, tasks/T73.md, tasks/T24b.md,
   implementation-details/session-tags.md, and sessions/2026-10-30-t78-global-tag-normalization.md.
+
+### 2026-10-30 — T77 daily community download tracking
+
+- The official listing confirmed Chat Lab AI v1.9.1 at 498 downloads on
+  2026-10-30 08:58:13 IST, up 51 from the prior confirmed count. T77 remains
+  active with daily 09:00 IST checks; the full log is in `tasks/T77.md`.
+- See `sessions/2026-10-30-morning.md` and
+  `sessions/2026-10-30-t77-t8-record-transfer.md`.
 
 ### 2026-10-25 — T78 live acceptance and unified tag input
 
@@ -57,15 +79,15 @@
   pass. Live Obsidian acceptance remains open. See `tasks/T78.md` and the
   October 23 session record.
 
-### 2026-10-22 — v1.9.1 patch release preparation
+### 2026-10-22 — v1.9.1 patch release and review acceptance
 
-- Prepared 1.9.1 as a patch release for the Settings heading error and
-  straightforward Obsidian compatibility warning fixes. Minimum Obsidian
-  version remains 1.11.4.
-- The full suite passes (676 tests in 81 files); TypeScript, production build,
-  targeted Prettier, and diff checks pass. GitHub publication is pending.
-- The remote `main` matches local `main`, and remote tag `1.9.1` is unused.
-  See `sessions/2026-10-22-v1.9.1-release.md`.
+- Published commit `3114cb5`; the public release includes all four plugin
+  assets and retains `minAppVersion` 1.11.4. The user confirmed the Obsidian
+  review passed.
+- 676 tests in 81 files, TypeScript, production build, targeted Prettier, and
+  diff checks passed. GitHub Actions run `39815213172` was queued at the last
+  check; its final status was not observed.
+- See `sessions/2026-10-22-v1.9.1-release.md`.
 
 ### 2026-10-22 — v1.9.0 Obsidian review follow-up
 

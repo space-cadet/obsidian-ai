@@ -238,7 +238,8 @@ export function serializeMessagesToMarkdown(messages: ChatMessage[]): string {
 
 function sessionToMarkdown(session: ChatSession): string {
 	const title = session.title || `Chat ${formatDate(session.createdAt)}`;
-	const header = `# ${title}\n\n*Created:* ${formatDate(session.createdAt)}  \n*Updated:* ${formatDate(session.updatedAt)}  \n*Messages:* ${session.messages.length}\n\n---\n\n`;
+	const tags = sessionTagsToMarkdown(session.tags);
+	const header = `# ${title}\n\n*Created:* ${formatDate(session.createdAt)}  \n*Updated:* ${formatDate(session.updatedAt)}  \n*Messages:* ${session.messages.length}${tags}\n\n---\n\n`;
 	const body = session.messages
 		.map((m, i) => messageToMarkdown(m, i))
 		.join("\n---\n\n");
@@ -253,6 +254,10 @@ function debugTelemetryToMarkdown(
 	return telemetry
 		? `\n## Debug telemetry\n\n\`\`\`json\n${JSON.stringify(telemetry, null, 2)}\n\`\`\`\n`
 		: "";
+}
+
+function sessionTagsToMarkdown(tags?: string[]): string {
+	return tags?.length ? `  \n*Tags:* ${JSON.stringify(tags)}` : "";
 }
 
 export function serializeToMarkdown(
@@ -272,7 +277,8 @@ export function serializeToMarkdown(
 		.map((session, idx) => {
 			const title =
 				session.title || `Chat ${formatDate(session.createdAt)}`;
-			return `## Session ${idx + 1}: ${title}\n\n*Created:* ${formatDate(session.createdAt)}  \n*Messages:* ${session.messages.length}\n\n${session.messages.map((m, i) => messageToMarkdown(m, i)).join("\n---\n\n")}`;
+			const tags = sessionTagsToMarkdown(session.tags);
+			return `## Session ${idx + 1}: ${title}\n\n*Created:* ${formatDate(session.createdAt)}  \n*Messages:* ${session.messages.length}${tags}\n\n${session.messages.map((m, i) => messageToMarkdown(m, i)).join("\n---\n\n")}`;
 		})
 		.join("\n\n---\n\n");
 	return header + body + debugTelemetryToMarkdown(sessions, options) + "\n";
@@ -321,20 +327,33 @@ export function serializeToJSONL(
 ): string {
 	const telemetry = buildDebugTelemetry(sessions, options);
 	if (scope === "single" && sessions.length === 1) {
-		// For a single session, each line is one message
+		// Keep one message per line while carrying session metadata on the first
+		// row so tags and other session fields survive a JSONL export/import.
+		const { messages, ...sessionMetadata } = sessions[0];
+		if (messages.length === 0) {
+			return (
+				JSON.stringify({
+					_recordType: "session",
+					_sessionMetadata: sessionMetadata,
+				}) + "\n"
+			);
+		}
 		return (
-			sessions[0].messages
+			messages
 				.map((m, index) =>
-					JSON.stringify(
-						telemetry
+					JSON.stringify({
+						...m,
+						...(index === 0
+							? { _sessionMetadata: sessionMetadata }
+							: {}),
+						...(telemetry
 							? {
-									...m,
 									_debugTelemetry: (
 										telemetry.sessions[0] as any
 									).messages[index],
 								}
-							: m,
-					),
+							: {}),
+					}),
 				)
 				.join("\n") + "\n"
 		);

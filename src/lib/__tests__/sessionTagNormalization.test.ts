@@ -3,6 +3,7 @@ import type { ChatSession, StoredChatData } from "../../types";
 import type { ChatApiManager } from "../../api";
 import type { ProviderProfile } from "../../settings";
 import { SessionStateOwner } from "../../state/SessionStateOwner";
+import { SyncIndexManager } from "../../sync/SyncIndexManager";
 import {
 	replaceSessionTags,
 	affectedTagSessions,
@@ -119,6 +120,31 @@ describe("saved-session tag normalization", () => {
 		merges.find((row) => row.target === "research-notes")!.selected = false;
 		expect(await applyTagMerges(owner, inventory, merges)).toBe(1);
 		expect(saved!.sessions[0].tags).toEqual(["ai", "keep"]);
+		expect(saved!.sessions[0].updatedAt).toBeGreaterThan(1);
+		const syncIndex = {
+			lastSyncTime: 1,
+			serverSignature: "server",
+			entries: {
+				a: {
+					localChecksum: "before-tag-edit",
+					localMtime: 1,
+					localSize: 100,
+					remoteMtime: 1,
+					etag: "etag-1",
+				},
+			},
+		};
+		const syncIndexManager = new SyncIndexManager({
+			load: async () => null,
+			save: async () => undefined,
+		});
+		expect(
+			syncIndexManager.isUnchanged(
+				saved!.sessions[0],
+				{ id: "a", modifiedAt: 1, etag: "etag-1" },
+				syncIndex,
+			),
+		).toBe(false);
 		expect(saved!.sessions[2].tags).toEqual([
 			"Research Notes",
 			"research-notes",

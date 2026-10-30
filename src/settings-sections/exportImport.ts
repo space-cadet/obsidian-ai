@@ -3,6 +3,10 @@ import ObsidianAIPlugin from "../main";
 import { createSection, createSliderWithValue } from "./helpers";
 import { PluginDataManager } from "../data/PluginDataManager";
 import { ChatStorageMigration } from "../storage/Migration";
+import {
+	makeImportedSessionsUnique,
+	parseSessionArchive,
+} from "../utils/importChat";
 
 async function saveExportToVault(
 	plugin: ObsidianAIPlugin,
@@ -125,6 +129,43 @@ export function renderExportImportSection(
 					}
 				}
 				new ExportFileSuggester(plugin.app).open();
+			});
+		});
+
+	new Setting(sectionEl)
+		.setName("Import saved chats")
+		.setDesc(
+			"Import Chat History JSON or JSONL exports. Existing sessions with matching IDs are kept; imported chats are added as separate copies.",
+		)
+		.addButton((button) => {
+			button.setButtonText("Import chats…").onClick(() => {
+				const archives = plugin.app.vault
+					.getFiles()
+					.filter(
+						(file: TFile) =>
+							["json", "jsonl"].includes(file.extension) &&
+							!file.basename.startsWith("chat-lab-settings"),
+					);
+				if (archives.length === 0) {
+					new Notice(
+						"No saved-chat JSON or JSONL exports found in the vault.",
+						5000,
+					);
+					return;
+				}
+
+				class ChatArchiveSuggester extends FuzzySuggestModal<TFile> {
+					getItems(): TFile[] {
+						return archives;
+					}
+					getItemText(item: TFile): string {
+						return item.path;
+					}
+					onChooseItem(item: TFile): void {
+						void importChatsFromFile(plugin, item);
+					}
+				}
+				new ChatArchiveSuggester(plugin.app).open();
 			});
 		});
 
@@ -294,5 +335,57 @@ async function importFromFile(
 		);
 	} catch (e: any) {
 		new Notice(`Import failed: ${e.message}`, 5000);
+	}
+}
+
+async function importChatsFromFile(
+	plugin: ObsidianAIPlugin,
+	file: TFile,
+): Promise<void> {
+	try {
+		const content = await plugin.app.vault.read(file);
+		const imported = parseSessionArchive(content, file.basename);
+		let existingIds: Set<string>;
+		let currentData: Awaited<
+			ReturnType<typeof plugin.loadChatData>
+		> | null = null;
+		if (plugin.sessionState) {
+			const owner = plugin.sessionState;
+			await owner.initialize();
+			existingIds = new Set([
+				...owner.getSnapshot().sessions.map((session) => session.id),
+				...(owner.getSnapshot().deletedSessionIds ?? []),
+			]);
+		} else {
+			currentData = await plugin.loadChatData({ hydrate: true });
+			existingIds = new Set([
+				...currentData.sessions.map((session) => session.id),
+				...(currentData.deletedSessionIds ?? []),
+			]);
+		}
+
+		const { sessions, copiedIdCount } = makeImportedSessionsUnique(
+			imported,
+			existingIds,
+		);
+
+		if (plugin.sessionState) {
+			for (const session of sessions)
+				plugin.sessionState.addSession(session);
+			await plugin.sessionState.flush();
+		} else {
+			if (!currentData)
+				throw new Error("Could not load current saved chats.");
+			await plugin.saveChatData({
+				...currentData,
+				sessions: [...currentData.sessions, ...sessions],
+			});
+		}
+		new Notice(
+			`Imported ${sessions.length} saved chat${sessions.length === 1 ? "" : "s"}${copiedIdCount ? ` (${copiedIdCount} added as copies)` : ""}.`,
+			5000,
+		);
+	} catch (error) {
+		new Notice(`Chat import failed: ${(error as Error).message}`, 5000);
 	}
 }

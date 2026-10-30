@@ -1,6 +1,21 @@
 # Session Cache
 
-*Last Updated: 2026-10-30 16:46:27 IST*
+*Last Updated: 2026-10-30 17:27:24 IST*
+
+## 2026-10-30 — T78 sync and archive integration
+
+- Fixed legacy-to-JSONL migration to preserve `tags` and `autoTagPending`.
+  Markdown exports show tags; JSON and JSONL archives retain structured tags.
+- Added saved-chat JSON/JSONL import in Backup & Restore. Imported IDs that
+  collide with live sessions or deletion tombstones become new copies; imports
+  do not trigger automatic provider requests. Settings import remains separate.
+- Sync serializes complete sessions. Tag edits update `updatedAt`; a focused
+  regression confirms normalization invalidates the prior sync timestamp.
+- Focused tests: 48 passed in five files. Build/typecheck, Prettier, and diff
+  checks pass. Broad suite: 701 passed, six known failures. Live archive import
+  and remote sync remain unverified. See T78/T20/T24b/T42/T42a/T73 and the
+  implementation reference. The stale SQLite snapshot and generated
+  `edit_history.md` were not regenerated.
 
 ## 2026-10-30 — T78 global vocabulary normalization
 
@@ -38,6 +53,15 @@
   Desktop/mobile browser harness passes; live Obsidian normalization is pending.
 - See tasks/T78.md, tasks/T73.md, tasks/T24b.md,
   implementation-details/session-tags.md, and sessions/2026-10-30-t78-global-tag-normalization.md.
+
+## 2026-10-30 — T77 daily download check
+
+- Official listing confirmed 498 downloads for version 1.9.1 at 08:58:13 IST,
+  up 51 from the prior confirmed 447; T77 remains active.
+- The full 2026-10-23 through 2026-10-30 log, dated sessions, and canonical edit
+  chunks are retained under T77. Daily 09:00 IST automation remains active.
+- See `tasks/T77.md`, `sessions/2026-10-30-morning.md`, and
+  `sessions/2026-10-30-t77-t8-record-transfer.md`.
 
 ## 2026-10-25 — T78 live generation-modal acceptance and unified tag input
 
@@ -87,13 +111,13 @@
   changes are committed and pushed. See `tasks/T78.md` and
   `sessions/2026-10-23-session-tags-prototype.md`.
 
-## 2026-10-22 — v1.9.1 patch release preparation
+## 2026-10-22 — v1.9.1 patch release and review acceptance
 
-- Prepared the 1.9.1 patch version and release notes for Obsidian compatibility
-  fixes; `minAppVersion` remains 1.11.4.
-- 676 tests in 81 files, TypeScript, production build, targeted Prettier, and
-  diff checks pass. Publication is pending; remote main is in sync and tag
-  `1.9.1` is unused. See `sessions/2026-10-22-v1.9.1-release.md`.
+- Published commit `3114cb5` as tag `1.9.1`; all four release assets are public.
+  The user confirmed the Obsidian review passed.
+- 676 tests in 81 files and the recorded build/type/format checks passed. GitHub
+  Actions run `39815213172` was queued at the last check; final status unknown.
+  See `sessions/2026-10-22-v1.9.1-release.md`.
 
 ## 2026-10-22 — v1.9.0 Obsidian review follow-up
 

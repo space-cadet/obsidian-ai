@@ -127,6 +127,8 @@ export class ChatStorageMigration {
 						draft: session.draft,
 						draftAttachmentsFile,
 						contextItems: session.contextItems,
+						tags: session.tags,
+						autoTagPending: session.autoTagPending,
 					};
 				}),
 			);
