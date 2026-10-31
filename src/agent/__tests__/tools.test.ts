@@ -85,7 +85,9 @@ describe("noteTools", () => {
 });
 
 describe("search_note_content schema", () => {
-	const schema = noteTools.search_note_content.inputSchema as z.ZodSchema;
+	const schema = noteTools.search_note_content.inputSchema as z.ZodType<
+		Record<string, unknown>
+	>;
 
 	it("defaults to compact phrase searches", () => {
 		const parsed = schema.parse({ query: "there is" });
@@ -95,7 +97,9 @@ describe("search_note_content schema", () => {
 });
 
 describe("read_note schema", () => {
-	const schema = noteTools.read_note.inputSchema as z.ZodSchema;
+	const schema = noteTools.read_note.inputSchema as z.ZodType<
+		Record<string, unknown>
+	>;
 
 	it("accepts valid input", () => {
 		const result = schema.parse({ path: "My Note" });
@@ -116,7 +120,9 @@ describe("read_note schema", () => {
 });
 
 describe("edit_note schema", () => {
-	const schema = noteTools.edit_note.inputSchema as z.ZodSchema;
+	const schema = noteTools.edit_note.inputSchema as z.ZodType<
+		Record<string, unknown>
+	>;
 
 	it("accepts valid input", () => {
 		const result = schema.parse({
@@ -132,7 +138,9 @@ describe("edit_note schema", () => {
 });
 
 describe("create_notes schema", () => {
-	const schema = noteTools.create_notes.inputSchema as z.ZodSchema;
+	const schema = noteTools.create_notes.inputSchema as z.ZodType<
+		Record<string, unknown>
+	>;
 
 	it("accepts a bounded batch of new notes", () => {
 		const result = schema.parse({
@@ -160,7 +168,9 @@ describe("create_notes schema", () => {
 });
 
 describe("patch_note schema", () => {
-	const schema = noteTools.patch_note.inputSchema as z.ZodSchema;
+	const schema = noteTools.patch_note.inputSchema as z.ZodType<
+		Record<string, unknown>
+	>;
 
 	it("accepts valid input with required fields", () => {
 		const result = schema.parse({
@@ -193,7 +203,9 @@ describe("patch_note schema", () => {
 });
 
 describe("search_notes schema", () => {
-	const schema = noteTools.search_notes.inputSchema as z.ZodSchema;
+	const schema = noteTools.search_notes.inputSchema as z.ZodType<
+		Record<string, unknown>
+	>;
 
 	it("accepts query-only input", () => {
 		const result = schema.parse({ query: "meeting" });
@@ -240,7 +252,9 @@ describe("search_notes schema", () => {
 });
 
 describe("list_notes schema", () => {
-	const schema = noteTools.list_notes.inputSchema as z.ZodSchema;
+	const schema = noteTools.list_notes.inputSchema as z.ZodType<
+		Record<string, unknown>
+	>;
 
 	it("uses correct defaults", () => {
 		const result = schema.parse({});
@@ -263,7 +277,9 @@ describe("list_notes schema", () => {
 });
 
 describe("read_pdf schema", () => {
-	const schema = noteTools.read_pdf.inputSchema as z.ZodSchema;
+	const schema = noteTools.read_pdf.inputSchema as z.ZodType<
+		Record<string, unknown>
+	>;
 
 	it("defaults to the first page and accepts a later page", () => {
 		expect(schema.parse({ source: "paper.pdf" }).start_page).toBe(1);
@@ -274,7 +290,9 @@ describe("read_pdf schema", () => {
 });
 
 describe("create_memory schema", () => {
-	const schema = noteTools.create_memory.inputSchema as z.ZodSchema;
+	const schema = noteTools.create_memory.inputSchema as z.ZodType<
+		Record<string, unknown>
+	>;
 
 	it("accepts valid input with category enum", () => {
 		const result = schema.parse({

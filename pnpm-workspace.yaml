@@ -1,8 +1,7 @@
 allowBuilds:
     esbuild: true
 overrides:
-    fast-uri@>=3.0.0 <3.1.7: ^3.1.7
-    fast-uri@>=3.0.0 <3.1.8: ^3.1.8
+    fast-uri@>=3.0.0 <3.1.9: ^3.1.9
     undici@>=7.0.0 <7.29.1: ^7.29.1
     undici@>=7.1.0 <7.29.1: ^7.29.1
     undici@>=7.11.0 <7.29.1: ^7.29.1

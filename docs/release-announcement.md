@@ -1,14 +1,14 @@
-# Chat Lab AI 1.10.0
+# Chat Lab AI 1.10.1
 
-Chat Lab AI 1.10.0 adds tags for saved chat sessions and tools to organize,
-search, and normalize the tag vocabulary.
+Chat Lab AI 1.10.1 includes the session-tag features from 1.10.0 and updates
+production dependencies to patched versions.
 
 ## Compatibility
 
 - Requires Obsidian 1.11.4 or newer.
 - Supports desktop and mobile.
 
-## Added
+## Session tags
 
 - Add and remove tags on saved sessions, filter History by tag, and preview
   tags with session counts.
@@ -22,3 +22,7 @@ search, and normalize the tag vocabulary.
 
 Session tags are chat metadata; they do not change Obsidian note tags or
 frontmatter. Automatic suggestions are off by default.
+
+## Security
+
+- Update Zod to 4.6.7 and resolve Ajv's `fast-uri` dependency to 3.1.9.

@@ -3,6 +3,12 @@
 Notable user-facing changes are recorded here. Dates reflect the project release
 records; unreleased development notes remain in the Memory Bank.
 
+## [1.10.1] - 2026-10-31
+
+### Fixed
+
+- Upgrade Zod and `fast-uri` to patched versions for production dependencies.
+
 ## [1.10.0] - 2026-10-31
 
 ### Added
