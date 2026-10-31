@@ -3,6 +3,20 @@
 Notable user-facing changes are recorded here. Dates reflect the project release
 records; unreleased development notes remain in the Memory Bank.
 
+## [1.10.0] - 2026-10-31
+
+### Added
+
+- Add tags to saved chat sessions, filter History by tag, and manage labels
+  across sessions with a review-first normalization flow.
+- Add opt-in automatic suggestions, manual and bulk tag generation, and agent
+  tools for managing session tags.
+- Preserve session tags through migration, chat archives, and remote sync.
+
+### Changed
+
+- Show tag previews and session counts in the searchable Chat History.
+
 ## [1.9.1] - 2026-10-22
 
 ### Fixed
