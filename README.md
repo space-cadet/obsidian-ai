@@ -27,6 +27,7 @@
 | **Model Providers**          | OpenAI, Codex, Anthropic, Google, DeepSeek, Kimi, Ollama, OpenRouter, Azure, and custom endpoints |
 | **Web Search**               | DuckDuckGo, Brave, Tavily, Exa, and SearXNG                                                       |
 | **Session History & Search** | Save and restore conversations; agents can search past sessions by topic, keyword, or content     |
+| **Session Tags**             | Tag saved chats, filter History, organize the vocabulary, and optionally generate tag suggestions |
 | **Remote Sync**              | Sync chat sessions across devices through WebDAV storage                                          |
 | **Agent Introspection**      | Let agents report the plugin version and currently available capabilities                         |
 | **Token Usage & Statistics** | Track context usage and review token totals, model usage, and response statistics                 |
@@ -96,6 +97,7 @@ Ask about recent events or facts beyond the model's training data:
 ### Session History & Search
 
 - **Session History** — Save and restore conversations across Obsidian restarts; archive and rename past chats.
+- **Session Tags** — Tag saved chats, filter History by tag, and normalize the tag vocabulary in Settings. Optional tag suggestions are off by default.
 - **Past Session Search** — The `search_past_sessions` tool finds earlier conversations by topic, keyword, or content.
 
 ### Remote Sync
